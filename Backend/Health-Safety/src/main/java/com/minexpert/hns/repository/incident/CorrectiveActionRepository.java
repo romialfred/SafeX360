@@ -1,0 +1,270 @@
+package com.minexpert.hns.repository.incident;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+
+import com.minexpert.hns.dto.response.CorrectiveActionResponse;
+import com.minexpert.hns.entity.incident.CorrectiveAction;
+import com.minexpert.hns.enums.ActionStatus;
+
+public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAction, Long> {
+
+    @Query("SELECT c FROM CorrectiveAction c WHERE c.incident.id = ?1")
+    List<CorrectiveAction> findByIncidentId(Long incidentId);
+
+    @Query("""
+                SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                    c.id,
+                    c.actionName,
+                    COALESCE(i.id, g.id, h.id, n.id),
+                    CASE
+                        WHEN i IS NOT NULL THEN i.title
+                        WHEN ha IS NOT NULL THEN ha.title
+                        WHEN ga IS NOT NULL THEN ga.title
+                        WHEN n IS NOT NULL THEN n.title
+                        ELSE 'Untitled'
+                    END,
+                    c.assignedEmployeeId,
+                    null,
+                    c.departmentId,
+                    c.ownerId,
+                    c.deadline,
+                    c.status,
+                    null,
+                    c.progress,
+                    CASE
+                        WHEN i IS NOT NULL THEN 'INCIDENT'
+                        WHEN h IS NOT NULL THEN 'HS_ACTIVITY'
+                        WHEN g IS NOT NULL THEN 'GENERAL_INSPECTION'
+                        WHEN n IS NOT NULL THEN
+                            CASE n.type
+                                WHEN 'NON_CONFORMITY' THEN 'NON_CONFORMITY'
+                                WHEN 'NEAR_MISS' THEN 'NEAR_MISS'
+                                ELSE 'HAZARD'
+                            END
+                        ELSE 'GENERAL_INSPECTION'
+                    END
+                )
+                FROM CorrectiveAction c
+                LEFT JOIN c.incident i
+                LEFT JOIN c.generalInspection g
+                LEFT JOIN g.activity ga
+                LEFT JOIN c.hsActivity h
+                LEFT JOIN h.activity ha
+                LEFT JOIN c.nonConformity n
+                WHERE i.id IS NOT NULL OR g.id IS NOT NULL OR h.id IS NOT NULL OR n.id IS NOT NULL
+            """)
+    List<CorrectiveActionResponse> findAllActions();
+
+    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
+            "c.id, c.actionName, c.incident.id, c.incident.title, c.assignedEmployeeId, " +
+            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'INCIDENT') " +
+            "FROM CorrectiveAction c WHERE c.incident.id = ?1")
+    List<CorrectiveActionResponse> findActionsByIncidentId(Long incidentId);
+
+    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
+            "c.id, c.actionName, c.generalInspection.id, c.generalInspection.activity.title, c.assignedEmployeeId, " +
+            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'GENERAL_INSPECTION') " +
+            "FROM CorrectiveAction c WHERE c.generalInspection.id = ?1")
+    List<CorrectiveActionResponse> findActionsByInspectionId(Long inspectionId);
+
+    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
+            "c.id, c.actionName, c.hsActivity.id, c.hsActivity.activity.title, c.assignedEmployeeId, " +
+            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'HS_ACTIVITY') " +
+            "FROM CorrectiveAction c WHERE c.hsActivity.id = ?1")
+    List<CorrectiveActionResponse> findActionsByActivityId(Long activityId);
+
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                c.id,
+                c.actionName,
+                COALESCE(i.id, g.id, h.id, n.id),
+                CASE
+                    WHEN i IS NOT NULL THEN i.title
+                    WHEN ha IS NOT NULL THEN ha.title
+                    WHEN ga IS NOT NULL THEN ga.title
+                    WHEN n IS NOT NULL THEN n.title
+                    ELSE 'ADHOC'
+                END,
+                c.assignedEmployeeId,
+                null,
+                c.departmentId,
+                c.ownerId,
+                c.deadline,
+                c.status,
+                null,
+                c.progress,
+                CASE
+                    WHEN i IS NOT NULL THEN 'INCIDENT'
+                    WHEN h IS NOT NULL THEN 'HS_ACTIVITY'
+                    WHEN g IS NOT NULL THEN 'GENERAL_INSPECTION'
+                    WHEN n IS NOT NULL THEN
+                        CASE n.type
+                            WHEN 'NON_CONFORMITY' THEN 'NON_CONFORMITY'
+                            WHEN 'NEAR_MISS' THEN 'NEAR_MISS'
+                            ELSE 'HAZARD'
+                        END
+                    ELSE 'ADHOC'
+                END
+            )
+            FROM CorrectiveAction c
+            LEFT JOIN c.incident i
+            LEFT JOIN c.generalInspection g
+            LEFT JOIN g.activity ga
+            LEFT JOIN c.hsActivity h
+            LEFT JOIN h.activity ha
+            LEFT JOIN c.nonConformity n
+            WHERE (i.id IS NOT NULL OR g.id IS NOT NULL OR h.id IS NOT NULL OR n.id IS NOT NULL)
+              AND (c.departmentId = :departmentId OR c.departmentId IS NULL)
+            """)
+    List<CorrectiveActionResponse> findActionsByDepartmentId(Long departmentId);
+
+    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
+            "c.id, c.actionName, c.nonConformity.id, c.nonConformity.title, c.assignedEmployeeId, " +
+            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  c.nonConformity.type) " +
+            "FROM CorrectiveAction c WHERE c.nonConformity.id = ?1")
+    List<CorrectiveActionResponse> findActionsByNonConformityId(Long nonConformityId);
+
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                c.id,
+                c.actionName,
+                null,
+                'ADHOC',
+                c.assignedEmployeeId,
+                null,
+                c.departmentId,
+                c.ownerId,
+                c.deadline,
+                c.status,
+                null,
+                c.progress,
+                'ADHOC'
+            )
+            FROM CorrectiveAction c
+            WHERE c.incident IS NULL
+              AND c.generalInspection IS NULL
+              AND c.hsActivity IS NULL
+              AND c.nonConformity IS NULL
+            """)
+    List<CorrectiveActionResponse> findAdhocActions();
+
+    @Query("""
+                SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                    c.id,
+                    c.actionName,
+                    COALESCE(i.id, g.id, h.id, n.id),
+                    CASE
+                        WHEN i IS NOT NULL THEN i.title
+                        WHEN ha IS NOT NULL THEN ha.title
+                        WHEN ga IS NOT NULL THEN ga.title
+                        WHEN n IS NOT NULL THEN n.title
+                        ELSE 'ADHOC'
+                    END,
+                    c.assignedEmployeeId,
+                    null,
+                    c.departmentId,
+                    c.ownerId,
+                    c.deadline,
+                    c.status,
+                    null,
+                    c.progress,
+                    CASE
+                        WHEN i IS NOT NULL THEN 'INCIDENT'
+                        WHEN h IS NOT NULL THEN 'HS_ACTIVITY'
+                        WHEN g IS NOT NULL THEN 'GENERAL_INSPECTION'
+                        WHEN n IS NOT NULL THEN
+                            CASE n.type
+                                WHEN 'NON_CONFORMITY' THEN 'NON_CONFORMITY'
+                                WHEN 'NEAR_MISS' THEN 'NEAR_MISS'
+                                ELSE 'NOT_MATCHED'
+                            END
+                        ELSE 'ADHOC'
+                    END
+                )
+                FROM CorrectiveAction c
+                LEFT JOIN c.incident i
+                LEFT JOIN c.generalInspection g
+                LEFT JOIN g.activity ga
+                LEFT JOIN c.hsActivity h
+                LEFT JOIN h.activity ha
+                LEFT JOIN c.nonConformity n
+                WHERE c.status = :status
+            """)
+    List<CorrectiveActionResponse> findAllActionsByStatus(ActionStatus status);
+
+    long countByDepartmentIdAndStatusInAndDeadlineBetween(Long departmentId, List<ActionStatus> statuses,
+            LocalDate fromDate, LocalDate toDate);
+
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                c.id,
+                c.actionName,
+                null,
+                'ADHOC',
+                c.assignedEmployeeId,
+                null,
+                c.departmentId,
+                c.ownerId,
+                c.deadline,
+                c.status,
+                null,
+                c.progress,
+                'ADHOC'
+            )
+            FROM CorrectiveAction c
+            WHERE c.incident IS NULL
+              AND c.generalInspection IS NULL
+              AND c.hsActivity IS NULL
+              AND c.nonConformity IS NULL
+              AND c.status = :status
+            """)
+    List<CorrectiveActionResponse> findAdhocActionsByStatus(ActionStatus status);
+
+    @Query("""
+                SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                    c.id,
+                    c.actionName,
+                    COALESCE(i.id, g.id, h.id, n.id),
+                    CASE
+                        WHEN i IS NOT NULL THEN i.title
+                        WHEN ha IS NOT NULL THEN ha.title
+                        WHEN ga IS NOT NULL THEN ga.title
+                        WHEN n IS NOT NULL THEN n.title
+                        ELSE 'ADHOC'
+                    END,
+                    c.assignedEmployeeId,
+                    null,
+                    c.departmentId,
+                    c.ownerId,
+                    c.deadline,
+                    c.status,
+                    c.description,
+                    c.progress,
+                    CASE
+                        WHEN i IS NOT NULL THEN 'INCIDENT'
+                        WHEN h IS NOT NULL THEN 'HS_ACTIVITY'
+                        WHEN g IS NOT NULL THEN 'GENERAL_INSPECTION'
+                        WHEN n IS NOT NULL THEN
+                            CASE n.type
+                                WHEN 'NON_CONFORMITY' THEN 'NON_CONFORMITY'
+                                WHEN 'NEAR_MISS' THEN 'NEAR_MISS'
+                                ELSE 'NOT_MATCHED'
+                            END
+                        ELSE 'ADHOC'
+                    END
+                )
+                FROM CorrectiveAction c
+                LEFT JOIN c.incident i
+                LEFT JOIN c.generalInspection g
+                LEFT JOIN g.activity ga
+                LEFT JOIN c.hsActivity h
+                LEFT JOIN h.activity ha
+                LEFT JOIN c.nonConformity n
+                WHERE c.id = ?1
+            """)
+    CorrectiveActionResponse getCorrectiveActionById(Long id);
+}

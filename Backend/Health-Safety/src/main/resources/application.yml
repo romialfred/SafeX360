@@ -1,0 +1,199 @@
+spring:
+  application:
+    name: Health-Safety
+
+  datasource:
+    # Local MySQL connection (commented)
+    # url: jdbc:mysql://localhost:3306/health_safety
+    # username: root
+    # password: Marshal9758@
+
+    # Environment variable-based config (commented)
+    username: ${DB_USERNAME}
+    url: ${DB_URL}
+    password: ${DB_PASSWORD}
+
+    # Active MySQL Aiven config
+    # url: jdbc:mysql://avnadmin:AVNS_WyMuze10sX31GeYVJY2@hrms-roxgold-hrms-roxgold.g.aivencloud.com:12254/healthsafety?ssl-mode=REQUIRED
+    # username: avnadmin
+    # password: AVNS_WyMuze10sX31GeYVJY2
+
+    # Alternate Aiven MySQL config (commented)
+    # url: jdbc:mysql://avnadmin:AVNS_J2VSkRIZfCanFADRGaK@datauniversmysql01-minex-360.g.aivencloud.com:23891/healthsafety?ssl-mode=REQUIRED
+    # username: avnadmin
+    # password: AVNS_J2VSkRIZfCanFADRGaK
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  mail:
+    username: no-replay@data-univers.com
+    password: Connex@ted001$
+    host: mail.data-univers.com
+    port: 465
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+          ssl:
+            enable: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+server:
+  port: 8081
+  servlet:
+    context-path: /hns
+
+eureka:
+  client:
+    register-with-eureka: true
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+
+# Custom application messages
+INCIDENT_NOT_FOUND: Incident not found
+
+# Incident Category
+INCIDENT_CATEGORY_NOT_FOUND: Incident Category not found
+INCIDENT_CATEGORY_ALREADY_EXISTS: Incident Category already exists
+
+# Incident Type
+INCIDENT_TYPE_NOT_FOUND: Incident Type not found
+INCIDENT_TYPE_ALREADY_EXISTS: Incident Type already exists
+
+# Check List
+CHECK_LIST_NOT_FOUND: Check List not found
+CHECK_LIST_ALREADY_EXISTS: Check List already exists
+
+# Location
+LOCATION_NOT_FOUND: Location not found
+LOCATION_ALREADY_EXISTS: Location already exists
+
+# Severity Level
+SEVERITY_LEVEL_NOT_FOUND: Severity Level not found
+SEVERITY_LEVEL_ALREADY_EXISTS: Severity Level already exists
+
+# Weather Condition
+WEATHER_CONDITION_NOT_FOUND: Weather Condition not found
+WEATHER_CONDITION_ALREADY_EXISTS: Weather Condition already exists
+
+# Body Part
+BODY_PART_NOT_FOUND: Body Part not found
+BODY_PART_ALREADY_EXISTS: Body Part already exists
+
+# Corrective Action
+CORRECTIVE_ACTION_NOT_FOUND: Corrective Action not found
+
+# Measurements
+MEASUREMENT_NOT_FOUND: Measurement not found
+MEASUREMENT_ALREADY_EXISTS: Measurement already exists
+
+# Incident Teams
+INCIDENT_TEAM_NOT_FOUND: Incident Team not found
+INCIDENT_TEAM_DEPARTMENT_ALREADY_EXISTS: Incident Team Department already exists
+INCIDENT_TEAM_NAME_ALREADY_EXISTS: Incident Team Name already exists
+
+# Team Members
+TEAM_MEMBER_ALREADY_EXISTS: Team Member already exists
+TEAM_MEMBER_NOT_FOUND: Team Member not found
+
+# HS Activity
+ACTIVITY_NOT_FOUND: Activity not found
+ACTIVITY_ALREADY_EXISTS: Activity already exists
+
+#Activity Report
+ACTIVITY_REPORT_ALREADY_EXISTS: HS Activity Report already exists
+ACTIVITY_REPORT_NOT_FOUND: HS Activity Report not found
+
+#Audit Area
+AUDIT_AREA_NAME_ALREADY_EXISTS: Audit Area Name already exists
+AUDIT_AREA_NOT_FOUND: Audit Area not found
+
+DOCUMENT_ALREADY_EXISTS_FOR_EMPLOYEE: Document already exists for employee
+DOCUMENT_ALREADY_APPROVED_OR_REJECTED: Document already approved or rejected
+DOCUMENT_NOT_FOUND: Document not found
+
+POSITION_ASSIGNMENT_NOT_FOUND: Position Assignment not found
+POSITION_ASSIGNMENT_ALREADY_EXISTS: Position Assignment already exists
+
+REQUIREMENT_ALREADY_EXISTS: Requirement already exists
+REQUIREMENT_NOT_FOUND: Requirement not found
+REQUIREMENT_NAME_ALREADY_EXISTS: Requirement Name already exists
+
+LESSON_LEARNED_ALREADY_EXISTS_FOR_INCIDENT: Lesson Learned already exists for incident
+
+LESSON_LEARNED_NOT_FOUND: Lesson Learned not found
+LESSON_LEARNED_NOT_FOUND_FOR_INCIDENT: Lesson Learned not found for incident
+
+WORK_PROCESS_NOT_FOUND: Work Process not found
+WORK_PROCESS_ALREADY_EXISTS: Work Process already exists
+WORK_PROCESS_ALREADY_ACTIVE: Work Process already active
+WORK_PROCESS_ALREADY_INACTIVE: Work Process already inactive
+
+WORK_AREA_NOT_FOUND: Work Area not found
+WORK_AREA_ALREADY_EXISTS: Work Area already exists
+WORK_AREA_ALREADY_ACTIVE: Work Area already active
+WORK_AREA_ALREADY_INACTIVE: Work Area already inactive
+
+INVESTIGATION_NOT_FOUND: Investigation not found
+INVESTIGATION_ALREADY_EXISTS: Investigation already exists
+
+INTERNAL_AUDITOR_NOT_FOUND: Auditor not found
+INTERNAL_AUDITOR_ALREADY_EXISTS: Auditor already exists
+
+EVENT_ANALYSIS_ALREADY_EXISTS_FOR_NON_CONFORMITY: Event Analysis already exists for Non-Conformity
+
+EVENT_ANALYSIS_NOT_FOUND_FOR_NON_CONFORMITY: Event Analysis not found for Non-Conformity
+
+# Theme
+THEME_NOT_FOUND: Theme not found
+
+#Inspection Report
+INSPECTION_REPORT_NOT_FOUND: Inspection Report not found
+
+INSUFFICIENT_STOCK_FOR_PPE: Insufficient stock for PPE
+INVALID_OPERATION: Invalid operation
+INVALID_STOCK_QUANTITY: Invalid stock quantity
+PPE_NOT_FOUND: PPE not found
+PPE_ALREADY_EXISTS: PPE already exists
+
+STOCK_NOT_FOUND: Stock not found
+
+REQUEST_NOT_FOUND: Request not found
+
+EMPLOYEE_PPE_NOT_FOUND: Employee PPE not found
+
+RISK_NOT_FOUND: Risk not found
+ANALYSIS_NOT_FOUND: Analysis not found
+
+DOCUMENT_ALREADY_EXISTS: Document already exists
+
+VERSION_NOT_FOUND: Version not found
+
+ZONE_NOT_FOUND: Zone not found
+COMM_NOT_FOUND: Communication not found
+NOTIFICATION_NOT_FOUND: Notification not found
+
+# Default sender address for outgoing emails
+app:
+  mail:
+    from: ${MAIL_FROM:no-replay@data-univers.com}
+
+scheduler:
+  poll-ms: 60000
+  batch-size: 50
+  retry-backoff-seconds: 300
+hrms:
+  url: ${MINE_XPERT_URL}

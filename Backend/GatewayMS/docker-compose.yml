@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  gateway-ms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-ms
+    networks:
+      - hms-network
+    ports:
+      - "9000:9000"
+
+networks:
+  hms-network:
+    external: true

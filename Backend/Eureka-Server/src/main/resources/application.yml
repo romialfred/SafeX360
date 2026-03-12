@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: Eureka-Server
+server:
+  port: ${SERVER_PORT}
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+# docker run -d --name eureka-server --network hms-network -p 8761:8761 eureka-server

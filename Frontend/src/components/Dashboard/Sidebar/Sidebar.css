@@ -1,0 +1,21 @@
+.menuItem:has(.active) .menus {
+    color: var(--mantine-primary-color-9) !important;
+    background-color: rgba(71, 179, 185, 0.2) !important;
+
+    .mantine-Accordion-label {
+        color: var(--mantine-primary-color-9) !important;
+    }
+
+    .mantine-Accordion-chevron {
+        color: var(--mantine-primary-color-9) !important;
+    }
+
+    /* .mantine-ActionIcon-icon {
+        color: var(--mantine-primary-color-9) !important;
+    } */
+}
+
+/* ✅ Hide chevron when collapsed sidebar is active */
+.chevron-hidden .mantine-Accordion-chevron {
+    display: none !important;
+}

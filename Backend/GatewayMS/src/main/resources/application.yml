@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: GatewayMS
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: true
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_UNIQUE
+        - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
+        - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowedOriginPatterns:
+              - http://localhost:3000
+              - http://localhost:5173
+              - https://health-safety-eight.vercel.app
+              - http://host.docker.internal:3000
+              - https://safex360.data-univers.com
+              - http://app1.localtest.me:3000
+              - http://app2.localtest.me:5173
+              - https://mine-xpert.data-univers.com
+              - https://dev.safex360.data-univers.com
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+      routes:
+        - id: hrms
+          uri: ${MINE_XPERT_URL}
+          # uri: lb://hrms
+          predicates:
+            - Path=/hrms/**
+          filters:
+            - TokenFilter
+        - id: Health-Safety
+          uri: ${SAFEX_URL}
+          # uri: lb://Health-Safety
+          predicates:
+            - Path=/hns/**
+          filters:
+            - TokenFilter
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 60s
+server:
+  port: 9000
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+    fetch-registry: true
+    register-with-eureka: true

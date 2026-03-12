@@ -1,0 +1,38 @@
+package com.minexpert.hns.repository.compliance;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+
+import com.minexpert.hns.dto.compliance.DocResponse;
+import com.minexpert.hns.entity.compliance.ComplianceDocs;
+import com.minexpert.hns.enums.DocStatus;
+
+public interface ComplianceDocsRepository extends CrudRepository<ComplianceDocs, Long> {
+    @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d ")
+    List<DocResponse> findAllDocs();
+
+    @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d ")
+    List<DocResponse> findAllDocsByEmpId(Long employeeId);
+
+    @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d WHERE d.id = ?1")
+    Optional<DocResponse> findDocById(Long id);
+
+    List<ComplianceDocs> findByEmployeeIdAndRequirementIdIn(Long empId, List<Long> requirementIds);
+
+    List<ComplianceDocs> findByEmployeeIdAndRequirementId(Long empId, Long requirementId);
+
+    Optional<ComplianceDocs> findByEmployeeIdAndRequirementIdAndStatusNotAndExpiryDateAfter(Long employeeId,
+            Long requirementId,
+            DocStatus status, LocalDate expiryDate);
+
+    @Query("""
+            SELECT d FROM ComplianceDocs d
+            WHERE d.employeeId IN :employeeIds
+                AND d.requirement.id IN :requirementIds
+            """)
+    List<ComplianceDocs> findByEmployeeIdInAndRequirementIdIn(List<Long> employeeIds, List<Long> requirementIds);
+}

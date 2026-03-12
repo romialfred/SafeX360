@@ -1,0 +1,5 @@
+package com.minexpert.hns.enums;
+
+public enum IncidentStatus {
+    PENDING, REPORTED, INVESTIGATION, INVESTIGATION_COMPLETED, CORRECTIVE_ACTIONS, CLOSED, REJECTED
+}
