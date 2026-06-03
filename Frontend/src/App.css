@@ -1,42 +1,102 @@
 @import "tailwindcss";
 
 /* ===========================================================================
-   SafeX360 — Police globale Inter (corps) + Inter Black (logo)
-   Inter offre un rendu plus net et léger que Plus Jakarta Sans,
-   avec de vraies graisses 300/400 sans synthèse browser.
+   SafeX360 — Système typographique éditorial (inspiré Mirka Portail)
+   • Body : Inter, light/regular, jamais gras
+   • Titres & valeurs proéminentes : Source Serif 4 (transitional serif)
+   • Fond : cream subtil (warm off-white) au lieu du blanc pur
+   • Aucun bold visible sauf via .safex-bold (rare exception)
    =========================================================================== */
+
+/* Polices Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap');
+
 html, body {
   font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-weight: 400;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1f2937; /* slate-800 plus doux que noir */
+  background-color: #FAF8F3; /* cream warm off-white */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* Force tous les éléments à 400 sauf titres principaux (font-bold explicite via Tailwind) */
-*:not(.font-bold):not(.font-black):not(strong):not(b) {
-  font-weight: 400;
+/* ═══ TITRES — Source Serif 4 ═══ */
+h1, h2, h3 {
+  font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #0f172a; /* slate-900 */
 }
 
-/* Réservé aux titres de page h1 (PageHeader.tsx + h1 sur LoginsPage) */
-h1.font-bold {
-  font-weight: 700 !important;
+/* H1 page titles : pas bold, mais serif size pour la prestance */
+h1 {
+  font-weight: 500;
 }
 
-/* Wordmark logo (Inter 900 inline style) doit absolument rester */
+/* ═══ NEUTRALISATION DU GRAS PARTOUT ═══ */
+*:not(.safex-bold):not(strong):not(b):not(h1):not(h2):not(h3) {
+  font-weight: 400 !important;
+}
+
+/* Wordmark logo SafeX360 (Inter Black inline style) — toujours appuyé */
 [style*="fontWeight: 900"], [style*="font-weight: 900"] {
   font-weight: 900 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
-/* Mantine : neutraliser les poids hérités */
+/* ═══ CLASSE UTILITAIRE pour chiffres / valeurs éditoriales (serif) ═══ */
+.safex-serif {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ═══ COMPOSANTS Mantine — alléger ═══ */
 .mantine-Text-root, .mantine-Title-root, .mantine-Button-label,
 .mantine-Anchor-root, .mantine-Badge-label, .mantine-Tabs-tabLabel {
-  font-weight: 400;
+  font-weight: 400 !important;
 }
 
-/* Boutons Mantine restent légèrement appuyés pour lisibilité CTA */
+/* Boutons CTA : légère emphase pour lisibilité */
 .mantine-Button-root {
-  font-weight: 500;
+  font-weight: 500 !important;
+  letter-spacing: 0.005em;
+}
+
+/* Tableaux PrimeReact : poids normal pour les en-têtes */
+.p-datatable .p-column-header-content, .p-datatable th {
+  font-weight: 500 !important;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280; /* slate-500 */
+}
+
+/* ═══ TARGETS Tailwind override (suite au sweep) ═══ */
+/* Les classes font-bold qui RESTENT (h1 dans PageHeader) deviennent serif élégant */
+.font-bold:not([style*="fontWeight: 900"]) {
+  font-weight: 500 !important;
+  font-family: 'Source Serif 4', Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+/* Page background pattern overlay subtil (texture papier) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(15,23,42,0.012) 1px, transparent 1px);
+  background-size: 24px 24px;
+  z-index: -1;
+}
+
+/* Cartes blanches restent blanches (contraste avec fond cream) */
+.mantine-Card-root, .bg-white {
+  background-color: #ffffff !important;
 }
 
 @layer base {
