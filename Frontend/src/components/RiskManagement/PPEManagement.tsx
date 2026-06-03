@@ -394,7 +394,7 @@ const PpeManagement = () => {
                             {eppData.slice(0, 5).map((epp) => (
                                 <Box key={epp.id} p="sm" style={{ border: '1px solid #e9ecef', borderRadius: '8px' }}>
                                     <Group justify="space-between" mb="xs">
-                                        <Text size="sm" fw={500} lineClamp={1}>{epp.name}</Text>
+                                        <Text size="sm" lineClamp={1}>{epp.name}</Text>
                                     </Group>
                                     <Badge variant="light" color="blue" size="xs" mb="xs">
                                         {epp.category.toUpperCase()}
@@ -714,13 +714,13 @@ const PpeManagement = () => {
                                                 <Table.Tr key={epp.id}>
                                                     <Table.Td>
                                                         <Box>
-                                                            <Text size="sm" fw={500}>{epp.name}</Text>
+                                                            <Text size="sm">{epp.name}</Text>
                                                             <Text size="xs" c="dimmed">{epp.brand} {epp.model}</Text>
                                                         </Box>
                                                     </Table.Td>
                                                     <Table.Td>{epp.category}</Table.Td>
                                                     <Table.Td>
-                                                        <Text fw={500} c={stockColor}>{epp.quantity}</Text>
+                                                        <Text c={stockColor}>{epp.quantity}</Text>
                                                     </Table.Td>
                                                     <Table.Td>{epp.minStockLevel}</Table.Td>
                                                     <Table.Td>
@@ -898,7 +898,7 @@ const PpeManagement = () => {
                             <Stack gap="md">
                                 <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Category:</Text>
-                                    <Text size="sm" fw={500}>{selectedEPPForStock.category}</Text>
+                                    <Text size="sm">{selectedEPPForStock.category}</Text>
                                 </Group>
 
                                 <Box>
@@ -908,12 +908,12 @@ const PpeManagement = () => {
 
                                 <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Minimum Stock:</Text>
-                                    <Text size="sm" fw={500}>{selectedEPPForStock.minStockLevel}</Text>
+                                    <Text size="sm">{selectedEPPForStock.minStockLevel}</Text>
                                 </Group>
 
                                 <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Certification:</Text>
-                                    <Text size="sm" fw={500}>{selectedEPPForStock.certificationStandard}</Text>
+                                    <Text size="sm">{selectedEPPForStock.certificationStandard}</Text>
                                 </Group>
 
                                 <Group justify="space-between">
@@ -955,7 +955,7 @@ const PpeManagement = () => {
                                     return (
                                         <Box key={epp.id}>
                                             <Group justify="space-between" mb="xs">
-                                                <Text size="sm" fw={500}>{epp.name}</Text>
+                                                <Text size="sm">{epp.name}</Text>
                                                 <Badge color="orange" variant="light" size="xs">
                                                     {percentage}%
                                                 </Badge>
@@ -1119,7 +1119,7 @@ const PpeManagement = () => {
                                                 <Table.Tr key={assignment.id}>
                                                     <Table.Td>
                                                         <Box>
-                                                            <Text size="sm" fw={500}>{assignment.epp?.name}</Text>
+                                                            <Text size="sm">{assignment.epp?.name}</Text>
                                                             <Text size="xs" c="dimmed">{assignment.epp?.brand} {assignment.epp?.model}</Text>
                                                         </Box>
                                                     </Table.Td>
@@ -1148,27 +1148,27 @@ const PpeManagement = () => {
                                     <Stack gap="sm">
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Numéro:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.employeeNumber}</Text>
+                                            <Text size="sm">{selectedEmployee.employeeNumber}</Text>
                                         </Group>
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Département:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.department}</Text>
+                                            <Text size="sm">{selectedEmployee.department}</Text>
                                         </Group>
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Poste:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.position}</Text>
+                                            <Text size="sm">{selectedEmployee.position}</Text>
                                         </Group>
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Date d'embauche:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.hireDate}</Text>
+                                            <Text size="sm">{selectedEmployee.hireDate}</Text>
                                         </Group>
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Email:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.email}</Text>
+                                            <Text size="sm">{selectedEmployee.email}</Text>
                                         </Group>
                                         <Group justify="space-between">
                                             <Text size="sm" c="dimmed">Téléphone:</Text>
-                                            <Text size="sm" fw={500}>{selectedEmployee.phone}</Text>
+                                            <Text size="sm">{selectedEmployee.phone}</Text>
                                         </Group>
                                     </Stack>
                                 </Card>
@@ -1188,7 +1188,7 @@ const PpeManagement = () => {
                                     >
                                         <Card withBorder p="md" mb="md">
                                             <Group justify="space-between" mb="xs">
-                                                <Text size="sm" fw={500}>{historyItem.epp?.name}</Text>
+                                                <Text size="sm">{historyItem.epp?.name}</Text>
                                                 <Badge color={getActionColor(historyItem.action)} variant="light" size="sm">
                                                     {historyItem.action}
                                                 </Badge>

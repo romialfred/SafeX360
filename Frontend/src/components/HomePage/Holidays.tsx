@@ -32,7 +32,7 @@ const Holidays = () => {
 
             <div className="flex gap-2 items-center">
                 <IconCalendarEvent stroke={2} color="purple" />
-                <Text size="xl" fw={700} className="text-gray-900">Upcoming Holidays</Text>
+                <Text size="xl" className="text-gray-900">Upcoming Holidays</Text>
             </div>
 
 
@@ -49,14 +49,14 @@ const Holidays = () => {
 
                             {/* Title & Date */}
                             <div className="flex flex-col">
-                                <Text size="md" fw={600}>{item.title}</Text>
+                                <Text size="md">{item.title}</Text>
                                 <Text size="sm" color="dimmed">{item.date}</Text>
                             </div>
                         </div>
 
                         {/* Label with Dynamic Colors */}
                         <div >
-                            <p className="text-primary bg-hoverbg  text-xs font-bold p-2 rounded-4xl">Public Holiday</p>
+                            <p className="text-primary bg-hoverbg  text-xs p-2 rounded-4xl">Public Holiday</p>
                         </div>
                     </div>
                 ))}

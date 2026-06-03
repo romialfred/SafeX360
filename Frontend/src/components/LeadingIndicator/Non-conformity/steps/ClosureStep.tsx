@@ -17,17 +17,17 @@ const ClosureStep = ({ form, employees }: any) => {
                             <IconBulb size={20} className="text-orange-600" />
                         </div>
                         <div>
-                            <Text size="lg" fw={600} className="text-orange-800">
-                                Lessons Learned
+                            <Text size="lg" className="text-orange-800">
+                                Leçons apprises
                             </Text>
                             <Text size="sm" className="text-orange-600">
-                                Document lessons learned from this {eventTypesMap[form.values.nonConformity.type]} event
+                                Documentez les leçons apprises de cet événement {eventTypesMap[form.values.nonConformity.type]?.toLowerCase() || ''}
                             </Text>
                         </div>
                     </Group>
                     <Grid>
                         <Grid.Col span={12}>
-                            <TextEditor form={form} id="nonConformity.lessonLearned" title="Lessons Learned" />
+                            <TextEditor form={form} id="nonConformity.lessonLearned" title="Leçons apprises" />
                         </Grid.Col>
                         {/* <Grid.Col span={12}>
                             <TextEditor form={form} id="nonConformity.sharingPlan" title="Knowledge Sharing Plan" />
@@ -42,101 +42,110 @@ const ClosureStep = ({ form, employees }: any) => {
                         <IconCheck size={20} className={form.values.nonConformity.type === 'NON_CONFORMITY' ? 'text-red-500' : 'text-green-500'} />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            {eventTypesMap[form.values.nonConformity.type]} Closure
+                        <Text size="lg" className="text-slate-800">
+                            Clôture {eventTypesMap[form.values.nonConformity.type]?.toLowerCase() || ''}
                         </Text>
                         <Text size="sm" className="text-slate-600">
-                            Final closure and validation
+                            Clôture finale et validation du dossier
                         </Text>
                     </div>
                 </Group>
                 <Grid>
                     <Grid.Col span={6}>
                         <DateInput
-                            label="Closing date"
+                            size="sm"
+                            label="Date de clôture"
                             {...form.getInputProps('nonConformity.closingDate')}
-                            placeholder="Enter Closing date"
+                            placeholder="Sélectionner la date"
                             withAsterisk
-
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <Select
-                            label="Final status"
+                            size="sm"
+                            label="Statut final"
                             {...form.getInputProps('nonConformity.finalStatus')}
-                            placeholder="Select Final status"
+                            placeholder="Sélectionner le statut final"
                             data={[{ value: 'Clôturé', label: 'Clôturé' }, { value: 'Rejeté', label: 'Rejeté' }, { value: 'Annulé', label: 'Annulé' }, { value: 'En attente', label: 'En attente' }, { value: 'Reporté', label: 'Reporté' }]}
                             withAsterisk
-
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <Select
-                            label="Validated by "
+                            size="sm"
+                            label="Validé par"
                             {...form.getInputProps('nonConformity.validator')}
-                            placeholder="Name of Validator"
+                            placeholder="Sélectionner le validateur"
                             withAsterisk
                             data={employees}
+                            searchable
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <DateInput
-                            label="Validation date"
+                            size="sm"
+                            label="Date de validation"
                             {...form.getInputProps('nonConformity.validationDate')}
-                            placeholder="Enter Validation date"
+                            placeholder="Sélectionner la date"
                             withAsterisk
                         />
                     </Grid.Col>
                     <Grid.Col span={12}>
-                        <TextEditor form={form} id="nonConformity.validationComment" title="Closing comments" />
+                        <TextEditor form={form} id="nonConformity.validationComment" title="Commentaires de clôture" />
                     </Grid.Col>
                 </Grid>
             </Card>
 
             <Card shadow="sm" padding="md">
-                <Text size="lg" fw={500} className="mb-4">
-                    Effectiveness evaluation
+                <Text size="lg" className="mb-4">
+                    Évaluation de l'efficacité
                 </Text>
                 <Grid>
                     <Grid.Col span={6}>
                         <Select
-                            label="Treatment Effectiveness"
-                            placeholder="Select Treatment Effectiveness"
-                            data={[{ value: 'Très efficace', label: 'Très efficace' }, { value: 'Efficace', label: 'Efficace' }, { value: 'Peu efficace', label: 'Peu efficace' }, { value: 'Inefficace', label: 'Inefficace' }]}{...form.getInputProps('nonConformity.effectiveness')}
+                            size="sm"
+                            label="Efficacité du traitement"
+                            placeholder="Sélectionner le niveau d'efficacité"
+                            data={[{ value: 'Très efficace', label: 'Très efficace' }, { value: 'Efficace', label: 'Efficace' }, { value: 'Peu efficace', label: 'Peu efficace' }, { value: 'Inefficace', label: 'Inefficace' }]}
+                            {...form.getInputProps('nonConformity.effectiveness')}
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <NumberInput
-                            label="Efficiency score (/10)"
+                            size="sm"
+                            label="Score d'efficacité (/10)"
                             placeholder="0"
                             min={0}
                             max={10}
-                            step={0.1}{...form.getInputProps('nonConformity.rating')}
+                            step={0.1}
+                            {...form.getInputProps('nonConformity.rating')}
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <Select
-                            label="Risk of recurrence"
-                            placeholder="Select Risk of recurrence"
+                            size="sm"
+                            label="Risque de récurrence"
+                            placeholder="Sélectionner le niveau de risque"
                             data={[{ value: 'Très faible', label: 'Très faible' }, { value: 'Faible', label: 'Faible' }, { value: 'Moyen', label: 'Moyen' }, { value: 'Élevé', label: 'Élevé' }, { value: 'Très élevé', label: 'Très élevé' }]}
                             {...form.getInputProps('nonConformity.risk')}
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <DateInput
-                            label="Next check"
-                            placeholder="Follow-up Date"
+                            size="sm"
+                            label="Prochaine vérification"
+                            placeholder="Date de suivi"
                             {...form.getInputProps('nonConformity.nextCheck')}
                         />
                     </Grid.Col>
                     <Grid.Col span={12}>
-                        <TextEditor form={form} id="nonConformity.feedback" title="Feedback" />
+                        <TextEditor form={form} id="nonConformity.feedback" title="Retour d'expérience" />
                     </Grid.Col>
                 </Grid>
             </Card>
 
             {/* <Card shadow="sm" padding="md">
-                <Text size="lg" fw={500} className="mb-4">
+                <Text size="lg" className="mb-4">
                     Archiving and Tracking
                 </Text>
                 <Grid>

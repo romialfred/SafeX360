@@ -117,7 +117,7 @@ const EditRegisterForm = () => {
   return (
     <div>
       <div>
-        <div className="font-semibold text-2xl text-blue-500 w-fit">Edit Risk Identification</div>
+        <div className="text-2xl text-blue-500 w-fit">Edit Risk Identification</div>
         <Breadcrumbs mt="xs" mb="lg">
           <Link className="hover:!underline" to="/">
             <Text variant="gradient">Home</Text>
@@ -180,7 +180,7 @@ const EditRegisterForm = () => {
             <Title order={4} mb="md" c="blue">Risk Identification Guide</Title>
 
             <Box p="md" mb="md" style={{ backgroundColor: '#e7f5ff', borderRadius: '8px', border: '1px solid #339af0' }}>
-              <Text fw={600} size="sm" mb="xs" c="blue">Document the Scenario</Text>
+              <Text size="sm" mb="xs" c="blue">Document the Scenario</Text>
               <Text size="xs" c="dimmed">
                 • Use the description to explain what is happening or could happen.<br />
                 • Include triggering conditions, locations, or equipment involved.<br />
@@ -189,7 +189,7 @@ const EditRegisterForm = () => {
             </Box>
 
             <Box p="md" mb="md" style={{ backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
-              <Text fw={600} size="sm" mb="xs" c="orange">Department & Process Context</Text>
+              <Text size="sm" mb="xs" c="orange">Department & Process Context</Text>
               <Text size="xs" c="dimmed">
                 • Select the department accountable for monitoring the risk.<br />
                 • Choose the work process where the hazard originates.<br />
@@ -198,7 +198,7 @@ const EditRegisterForm = () => {
             </Box>
 
             <Box p="md" mb="md" style={{ backgroundColor: '#f8d7da', borderRadius: '8px', border: '1px solid #f5c6cb' }}>
-              <Text fw={600} size="sm" mb="xs" c="red">Hazard & Consequence Tips</Text>
+              <Text size="sm" mb="xs" c="red">Hazard & Consequence Tips</Text>
               <Text size="xs" c="dimmed">
                 • Hazard source: identify the condition, task, or substance causing concern.<br />
                 • Potential consequences: focus on credible outcomes (injury, downtime, environmental impact).<br />
@@ -207,7 +207,7 @@ const EditRegisterForm = () => {
             </Box>
 
             <Box p="md" style={{ backgroundColor: '#d1ecf1', borderRadius: '8px', border: '1px solid #bee5eb' }}>
-              <Text fw={600} size="sm" mb="xs" c="teal">Assign Ownership & Reviews</Text>
+              <Text size="sm" mb="xs" c="teal">Assign Ownership & Reviews</Text>
               <Text size="xs" c="dimmed">
                 • Nominate an owner empowered to coordinate mitigations.<br />
                 • Set a review date aligned with inspections or audits.<br />

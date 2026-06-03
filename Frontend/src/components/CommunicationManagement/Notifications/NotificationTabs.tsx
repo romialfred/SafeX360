@@ -19,7 +19,7 @@ const NotificationTabs = () => {
         <div>
 
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Notification Details</div>
+                <div className="text-2xl text-blue-500 w-fit">Notification Details</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>

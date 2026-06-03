@@ -31,10 +31,10 @@ const TopCards = () => {
                 >
                     <Box className="flex flex-col items-center">
                         <Image src={topcard.icon} alt={topcard.title} h={30} w={30} />
-                        <Text color={`${topcard.bgcolor}.7`} mt="sm" size="sm" fw={500}>
+                        <Text color={`${topcard.bgcolor}.7`} mt="sm" size="sm">
                             {topcard.title}
                         </Text>
-                        <Text color={`${topcard.bgcolor}.9`} size="sm" fw={500}>
+                        <Text color={`${topcard.bgcolor}.9`} size="sm">
                             {topcard.digits}
                         </Text>
                     </Box>

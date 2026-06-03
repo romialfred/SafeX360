@@ -46,7 +46,7 @@ const AnalysisSection = ({ form, employees }: any) => {
         console.log("ID", id);
         if (id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -81,7 +81,7 @@ const AnalysisSection = ({ form, employees }: any) => {
     return (
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold mb-5 text-gray-800">Impact Assessment & Analysis</h2>
+                <h2 className="text-lg mb-5 text-gray-800">Impact Assessment & Analysis</h2>
                 {isSaving && (
                     <Group gap="xs">
                         <Loader size="xs" />
@@ -181,11 +181,11 @@ const AnalysisSection = ({ form, employees }: any) => {
                         <div className="flex flex-col p-5 gap-5">
                             <div className="flex justify-between items-center">
 
-                                <h3 className="font-medium text-lg text-gray-800 mb-4">Corrective Actions</h3>
+                                <h3 className="text-lg text-gray-800 mb-4">Corrective Actions</h3>
                                 <Button onClick={handleAddIncident} leftSection={<IconPlus />} >Add Action Plan</Button>
                             </div>
                             {form?.values.correctiveActions && form?.values.correctiveActions.map((x: any, index: any) => <Fieldset className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                                <div className="text-lg font-medium text-blue-500">Action {index + 1}</div>
+                                <div className="text-lg text-blue-500">Action {index + 1}</div>
                                 {<ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Settings">
                                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                 </ActionIcon>}

@@ -89,7 +89,7 @@ const TeamDetails = () => {
 
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         Team Details
                     </div>
                     <Breadcrumbs mt="xs">
@@ -112,17 +112,17 @@ const TeamDetails = () => {
             <div className="bg-white rounded-lg shadow-lg p-4 border border-gray-300 flex flex-col gap-5">
                 <div className="flex justify-between">
                     <div className="flex gap-1 items-center">
-                        <span className="text-gray-600 text-lg font-medium">Department: </span>
-                        <span className="font-medium text-blue-600">{teamDetails.department}</span>
+                        <span className="text-gray-600 text-lg">Department: </span>
+                        <span className="text-blue-600">{teamDetails.department}</span>
                     </div>
                     <div>
-                        <span className="text-gray-600 text-lg font-medium">Team Name: </span>
-                        <span className="font-medium text-blue-600">{teamDetails.teamName}</span>
+                        <span className="text-gray-600 text-lg">Team Name: </span>
+                        <span className="text-blue-600">{teamDetails.teamName}</span>
                     </div>
                 </div>
 
 
-                <h2 className="text-xl font-semibold text-gray-800">Team Members</h2>
+                <h2 className="text-lg text-gray-800">Team Members</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-100 p-4 rounded-xl shadow-sm border border-gray-300">
                     {teamDetails.members.map((member) => (
                         <div
@@ -138,26 +138,26 @@ const TeamDetails = () => {
                             <div className="flex items-center mb-4 ">
 
                                 <Avatar color="white"
-                                    className={` flex items-center justify-center  !font-bold rounded-full mr-3 ${member.color}`}
+                                    className={` flex items-center justify-center  !rounded-full mr-3 ${member.color}`}
                                 >
                                     {member.initials}
                                 </Avatar>
 
                                 <div>
-                                    <p className="font-semibold text-gray-700">{member.name}</p>
-                                    <p className="text-sm font-medium text-gray-500">{member.code}</p>
+                                    <p className="text-gray-700">{member.name}</p>
+                                    <p className="text-sm text-gray-500">{member.code}</p>
                                 </div>
                             </div>
                             <Divider />
                             <div className="flex flex-col gap-4">
-                                <p className="text-lg font-medium mt-2 text-gray-700">
+                                <p className="text-lg mt-2 text-gray-700">
                                     Incident Level Notifications:
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                     {[1, 2, 3, 4, 5].map((level) => (
                                         <span
                                             key={level}
-                                            className={`px-4 py-2 text-md rounded-full cursor-pointer font-medium ${member.notifications.includes(level)
+                                            className={`px-4 py-2 text-md rounded-full cursor-pointer ${member.notifications.includes(level)
                                                 ? "bg-blue-500 border text-white hover:bg-white hover:text-blue-500 hover:border-blue"
                                                 : "bg-gray-200 text-gray-700 border-gray-200 border hover:bg-white hover:text-gray-600 hover:border-gray-300"
                                                 }`}

@@ -174,7 +174,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                         {scheduleItems.map((item, index) => (
                             <Group key={item.label ?? index} justify="space-between" align="flex-start">
                                 <Text size="sm" c="dimmed">{item.label}</Text>
-                                <Text size="sm" fw={500}>{item.value}</Text>
+                                <Text size="sm">{item.value}</Text>
                             </Group>
                         ))}
                     </Stack>

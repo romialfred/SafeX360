@@ -7,10 +7,8 @@ import {
     Text,
     Grid,
     ActionIcon,
-    Tabs,
     Paper,
     Tooltip,
-    Breadcrumbs,
     SegmentedControl,
     Select,
 } from '@mantine/core';
@@ -26,10 +24,16 @@ import {
     IconTarget,
     IconLayoutGrid,
     IconList,
+    IconPlus,
+    IconClipboardList,
+    IconChartPie,
 } from '@tabler/icons-react';
 import { NonConformity } from './NonConformity';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getAllNonConformities } from '../../../services/NonConformityService';
+import PageHeader from '../../UtilityComp/PageHeader';
+import StatCard from '../../UtilityComp/StatCard';
+import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { formatDateShort } from '../../../utility/DateFormats';
@@ -181,14 +185,14 @@ const NonConformityDashboard = () => {
                     >
                         <div className="relative z-10">
                             <div className='flex justify-between gap-5'>
-                                <Text size="sm" className={`font-bold transition-opacity duration-300 ${getStatTextColor(index)}`}>
+                                <Text size="sm" className={`transition-opacity duration-300 ${getStatTextColor(index)}`}>
                                     {stat.label}
                                 </Text>
                                 <div className={` mt-1 rounded-xl ${getStatIconBackground(index)} transition-all duration-300 p-1 group-hover:scale-110`}>
                                     <stat.icon size={16} className={`${getStatIconColor(index)} transition-colors duration-300`} />
                                 </div>
                             </div>
-                            <Text size="2xl" fw={900} className={`${getStatValueColor(index)} transition-colors duration-300 font-mono`}>
+                            <Text size="2xl" className={`${getStatValueColor(index)} transition-colors duration-300 font-mono`}>
                                 {stat.value}
                             </Text>
                         </div>
@@ -302,7 +306,7 @@ const NonConformityDashboard = () => {
                     <Card onClick={() => onView(nc)} className="bg-white border border-slate-200 shadow-sm hover:shadow-lg cursor-pointer transition-all duration-300 rounded-xl group">
                         <div className="space-y-3 p-1">
                             <Group justify="space-between">
-                                <Text fw={600} size="md" className="text-slate-800">{nc.number}</Text>
+                                <Text size="md" className="text-slate-800">{nc.number}</Text>
                                 <div className='flex gap-3'>
                                     <Badge color={getStatusColor(nc.status)} variant="light" className="rounded-full !capitalize">
                                         {eventStatusMap[nc.status]}
@@ -440,103 +444,143 @@ const NonConformityDashboard = () => {
         },
     ];
 
-    return (
-        <div className="p-5">
-            {/* Header */}
-            <div className="mb-4">
-                <div>
-                    <div className="font-semibold  text-2xl text-blue-500 w-fit"> Central Findings Dashboard</div>
-                    <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-                        <Link className="hover:!underline" to="/non-conformity"><Text variant="gradient">Central Findings Dashboard</Text></Link>
-                    </Breadcrumbs>
-                </div>
-                <Group justify="space-between" className="">
-                    <div>
-                        <Text fs="italic" size='sm'>
-                            Monitor and manage non-conformities and near miss according to ISO 45001 standards
-                        </Text>
-                    </div>
-                </Group>
-            </div>
-            {/* KPI Stats */}
-            {renderStats()}
-            {/* Tabs and Controls */}
-            <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 ">
-                {/* Type Tabs */}
-                <div className='flex justify-between '>
+    // Mapping pour SegmentedFilter
+    const typeFilterOptions = typeOptions.map(opt => ({
+        value: opt.value,
+        label: opt.value === 'NON_CONFORMITY' ? 'Non-conformités' : opt.value === 'NEAR_MISS' ? 'Quasi-accidents' : 'Tous',
+        count: getTypeCount(opt.value),
+        color: (opt.value === 'NON_CONFORMITY' ? 'orange' : opt.value === 'NEAR_MISS' ? 'blue' : 'slate') as any,
+    }));
 
-                    <Tabs value={selectedType} onChange={(value) => value && setSelectedType(value)}>
-                        <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
-                            {typeOptions.map(opt =>
-                                <Tabs.Tab
-                                    key={opt.value}
-                                    value={opt.value}
-                                    className="!text-slate-600 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500 !rounded-lg px-4 py-2 transition-all duration-200"
-                                >
-                                    {opt.label} ({getTypeCount(opt.value)})
-                                </Tabs.Tab>
-                            )}
-                        </Tabs.List>
-                    </Tabs>
-                    <Group gap="md" className="mb-6">
-                        <Select
-                            size='sm'
-                            data={[
-                                { label: 'All Time', value: 'all' },
-                                { label: 'Last Week', value: 'last_week' },
-                                { label: 'This Month', value: 'this_month' },
-                                { label: 'Last 90 Days', value: 'last_90_days' }
-                            ]}
-                            value={selectedPeriod}
-                            onChange={(value) => setSelectedPeriod(value || 'all')}
-                            placeholder="Select Period"
-                        />
-                        <Select allowDeselect={false}
-                            size='sm'
-                            data={[{ label: "All", value: "All" }, ...eventStatuses]}
-                            value={selectedStatus}
-                            onChange={setSelectedStatus}
-                        />
-                        <Button
-                            leftSection={<IconFileExport size={16} />}
-                            variant="outline"
-                            className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg"
-                        >
-                            Export
+    const severityFilterOptions = severityOptions.map(opt => ({
+        value: opt.value,
+        label: opt.value === 'all' ? 'Toutes' : opt.label,
+        count: getSeverityCount(opt.value),
+        color: (opt.value === 'Catastrophique' ? 'red' : opt.value === 'Majeure' ? 'orange' : opt.value === 'Modérée' ? 'yellow' : opt.value === 'Mineure' ? 'green' : opt.value === 'Insignifiante' ? 'slate' : 'slate') as any,
+    }));
+
+    return (
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Activités préventives' },
+                    { label: 'Non-conformités' },
+                ]}
+                icon={<IconClipboardList size={22} stroke={2} />}
+                iconColor="green"
+                title="Non-conformités et quasi-accidents"
+                subtitle="Suivi et traitement des écarts conformément aux normes ISO 45001 et ISO 9001"
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />}>
+                            Exporter
                         </Button>
-                        <Group gap="xs">
+                        <Button color="teal" size="sm" leftSection={<IconPlus size={15} />} onClick={() => navigate('/non-conformity/create')}>
+                            Nouvel événement
+                        </Button>
+                    </>
+                }
+            />
+
+            {/* KPI sobres et professionnels */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <StatCard
+                    label="Total événements"
+                    value={totalNC}
+                    icon={<IconAlertTriangle size={18} stroke={2} />}
+                    color="blue"
+                    badge="TOTAL"
+                    tooltip="Nombre total de non-conformités et quasi-accidents enregistrés"
+                />
+                <StatCard
+                    label="Échéances dépassées"
+                    value={ncOverdue}
+                    icon={<IconClock size={18} stroke={2} />}
+                    color="orange"
+                    badge="EN RETARD"
+                    tooltip="Événements dont l'échéance est dépassée sans clôture"
+                />
+                <StatCard
+                    label="En investigation"
+                    value={ncUnderInvestigation}
+                    icon={<IconSearch size={18} stroke={2} />}
+                    color="yellow"
+                    badge="EN COURS"
+                    tooltip="Événements en cours d'analyse causale"
+                />
+                <StatCard
+                    label="Événements clôturés"
+                    value={ncClosed}
+                    icon={<IconCircleCheck size={18} stroke={2} />}
+                    color="green"
+                    badge="CLÔTURÉS"
+                    tooltip="Événements complètement traités avec vérification d'efficacité"
+                />
+                <StatCard
+                    label="Taux de clôture"
+                    value={rate.replace('%', '')}
+                    suffix="%"
+                    icon={<IconChartPie size={18} stroke={2} />}
+                    color="teal"
+                    badge="TAUX"
+                    tooltip="Pourcentage d'événements clôturés sur le total enregistré"
+                />
+            </div>
+
+            {/* Filtres et contrôles */}
+            <Paper className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <SegmentedFilter
+                    value={selectedType}
+                    onChange={setSelectedType}
+                    options={typeFilterOptions}
+                    rightElement={
+                        <>
+                            <Select
+                                size="xs"
+                                data={[
+                                    { label: 'Toutes périodes', value: 'all' },
+                                    { label: 'Semaine dernière', value: 'last_week' },
+                                    { label: 'Ce mois', value: 'this_month' },
+                                    { label: '90 derniers jours', value: 'last_90_days' },
+                                ]}
+                                value={selectedPeriod}
+                                onChange={(value) => setSelectedPeriod(value || 'all')}
+                                w={150}
+                            />
+                            <Select
+                                allowDeselect={false}
+                                size="xs"
+                                data={[{ label: 'Tous statuts', value: 'All' }, ...eventStatuses]}
+                                value={selectedStatus}
+                                onChange={setSelectedStatus}
+                                w={150}
+                            />
                             <SegmentedControl
                                 value={viewMode}
                                 onChange={handleViewChange}
                                 data={viewOptions}
                                 radius="md"
-                                size="sm"
-                                color="blue"
-                                transitionDuration={500}
-                                transitionTimingFunction="linear"
+                                size="xs"
+                                color="teal"
                             />
-                        </Group>
-                    </Group>
-                </div>
-                {/* Severity Tabs */}
-                <Tabs value={selectedSeverity} onChange={(value) => value && setSelectedSeverity(value)}>
-                    <Tabs.List className="mb-4 border-b border-slate-200 bg-slate-50 rounded-lg p-1">
-                        {severityOptions.map(opt =>
-                            <Tabs.Tab
-                                key={opt.value}
-                                value={opt.value}
-                                className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-all duration-200`}
-                            >
-                                {opt.label} ({getSeverityCount(opt.value)})
-                            </Tabs.Tab>
-                        )}
-                    </Tabs.List>
-                </Tabs>
-                {/* Filters and View Toggle */}
+                        </>
+                    }
+                />
 
-                {/* The main table/cards */}
-                {viewMode === 'cards' ? renderCards(filteredData) : renderTable(filteredData)}
+                <div className="pt-2 border-t border-slate-100">
+                    <SegmentedFilter
+                        value={selectedSeverity}
+                        onChange={setSelectedSeverity}
+                        options={severityFilterOptions}
+                        leftElement={<span className="text-[10px] uppercase tracking-wider text-slate-500 mr-1">Sévérité</span>}
+                    />
+                </div>
+
+                {/* Vue principale (cartes ou table) */}
+                <div className="pt-2">
+                    {viewMode === 'cards' ? renderCards(filteredData) : renderTable(filteredData)}
+                </div>
             </Paper>
         </div>
     );

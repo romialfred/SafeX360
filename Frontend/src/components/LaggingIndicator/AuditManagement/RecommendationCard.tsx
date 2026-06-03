@@ -59,23 +59,23 @@ const RecommendationCard = ({ data, onView, onUpdate }: {
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
             {/* Top badges */}
             <div className="flex flex-wrap gap-3">
-                <span className={`text-sm px-2 py-1 rounded-lg font-medium ${statusStyle}`}>
+                <span className={`text-sm px-2 py-1 rounded-lg ${statusStyle}`}>
                     {recMap[data.status]}
                 </span>
-                <span className="text-sm px-2 py-1 rounded-lg font-medium bg-orange-100 text-orange-800">
+                <span className="text-sm px-2 py-1 rounded-lg bg-orange-100 text-orange-800">
                     {data.progress}%
                 </span>
-                <span className="text-sm px-2 py-1 rounded-lg font-medium bg-sky-100 text-sky-800">
+                <span className="text-sm px-2 py-1 rounded-lg bg-sky-100 text-sky-800">
                     Department: {data.department}
                 </span>
             </div>
 
             {/* Title */}
-            <p className=" font-medium text-gray-700">{data.title}</p>
+            <p className=" text-gray-700">{data.title}</p>
 
             {/* Audit Title */}
-            <p className="text-gray-700 font-medium">Observation: {data.observation}</p>
-            <p className="text-gray-700 font-medium">Responsible: {data.actionManagerId}</p>
+            <p className="text-gray-700">Observation: {data.observation}</p>
+            <p className="text-gray-700">Responsible: {data.actionManagerId}</p>
 
             {/* Date */}
             <div className="text-gray-700 font-normal flex items-center gap-1">

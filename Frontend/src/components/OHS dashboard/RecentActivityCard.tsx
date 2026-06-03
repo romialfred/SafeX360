@@ -64,7 +64,7 @@ const RecentActivityCard = () => {
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
                 <IconActivity size={30} className="text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-800">Recent Activities</h2>
+                <h2 className="text-lg text-gray-800">Recent Activities</h2>
             </div>
 
             {/* Scrollable Area */}
@@ -74,10 +74,10 @@ const RecentActivityCard = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div>{item.icon}</div>
-                                <p className="font-medium text-gray-800">{item.title}</p>
+                                <p className="text-gray-800">{item.title}</p>
                             </div>
                             <span
-                                className={`text-xs px-3 py-1 rounded-full border font-semibold ${getSeverityStyle(item.severity)}`}
+                                className={`text-xs px-3 py-1 rounded-full border ${getSeverityStyle(item.severity)}`}
                             >
                                 {item.severity}
                             </span>

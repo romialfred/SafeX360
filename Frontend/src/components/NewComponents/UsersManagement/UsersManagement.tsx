@@ -457,7 +457,7 @@ const UsersManagement = () => {
                                 Back to home
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h1>
+                                <h1 className="text-2xl font-semibold text-gray-900 mb-2">Users Management</h1>
                                 <p className="text-gray-600">Manage user accounts, roles, and permissions</p>
                             </div>
                         </div>
@@ -483,7 +483,7 @@ const UsersManagement = () => {
                         <button
                             onClick={() => setActiveTab('users')}
                             className={`
-                flex items-center px-6 py-4 font-medium text-sm transition-colors
+                flex items-center px-6 py-4 text-sm transition-colors
                 ${activeTab === 'users'
                                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                                     : 'text-gray-500 hover:text-gray-700'
@@ -496,7 +496,7 @@ const UsersManagement = () => {
                         <button
                             onClick={() => setActiveTab('online')}
                             className={`
-                flex items-center px-6 py-4 font-medium text-sm transition-colors
+                flex items-center px-6 py-4 text-sm transition-colors
                 ${activeTab === 'online'
                                     ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
                                     : 'text-gray-500 hover:text-gray-700'
@@ -509,7 +509,7 @@ const UsersManagement = () => {
                         <button
                             onClick={() => setActiveTab('tracking')}
                             className={`
-                flex items-center px-6 py-4 font-medium text-sm transition-colors
+                flex items-center px-6 py-4 text-sm transition-colors
                 ${activeTab === 'tracking'
                                     ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
                                     : 'text-gray-500 hover:text-gray-700'
@@ -526,7 +526,7 @@ const UsersManagement = () => {
                 {showAddUserForm && (
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-semibold text-gray-900">
+                            <h2 className="text-lg text-gray-900">
                                 {editingUser ? 'Edit User' : 'Add New User'}
                             </h2>
                             <button
@@ -541,7 +541,7 @@ const UsersManagement = () => {
                             <div className="space-y-6">
                                 {/* Employee Selection */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm text-gray-700 mb-2">
                                         Select Employee from HRMS *
                                     </label>
                                     <div className="relative">
@@ -577,7 +577,7 @@ const UsersManagement = () => {
                                                         >
                                                             <div className="flex items-center justify-between">
                                                                 <div>
-                                                                    <div className="font-medium text-gray-900">
+                                                                    <div className="text-gray-900">
                                                                         {employee.employeeNumber} - {employee.firstName} {employee.lastName}
                                                                     </div>
                                                                     <div className="text-sm text-gray-500">
@@ -585,7 +585,7 @@ const UsersManagement = () => {
                                                                     </div>
                                                                     <div className="text-sm text-gray-400">{employee.email}</div>
                                                                 </div>
-                                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${employee.status === 'active'
+                                                                <span className={`px-2 py-1 rounded-full text-xs ${employee.status === 'active'
                                                                     ? 'bg-green-100 text-green-800'
                                                                     : employee.status === 'on-leave'
                                                                         ? 'bg-yellow-100 text-yellow-800'
@@ -609,51 +609,51 @@ const UsersManagement = () => {
                                 {/* Selected Employee Details */}
                                 {selectedEmployee && (
                                     <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h3 className="text-sm font-medium text-gray-900 mb-3">Selected Employee Details</h3>
+                                        <h3 className="text-sm text-gray-900 mb-3">Selected Employee Details</h3>
                                         <div className="grid grid-cols-2 gap-4 text-sm">
                                             <div>
-                                                <span className="font-medium text-gray-700">Employee Number:</span>
+                                                <span className="text-gray-700">Employee Number:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.employeeNumber}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Full Name:</span>
+                                                <span className="text-gray-700">Full Name:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.firstName} {selectedEmployee.lastName}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Email:</span>
+                                                <span className="text-gray-700">Email:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.email}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Department:</span>
+                                                <span className="text-gray-700">Department:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.department}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Position:</span>
+                                                <span className="text-gray-700">Position:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.position}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Manager:</span>
+                                                <span className="text-gray-700">Manager:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.manager}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Location:</span>
+                                                <span className="text-gray-700">Location:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.location}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Hire Date:</span>
+                                                <span className="text-gray-700">Hire Date:</span>
                                                 <span className="ml-2 text-gray-900">{new Date(selectedEmployee.hireDate).toLocaleDateString()}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Contract Type:</span>
+                                                <span className="text-gray-700">Contract Type:</span>
                                                 <span className="ml-2 text-gray-900 capitalize">{selectedEmployee.contractType}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Work Schedule:</span>
+                                                <span className="text-gray-700">Work Schedule:</span>
                                                 <span className="ml-2 text-gray-900">{selectedEmployee.workSchedule}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Status:</span>
-                                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${selectedEmployee.status === 'active'
+                                                <span className="text-gray-700">Status:</span>
+                                                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${selectedEmployee.status === 'active'
                                                     ? 'bg-green-100 text-green-800'
                                                     : selectedEmployee.status === 'on-leave'
                                                         ? 'bg-yellow-100 text-yellow-800'
@@ -668,7 +668,7 @@ const UsersManagement = () => {
 
                                 {/* Role Selection */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm text-gray-700 mb-2">
                                         Role *
                                     </label>
                                     <select
@@ -704,15 +704,15 @@ const UsersManagement = () => {
                             {/* Permissions Grid */}
                             {selectedEmployee && newUser.roleId && (
                                 <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom Permissions</h3>
+                                    <h3 className="text-lg text-gray-900 mb-4">Custom Permissions</h3>
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
                                                     <tr>
-                                                        <th className="text-left py-3 px-4 font-medium text-gray-700">Module</th>
+                                                        <th className="text-left py-3 px-4 text-gray-700">Module</th>
                                                         {permissionTypes.map(type => (
-                                                            <th key={type.id} className="text-center py-3 px-4 font-medium text-gray-700">
+                                                            <th key={type.id} className="text-center py-3 px-4 text-gray-700">
                                                                 {type.label}
                                                             </th>
                                                         ))}
@@ -721,7 +721,7 @@ const UsersManagement = () => {
                                                 <tbody className="divide-y divide-gray-200">
                                                     {menuItems.map(item => (
                                                         <tr key={item.id} className="hover:bg-white transition-colors">
-                                                            <td className="py-3 px-4 font-medium text-gray-900">
+                                                            <td className="py-3 px-4 text-gray-900">
                                                                 {item.name}
                                                             </td>
                                                             {permissionTypes.map(type => (
@@ -825,18 +825,18 @@ const UsersManagement = () => {
                 {activeTab === 'online' && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                         <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">Currently Online Users</h2>
+                            <h2 className="text-lg text-gray-900">Currently Online Users</h2>
                             <p className="text-sm text-gray-600 mt-1">{onlineUsers.length} users currently active</p>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Activity</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Session</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -851,7 +851,7 @@ const UsersManagement = () => {
                                                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                                         </div>
                                                         <div className="ml-4">
-                                                            <div className="text-sm font-medium text-gray-900">
+                                                            <div className="text-sm text-gray-900">
                                                                 {user.firstName} {user.lastName}
                                                             </div>
                                                             <div className="text-sm text-gray-500">{user.email}</div>
@@ -859,7 +859,7 @@ const UsersManagement = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    <span className="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
                                                         Online
                                                     </span>
                                                 </td>
@@ -874,7 +874,7 @@ const UsersManagement = () => {
                                                         </div>
                                                     ) : 'No session data'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                     <button
                                                         onClick={() => handleViewUserTracking(user.id)}
                                                         className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
@@ -895,19 +895,19 @@ const UsersManagement = () => {
                 {activeTab === 'tracking' && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                         <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">User Activity Tracking</h2>
+                            <h2 className="text-lg text-gray-900">User Activity Tracking</h2>
                             <p className="text-sm text-gray-600 mt-1">Monitor user sessions and activities</p>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Login Time</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages Visited</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Session Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Login Time</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Pages Visited</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Details</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -922,7 +922,7 @@ const UsersManagement = () => {
                                                         )}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm text-gray-900">
                                                             {session.userName}
                                                         </div>
                                                         <div className="text-sm text-gray-500">{session.ipAddress}</div>
@@ -930,7 +930,7 @@ const UsersManagement = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${session.isActive
+                                                <span className={`inline-flex px-2 py-1 text-xs rounded-full ${session.isActive
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-gray-100 text-gray-800'
                                                     }`}>
@@ -958,7 +958,7 @@ const UsersManagement = () => {
                                                 <div className="font-medium">{session.actionsPerformed}</div>
                                                 <div className="text-xs text-gray-400">actions performed</div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 <button
                                                     onClick={() => handleViewUserTracking(session.userId)}
                                                     className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
@@ -982,12 +982,12 @@ const UsersManagement = () => {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Department</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Login</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -1002,7 +1002,7 @@ const UsersManagement = () => {
                                                         )}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm text-gray-900">
                                                             {user.firstName} {user.lastName}
                                                         </div>
                                                         <div className="text-sm text-gray-500">{user.email}</div>
@@ -1020,14 +1020,14 @@ const UsersManagement = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-col space-y-1">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive
+                                                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${user.isActive
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
                                                         }`}>
                                                         {user.isActive ? 'Active' : 'Inactive'}
                                                     </span>
                                                     {user.isOnline && (
-                                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        <span className="inline-flex px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
                                                             Online
                                                         </span>
                                                     )}
@@ -1036,7 +1036,7 @@ const UsersManagement = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 <div className="flex items-center space-x-2">
                                                     <button
                                                         onClick={() => {
@@ -1097,7 +1097,7 @@ const UsersManagement = () => {
                         <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
                             <div className="p-6 border-b border-gray-200">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-semibold text-gray-900">
+                                    <h2 className="text-lg text-gray-900">
                                         User Activity Tracking
                                     </h2>
                                     <button
@@ -1119,7 +1119,7 @@ const UsersManagement = () => {
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* User Sessions */}
                                     <div className="bg-gray-50 rounded-lg p-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                        <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                             <IconDeviceDesktop className="w-5 h-5 mr-2 text-blue-500" />
                                             Sessions
                                         </h3>
@@ -1127,7 +1127,7 @@ const UsersManagement = () => {
                                             {getUserSessions(selectedUserForTracking).map((session) => (
                                                 <div key={session.id} className="bg-white p-4 rounded-lg border border-gray-200">
                                                     <div className="flex items-center justify-between mb-2">
-                                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${session.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                                        <span className={`px-2 py-1 text-xs rounded-full ${session.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                                                             }`}>
                                                             {session.isActive ? 'Active' : 'Ended'}
                                                         </span>
@@ -1162,7 +1162,7 @@ const UsersManagement = () => {
 
                                     {/* User Activities */}
                                     <div className="bg-gray-50 rounded-lg p-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                        <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                             <IconActivity className="w-5 h-5 mr-2 text-purple-500" />
                                             Recent Activities
                                         </h3>
@@ -1175,7 +1175,7 @@ const UsersManagement = () => {
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex items-center justify-between">
-                                                                <h4 className="font-medium text-gray-900">{activity.action}</h4>
+                                                                <h4 className="text-gray-900">{activity.action}</h4>
                                                                 <span className="text-sm text-gray-500">
                                                                     {formatTimeAgo(activity.timestamp)}
                                                                 </span>
@@ -1212,7 +1212,7 @@ const UsersManagement = () => {
                         <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
                             <div className="p-6 border-b border-gray-200">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-semibold text-gray-900">
+                                    <h2 className="text-lg text-gray-900">
                                         Permissions for {selectedUser.firstName} {selectedUser.lastName}
                                     </h2>
                                     <button
@@ -1232,7 +1232,7 @@ const UsersManagement = () => {
                                         return (
                                             <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                                 <div>
-                                                    <h3 className="font-medium text-gray-900">{item.name}</h3>
+                                                    <h3 className="text-gray-900">{item.name}</h3>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
                                                     <div className="flex items-center space-x-2">
@@ -1280,7 +1280,7 @@ const UsersManagement = () => {
                                     <div className="flex items-center mb-4">
                                         <IconShield className="w-8 h-8 text-blue-500 mr-3" />
                                         <div>
-                                            <h3 className="font-semibold text-gray-900">{role.name}</h3>
+                                            <h3 className="text-gray-900">{role.name}</h3>
                                             <p className="text-sm text-gray-500">{userCount} users</p>
                                         </div>
                                     </div>

@@ -12,7 +12,7 @@ const Home = () => {
         <div className="flex flex-col gap-10 w-full bg-home p-10 ">
             <div className="flex justify-between items-center">
                 <div className="flex flex-col gap-2">
-                    <p className="text-3xl font-bold text-white">Welcome Back, ROMUALD TIEGNAN!</p>
+                    <p className="text-2xl font-semibold text-white">Welcome Back, ROMUALD TIEGNAN!</p>
                     <p className="text-lg text-white">Monday, March 31, 2025</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -40,7 +40,7 @@ const Home = () => {
 
                         <div className="text-white ">{item.icon}</div>
                         <div>
-                            <p className="text-lg font-bold text-white">{item.count}</p>
+                            <p className="text-lg text-white">{item.count}</p>
                             <p className="text-white/50">{item.label}</p>
                         </div>
                     </div>

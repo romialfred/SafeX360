@@ -187,7 +187,7 @@ export default function Settings() {
             <div className="bg-white border-b border-slate-200 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Settings</h1>
+                        <h1 className="text-2xl text-slate-800">Settings</h1>
                         <nav className="text-sm text-slate-600 mt-1">
                             <span>Home</span>
                             <span className="mx-2">/</span>
@@ -203,7 +203,7 @@ export default function Settings() {
                     <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl p-8 text-white mb-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-2xl font-bold mb-2">System Configuration</h2>
+                                <h2 className="text-2xl mb-2">System Configuration</h2>
                                 <p className="text-teal-100">
                                     Configure and customize your HSE management system settings
                                 </p>
@@ -226,7 +226,7 @@ export default function Settings() {
                                             <GroupIcon className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-slate-800">{group.title}</h3>
+                                            <h3 className="text-lg text-slate-800">{group.title}</h3>
                                             <p className="text-slate-600 mt-1">{group.description}</p>
                                         </div>
                                     </div>
@@ -249,7 +249,7 @@ export default function Settings() {
                                                         </div>
                                                         <IconChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-500 transition-colors" />
                                                     </div>
-                                                    <h4 className="font-semibold text-slate-800 mb-2">{item.label}</h4>
+                                                    <h4 className="text-slate-800 mb-2">{item.label}</h4>
                                                     <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
                                                 </button>
                                             );
@@ -263,7 +263,7 @@ export default function Settings() {
 
                 {/* Quick Actions */}
                 <div className="mt-8 bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
+                    <h3 className="text-lg text-slate-800 mb-4">Quick Actions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <button className="p-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors text-left">
                             <div className="flex items-center space-x-3">
@@ -271,7 +271,7 @@ export default function Settings() {
                                     <IconFileText className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-slate-800">Export Settings</h4>
+                                    <h4 className="text-slate-800">Export Settings</h4>
                                     <p className="text-sm text-slate-600">Download configuration backup</p>
                                 </div>
                             </div>
@@ -283,7 +283,7 @@ export default function Settings() {
                                     <IconClipboardList className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-slate-800">Import Settings</h4>
+                                    <h4 className="text-slate-800">Import Settings</h4>
                                     <p className="text-sm text-slate-600">Restore from backup file</p>
                                 </div>
                             </div>
@@ -295,7 +295,7 @@ export default function Settings() {
                                     <IconSettingsGear className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-slate-800">Reset to Default</h4>
+                                    <h4 className="text-slate-800">Reset to Default</h4>
                                     <p className="text-sm text-slate-600">Restore default settings</p>
                                 </div>
                             </div>

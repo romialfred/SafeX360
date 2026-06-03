@@ -514,7 +514,7 @@ const ISODocuments = () => {
                             </button>
                         )}
                         <div className="flex-1">
-                            <div className="font-medium text-gray-900">
+                            <div className="text-gray-900">
                                 {section.number}. {section.title}
                             </div>
                             {viewMode === 'full' && (
@@ -541,7 +541,7 @@ const ISODocuments = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">ISO Documents Review</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">ISO Documents Review</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Text variant="gradient">ISO Documents Review</Text>
@@ -563,7 +563,7 @@ const ISODocuments = () => {
                 {/* Sidebar */}
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-32">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">ISO Standards</h2>
+                        <h2 className="text-lg text-gray-900 mb-4">ISO Standards</h2>
                         <div className="space-y-3">
                             {isoDocuments.map((doc) => (
                                 <div
@@ -584,7 +584,7 @@ const ISODocuments = () => {
                                     <div className="flex items-center">
                                         <IconFileText className={`w-5 h-5 ${doc.color} mr-3`} />
                                         <div>
-                                            <div className={`font-medium ${selectedDocument === doc.id ? doc.color : 'text-gray-900'}`}>
+                                            <div className={`${selectedDocument === doc.id ? doc.color : 'text-gray-900'}`}>
                                                 {doc.title}
                                             </div>
                                             <div className="text-sm text-gray-500">{doc.subtitle}</div>
@@ -606,7 +606,7 @@ const ISODocuments = () => {
                                 <div className="flex items-center">
                                     <IconFileText className={`w-8 h-8 ${currentDocument.color} mr-4`} />
                                     <div>
-                                        <h2 className={`text-2xl font-bold ${currentDocument.color}`}>
+                                        <h2 className={`text-2xl ${currentDocument.color}`}>
                                             {currentDocument.title}
                                         </h2>
                                         <p className="text-gray-600 mt-1">{currentDocument.subtitle}</p>
@@ -676,13 +676,13 @@ const ISODocuments = () => {
                                 <div className="space-y-8">
                                     {filteredSections.map(section => (
                                         <div key={section.id} className="border-b border-gray-100 pb-8 last:border-b-0">
-                                            <h3 className="text-xl font-bold text-gray-900 mb-4">{section.number}. {section.title}</h3>
+                                            <h3 className="text-lg text-gray-900 mb-4">{section.number}. {section.title}</h3>
                                             <div className="text-gray-700 leading-relaxed mb-6">{section.content}</div>
                                             {section.subsections && section.subsections.length > 0 && (
                                                 <div className="ml-6 space-y-6">
                                                     {section.subsections.map(subsection => (
                                                         <div key={subsection.id}>
-                                                            <h4 className="text-lg font-semibold text-gray-800 mb-3">{subsection.number} {subsection.title}</h4>
+                                                            <h4 className="text-lg text-gray-800 mb-3">{subsection.number} {subsection.title}</h4>
                                                             <div className="text-gray-700 leading-relaxed">{subsection.content}</div>
                                                         </div>
                                                     ))}
@@ -695,13 +695,13 @@ const ISODocuments = () => {
 
                             {viewMode === 'toc' && selectedSection && (
                                 <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                                    <h3 className="text-lg font-semibold text-blue-500 mb-4">Section Content</h3>
+                                    <h3 className="text-lg text-blue-500 mb-4">Section Content</h3>
                                     {(() => {
                                         const section = currentDocument.sections.find(s => s.id === selectedSection) ||
                                             currentDocument.sections.flatMap(s => s.subsections || []).find(s => s.id === selectedSection);
                                         return section ? (
                                             <div className="text-blue-800 leading-relaxed">
-                                                <div className="font-medium mb-2">{section.number}. {section.title}</div>
+                                                <div className="mb-2">{section.number}. {section.title}</div>
                                                 <div>{section.content}</div>
                                             </div>
                                         ) : null;
@@ -717,21 +717,21 @@ const ISODocuments = () => {
                                     <IconFileText className="w-5 h-5 text-blue-500 mr-2" />
                                     <div>
                                         <div className="text-sm text-gray-500">Total Sections</div>
-                                        <div className="font-semibold text-gray-900">{totalSections}</div>
+                                        <div className="text-gray-900">{totalSections}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center">
                                     <IconBook className="w-5 h-5 text-green-500 mr-2" />
                                     <div>
                                         <div className="text-sm text-gray-500">Subsections</div>
-                                        <div className="font-semibold text-gray-900">{totalSubsections}</div>
+                                        <div className="text-gray-900">{totalSubsections}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center">
                                     <IconSearch className="w-5 h-5 text-purple-500 mr-2" />
                                     <div>
                                         <div className="text-sm text-gray-500">Search Results</div>
-                                        <div className="font-semibold text-gray-900">{searchResults}</div>
+                                        <div className="text-gray-900">{searchResults}</div>
                                     </div>
                                 </div>
                             </div>

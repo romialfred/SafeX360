@@ -47,27 +47,27 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
 
     return (
         <div className="flex flex-col gap-6 ">
-            <h2 className="text-lg font-semibold text-gray-800">Investigation Details</h2>
+            <h2 className="text-lg text-gray-800">Investigation Details</h2>
 
             {/* Method and Dates */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm font-medium mb-1">Method</h4>
-                    <p className="text-base font-medium text-gray-800">{investMethodMap[investigation.method] || "N/A"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">Method</h4>
+                    <p className="text-base text-gray-800">{investMethodMap[investigation.method] || "N/A"}</p>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm font-medium mb-1">Start Date</h4>
-                    <p className="text-base font-medium text-gray-800">{formatDateWithDay(investigation.startDate) || "N/A"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">Start Date</h4>
+                    <p className="text-base text-gray-800">{formatDateWithDay(investigation.startDate) || "N/A"}</p>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm font-medium mb-1">End Date</h4>
-                    <p className="text-base font-medium text-gray-800">{investigation.endDate ? formatDateWithDay(investigation.endDate) : "Ongoing"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">End Date</h4>
+                    <p className="text-base text-gray-800">{investigation.endDate ? formatDateWithDay(investigation.endDate) : "Ongoing"}</p>
                 </div>
             </div>
 
             {/* Team */}
             <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
-                <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <h4 className="text-lg text-gray-700 mb-4 flex items-center gap-2">
                     <IconUsersGroup size={20} className="text-blue-500" /> Investigation Team
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -76,7 +76,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                             key={index}
                             className="flex items-center gap-2 p-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition border border-blue-100"
                         >
-                            <div className="w-7 h-7 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-medium text-xs">
+                            <div className="w-7 h-7 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 text-xs">
                                 {member.name
                                     ?.split(" ")
                                     .map((n: string) => n[0])
@@ -85,7 +85,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                                     .toUpperCase()}
                             </div>
                             <div>
-                                <p className="text-blue-700 font-semibold text-xs">{member.name}</p>
+                                <p className="text-blue-700 text-xs">{member.name}</p>
                                 <p className="text-xs text-gray-600">{member.role} </p>
                             </div>
                         </div>
@@ -99,7 +99,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                     key={type}
                     className={`border-l-4 rounded-xl p-4 shadow-sm ${sectionStyles[type].bg} ${sectionStyles[type].border}`}
                 >
-                    <h4 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <h4 className="text-lg text-gray-800 mb-2 flex items-center gap-2">
                         {sectionStyles[type].icon} {sectionStyles[type].title}
                     </h4>
                     <List
@@ -134,7 +134,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
 
             {/* Final Report */}
             <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
-                <h4 className="text-lg font-semibold text-gray-700 mb-2">Investigation Report</h4>
+                <h4 className="text-lg text-gray-700 mb-2">Investigation Report</h4>
                 <div
                     className="prose max-w-none text-gray-800"
                     dangerouslySetInnerHTML={{ __html: investigation.report || "<p>No report available.</p>" }}
@@ -142,7 +142,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
             </div>
 
             {investigation.evidence?.length > 0 && <div className="">
-                <h4 className="text-2xl font-bold mb-4 text-gray-800">Evidence</h4>
+                <h4 className="text-2xl mb-4 text-gray-800">Evidence</h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 border border-gray-300 rounded-xl p-6 bg-gray-50">
                     {[...(investigation.evidence ?? [])]?.map((image: any, index: number) => (
@@ -153,7 +153,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                                 className="w-20 h-20 object-cover rounded-md border"
                             />
                             <div className="flex flex-col justify-center">
-                                <p className="text-sm font-semibold text-gray-800">{image.name}</p>
+                                <p className="text-sm text-gray-800">{image.name}</p>
                                 <p className="text-sm text-gray-500">{getBase64FileSize(image.file)} KB</p>
                             </div>
                         </div>

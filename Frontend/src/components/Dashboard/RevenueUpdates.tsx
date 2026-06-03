@@ -51,7 +51,7 @@ const RevenueUpdates = () => {
                 <Stack gap="sm" >
                     <div className='flex justify-between p-5'>
                         <div>
-                            <Text size="lg" fw={700}>Revenue Updates</Text>
+                            <Text size="lg">Revenue Updates</Text>
                             <Text color="dimmed" size="sm">Overview of Profit</Text>
                         </div>
                         <Select
@@ -97,7 +97,7 @@ const RevenueUpdates = () => {
                                     <IconGridDots color={primary} size={20} />
                                 </Box>
                                 <Box>
-                                    <Text size="xl" fw={700}>$63,489.50</Text>
+                                    <Text size="xl">$63,489.50</Text>
                                     <Text size="sm" color="dimmed">Total Earnings</Text>
                                 </Box>
                             </Stack>

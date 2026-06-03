@@ -64,7 +64,7 @@ const ExecuteAudit = () => {
 
                 setSubmitted(true);
                 modals.openConfirmModal({
-                    title: <span className="font-semibold text-2xl">Report already exists</span>,
+                    title: <span className="text-2xl">Report already exists</span>,
                     centered: true,
                     children: (
                         <span className="text-md">
@@ -219,7 +219,7 @@ const ExecuteAudit = () => {
         form.validate();
         if (!form.isValid()) return;
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -281,7 +281,7 @@ const ExecuteAudit = () => {
         return (
             <div className={`  flex gap-5 justify-between self-center`}>
                 <div className='flex flex-col gap-1'>
-                    <span className="font-bold">{item.name}</span>
+                    <span className="font-medium">{item.name}</span>
                     <span className="text-400">{item.empNumber}</span>
                 </div>
                 {item.pos === "Target" && (
@@ -297,7 +297,7 @@ const ExecuteAudit = () => {
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm font-medium px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -326,7 +326,7 @@ const ExecuteAudit = () => {
                     className="cursor-pointer hover:shadow-lg"
                 >
                     <Stack gap={2}>
-                        <p className="text-xl font-medium">{areaMap[area.auditAreaId]?.name}</p>
+                        <p className="text-lg">{areaMap[area.auditAreaId]?.name}</p>
                         <Text>{areaMap[area.auditAreaId]?.type}</Text>
                         <Text color="dimmed" size="sm">{areaMap[area.auditAreaId]?.ownerName}</Text>
                     </Stack>
@@ -339,7 +339,7 @@ const ExecuteAudit = () => {
         <Card withBorder shadow="md" >
             <Stack>
                 <div className="flex justify-between">
-                    <p className="text-xl font-medium">Area Execution Details</p>
+                    <p className="text-lg">Area Execution Details</p>
                     <Button leftSection={<IconPlus />} onClick={addInterview}>
                         Add Interview
                     </Button>
@@ -347,7 +347,7 @@ const ExecuteAudit = () => {
 
                 {form.values.executions.filter(x => x.areaId == selectedArea.id).map((x, index: any) => (
                     <Fieldset key={index} className="grid grid-cols-2 gap-5" legend={<div className="flex gap-5">
-                        <div className="text-lg font-medium text-blue-500">Interview {index + 1}</div>
+                        <div className="text-lg text-blue-500">Interview {index + 1}</div>
                         <ActionIcon onClick={() => removeInterview(x.index)} variant="filled" color="red" aria-label="Settings">
                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                         </ActionIcon>
@@ -404,7 +404,7 @@ const ExecuteAudit = () => {
     return (
         submitted ? <div></div> : <div>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Execute Audit</div>
+                <div className="text-2xl text-blue-500 w-fit">Execute Audit</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -444,7 +444,7 @@ const ExecuteAudit = () => {
                                 <div className="flex gap-2 ">
                                     <IconFileText color="gray" />
                                     <div className="flex flex-col gap-1 ">
-                                        <p className="text-lg text-gray-600 font-medium">Report Status</p>
+                                        <p className="text-lg text-gray-600">Report Status</p>
                                         <p className="text-sm text-gray-400 ">Draft</p>
                                     </div>
 
@@ -460,7 +460,7 @@ const ExecuteAudit = () => {
                         </Card> */}
 
                             <Card shadow="md" withBorder>
-                                <p className="flex items-center text-lg mb-2 font-medium text-gray-600"> <IconFilePencil stroke={1.5} size={20} /> Report Preparer</p>
+                                <p className="flex items-center text-lg mb-2 text-gray-600"> <IconFilePencil stroke={1.5} size={20} /> Report Preparer</p>
                                 <Grid>
                                     <Grid.Col span={4}><TextInput {...form.getInputProps("report.preparerName")} label="Name" placeholder="Enter preparer's name" /></Grid.Col>
                                     <Grid.Col span={4}><TextInput label="Role" placeholder="Enter preparer's role" {...form.getInputProps("report.preparerRole")} /></Grid.Col>
@@ -470,12 +470,12 @@ const ExecuteAudit = () => {
 
                             <Card shadow="md" withBorder>
                                 <Group justify="space-between" mb="xs">
-                                    <p className="flex text-lg font-medium items-center text-gray-600"><IconUsers stroke={1.5} size={20} />  Contributors</p>
+                                    <p className="flex text-lg items-center text-gray-600"><IconUsers stroke={1.5} size={20} />  Contributors</p>
                                     <Button size="xs" leftSection={<IconPlus />} onClick={addContributor}>Add Contributor</Button>
                                 </Group>
                                 {form.values.contributors.map((_item, index) => (
                                     <Fieldset key={index} className="grid grid-cols-3 gap-5 mb-5" legend={<div className="flex gap-5">
-                                        <div className="text-lg font-medium text-blue-500">Contributor {index + 1}</div>
+                                        <div className="text-lg text-blue-500">Contributor {index + 1}</div>
                                         <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red" aria-label="Settings">
                                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                         </ActionIcon>
@@ -489,7 +489,7 @@ const ExecuteAudit = () => {
                             </Card>
 
                             <Card shadow="md" withBorder>
-                                <p className="flex items-center mb-2 text-lg font-medium text-gray-600"><IconUserCheck stroke={1.5} size={20} /> Report Validator</p>
+                                <p className="flex items-center mb-2 text-lg text-gray-600"><IconUserCheck stroke={1.5} size={20} /> Report Validator</p>
                                 <Grid mb={10}>
                                     <Grid.Col span={4}><TextInput {...form.getInputProps("report.validatorName")} label="Name" placeholder="Enter preparer's name" /></Grid.Col>
                                     <Grid.Col span={4}><TextInput label="Role" placeholder="Enter preparer's role" {...form.getInputProps("report.validatorRole")} /></Grid.Col>
@@ -499,7 +499,7 @@ const ExecuteAudit = () => {
                             </Card>
 
                             <Card shadow="md" withBorder>
-                                <p className="text-lg font-medium text-gray-600">Supporting Documents</p>
+                                <p className="text-lg text-gray-600">Supporting Documents</p>
 
                                 <ImagePdfDropzone name="Supporting Documents" id="report.docs" form={form} />
                             </Card>
@@ -519,7 +519,7 @@ const ExecuteAudit = () => {
                     {section === "recommendations" && (
                         <Stack>
                             <div className="flex justify-between">
-                                <p className="text-lg font-medium text-gray-600">Audit Recommendations</p>
+                                <p className="text-lg text-gray-600">Audit Recommendations</p>
                                 <Button leftSection={<IconPlus size={16} />} onClick={addRecommendation}>
                                     Add Recommendation
                                 </Button>
@@ -528,7 +528,7 @@ const ExecuteAudit = () => {
 
                             {form.values.recommendations.map((_rec, index) => (
                                 <Fieldset key={index} className="grid grid-cols-2 gap-5" legend={<div className="flex gap-5">
-                                    <div className="text-lg font-medium text-blue-500">Recommendation {index + 1}</div>
+                                    <div className="text-lg text-blue-500">Recommendation {index + 1}</div>
                                     <ActionIcon onClick={() => removeRecommendation(index)} variant="filled" color="red" aria-label="Settings">
                                         <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                     </ActionIcon>

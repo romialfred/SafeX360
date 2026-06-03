@@ -112,7 +112,7 @@ const DepartmentStatistics = () => {
 
     return (
         <div className="flex flex-col gap-5 p-5 bg-white border border-gray-300 shadow-sm rounded-2xl">
-            <h1 className="text-2xl font-bold text-gray-600">My Department Statistics</h1>
+            <h1 className="text-2xl text-gray-600">My Department Statistics</h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {incidentSummaryCards.map((card, index) => (

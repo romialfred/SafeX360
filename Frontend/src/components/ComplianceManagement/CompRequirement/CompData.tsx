@@ -44,7 +44,7 @@ const CompData = () => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des exigences");
             })
             .finally();
     }, []);
@@ -53,17 +53,18 @@ const CompData = () => {
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
 
+        const actionLabel = action === 'activate' ? 'activer' : 'désactiver';
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-lg'>Confirmer l'action</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to <strong>{action}</strong> the category: <strong>{rowData.name}</strong>?
+                <span className="text-sm">
+                    Souhaitez-vous <strong>{actionLabel}</strong> l'exigence : <strong>{rowData.title}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
-            cancelProps: { color: 'red', variant: "filled" },
-            confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: "default" },
+            confirmProps: { color: action === 'activate' ? 'green' : 'red', variant: "filled" },
 
             closeOnEscape: false,
             closeOnClickOutside: false,
@@ -73,7 +74,7 @@ const CompData = () => {
                 const apiCall = action === "activate" ? activateRequirement : deactivateRequirement;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Category ${action}d successfully`);
+                        successNotification(`Exigence ${actionLabel === 'activer' ? 'activée' : 'désactivée'} avec succès`);
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -82,7 +83,7 @@ const CompData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} category`);
+                        errorNotification(`Échec de l'opération`);
                     }
                     ).finally(() => {
                         dispatch(hideOverlay())
@@ -101,9 +102,9 @@ const CompData = () => {
 
     const rightToolbarTemplate = () => {
         return (
-            <div className='flex gap-5'>
-                <Button size="sm" variant='outline' leftSection={<IconUpload />}  >Export</Button>
-                <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
+            <div className='flex gap-3'>
+                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />}>Exporter</Button>
+                <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Rechercher...' leftSection={<IconSearch size={14} />} />
             </div>
         );
     };
@@ -111,7 +112,7 @@ const CompData = () => {
     const leftToolbarTemplate = () => {
         return (
             <div className="flex gap-3">
-                <Button size="sm" onClick={() => navigate('add-requirement')} leftSection={<IconPlus />} variant="gradient">Add Requirement</Button>
+                <Button size="sm" onClick={() => navigate('add-requirement')} leftSection={<IconPlus size={14} />} color="teal">Ajouter une exigence</Button>
             </div>
         );
     };
@@ -125,54 +126,44 @@ const CompData = () => {
     const actionBodyTemplate = (rowData: any) => {
         const id = rowData.id;
         return (
-            <div className='flex gap-3 '>
-                <Tooltip label="Edit Requirement">
-                    <ActionIcon onClick={() => navigate(`edit-requirement/${id}`)} variant="filled" size="sm" color="primary" >
-                        <IconEdit style={{ width: '90%', height: '90%' }} stroke={1.5} /></ActionIcon>
+            <div className='flex gap-2 justify-center'>
+                <Tooltip label="Modifier l'exigence">
+                    <ActionIcon onClick={() => navigate(`edit-requirement/${id}`)} variant="light" size="sm" color="blue" >
+                        <IconEdit size={14} stroke={1.5} /></ActionIcon>
                 </Tooltip>
 
-                {<Tooltip label="Remove Requirement">
-                    <ActionIcon onClick={() => navigate(`inspection/${id}`)} variant="outline" size="sm" color="red" >
-                        <IconTrash stroke={1.5} style={{ width: '90%', height: '90%' }} /></ActionIcon>
-                </Tooltip>}
+                <Tooltip label="Supprimer">
+                    <ActionIcon onClick={() => navigate(`inspection/${id}`)} variant="light" size="sm" color="red" >
+                        <IconTrash size={14} stroke={1.5} /></ActionIcon>
+                </Tooltip>
 
-                <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
+                <Tooltip label={rowData.status === 'ACTIVE' ? 'Désactiver' : 'Activer'}>
                     <ActionIcon
+                        variant="light"
                         color={rowData.status === 'ACTIVE' ? "red" : "green"}
                         onClick={() => handleStatusChange(rowData)}
                         size="sm"
                     >
-                        {rowData.status === 'ACTIVE'
-                            ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                            : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                        }
+                        {rowData.status === 'ACTIVE' ? <IconX size={14} /> : <IconCheck size={14} />}
                     </ActionIcon>
                 </Tooltip>
-
             </div>
         )
     }
 
     const renderHeader = () => {
-
-
         return (
-
             <div className='flex justify-between p-2'>
                 <Input
-                    leftSection={<IconSearch size={16} />}
-                    placeholder="Search Requirement..."
+                    leftSection={<IconSearch size={14} />}
+                    placeholder="Rechercher une exigence..."
                     type="search"
-
                     onChange={(e) => onGlobalFilterChange(e)}
                 />
-
                 <div>
-                    <Button variant='outline' leftSection={<IconFilter />}>Filter</Button>
+                    <Button variant='default' size="sm" leftSection={<IconFilter size={14} />}>Filtrer</Button>
                 </div>
             </div>
-
-
         );
     };
 
@@ -191,12 +182,19 @@ const CompData = () => {
                 currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" onFilter={(e) => setFilters(e.filters)}
             >
 
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Title' field='title' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Category' field='category' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Renewal Frequency' field='renewalFrequency' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Document Type' field='docType' />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" />
-                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header='Titre' field='title' sortable />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header='Catégorie' field='category' sortable />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header='Fréquence renouvellement' field='renewalFrequency' sortable />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header='Type de document' field='docType' />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="status" header="Statut"
+                    body={(row: any) => (
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border ${
+                            row.status === 'ACTIVE'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}>{row.status === 'ACTIVE' ? 'Actif' : 'Inactif'}</span>
+                    )} />
+                <Column headerStyle={{ width: '7rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
 
 
 

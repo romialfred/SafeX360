@@ -29,38 +29,53 @@ interface IncidentHistoryProps {
 const IncidentHistory = ({ history, incident: _incident }: IncidentHistoryProps) => {
     const sortedHistory = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return (
-        <div className="p-6">
+    if (sortedHistory.length === 0) {
+        return (
+            <div className="p-4">
+                <p className="text-xs text-slate-400 italic">Aucun changement de statut enregistré pour cet incident.</p>
+            </div>
+        );
+    }
 
-            <Timeline active={history.length} bulletSize={24} lineWidth={3}>
+    return (
+        <div className="p-2">
+            <Timeline active={history.length} bulletSize={20} lineWidth={2} color="teal">
                 {sortedHistory.map((entry, index) => {
                     const currentDate = dayjs(entry.date);
                     const nextDate = index < sortedHistory.length - 1
                         ? dayjs(sortedHistory[index + 1].date)
                         : dayjs();
-
                     const daysInStatus = nextDate.diff(currentDate, 'day');
 
                     return (
-                        <Timeline.Item key={entry.id} title={incidentStatusMap[entry.status]}>
-                            <Card shadow="sm" radius="md" className="bg-white mt-2" withBorder>
-                                <Group justify="space-between" className="mb-2">
-                                    <Text size="sm" className="text-gray-500 flex items-center gap-1">
-                                        <IconUser size={14} /> {entry.ownerName}
+                        <Timeline.Item key={entry.id} title={
+                            <span className="text-xs text-slate-800 uppercase tracking-wider">
+                                {incidentStatusMap[entry.status]}
+                            </span>
+                        }>
+                            <Card shadow="none" radius="md" className="!bg-white mt-2 !border !border-slate-200" p="sm">
+                                <Group justify="space-between" mb={6}>
+                                    <Text size="xs" className="text-slate-600 flex items-center gap-1">
+                                        <IconUser size={12} className="text-slate-400" />
+                                        <span className="font-medium">{entry.ownerName || 'Utilisateur inconnu'}</span>
                                     </Text>
-                                    <Badge color="gray" variant="light">{incidentStatusMap[entry.status]}</Badge>
+                                    <Badge color="teal" variant="light" size="xs" radius="sm">
+                                        {incidentStatusMap[entry.status]}
+                                    </Badge>
                                 </Group>
 
-                                <Text size="sm" className="text-gray-700">{entry.comment || 'No comment provided.'}</Text>
+                                <Text size="xs" className="text-slate-700 leading-relaxed">
+                                    {entry.comment || <span className="italic text-slate-400">Aucun commentaire fourni</span>}
+                                </Text>
 
-                                <Group justify="space-between" className="mt-2 text-xs text-gray-400">
+                                <Group justify="space-between" mt={8} className="text-[10px] text-slate-500">
                                     <div className="flex items-center gap-1">
-                                        <IconCalendar size={14} />
+                                        <IconCalendar size={11} />
                                         {dayjs(entry.date).format('DD MMM YYYY')}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <IconClock size={14} />
-                                        In this status for {daysInStatus} day{daysInStatus !== 1 ? 's' : ''}
+                                        <IconClock size={11} />
+                                        Durée dans le statut : {daysInStatus} jour{daysInStatus !== 1 ? 's' : ''}
                                     </div>
                                 </Group>
                             </Card>

@@ -111,7 +111,7 @@ const Measurements = ({ employee, empMap }: any) => {
 
     const handleRemove = (id: any) => {
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -152,7 +152,7 @@ const Measurements = ({ employee, empMap }: any) => {
     const handleSubmit = (values: any) => {
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -187,7 +187,7 @@ const Measurements = ({ employee, empMap }: any) => {
     return (
         <div className="flex flex-col gap-5">
             <Group justify="space-between">
-                <div className="text-lg font-medium">Measurements</div>
+                <div className="text-lg">Measurements</div>
                 {!showAddForm && <Button color="green" onClick={handleShowAddForm}>
                     Add Measurement
                 </Button>}
@@ -204,7 +204,7 @@ const Measurements = ({ employee, empMap }: any) => {
                         />
                         <div className="relative">
 
-                            <Badge className="!absolute right-0 !font-medium " size="md" color={isExceeded ? 'red' : 'green'} variant="light">
+                            <Badge className="!absolute right-0 !" size="md" color={isExceeded ? 'red' : 'green'} variant="light">
                                 Threshold: {record[form.values.measurementId]?.threshold}{record[form.values.measurementId]?.unit}
                             </Badge>
                             <NumberInput
@@ -236,7 +236,7 @@ const Measurements = ({ employee, empMap }: any) => {
                     <Card key={x.id} shadow="sm" radius="md" withBorder className="bg-white p-4">
                         <Card.Section withBorder inheritPadding py="xs">
                             <Group justify="space-between" align="center">
-                                <Text size="lg" fw={500}>
+                                <Text size="lg">
                                     {record[x.measurementId]?.name}
                                 </Text>
                                 <Group gap="xs">
@@ -286,7 +286,7 @@ const Measurements = ({ employee, empMap }: any) => {
                 closeOnClickOutside={false}
                 closeOnEscape={false}
                 title={
-                    <h1 className="text-lg font-medium text-blue-500">
+                    <h1 className="text-lg text-blue-500">
                         Add Action Plan
                     </h1>
                 }

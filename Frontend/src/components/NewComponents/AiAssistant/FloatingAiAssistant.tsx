@@ -386,7 +386,7 @@ How can I assist more precisely?`,
 
                     {/* Notification Badge */}
                     <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
-                        <span className="text-xs text-white font-bold">AI</span>
+                        <span className="text-xs text-white">AI</span>
                     </div>
 
                     {/* Tooltip */}
@@ -420,7 +420,7 @@ How can I assist more precisely?`,
                         </div>
                         {!isMinimized && (
                             <div>
-                                <h3 className="text-white font-semibold">SafeX Assist</h3>
+                                <h3 className="text-white">SafeX Assist</h3>
                                 <p className="text-purple-100 text-sm">Health & Safety Assistant</p>
                             </div>
                         )}
@@ -489,7 +489,7 @@ How can I assist more precisely?`,
                                         {/* Empty-messages icon */}
                                         <IconSparkles className="w-8 h-8 text-purple-600" />
                                     </div>
-                                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Hello!</h4>
+                                    <h4 className="text-lg text-gray-900 mb-2">Hello!</h4>
                                     <p className="text-gray-600 text-sm">I'm SafeX Assist, your AI assistant for Health & Safety.</p>
                                 </div>
                             )}
@@ -526,14 +526,14 @@ How can I assist more precisely?`,
                                                         <ReactMarkdown
                                                             remarkPlugins={[remarkGfm]}
                                                             components={{
-                                                                h1: (props: any) => <h1 className="text-xl font-semibold mb-2" {...props} />,
-                                                                h2: (props: any) => <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />,
-                                                                h3: (props: any) => <h3 className="text-base font-semibold mt-3 mb-2" {...props} />,
+                                                                h1: (props: any) => <h1 className="text-lg mb-2" {...props} />,
+                                                                h2: (props: any) => <h2 className="text-lg mt-3 mb-2" {...props} />,
+                                                                h3: (props: any) => <h3 className="text-base mt-3 mb-2" {...props} />,
                                                                 p: (props: any) => <p className="mb-2 leading-relaxed" {...props} />,
                                                                 ul: (props: any) => <ul className="list-disc pl-5 space-y-1 mb-2" {...props} />,
                                                                 ol: (props: any) => <ol className="list-decimal pl-5 space-y-1 mb-2" {...props} />,
                                                                 li: (props: any) => <li className="leading-relaxed" {...props} />,
-                                                                strong: (props: any) => <strong className="font-semibold" {...props} />,
+                                                                strong: (props: any) => <strong className="font-medium" {...props} />,
                                                                 a: (props: any) => <a className="text-blue-600 underline hover:text-blue-700" target="_blank" rel="noopener noreferrer" {...props} />,
                                                                 code: ({ inline, children, ...props }: any) => (
                                                                     inline ? (
@@ -628,7 +628,7 @@ How can I assist more precisely?`,
                                             className="flex items-center p-2 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 group"
                                         >
                                             <action.icon className={`w-4 h-4 ${action.color} mr-2 group-hover:scale-110 transition-transform`} />
-                                            <span className="text-xs font-medium text-gray-700 group-hover:text-purple-700">
+                                            <span className="text-xs text-gray-700 group-hover:text-purple-700">
                                                 {action.label}
                                             </span>
                                         </button>

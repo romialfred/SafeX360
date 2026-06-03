@@ -8,14 +8,14 @@ const ForgetPassword = () => {
         <div className="flex">
 
             <div className=" bg-hoverbg p-5 flex flex-col w-[65%]">
-                <Text size="xl" fw={800} color="blue" fs="italic" tt="uppercase">Mine Xpert</Text>
+                <Text size="xl" color="blue" fs="italic" tt="uppercase">Mine Xpert</Text>
                 <div className="w-[585px] p-10 left-10 place-self-center">
                     <img src="/login-bg.svg" alt="" />
                 </div>
             </div>
             <div className="p-10 self-center  w-[35%] flex flex-col gap-10" >
                 <div className="flex flex-col gap-5">
-                    <h1 className="text-2xl font-bold ">Forgot your password? </h1>
+                    <h1 className="text-2xl ">Forgot your password? </h1>
                     <p className="text-sm text-textprimary">Please enter the email address associated with your account and We will email you a link to reset your password.</p>
                 </div>
 

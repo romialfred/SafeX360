@@ -50,7 +50,7 @@ const DetailDocument = () => {
 
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         Document Details
                     </div>
                     <Breadcrumbs mt="xs">
@@ -68,27 +68,27 @@ const DetailDocument = () => {
 
                 <div className="grid grid-cols-2 gap-5">
 
-                    <h2 className="text-xl col-span-2 font-medium text-primary">Document Information</h2>
+                    <h2 className="text-xl col-span-2 text-primary">Document Information</h2>
 
                     <div>
-                        <p className="font-medium text-lg text-gray-500">File Name</p>
+                        <p className="text-lg text-gray-500">File Name</p>
                         <p className="text-blue-700 text-sm">{document.docName}</p>
                     </div>
 
                     <div>
-                        <p className="font-medium text-lg text-gray-500">Uploaded By</p>
-                        <p className="text-blue-800 font-medium">{document.uploadedBy}</p>
+                        <p className="text-lg text-gray-500">Uploaded By</p>
+                        <p className="text-blue-800">{document.uploadedBy}</p>
                     </div>
                     <div>
-                        <p className="font-medium text-lg text-gray-500">Upload Date</p>
-                        <p className="text-gray-600 font-medium">{formatDate(document.uploadDate)}</p>
+                        <p className="text-lg text-gray-500">Upload Date</p>
+                        <p className="text-gray-600">{formatDate(document.uploadDate)}</p>
                     </div>
                     <div>
-                        <p className="font-medium text-lg text-gray-500">Expiration Date</p>
-                        <p className="text-gray-600 font-medium">{formatDateShort(document.expiryDate)}</p>
+                        <p className="text-lg text-gray-500">Expiration Date</p>
+                        <p className="text-gray-600">{formatDateShort(document.expiryDate)}</p>
                     </div>
                     <div>
-                        <p className="font-medium text-lg text-gray-500">Status</p>
+                        <p className="text-lg text-gray-500">Status</p>
                         <Tag >{document.status}</Tag>
                     </div>
                     <div className="self-end">
@@ -101,26 +101,26 @@ const DetailDocument = () => {
 
 
                     {/* <div className=" flex flex-col gap-5">
-                        <h2 className="text-lg font-medium text-primary">Document History</h2>
+                        <h2 className="text-lg text-primary">Document History</h2>
                         <div className="flex flex-col gap-8 ">
                             <div className="flex gap-2 ">
                                 <div>
-                                    <p className="text-blue-500"><span className="font-medium text-gray-800">Valid by-</span> validator@example.com</p>
+                                    <p className="text-blue-500"><span className="text-gray-800">Valid by-</span> validator@example.com</p>
                                     <p className="text-sm text-gray-700">Document approved but expiring soon.</p>
                                 </div>
 
                                 <div>
-                                    <p className=" font-medium text-gray-500">4/7/2024 09:25 am</p>
+                                    <p className=" text-gray-500">4/7/2024 09:25 am</p>
                                 </div>
 
                             </div>
                             <div className="flex gap-2 ">
                                 <div>
-                                    <p className=" text-blue-700 font-medium"><span className="font-medium text-lg text-gray-600">Uploaded by-</span> Rachel Martinez</p>
+                                    <p className=" text-blue-700"><span className="text-lg text-gray-600">Uploaded by-</span> Rachel Martinez</p>
                                     <p className="text-gray-600 text-sm">Document uploaded to the system.</p>
                                 </div>
                                 <div>
-                                    <p className=" text-gray-500  font-medium">3/7/2024 09:25 am</p>
+                                    <p className=" text-gray-500 ">3/7/2024 09:25 am</p>
                                 </div>
 
                             </div>
@@ -129,7 +129,7 @@ const DetailDocument = () => {
 
                 </div>
                 {/* <div className="border border-dashed bg-blue-50 border-gray-400 p-20 rounded-md text-center text-gray-500">
-                    <p className="text-gray-600 font-medium text-xl">Document preview would be displayed here</p>
+                    <p className="text-gray-600 text-xl">Document preview would be displayed here</p>
                 </div> */}
             </div>
         </div >

@@ -23,7 +23,7 @@ const RegisterDetails = () => {
     return (
         <Box p="xl">
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Regsiter Details</div>
+                <div className="text-2xl text-blue-500 w-fit">Regsiter Details</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -38,16 +38,16 @@ const RegisterDetails = () => {
                 <Group justify="space-between" mb="xl">
                     <Box>
 
-                        <p className="text-2xl font-medium text-primary">{selectedRisk?.id} - {selectedRisk?.title}</p>
+                        <p className="text-2xl text-primary">{selectedRisk?.id} - {selectedRisk?.title}</p>
                     </Box>
                 </Group>
 
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
-                    <p className="text-xl font-bold text-gray-600 mb-4">Risk Details</p>
+                    <p className="text-lg text-gray-600 mb-4">Risk Details</p>
                     <Grid>
                         <Grid.Col span={6}>
                             <Text size="sm" c="dimmed">Title:</Text>
-                            <Text size="sm" fw={500} mb="md">{selectedRisk?.title}</Text>
+                            <Text size="sm" mb="md">{selectedRisk?.title}</Text>
                         </Grid.Col>
                         <Grid.Col span={6}>
                             <Text size="sm" c="dimmed">Zone:</Text>

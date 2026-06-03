@@ -31,11 +31,11 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
 
                 <Grid>
                     <Grid.Col span={6}>
-                        <Text size="sm" fw={500} mb="xs">Identification</Text>
+                        <Text size="sm" mb="xs">Identification</Text>
                         <Stack gap="xs" mb="md">
                             {/* <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Document ID:</Text>
-                                <Text size="sm" fw={500}>{document?.id}</Text>
+                                <Text size="sm">{document?.id}</Text>
                             </Group> */}
                             <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Name:</Text>
@@ -53,7 +53,7 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
                     </Grid.Col>
 
                     <Grid.Col span={6}>
-                        <Text size="sm" fw={500} mb="xs">Gestion</Text>
+                        <Text size="sm" mb="xs">Gestion</Text>
                         <Stack gap="xs" mb="md">
                             <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Owner:</Text>
@@ -79,7 +79,7 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
                     </Grid.Col>
 
                     <Grid.Col span={6}>
-                        <Text size="sm" fw={500} mb="xs">Dates</Text>
+                        <Text size="sm" mb="xs">Dates</Text>
                         <Stack gap="xs" mb="md">
                             <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Creation Date:</Text>
@@ -105,11 +105,11 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
                     </Grid.Col>
 
                     <Grid.Col span={6}>
-                        <Text size="sm" fw={500} mb="xs">Statistiques</Text>
+                        <Text size="sm" mb="xs">Statistiques</Text>
                         <Stack gap="xs" mb="md">
                             <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Current Version:</Text>
-                                <Text size="sm" fw={500}>v{versions?.[versions.length - 1]?.version}</Text>
+                                <Text size="sm">v{versions?.[versions.length - 1]?.version}</Text>
                             </Group>
                             <Group justify="space-between">
                                 <Text size="sm" c="dimmed">Number of Versions:</Text>
@@ -129,7 +129,7 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
 
                 <Divider my="md" />
 
-                <Text size="sm" fw={500} mb="xs">Tags</Text>
+                <Text size="sm" mb="xs">Tags</Text>
                 <Group mb="md">
                     {document?.tags?.map((tag: any, index: number) => (
                         <Badge key={index} variant="outline" size="sm">
@@ -138,7 +138,7 @@ const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) =>
                     ))}
                 </Group>
 
-                <Text size="sm" fw={500} mb="xs">Full Description</Text>
+                <Text size="sm" mb="xs">Full Description</Text>
                 <Text size="sm" c="dimmed">
                     {document?.description}
                 </Text>

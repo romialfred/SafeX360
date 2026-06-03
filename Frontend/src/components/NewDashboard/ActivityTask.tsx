@@ -28,7 +28,7 @@ const ActiveTasks = () => {
     return (
         <div className="p-6 flex flex-col gap-5 bg-white rounded-xl shadow-lg border border-gray-200 ">
             {/* Header */}
-            <Text size="xl" fw={700} className="mb-4 text-gray-700">
+            <Text size="xl" className="mb-4 text-gray-700">
                 Active Tasks
             </Text>
 
@@ -46,8 +46,8 @@ const ActiveTasks = () => {
                     <tbody className='divide-y divide-gray-200'>
                         {tasks.map((task, index) => (
                             <tr key={index} className="border-b border-gray-300 hover:bg-gray-50 transition-all">
-                                <td className="p-3  text-gray-600 font-medium">{task.activity}</td>
-                                <td className="p-3 text-gray-600 font-medium">{task.type}</td>
+                                <td className="p-3  text-gray-600">{task.activity}</td>
+                                <td className="p-3 text-gray-600">{task.type}</td>
                                 <td className="p-3">
                                     <Progress value={task.progress} color={task.progressColor} size="md" radius="lg" />
                                     {/* <Text size="sm" ta="center" mt={4} className="font-medium">

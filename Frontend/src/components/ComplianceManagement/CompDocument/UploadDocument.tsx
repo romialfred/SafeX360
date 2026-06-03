@@ -170,7 +170,7 @@ const UploadDocument = () => {
         <div className="flex flex-col gap-10">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         Upload Documents
                     </div>
                     <Breadcrumbs mt="xs">
@@ -187,7 +187,7 @@ const UploadDocument = () => {
 
             <div className="bg-white p-4 rounded-lg shadow-xl border border-gray-300 flex flex-col gap-5">
                 <div>
-                    <h1 className="text-xl font-medium text-primary">Select Requirement for Upload</h1>
+                    <h1 className="text-lg text-primary">Select Requirement for Upload</h1>
                 </div>
 
                 <div className="flex flex-col gap-5 mt-4">
@@ -198,10 +198,10 @@ const UploadDocument = () => {
                             className="bg-blue-50 shadow-sm p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-blue-100 transition"
                         >
                             <div>
-                                <h2 className="text-lg font-semibold mb-1">{item.title}</h2>
+                                <h2 className="text-lg mb-1">{item.title}</h2>
                                 <p className="text-sm mb-2">{item.description}</p>
                             </div>
-                            <div className={`font-medium px-3 py-1 rounded-full text-sm ${getStatusColor(item.status)}`}>
+                            <div className={`px-3 py-1 rounded-full text-sm ${getStatusColor(item.status)}`}>
                                 {item.status}
                             </div>
                         </div>
@@ -215,13 +215,13 @@ const UploadDocument = () => {
 
             {/* MODAL */}
             <Modal opened={modalOpen} onClose={closeModal} title={
-                <div className="text-lg font-medium text-blue-500">
+                <div className="text-lg text-blue-500">
                     Upload Document
                 </div>
             } centered size="lg">
                 {selectedItem && (
                     <div className="space-y-4">
-                        <h2 className="text-xl font-semibold">{selectedItem.title}</h2>
+                        <h2 className="text-lg">{selectedItem.title}</h2>
                         <p>{selectedItem.description}</p>
                         <div className="text-sm text-gray-600 space-y-1">
                             <p><strong>Category:</strong> {selectedItem.category}</p>

@@ -1,5 +1,5 @@
 
-import { Alert, Badge, Breadcrumbs, Button, Modal, Select, Tabs, Text, Textarea, Tooltip } from '@mantine/core';
+import { Alert, Anchor, Badge, Breadcrumbs, Button, Modal, Select, Tabs, Text, Textarea, Tooltip } from '@mantine/core';
 import {
     IconCalendarEvent,
     IconClock,
@@ -9,6 +9,12 @@ import {
     IconSearch,
     IconCalendarFilled,
     IconLock,
+    IconAlertOctagon,
+    IconArrowLeft,
+    IconMapPin,
+    IconUser,
+    IconEdit,
+    IconPrinter,
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -180,7 +186,7 @@ const ViewDetails = () => {
 
     const tabData = {
         details: {
-            label: 'Incident Details',
+            label: 'Détails',
             icon: IconFileText,
             content: <IncidentDetailsTab
                 incident={incident}
@@ -190,7 +196,7 @@ const ViewDetails = () => {
             hide: false
         },
         analysis: {
-            label: 'Impact Analysis',
+            label: 'Analyse d\'Impact',
             icon: IconTrendingUp,
             content: <ImpactAnalysis
                 incident={incident}
@@ -199,7 +205,7 @@ const ViewDetails = () => {
             hide: false
         },
         risks: {
-            label: 'Risk Assessment',
+            label: 'Évaluation Risque',
             icon: IconClock,
             content: <RiskAssessment incident={incident} />,
             hide: false
@@ -211,128 +217,298 @@ const ViewDetails = () => {
             hide: !investigation || Object.keys(investigation).length === 0,
         },
         actions: {
-            label: 'Action Plans',
+            label: 'Plans d\'Actions',
             icon: IconCalendarFilled,
             content: <ActionPlansTab actions={actions} />,
             hide: !actions || actions.length === 0,
         },
-
         lessons: {
-            label: 'Lessons Learned',
+            label: 'Leçons Apprises',
             icon: IconBook,
             content: <Lesson incidentId={incidentId} />,
             hide: false
         },
         history: {
-            label: "History",
+            label: "Historique",
             icon: IconCalendarEvent,
             content: <IncidentHistory incident={incident} history={history} />,
             hide: history.length === 0
         }
-
     };
 
+    // Helpers — affichage robuste face aux données partielles (évite "Invalid Date")
+    const safeDate = (v: any) => {
+        if (!v) return '—';
+        const d = new Date(v);
+        return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    };
+    const safeTime = (v: any) => {
+        if (!v) return '';
+        const d = new Date(v);
+        return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    };
+    const statusColorMap: Record<string, string> = {
+        'PENDING': 'gray',
+        'REPORTED': 'blue',
+        'INVESTIGATION': 'cyan',
+        'INVESTIGATION_COMPLETED': 'yellow',
+        'CORRECTIVE_ACTIONS': 'orange',
+        'CLOSED': 'green',
+        'REJECTED': 'red',
+    };
+    const currentStatusKey = String(incident?.status || '').toUpperCase();
+    const statusColor = statusColorMap[currentStatusKey] || 'gray';
+    const statusLabel = incidentStatusMap[incident?.status] || (incident?.status ? String(incident.status) : '—');
+    const reporterName = employees[incident?.reporterId]?.name || 'Inconnu';
+
+    const isLoading = !incident?.id;
+
     return (
-        <div className=" space-y-6" >
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Incidents Details</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/incidents" ><Text variant="gradient" className="hover:!underline cursor-pointer">Incidents Management</Text></Link>
-                        <Text variant="gradient">Incidents Details</Text>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            {/* Page header — breadcrumb + titre + actions */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pb-3 border-b border-slate-200">
+                <div className="flex-1 min-w-0">
+                    <Breadcrumbs separator="›" className="!text-xs">
+                        <Anchor component={Link} to="/" size="xs" c="dimmed">Accueil</Anchor>
+                        <Anchor component={Link} to="/incidents" size="xs" c="dimmed">Gestion des incidents</Anchor>
+                        <Text size="xs" c="teal">{incident?.number || (isLoading ? '...' : 'Détail')}</Text>
                     </Breadcrumbs>
-                </div>
-
-            </div>
-
-
-            <div className="  rounded-lg p-5 space-y-3 bg-home">
-                <div className="flex justify-between">
-                    <div className='flex flex-col gap-1'>
-                        <h2 className="text-2xl flex items-center gap-5 font-semibold text-white">{incident.title} <Badge className='' radius="xs" size='md'>{incident.number}</Badge></h2>
-
-                        <div className="flex items-center gap-1 text-white">
-                            <IconCalendarEvent size={18} />
-                            <span>{formatDate(incident.occurredAt)}</span>
+                    <div className="flex items-center gap-3 mt-2">
+                        <div className="p-2 rounded-lg bg-red-50 border border-red-200">
+                            <IconAlertOctagon className="text-red-600" size={22} stroke={2} />
+                        </div>
+                        <div className="min-w-0">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight truncate">
+                                {isLoading ? (
+                                    <span className="inline-block h-7 w-72 bg-slate-200 rounded animate-pulse align-middle" />
+                                ) : (incident?.title || '—')}
+                            </h1>
+                            <p className="text-sm text-slate-500 mt-0.5">Dossier incident — référentiel ISO 45001 §10.2</p>
                         </div>
                     </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button size="sm" variant="default" leftSection={<IconArrowLeft size={14} />} onClick={() => window.history.back()}>
+                        Retour
+                    </Button>
+                    <Tooltip label="Imprimer le rapport d'incident">
+                        <Button size="sm" variant="default" leftSection={<IconPrinter size={14} />}>Imprimer</Button>
+                    </Tooltip>
+                    <Tooltip label="Modifier les informations de l'incident" disabled={locked.locked}>
+                        <Button size="sm" variant="default" leftSection={<IconEdit size={14} />} disabled={locked.locked} onClick={() => window.location.href = `/incidents/update/${incidentId}`}>
+                            Modifier
+                        </Button>
+                    </Tooltip>
+                </div>
+            </div>
 
-                    <div className="flex items-end gap-2  flex-col">
-                        <Tooltip label={locked.locked ? (locked.status === 'CLOSED' ? 'Closed — status cannot be changed' : 'Rejected — status cannot be changed') : 'Change status'}>
-                            <span className="inline-flex">
-                                <Button leftSection={<IconClock />} onClick={handleStatusChange} disabled={locked.locked} className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm">{incidentStatusMap[incident.status]}</Button>
-                            </span>
-                        </Tooltip>
-                        <p className='text-sm text-white'>
-                            Reporter : <span className='font-medium'>{employees[incident.reporterId] ? employees[incident.reporterId]?.name : "Unknown"}</span>
-                        </p>
+            {/* Identification : badges + métadonnées clés sur une seule rangée */}
+            <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                <div className="p-4">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                                <Badge color="dark" variant="light" radius="sm" size="sm" className="font-mono">
+                                    {incident?.number || '—'}
+                                </Badge>
+                                <Badge color={statusColor} variant="filled" radius="sm" size="sm">
+                                    {statusLabel}
+                                </Badge>
+                                {locked.locked && (
+                                    <Badge color="gray" variant="light" radius="sm" size="sm" leftSection={<IconLock size={11} />}>
+                                        Verrouillé
+                                    </Badge>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-3 text-sm">
+                                <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Survenance</div>
+                                    <div className="flex items-center gap-1.5 text-slate-800">
+                                        <IconCalendarEvent size={13} className="text-slate-400 flex-shrink-0" />
+                                        <span className="text-sm">{safeDate(incident?.occurredAt)}</span>
+                                        {safeTime(incident?.occurredAt) && <span className="text-xs text-slate-500">{safeTime(incident?.occurredAt)}</span>}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Découverte</div>
+                                    <div className="flex items-center gap-1.5 text-slate-800">
+                                        <IconClock size={13} className="text-slate-400 flex-shrink-0" />
+                                        <span className="text-sm">{safeDate(incident?.discoveryTime)}</span>
+                                        {safeTime(incident?.discoveryTime) && <span className="text-xs text-slate-500">{safeTime(incident?.discoveryTime)}</span>}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Déclarant</div>
+                                    <div className="flex items-center gap-1.5 text-slate-800">
+                                        <IconUser size={13} className="text-slate-400 flex-shrink-0" />
+                                        <span className="text-sm truncate">{reporterName}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Lieu</div>
+                                    <div className="flex items-center gap-1.5 text-slate-800">
+                                        <IconMapPin size={13} className="text-slate-400 flex-shrink-0" />
+                                        <span className="text-sm truncate">{incident?.location?.name || incident?.locationName || '—'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="lg:w-64 flex-shrink-0">
+                            <Tooltip label={locked.locked ? (locked.status === 'CLOSED' ? 'Incident clôturé, le statut ne peut plus être modifié' : 'Incident rejeté, le statut ne peut plus être modifié') : 'Changer le statut'}>
+                                <span className="inline-flex w-full">
+                                    <Button
+                                        fullWidth
+                                        size="md"
+                                        color="teal"
+                                        leftSection={<IconClock size={18} />}
+                                        onClick={handleStatusChange}
+                                        disabled={locked.locked}
+                                    >
+                                        Changer le statut
+                                    </Button>
+                                </span>
+                            </Tooltip>
+                            <p className="text-xs text-slate-500 mt-2 text-center">
+                                Workflow ISO 45001 : transitions tracées dans l'historique
+                            </p>
+                        </div>
                     </div>
                 </div>
-
             </div>
 
             {locked.locked && (
-                <Alert color={locked.status === 'CLOSED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text fw={600}>
-                        {locked.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.'}
-                    </Text>
+                <Alert
+                    color={locked.status === 'CLOSED' ? 'green' : 'red'}
+                    variant="light"
+                    icon={<IconLock size={18} />}
+                    title={locked.status === 'CLOSED' ? 'Incident clôturé' : 'Incident rejeté'}
+                >
+                    {locked.status === 'CLOSED'
+                        ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées. Le dossier conserve sa valeur de preuve réglementaire (ISO 45001 §7.5.3).'
+                        : 'Cet incident a été rejeté lors de l\'analyse préliminaire. Aucune modification n\'est autorisée.'}
                 </Alert>
             )}
 
+            {/* Workflow ISO 45001 — étapes visuelles */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <div className="p-1 rounded bg-slate-200">
+                        <IconCalendarFilled size={14} className="text-slate-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider flex-1">
+                        Workflow ISO 45001 — Étapes du dossier
+                    </h2>
+                    <span className="text-[10px] text-slate-500">
+                        ISO 45001 §10.2.1 (a→f)
+                    </span>
+                </header>
+                <div className="p-4">
+                    {(() => {
+                        const stepsOrder = ['REPORTED', 'INVESTIGATION', 'INVESTIGATION_COMPLETED', 'CORRECTIVE_ACTIONS', 'CLOSED'];
+                        const stepLabels: Record<string, string> = {
+                            REPORTED: 'Déclaré',
+                            INVESTIGATION: 'Investigation',
+                            INVESTIGATION_COMPLETED: 'Analyse complétée',
+                            CORRECTIVE_ACTIONS: 'Actions correctives',
+                            CLOSED: 'Clôturé',
+                        };
+                        const currentIdx = stepsOrder.indexOf(currentStatusKey);
+                        const rejected = currentStatusKey === 'REJECTED';
+                        return (
+                            <div className="flex items-center gap-1 overflow-x-auto">
+                                {stepsOrder.map((step, i) => {
+                                    const isDone = !rejected && currentIdx >= i;
+                                    const isCurrent = currentIdx === i;
+                                    return (
+                                        <div key={step} className="flex items-center gap-1 flex-shrink-0">
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] transition-all
+                                                ${isCurrent ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
+                                                  : isDone ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                                  : rejected && i === 0 ? 'bg-red-50 text-red-700 border-red-200'
+                                                  : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                                                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px]
+                                                    ${isCurrent ? 'bg-white text-teal-700'
+                                                      : isDone ? 'bg-teal-200 text-teal-800'
+                                                      : 'bg-slate-200 text-slate-500'}`}>
+                                                    {i + 1}
+                                                </span>
+                                                <span className="whitespace-nowrap">{stepLabels[step]}</span>
+                                            </div>
+                                            {i < stepsOrder.length - 1 && (
+                                                <div className={`w-6 h-0.5 ${currentIdx > i ? 'bg-teal-400' : 'bg-slate-200'}`} />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                {rejected && (
+                                    <div className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border bg-red-50 text-red-700 border-red-200 text-[11px]">
+                                        <IconLock size={11} />
+                                        Dossier rejeté
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                </div>
+            </div>
 
-            <div className="">
-                <Tabs
-                    value={activeTab}
-                    onChange={(value) => value && setActiveTab(value)}
-                    className=""
-
-                >
-                    <Tabs.List className="bg-white border border-slate-200 rounded-lg p-2 !flex !gap-1">
-                        {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
-                            !hide && <Tabs.Tab key={key} value={key} leftSection={<Icon size={15} />} className="  !text-slate-600 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500 !rounded-lg px-3 py-1.5 text-sm transition-all duration-200">
+            {/* Tabs */}
+            <Tabs
+                value={activeTab}
+                onChange={(value) => value && setActiveTab(value)}
+                color="teal"
+                variant="pills"
+            >
+                <Tabs.List className="bg-white border border-slate-200 rounded-xl p-1.5 !flex !gap-0.5">
+                    {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
+                        !hide && (
+                            <Tabs.Tab
+                                key={key}
+                                value={key}
+                                leftSection={<Icon size={15} />}
+                                className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-all"
+                            >
                                 {label}
                             </Tabs.Tab>
-                        ))}
-                    </Tabs.List>
-
-                    {Object.entries(tabData).map(([key, { content }]) => (
-                        <Tabs.Panel value={key} key={key} pt="md">
-
-                            <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                                <div className="p-2">{content}</div>
-                            </div>
-
-                        </Tabs.Panel>
+                        )
                     ))}
-                </Tabs>
-            </div>
+                </Tabs.List>
+
+                {Object.entries(tabData).map(([key, { content }]) => (
+                    <Tabs.Panel value={key} key={key} pt="md">
+                        <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                            {content}
+                        </div>
+                    </Tabs.Panel>
+                ))}
+            </Tabs>
+
             <Modal
                 opened={opened}
                 onClose={close}
-                title={<div className='text-lg flex items-center gap-2'>  <span className='bg-gray-100 rounded-full p-2'><IconLock /></span>Manage Incident Status</div>}
+                title={<div className='text-base flex items-center gap-2'><span className='bg-teal-50 text-teal-700 rounded-lg p-1.5'><IconLock size={18} /></span>Changement de statut</div>}
                 centered
                 size="lg"
-                classNames={{
-                    body: 'p-6',
-                    header: 'text-lg font-semibold border-b border-gray-500 mx-2',
-                }}
+                radius="lg"
             >
-                <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-
+                <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-2">
+                    <Text size="sm" c="dimmed">
+                        Chaque changement de statut est tracé dans l'historique de l'incident pour conformité ISO 45001 §7.5.3.
+                    </Text>
 
                     <Select
-                        label="Owner"
-                        placeholder="Select owner"
+                        label="Responsable du changement"
+                        placeholder="Sélectionner le responsable"
                         data={emps}
                         {...form.getInputProps("ownerId")}
+                        searchable
                         withAsterisk
                     />
 
                     <DateInput
                         maxDate={new Date()}
-                        label="Date"
-                        placeholder='Select date'
+                        label="Date effective"
+                        placeholder="Sélectionner la date"
                         minDate={history?.length > 0
                             ? new Date(Math.max(...history.map(h => new Date(h.date).getTime())))
                             : incident.discoveryTime
@@ -342,41 +518,29 @@ const ViewDetails = () => {
                         withAsterisk
                     />
                     <Select
-
-                        label="Status"
-                        placeholder="Select Status"
+                        label="Nouveau statut"
+                        placeholder="Sélectionner le statut"
                         data={incidentHistoryStatus.slice(incidentHistoryStatus.findIndex((item) => item.value === (history.length > 0 ? history[history.length - 1]?.status : incident.status)))}
                         {...form.getInputProps("status")}
                         withAsterisk
                     />
                     <Textarea
-                        label="Comment"
-                        placeholder="Write comment regarding status change"
+                        label="Commentaire justificatif"
+                        placeholder="Justifier le changement de statut (visible dans l'audit trail)"
                         {...form.getInputProps("comment")}
                         minRows={3}
                     />
 
-                    {/* <Alert
-                        icon={<IconAlertCircle size="1.2rem" />}
-                        title="Warning: Incomplete Action Plans"
-                        color="orange"
-                        className="text-sm text-orange-200"
-                    >
-                        <span className='text-orange-400'>This incident has incomplete action plans. Closing the incident will not automatically complete these actions. They will need to be managed separately.</span>
-                    </Alert> */}
-
-                    <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="outline" onClick={close}>
-                            Cancel
+                    <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-slate-200">
+                        <Button variant="default" onClick={close}>
+                            Annuler
                         </Button>
-                        <Button color="primary" type='submit' disabled={locked.locked}>
-                            Submit
+                        <Button color="teal" type="submit" disabled={locked.locked}>
+                            Valider le changement
                         </Button>
                     </div>
                 </form>
             </Modal>
-
-
         </div >
     );
 };

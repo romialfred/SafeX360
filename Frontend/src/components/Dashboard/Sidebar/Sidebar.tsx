@@ -382,7 +382,7 @@ const Sidebar = () => {
             <div className={` ${collapsed ? "w-20 max-w-20" : "max-w-72 w-72"} scrollbar-hide bg-blackbg  p-3  h-screen overflow-y-auto fixed flex-col flex gap-2  transition-[max-width] duration-500  text-neutral-400  justify-between `} >
                 <div className={`flex flex-col ${collapsed ? "items-center" : ""} gap-2`}>
                     <div className="py-2  flex items-center justify-between">
-                        {!collapsed && <div className="text-white font-semibold text-xl">My Applications</div>}
+                        {!collapsed && <div className="text-white text-xl">My Applications</div>}
                         <Tooltip position="right" zIndex={1001} disabled={!collapsed} label={collapsed ? "Expand" : "Collapse"}>
                             <ActionIcon color="gray" onClick={() => dispatch(collapsed ? expand() : collapse())} variant="subtle" size={collapsed ? "xl" : "lg"} >
                                 {collapsed ? <IconChevronRight size={collapsed ? 40 : 25} className="" /> : <IconChevronLeft size={30} className="" />} </ActionIcon></Tooltip>
@@ -400,11 +400,11 @@ const Sidebar = () => {
                                 <Tooltip position="right" zIndex={1001} color={item.mColor} key={index} label={collapsed ? item.name : item.description}>
                                     {item.id == "home" ? <NavLink to={"/"} className={({ isActive }) => `flex mt-2 gap-3 items-center hover:bg-neutral-950 !border border-transparent hover:!border-primary rounded-md p-2   cursor-pointer transition-all duration-200 ${isActive ? "bg-neutral-900" : ""}`}>
                                         <item.icon size={collapsed ? 35 : 20} className={`text-orange-400`} />
-                                        {!collapsed && <div className="text-sm font-medium">{item.name}</div>}
+                                        {!collapsed && <div className="text-sm">{item.name}</div>}
                                     </NavLink> :
                                         <div key={index} onClick={() => handleMenuClick(item)} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2 cursor-pointer transition-all duration-200 !border border-transparent hover:!border-primary ${location.pathname.includes(item.name.toLowerCase()) ? "bg-neutral-900" : ""}`}>
                                             <item.icon size={collapsed ? 35 : 20} className={`${item.color}`} />
-                                            {!collapsed && <div className="text-sm font-medium">{item.name}</div>}
+                                            {!collapsed && <div className="text-sm">{item.name}</div>}
                                         </div>}
                                 </Tooltip>
                             ))}
@@ -417,13 +417,13 @@ const Sidebar = () => {
                             <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="red" label={`Back to  main menu`}>
                                 <div onClick={() => dispatch(setMenu({ id: "dashboard", pos: true }))} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2  cursor-pointer transition-all duration-200 `}>
                                     <IconChevronLeft size={collapsed ? 35 : 20} className={`text-primary`} />
-                                    {!collapsed && <div className="text-sm font-medium">Back to main menu</div>}
+                                    {!collapsed && <div className="text-sm">Back to main menu</div>}
                                 </div>
                             </Tooltip>
 
                             <Divider size="xs" my={collapsed ? -5 : 0} color="gray.6" className="!text-neutral-900" />
                             <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="primary" label={menuRecord[menu.id]?.name}>
-                                <div className={`p-2 bg-primary/30 rounded-md ${collapsed ? "text-center" : "text-left"} text-primary text-sm font-medium mt-2 `}>
+                                <div className={`p-2 bg-primary/30 rounded-md ${collapsed ? "text-center" : "text-left"} text-primary text-sm mt-2 `}>
                                     {collapsed
                                         ? React.createElement(menuRecord[menu.id].icon, { size: collapsed ? 40 : 25 })
                                         : menuRecord[menu.id]?.name}
@@ -453,7 +453,7 @@ const Sidebar = () => {
                                         >
                                             <Accordion.Control
                                                 className={`transition-all duration-300 flex items-center !rounded-2xl relative
-            ${collapsed ? "!justify-center !p-0 chevron-hidden" : "!justify-between !py-2 !px-3 hover:!bg-neutral-900"}   !text-base !font-semibold !text-gray-300`}
+            ${collapsed ? "!justify-center !p-0 chevron-hidden" : "!justify-between !py-2 !px-3 hover:!bg-neutral-900"}   !text-base !!text-gray-300`}
                                             >
                                                 <Tooltip
                                                     label={section.heading}
@@ -496,7 +496,7 @@ const Sidebar = () => {
                                                                         className: "text-orange-400",
                                                                     })}
                                                                 {!collapsed && (
-                                                                    <div className="text-sm font-medium ">{item.name}</div>
+                                                                    <div className="text-sm ">{item.name}</div>
                                                                 )}
                                                             </NavLink>
                                                         </Tooltip>
@@ -547,7 +547,7 @@ const Sidebar = () => {
                                 <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="orange" label={item.name} key={index} >
                                     <NavLink to={item.url} className={({ isActive }) => `flex  gap-3 items-center hover:bg-neutral-950 !border border-transparent hover:!border-primary rounded-md p-2   cursor-pointer transition-all duration-200 ${isActive ? "bg-neutral-900" : ""}`}>
                                         <item.icon size={collapsed ? 35 : 20} className={`text-orange-400`} />
-                                        {!collapsed && <div className="text-sm font-medium">{item.name}</div>}
+                                        {!collapsed && <div className="text-sm">{item.name}</div>}
                                     </NavLink>
                                 </Tooltip>
                             ))}
@@ -561,7 +561,7 @@ const Sidebar = () => {
                         <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="red" label="Go to MINE XPERT">
                             <a href="https://mine-xpert.data-univers.com/" target="_blank" className={`flex gap-3 items-center hover:bg-red-500/20 rounded-md p-2 py-3 cursor-pointer transition-all duration-200 hover:text-red-500 !border border-transparent hover:!border-red-500`}>
                                 <IconLogout2 size={collapsed ? 32 : 20} className="text-red-500" />
-                                {!collapsed && <div className="text-xs font-medium">Go to MINE XPERT</div>}
+                                {!collapsed && <div className="text-xs">Go to MINE XPERT</div>}
                             </a>
                         </Tooltip>
                     </div>

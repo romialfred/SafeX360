@@ -16,7 +16,7 @@ const TechnicalDocs = () => {
                         <IconDeviceDesktop size={40} />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold ">System Architecture</h2>
+                        <h2 className="text-2xl font-semibold ">System Architecture</h2>
                         <p className="text-lg text-white">
                             Microservices-based Health & Safety Management Platform.
                         </p>
@@ -34,22 +34,22 @@ const TechnicalDocs = () => {
 
                     {/* Architecture Diagram */}
                     <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8 mb-8">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Microservices Architecture Overview</h3>
+                        <h3 className="text-lg text-gray-900 mb-6 text-center">Microservices Architecture Overview</h3>
 
                         {/* Frontend Layer */}
                         <div className="mb-8">
-                            <h4 className="text-lg font-semibold text-blue-700 mb-4">Frontend Layer</h4>
+                            <h4 className="text-lg text-blue-700 mb-4">Frontend Layer</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
-                                    <div className="font-medium text-blue-800">React SPA</div>
+                                    <div className="text-blue-800">React SPA</div>
                                     <div className="text-sm text-gray-600">TypeScript + Tailwind CSS</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
-                                    <div className="font-medium text-blue-800">Mobile App</div>
+                                    <div className="text-blue-800">Mobile App</div>
                                     <div className="text-sm text-gray-600">React Native</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
-                                    <div className="font-medium text-blue-800">PWA</div>
+                                    <div className="text-blue-800">PWA</div>
                                     <div className="text-sm text-gray-600">Progressive Web App</div>
                                 </div>
                             </div>
@@ -57,47 +57,47 @@ const TechnicalDocs = () => {
 
                         {/* API Gateway */}
                         <div className="mb-8">
-                            <h4 className="text-lg font-semibold text-purple-700 mb-4">API Gateway & Load Balancer</h4>
+                            <h4 className="text-lg text-purple-700 mb-4">API Gateway & Load Balancer</h4>
                             <div className="bg-white p-6 rounded-lg border-2 border-purple-200 shadow-sm text-center">
-                                <div className="font-medium text-purple-800 mb-2">Kong API Gateway</div>
+                                <div className="text-purple-800 mb-2">Kong API Gateway</div>
                                 <div className="text-sm text-gray-600">Authentication • Rate Limiting • Load Balancing • SSL Termination</div>
                             </div>
                         </div>
 
                         {/* Microservices */}
                         <div className="mb-8">
-                            <h4 className="text-lg font-semibold text-green-700 mb-4">Microservices Layer</h4>
+                            <h4 className="text-lg text-green-700 mb-4">Microservices Layer</h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">User Management</div>
+                                    <div className="text-green-800 text-sm">User Management</div>
                                     <div className="text-xs text-gray-600">Authentication, Authorization, RBAC</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Incident Service</div>
+                                    <div className="text-green-800 text-sm">Incident Service</div>
                                     <div className="text-xs text-gray-600">Incident reporting, investigations</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Risk Service</div>
+                                    <div className="text-green-800 text-sm">Risk Service</div>
                                     <div className="text-xs text-gray-600">Risk assessment, chemical register</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Action Service</div>
+                                    <div className="text-green-800 text-sm">Action Service</div>
                                     <div className="text-xs text-gray-600">Action plans, tracking</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Audit Service</div>
+                                    <div className="text-green-800 text-sm">Audit Service</div>
                                     <div className="text-xs text-gray-600">Audit planning, execution</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">PPE Service</div>
+                                    <div className="text-green-800 text-sm">PPE Service</div>
                                     <div className="text-xs text-gray-600">PPE requests, monitoring</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Document Service</div>
+                                    <div className="text-green-800 text-sm">Document Service</div>
                                     <div className="text-xs text-gray-600">Document management, validation</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-green-200 shadow-sm">
-                                    <div className="font-medium text-green-800 text-sm">Notification Service</div>
+                                    <div className="text-green-800 text-sm">Notification Service</div>
                                     <div className="text-xs text-gray-600">Email, SMS, push notifications</div>
                                 </div>
                             </div>
@@ -105,18 +105,18 @@ const TechnicalDocs = () => {
 
                         {/* Data Layer */}
                         <div className="mb-8">
-                            <h4 className="text-lg font-semibold text-orange-700 mb-4">Data Layer</h4>
+                            <h4 className="text-lg text-orange-700 mb-4">Data Layer</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="bg-white p-4 rounded-lg border-2 border-orange-200 shadow-sm">
-                                    <div className="font-medium text-orange-800">PostgreSQL</div>
+                                    <div className="text-orange-800">PostgreSQL</div>
                                     <div className="text-sm text-gray-600">Primary database for transactional data</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-orange-200 shadow-sm">
-                                    <div className="font-medium text-orange-800">Redis</div>
+                                    <div className="text-orange-800">Redis</div>
                                     <div className="text-sm text-gray-600">Caching and session storage</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-orange-200 shadow-sm">
-                                    <div className="font-medium text-orange-800">Elasticsearch</div>
+                                    <div className="text-orange-800">Elasticsearch</div>
                                     <div className="text-sm text-gray-600">Search and analytics</div>
                                 </div>
                             </div>
@@ -124,22 +124,22 @@ const TechnicalDocs = () => {
 
                         {/* Infrastructure */}
                         <div>
-                            <h4 className="text-lg font-semibold text-gray-700 mb-4">Infrastructure & DevOps</h4>
+                            <h4 className="text-lg text-gray-700 mb-4">Infrastructure & DevOps</h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                                    <div className="font-medium text-gray-800 text-sm">Docker</div>
+                                    <div className="text-gray-800 text-sm">Docker</div>
                                     <div className="text-xs text-gray-600">Containerization</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                                    <div className="font-medium text-gray-800 text-sm">Kubernetes</div>
+                                    <div className="text-gray-800 text-sm">Kubernetes</div>
                                     <div className="text-xs text-gray-600">Orchestration</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                                    <div className="font-medium text-gray-800 text-sm">Jenkins</div>
+                                    <div className="text-gray-800 text-sm">Jenkins</div>
                                     <div className="text-xs text-gray-600">CI/CD Pipeline</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-                                    <div className="font-medium text-gray-800 text-sm">Prometheus</div>
+                                    <div className="text-gray-800 text-sm">Prometheus</div>
                                     <div className="text-xs text-gray-600">Monitoring</div>
                                 </div>
                             </div>
@@ -149,7 +149,7 @@ const TechnicalDocs = () => {
                     {/* Architecture Benefits */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-blue-50 p-6 rounded-lg">
-                            <h4 className="font-semibold text-blue-900 mb-3">Microservices Benefits</h4>
+                            <h4 className="text-blue-900 mb-3">Microservices Benefits</h4>
                             <ul className="text-sm text-blue-800 space-y-2">
                                 <li>• Independent deployment and scaling</li>
                                 <li>• Technology diversity per service</li>
@@ -159,7 +159,7 @@ const TechnicalDocs = () => {
                             </ul>
                         </div>
                         <div className="bg-green-50 p-6 rounded-lg">
-                            <h4 className="font-semibold text-green-900 mb-3">Scalability Features</h4>
+                            <h4 className="text-green-900 mb-3">Scalability Features</h4>
                             <ul className="text-sm text-green-800 space-y-2">
                                 <li>• Horizontal scaling per service</li>
                                 <li>• Load balancing and auto-scaling</li>
@@ -176,31 +176,31 @@ const TechnicalDocs = () => {
                     <div className="flex items-center mb-6">
                         <IconFileText className="w-8 h-8 text-green-600 mr-4" />
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Database Documentation</h2>
+                            <h2 className="text-2xl text-gray-900">Database Documentation</h2>
                             <p className="text-gray-600">Entity Relationship Diagrams and Data Dictionary</p>
                         </div>
                     </div>
 
                     {/* Database Schema Diagram */}
                     <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-8 mb-8">
-                        <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Database Schema - Entity Relationship Diagram</h3>
+                        <h3 className="text-lg text-gray-900 mb-6 text-center">Database Schema - Entity Relationship Diagram</h3>
 
                         {/* Core Entities */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             {/* Users & Authentication */}
                             <div className="bg-white p-6 rounded-lg border-2 border-blue-300 shadow-lg">
-                                <h4 className="font-bold text-blue-800 mb-4 text-center">User Management</h4>
+                                <h4 className="text-blue-800 mb-4 text-center">User Management</h4>
                                 <div className="space-y-3">
                                     <div className="bg-blue-50 p-3 rounded border">
-                                        <div className="font-semibold text-blue-900">users</div>
+                                        <div className="text-blue-900">users</div>
                                         <div className="text-xs text-blue-700">id, email, first_name, last_name, role_id, is_active, created_at</div>
                                     </div>
                                     <div className="bg-blue-50 p-3 rounded border">
-                                        <div className="font-semibold text-blue-900">roles</div>
+                                        <div className="text-blue-900">roles</div>
                                         <div className="text-xs text-blue-700">id, name, description, permissions</div>
                                     </div>
                                     <div className="bg-blue-50 p-3 rounded border">
-                                        <div className="font-semibold text-blue-900">user_sessions</div>
+                                        <div className="text-blue-900">user_sessions</div>
                                         <div className="text-xs text-blue-700">id, user_id, login_time, ip_address</div>
                                     </div>
                                 </div>
@@ -208,18 +208,18 @@ const TechnicalDocs = () => {
 
                             {/* Incidents & Risks */}
                             <div className="bg-white p-6 rounded-lg border-2 border-red-300 shadow-lg">
-                                <h4 className="font-bold text-red-800 mb-4 text-center">Incidents & Risks</h4>
+                                <h4 className="text-red-800 mb-4 text-center">Incidents & Risks</h4>
                                 <div className="space-y-3">
                                     <div className="bg-red-50 p-3 rounded border">
-                                        <div className="font-semibold text-red-900">incidents</div>
+                                        <div className="text-red-900">incidents</div>
                                         <div className="text-xs text-red-700">id, title, description, severity, status, reported_by, date_occurred</div>
                                     </div>
                                     <div className="bg-red-50 p-3 rounded border">
-                                        <div className="font-semibold text-red-900">risk_assessments</div>
+                                        <div className="text-red-900">risk_assessments</div>
                                         <div className="text-xs text-red-700">id, title, likelihood, severity, risk_rating, status</div>
                                     </div>
                                     <div className="bg-red-50 p-3 rounded border">
-                                        <div className="font-semibold text-red-900">chemical_risks</div>
+                                        <div className="text-red-900">chemical_risks</div>
                                         <div className="text-xs text-red-700">id, chemical_name, cas_number, classification, hazard_source</div>
                                     </div>
                                 </div>
@@ -227,18 +227,18 @@ const TechnicalDocs = () => {
 
                             {/* Actions & Audits */}
                             <div className="bg-white p-6 rounded-lg border-2 border-green-300 shadow-lg">
-                                <h4 className="font-bold text-green-800 mb-4 text-center">Actions & Audits</h4>
+                                <h4 className="text-green-800 mb-4 text-center">Actions & Audits</h4>
                                 <div className="space-y-3">
                                     <div className="bg-green-50 p-3 rounded border">
-                                        <div className="font-semibold text-green-900">action_plans</div>
+                                        <div className="text-green-900">action_plans</div>
                                         <div className="text-xs text-green-700">id, title, description, assigned_to, due_date, status, progress</div>
                                     </div>
                                     <div className="bg-green-50 p-3 rounded border">
-                                        <div className="font-semibold text-green-900">audits</div>
+                                        <div className="text-green-900">audits</div>
                                         <div className="text-xs text-green-700">id, title, audit_date, auditor, department, findings</div>
                                     </div>
                                     <div className="bg-green-50 p-3 rounded border">
-                                        <div className="font-semibold text-green-900">ppe_requests</div>
+                                        <div className="text-green-900">ppe_requests</div>
                                         <div className="text-xs text-green-700">id, item_name, quantity, requestor, status, approval_date</div>
                                     </div>
                                 </div>
@@ -247,10 +247,10 @@ const TechnicalDocs = () => {
 
                         {/* Relationships */}
                         <div className="bg-white p-6 rounded-lg border border-gray-300">
-                            <h4 className="font-bold text-gray-800 mb-4 text-center">Key Relationships</h4>
+                            <h4 className="text-gray-800 mb-4 text-center">Key Relationships</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <div className="font-semibold text-gray-700 mb-2">One-to-Many:</div>
+                                    <div className="text-gray-700 mb-2">One-to-Many:</div>
                                     <ul className="text-gray-600 space-y-1">
                                         <li>• users → incidents (reported_by)</li>
                                         <li>• users → action_plans (assigned_to)</li>
@@ -259,7 +259,7 @@ const TechnicalDocs = () => {
                                     </ul>
                                 </div>
                                 <div>
-                                    <div className="font-semibold text-gray-700 mb-2">Many-to-Many:</div>
+                                    <div className="text-gray-700 mb-2">Many-to-Many:</div>
                                     <ul className="text-gray-600 space-y-1">
                                         <li>• users ↔ audits (audit_participants)</li>
                                         <li>• action_plans ↔ documents (action_documents)</li>
@@ -276,7 +276,7 @@ const TechnicalDocs = () => {
                     <div className="flex items-center mb-6">
                         <IconBook className="w-8 h-8 text-purple-600 mr-4" />
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Data Dictionary</h2>
+                            <h2 className="text-2xl text-gray-900">Data Dictionary</h2>
                             <p className="text-gray-600">Detailed field documentation for all database tables</p>
                         </div>
                     </div>
@@ -286,17 +286,17 @@ const TechnicalDocs = () => {
                         {/* Users Table */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-blue-50 px-6 py-4 border-b border-gray-200">
-                                <h3 className="text-lg font-bold text-blue-900">users</h3>
+                                <h3 className="text-lg text-blue-900">users</h3>
                                 <p className="text-sm text-blue-700">System users and authentication information</p>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Field</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Constraints</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Field</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Type</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Constraints</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Description</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -350,17 +350,17 @@ const TechnicalDocs = () => {
                         {/* Incidents Table */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-red-50 px-6 py-4 border-b border-gray-200">
-                                <h3 className="text-lg font-bold text-red-900">incidents</h3>
+                                <h3 className="text-lg text-red-900">incidents</h3>
                                 <p className="text-sm text-red-700">Safety incidents and near-miss reports</p>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Field</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Constraints</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Field</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Type</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Constraints</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Description</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -420,17 +420,17 @@ const TechnicalDocs = () => {
                         {/* Chemical Risks Table */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-orange-50 px-6 py-4 border-b border-gray-200">
-                                <h3 className="text-lg font-bold text-orange-900">chemical_risks</h3>
+                                <h3 className="text-lg text-orange-900">chemical_risks</h3>
                                 <p className="text-sm text-orange-700">Chemical hazard identification and risk assessment</p>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Field</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Constraints</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Field</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Type</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Constraints</th>
+                                            <th className="px-4 py-3 text-left text-xs text-gray-500 uppercase">Description</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -494,14 +494,14 @@ const TechnicalDocs = () => {
                     <div className="flex items-center mb-6">
                         <IconFileText className="w-8 h-8 text-gray-600 mr-4" />
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">API Documentation</h2>
+                            <h2 className="text-2xl text-gray-900">API Documentation</h2>
                             <p className="text-gray-600">RESTful API endpoints and integration guides</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Core APIs</h3>
+                            <h3 className="text-lg text-gray-900">Core APIs</h3>
                             <div className="space-y-3">
                                 <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                     <IconFileText className="w-5 h-5 text-blue-600 mr-3" />
@@ -531,7 +531,7 @@ const TechnicalDocs = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Integration Guides</h3>
+                            <h3 className="text-lg text-gray-900">Integration Guides</h3>
                             <div className="space-y-3">
                                 <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                     <IconFileText className="w-5 h-5 text-purple-600 mr-3" />
@@ -564,10 +564,10 @@ const TechnicalDocs = () => {
 
                 {/* System Requirements */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">System Requirements & Specifications</h3>
+                    <h3 className="text-lg text-gray-900 mb-4">System Requirements & Specifications</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Browser Support</h4>
+                            <h4 className="text-gray-900 mb-2">Browser Support</h4>
                             <ul className="text-sm text-gray-600 space-y-1">
                                 <li>• Chrome 90+</li>
                                 <li>• Firefox 88+</li>
@@ -576,7 +576,7 @@ const TechnicalDocs = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Mobile Support</h4>
+                            <h4 className="text-gray-900 mb-2">Mobile Support</h4>
                             <ul className="text-sm text-gray-600 space-y-1">
                                 <li>• iOS 14+</li>
                                 <li>• Android 10+</li>
@@ -585,7 +585,7 @@ const TechnicalDocs = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Security</h4>
+                            <h4 className="text-gray-900 mb-2">Security</h4>
                             <ul className="text-sm text-gray-600 space-y-1">
                                 <li>• SSL/TLS encryption</li>
                                 <li>• OAuth 2.0</li>
@@ -594,7 +594,7 @@ const TechnicalDocs = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Performance</h4>
+                            <h4 className="text-gray-900 mb-2">Performance</h4>
                             <ul className="text-sm text-gray-600 space-y-1">
                                 <li>• &lt; 2s page load</li>
                                 <li>• 99.9% uptime SLA</li>
@@ -612,7 +612,7 @@ const TechnicalDocs = () => {
                                             <IconFileText className="w-8 h-8 text-purple-600" />
                                         </div>
                                         <div className="ml-4">
-                                            <h3 className="text-lg font-semibold text-gray-900">Technical Documentation</h3>
+                                            <h3 className="text-lg text-gray-900">Technical Documentation</h3>
                                         </div>
                                     </div>
 
@@ -636,7 +636,7 @@ const TechnicalDocs = () => {
                                     </div>
 
                                     <div className="mt-4 pt-4 border-t border-gray-200">
-                                        <span className="text-sm font-medium text-purple-600">
+                                        <span className="text-sm text-purple-600">
                                             View documentation →
                                         </span>
                                     </div>

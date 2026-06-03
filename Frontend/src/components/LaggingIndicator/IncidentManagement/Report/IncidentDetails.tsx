@@ -3,7 +3,6 @@ import {
     Badge,
     Button,
     Checkbox,
-    Divider,
     Fieldset,
     Group,
     MultiSelect,
@@ -13,7 +12,7 @@ import {
     TextInput,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconTrash, IconInfoSquareRounded, IconShield, IconCategoryPlus, IconMapPin2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import TextEditor from "../../../UtilityComp/TextEditor";
 import BodyPartSelect from "./BodyPartSelect";
@@ -23,15 +22,37 @@ import { incidentStatuses } from "../../../../Data/DropdownData";
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, workAreas, workProcesses, departments }: any) => {
 
 
-    const [ppe, _setPPE] = useState([
-        { id: 'helmet', name: 'Safety Helmet', required: false, worn: false },
-        { id: 'goggles', name: 'Safety Goggles', required: false, worn: false },
-        { id: 'gloves', name: 'Safety Gloves', required: false, worn: false },
-        { id: 'boots', name: 'Safety Boots', required: false, worn: false },
-        { id: 'vest', name: 'High-Visibility Vest', required: false, worn: false },
-        { id: 'mask', name: 'Respiratory Mask', required: false, worn: false },
-        { id: 'harness', name: 'Safety Harness', required: false, worn: false }
-    ]);
+    // EPI organisés en 3 catégories anatomiques pour saisie rapide terrain
+    const ppeCategories = [
+        {
+            label: 'Tête & voies respiratoires',
+            items: [
+                { id: 'helmet', name: 'Casque de sécurité' },
+                { id: 'goggles', name: 'Lunettes de protection' },
+                { id: 'mask', name: 'Masque respiratoire' },
+                { id: 'earplugs', name: 'Bouchons auditifs' },
+                { id: 'faceshield', name: 'Visière' },
+            ],
+        },
+        {
+            label: 'Mains & corps',
+            items: [
+                { id: 'gloves', name: 'Gants de protection' },
+                { id: 'vest', name: 'Gilet haute visibilité' },
+                { id: 'coverall', name: 'Combinaison ignifuge' },
+                { id: 'apron', name: 'Tablier de protection' },
+            ],
+        },
+        {
+            label: 'Pieds & antichute',
+            items: [
+                { id: 'boots', name: 'Chaussures de sécurité S3' },
+                { id: 'harness', name: 'Harnais antichute' },
+                { id: 'lanyard', name: 'Longe avec absorbeur' },
+                { id: 'kneepads', name: 'Genouillères' },
+            ],
+        },
+    ];
 
 
 
@@ -79,123 +100,141 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         form.setFieldValue("workProcessId", "");
     }, [form.values.department])
     return (
-        <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
-            <div className="flex justify-between items-center mb-2">
-
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Incident Information</h2>
-                <Select {...form.getInputProps("status")} data={incidentStatuses} allowDeselect={false} />
-            </div>
-            <div className="grid grid-cols-1 gap-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <TextInput disabled {...form.getInputProps("number")} readOnly label="Incident Number" placeholder="Enter incident number" withAsterisk />
-                    <TextInput {...form.getInputProps("title")} label="Incident Title" placeholder="Enter incident title" withAsterisk />
-
-                    <DateTimePicker maxDate={form.values.discoveryTime} {...form.getInputProps("occurredAt")} label="Incident Date and Time" placeholder="Pick date and time" withAsterisk />
-                    <DateTimePicker minDate={form.values.occurredAt} maxDate={new Date()} {...form.getInputProps("discoveryTime")} label="Discovery Date and Time" placeholder="Pick date and time" withAsterisk />
-
+        <div className="space-y-4">
+            {/* Carte 1 : Informations générales (numéro retiré, déjà visible dans le header de la page) */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-teal-100/80">
+                            <IconInfoSquareRounded size={14} className="text-teal-700" />
+                        </div>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">Informations générales</h2>
+                    </div>
+                    <Select size="xs" {...form.getInputProps("status")} data={incidentStatuses} allowDeselect={false} w={180} />
+                </header>
+                <div className="p-4 grid grid-cols-1 gap-3">
+                    <TextInput size="sm" {...form.getInputProps("title")} label="Titre de l'incident" placeholder="Description courte et factuelle" withAsterisk />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <DateTimePicker size="sm" maxDate={form.values.discoveryTime} {...form.getInputProps("occurredAt")} label="Date et heure de survenance" placeholder="Sélectionner la date et l'heure" withAsterisk />
+                        <DateTimePicker size="sm" minDate={form.values.occurredAt} maxDate={new Date()} {...form.getInputProps("discoveryTime")} label="Date et heure de découverte" placeholder="Sélectionner la date et l'heure" withAsterisk />
+                    </div>
                 </div>
+            </section>
 
-                <Checkbox.Group size="md"
-                    {...form.getInputProps("ppe")}
-                    label="Personal Protective Equipment (PPE)"
-                >
-                    <div className="flex flex-wrap mt-5 gap-2">
-                        {ppe.map((item: any) => (
-                            <div key={item.id} className="">
-
-                                <Checkbox.Card key={item.id}
-                                    value={item.id}
-                                    radius="md"
-                                    className="group border border-gray-300 transition duration-150 cursor-pointer 
-                                 hover:!border-primary hover:!bg-primary/10 
-                                 data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                                 data-[checked]:shadow-sm"
-                                    p="xs"
-                                >
-                                    <Group align="center" gap="xs">
-                                        <Checkbox.Indicator size="xs" className=" text-blue-600" />
-                                        <Text
-                                            size="xs"
-                                            className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
-                                        >
-                                            {item.name}
-                                        </Text>
-                                    </Group>
-                                </Checkbox.Card>
-
-                            </div>
-                        ))}
+            {/* Carte 2 : EPI organisés en 3 colonnes par catégorie anatomique */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-yellow-50/60 border-b border-yellow-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-yellow-100">
+                        <IconShield size={14} className="text-yellow-700" />
                     </div>
-                </Checkbox.Group>
-                <Divider my="sm" />
-                <div className="flex flex-col gap-5">
-                    <div className="flex justify-between items-center">
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">Équipements de protection individuelle</h2>
+                    <span className="text-[10px] text-slate-500 ml-auto">Cochez les EPI concernés ou manquants au moment de l'incident</span>
+                </header>
+                <div className="p-4">
+                    <Checkbox.Group {...form.getInputProps("ppe")}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {ppeCategories.map((cat) => (
+                                <div key={cat.label} className="bg-slate-50/60 rounded-md border border-slate-200 flex flex-col">
+                                    <div className="px-3 py-1.5 border-b border-slate-200 bg-white">
+                                        <p className="text-[11px] text-slate-700 uppercase tracking-wider">{cat.label}</p>
+                                    </div>
+                                    <div className="p-2 space-y-1.5 max-h-[180px] overflow-y-auto">
+                                        {cat.items.map((item) => (
+                                            <Checkbox.Card key={item.id}
+                                                value={item.id}
+                                                radius="md"
+                                                className="group border border-slate-200 transition duration-150 cursor-pointer w-full
+                                                 hover:!border-teal-500 hover:!bg-teal-50/60
+                                                 data-[checked]:!border-teal-500 data-[checked]:!bg-teal-50
+                                                 data-[checked]:shadow-sm bg-white"
+                                                p="xs"
+                                            >
+                                                <Group align="center" gap="xs" wrap="nowrap">
+                                                    <Checkbox.Indicator size="xs" />
+                                                    <Text size="xs" className="text-slate-800 group-data-[checked]:text-teal-800 group-data-[checked]:truncate">
+                                                        {item.name}
+                                                    </Text>
+                                                </Group>
+                                            </Checkbox.Card>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Checkbox.Group>
+                </div>
+            </section>
 
-                        <h3 className="font-medium text-lg text-gray-800 mb-4">Incident Classification</h3>
-                        <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient" >Add Incident</Button>
+            {/* Carte 3 : Classification */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-red-50/60 border-b border-red-200/70 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-red-100">
+                            <IconCategoryPlus size={14} className="text-red-700" />
+                        </div>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">Classification de l'incident</h2>
                     </div>
+                    <Button size="xs" onClick={handleAddIncident} leftSection={<IconPlus size={14} />} variant="light" color="teal">Ajouter une classification</Button>
+                </header>
+                <div className="p-4 space-y-3">
                     {form.values.incidentDetails && form.values.incidentDetails.map((x: any, index: any) => {
-
-                        return <Fieldset key={index} className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                            <div className="text-lg font-medium text-blue-500">Incident {index + 1}</div>
-                            <ActionIcon onClick={() => form.removeListItem('incidentDetails', index)} variant="filled" color="red" aria-label="Settings">
-                                <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                            </ActionIcon>
-                        </div>}>
-                            <Select withAsterisk {...form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)} onChange={(e) => handleCategoryChange(e, index)} data={categories} label="Incident Category" placeholder="Select incident category" />
+                        return <Fieldset
+                            key={index}
+                            className="grid grid-cols-2 gap-3"
+                            styles={{
+                                root: { borderColor: '#E2E8F0' },
+                                legend: { fontSize: 11, fontWeight: 600, color: '#0F766E', padding: '0 6px' }
+                            }}
+                            legend={<div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-teal-700">Incident {index + 1}</span>
+                                <ActionIcon size="xs" onClick={() => form.removeListItem('incidentDetails', index)} variant="light" color="red" aria-label="Retirer">
+                                    <IconTrash size={11} stroke={1.5} />
+                                </ActionIcon>
+                            </div>}
+                        >
+                            <Select size="sm" withAsterisk {...form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)} onChange={(e) => handleCategoryChange(e, index)} data={categories} label="Catégorie" placeholder="Sélectionner une catégorie" />
                             <div className="flex flex-col gap-1">
-
-                                <Select
-                                    withAsterisk
-                                    renderOption={renderSelectOption}{...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Incident Type" placeholder="Select incident type" />
-                                {severityLevelMap[x.severityLevelId]?.level > 3 && <Text color="red">This incident will require deep investigation</Text>}
+                                <Select size="sm" withAsterisk renderOption={renderSelectOption} {...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Type d'incident" placeholder="Sélectionner un type" />
+                                {severityLevelMap[x.severityLevelId]?.level > 3 && <Text size="xs" c="red">Cet incident nécessitera une investigation approfondie</Text>}
                             </div>
-
-                            {/* <Select readOnly {...form.getInputProps(`incidentDetails.${index}.severityLevelId`)} data={severityLevels} label="Severity Level" placeholder="Select severity level" /> */}
-
                             {(incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Blessure avec traitement" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Premiers soins" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "First Aid" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Injury with treatment") &&
-                                <div className="space-y-4 col-span-3 bg-red-50 p-4 rounded-lg mt-4">
-                                    <h3 className="font-medium text-gray-800">Injury Details</h3>
-
+                                <div className="space-y-2 col-span-2 bg-red-50/60 border border-red-200 p-3 rounded-md mt-2">
+                                    <h4 className="text-xs text-red-800 uppercase tracking-wider">Détails de la blessure</h4>
                                     <BodyPartSelect bodyParts={bodyParts} form={form} id={`incidentDetails.${index}.affectedBodyParts`} />
-
-
                                 </div>
                             }
                             {
-                                categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" && < div className="space-y-4 col-span-3 bg-green-50 p-4 rounded-lg mt-4">
-                                    <h3 className="font-medium text-gray-800">Environment Incident Details</h3>
-                                    <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Environmental Impact" />
-                                    <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Containment Measures" />
+                                categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" &&
+                                <div className="space-y-2 col-span-2 bg-green-50/60 border border-green-200 p-3 rounded-md mt-2">
+                                    <h4 className="text-xs text-green-800 uppercase tracking-wider">Détails de l'incident environnemental</h4>
+                                    <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Impact environnemental" />
+                                    <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Mesures de confinement" />
                                 </div>
                             }
                         </Fieldset>
                     })}
                 </div>
+            </section>
 
-                {/* <TextEditor withAsterisk form={form} id="description" title="Description" /> */}
-                <Divider my="sm" />
-                <div className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Location and Work Context</h2>
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <Select {...form.getInputProps("locationId")} data={locations} label="Incident Location" placeholder="Select incident location" withAsterisk />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <Select {...form.getInputProps("department")} label="Department" placeholder="Select department" withAsterisk data={departments} />
-                            <Select {...form.getInputProps("workAreaId")} label="Work Area" placeholder="Select work area" withAsterisk data={workAreas.filter((x: any) => x.departmentId == form.values.department)} />
-                            <Select {...form.getInputProps("workProcessId")} label="Work Process" placeholder="Select work process" withAsterisk data={workProcesses.filter((x: any) => x.departmentId == form.values.department)} />
-                        </div>
-                        <div>
-                            <MultiSelect hidePickedOptions {...form.getInputProps("weatherConditions")} data={weatherConditions} label="Environmental Conditions" placeholder="Select environmental conditions" withAsterisk />
-                        </div>
+            {/* Carte 4 : Localisation */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-blue-100">
+                        <IconMapPin2 size={14} className="text-blue-700" />
                     </div>
-
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">Localisation et contexte de travail</h2>
+                </header>
+                <div className="p-4 space-y-3">
+                    <Select size="sm" {...form.getInputProps("locationId")} data={locations} label="Lieu de l'incident" placeholder="Sélectionner le lieu" withAsterisk />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Select size="sm" {...form.getInputProps("department")} label="Département" placeholder="Sélectionner le département" withAsterisk data={departments} />
+                        <Select size="sm" {...form.getInputProps("workAreaId")} label="Zone de travail" placeholder="Sélectionner la zone" withAsterisk data={workAreas.filter((x: any) => x.departmentId == form.values.department)} />
+                        <Select size="sm" {...form.getInputProps("workProcessId")} label="Processus de travail" placeholder="Sélectionner le processus" withAsterisk data={workProcesses.filter((x: any) => x.departmentId == form.values.department)} />
+                    </div>
+                    <MultiSelect size="sm" hidePickedOptions {...form.getInputProps("weatherConditions")} data={weatherConditions} label="Conditions environnementales" placeholder="Sélectionner les conditions" withAsterisk />
                 </div>
-            </div>
-
-
-        </div >
+            </section>
+        </div>
     )
 }
 

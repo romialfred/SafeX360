@@ -38,7 +38,7 @@ const UpcomingEvents = () => {
                     <IconCalendarPlus size={22} />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-700">Upcoming OH&S Events</h1>
+                    <h1 className="text-2xl text-gray-700">Upcoming OH&S Events</h1>
                     <Text size="sm" c="gray.6">Stay aligned with the next inspections, audits, and key H&S activities.</Text>
                 </div>
             </div>

@@ -135,7 +135,7 @@ const UserDetails = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Users Management Details</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Users Management Details</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
 
@@ -159,12 +159,12 @@ const UserDetails = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-300  ">
                         <div className="p-6 border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-primary">
+                                <h2 className="text-lg text-primary">
                                     {employee?.name}
                                 </h2>
                             </div>
                             <div className="flex items-center gap-3 mt-2">
-                                <p className="text-sm text-gray-600">Role: <span className="font-medium text-gray-900">{apiRoleToName(profile.role)}</span></p>
+                                <p className="text-sm text-gray-600">Role: <span className="text-gray-900">{apiRoleToName(profile.role)}</span></p>
                                 <Badge color={profile.status === 'ACTIVE' ? 'green' : 'red'} variant="light">{profile.status}</Badge>
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
@@ -180,7 +180,7 @@ const UserDetails = () => {
                                     return (
                                         <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                             <div>
-                                                <h3 className="font-medium text-gray-900">{item.name}</h3>
+                                                <h3 className="text-gray-900">{item.name}</h3>
                                             </div>
                                             <div className="flex items-center space-x-4">
                                                 <div className="flex items-center space-x-2">

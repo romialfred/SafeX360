@@ -119,7 +119,7 @@ const PasswordPage = () => {
                         className="flex items-center px-4 py-2 bg-white/90 backdrop-blur-sm border-2 border-white/50 rounded-lg hover:bg-white/95 transition-all duration-200 shadow-lg group"
                     >
                         <IconWorld className="w-4 h-4 mr-2 text-blue-600 group-hover:text-blue-700" />
-                        <span className="text-sm font-bold text-gray-900">{language === 'fr' ? 'FR' : 'EN'}</span>
+                        <span className="text-sm text-gray-900">{language === 'fr' ? 'FR' : 'EN'}</span>
                         <span className="mx-2 text-gray-400">|</span>
                         <span className="text-sm text-gray-600">{language === 'fr' ? 'English' : 'Français'}</span>
                     </button>
@@ -131,7 +131,7 @@ const PasswordPage = () => {
                         <div className="flex justify-center mb-4">
                             <div className="w-full max-w-sm">
                                 <div className="text-center mb-6">
-                                    <h1 className="text-2xl font-bold text-blue-900 mb-4 drop-shadow-xl">{t.title}</h1>
+                                    <h1 className="text-2xl text-blue-900 mb-4 drop-shadow-xl">{t.title}</h1>
                                 </div>
 
                                 <div className="w-full max-w-sm relative">
@@ -141,15 +141,15 @@ const PasswordPage = () => {
                                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg mx-auto flex items-center justify-center mb-2 shadow-xl border-2 border-white">
                                                 <IconLock className="w-5 h-5 text-white drop-shadow-lg" />
                                             </div>
-                                            <h3 className="text-base font-bold text-gray-900 mb-1 drop-shadow-lg">{t.forgotTitle}</h3>
-                                            <p className="text-xs text-gray-800 font-semibold">{t.forgotSubtitle}</p>
+                                            <h3 className="text-base text-gray-900 mb-1 drop-shadow-lg">{t.forgotTitle}</h3>
+                                            <p className="text-xs text-gray-800">{t.forgotSubtitle}</p>
                                         </div>
 
                                         {/* Error */}
                                         {error && (
                                             <div className="mb-3 p-2 bg-red-50/95 border-2 border-red-400 rounded-lg flex items-center backdrop-blur-sm shadow-lg">
                                                 <IconAlertTriangle className="w-4 h-4 text-red-600 mr-2" />
-                                                <span className="text-red-800 text-xs font-bold">{error}</span>
+                                                <span className="text-red-800 text-xs">{error}</span>
                                             </div>
                                         )}
 
@@ -171,12 +171,12 @@ const PasswordPage = () => {
                                                 type="submit"
                                                 fullWidth
                                                 loading={loading}
-                                                className="!bg-gradient-to-r from-blue-500 via-green-500 to-blue-600 hover:from-blue-600 hover:via-green-600 hover:to-blue-700 shadow-xl text-sm font-bold"
+                                                className="!bg-gradient-to-r from-blue-500 via-green-500 to-blue-600 hover:from-blue-600 hover:via-green-600 hover:to-blue-700 shadow-xl text-sm"
                                                 leftSection={<IconShield size={16} />}
                                             >
                                                 {loading ? t.resetProgress : t.resetButton}
                                             </Button>
-                                            <div className="text-center ">Remember your password? <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-medium hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
+                                            <div className="text-center ">Remember your password? <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
                                         </form>
                                     </div>
                                 </div>
@@ -188,58 +188,58 @@ const PasswordPage = () => {
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <div className="text-center">
-                                        <div className="text-white font-bold text-sm drop-shadow-lg">SafeX</div>
-                                        <div className="text-cyan-100 font-bold text-sm drop-shadow-lg">360</div>
+                                        <div className="text-white text-sm drop-shadow-lg">SafeX</div>
+                                        <div className="text-cyan-100 text-sm drop-shadow-lg">360</div>
                                     </div>
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-blue-900 drop-shadow-lg">{t.healthSafety}</div>
+                                <div className="mt-2 text-sm text-blue-900 drop-shadow-lg">{t.healthSafety}</div>
                             </div>
 
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-teal-600 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <IconShield className="w-7 h-7 text-white drop-shadow-lg" />
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-green-900 drop-shadow-lg">{t.epiProtection}</div>
+                                <div className="mt-2 text-sm text-green-900 drop-shadow-lg">{t.epiProtection}</div>
                             </div>
 
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-blue-700 to-indigo-700 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <div className="text-center">
                                         <IconCircleCheck className="w-5 h-5 text-white mx-auto mb-1 drop-shadow-lg" />
-                                        <div className="text-white font-bold text-xs drop-shadow-lg">AUDIT</div>
+                                        <div className="text-white text-xs drop-shadow-lg">AUDIT</div>
                                     </div>
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-blue-900 drop-shadow-lg">{t.audit}</div>
+                                <div className="mt-2 text-sm text-blue-900 drop-shadow-lg">{t.audit}</div>
                             </div>
 
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <div className="text-center">
                                         <IconAlertTriangle className="w-5 h-5 text-white mx-auto mb-1 drop-shadow-lg" />
-                                        <div className="text-white font-bold text-xs drop-shadow-lg">RISK</div>
+                                        <div className="text-white text-xs drop-shadow-lg">RISK</div>
                                     </div>
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-red-900 drop-shadow-lg">{t.riskManagement}</div>
+                                <div className="mt-2 text-sm text-red-900 drop-shadow-lg">{t.riskManagement}</div>
                             </div>
 
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-violet-600 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <div className="text-center">
                                         <IconFileText className="w-5 h-5 text-white mx-auto mb-1 drop-shadow-lg" />
-                                        <div className="text-white font-bold text-xs drop-shadow-lg">DOCS</div>
+                                        <div className="text-white text-xs drop-shadow-lg">DOCS</div>
                                     </div>
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-purple-900 drop-shadow-lg">{t.documentManagement}</div>
+                                <div className="mt-2 text-sm text-purple-900 drop-shadow-lg">{t.documentManagement}</div>
                             </div>
 
                             <div className="flex flex-col items-center group">
                                 <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg flex items-center justify-center shadow-xl border-2 border-white group-hover:scale-110 transition-transform duration-300">
                                     <div className="text-center">
                                         <IconUsers className="w-5 h-5 text-white mx-auto mb-1 drop-shadow-lg" />
-                                        <div className="text-white font-bold text-xs drop-shadow-lg">STAKE</div>
+                                        <div className="text-white text-xs drop-shadow-lg">STAKE</div>
                                     </div>
                                 </div>
-                                <div className="mt-2 text-sm font-bold text-indigo-900 drop-shadow-lg">{t.stakeholderManagement}</div>
+                                <div className="mt-2 text-sm text-indigo-900 drop-shadow-lg">{t.stakeholderManagement}</div>
                             </div>
                         </div>
                     </div>
@@ -247,7 +247,7 @@ const PasswordPage = () => {
 
                 {/* Footer */}
                 <div className="w-full p-2 text-center flex-shrink-0">
-                    <div className="text-sm text-blue-900 font-medium drop-shadow-lg">
+                    <div className="text-sm text-blue-900 drop-shadow-lg">
                         Copyright Mine Xpert © 2025 All Rights Reserved
                     </div>
                 </div>

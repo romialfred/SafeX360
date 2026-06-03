@@ -93,7 +93,7 @@ const AnnualDataFile = () => {
         const action = capitalizeFirstLetter(status);
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -297,14 +297,14 @@ const AnnualDataFile = () => {
                             />
                             <Column align="center" style={{ fontWeight: 'normal', fontSize: "14px" }} field="leadAuditor" header="Lead Auditor" body={leadAuditorBodyTemplate} />
                             <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Category" body={(rowData) => (
-                                <span className={`px-3 py-1  rounded-full !capitalize text-sm font-medium ${getCategoryStyles(capitalizeFirstLetter(rowData.category))}`}>
+                                <span className={`px-3 py-1  rounded-full !capitalize text-sm ${getCategoryStyles(capitalizeFirstLetter(rowData.category))}`}>
                                     {capitalizeFirstLetter(rowData.category)}
                                 </span>
                             )} />
                             <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="startDate" header="Start Date" />
                             <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="endDate" header="End Date" />
                             <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyles(rowData.planningStatus)}`}>
+                                <span className={`px-3 py-1 rounded-full text-sm ${getStatusStyles(rowData.planningStatus)}`}>
                                     {capitalizeFirstLetter(rowData.planningStatus)}
                                 </span>
                             )} />

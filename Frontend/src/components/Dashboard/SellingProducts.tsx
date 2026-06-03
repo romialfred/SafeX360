@@ -31,7 +31,7 @@ const SellingProducts = () => {
 
     return (
         <Card shadow="sm" p="lg" radius="md" withBorder style={{ backgroundColor: primary }}>
-            <Text size="lg" fw={700} color="white">Best selling products</Text>
+            <Text size="lg" color="white">Best selling products</Text>
             <Text size="sm" color="white" mb="md">Overview 2025</Text>
 
             <Box style={{ textAlign: 'center', marginTop: '16px', marginBottom: '-70px' }}>
@@ -44,7 +44,7 @@ const SellingProducts = () => {
                         <Box key={i}>
                             <Stack gap="xs" justify="space-between" align="center" style={{ display: 'flex', flexDirection: 'row' }}>
                                 <Box>
-                                    <Text size="md" fw={600}>{sell.product}</Text>
+                                    <Text size="md">{sell.product}</Text>
                                     <Text size="sm" color="dimmed">${sell.price}</Text>
                                 </Box>
                                 <Chip

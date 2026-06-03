@@ -23,6 +23,7 @@ import {
     IconClipboardCheck,
     IconMessage,
 } from '@tabler/icons-react';
+import PageHeader from '../../UtilityComp/PageHeader';
 
 
 interface TableField {
@@ -43,77 +44,77 @@ interface DatabaseTable {
 const databaseTables: DatabaseTable[] = [
     {
         name: 'users',
-        description: 'User accounts and authentication information',
+        description: "Comptes utilisateurs et informations d'authentification",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each user',
+                description: "Identifiant unique de chaque utilisateur",
                 example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
             },
             {
                 name: 'first_name',
                 type: 'VARCHAR(100)',
                 constraints: ['NOT NULL'],
-                description: 'User\'s first name',
-                example: 'John'
+                description: "Prénom de l'utilisateur",
+                example: 'Jean'
             },
             {
                 name: 'last_name',
                 type: 'VARCHAR(100)',
                 constraints: ['NOT NULL'],
-                description: 'User\'s last name',
-                example: 'Smith'
+                description: "Nom de famille de l'utilisateur",
+                example: 'Dupont'
             },
             {
                 name: 'email',
                 type: 'VARCHAR(255)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'User\'s email address for login',
-                example: 'john.smith@company.com'
+                description: "Adresse email pour la connexion",
+                example: 'jean.dupont@entreprise.com'
             },
             {
                 name: 'role_id',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY'],
-                description: 'Reference to user role',
+                description: "Référence vers le rôle utilisateur",
                 example: 'b1ffbc99-9c0b-4ef8-bb6d-6bb9bd380a22'
             },
             {
                 name: 'department',
                 type: 'VARCHAR(100)',
                 constraints: [],
-                description: 'User\'s department',
-                example: 'Health & Safety'
+                description: "Département de l'utilisateur",
+                example: 'Santé & Sécurité'
             },
             {
                 name: 'position',
                 type: 'VARCHAR(100)',
                 constraints: [],
-                description: 'User\'s job position',
-                example: 'Safety Coordinator'
+                description: "Poste de l'utilisateur",
+                example: 'Coordinateur Sécurité'
             },
             {
                 name: 'is_active',
                 type: 'BOOLEAN',
                 constraints: ['DEFAULT true'],
-                description: 'Whether the user account is active',
+                description: "Statut du compte utilisateur (actif/inactif)",
                 example: 'true'
             },
             {
                 name: 'created_at',
                 type: 'TIMESTAMP',
                 constraints: ['DEFAULT CURRENT_TIMESTAMP'],
-                description: 'Account creation timestamp',
-                example: '2024-01-15 08:00:00'
+                description: "Date de création du compte",
+                example: '2026-01-15 08:00:00'
             },
             {
                 name: 'last_login',
                 type: 'TIMESTAMP',
                 constraints: [],
-                description: 'Last login timestamp',
-                example: '2024-01-20 14:30:00'
+                description: "Date de dernière connexion",
+                example: '2026-01-20 14:30:00'
             }
         ],
         relations: [
@@ -124,84 +125,84 @@ const databaseTables: DatabaseTable[] = [
     },
     {
         name: 'incidents',
-        description: 'Safety incidents and accident reports',
+        description: "Incidents de sécurité et rapports d'accidents",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each incident',
+                description: "Identifiant unique de chaque incident",
                 example: 'c2ffbc99-9c0b-4ef8-bb6d-6bb9bd380a33'
             },
             {
                 name: 'incident_number',
                 type: 'VARCHAR(50)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'Human-readable incident number',
-                example: 'INC-2024-001'
+                description: "Numéro d'incident lisible (humain)",
+                example: 'INC-2026-001'
             },
             {
                 name: 'title',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Brief title of the incident',
-                example: 'Slip and fall in warehouse'
+                description: "Titre court de l'incident",
+                example: "Glissade et chute dans l'entrepôt"
             },
             {
                 name: 'description',
                 type: 'TEXT',
                 constraints: ['NOT NULL'],
-                description: 'Detailed description of what happened',
-                example: 'Employee slipped on wet floor near loading dock'
+                description: "Description détaillée des faits",
+                example: "Employé a glissé sur un sol mouillé près du quai de chargement"
             },
             {
                 name: 'incident_date',
                 type: 'TIMESTAMP',
                 constraints: ['NOT NULL'],
-                description: 'When the incident occurred',
-                example: '2024-01-15 10:30:00'
+                description: "Date et heure de survenue de l'incident",
+                example: '2026-01-15 10:30:00'
             },
             {
                 name: 'location',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Where the incident occurred',
-                example: 'Warehouse A - Loading Dock 3'
+                description: "Lieu où l'incident s'est produit",
+                example: "Entrepôt A - Quai de chargement 3"
             },
             {
                 name: 'severity',
                 type: 'ENUM',
                 constraints: ['CHECK (severity IN (\'minor\', \'moderate\', \'major\', \'critical\'))'],
-                description: 'Severity level of the incident',
+                description: "Niveau de gravité de l'incident",
                 example: 'moderate'
             },
             {
                 name: 'status',
                 type: 'ENUM',
                 constraints: ['CHECK (status IN (\'open\', \'investigating\', \'closed\'))', 'DEFAULT \'open\''],
-                description: 'Current status of incident investigation',
+                description: "Statut actuel de l'investigation",
                 example: 'investigating'
             },
             {
                 name: 'created_by',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY', 'NOT NULL'],
-                description: 'User who reported the incident',
+                description: "Utilisateur ayant déclaré l'incident",
                 example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
             },
             {
                 name: 'assigned_to',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY'],
-                description: 'User assigned to investigate',
+                description: "Utilisateur assigné à l'investigation",
                 example: 'b1ffbc99-9c0b-4ef8-bb6d-6bb9bd380a22'
             },
             {
                 name: 'created_at',
                 type: 'TIMESTAMP',
                 constraints: ['DEFAULT CURRENT_TIMESTAMP'],
-                description: 'When the incident was reported',
-                example: '2024-01-15 11:00:00'
+                description: "Date de déclaration de l'incident",
+                example: '2026-01-15 11:00:00'
             }
         ],
         relations: [
@@ -212,105 +213,105 @@ const databaseTables: DatabaseTable[] = [
     },
     {
         name: 'chemical_risks',
-        description: 'Chemical risk identification and assessment records',
+        description: "Identification et évaluation des risques chimiques",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each chemical risk',
+                description: "Identifiant unique du risque chimique",
                 example: 'd3ffbc99-9c0b-4ef8-bb6d-6bb9bd380a44'
             },
             {
                 name: 'risk_id',
                 type: 'VARCHAR(50)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'Human-readable risk identifier',
-                example: 'CHR-2024-001'
+                description: "Identifiant lisible du risque",
+                example: 'CHR-2026-001'
             },
             {
                 name: 'risk_title',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Short descriptive title of the risk',
-                example: 'Acid Burns from Sulfuric Acid Handling'
+                description: "Titre descriptif court du risque",
+                example: "Brûlures à l'acide lors de la manipulation d'acide sulfurique"
             },
             {
                 name: 'chemical_name',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Official name of the chemical',
-                example: 'Sulfuric Acid 98%'
+                description: "Nom officiel du produit chimique",
+                example: 'Acide sulfurique 98%'
             },
             {
                 name: 'cas_number',
                 type: 'VARCHAR(20)',
                 constraints: [],
-                description: 'Chemical Abstracts Service number',
+                description: "Numéro CAS (Chemical Abstracts Service)",
                 example: '7664-93-9'
             },
             {
                 name: 'classification',
                 type: 'ENUM',
                 constraints: ['CHECK (classification IN (\'flammable\', \'toxic\', \'corrosive\', \'oxidizing\', \'explosive\', \'irritant\', \'carcinogenic\'))'],
-                description: 'GHS hazard classification',
+                description: "Classification SGH du danger",
                 example: 'corrosive'
             },
             {
                 name: 'department',
                 type: 'VARCHAR(100)',
                 constraints: ['NOT NULL'],
-                description: 'Department where chemical is used',
-                example: 'Laboratory'
+                description: "Département où le produit est utilisé",
+                example: 'Laboratoire'
             },
             {
                 name: 'likelihood',
                 type: 'INTEGER',
                 constraints: ['CHECK (likelihood >= 1 AND likelihood <= 5)'],
-                description: 'Probability of occurrence (1-5 scale)',
+                description: "Probabilité d'occurrence (échelle 1-5)",
                 example: '3'
             },
             {
                 name: 'severity',
                 type: 'INTEGER',
                 constraints: ['CHECK (severity >= 1 AND severity <= 5)'],
-                description: 'Impact severity (1-5 scale)',
+                description: "Gravité de l'impact (échelle 1-5)",
                 example: '4'
             },
             {
                 name: 'risk_rating',
                 type: 'INTEGER',
                 constraints: ['GENERATED ALWAYS AS (likelihood * severity) STORED'],
-                description: 'Calculated risk rating (likelihood × severity)',
+                description: "Score de risque calculé (probabilité × gravité)",
                 example: '12'
             },
             {
                 name: 'status',
                 type: 'ENUM',
                 constraints: ['CHECK (status IN (\'open\', \'in_progress\', \'closed\'))', 'DEFAULT \'open\''],
-                description: 'Current status of risk management',
+                description: "Statut actuel de la gestion du risque",
                 example: 'in_progress'
             },
             {
                 name: 'assigned_to',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY'],
-                description: 'User responsible for risk management',
+                description: "Utilisateur responsable de la gestion du risque",
                 example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
             },
             {
                 name: 'date_identified',
                 type: 'DATE',
                 constraints: ['NOT NULL'],
-                description: 'Date when risk was identified',
-                example: '2024-01-15'
+                description: "Date d'identification du risque",
+                example: '2026-01-15'
             },
             {
                 name: 'next_review',
                 type: 'DATE',
                 constraints: [],
-                description: 'Scheduled date for next review',
-                example: '2024-04-15'
+                description: "Date prévue pour la prochaine revue",
+                example: '2026-04-15'
             }
         ],
         relations: [
@@ -320,84 +321,84 @@ const databaseTables: DatabaseTable[] = [
     },
     {
         name: 'actions',
-        description: 'Action items and corrective measures',
+        description: "Actions et mesures correctives",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each action',
+                description: "Identifiant unique de chaque action",
                 example: 'e4ffbc99-9c0b-4ef8-bb6d-6bb9bd380a55'
             },
             {
                 name: 'action_number',
                 type: 'VARCHAR(50)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'Human-readable action number',
-                example: 'ACT-2024-001'
+                description: "Numéro d'action lisible (humain)",
+                example: 'ACT-2026-001'
             },
             {
                 name: 'title',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Brief title of the action',
-                example: 'Install non-slip flooring'
+                description: "Titre court de l'action",
+                example: "Installer un revêtement antidérapant"
             },
             {
                 name: 'description',
                 type: 'TEXT',
                 constraints: ['NOT NULL'],
-                description: 'Detailed description of required action',
-                example: 'Install anti-slip flooring material in warehouse loading areas'
+                description: "Description détaillée de l'action requise",
+                example: "Installer un revêtement antidérapant dans les zones de chargement"
             },
             {
                 name: 'priority',
                 type: 'ENUM',
                 constraints: ['CHECK (priority IN (\'low\', \'medium\', \'high\', \'critical\'))', 'DEFAULT \'medium\''],
-                description: 'Priority level of the action',
+                description: "Niveau de priorité de l'action",
                 example: 'high'
             },
             {
                 name: 'status',
                 type: 'ENUM',
                 constraints: ['CHECK (status IN (\'not_started\', \'in_progress\', \'completed\', \'cancelled\'))', 'DEFAULT \'not_started\''],
-                description: 'Current status of action implementation',
+                description: "Statut actuel de mise en œuvre",
                 example: 'in_progress'
             },
             {
                 name: 'assigned_to',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY', 'NOT NULL'],
-                description: 'User responsible for completing action',
+                description: "Utilisateur responsable de la réalisation",
                 example: 'b1ffbc99-9c0b-4ef8-bb6d-6bb9bd380a22'
             },
             {
                 name: 'due_date',
                 type: 'DATE',
                 constraints: ['NOT NULL'],
-                description: 'Target completion date',
-                example: '2024-02-15'
+                description: "Date cible de fin",
+                example: '2026-02-15'
             },
             {
                 name: 'completed_date',
                 type: 'DATE',
                 constraints: [],
-                description: 'Actual completion date',
-                example: '2024-02-10'
+                description: "Date réelle de fin",
+                example: '2026-02-10'
             },
             {
                 name: 'progress',
                 type: 'INTEGER',
                 constraints: ['CHECK (progress >= 0 AND progress <= 100)', 'DEFAULT 0'],
-                description: 'Completion percentage (0-100)',
+                description: "Pourcentage d'avancement (0-100)",
                 example: '75'
             },
             {
                 name: 'created_at',
                 type: 'TIMESTAMP',
                 constraints: ['DEFAULT CURRENT_TIMESTAMP'],
-                description: 'When the action was created',
-                example: '2024-01-20 09:00:00'
+                description: "Date de création de l'action",
+                example: '2026-01-20 09:00:00'
             }
         ],
         relations: [
@@ -408,91 +409,91 @@ const databaseTables: DatabaseTable[] = [
     },
     {
         name: 'audits',
-        description: 'Internal and external audit records',
+        description: "Audits internes et externes",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each audit',
+                description: "Identifiant unique de chaque audit",
                 example: 'f5ffbc99-9c0b-4ef8-bb6d-6bb9bd380a66'
             },
             {
                 name: 'audit_number',
                 type: 'VARCHAR(50)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'Human-readable audit number',
-                example: 'AUD-2024-001'
+                description: "Numéro d'audit lisible (humain)",
+                example: 'AUD-2026-001'
             },
             {
                 name: 'title',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Title of the audit',
-                example: 'ISO 45001 Internal Audit - Production'
+                description: "Titre de l'audit",
+                example: 'Audit interne ISO 45001 - Production'
             },
             {
                 name: 'audit_type',
                 type: 'ENUM',
                 constraints: ['CHECK (audit_type IN (\'internal\', \'external\', \'certification\', \'surveillance\'))', 'NOT NULL'],
-                description: 'Type of audit being conducted',
+                description: "Type d'audit réalisé",
                 example: 'internal'
             },
             {
                 name: 'scope',
                 type: 'TEXT',
                 constraints: ['NOT NULL'],
-                description: 'Scope and areas covered by audit',
-                example: 'Production processes, safety procedures, PPE compliance'
+                description: "Périmètre et domaines couverts",
+                example: 'Processus de production, procédures de sécurité, conformité EPI'
             },
             {
                 name: 'auditor',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY', 'NOT NULL'],
-                description: 'Lead auditor conducting the audit',
+                description: "Auditeur principal en charge",
                 example: 'c2ffbc99-9c0b-4ef8-bb6d-6bb9bd380a33'
             },
             {
                 name: 'auditee_department',
                 type: 'VARCHAR(100)',
                 constraints: ['NOT NULL'],
-                description: 'Department being audited',
+                description: "Département audité",
                 example: 'Production'
             },
             {
                 name: 'planned_date',
                 type: 'DATE',
                 constraints: ['NOT NULL'],
-                description: 'Planned audit date',
-                example: '2024-02-01'
+                description: "Date d'audit planifiée",
+                example: '2026-02-01'
             },
             {
                 name: 'actual_date',
                 type: 'DATE',
                 constraints: [],
-                description: 'Actual audit date',
-                example: '2024-02-01'
+                description: "Date d'audit réelle",
+                example: '2026-02-01'
             },
             {
                 name: 'status',
                 type: 'ENUM',
                 constraints: ['CHECK (status IN (\'planned\', \'in_progress\', \'completed\', \'cancelled\'))', 'DEFAULT \'planned\''],
-                description: 'Current status of the audit',
+                description: "Statut actuel de l'audit",
                 example: 'completed'
             },
             {
                 name: 'findings_count',
                 type: 'INTEGER',
                 constraints: ['DEFAULT 0'],
-                description: 'Number of findings identified',
+                description: "Nombre de constats identifiés",
                 example: '3'
             },
             {
                 name: 'created_at',
                 type: 'TIMESTAMP',
                 constraints: ['DEFAULT CURRENT_TIMESTAMP'],
-                description: 'When the audit was scheduled',
-                example: '2024-01-15 10:00:00'
+                description: "Date de programmation de l'audit",
+                example: '2026-01-15 10:00:00'
             }
         ],
         relations: [
@@ -502,105 +503,105 @@ const databaseTables: DatabaseTable[] = [
     },
     {
         name: 'ppe_requests',
-        description: 'Personal Protective Equipment requests and approvals',
+        description: "Demandes et approbations d'équipements de protection individuelle (EPI)",
         fields: [
             {
                 name: 'id',
                 type: 'UUID',
                 constraints: ['PRIMARY KEY', 'DEFAULT gen_random_uuid()'],
-                description: 'Unique identifier for each PPE request',
+                description: "Identifiant unique de chaque demande EPI",
                 example: 'g6ffbc99-9c0b-4ef8-bb6d-6bb9bd380a77'
             },
             {
                 name: 'request_number',
                 type: 'VARCHAR(50)',
                 constraints: ['UNIQUE', 'NOT NULL'],
-                description: 'Human-readable request number',
-                example: 'PPE-REQ-2024-001'
+                description: "Numéro de demande lisible (humain)",
+                example: 'PPE-REQ-2026-001'
             },
             {
                 name: 'item_name',
                 type: 'VARCHAR(255)',
                 constraints: ['NOT NULL'],
-                description: 'Name of PPE item requested',
-                example: 'Safety Helmets - Hard Hat Type II'
+                description: "Nom de l'EPI demandé",
+                example: 'Casques de sécurité - Type II'
             },
             {
                 name: 'item_category',
                 type: 'ENUM',
                 constraints: ['CHECK (item_category IN (\'head_protection\', \'eye_protection\', \'respiratory\', \'hand_protection\', \'foot_protection\', \'body_protection\', \'fall_protection\'))', 'NOT NULL'],
-                description: 'Category of PPE item',
+                description: "Catégorie d'EPI",
                 example: 'head_protection'
             },
             {
                 name: 'quantity',
                 type: 'INTEGER',
                 constraints: ['CHECK (quantity > 0)', 'NOT NULL'],
-                description: 'Number of items requested',
+                description: "Quantité d'articles demandés",
                 example: '25'
             },
             {
                 name: 'unit_cost',
                 type: 'DECIMAL(10,2)',
                 constraints: ['CHECK (unit_cost >= 0)'],
-                description: 'Cost per unit in local currency',
+                description: "Coût unitaire en devise locale",
                 example: '29.99'
             },
             {
                 name: 'total_cost',
                 type: 'DECIMAL(10,2)',
                 constraints: ['GENERATED ALWAYS AS (quantity * unit_cost) STORED'],
-                description: 'Total cost (quantity × unit_cost)',
+                description: "Coût total (quantité × coût unitaire)",
                 example: '749.75'
             },
             {
                 name: 'justification',
                 type: 'TEXT',
                 constraints: ['NOT NULL'],
-                description: 'Business justification for the request',
-                example: 'Replacement of damaged helmets and new hires in construction team'
+                description: "Justification métier de la demande",
+                example: "Remplacement de casques endommagés et nouvelles embauches sur le chantier"
             },
             {
                 name: 'requested_by',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY', 'NOT NULL'],
-                description: 'User who made the request',
+                description: "Utilisateur ayant fait la demande",
                 example: 'd3ffbc99-9c0b-4ef8-bb6d-6bb9bd380a44'
             },
             {
                 name: 'department',
                 type: 'VARCHAR(100)',
                 constraints: ['NOT NULL'],
-                description: 'Department making the request',
+                description: "Département à l'origine de la demande",
                 example: 'Construction'
             },
             {
                 name: 'status',
                 type: 'ENUM',
                 constraints: ['CHECK (status IN (\'pending\', \'approved\', \'rejected\', \'ordered\', \'delivered\'))', 'DEFAULT \'pending\''],
-                description: 'Current status of the request',
+                description: "Statut actuel de la demande",
                 example: 'approved'
             },
             {
                 name: 'approved_by',
                 type: 'UUID',
                 constraints: ['FOREIGN KEY'],
-                description: 'User who approved the request',
+                description: "Utilisateur ayant approuvé la demande",
                 example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
             },
             {
                 name: 'approved_date',
                 type: 'TIMESTAMP',
                 constraints: [],
-                description: 'When the request was approved',
-                example: '2024-01-22 14:30:00'
+                description: "Date d'approbation",
+                example: '2026-01-22 14:30:00'
             },
             {
                 name: 'created_at',
                 type: 'TIMESTAMP',
                 constraints: ['DEFAULT CURRENT_TIMESTAMP'],
-                description: 'When the request was created',
-                example: '2024-01-20 09:15:00'
+                description: "Date de création de la demande",
+                example: '2026-01-20 09:15:00'
             }
         ],
         relations: [
@@ -615,86 +616,86 @@ const TechnicalDocumentation = () => {
     const [selectedTable, setSelectedTable] = useState<string>('users');
 
     const tabs = [
-        { id: 'architecture', label: 'System Architecture', icon: IconDeviceDesktop },
-        { id: 'database', label: 'Database Documentation', icon: IconDatabase },
-        { id: 'dictionary', label: 'Data Dictionary', icon: IconBook }
+        { id: 'architecture', label: 'Architecture système', icon: IconDeviceDesktop },
+        { id: 'database', label: 'Documentation base de données', icon: IconDatabase },
+        { id: 'dictionary', label: 'Dictionnaire de données', icon: IconBook }
     ];
 
     const getConstraintIcon = (constraint: string) => {
-        if (constraint.includes('PRIMARY KEY')) return <IconKey className="w-4 h-4 text-yellow-600" title="Primary Key" />;
-        if (constraint.includes('FOREIGN KEY')) return <IconLink className="w-4 h-4 text-blue-600" title="Foreign Key" />;
-        if (constraint.includes('UNIQUE')) return <IconHash className="w-4 h-4 text-purple-600" title="Unique" />;
-        if (constraint.includes('NOT NULL')) return <IconShield className="w-4 h-4 text-red-600" title="Not Null" />;
-        if (constraint.includes('DEFAULT')) return <IconSettings className="w-4 h-4 text-green-600" title="Default Value" />;
-        if (constraint.includes('CHECK')) return <IconCircleCheck className="w-4 h-4 text-orange-600" title="Check Constraint" />;
+        if (constraint.includes('PRIMARY KEY')) return <IconKey className="w-4 h-4 text-yellow-600" />;
+        if (constraint.includes('FOREIGN KEY')) return <IconLink className="w-4 h-4 text-blue-600" />;
+        if (constraint.includes('UNIQUE')) return <IconHash className="w-4 h-4 text-purple-600" />;
+        if (constraint.includes('NOT NULL')) return <IconShield className="w-4 h-4 text-red-600" />;
+        if (constraint.includes('DEFAULT')) return <IconSettings className="w-4 h-4 text-green-600" />;
+        if (constraint.includes('CHECK')) return <IconCircleCheck className="w-4 h-4 text-orange-600" />;
         return null;
     };
 
     const renderSystemArchitecture = () => (
         <div className="space-y-8">
-            {/* Architecture Overview */}
+            {/* Aperçu de l'architecture */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <div className="flex items-center mb-6">
-                    <IconDeviceDesktop className="w-8 h-8 text-blue-600 mr-4" />
+                    <IconDeviceDesktop className="w-8 h-8 text-violet-600 mr-4" />
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Microservices Architecture Overview</h2>
-                        <p className="text-gray-600 italic">Health & Safety Management Platform</p>
+                        <h2 className="text-base text-gray-900">Vue d'ensemble de l'architecture microservices</h2>
+                        <p className="text-sm text-gray-600">Plateforme de management Santé & Sécurité</p>
                     </div>
                 </div>
 
-                {/* Architecture Diagram */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 mb-8">
+                {/* Schéma d'architecture */}
+                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-8 mb-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {/* Frontend Layer */}
-                        <div className="bg-white rounded-lg p-6 shadow-sm border border-blue-200">
+                        {/* Couche Frontend */}
+                        <div className="bg-white rounded-lg p-6 shadow-sm border border-cyan-200">
                             <div className="flex items-center mb-4">
-                                <IconGlobe className="w-6 h-6 text-blue-600 mr-3" />
-                                <h3 className="text-lg font-semibold text-gray-900">Frontend Layer</h3>
+                                <IconGlobe className="w-6 h-6 text-cyan-600 mr-3" />
+                                <h3 className="text-base text-gray-900">Couche Frontend</h3>
                             </div>
                             <div className="space-y-3">
-                                <div className="flex items-center p-2 bg-blue-50 rounded">
-                                    <IconDeviceDesktop className="w-4 h-4 text-blue-600 mr-2" />
+                                <div className="flex items-center p-2 bg-cyan-50 rounded">
+                                    <IconDeviceDesktop className="w-4 h-4 text-cyan-600 mr-2" />
                                     <span className="text-sm">React SPA</span>
                                 </div>
-                                <div className="flex items-center p-2 bg-blue-50 rounded">
-                                    <IconGlobe className="w-4 h-4 text-blue-600 mr-2" />
-                                    <span className="text-sm">Mobile App</span>
+                                <div className="flex items-center p-2 bg-cyan-50 rounded">
+                                    <IconGlobe className="w-4 h-4 text-cyan-600 mr-2" />
+                                    <span className="text-sm">Application mobile</span>
                                 </div>
-                                <div className="flex items-center p-2 bg-blue-50 rounded">
-                                    <IconBolt className="w-4 h-4 text-blue-600 mr-2" />
+                                <div className="flex items-center p-2 bg-cyan-50 rounded">
+                                    <IconBolt className="w-4 h-4 text-cyan-600 mr-2" />
                                     <span className="text-sm">PWA</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* API Gateway */}
+                        {/* Passerelle API */}
                         <div className="bg-white rounded-lg p-6 shadow-sm border border-green-200">
                             <div className="flex items-center mb-4">
                                 <IconServer className="w-6 h-6 text-green-600 mr-3" />
-                                <h3 className="text-lg font-semibold text-gray-900">API Gateway</h3>
+                                <h3 className="text-base text-gray-900">Passerelle API</h3>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex items-center p-2 bg-green-50 rounded">
                                     <IconLock className="w-4 h-4 text-green-600 mr-2" />
-                                    <span className="text-sm">Authentication</span>
+                                    <span className="text-sm">Authentification</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-green-50 rounded">
                                     <IconShield className="w-4 h-4 text-green-600 mr-2" />
-                                    <span className="text-sm">Rate Limiting</span>
+                                    <span className="text-sm">Limitation de débit</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-green-50 rounded">
                                     <IconChartBar className="w-4 h-4 text-green-600 mr-2" />
-                                    <span className="text-sm">Load Balancing</span>
+                                    <span className="text-sm">Équilibrage de charge</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Data Layer */}
+                        {/* Couche données */}
                         <div className="bg-white rounded-lg p-6 shadow-sm border border-purple-200">
                             <div className="flex items-center mb-4">
                                 <IconDatabase className="w-6 h-6 text-purple-600 mr-3" />
-                                <h3 className="text-lg font-semibold text-gray-900">Data Layer</h3>
+                                <h3 className="text-base text-gray-900">Couche données</h3>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex items-center p-2 bg-purple-50 rounded">
@@ -703,7 +704,7 @@ const TechnicalDocumentation = () => {
                                 </div>
                                 <div className="flex items-center p-2 bg-purple-50 rounded">
                                     <IconBolt className="w-4 h-4 text-purple-600 mr-2" />
-                                    <span className="text-sm">Redis Cache</span>
+                                    <span className="text-sm">Cache Redis</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-purple-50 rounded">
                                     <IconFileText className="w-4 h-4 text-purple-600 mr-2" />
@@ -714,58 +715,58 @@ const TechnicalDocumentation = () => {
                     </div>
                 </div>
 
-                {/* Microservices Grid */}
+                {/* Grille des microservices */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {[
-                        { name: 'User Management', icon: IconUsers, color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { name: 'Incident Service', icon: IconAlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
-                        { name: 'Risk Service', icon: IconShield, color: 'text-orange-600', bg: 'bg-orange-50' },
-                        { name: 'Action Service', icon: IconTarget, color: 'text-green-600', bg: 'bg-green-50' },
-                        { name: 'Audit Service', icon: IconClipboardCheck, color: 'text-purple-600', bg: 'bg-purple-50' },
-                        { name: 'PPE Service', icon: IconHelmet, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                        { name: 'Document Service', icon: IconFileText, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-                        { name: 'Notification Service', icon: IconMessage, color: 'text-pink-600', bg: 'bg-pink-50' }
+                        { name: 'Gestion utilisateurs', icon: IconUsers, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+                        { name: 'Service Incidents', icon: IconAlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
+                        { name: 'Service Risques', icon: IconShield, color: 'text-orange-600', bg: 'bg-orange-50' },
+                        { name: 'Service Actions', icon: IconTarget, color: 'text-green-600', bg: 'bg-green-50' },
+                        { name: 'Service Audits', icon: IconClipboardCheck, color: 'text-purple-600', bg: 'bg-purple-50' },
+                        { name: 'Service EPI', icon: IconHelmet, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { name: 'Service Documents', icon: IconFileText, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+                        { name: 'Service Notifications', icon: IconMessage, color: 'text-pink-600', bg: 'bg-pink-50' }
                     ].map((service, index) => (
                         <div key={index} className={`${service.bg} rounded-lg p-4 border border-gray-200`}>
                             <div className="flex items-center mb-2">
                                 <service.icon className={`w-5 h-5 ${service.color} mr-2`} />
-                                <h4 className="font-medium text-gray-900 text-sm">{service.name}</h4>
+                                <h4 className="text-gray-900 text-sm">{service.name}</h4>
                             </div>
-                            <p className="text-xs text-gray-600">Independent deployment & scaling</p>
+                            <p className="text-xs text-gray-600">Déploiement et mise à l'échelle indépendants</p>
                         </div>
                     ))}
                 </div>
 
-                {/* Benefits */}
+                {/* Bénéfices */}
                 <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Microservices Benefits</h3>
+                    <h3 className="text-base text-gray-900 mb-4">Avantages des microservices</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start">
                             <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-medium text-gray-900">Independent Deployment</h4>
-                                <p className="text-sm text-gray-600">Each service can be deployed independently</p>
+                                <h4 className="text-gray-900 text-sm">Déploiement indépendant</h4>
+                                <p className="text-sm text-gray-600">Chaque service peut être déployé séparément</p>
                             </div>
                         </div>
                         <div className="flex items-start">
                             <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-medium text-gray-900">Technology Diversity</h4>
-                                <p className="text-sm text-gray-600">Different technologies per service</p>
+                                <h4 className="text-gray-900 text-sm">Diversité technologique</h4>
+                                <p className="text-sm text-gray-600">Technologies différentes par service</p>
                             </div>
                         </div>
                         <div className="flex items-start">
                             <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-medium text-gray-900">Fault Isolation</h4>
-                                <p className="text-sm text-gray-600">Failures don't cascade across services</p>
+                                <h4 className="text-gray-900 text-sm">Isolation des pannes</h4>
+                                <p className="text-sm text-gray-600">Les pannes ne se propagent pas entre services</p>
                             </div>
                         </div>
                         <div className="flex items-start">
                             <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-medium text-gray-900">Team Autonomy</h4>
-                                <p className="text-sm text-gray-600">Teams can work independently</p>
+                                <h4 className="text-gray-900 text-sm">Autonomie des équipes</h4>
+                                <p className="text-sm text-gray-600">Les équipes peuvent travailler de manière indépendante</p>
                             </div>
                         </div>
                     </div>
@@ -776,148 +777,148 @@ const TechnicalDocumentation = () => {
 
     const renderDatabaseDocumentation = () => (
         <div className="space-y-8">
-            {/* Database Overview */}
+            {/* Vue d'ensemble base de données */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <div className="flex items-center mb-6">
-                    <IconDatabase className="w-8 h-8 text-blue-600 mr-4" />
+                    <IconDatabase className="w-8 h-8 text-violet-600 mr-4" />
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Database Schema Documentation</h2>
-                        <p className="text-gray-600 italic">Entity Relationship Diagram and Database Structure</p>
+                        <h2 className="text-base text-gray-900">Documentation du schéma de base de données</h2>
+                        <p className="text-sm text-gray-600">Diagramme entité-relation et structure de la base</p>
                     </div>
                 </div>
 
-                {/* ERD Diagram */}
+                {/* Diagramme ERD */}
                 <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-8">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Entity Relationship Diagram</h3>
+                    <h3 className="text-base text-gray-900 mb-6 text-center">Diagramme entité-relation</h3>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {/* User Management Group */}
-                        <div className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
-                            <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                        {/* Groupe Gestion utilisateurs */}
+                        <div className="bg-cyan-50 rounded-lg p-6 border-2 border-cyan-200">
+                            <h4 className="text-base text-cyan-900 mb-4 flex items-center">
                                 <IconUsers className="w-5 h-5 mr-2" />
-                                User Management
+                                Gestion des utilisateurs
                             </h4>
 
-                            <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                            <div className="bg-white rounded-lg p-4 mb-4 border border-cyan-200">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     users
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• email (VARCHAR)</div>
                                     <div>• first_name, last_name</div>
-                                    <div>• role_id (UUID) 🔗</div>
+                                    <div>• role_id (UUID)</div>
                                     <div>• department, position</div>
                                     <div>• is_active, created_at</div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-lg p-4 border border-blue-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                            <div className="bg-white rounded-lg p-4 border border-cyan-200">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     roles
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• name (VARCHAR)</div>
                                     <div>• permissions (JSON)</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Incidents & Risks Group */}
+                        {/* Groupe Incidents & Risques */}
                         <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200">
-                            <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                            <h4 className="text-base text-red-900 mb-4 flex items-center">
                                 <IconAlertTriangle className="w-5 h-5 mr-2" />
-                                Incidents & Risks
+                                Incidents et risques
                             </h4>
 
                             <div className="bg-white rounded-lg p-4 mb-4 border border-red-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     incidents
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• incident_number</div>
                                     <div>• title, description</div>
                                     <div>• severity, status</div>
-                                    <div>• created_by (UUID) 🔗</div>
+                                    <div>• created_by (UUID)</div>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-lg p-4 border border-red-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     chemical_risks
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• risk_id, risk_title</div>
                                     <div>• chemical_name, cas_number</div>
                                     <div>• likelihood, severity</div>
-                                    <div>• risk_rating (calculated)</div>
+                                    <div>• risk_rating (calculé)</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Actions & Audits Group */}
+                        {/* Groupe Actions & Audits */}
                         <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
-                            <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                            <h4 className="text-base text-green-900 mb-4 flex items-center">
                                 <IconTarget className="w-5 h-5 mr-2" />
-                                Actions & Audits
+                                Actions et audits
                             </h4>
 
                             <div className="bg-white rounded-lg p-4 mb-4 border border-green-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     actions
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• action_number</div>
                                     <div>• title, description</div>
                                     <div>• priority, status</div>
-                                    <div>• assigned_to (UUID) 🔗</div>
+                                    <div>• assigned_to (UUID)</div>
                                     <div>• due_date, progress</div>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-lg p-4 mb-4 border border-green-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     audits
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• audit_number</div>
                                     <div>• title, audit_type</div>
-                                    <div>• auditor (UUID) 🔗</div>
+                                    <div>• auditor (UUID)</div>
                                     <div>• planned_date, status</div>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-lg p-4 border border-green-200">
-                                <h5 className="font-medium text-gray-900 mb-2 flex items-center">
+                                <h5 className="text-gray-900 mb-2 flex items-center">
                                     <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
                                     ppe_requests
                                 </h5>
                                 <div className="text-sm text-gray-600 space-y-1">
-                                    <div>• id (UUID) 🔑</div>
+                                    <div>• id (UUID)</div>
                                     <div>• request_number</div>
                                     <div>• item_name, quantity</div>
-                                    <div>• requested_by (UUID) 🔗</div>
+                                    <div>• requested_by (UUID)</div>
                                     <div>• status, total_cost</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Relationships */}
+                    {/* Relations */}
                     <div className="mt-8 bg-white rounded-lg p-6 border border-gray-200">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Key Relationships</h4>
+                        <h4 className="text-base text-gray-900 mb-4">Relations principales</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center">
                                 <IconLink className="w-4 h-4 text-blue-600 mr-2" />
@@ -955,14 +956,14 @@ const TechnicalDocumentation = () => {
 
         return (
             <div className="space-y-8">
-                {/* Table Selection */}
+                {/* Sélection de la table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center">
-                            <IconBook className="w-8 h-8 text-blue-600 mr-4" />
+                            <IconBook className="w-8 h-8 text-violet-600 mr-4" />
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Data Dictionary</h2>
-                                <p className="text-gray-600 italic">Detailed field documentation for database tables</p>
+                                <h2 className="text-base text-gray-900">Dictionnaire de données</h2>
+                                <p className="text-sm text-gray-600">Documentation détaillée des champs des tables</p>
                             </div>
                         </div>
 
@@ -970,7 +971,7 @@ const TechnicalDocumentation = () => {
                             <select
                                 value={selectedTable}
                                 onChange={(e) => setSelectedTable(e.target.value)}
-                                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-48"
+                                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-violet-500 focus:border-transparent min-w-48 text-sm"
                             >
                                 {databaseTables.map(table => (
                                     <option key={table.name} value={table.name}>
@@ -982,17 +983,17 @@ const TechnicalDocumentation = () => {
                         </div>
                     </div>
 
-                    {/* Constraints Legend */}
+                    {/* Légende des contraintes */}
                     <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Constraint Legend</h3>
+                        <h3 className="text-xs uppercase tracking-wider text-gray-900 mb-3">Légende des contraintes</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
                             <div className="flex items-center">
                                 <IconKey className="w-4 h-4 text-yellow-600 mr-2" />
-                                <span>Primary Key</span>
+                                <span>Clé primaire</span>
                             </div>
                             <div className="flex items-center">
                                 <IconLink className="w-4 h-4 text-blue-600 mr-2" />
-                                <span>Foreign Key</span>
+                                <span>Clé étrangère</span>
                             </div>
                             <div className="flex items-center">
                                 <IconHash className="w-4 h-4 text-purple-600 mr-2" />
@@ -1000,51 +1001,51 @@ const TechnicalDocumentation = () => {
                             </div>
                             <div className="flex items-center">
                                 <IconShield className="w-4 h-4 text-red-600 mr-2" />
-                                <span>Not Null</span>
+                                <span>Non null</span>
                             </div>
                             <div className="flex items-center">
                                 <IconSettings className="w-4 h-4 text-green-600 mr-2" />
-                                <span>Default Value</span>
+                                <span>Valeur par défaut</span>
                             </div>
                             <div className="flex items-center">
                                 <IconCircleCheck className="w-4 h-4 text-orange-600 mr-2" />
-                                <span>Check Constraint</span>
+                                <span>Contrainte CHECK</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Selected Table Details */}
+                {/* Détails de la table sélectionnée */}
                 {selectedTableData && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 bg-blue-50 border-b border-gray-200">
-                            <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                                <IconDatabase className="w-6 h-6 text-blue-600 mr-3" />
+                        <div className="px-6 py-4 bg-violet-50 border-b border-gray-200">
+                            <h3 className="text-base text-gray-900 flex items-center">
+                                <IconDatabase className="w-6 h-6 text-violet-600 mr-3" />
                                 {selectedTableData.name}
                             </h3>
-                            <p className="text-gray-600 mt-1">{selectedTableData.description}</p>
+                            <p className="text-sm text-gray-600 mt-1">{selectedTableData.description}</p>
                         </div>
 
-                        {/* Fields Table */}
+                        {/* Tableau des champs */}
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Type</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Constraints</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Example</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Nom du champ</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Type de données</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Contraintes</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Description</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Exemple</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {selectedTableData.fields.map((field, index) => (
                                         <tr key={index} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm font-medium text-gray-900">{field.name}</span>
+                                                <span className="text-sm text-gray-900">{field.name}</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded">
+                                                <span className="text-sm text-violet-600 font-mono bg-violet-50 px-2 py-1 rounded">
                                                     {field.type}
                                                 </span>
                                             </td>
@@ -1075,7 +1076,7 @@ const TechnicalDocumentation = () => {
                         {/* Relations */}
                         {selectedTableData.relations.length > 0 && (
                             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Table Relations</h4>
+                                <h4 className="text-xs uppercase tracking-wider text-gray-900 mb-2">Relations de la table</h4>
                                 <div className="space-y-1">
                                     {selectedTableData.relations.map((relation, index) => (
                                         <div key={index} className="flex items-center text-sm text-gray-600">
@@ -1094,51 +1095,44 @@ const TechnicalDocumentation = () => {
 
 
     return (
-        <div className="bg-gray-50 min-h-screen">
-            {/* Fixed Header */}
-            <div className=" rounded-xl px-8 pt-8 pb-5 ">
-                <div className="flex items-center gap-4">
-                    <div className="bg-gradient-to-r text-white from-purple-500 to-blue-500 rounded-lg p-2">
-                        <IconDeviceDesktop size={40} />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold ">Technical Documentation</h2>
-                        <p className="text-gray-600 italic ">
-                            Microservices-based Health & Safety Management Platform.
-                        </p>
-                    </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: "Centre d'aide" },
+                    { label: 'Documentation technique' },
+                ]}
+                icon={<IconFileText size={22} stroke={2} />}
+                iconColor="violet"
+                title="Documentation technique"
+                subtitle="Architecture, base de données et spécifications API"
+            />
 
-                </div>
+            {/* Navigation par onglets */}
+            <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`flex items-center px-5 py-2.5 rounded-md text-sm transition-colors ${activeTab === tab.id
+                            ? 'bg-white text-violet-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                    >
+                        <tab.icon className="w-4 h-4 mr-2" />
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="max-w-7xl mx-auto px-8 ">
-                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-5 w-fit">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center px-6 py-3 rounded-md font-medium transition-colors ${activeTab === tab.id
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                        >
-                            <tab.icon className="w-5 h-5 mr-2" />
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Tab Content */}
-                <div className="max-w-none">
-                    {activeTab === 'architecture' && renderSystemArchitecture()}
-                    {activeTab === 'database' && renderDatabaseDocumentation()}
-                    {activeTab === 'dictionary' && renderDataDictionary()}
-                </div>
+            {/* Contenu */}
+            <div className="max-w-none">
+                {activeTab === 'architecture' && renderSystemArchitecture()}
+                {activeTab === 'database' && renderDatabaseDocumentation()}
+                {activeTab === 'dictionary' && renderDataDictionary()}
             </div>
         </div>
     );
 };
 
 export default TechnicalDocumentation;
-

@@ -710,7 +710,7 @@ Could you be more specific about what you'd like me to help you with? For exampl
                         <IconSparkles className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+                        <h1 className="text-2xl bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
                             AI Safety Assistant
                         </h1>
                         <p className="text-gray-600 ">
@@ -739,7 +739,7 @@ Could you be more specific about what you'd like me to help you with? For exampl
                 {showSuggestions && (
                     <div className="mb-8">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900">Suggested Prompts</h2>
+                            <h2 className="text-lg text-gray-900">Suggested Prompts</h2>
                             <button
                                 onClick={() => setShowSuggestions(false)}
                                 className="text-gray-500 hover:text-gray-700"
@@ -759,7 +759,7 @@ Could you be more specific about what you'd like me to help you with? For exampl
                                             <prompt.icon className={`w-5 h-5 ${prompt.color} group-hover:text-blue-600 transition-colors`} />
                                         </div>
                                         <div className="flex-1">
-                                            <div className="text-sm font-medium text-gray-900 mb-1">{prompt.category}</div>
+                                            <div className="text-sm text-gray-900 mb-1">{prompt.category}</div>
                                             <div className="text-sm text-gray-600">{prompt.text}</div>
                                         </div>
                                     </div>
@@ -772,7 +772,7 @@ Could you be more specific about what you'd like me to help you with? For exampl
                 {!showSuggestions && (
                     <button
                         onClick={() => setShowSuggestions(true)}
-                        className="mb-4 flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="mb-4 flex items-center text-blue-600 hover:text-blue-700 text-sm"
                     >
                         <IconChevronDown className="w-4 h-4 mr-1" />
                         Show suggested prompts
@@ -811,14 +811,14 @@ Could you be more specific about what you'd like me to help you with? For exampl
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
-                                                    h1: (props: any) => <h1 className="text-xl font-semibold mb-2" {...props} />,
-                                                    h2: (props: any) => <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />,
-                                                    h3: (props: any) => <h3 className="text-base font-semibold mt-3 mb-2" {...props} />,
+                                                    h1: (props: any) => <h1 className="text-lg mb-2" {...props} />,
+                                                    h2: (props: any) => <h2 className="text-lg mt-3 mb-2" {...props} />,
+                                                    h3: (props: any) => <h3 className="text-base mt-3 mb-2" {...props} />,
                                                     p: (props: any) => <p className="mb-2 leading-relaxed" {...props} />,
                                                     ul: (props: any) => <ul className="list-disc pl-5 space-y-1 mb-2" {...props} />,
                                                     ol: (props: any) => <ol className="list-decimal pl-5 space-y-1 mb-2" {...props} />,
                                                     li: (props: any) => <li className="leading-relaxed" {...props} />,
-                                                    strong: (props: any) => <strong className="font-semibold" {...props} />,
+                                                    strong: (props: any) => <strong className="font-medium" {...props} />,
                                                     a: (props: any) => <a className="text-blue-600 underline hover:text-blue-700" target="_blank" rel="noopener noreferrer" {...props} />,
                                                     code: ({ inline, children, ...props }: any) => (
                                                         inline ? (

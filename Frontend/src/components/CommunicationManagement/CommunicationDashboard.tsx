@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Box,
-    Breadcrumbs,
     Card,
     Center,
     Grid,
@@ -23,8 +22,9 @@ import {
     IconClock,
     IconMail,
     IconUsers,
+    IconMessageCircle,
 } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import PageHeader from '../UtilityComp/PageHeader';
 import { getCommunicationStats, getRecentCommunications } from '../../services/CommunicationService';
 import { getAllDepartments } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
@@ -313,7 +313,7 @@ const CommunicationDashboard = () => {
     const metricCards = useMemo(
         () => [
             {
-                label: 'Total Communications',
+                label: 'Total communications',
                 primary: loading ? '--' : formatCount(totalByType),
                 secondary: 'Records',
                 icon: IconMail,
@@ -337,7 +337,7 @@ const CommunicationDashboard = () => {
                 background: 'linear-gradient(135deg, rgba(18,184,134,0.18) 0%, rgba(111,197,169,0.08) 100%)',
             },
             {
-                label: 'Top Department',
+                label: 'Département le plus actif',
                 primary: loading ? '--' : resolveDepartmentName(topDepartment?.departmentId),
                 secondary: loading ? 'Highlighting departments' : topDepartment ? `${formatCount(topDepartment.total)} communications${topDepartmentShare ? ` • ${topDepartmentShare}% share` : ''}` : 'Awaiting statistics',
                 icon: IconUsers,
@@ -349,20 +349,18 @@ const CommunicationDashboard = () => {
     );
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Communication Management Dashboard</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-                        <Text variant="gradient">Communication Management Dashboard</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-
-            <p className="italic text-gray-600">Real-time insights into communication reach, engagement patterns, and distribution.</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Communication Sécurité' },
+                    { label: 'Tableau de bord' },
+                ]}
+                icon={<IconMessageCircle size={22} stroke={2} />}
+                iconColor="pink"
+                title="Tableau de bord — Communication HSE"
+                subtitle="Vue en temps réel sur la portée, l'engagement et la distribution des communications"
+            />
 
             {error && (
                 <Card shadow="sm" padding="sm" radius="md" withBorder>
@@ -386,10 +384,10 @@ const CommunicationDashboard = () => {
                             <Box className="absolute inset-0 pointer-events-none" style={{ background: metric.background }} />
                             <Group justify="space-between" align="flex-start" className="relative z-10">
                                 <Box>
-                                    <Text size="xs" fw={600} c="dimmed" className="uppercase tracking-wide">
+                                    <Text size="xs" c="dimmed" className="uppercase tracking-wide">
                                         {metric.label}
                                     </Text>
-                                    <Text fw={700} style={{ fontSize: '1rem', lineHeight: 1.1 }} mt={6}>
+                                    <Text style={{ fontSize: '1rem', lineHeight: 1.1 }} mt={6}>
                                         {metric.primary}
                                     </Text>
                                     <Text size="sm" c="dimmed" mt={8}>
@@ -409,13 +407,13 @@ const CommunicationDashboard = () => {
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
                         <Group justify="space-between" mb="lg">
-                            <Title order={3}>Communications by Type</Title>
+                            <Title order={3}>Communications par type</Title>
                             <Text size="sm" c="dimmed">
                                 {loading
-                                    ? 'Loading distribution...'
+                                    ? 'Chargement...'
                                     : typeChartData.length
-                                        ? `${typeChartData.length} channel${typeChartData.length > 1 ? 's' : ''} tracked`
-                                        : 'No data available'}
+                                        ? `${typeChartData.length} canal${typeChartData.length > 1 ? 'x' : ''} suivi${typeChartData.length > 1 ? 's' : ''}`
+                                        : 'Aucune donnée'}
                             </Text>
                         </Group>
                         <Grid align="center" justify='center'>
@@ -462,7 +460,7 @@ const CommunicationDashboard = () => {
                                                 className="rounded-full"
                                             />
                                             <Box className='!flex-row'>
-                                                <Text size="xs" fw={600}>{item.name}</Text>
+                                                <Text size="xs">{item.name}</Text>
                                                 <Text size="xs" c="dimmed">{formatCount(item.value)}</Text>
                                             </Box>
                                         </Card>
@@ -572,7 +570,7 @@ const CommunicationDashboard = () => {
                                                 className="rounded-full"
                                             />
                                             <Box>
-                                                <Text size="xs" fw={600}>{item.name}</Text>
+                                                <Text size="xs">{item.name}</Text>
                                                 <Text size="xs" c="dimmed">{formatCount(item.value)}</Text>
                                             </Box>
                                         </Card>

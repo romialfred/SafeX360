@@ -19,7 +19,7 @@ const colors = ['green', 'yellow', 'orange', 'red', 'blue', 'cyan', 'pink'];
 
 const renderLevelCell = (value: number, bgColor: string, textColor: string) => (
     <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold mx-auto`}
+        className={`w-9 h-9 rounded-full flex items-center justify-center mx-auto`}
         style={{ backgroundColor: bgColor, color: textColor }}
     >
         {value}
@@ -108,7 +108,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                         <div className="flex justify-between p-5">
                             <div>
 
-                                <Text size="xl" fw={700}>Severity Levels Distribution</Text>
+                                <Text size="xl">Severity Levels Distribution</Text>
                             </div>
 
                         </div>
@@ -120,7 +120,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                                     className="w-4 h-4 rounded-full"
                                     style={{ backgroundColor: pieMap[item] }}
                                 ></div>
-                                <span className="text-sm font-medium">Level {item}</span>
+                                <span className="text-sm">Level {item}</span>
                             </div>
                         ))}
                     </div>
@@ -135,8 +135,8 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                     </div>
 
 
-                    <div className=" font-semibold mx-auto text-gray-700">
-                        Total Incident Type: <span className="text-blue-600 font-bold">{totalIncidents}</span>
+                    <div className=" mx-auto text-gray-700">
+                        Total Incident Type: <span className="text-blue-600">{totalIncidents}</span>
                     </div>
                 </Card>
 
@@ -145,7 +145,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                         <div className="flex justify-between p-5">
                             <div>
 
-                                <Text size="xl" fw={700}>Incident Types by Category</Text>
+                                <Text size="xl">Incident Types by Category</Text>
                             </div>
 
                         </div>
@@ -178,7 +178,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
 
 
             <Card shadow="sm" p="lg" radius="md" withBorder>
-                <h2 className="text-xl font-bold mt-8 mb-4">Incident Type Severity Summary</h2>
+                <h2 className="text-lg mt-8 mb-4">Incident Type Severity Summary</h2>
                 <DataTable selectionMode="single" rows={5} responsiveLayout="scroll" value={tableData} className='[&_.p-datatable-tbody]:!text-sm'>
                     <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Category" />
                     <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level1" header="Level 1" body={(row) => renderLevelCell(row.level1, '#e3f2fd', '#1565c0')} />

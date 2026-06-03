@@ -154,7 +154,7 @@ const RiskDataTable: React.FC<RiskTableProps> = ({
 
 
     const statusBody = (rowData: RiskData) => (
-        <Badge size="xs" color={getStatusColor(rowData.status)} fw={500}>
+        <Badge size="xs" color={getStatusColor(rowData.status)}>
             {rowData.status.toLowerCase()}
         </Badge>
     );
@@ -298,7 +298,7 @@ const RiskDataTable: React.FC<RiskTableProps> = ({
             ) : (
                 <div>
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">
+                        <h3 className="text-lg">
                             Risk Catalog ({filteredData.length})
                         </h3>
                     </div>

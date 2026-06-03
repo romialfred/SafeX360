@@ -151,7 +151,7 @@ const BodyPartsData = () => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -294,7 +294,7 @@ const BodyPartsData = () => {
                 onClose={handleClose}
                 centered
                 title={
-                    <h1 className="text-lg font-medium text-blue-500">
+                    <h1 className="text-lg text-blue-500">
                         {edit ? 'Update' : 'Create'} Body Parts
                     </h1>
                 }

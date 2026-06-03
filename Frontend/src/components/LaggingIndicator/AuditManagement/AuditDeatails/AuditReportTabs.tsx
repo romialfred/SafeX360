@@ -96,7 +96,7 @@ const AuditReportTabs = () => {
         let values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -140,7 +140,7 @@ const AuditReportTabs = () => {
             {isEditing ? (
                 <Stack>
                     <Card shadow="md" withBorder>
-                        <p className="flex items-center text-lg mb-2 font-medium text-gray-600">
+                        <p className="flex items-center text-lg mb-2 text-gray-600">
                             <IconFilePencil stroke={1.5} size={20} /> Report Preparer
                         </p>
                         <Grid>
@@ -158,7 +158,7 @@ const AuditReportTabs = () => {
 
                     <Card shadow="md" withBorder>
                         <Group justify="space-between" mb="xs">
-                            <p className="flex text-lg font-medium items-center text-gray-600">
+                            <p className="flex text-lg items-center text-gray-600">
                                 <IconUsers stroke={1.5} size={20} /> Contributors
                             </p>
                             <Button size="xs" leftSection={<IconPlus />} onClick={addContributor}>Add Contributor</Button>
@@ -166,7 +166,7 @@ const AuditReportTabs = () => {
                         {form.values.contributors.map((_item, index) => (
                             <Fieldset key={index} className="grid grid-cols-2 gap-5 mb-5" legend={
                                 <div className="flex gap-5">
-                                    <div className="text-lg font-medium text-blue-500">Contributor {index + 1}</div>
+                                    <div className="text-lg text-blue-500">Contributor {index + 1}</div>
                                     <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red">
                                         <IconTrash style={{ width: "70%", height: "70%" }} stroke={1.5} />
                                     </ActionIcon>
@@ -180,7 +180,7 @@ const AuditReportTabs = () => {
                     </Card>
 
                     <Card shadow="md" withBorder>
-                        <p className="flex items-center mb-2 text-lg font-medium text-gray-600">
+                        <p className="flex items-center mb-2 text-lg text-gray-600">
                             <IconUserCheck stroke={1.5} size={20} /> Report Validator
                         </p>
                         <Grid mb={10}>
@@ -200,7 +200,7 @@ const AuditReportTabs = () => {
                     </Card>
 
                     <Card shadow="md" withBorder>
-                        <p className="text-lg font-medium text-gray-600">Supporting Documents</p>
+                        <p className="text-lg text-gray-600">Supporting Documents</p>
                         <FileUpdateDropzone name="Supporting Documents" id="report.docs" form={form} />
                     </Card>
 
@@ -217,7 +217,7 @@ const AuditReportTabs = () => {
                     <Card shadow="md" withBorder className="!rounded-lg !p-6">
                         {/* Header */}
                         <Group justify="space-between" className="mb-2">
-                            <h1 className="text-lg font-bold text-blue-700">Report Summary</h1>
+                            <h1 className="text-lg text-blue-700">Report Summary</h1>
                             <Button
                                 onClick={() => setIsEditing(true)}
                                 radius="xl"
@@ -258,7 +258,7 @@ const AuditReportTabs = () => {
                                     Preparer: {report?.preparerName}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-1">
-                                    <Text fw={500} size="sm" className="">Contributors:</Text>
+                                    <Text size="sm" className="">Contributors:</Text>
                                     {contributors.map((c, i) => (
                                         <span key={i} className="text-sm" >
                                             {c.name} {i < contributors.length - 1 ? "," : ""}

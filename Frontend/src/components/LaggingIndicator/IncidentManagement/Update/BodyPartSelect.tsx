@@ -58,7 +58,7 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
                                     className={`w-60 h-30  object-contain bg-white ${isSelected ? "opacity-90" : "opacity-70"
                                         }`}
                                 />
-                                <div className=" bg-white bg-opacity-80 text-lg mx-auto font-medium">
+                                <div className=" bg-white bg-opacity-80 text-lg mx-auto">
                                     {item.name}
                                 </div>
                                 {isSelected && (

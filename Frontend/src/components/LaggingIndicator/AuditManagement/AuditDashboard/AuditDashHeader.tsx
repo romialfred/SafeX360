@@ -2,139 +2,140 @@ import { useEffect, useMemo, useState } from "react";
 import { IconCalendar, IconCircleCheck, IconClock, IconTarget, IconTrendingUp } from "@tabler/icons-react";
 import { getAllAudit } from "../../../../services/AuditService";
 
+/**
+ * Statuts d'audit (backend AuditStatus enum, ORDINAL ou STRING) :
+ *   0/PLANNING     → planifié (non démarré)
+ *   1/PREPARATION  → en préparation
+ *   2/EXECUTION    → en exécution
+ *   3/CLOSED       → clôturé
+ * Le backend Spring serialise par défaut en NOM (PLANNING/PREPARATION/...) mais
+ * peut aussi renvoyer l'ordinal numérique selon la config Jackson.
+ */
+const normalizeStatus = (raw: any): string => {
+    if (raw === null || raw === undefined) return '';
+    if (typeof raw === 'number') {
+        const map = ['PLANNING', 'PREPARATION', 'EXECUTION', 'CLOSED', 'CANCELLED'];
+        return map[raw] || '';
+    }
+    return String(raw).toUpperCase();
+};
+
 const AuditDashHeader = () => {
-  const [audits, setAudits] = useState<any[]>([]);
+    const [audits, setAudits] = useState<any[]>([]);
 
-  useEffect(() => {
-    getAllAudit()
-      .then((audits: any[]) => {
-        setAudits(Array.isArray(audits) ? audits : []);
-      })
-      .catch(() => { /* noop */ });
-  }, []);
+    useEffect(() => {
+        getAllAudit()
+            .then((data: any[]) => setAudits(Array.isArray(data) ? data : []))
+            .catch(() => setAudits([]));
+    }, []);
 
-  const statistics = useMemo(() => {
-    const counts = {
-      planned: 0,
-      inProgress: 0,
-      completed: 0,
-      upcoming: 0,
-    };
+    const stats = useMemo(() => {
+        const now = new Date();
+        let inProgress = 0;
+        let completed = 0;
+        let upcoming = 0;
 
-    const now = new Date();
+        audits.forEach((audit: any) => {
+            const status = normalizeStatus(audit?.status);
+            const startDate = audit?.startDate ? new Date(audit.startDate) : null;
 
-    audits.forEach((audit: any) => {
-      const normalized = String(audit?.status || '').toUpperCase();
-      const plannedStart = audit?.plannedStartDate ? new Date(audit.plannedStartDate) : null;
+            if (status === 'EXECUTION' || status === 'IN_PROGRESS') {
+                inProgress += 1;
+            } else if (status === 'CLOSED' || status === 'COMPLETED' || status === 'FINISHED') {
+                completed += 1;
+            } else if (status === 'PLANNING' || status === 'PREPARATION') {
+                if (startDate && startDate > now) upcoming += 1;
+            }
+        });
 
-      if (normalized === 'PLANNED') {
-        counts.planned += 1;
-        if (plannedStart && plannedStart > now) {
-          counts.upcoming += 1;
-        }
-        return;
-      }
+        const planned = audits.length;
+        const executionRate = planned > 0
+            ? `${Math.round((completed / planned) * 100)}%`
+            : '0%';
 
-      if (['IN_PROGRESS', 'EXECUTION', 'ONGOING'].includes(normalized)) {
-        counts.inProgress += 1;
-        return;
-      }
+        return { planned, inProgress, completed, upcoming, executionRate };
+    }, [audits]);
 
-      if (['COMPLETED', 'CLOSED', 'FINISHED'].includes(normalized)) {
-        counts.completed += 1;
-        return;
-      }
+    const cards = [
+        {
+            value: stats.planned,
+            label: 'Audits planifiés',
+            sublabel: 'Total programme',
+            icon: IconCalendar,
+            iconColor: 'text-blue-700',
+            bg: 'bg-blue-50/70',
+            border: 'border-blue-200',
+            accent: 'bg-blue-500',
+        },
+        {
+            value: stats.inProgress,
+            label: 'En exécution',
+            sublabel: 'Audits en cours',
+            icon: IconTarget,
+            iconColor: 'text-amber-700',
+            bg: 'bg-amber-50/70',
+            border: 'border-amber-200',
+            accent: 'bg-amber-500',
+        },
+        {
+            value: stats.completed,
+            label: 'Clôturés',
+            sublabel: 'Rapports finalisés',
+            icon: IconCircleCheck,
+            iconColor: 'text-green-700',
+            bg: 'bg-green-50/70',
+            border: 'border-green-200',
+            accent: 'bg-green-500',
+        },
+        {
+            value: stats.upcoming,
+            label: 'À venir',
+            sublabel: 'Démarrage planifié',
+            icon: IconClock,
+            iconColor: 'text-pink-700',
+            bg: 'bg-pink-50/70',
+            border: 'border-pink-200',
+            accent: 'bg-pink-500',
+        },
+        {
+            value: stats.executionRate,
+            label: "Taux d'exécution",
+            sublabel: 'Clôturés / Total',
+            icon: IconTrendingUp,
+            iconColor: 'text-violet-700',
+            bg: 'bg-violet-50/70',
+            border: 'border-violet-200',
+            accent: 'bg-violet-500',
+        },
+    ];
 
-      if (['UPCOMING', 'SCHEDULED', 'NOT_STARTED'].includes(normalized)) {
-        counts.upcoming += 1;
-        return;
-      }
-
-      if (plannedStart && plannedStart > now) {
-        counts.upcoming += 1;
-      }
-    });
-
-    counts.planned = audits.length;
-
-    const executionRate = counts.planned > 0
-      ? `${((counts.completed / counts.planned) * 100).toFixed(1)}%`
-      : '0%';
-
-    return {
-      counts,
-      executionRate,
-    };
-  }, [audits]);
-
-  const { counts, executionRate } = statistics;
-
-  const cards = [
-    {
-      id: counts.planned,
-      label: 'Planned Audits',
-      icon: IconCalendar,
-      color: '#2563eb',
-      textColor: 'text-blue-600',
-      iconBg: 'bg-blue-100',
-      cardBg: 'bg-blue-50',
-    },
-    {
-      id: counts.inProgress,
-      label: 'In Progress Audits',
-      icon: IconTarget,
-      color: '#f59e0b',
-      textColor: 'text-amber-600',
-      iconBg: 'bg-amber-100',
-      cardBg: 'bg-amber-50',
-    },
-    {
-      id: counts.completed,
-      label: 'Completed Audits',
-      icon: IconCircleCheck,
-      color: '#22c55e',
-      textColor: 'text-green-600',
-      iconBg: 'bg-green-100',
-      cardBg: 'bg-green-50',
-    },
-    {
-      id: counts.upcoming,
-      label: 'Upcoming Audits',
-      icon: IconClock,
-      color: '#ec4899',
-      textColor: 'text-pink-600',
-      iconBg: 'bg-pink-100',
-      cardBg: 'bg-pink-50',
-    },
-    {
-      id: executionRate,
-      label: 'Execution Rate',
-      icon: IconTrendingUp,
-      color: '#8b5cf6',
-      textColor: 'text-purple-500',
-      iconBg: 'bg-purple-100',
-      cardBg: 'bg-purple-50',
-    },
-  ];
-
-  return (
-    <div className="grid gap-4 md:grid-cols-5">
-      {cards.map((item, index) => {
-        const Icon = item.icon as any;
-        return (
-          <div key={index} className={`flex justify-between items-center p-4 shadow-sm rounded-xl ${item.cardBg}`}>
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">{item.label}</p>
-              <h2 className={`text-xl font-bold ${item.textColor}`}>{String(item.id)}</h2>
-            </div>
-            <div className={`w-10 h-10 flex items-center justify-center rounded-full ${item.iconBg}`}>
-              <Icon size={24} stroke={2} color={item.color} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {cards.map((card, idx) => {
+                const Icon = card.icon;
+                return (
+                    <div
+                        key={idx}
+                        className={`relative bg-white rounded-lg border ${card.border} hover:shadow-md transition-all overflow-hidden`}
+                    >
+                        <div className={`h-1 ${card.accent}`}></div>
+                        <div className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className={`p-1.5 rounded-md ${card.bg} ${card.border} border`}>
+                                    <Icon size={15} className={card.iconColor} stroke={2} />
+                                </div>
+                            </div>
+                            <p className={`text-2xl ${card.iconColor} tabular-nums leading-none`}>
+                                {String(card.value)}
+                            </p>
+                            <p className="text-[11px] text-slate-800 mt-1.5 leading-tight">{card.label}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{card.sublabel}</p>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
 };
 
 export default AuditDashHeader;

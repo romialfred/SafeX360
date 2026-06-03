@@ -53,10 +53,13 @@ const getYearlyClosureSummary = async (year: number): Promise<YearlyClosureRespo
 }
 
 const getDepartmentStatistics = async (departmentId: number | string | null) => {
-    const resolvedDepartmentId = departmentId ?? "null";
-    const response = await axiosInstance.get<any>(
-        `${url}/department/stats/${resolvedDepartmentId}`
-    );
+    // Fix Phase 2.a — ne pas envoyer la chaîne littérale "null" au backend (Spring rejette le cast Long).
+    // Si departmentId est null/undefined, on appelle l'endpoint global sans ID.
+    if (departmentId === null || departmentId === undefined || departmentId === '' || departmentId === 'null') {
+        const response = await axiosInstance.get<any>(`${url}/department/stats`);
+        return response.data;
+    }
+    const response = await axiosInstance.get<any>(`${url}/department/stats/${departmentId}`);
     return response.data;
 };
 

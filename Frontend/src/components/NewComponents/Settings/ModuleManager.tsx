@@ -180,7 +180,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
 
                 {/* Title + Description */}
                 <div className="flex-1 text-center">
-                    <h1 className="text-3xl font-medium text-blue-500 mb-2 tracking-tight">Module Manager</h1>
+                    <h1 className="text-2xl font-semibold text-blue-500 mb-2 tracking-tight">Module Manager</h1>
                     <p className="text-gray-600 text-sm">Enable or disable application modules</p>
                 </div>
 
@@ -199,7 +199,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                             </div>
                             <div className="ml-4">
                                 <p className="text-sm text-gray-500">Total Modules</p>
-                                <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
+                                <p className="text-2xl text-gray-900">{totalCount}</p>
                             </div>
                         </div>
                     </div>
@@ -211,7 +211,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                             </div>
                             <div className="ml-4">
                                 <p className="text-sm text-gray-500">Active Modules</p>
-                                <p className="text-2xl font-bold text-green-600">{enabledCount}</p>
+                                <p className="text-2xl text-green-600">{enabledCount}</p>
                             </div>
                         </div>
                     </div>
@@ -223,7 +223,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                             </div>
                             <div className="ml-4">
                                 <p className="text-sm text-gray-500">Deactivated Modules</p>
-                                <p className="text-2xl font-bold text-red-600">{disabledCount}</p>
+                                <p className="text-2xl text-red-600">{disabledCount}</p>
                             </div>
                         </div>
                     </div>
@@ -289,7 +289,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                 )}
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-semibold text-gray-900">{category}</h2>
+                                                <h2 className="text-lg text-gray-900">{category}</h2>
                                                 <p className="text-sm text-gray-600 mt-1">
                                                     {categoryModules.filter((m: any) => m.isEnabled).length} of {categoryModules.length} modules enabled
                                                 </p>
@@ -298,13 +298,13 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                         <div className="flex items-center space-x-4">
                                             <div className="text-right">
                                                 <div className="text-sm text-gray-500">Active</div>
-                                                <div className="text-lg font-bold text-green-600">
+                                                <div className="text-lg text-green-600">
                                                     {categoryModules.filter((m) => m.isEnabled).length}
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-sm text-gray-500">Inactive</div>
-                                                <div className="text-lg font-bold text-red-600">
+                                                <div className="text-lg text-red-600">
                                                     {categoryModules.filter((m) => !m.isEnabled).length}
                                                 </div>
                                             </div>
@@ -324,7 +324,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                     <div className="flex-1">
                                                         <div className="flex items-center">
                                                             <h3
-                                                                className={`text-lg font-medium ${module.isEnabled ? 'text-gray-900' : 'text-gray-400 italic'
+                                                                className={`text-lg ${module.isEnabled ? 'text-gray-900' : 'text-gray-400 italic'
                                                                     }`}
                                                             >
                                                                 {module.name}
@@ -371,7 +371,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                     <div className="flex items-center">
                         <IconSettings className="w-6 h-6 text-blue-600 mr-3" />
                         <div>
-                            <h3 className="text-lg font-semibold text-blue-900">Module Configuration</h3>
+                            <h3 className="text-lg text-blue-900">Module Configuration</h3>
                             <p className="text-blue-700 text-sm">
                                 Changes are saved automatically. Disabled modules will appear grayed out in the navigation menu.
                                 Click on category headers to expand/collapse sections.

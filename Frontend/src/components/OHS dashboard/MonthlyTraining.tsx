@@ -129,14 +129,14 @@ const MonthlyTraining = () => {
                 <>
                     <div className="flex justify-between">
                         <div>
-                            <p className="text-xl font-medium">March 2024 Training Schedule</p>
-                            <p className="text-sm font-medium text-gray-600">Enroll in upcoming OH&S training sessions</p>
+                            <p className="text-lg">March 2024 Training Schedule</p>
+                            <p className="text-sm text-gray-600">Enroll in upcoming OH&S training sessions</p>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="bg-blue-100 font-medium text-blue-700 rounded-full p-2 cursor-pointer">
+                            <div className="bg-blue-100 text-blue-700 rounded-full p-2 cursor-pointer">
                                 <p>6 Sessions Available</p>
                             </div>
-                            <div className="bg-gray-100 font-medium text-gray-700 rounded-full p-2 cursor-pointer">
+                            <div className="bg-gray-100 text-gray-700 rounded-full p-2 cursor-pointer">
                                 <p>March 2024</p>
                             </div>
                         </div>
@@ -180,8 +180,8 @@ const MonthlyTraining = () => {
                 <>
                     <div className="flex justify-between">
                         <div>
-                            <p className="text-xl font-medium">OH&S Document Library</p>
-                            <p className="text-sm font-medium text-gray-600">Download important health and safety documents, policies, and procedures</p>
+                            <p className="text-lg">OH&S Document Library</p>
+                            <p className="text-sm text-gray-600">Download important health and safety documents, policies, and procedures</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <TextInput

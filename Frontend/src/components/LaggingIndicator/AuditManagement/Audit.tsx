@@ -1,50 +1,47 @@
-import { Breadcrumbs, Button, Text } from "@mantine/core"
-import { Link, useNavigate } from "react-router-dom"
+import { Button } from "@mantine/core"
+import { useNavigate } from "react-router-dom"
 import AuditData from "./AuditData"
-import { IconCalendarCheck } from "@tabler/icons-react"
-
+import { IconCalendarCheck, IconClipboardCheck, IconPlus, IconFileExport } from "@tabler/icons-react"
+import PageHeader from "../../UtilityComp/PageHeader"
 
 const Audit = () => {
     const navigate = useNavigate();
     return (
-        <div className=' '>
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Audit Management</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Audit Management</Text>
-                    </Breadcrumbs>
-                </div>
-                <div className="flex gap-2">
-
-                    <Button
-                        size='sm'
-                        onClick={() => navigate('new-audit')}
-                        leftSection={<IconCalendarCheck />}
-                        variant="gradient"
-                    >
-                        Schedule Audit
-                    </Button>
-                    <Button
-                        size='sm'
-                        onClick={() => navigate('/annual-audit-plan')}
-                        leftSection={<IconCalendarCheck />}
-                        color="red"
-                        variant="outline"
-                    >
-                        Annual Audit Plan (AAP)
-                    </Button>
-                </div>
-
-            </div>
-            <p className=' italic my-3'>Comprehensive tracking of safety audits, findings, corrective actions, and compliance status</p>
-
-            <div className='mt-5   '>
-                <AuditData />
-            </div>
-
-
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des audits' },
+                ]}
+                icon={<IconClipboardCheck size={22} stroke={2} />}
+                iconColor="indigo"
+                title="Gestion des audits"
+                subtitle="Programme d'audits internes ISO 19011 et suivi des constats, recommandations et clôtures"
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />}>
+                            Exporter
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="default"
+                            leftSection={<IconCalendarCheck size={15} />}
+                            onClick={() => navigate('/annual-audit-plan')}
+                        >
+                            Plan annuel
+                        </Button>
+                        <Button
+                            size="sm"
+                            color="indigo"
+                            leftSection={<IconPlus size={15} />}
+                            onClick={() => navigate('new-audit')}
+                        >
+                            Programmer un audit
+                        </Button>
+                    </>
+                }
+            />
+            <AuditData />
         </div>
     )
 }

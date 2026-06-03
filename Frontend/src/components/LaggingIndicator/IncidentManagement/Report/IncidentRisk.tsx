@@ -26,7 +26,7 @@ const probabilities = [
 const IncidentRisk = ({ form }: any) => {
     return (
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
-            <h2 className="text-xl font-semibold text-gray-800 ">Risk Assessment</h2>
+            <h2 className="text-lg text-gray-800 ">Risk Assessment</h2>
             <div className="flex flex-col gap-5">
                 <div className="grid grid-cols-3 gap-4">
                     <Select  {...form.getInputProps("probability")} label="Probability (1-5)" placeholder="Select Probability" withAsterisk data={probabilities} />

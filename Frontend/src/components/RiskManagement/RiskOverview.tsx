@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Text, Breadcrumbs, LoadingOverlay } from '@mantine/core';
+import { Box, LoadingOverlay } from '@mantine/core';
+import { IconChartBar } from '@tabler/icons-react';
 import SummaryCards from './RiskOverview/SummaryCards';
 import Charts from './RiskOverview/Charts';
 import DetailView from './RiskAssessment/Detail/DetailView';
-import { Link } from 'react-router-dom';
+import PageHeader from '../UtilityComp/PageHeader';
 import { getAllDepartments } from '../../services/HrmsService';
 import { getRiskOverview, RiskOverviewResponse } from '../../services/RiskRegisterService';
 
@@ -31,8 +32,8 @@ const RiskOverview: React.FC = () => {
             .catch((_e) => { /* ignore */ });
     }, []);
 
-    const probabilityLabels = overview?.matrix?.probabilityLabels || ['Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'];
-    const severityLabels = overview?.matrix?.severityLabels || ['Negligible', 'Minor', 'Moderate', 'Major', 'Catastrophic'];
+    const probabilityLabels = overview?.matrix?.probabilityLabels || ['Rare', 'Improbable', 'Possible', 'Probable', 'Quasi-certain'];
+    const severityLabels = overview?.matrix?.severityLabels || ['Négligeable', 'Mineure', 'Modérée', 'Majeure', 'Catastrophique'];
 
     // Donuts
     const departmentDonut = (overview?.distributions?.byDepartment || []).map((d) => ({ name: d.label || departmentMap[d.key]?.name || String(d.key), value: d.count, color: '' }));
@@ -58,26 +59,25 @@ const RiskOverview: React.FC = () => {
 
 
             {!showDetails ? (
-                <>
-
-                    <div>
-                        <div className="font-semibold text-2xl text-blue-500 w-fit">Risk Management Dashboard</div>
-                        <Breadcrumbs mt="xs" mb="lg">
-                            <Link className="hover:!underline" to="/">
-                                <Text variant="gradient">Home</Text>
-                            </Link>
-
-                            <Text variant="gradient">Risk Management Dashboard</Text>
-                        </Breadcrumbs>
-                    </div>
-                    <p className=' italic mb-3'>Comprehensive risk analysis and monitoring system</p>
+                <div className="space-y-5 max-w-[1600px] mx-auto">
+                    <PageHeader
+                        breadcrumbs={[
+                            { label: 'Accueil', to: '/' },
+                            { label: 'Gestion des Risques' },
+                            { label: "Vue d'ensemble" },
+                        ]}
+                        icon={<IconChartBar size={22} stroke={2} />}
+                        iconColor="red"
+                        title="Vue d'ensemble — Gestion des risques"
+                        subtitle="Analyse complète et surveillance des risques HSE conformément à ISO 31000"
+                    />
                     <LoadingOverlay visible={loading} />
                     {overview && (
                         <>
                             <SummaryCards metrics={overview.metrics} />
                             <Charts
-                                leftDonutTitle="Risk distribution by hazard sources"
-                                rightDonutTitle="Risk distribution by Department"
+                                leftDonutTitle="Répartition par sources de danger"
+                                rightDonutTitle="Répartition par département"
                                 leftDonutData={hazardDonut}
                                 rightDonutData={departmentDonut}
                                 matrixCounts={overview.matrix.counts}
@@ -93,7 +93,7 @@ const RiskOverview: React.FC = () => {
 
                         getStatusColor={getStatusColor}
                     /> */}
-                </>
+                </div>
             ) : selectedRisk ? (
                 <DetailView
 

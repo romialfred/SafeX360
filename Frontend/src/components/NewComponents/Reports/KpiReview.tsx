@@ -1,4 +1,5 @@
-import { IconAlertTriangle, IconCircleCheck, IconClock, IconInfoCircle, IconTarget } from "@tabler/icons-react";
+import { IconAlertTriangle, IconChartBar, IconCircleCheck, IconClock, IconInfoCircle, IconTarget } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
 
 interface KPIData {
     name: string;
@@ -16,9 +17,9 @@ interface KPIData {
     trend: 'up' | 'down' | 'stable';
 }
 const healthSafetyKPIs: KPIData[] = [
-    // Leading Indicators
+    // Indicateurs avancés (Leading)
     {
-        name: 'Crew Safety Meetings Held',
+        name: 'Réunions sécurité tenues',
         actualMonth: 240,
         forecastMonth: 208,
         varianceMonth: 15.4,
@@ -33,7 +34,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'up'
     },
     {
-        name: 'Management Site Safety Visits',
+        name: 'Visites sécurité de la direction',
         actualMonth: 22,
         forecastMonth: 12,
         varianceMonth: 83.3,
@@ -48,7 +49,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'down'
     },
     {
-        name: 'Monthly Joint H&S Meetings',
+        name: 'Réunions HSE mensuelles paritaires',
         actualMonth: 1,
         forecastMonth: 1,
         varianceMonth: 0.0,
@@ -63,7 +64,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'stable'
     },
     {
-        name: 'Site Inspections (IGP)',
+        name: 'Inspections terrain (IGP)',
         actualMonth: 59,
         forecastMonth: 64,
         varianceMonth: -7.8,
@@ -77,9 +78,9 @@ const healthSafetyKPIs: KPIData[] = [
         status: 'warning',
         trend: 'down'
     },
-    // Lagging Indicators
+    // Indicateurs retardés (Lagging)
     {
-        name: 'DART (Days Away, Restricted, Transfer)',
+        name: "DART (jours d'arrêt, restriction, transfert)",
         actualMonth: 0.34,
         forecastMonth: 0.12,
         varianceMonth: 183.8,
@@ -94,7 +95,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'up'
     },
     {
-        name: 'TRIR (Total Recordable Incident Rate)',
+        name: "TRIR (Taux total d'incidents enregistrables)",
         actualMonth: 0.68,
         forecastMonth: 0.36,
         varianceMonth: 88.9,
@@ -109,7 +110,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'up'
     },
     {
-        name: 'DART Severity Rate',
+        name: 'Taux de gravité DART',
         actualMonth: 33.04,
         forecastMonth: 16.00,
         varianceMonth: 106.5,
@@ -124,7 +125,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'up'
     },
     {
-        name: 'Fatality',
+        name: 'Accident mortel',
         actualMonth: 0,
         forecastMonth: 0,
         varianceMonth: 0.0,
@@ -139,7 +140,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'stable'
     },
     {
-        name: 'Total Incidents',
+        name: 'Total incidents',
         actualMonth: 2,
         forecastMonth: 0,
         varianceMonth: 100.0,
@@ -154,7 +155,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'up'
     },
     {
-        name: 'Community Incidents (Cat 4 or 5)',
+        name: 'Incidents communautaires (Cat 4 ou 5)',
         actualMonth: 0,
         forecastMonth: 0,
         varianceMonth: 0.0,
@@ -169,7 +170,7 @@ const healthSafetyKPIs: KPIData[] = [
         trend: 'stable'
     },
     {
-        name: 'Environmental Incidents (Cat 4 or 5)',
+        name: 'Incidents environnementaux (Cat 4 ou 5)',
         actualMonth: 0,
         forecastMonth: 0,
         varianceMonth: 0.0,
@@ -208,207 +209,206 @@ const KpiReview = () => {
         return 'bg-red-50';
     };
     return (
-        <div className="p-5">
-            <div className="space-y-5">
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Rapports' },
+                    { label: 'Revue des KPI' },
+                ]}
+                icon={<IconChartBar size={22} stroke={2} />}
+                iconColor="green"
+                title="Revue des KPI HSE"
+                subtitle="Indicateurs avancés (Leading) et retardés (Lagging) — Performance vs cible"
+            />
 
-                {/* KPI Dashboard Header */}
-                <div className=" rounded-xl  p-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs uppercase tracking-wider text-slate-500">
+                    Analyse des performances des indicateurs avancés et retardés
+                </div>
+                <div className="text-right">
+                    <div className="text-lg text-slate-800">Janvier 2026</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500">Période de reporting</div>
+                </div>
+            </div>
+
+            {/* Tableau KPI - style corporate */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-blue-100 rounded-lg mr-4">
-                                <IconInfoCircle className="w-6 h-6 text-green-600" />
-                            </div>
+                        <h3 className="text-lg text-slate-900">SANTÉ & SÉCURITÉ</h3>
+                        <div className="flex space-x-2">
+                            <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+                                Indicateurs avancés (Leading)
+                            </button>
+                            <button className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm">
+                                Indicateurs retardés (Lagging)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Réel mois</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Prévision mois</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Écart %</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300 bg-blue-50">Indicateur</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Réel cumulé</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Budget cumulé</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Écart %</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Prévision exercice</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Budget exercice</th>
+                                <th className="px-4 py-3 text-left text-gray-700">Écart %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* Section indicateurs avancés */}
+                            <tr className="bg-green-50">
+                                <td colSpan={10} className="px-4 py-2 text-green-800 border-b border-green-200">
+                                    Indicateurs avancés (Leading)
+                                </td>
+                            </tr>
+                            {healthSafetyKPIs.filter(kpi => kpi.category === 'Leading').map((kpi, index) => (
+                                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.actualMonth}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.forecastMonth}
+                                    </td>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
+                                        {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
+                                        <div className="flex items-center">
+                                            {getStatusIcon(kpi.status)}
+                                            <span className="ml-2 text-gray-900">{kpi.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.actualYTD}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.budgetYTD}
+                                    </td>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
+                                        {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.forecastFY}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.budgetFY}
+                                    </td>
+                                    <td className={`px-4 py-3 text-center ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
+                                        {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {/* Section indicateurs retardés */}
+                            <tr className="bg-red-50">
+                                <td colSpan={10} className="px-4 py-2 text-red-800 border-b border-red-200">
+                                    Indicateurs retardés (Lagging)
+                                </td>
+                            </tr>
+                            {healthSafetyKPIs.filter(kpi => kpi.category === 'Lagging').map((kpi, index) => (
+                                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.actualMonth}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.forecastMonth}
+                                    </td>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
+                                        {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
+                                        <div className="flex items-center">
+                                            {getStatusIcon(kpi.status)}
+                                            <span className="ml-2 text-gray-900">{kpi.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.actualYTD}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.budgetYTD}
+                                    </td>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
+                                        {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.forecastFY}
+                                    </td>
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
+                                        {kpi.budgetFY}
+                                    </td>
+                                    <td className={`px-4 py-3 text-center ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
+                                        {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Points clés et recommandations */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg text-slate-900 mb-6">Points clés et recommandations</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200">
+                            <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h2 className="text-2xl text-blue-500 font-bold ">Health & Safety KPI Review</h2>
-                                <p className="italic text-gray">Leading and Lagging Indicators Performance Analysis</p>
+                                <h4 className="text-green-900">Tendances positives</h4>
+                                <ul className="text-sm text-green-800 mt-2 space-y-1">
+                                    <li>• Réunions sécurité au-dessus de la cible de 15,4 %</li>
+                                    <li>• 47 jours sans accident avec arrêt</li>
+                                    <li>• Taux de formation supérieur à la cible de 95 %</li>
+                                </ul>
                             </div>
                         </div>
 
-                        <div className="text-right">
-                            <div className="text-xl font-bold text-gray-700">January 2024</div>
-                            <div className="text-gray-600">Reporting Period</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* KPI Table - Corporate Style */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900">HEALTH & SAFETY</h3>
-                            <div className="flex space-x-2">
-                                <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                                    Leading Indicators
-                                </button>
-                                <button className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm">
-                                    Lagging Indicators
-                                </button>
+                        <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <IconInfoCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
+                            <div>
+                                <h4 className="text-blue-900">Opportunités d'amélioration</h4>
+                                <ul className="text-sm text-blue-800 mt-2 space-y-1">
+                                    <li>• Renforcer la culture de déclaration des quasi-accidents</li>
+                                    <li>• Accroître les visites sécurité de la direction</li>
+                                    <li>• Améliorer la fréquence des inspections terrain</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Actual Month</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Forecast Month</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Variance %</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300 bg-blue-50">Metric Name</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Actual YTD</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Budget YTD</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Variance %</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Forecast FY</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Budget FY</th>
-                                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Variance %</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {/* Leading Indicators Section */}
-                                <tr className="bg-green-50">
-                                    <td colSpan={10} className="px-4 py-2 font-semibold text-green-800 border-b border-green-200">
-                                        Leading Indicators
-                                    </td>
-                                </tr>
-                                {healthSafetyKPIs.filter(kpi => kpi.category === 'Leading').map((kpi, index) => (
-                                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
-                                            {kpi.actualMonth}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.forecastMonth}
-                                        </td>
-                                        <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
-                                            {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
-                                            <div className="flex items-center">
-                                                {getStatusIcon(kpi.status)}
-                                                <span className="ml-2 font-medium text-gray-900">{kpi.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
-                                            {kpi.actualYTD}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.budgetYTD}
-                                        </td>
-                                        <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
-                                            {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.forecastFY}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.budgetFY}
-                                        </td>
-                                        <td className={`px-4 py-3 text-center font-medium ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
-                                            {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
-                                        </td>
-                                    </tr>
-                                ))}
-
-                                {/* Lagging Indicators Section */}
-                                <tr className="bg-red-50">
-                                    <td colSpan={10} className="px-4 py-2 font-semibold text-red-800 border-b border-red-200">
-                                        Lagging Indicators
-                                    </td>
-                                </tr>
-                                {healthSafetyKPIs.filter(kpi => kpi.category === 'Lagging').map((kpi, index) => (
-                                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
-                                            {kpi.actualMonth}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.forecastMonth}
-                                        </td>
-                                        <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
-                                            {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
-                                            <div className="flex items-center">
-                                                {getStatusIcon(kpi.status)}
-                                                <span className="ml-2 font-medium text-gray-900">{kpi.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
-                                            {kpi.actualYTD}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.budgetYTD}
-                                        </td>
-                                        <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
-                                            {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.forecastFY}
-                                        </td>
-                                        <td className="px-4 py-3 border-r border-gray-200 text-center">
-                                            {kpi.budgetFY}
-                                        </td>
-                                        <td className={`px-4 py-3 text-center font-medium ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
-                                            {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Key Insights */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Key Insights & Recommendations</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200">
-                                <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
-                                <div>
-                                    <h4 className="font-semibold text-green-900">Positive Trends</h4>
-                                    <ul className="text-sm text-green-800 mt-2 space-y-1">
-                                        <li>• Safety meetings exceeded target by 15.4%</li>
-                                        <li>• 47 days without lost time injury</li>
-                                        <li>• Training completion above 95% target</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <IconInfoCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
-                                <div>
-                                    <h4 className="font-semibold text-blue-900">Opportunities</h4>
-                                    <ul className="text-sm text-blue-800 mt-2 space-y-1">
-                                        <li>• Increase near miss reporting culture</li>
-                                        <li>• Enhance management safety visits</li>
-                                        <li>• Improve site inspection frequency</li>
-                                    </ul>
-                                </div>
+                    <div className="space-y-4">
+                        <div className="flex items-start p-4 bg-red-50 rounded-lg border border-red-200">
+                            <IconAlertTriangle className="w-5 h-5 text-red-600 mr-3 mt-0.5" />
+                            <div>
+                                <h4 className="text-red-900">Points de vigilance</h4>
+                                <ul className="text-sm text-red-800 mt-2 space-y-1">
+                                    <li>• Taux DART supérieur de 183 % à la prévision</li>
+                                    <li>• TRIR en hausse de 88,9 %</li>
+                                    <li>• Un accident mortel enregistré sur l'exercice</li>
+                                </ul>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-start p-4 bg-red-50 rounded-lg border border-red-200">
-                                <IconAlertTriangle className="w-5 h-5 text-red-600 mr-3 mt-0.5" />
-                                <div>
-                                    <h4 className="font-semibold text-red-900">Areas of Concern</h4>
-                                    <ul className="text-sm text-red-800 mt-2 space-y-1">
-                                        <li>• DART rate 183% above forecast</li>
-                                        <li>• TRIR increased by 88.9%</li>
-                                        <li>• One fatality recorded YTD</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                                <IconTarget className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
-                                <div>
-                                    <h4 className="font-semibold text-yellow-900">Action Items</h4>
-                                    <ul className="text-sm text-yellow-800 mt-2 space-y-1">
-                                        <li>• Review incident investigation processes</li>
-                                        <li>• Implement additional safety controls</li>
-                                        <li>• Increase management engagement</li>
-                                    </ul>
-                                </div>
+                        <div className="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <IconTarget className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
+                            <div>
+                                <h4 className="text-yellow-900">Actions à entreprendre</h4>
+                                <ul className="text-sm text-yellow-800 mt-2 space-y-1">
+                                    <li>• Revoir les processus d'enquête incident</li>
+                                    <li>• Mettre en place des contrôles sécurité supplémentaires</li>
+                                    <li>• Renforcer l'engagement du management</li>
+                                </ul>
                             </div>
                         </div>
                     </div>

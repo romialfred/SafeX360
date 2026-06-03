@@ -76,7 +76,7 @@ const ClosureRateGraph = () => {
             <Stack gap="md">
                 <Group justify="space-between" align="flex-start" gap="xl">
                     <Stack gap={4}>
-                        <Text size="xl" fw={700} c="gray.7">Incident Management & Closure Rate</Text>
+                        <Text size="xl" c="gray.7">Incident Management & Closure Rate</Text>
                         <Text size="sm" c="gray.5">
                             Monitor monthly totals versus resolved incidents to understand overall performance.
                         </Text>
@@ -108,17 +108,17 @@ const ClosureRateGraph = () => {
                         <Box className="hidden sm:block" style={{ width: 1, height: 48, background: 'var(--mantine-color-gray-2)' }} />
                         <Stack gap={2}>
                             <Text size="sm" c="gray.6">Total Incidents</Text>
-                            <Text size="lg" fw={600}>{totals.totalIncidents}</Text>
+                            <Text size="lg">{totals.totalIncidents}</Text>
                         </Stack>
                         <Box className="hidden sm:block" style={{ width: 1, height: 48, background: 'var(--mantine-color-gray-2)' }} />
                         <Stack gap={2}>
                             <Text size="sm" c="gray.6">Closed Incidents</Text>
-                            <Text size="lg" fw={600} c="green.6">{totals.closedIncidents}</Text>
+                            <Text size="lg" c="green.6">{totals.closedIncidents}</Text>
                         </Stack>
                         <Box className="hidden sm:block" style={{ width: 1, height: 48, background: 'var(--mantine-color-gray-2)' }} />
                         <Stack gap={2}>
                             <Text size="sm" c="gray.6">Closure Rate</Text>
-                            <Text size="lg" fw={600}>{totals.closureRate}%</Text>
+                            <Text size="lg">{totals.closureRate}%</Text>
                         </Stack>
                     </Group>
                 </Paper>

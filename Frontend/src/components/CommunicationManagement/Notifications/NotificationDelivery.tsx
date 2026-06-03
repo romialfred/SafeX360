@@ -41,32 +41,32 @@ const NotificationDelivery: React.FC<NotificationDeliveryProps> = ({ notificatio
         <Grid mb="md">
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#E7F5FF' }}>
-                    <Text size="lg" fw={700} c="blue">{notification.recipientCount}</Text>
+                    <Text size="lg" c="blue">{notification.recipientCount}</Text>
                     <Text size="sm" c="dimmed">Total Sent</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#D3F9D8' }}>
-                    <Text size="lg" fw={700} c="green">{notification.readCount}</Text>
+                    <Text size="lg" c="green">{notification.readCount}</Text>
                     <Text size="sm" c="dimmed">Delivered</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#FFF3CD' }}>
-                    <Text size="lg" fw={700} c="orange">{notification.recipientCount - notification.readCount}</Text>
+                    <Text size="lg" c="orange">{notification.recipientCount - notification.readCount}</Text>
                     <Text size="sm" c="dimmed">Pending</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#F8D7DA' }}>
-                    <Text size="lg" fw={700} c="red">0</Text>
+                    <Text size="lg" c="red">0</Text>
                     <Text size="sm" c="dimmed">Failed</Text>
                 </Card>
             </Grid.Col>
         </Grid>
 
         <Box mb="md">
-            <Text size="sm" fw={500} mb="xs">Delivery Progress</Text>
+            <Text size="sm" mb="xs">Delivery Progress</Text>
             <Progress
                 value={(notification.readCount / notification.recipientCount) * 100}
                 color="green"

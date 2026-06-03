@@ -37,17 +37,17 @@ const TrainingCard = ({ trainingSessions }: any) => {
             {/* Top badges */}
             <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                    <span className=" font-semibold px-2 py-1 flex items-center gap-1 rounded-full bg-blue-100 text-blue-700">
+                    <span className=" px-2 py-1 flex items-center gap-1 rounded-full bg-blue-100 text-blue-700">
                         <IconSchool size={25} className="text-blue-600" />
                     </span>
                 </div>
-                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${colors.badge}`}>
+                <span className={`text-xs px-2 py-1 rounded-full ${colors.badge}`}>
                     {status}
                 </span>
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-semibold text-gray-800">{trainingSessions.title}</h3>
+            <h3 className="text-lg text-gray-800">{trainingSessions.title}</h3>
 
             {/* Meta Info */}
             <div className="space-y-1  text-gray-700">
@@ -85,7 +85,7 @@ const TrainingCard = ({ trainingSessions }: any) => {
             <div className="pt-1">
                 {/* <button
                     disabled={status === "Full"}
-                    className={`w-full text-sm font-medium py-2 rounded-md transition duration-200 ${status === "Full"
+                    className={`w-full text-sm py-2 rounded-md transition duration-200 ${status === "Full"
                         ? "bg-gray-400 text-white cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                         }`}

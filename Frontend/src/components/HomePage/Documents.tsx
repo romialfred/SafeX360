@@ -34,7 +34,7 @@ const Documents = () => {
             <div className="flex gap-4 items-center p-4">
                 <div className="flex items-center gap-3">
                     <IconBook size={30} className="text-blue-500" />
-                    <Text size="xl" fw={700} className="text-gray-900">Important Documents</Text>
+                    <Text size="xl" className="text-gray-900">Important Documents</Text>
                 </div>
                 <IconSearch size={25} className="text-blue-500 cursor-pointer" />
             </div>
@@ -54,13 +54,13 @@ const Documents = () => {
                                     <div className="flex gap-4 items-center">
                                         <IconFileText size={20} />
                                         <div className="flex flex-col">
-                                            <Text size="md" fw={600}>{item.documentName}</Text>
+                                            <Text size="md">{item.documentName}</Text>
                                             <Text size="sm" c="dimmed">{item.description || "No description provided."}</Text>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-4">
-                                        <Text size="sm" fw={600} className="px-3 py-1 !text-blue-500">
+                                        <Text size="sm" className="px-3 py-1 !text-blue-500">
                                             {(item.fileType || item.extension || "FILE").toUpperCase()}
                                         </Text>
                                         <IconDownload size={25} className="text-blue-500 cursor-pointer" />

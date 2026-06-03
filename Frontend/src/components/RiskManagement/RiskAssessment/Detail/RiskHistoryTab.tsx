@@ -21,7 +21,7 @@ const RiskHistoryTab = ({ revisionHistory }: any) => (
                     <Timeline.Item key={index}>
                         <Card withBorder p="md" mb="md">
                             <Group justify="space-between" mb="xs">
-                                <Text size="sm" fw={500}>
+                                <Text size="sm">
                                     Assessment on {formatDateShort(revision.createdAt)}
                                 </Text>
                             </Group>

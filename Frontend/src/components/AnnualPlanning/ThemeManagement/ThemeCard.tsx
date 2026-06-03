@@ -38,7 +38,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, categoryInfo, typeInfo, on
                 </div>
             </div> */}
 
-            <h5 className="font-medium text-sm mb-2 leading-tight">{theme.title}</h5>
+            <h5 className="text-sm mb-2 leading-tight">{theme.title}</h5>
 
             <p className="text-xs text-slate-600 mb-2 line-clamp-3">
                 {theme.description}
@@ -46,15 +46,15 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, categoryInfo, typeInfo, on
 
             <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2">
-                    <span className={`${categoryInfo.color.replace('bg-', 'text-')} font-medium text-xs`}>
+                    <span className={`${categoryInfo.color.replace('bg-', 'text-')} text-xs`}>
                         {categoryInfo.label}
                     </span>
-                    <span className={`${typeInfo.color.replace('bg-', 'text-')} font-medium text-xs`}>
+                    <span className={`${typeInfo.color.replace('bg-', 'text-')} text-xs`}>
                         {typeInfo.label}
                     </span>
                 </div>
                 {/* {theme.participants && (
-                    <span className="text-blue-600 font-medium">
+                    <span className="text-blue-600">
                         {theme.participants} participants
                     </span>
                 )} */}

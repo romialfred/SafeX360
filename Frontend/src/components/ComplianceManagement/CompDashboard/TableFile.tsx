@@ -43,7 +43,7 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
             </div>
 
             <div>
-                <p className="font-semibold text-sm text-gray-800 leading-tight">
+                <p className="text-sm text-gray-800 leading-tight">
                     {rowData.name}
                 </p>
                 <p className="text-xs text-gray-500">{rowData.jobTitle}</p>
@@ -54,7 +54,7 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
     const departmentBodyTemplate = (rowData: CompliantEmployee) => (
         <div className="flex items-center gap-2">
             <div className="bg-blue-50 rounded-2xl p-2">
-                <p className="font-medium text-sm text-blue-600 leading-tight">
+                <p className="text-sm text-blue-600 leading-tight">
                     {rowData.department}
                 </p>
             </div>
@@ -64,7 +64,7 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
     const nextReviewBodyTemplate = (rowData: CompliantEmployee) => (
         <div className="flex items-center gap-2">
             <div className="bg-green-50 rounded-2xl p-2">
-                <p className="font-medium text-sm text-green-600 leading-tight">
+                <p className="text-sm text-green-600 leading-tight">
                     {getNextReviewLabel(rowData)}
                 </p>
             </div>
@@ -87,8 +87,8 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
             <div className="flex items-center gap-2 mb-5 p-2">
                 <IconCircleCheck color="green" />
                 <div className="flex flex-col">
-                    <p className="text-xl font-semibold text-green-600 ">Compliant Employees</p>
-                    <p className="font-medium text-gray-500 ">Employees with up-to-date compliance requirements</p>
+                    <p className="text-lg text-green-600 ">Compliant Employees</p>
+                    <p className="text-gray-500 ">Employees with up-to-date compliance requirements</p>
                     <Text size="sm" c="dimmed">
                         Showing {endIndex} of {totalRecords} records
                     </Text>

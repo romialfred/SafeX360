@@ -170,7 +170,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
         // console.log("Form submitted with values:", form.values);
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -208,7 +208,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
     const handleFollowupSubmit = (values: any) => {
         if (isAuditLocked) return;
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -269,11 +269,11 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                 <Group gap="xs">
                                     {!isAuditLocked && (
                                         <>
-                                            <Button size="xs" fw={500} variant="light" color="blue" onClick={() => handleModal("modify", obs)}>Modify</Button>
-                                            <Button size="xs" fw={500} color="green" variant="light" onClick={() => handleModal("update", obs)}>Update</Button>
+                                            <Button size="xs" variant="light" color="blue" onClick={() => handleModal("modify", obs)}>Modify</Button>
+                                            <Button size="xs" color="green" variant="light" onClick={() => handleModal("update", obs)}>Update</Button>
                                         </>
                                     )}
-                                    <Button size="xs" fw={500} color="orange" variant="light" onClick={() => handleModal("history", obs)}>History</Button>
+                                    <Button size="xs" color="orange" variant="light" onClick={() => handleModal("history", obs)}>History</Button>
                                 </Group>
                             </Group>
 
@@ -296,14 +296,14 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                 <div>
                                     <Group justify="space-between" mb={5}>
                                         <Text size="sm">Advancement</Text>
-                                        <Text size="sm" fw={600} color={getProgressColor(obs.progress)}>{obs.progress}%</Text>
+                                        <Text size="sm" color={getProgressColor(obs.progress)}>{obs.progress}%</Text>
                                     </Group>
                                     <Progress color={getProgressColor(obs.progress)} value={obs.progress} />
                                 </div>
 
                                 {/* Description */}
                                 <div>
-                                    <Text fw={600} size="sm" c="gray">Description</Text>
+                                    <Text size="sm" c="gray">Description</Text>
                                     <div
                                         className="text-sm"
                                         dangerouslySetInnerHTML={{ __html: obs.description }}
@@ -312,7 +312,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
 
                                 {/* Corrective Action */}
                                 <div>
-                                    <Text fw={600} size="sm" c="gray">Corrective Action</Text>
+                                    <Text size="sm" c="gray">Corrective Action</Text>
                                     <div
                                         className="text-sm"
                                         dangerouslySetInnerHTML={{ __html: obs.correctiveAction }}
@@ -329,7 +329,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                     {/* New Observation Form */}
                     <div className="flex justify-between items-center">
 
-                        <h2 className="text-lg font-semibold text-gray-700 ">New Recommendation</h2>
+                        <h2 className="text-lg text-gray-700 ">New Recommendation</h2>
                         <Button color="red" onClick={handleCancel}>Cancel</Button>
 
                     </div>
@@ -452,7 +452,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             <Modal
                 opened={opened === "update"}
                 onClose={() => setOpened(null)}
-                title={<div className="text-lg text-blue-500 font-medium">Recommendation Update</div>}
+                title={<div className="text-lg text-blue-500">Recommendation Update</div>}
                 size="auto"
                 centered yOffset="10dvh"
             >
@@ -488,7 +488,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                             <>
                                 <Divider size="xs" orientation="vertical" />
                                 <div className="space-y-5 h-[530px] overflow-y-auto">
-                                    <p className="text-lg items-center font-semibold mb-4 flex gap-1 text-amber-600">
+                                    <p className="text-lg items-center mb-4 flex gap-1 text-amber-600">
                                         <IconClock /> Update History
                                     </p>
 
@@ -506,7 +506,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                                         {/* Header */}
                                                         <div className="flex justify-between items-center">
                                                             <div className="rounded-4xl">
-                                                                <p className="text-sm font-medium text-amber-800 flex gap-1 p-1 items-center">
+                                                                <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
                                                                     <IconClock />
                                                                     {formatDateShort(x.followupDate)}
                                                                 </p>
@@ -550,7 +550,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             <Modal
                 opened={opened === "history"}
                 onClose={() => setOpened(null)}
-                title={<span className="text-blue-500 text-lg font-medium"> Recommendation Update History</span>}
+                title={<span className="text-blue-500 text-lg"> Recommendation Update History</span>}
                 size="lg"
                 centered
             >
@@ -562,7 +562,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                 <div className="space-y-4 text-sm text-gray-800">
                     {/* Overview Header */}
                     <div className="bg-gray-50 p-4 rounded-md space-y-1">
-                        <div className="text-base font-medium "> Title: {recommendation.title}</div>
+                        <div className="text-base "> Title: {recommendation.title}</div>
                         <div className="flex justify-between">
                             <p><strong>Action Manager:</strong> {empMap[recommendation.actionManagerId]?.name}</p>
                             <p><strong>Deadline:</strong> {formatDateShort(recommendation.deadline)}</p>
@@ -570,7 +570,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                     </div>
 
                     <div className="space-y-6">
-                        <div className="font-medium text-base">Change History ({recommendationFollowups.length})</div>
+                        <div className="text-base">Change History ({recommendationFollowups.length})</div>
 
                         {recommendationFollowups.map((entry, index) => {
                             const previous = recommendationFollowups[index - 1];
@@ -585,7 +585,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                     className="p-4 border rounded-md bg-blue-50 space-y-2"
                                 >
                                     <div className="flex justify-between items-center">
-                                        <span className="text-blue-800 font-semibold">{statusChange}</span>
+                                        <span className="text-blue-800">{statusChange}</span>
                                         <span className="text-sm text-gray-600">{entry.progress}%</span>
                                     </div>
 

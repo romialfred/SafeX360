@@ -46,7 +46,7 @@ const NotificationRecipients: React.FC<NotificationRecipientsProps> = ({ notific
                         return recipient ? (
                             <Table.Tr key={recipientId}>
                                 <Table.Td>
-                                    <Text size="sm" fw={500}>{recipient.name}</Text>
+                                    <Text size="sm">{recipient.name}</Text>
                                 </Table.Td>
                                 <Table.Td>
                                     <Text size="sm">{recipient.department}</Text>

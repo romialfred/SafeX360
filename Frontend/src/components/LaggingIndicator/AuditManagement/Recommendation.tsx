@@ -1,7 +1,6 @@
 import {
     ActionIcon,
     Badge,
-    Breadcrumbs,
     Button,
     Card,
     Divider,
@@ -16,12 +15,14 @@ import {
 } from "@mantine/core";
 import {
     IconAlertTriangle,
+    IconBulb,
     IconCircleCheck,
     IconClock,
     IconLayoutGrid,
     IconLayoutList,
     IconTrendingUp,
 } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
@@ -165,11 +166,11 @@ const Recommendation = () => {
     };
 
     const recommendationSummaryData = [
-        { id: 'total', label: 'Total Recommendations', icon: IconTrendingUp, color: '#2563eb' },
-        { id: 'inProgress', label: 'In Progress', icon: IconClock, color: '#f59e0b' },
-        { id: 'implemented', label: 'Implemented', icon: IconCircleCheck, color: '#22c55e' },
-        { id: 'overdue', label: 'Overdue (Past Due Date)', icon: IconAlertTriangle, color: '#f97316' },
-        { id: 'execRate', label: 'Execution Rate', icon: IconTrendingUp, color: '#8b5cf6' },
+        { id: 'total', label: 'Total recommandations', icon: IconTrendingUp, color: '#2563eb' },
+        { id: 'inProgress', label: 'En cours', icon: IconClock, color: '#f59e0b' },
+        { id: 'implemented', label: 'Mises en œuvre', icon: IconCircleCheck, color: '#22c55e' },
+        { id: 'overdue', label: 'En retard', icon: IconAlertTriangle, color: '#f97316' },
+        { id: 'execRate', label: 'Taux de réalisation', icon: IconTrendingUp, color: '#8b5cf6' },
     ];
 
     const handleModalOpen = (rowData: any) => {
@@ -240,7 +241,7 @@ const Recommendation = () => {
 
     const handleSubmit = async (values: any) => {
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -293,10 +294,10 @@ const Recommendation = () => {
             value={selectedStatus}
             onChange={setSelectedStatus}
             data={[
-                { label: `All (${recommendations.length})`, value: 'All' },
-                { label: `Pending (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'pending').length})`, value: 'PENDING' },
-                { label: `In Progress (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'in_progress').length})`, value: 'IN_PROGRESS' },
-                { label: `Completed (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'completed').length})`, value: 'COMPLETED' },
+                { label: `Toutes (${recommendations.length})`, value: 'All' },
+                { label: `En attente (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'pending').length})`, value: 'PENDING' },
+                { label: `En cours (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'in_progress').length})`, value: 'IN_PROGRESS' },
+                { label: `Terminées (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'completed').length})`, value: 'COMPLETED' },
             ]}
             color="blue"
         />
@@ -306,7 +307,7 @@ const Recommendation = () => {
 
 
         return (
-            <Select className="col-span-2" placeholder="Select Departments" data={["All Departments", "Safety", "IT"]} withAsterisk />
+            <Select className="col-span-2" placeholder="Sélectionner les départements" data={["Tous départements", "HSE", "Production", "Maintenance", "Logistique"]} withAsterisk />
         );
     };
     const nameBodyTemplate = (rowData: any) => {
@@ -325,7 +326,7 @@ const Recommendation = () => {
                 value={selectedProgress}
                 onChange={setSelectedProgress}
                 data={[
-                    { label: `All`, value: 'All' },
+                    { label: `Tous`, value: 'All' },
                     { label: '0-20%', value: '20' },
                     { label: '21-70%', value: '70' },
                     { label: '71-100%', value: '71' },
@@ -333,7 +334,7 @@ const Recommendation = () => {
                 color={selectedProgress === 'All' ? 'blue' : selectedProgress === '20' ? 'red' : selectedProgress === '70' ? 'orange' : 'green'}
             />
             <div className="flex mx-auto gap-2 border border-primary rounded-lg p-2 bg-gray-100">
-                <Tooltip label="Table View">
+                <Tooltip label="Vue tableau">
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
@@ -342,7 +343,7 @@ const Recommendation = () => {
                         <IconLayoutList size={18} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Card View">
+                <Tooltip label="Vue cartes">
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
@@ -356,18 +357,18 @@ const Recommendation = () => {
     );
 
     return (
-        <div>
-            <div>
-                <div className="font-semibold  text-2xl text-blue-500 w-fit">Recommendation Followup</div>
-                <Breadcrumbs mt="xs" mb="lg">
-                    <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-                    <Link className="hover:!underline" to="/audit-management"><Text variant="gradient">Audit Management</Text></Link>
-                    <Text variant="gradient">Recommendation Followup</Text>
-                </Breadcrumbs>
-            </div>
-            <div className="italic my-3">
-                Track audit recommendations and hazard-related improvements to completion
-            </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Audits', to: '/audit-management' },
+                    { label: 'Suivi des recommandations' },
+                ]}
+                icon={<IconBulb size={22} stroke={2} />}
+                iconColor="indigo"
+                title="Suivi des recommandations d'audit"
+                subtitle="Suivi de la mise en œuvre des recommandations d'audit et améliorations associées jusqu'à clôture"
+            />
             <div className="flex flex-col gap-5">
                 {/* Summary Cards */}
                 <div className="grid gap-4 md:grid-cols-5 sm:grid-cols-1 mb-4">
@@ -384,8 +385,8 @@ const Recommendation = () => {
                                 />
                                 <div className="relative flex justify-between items-center p-4">
                                     <div className="flex flex-col gap-1">
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{item.label}</p>
-                                        <span className="text-lg font-semibold text-slate-800">
+                                        <p className="text-xs text-slate-500 uppercase tracking-wide">{item.label}</p>
+                                        <span className="text-lg text-slate-800">
                                             {countMap[item.id] ?? (item.id === 'execRate' ? '0%' : 0)}
                                         </span>
                                     </div>
@@ -424,12 +425,11 @@ const Recommendation = () => {
                                 currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
                                 onFilter={(e) => setFilters(e.filters)}
                             >
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" header="Recommendation" body={nameBodyTemplate} sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="auditTitle" header="Audit" />
-
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="endDate" header="Due Date" body={(rowData) => formatDateShort(rowData.deadline)} />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => getSeverity(rowData, 'status')} />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="progress" header="Progress %" body={(rowData) => getSeverity(rowData, 'progress')} />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="title" header="Recommandation" body={nameBodyTemplate} sortable />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="auditTitle" header="Audit lié" />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="endDate" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} sortable />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="status" header="Statut" body={(rowData) => getSeverity(rowData, 'status')} sortable />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="progress" header="Progression" body={(rowData) => getSeverity(rowData, 'progress')} sortable />
                                 <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                             </DataTable>
                         ) : (
@@ -450,7 +450,7 @@ const Recommendation = () => {
                 <Modal
                     opened={modalOpened}
                     onClose={() => setModalOpened(false)}
-                    title={<div className="text-xl font-medium">{recommendation?.title}</div>}
+                    title={<div className="text-lg">{recommendation?.title}</div>}
                     size="auto"
                     centered yOffset="10dvh"
                 >
@@ -473,7 +473,7 @@ const Recommendation = () => {
                                 <div className="grid grid-cols-2 gap-4">
 
                                     <NumberInput {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
-                                    <Select {...form.getInputProps('status')} label="Status" placeholder="Select Status" data={recommendationStatus.slice(recommendationStatus.findIndex((item) => item.value === (recommendationFollowups?.length > 0 ? recommendationFollowups[recommendationFollowups.length - 1]?.status : selectedRow?.status)))} />
+                                    <Select size="sm" {...form.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={recommendationStatus.slice(recommendationStatus.findIndex((item) => item.value === (recommendationFollowups?.length > 0 ? recommendationFollowups[recommendationFollowups.length - 1]?.status : selectedRow?.status)))} />
                                 </div>
                                 <TextEditor form={form} id="comment" title="Update Comment" />
                                 <Divider size="xs" />
@@ -486,7 +486,7 @@ const Recommendation = () => {
                                 <>
                                     <Divider size="xs" orientation="vertical" />
                                     <div className="space-y-5 h-[530px] overflow-y-auto">
-                                        <p className="text-lg items-center font-semibold mb-4 flex gap-1 text-amber-600">
+                                        <p className="text-lg items-center mb-4 flex gap-1 text-amber-600">
                                             <IconClock /> Update History
                                         </p>
 
@@ -504,7 +504,7 @@ const Recommendation = () => {
                                                             {/* Header */}
                                                             <div className="flex justify-between items-center">
                                                                 <div className="rounded-4xl">
-                                                                    <p className="text-sm font-medium text-amber-800 flex gap-1 p-1 items-center">
+                                                                    <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
                                                                         <IconClock />
                                                                         {formatDateShort(x.followupDate)}
                                                                     </p>

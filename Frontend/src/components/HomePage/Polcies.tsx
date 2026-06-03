@@ -31,7 +31,7 @@ const Polcies = () => {
 
             <div className="flex gap-2 items-center">
                 <IconBook stroke={2} />
-                <Text size="xl" fw={700} className="text-gray-900">Company Policies</Text>
+                <Text size="xl" className="text-gray-900">Company Policies</Text>
             </div>
 
 
@@ -45,7 +45,7 @@ const Polcies = () => {
 
                             {/* Title & Date */}
                             <div className="flex flex-col">
-                                <Text size="md" fw={600}>{item.title}</Text>
+                                <Text size="md">{item.title}</Text>
                                 <Text size="sm" color="dimmed">{item.date}</Text>
                             </div>
                         </div>

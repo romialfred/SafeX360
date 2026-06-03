@@ -27,9 +27,9 @@ const DocumentHistory = ({ versions, downloadDocument, openDocument }: any) => {
                         <Card withBorder p="md" mb="md">
                             <Group justify="space-between" mb="xs">
                                 <Group>
-                                    <Text size="sm" fw={500}>
+                                    <Text size="sm">
                                         {version.mediaName}
-                                        {index === 0 && <Text component="span" c="blue" fw={700}> (current)</Text>}
+                                        {index === 0 && <Text component="span" c="blue"> (current)</Text>}
                                     </Text>
                                     {/* <Badge size="sm" variant="outline">
                                         {formatFileSize(version. )}

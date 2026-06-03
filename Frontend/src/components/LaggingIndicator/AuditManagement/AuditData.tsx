@@ -78,17 +78,17 @@ const AuditData = () => {
 
     const actionBodyTemplate = (rowData: any) => {
         return (
-            <div className="flex gap-3">
+            <div className="flex gap-2">
 
-                {activeTab == "EXECUTION" && <Tooltip label="Execute Audit">
-                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" size="sm">
-                        <IconPlayerPlay className="!w-4/5 !h-4/5" stroke={1.5} />
+                {activeTab == "EXECUTION" && <Tooltip label="Exécuter l'audit">
+                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" variant="light" size="sm">
+                        <IconPlayerPlay className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
                 }
-                <Tooltip label="Update Schedule Audit">
-                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} variant="gradient" size="sm">
-                        <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
+                <Tooltip label="Modifier la planification">
+                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} color="teal" variant="light" size="sm">
+                        <IconEdit className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
                 {/* <Tooltip label="View Details Audit">
@@ -103,9 +103,9 @@ const AuditData = () => {
                     </ActionIcon>
                 </Tooltip> */}
 
-                <Tooltip label="Remove Schedule Audit">
-                    <ActionIcon onClick={() => (rowData)} color="red" size="sm">
-                        <IconTrash className="!w-4/5 !h-4/5" stroke={1.5} />
+                <Tooltip label="Supprimer la planification">
+                    <ActionIcon onClick={() => (rowData)} color="red" variant="light" size="sm">
+                        <IconTrash className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
             </div>
@@ -114,36 +114,45 @@ const AuditData = () => {
 
     const rightToolbarTemplate = () => {
         return (
-            activeTab !== "dashboard" && <div className="flex gap-5">
-                <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                    <Tooltip label="Table View">
+            activeTab !== "dashboard" && <div className="flex gap-3 items-center">
+                <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-slate-50">
+                    <Tooltip label="Vue tableau">
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
-                            color="blue"
+                            color="indigo"
+                            size="sm"
                             onClick={() => setViewType('table')}
                         >
-                            <IconLayoutList size={18} />
+                            <IconLayoutList size={16} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Card View">
+                    <Tooltip label="Vue cartes">
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
-                            color="blue"
+                            color="indigo"
+                            size="sm"
                             onClick={() => setViewType('card')}
                         >
-                            <IconLayoutGrid size={18} />
+                            <IconLayoutGrid size={16} />
                         </ActionIcon>
                     </Tooltip>
                 </div>
-                <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-                <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
+                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />}>Exporter</Button>
+                <TextInput
+                    value={globalFilterValue}
+                    onChange={onGlobalFilterChange}
+                    size='sm'
+                    radius="md"
+                    placeholder='Rechercher un audit…'
+                    leftSection={<IconSearch size={14} />}
+                />
             </div>
         );
     };
 
-    // Colorful tabs for planning statuses, blue for internal/external
+    // Onglets statut audit — couleurs cohérentes avec la palette HSE
     const planningTabOptions = [
-        { value: 'dashboard', label: 'Dashboard', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
+        { value: 'dashboard', label: 'Tableau de bord', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
         ...auditStatuses.map((status) => {
             let colorClass = '!text-slate-600';
             switch (status.value) {
@@ -262,28 +271,29 @@ const AuditData = () => {
                                 rowsPerPageOptions={[10, 25, 50]}
                                 dataKey="title"
                                 filters={filters}
-                                globalFilterFields={['title', 'objective', 'sites', 'ppe']}
-                                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                                globalFilterFields={['title', 'refNumber', 'objective', 'sites']}
+                                currentPageReportTemplate="{first} à {last} sur {totalRecords} audits"
+                                emptyMessage="Aucun audit dans ce statut"
                                 onFilter={(e) => setFilters(e.filters)}
                             >
 
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="refNumber" header="Reference" sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" body={nameBodyTemplate} header="Audit Title" sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="scopeId" header="Audit Area" body={(rowData) => auditAreaMap[rowData.scopeId]?.name} />
-                                <Column align="center" style={{ fontWeight: 'normal', fontSize: "14px" }} field="leadAuditor" header="Lead Auditor" body={leadAuditorBodyTemplate} />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Category" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
+                                <Column style={{ fontSize: "13px" }} field="refNumber" header="Référence" sortable />
+                                <Column style={{ fontSize: "13px" }} field="title" body={nameBodyTemplate} header="Titre de l'audit" sortable />
+                                <Column style={{ fontSize: "13px" }} field="scopeId" header="Domaine d'audit" body={(rowData) => auditAreaMap[rowData.scopeId]?.name ?? '—'} />
+                                <Column align="center" style={{ fontSize: "13px" }} field="leadAuditor" header="Auditeur principal" body={leadAuditorBodyTemplate} />
+                                <Column style={{ fontSize: "13px" }} field="category" header="Catégorie" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
 
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="startDate" header="Start Date" body={(rowData) => formatDateShort(rowData.startDate)} />
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="endDate" header="End Date" body={(rowData) => formatDateShort(rowData.endDate)} />
+                                <Column style={{ fontSize: "13px" }} field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} sortable />
+                                <Column style={{ fontSize: "13px" }} field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
 
-                                {/* <Column field="objective" header="Objective" body={levelBodyTemplate} /> */}
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => <Button
-                                    color="orange"
+                                <Column style={{ fontSize: "13px" }} field="status" header="Statut" body={(rowData) => <Button
+                                    color="indigo"
                                     size="compact-xs"
-                                    variant="outline"
-                                >{auditStatusMap[rowData.status ?? ""]}</Button>} />
+                                    variant="light"
+                                    radius="sm"
+                                >{auditStatusMap[rowData.status ?? ""] ?? rowData.status}</Button>} />
 
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
+                                <Column style={{ fontSize: "13px" }} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
                             </DataTable>
 
                         ) : (
@@ -292,8 +302,8 @@ const AuditData = () => {
                                     <AuditCard key={audit.id} incidentData={audit} auditAreaMap={auditAreaMap} />
                                 ))}
                                 {filteredData.length === 0 && (
-                                    <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                        No audit available
+                                    <div className='text-sm text-slate-500 col-span-3 mx-auto py-8'>
+                                        Aucun audit dans ce statut
                                     </div>
                                 )}
                             </div>

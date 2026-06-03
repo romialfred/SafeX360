@@ -32,7 +32,7 @@ const Charts: React.FC<ChartsProps> = ({ leftDonutTitle, rightDonutTitle, leftDo
                                 <div className="relative inline-flex items-center justify-center">
                                     <DonutChart data={coloredLeft} thickness={40} withTooltip />
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <Text fw={700} size="sm">
+                                        <Text size="sm">
                                             {coloredLeft.reduce((acc, d) => acc + (Number(d.value) || 0), 0)}
                                         </Text>
                                     </div>
@@ -54,7 +54,7 @@ const Charts: React.FC<ChartsProps> = ({ leftDonutTitle, rightDonutTitle, leftDo
                                 <div className="relative inline-flex items-center justify-center">
                                     <DonutChart data={coloredRight} thickness={40} withTooltip />
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <Text fw={700} size="sm">
+                                        <Text size="sm">
                                             {coloredRight.reduce((acc, d) => acc + (Number(d.value) || 0), 0)}
                                         </Text>
                                     </div>

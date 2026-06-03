@@ -111,7 +111,7 @@ const CreateDocument = () => {
     return (
         <div >
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Create New Document</div>
+                <div className="text-2xl text-blue-500 w-fit">Create New Document</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -296,7 +296,7 @@ const CreateDocument = () => {
                                             {/* {getFileTypeIcon(doc.fileType)} */}
                                             <Box>
                                                 <Link to={`/document-management/document-details/${doc.id}`}>
-                                                    <Text size="sm" fw={500} lineClamp={1}>{doc.documentName}</Text>
+                                                    <Text size="sm" lineClamp={1}>{doc.documentName}</Text>
                                                 </Link>
                                                 <Text size="xs" c="dimmed">{doc.category}</Text>
                                             </Box>
@@ -331,7 +331,7 @@ const CreateDocument = () => {
 
                         <Stack gap="sm">
                             <Box p="sm" style={{ backgroundColor: '#e7f5ff', borderRadius: '8px' }}>
-                                <Text size="sm" fw={500} c="blue" mb="xs">📋 Status Guidelines</Text>
+                                <Text size="sm" c="blue" mb="xs">📋 Status Guidelines</Text>
                                 <Text size="xs" c="dimmed">
                                     • <strong>Draft:</strong> Document in creation<br />
                                     • <strong>Under Review:</strong> Pending approval<br />
@@ -341,7 +341,7 @@ const CreateDocument = () => {
                             </Box>
 
                             <Box p="sm" style={{ backgroundColor: '#fff3cd', borderRadius: '8px' }}>
-                                <Text size="sm" fw={500} c="orange" mb="xs">🔒 Access Levels</Text>
+                                <Text size="sm" c="orange" mb="xs">🔒 Access Levels</Text>
                                 <Text size="xs" c="dimmed">
                                     • <strong>Public:</strong> Available to everyone<br />
                                     • <strong>Internal:</strong> Company employees only<br />
@@ -351,7 +351,7 @@ const CreateDocument = () => {
                             </Box>
 
                             <Box p="sm" style={{ backgroundColor: '#d1ecf1', borderRadius: '8px' }}>
-                                <Text size="sm" fw={500} c="teal" mb="xs">💡 Best Practices</Text>
+                                <Text size="sm" c="teal" mb="xs">💡 Best Practices</Text>
                                 <Text size="xs" c="dimmed">
                                     • Use descriptive names and tags<br />
                                     • Set appropriate review dates<br />

@@ -50,7 +50,6 @@ const StatusSummaryCards = ({ cards, className }: StatusSummaryCardsProps) => {
                             <div className="flex items-start justify-between">
                                 <Text
                                     size="xs"
-                                    fw={600}
                                     tt="uppercase"
                                     c="gray.6"
                                     className="tracking-wide"
@@ -67,7 +66,7 @@ const StatusSummaryCards = ({ cards, className }: StatusSummaryCardsProps) => {
                                     <card.icon size={22} stroke={1.8} />
                                 </ThemeIcon>
                             </div>
-                            <Text size="xl" fw={700} c="gray.9">
+                            <Text size="xl" c="gray.9">
                                 {card.value}
                             </Text>
                             {/* {card.description && (

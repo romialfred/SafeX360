@@ -140,7 +140,7 @@ const Sidebar = () => {
             <Accordion.Control p={0} chevron={<></>} className="!text-neutral-700 group hover:!text-neutral-50 ">
                 <div className="flex gap-3 justify-between hover:!text-neutral-400 cursor-pointer text-base items-center">
 
-                    <div className={`opacity - 100 uppercase text-sm font-medium tracking-wide`}>
+                    <div className={`opacity - 100 uppercase text-sm tracking-wide`}>
                         {props.children}
                     </div>
                     <ActionIcon color="neutral" className={`${"group-hover:opacity-100  group-hover:translate-x-0 group-hover:visible opacity-0 translate-x-2 invisible"} ${menu.find((x) => x == props.name) ? " rotate-90" : ""} transition-all duration-300 min-w-40`} variant="transparent" >

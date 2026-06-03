@@ -44,7 +44,7 @@ const RecommendationDetails = () => {
                 <div className="flex flex-col gap-10">
                     {/* Breadcrumb */}
                     <div>
-                        <div className="font-semibold text-2xl text-blue-500 w-fit">
+                        <div className="text-2xl text-blue-500 w-fit">
                             Recommendation Details
                         </div>
                         <Breadcrumbs mt="xs" mb="lg">
@@ -65,7 +65,7 @@ const RecommendationDetails = () => {
                         {/* Title, Status, Created Date */}
                         <div className="flex flex-col">
                             <div className="flex justify-between">
-                                <h1 className="text-2xl font-medium">
+                                <h1 className="text-2xl">
                                     {recommendation.title || "Untitled"}
                                 </h1>
                                 <div className="bg-amber-100 rounded-4xl p-2">
@@ -91,7 +91,7 @@ const RecommendationDetails = () => {
 
                         {/* Description */}
                         <div>
-                            <p className="text-lg font-medium text-gray-600">Description</p>
+                            <p className="text-lg text-gray-600">Description</p>
                             <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                                 {recommendation.description ? (
                                     <div
@@ -107,7 +107,7 @@ const RecommendationDetails = () => {
 
                         {/* Followups */}
                         <div className="flex flex-col gap-4">
-                            <h1 className="text-2xl font-medium">Update History</h1>
+                            <h1 className="text-2xl">Update History</h1>
                             {followups.length > 0 ? (
                                 followups.map((item, index) => (
                                     <div
@@ -117,7 +117,7 @@ const RecommendationDetails = () => {
                                         <div className="flex justify-between">
                                             <div className="flex gap-4 items-center">
                                                 <div className="bg-white rounded-4xl p-2 w-fit shadow-sm">
-                                                    <p className="flex items-center gap-2 text-gray-800 font-medium">
+                                                    <p className="flex items-center gap-2 text-gray-800">
                                                         <IconUser color="blue" />
                                                         {item.updatedBy || "Unknown"}
                                                     </p>
@@ -155,7 +155,7 @@ const RecommendationDetails = () => {
                                             <div>
                                                 <div className="flex gap-1">
                                                     <IconPaperclip color="blue" />
-                                                    <p className="text-gray-500 text-xl font-medium">
+                                                    <p className="text-gray-500 text-lg">
                                                         Attachments
                                                     </p>
                                                 </div>

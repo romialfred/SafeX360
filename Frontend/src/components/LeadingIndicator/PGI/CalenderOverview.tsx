@@ -24,8 +24,8 @@ const CalenderOverview = () => {
     const renderHeader = () => {
         return (
             <div className="flex font-normal gap-80 ">
-                <span className="text-2xl font-bold text-blue-500">Alice Johnson</span>
-                <div className="font-bold text-xl text-primary flex items-center gap-2">
+                <span className="text-2xl text-blue-500">Alice Johnson</span>
+                <div className="text-xl text-primary flex items-center gap-2">
                     <ActionIcon variant="subtle" color="secondary"><IconChevronLeft stroke={2} /> </ActionIcon>
                     January 2025
                     <ActionIcon variant="subtle" color="secondary"><IconChevronRight stroke={2} /> </ActionIcon>
@@ -44,7 +44,7 @@ const CalenderOverview = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Calendar Overview</div>
+                    <div className="text-2xl text-blue-500 w-fit">Calendar Overview</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -64,7 +64,7 @@ const CalenderOverview = () => {
                     left={() => <SegmentedControl size="md" data={['Monthly View']} color="primary" className="!border  !border-primary" />}
                     right={() => (
                         <div className='flex items-center  rounded gap-1'>
-                            <span className="text-xl font-bold text-primary">Select period:</span>
+                            <span className="text-lg text-primary">Select period:</span>
                             <Select placeholder="Jan 2025" data={['Jan 2025', 'Feb 2025', 'Nov 2024', 'Dec 2024']} searchable={false} />
                         </div>
                     )}

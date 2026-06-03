@@ -68,7 +68,7 @@ const Company = () => {
 
 
 
-                            <h1 className="text-5xl font-bold leading-tight mt-4 hover:text-primary">
+                            <h1 className="text-5xl leading-tight mt-4 hover:text-primary">
                                 {cardData[currentIndex].count}
                             </h1>
 
@@ -100,7 +100,7 @@ const Company = () => {
             <div>
                 <div className="flex flex-col gap-5  shadow-2xl p-14  bg-primary w-[1100px]   absolute -bottom-10 right-0">
                     <div className="flex justify-between">
-                        <p className="text-white text-4xl font-bold">Get your free quote today</p>
+                        <p className="text-white text-4xl">Get your free quote today</p>
 
                     </div>
 

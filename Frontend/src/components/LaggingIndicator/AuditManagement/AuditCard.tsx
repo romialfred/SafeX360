@@ -13,10 +13,10 @@ const AuditCard = ({ incidentData, auditAreaMap }: any) => {
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
             <div className="flex gap-4 items-center justify-between">
 
-                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                     {capitalizeFirstLetter(incidentData.category)}
                 </span>
-                <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-lg">
                     {auditAreaMap[incidentData.scopeId]?.name}
                 </span>
                 <Button
@@ -26,15 +26,15 @@ const AuditCard = ({ incidentData, auditAreaMap }: any) => {
                 >{auditStatusMap[incidentData.status ?? ""]}</Button>
             </div>
 
-            <div className="text-sm font-semibold text-gray-900">{incidentData.title}</div>
+            <div className="text-sm text-gray-900">{incidentData.title}</div>
 
-            <div className="text-gray-500 text-xs font-medium">
+            <div className="text-gray-500 text-xs">
                 Audit Date: {formatDateShort(incidentData.startDate)}
             </div>
-            <div className="text-gray-500 text-xs font-medium">
+            <div className="text-gray-500 text-xs">
                 Type: {Object.keys(incidentData.auditTypes).join(", ")}
             </div>
-            <div className="text-gray-500 text-xs font-medium">
+            <div className="text-gray-500 text-xs">
                 Lead Auditor:
             </div>
 

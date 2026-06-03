@@ -32,7 +32,7 @@ const Metrics = () => {
         <div className="flex flex-col  gap-6 shadow-2xl border border-gray-200 p-6 rounded-xl">
 
             <div>
-                <p className='text-3xl font-bold '>Compliance Metrics</p>
+                <p className='text-2xl font-semibold '>Compliance Metrics</p>
             </div>
             <div className='grid grid-cols-4 gap-4'>
 
@@ -43,7 +43,7 @@ const Metrics = () => {
 
                         {/* Metric Card */}
 
-                        <Text size="md" fw={600} className="text-gray-700">
+                        <Text size="md" className="text-gray-700">
                             {metric.title}
                         </Text>
 
@@ -52,8 +52,8 @@ const Metrics = () => {
 
                         {/* Target Info */}
                         <div className="flex justify-between text-gray-600 text-sm">
-                            <Text fw={500}>{metric.progress}%</Text>
-                            <Text fw={500}>Target: {metric.target}%</Text>
+                            <Text>{metric.progress}%</Text>
+                            <Text>Target: {metric.target}%</Text>
                         </div>
 
                     </div>

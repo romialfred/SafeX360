@@ -69,7 +69,7 @@ const AuditDashTable = () => {
     return (
         <div className="card">
             <div className="flex items-start mb-3">
-                <h1 className="text-xl font-bold text-gray-600">Active Recommendations</h1>
+                <h1 className="text-lg text-gray-600">Active Recommendations</h1>
             </div>
             <DataTable
                 value={active}

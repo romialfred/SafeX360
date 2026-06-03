@@ -1,31 +1,24 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import LessonData from "./LessonData"
-
-
+import { IconBook } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import LessonData from "./LessonData";
 
 const LessonLearn = () => {
     return (
-        <div className=' '>
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Lessons Learned</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Lessons Learned</Text>
-                    </Breadcrumbs>
-
-                </div>
-
-            </div>
-            <p className=' italic my-3'>Documenting and sharing insights from safety incidents to prevent future occurrences and enhance workplace safety</p>
-            <div className='   '>
-                <LessonData />
-            </div>
-
-
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Centre de Connaissances' },
+                    { label: "Retours d'expérience" },
+                ]}
+                icon={<IconBook size={22} stroke={2} />}
+                iconColor="cyan"
+                title="Retours d'expérience"
+                subtitle="Documentation et partage des enseignements tirés des incidents — ISO 45001 §10.2.1.e"
+            />
+            <LessonData />
         </div>
-    )
-}
+    );
+};
 
-export default LessonLearn
+export default LessonLearn;

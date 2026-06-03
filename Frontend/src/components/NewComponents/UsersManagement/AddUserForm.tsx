@@ -278,7 +278,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
         <div className="flex flex-col gap-8 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Create User</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Create User</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/users-management" ><Text variant="gradient" className="hover:!underline cursor-pointer">Users Management</Text></Link>
@@ -291,7 +291,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
 
                 {/* Content */}
                 <div className="bg-white shadow-sm border border-gray-300 p-6 rounded-xl">
-                    <p className="text-gray-600 text-lg font-medium mb-4">Manage user accounts, roles, and permissions</p>
+                    <p className="text-gray-600 text-lg mb-4">Manage user accounts, roles, and permissions</p>
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         {/* Main Form - 3 columns */}
                         <div className="lg:col-span-3 space-y-8">
@@ -301,7 +301,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                             {/* Employee Selection */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm text-gray-700 mb-2">
                                         Select Employee from HRMS *
                                     </label>
                                     <Select
@@ -326,47 +326,47 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                 )}
                                 {!loadingEmployee && selectedEmployee && (
                                     <div className="mt-6">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Employee Details</h3>
+                                        <h3 className="text-lg text-gray-900 mb-4">Selected Employee Details</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-4">
                                                 <div className="flex items-center">
                                                     <IconUser className="w-4 h-4 text-gray-400 mr-3" />
                                                     <div>
                                                         <span className="text-sm text-gray-500">Employee Number:</span>
-                                                        <span className="ml-2 font-medium text-gray-900">{empMap["" + selectedEmployee.id]?.empNumber || selectedEmployee.id}</span>
+                                                        <span className="ml-2 text-gray-900">{empMap["" + selectedEmployee.id]?.empNumber || selectedEmployee.id}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center">
                                                     <IconMail className="w-4 h-4 text-gray-400 mr-3" />
                                                     <div>
                                                         <span className="text-sm text-gray-500">Email:</span>
-                                                        <span className="ml-2 font-medium text-gray-900">{selectedEmployee.email}</span>
+                                                        <span className="ml-2 text-gray-900">{selectedEmployee.email}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center">
                                                     <IconBuilding className="w-4 h-4 text-gray-400 mr-3" />
                                                     <div>
                                                         <span className="text-sm text-gray-500">Position:</span>
-                                                        <span className="ml-2 font-medium text-gray-900">{selectedEmployee.position}</span>
+                                                        <span className="ml-2 text-gray-900">{selectedEmployee.position}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="flex items-center">
                                                     <span className="text-sm text-gray-500">Full Name:</span>
-                                                    <span className="ml-2 font-medium text-gray-900">{selectedEmployee.name || `${selectedEmployee.firstName || ''} ${selectedEmployee.lastName || ''}`.trim()}</span>
+                                                    <span className="ml-2 text-gray-900">{selectedEmployee.name || `${selectedEmployee.firstName || ''} ${selectedEmployee.lastName || ''}`.trim()}</span>
                                                 </div>
                                                 <div className="flex items-center">
                                                     <span className="text-sm text-gray-500">Department:</span>
-                                                    <span className="ml-2 font-medium text-gray-900">{selectedEmployee.department}</span>
+                                                    <span className="ml-2 text-gray-900">{selectedEmployee.department}</span>
                                                 </div>
                                                 {/* <div className="flex items-center">
                                                     <span className="text-sm text-gray-500">Manager:</span>
-                                                    <span className="ml-2 font-medium text-gray-900">{selectedEmployee.manager}</span>
+                                                    <span className="ml-2 text-gray-900">{selectedEmployee.manager}</span>
                                                 </div> */}
                                                 <div className="mt-4 flex items-center">
                                                     <span className="text-sm text-gray-500">Status:</span>
-                                                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${(selectedEmployee.status || (isActiveUser ? 'ACTIVE' : 'INACTIVE')) === 'ACTIVE'
+                                                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${(selectedEmployee.status || (isActiveUser ? 'ACTIVE' : 'INACTIVE')) === 'ACTIVE'
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-red-100 text-red-800'
                                                         }`}>
@@ -384,7 +384,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                             {selectedEmployee && (
                                 <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-6">
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm text-gray-700 mb-2">
                                             Role *
                                         </label>
                                         <Select
@@ -420,7 +420,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                             {/* Custom Permissions Matrix */}
                             {selectedRole && (
                                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Custom Permissions</h3>
+                                    <h3 className="text-lg text-gray-900 mb-6">Custom Permissions</h3>
 
                                     {/* Permission Tabs */}
                                     <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
@@ -428,7 +428,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                             <button
                                                 key={category}
                                                 onClick={() => setActivePermissionTab(category)}
-                                                className={`px-4 py-2 rounded-md font-medium transition-colors text-sm ${activePermissionTab === category
+                                                className={`px-4 py-2 rounded-md transition-colors text-sm ${activePermissionTab === category
                                                     ? 'bg-white text-blue-600 shadow-sm'
                                                     : 'text-gray-600 hover:text-gray-900'
                                                     }`}
@@ -442,11 +442,11 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                         <table className="w-full">
                                             <thead>
                                                 <tr className="border-b border-gray-200">
-                                                    <th className="text-left py-3 px-4 font-medium text-gray-900">Module</th>
-                                                    <th className="text-center py-3 px-4 font-medium text-blue-600">View/Read</th>
-                                                    <th className="text-center py-3 px-4 font-medium text-orange-600">Edit/Create</th>
-                                                    <th className="text-center py-3 px-4 font-medium text-red-600">Delete</th>
-                                                    <th className="text-center py-3 px-4 font-medium text-green-600">Full Access</th>
+                                                    <th className="text-left py-3 px-4 text-gray-900">Module</th>
+                                                    <th className="text-center py-3 px-4 text-blue-600">View/Read</th>
+                                                    <th className="text-center py-3 px-4 text-orange-600">Edit/Create</th>
+                                                    <th className="text-center py-3 px-4 text-red-600">Delete</th>
+                                                    <th className="text-center py-3 px-4 text-green-600">Full Access</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -527,7 +527,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                         <div className="flex items-start">
                                             <IconAlertTriangle className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
                                             <div>
-                                                <h4 className="font-semibold text-blue-900 mb-2">Permission Rules</h4>
+                                                <h4 className="text-blue-900 mb-2">Permission Rules</h4>
                                                 <ul className="text-sm text-blue-800">
                                                     <li>• View permission is required for Edit and Delete</li>
                                                     <li>• Edit permission includes View permission</li>
@@ -563,7 +563,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-8">
                                 <div className="flex items-center mb-6">
                                     <IconInfoCircle className="w-6 h-6 text-blue-600 mr-3" />
-                                    <h3 className="text-lg font-semibold text-gray-900">Permissions Guide</h3>
+                                    <h3 className="text-lg text-gray-900">Permissions Guide</h3>
                                 </div>
 
                                 <div className="space-y-6">
@@ -571,7 +571,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                     <div className="border-l-4 border-blue-500 pl-4">
                                         <div className="flex items-center mb-2">
                                             <IconEye className="w-5 h-5 text-blue-600 mr-2" />
-                                            <h4 className="font-semibold text-blue-900">View/Read</h4>
+                                            <h4 className="text-blue-900">View/Read</h4>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Allows users to view and read information in the module. Users can see data, reports, and content but cannot make changes.
@@ -585,7 +585,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                     <div className="border-l-4 border-orange-500 pl-4">
                                         <div className="flex items-center mb-2">
                                             <IconEdit className="w-5 h-5 text-orange-600 mr-2" />
-                                            <h4 className="font-semibold text-orange-900">Edit/Create</h4>
+                                            <h4 className="text-orange-900">Edit/Create</h4>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Allows users to create new records and edit existing ones. Includes all View permissions plus the ability to modify data.
@@ -599,7 +599,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                     <div className="border-l-4 border-red-500 pl-4">
                                         <div className="flex items-center mb-2">
                                             <IconTrash className="w-5 h-5 text-red-600 mr-2" />
-                                            <h4 className="font-semibold text-red-900">Delete</h4>
+                                            <h4 className="text-red-900">Delete</h4>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Allows users to permanently remove records. This is a high-level permission that should be granted carefully.
@@ -613,7 +613,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                     <div className="border-l-4 border-green-500 pl-4">
                                         <div className="flex items-center mb-2">
                                             <IconShield className="w-5 h-5 text-green-600 mr-2" />
-                                            <h4 className="font-semibold text-green-900">Full Access</h4>
+                                            <h4 className="text-green-900">Full Access</h4>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Grants complete control over the module. Includes View, Edit, and Delete permissions plus administrative functions.
@@ -626,7 +626,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
 
                                 {/* Best Practices */}
                                 <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                    <h4 className="text-gray-900 mb-3 flex items-center">
                                         <IconCircleCheck className="w-4 h-4 text-green-600 mr-2" />
                                         Best Practices
                                     </h4>

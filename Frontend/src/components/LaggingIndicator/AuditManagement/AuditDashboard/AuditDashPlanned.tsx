@@ -1,30 +1,49 @@
 import { DonutChart } from "@mantine/charts";
-import { Card, Divider, Stack, Text } from "@mantine/core";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconChartPie, IconAlertTriangle, IconBulb, IconCircleCheck } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getAllAudit, getPendingRecommendations } from "../../../../services/AuditService";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { Link } from "react-router-dom";
 
-
-// Dynamic Overall Compliance (status distribution)
 type DonutItem = { name: string; value: number; color: string };
 
-// will display pending recommendations in place of the static planned audits list
+const normalizeStatus = (raw: any): string => {
+    if (raw === null || raw === undefined) return '';
+    if (typeof raw === 'number') {
+        const map = ['PLANNING', 'PREPARATION', 'EXECUTION', 'CLOSED', 'CANCELLED'];
+        return map[raw] || '';
+    }
+    return String(raw).toUpperCase();
+};
 
+const priorityLabels: Record<string, string> = {
+    HIGH: 'Élevée',
+    MEDIUM: 'Moyenne',
+    LOW: 'Faible',
+    AVERAGE: 'Moyenne',
+    high: 'Élevée',
+    medium: 'Moyenne',
+    low: 'Faible',
+};
+
+const priorityBadgeClass = (priority: string) => {
+    const p = String(priority || '').toUpperCase();
+    if (p === 'HIGH') return 'bg-red-50 text-red-700 border-red-200';
+    if (p === 'MEDIUM' || p === 'AVERAGE') return 'bg-orange-50 text-orange-700 border-orange-200';
+    return 'bg-yellow-50 text-yellow-800 border-yellow-200';
+};
 
 const AuditDashPlanned = () => {
-
     const [startIndex, setStartIndex] = useState(0);
     const itemsPerPage = 2;
     const [totalAudits, setTotalAudits] = useState<number>(0);
     const [pendingRecs, setPendingRecs] = useState<any[]>([]);
     const [complianceData, setComplianceData] = useState<DonutItem[]>([
-        { name: 'Planning', value: 0, color: 'blue' },
-        { name: 'Preparation', value: 0, color: 'violet' },
-        { name: 'Execution', value: 0, color: 'orange' },
-        { name: 'Closed', value: 0, color: 'green' },
-        { name: 'Cancelled', value: 0, color: 'red' },
+        { name: 'Planification', value: 0, color: '#3b82f6' },
+        { name: 'Préparation', value: 0, color: '#8b5cf6' },
+        { name: 'Exécution', value: 0, color: '#f59e0b' },
+        { name: 'Clôturés', value: 0, color: '#22c55e' },
+        { name: 'Annulés', value: 0, color: '#ef4444' },
     ]);
 
     useEffect(() => {
@@ -33,98 +52,120 @@ const AuditDashPlanned = () => {
                 const total = audits?.length || 0;
                 const counts = { PLANNING: 0, PREPARATION: 0, EXECUTION: 0, CLOSED: 0, CANCELLED: 0 } as Record<string, number>;
                 (audits || []).forEach((a: any) => {
-                    const key = String(a.status || '').toUpperCase();
+                    const key = normalizeStatus(a?.status);
                     if (counts[key] !== undefined) counts[key] += 1;
                 });
                 setTotalAudits(total);
                 setComplianceData([
-                    { name: 'Planning', value: counts.PLANNING, color: 'blue' },
-                    { name: 'Preparation', value: counts.PREPARATION, color: 'violet' },
-                    { name: 'Execution', value: counts.EXECUTION, color: 'orange' },
-                    { name: 'Closed', value: counts.CLOSED, color: 'green' },
-                    { name: 'Cancelled', value: counts.CANCELLED, color: 'red' },
+                    { name: 'Planification', value: counts.PLANNING, color: '#3b82f6' },
+                    { name: 'Préparation', value: counts.PREPARATION, color: '#8b5cf6' },
+                    { name: 'Exécution', value: counts.EXECUTION, color: '#f59e0b' },
+                    { name: 'Clôturés', value: counts.CLOSED, color: '#22c55e' },
+                    { name: 'Annulés', value: counts.CANCELLED, color: '#ef4444' },
                 ]);
             })
             .catch(() => { /* noop */ });
+
         getPendingRecommendations()
             .then((res) => setPendingRecs(res || []))
             .catch(() => setPendingRecs([]));
     }, []);
 
     const handlePrev = () => {
-        if (startIndex > 0) {
-            setStartIndex(startIndex - itemsPerPage);
-        }
+        if (startIndex > 0) setStartIndex(startIndex - itemsPerPage);
+    };
+    const handleNext = () => {
+        if (startIndex + itemsPerPage < pendingRecs.length) setStartIndex(startIndex + itemsPerPage);
     };
 
-    const handleNext = () => {
-        if (startIndex + itemsPerPage < pendingRecs.length) {
-            setStartIndex(startIndex + itemsPerPage);
-        }
-    };
     const visiblePending = pendingRecs.slice(startIndex, startIndex + itemsPerPage);
+    const hasData = totalAudits > 0;
 
     return (
-        <div className="grid grid-cols-2 gap-4">
-            <Card shadow="xs" p="lg" radius="md" withBorder >
-                <Stack gap="sm">
-                    <div className="flex justify-between p-5">
-                        <div>
-
-                            <Text size="xl" fw={700}>Overall Compliance Status</Text>
-                        </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* === Carte 1 : Répartition par statut === */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-indigo-50/60 border-b border-indigo-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-indigo-100">
+                        <IconChartPie size={14} className="text-indigo-700" />
                     </div>
-                </Stack>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Répartition des audits par statut
+                    </h2>
+                    <span className="ml-auto text-[11px] text-slate-500">{totalAudits} audits</span>
+                </header>
 
-                <div className="flex flex-wrap gap-4 px-5">
-                    {complianceData.map((item) => (
-                        <div key={item.name} className="flex items-center gap-2">
-                            <div
-                                className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: item.color }}
-                            ></div>
-                            <span className="text-sm font-normal">{item.name}</span>
+                <div className="p-4">
+                    {hasData ? (
+                        <>
+                            <div className="flex justify-center mb-4">
+                                <DonutChart
+                                    h={220}
+                                    data={complianceData.filter(d => d.value > 0)}
+                                    size={220}
+                                    thickness={32}
+                                    chartLabel={`${totalAudits}`}
+                                    withLabelsLine={false}
+                                    paddingAngle={2}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+                                {complianceData.map((item) => (
+                                    <div key={item.name} className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                style={{ backgroundColor: item.color }}
+                                            ></span>
+                                            <span className="text-slate-600">{item.name}</span>
+                                        </div>
+                                        <span className="text-slate-800 tabular-nums">{item.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                            <IconAlertTriangle size={32} stroke={1.5} />
+                            <p className="text-sm mt-2">Aucun audit enregistré</p>
                         </div>
-                    ))}
+                    )}
                 </div>
+            </div>
 
-                <div className="flex items-center h-full justify-center">
-
-                    <DonutChart
-                        h={100}
-                        data={complianceData}
-                        size={350}
-                        thickness={90}
-                        chartLabel={`${totalAudits} Audits`}
-
-                    />
-
-                </div>
-            </Card>
-
-            <div className="p-4 bg-white border-gray-300 shadow-sm border rounded-lg flex flex-col gap-2">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-600">Pending Recommendations</h2>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handlePrev}
-                            disabled={startIndex === 0}
-                            className="p-2 bg-gray-200 rounded-full disabled:opacity-50"
-                        >
-                            <IconChevronLeft size={20} />
-                        </button>
-                        <button
-                            onClick={handleNext}
-                            disabled={startIndex + itemsPerPage >= pendingRecs.length}
-                            className="p-2 bg-gray-200 rounded-full disabled:opacity-50"
-                        >
-                            <IconChevronRight size={20} />
-                        </button>
+            {/* === Carte 2 : Recommandations en attente === */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
+                <header className="px-4 py-2.5 bg-amber-50/60 border-b border-amber-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-amber-100">
+                        <IconBulb size={14} className="text-amber-700" />
                     </div>
-                </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Recommandations en attente
+                    </h2>
+                    <span className="ml-auto text-[11px] text-slate-500">{pendingRecs.length} ouvertes</span>
+                    {pendingRecs.length > itemsPerPage && (
+                        <div className="flex items-center gap-1 ml-2">
+                            <button
+                                onClick={handlePrev}
+                                disabled={startIndex === 0}
+                                className="p-1 hover:bg-amber-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Précédent"
+                            >
+                                <IconChevronLeft size={14} className="text-slate-600" />
+                            </button>
+                            <button
+                                onClick={handleNext}
+                                disabled={startIndex + itemsPerPage >= pendingRecs.length}
+                                className="p-1 hover:bg-amber-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Suivant"
+                            >
+                                <IconChevronRight size={14} className="text-slate-600" />
+                            </button>
+                        </div>
+                    )}
+                </header>
 
-                <div className="flex flex-col gap-3">
+                <div className="p-3 flex-1 flex flex-col gap-2">
                     {visiblePending.map((rec, index) => {
                         const auditId = rec.auditId || rec.audit?.id;
                         const recommendationLink = auditId ? `/audit-management/details/${auditId}?tab=recommendation` : undefined;
@@ -132,34 +173,30 @@ const AuditDashPlanned = () => {
                         return (
                             <div
                                 key={index}
-                                className="border border-gray-200 rounded-xl flex flex-col gap-2 shadow-sm p-3 items-start bg-white"
+                                className="border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-all"
                             >
-                                <h3 className="text-sm self-start font-semibold text-gray-700">{rec.title || '-'}</h3>
-                                <div className="flex justify-between gap-4 w-full items-center">
-                                    <p className="text-xs text-gray-600 truncate">Audit: {rec.auditTitle || '-'}</p>
-                                    <div className="text-[11px] text-gray-500">Due: {rec?.deadline ? formatDateShort(rec.deadline) : '-'}</div>
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                    <h3 className="text-sm text-slate-900 leading-tight flex-1 line-clamp-2">
+                                        {rec.title || '—'}
+                                    </h3>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${priorityBadgeClass(rec.priority)} whitespace-nowrap`}>
+                                        {priorityLabels[String(rec.priority || '').toUpperCase()] || priorityLabels[rec.priority] || rec.priority || '—'}
+                                    </span>
                                 </div>
-                                <Divider />
-                                <div className="flex justify-between items-center w-full">
-                                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                                        <span className="text-[11px]">Priority:</span>
-                                        {(() => {
-                                            const p = String(rec.priority || '').toLowerCase();
-                                            const cls = p === 'high'
-                                                ? 'bg-red-100 text-red-700'
-                                                : p === 'average' || p === 'medium'
-                                                    ? 'bg-orange-100 text-orange-700'
-                                                    : 'bg-yellow-100 text-yellow-800';
-                                            const label = rec.priority || '-';
-                                            return <span className={`px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
-                                        })()}
-                                    </div>
+                                <p className="text-[11px] text-slate-600 line-clamp-1 mb-2">
+                                    <span className="text-slate-400">Audit :</span> {rec.auditTitle || '—'}
+                                </p>
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                                    <span className="text-[10px] text-slate-500">
+                                        <span className="font-medium">Échéance :</span>{' '}
+                                        {rec?.deadline ? formatDateShort(rec.deadline) : '—'}
+                                    </span>
                                     {recommendationLink && (
                                         <Link
                                             to={recommendationLink}
-                                            className="text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded-full mb-1 hover:bg-blue-100"
+                                            className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded hover:bg-indigo-100 transition-colors"
                                         >
-                                            View Details
+                                            Détails →
                                         </Link>
                                     )}
                                 </div>
@@ -167,12 +204,15 @@ const AuditDashPlanned = () => {
                         );
                     })}
                     {pendingRecs.length === 0 && (
-                        <div className="text-gray-500 text-sm">No pending recommendations</div>
+                        <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                            <IconCircleCheck size={28} stroke={1.5} className="text-green-400" />
+                            <p className="text-sm mt-2 text-slate-500">Aucune recommandation en attente</p>
+                        </div>
                     )}
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default AuditDashPlanned
+export default AuditDashPlanned;

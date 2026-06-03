@@ -55,7 +55,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
 
     const handleSubmit = (values: any) => {
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -98,7 +98,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
         <div>
             <div className="flex justify-between items-center mb-4">
 
-                <h4 className="text-lg font-semibold mb-4 text-gray-800">Corrective Actions</h4>
+                <h4 className="text-lg mb-4 text-gray-800">Corrective Actions</h4>
                 <Button
                     leftSection={<IconAlertCircle size={16} />}
                     color="red"
@@ -119,8 +119,8 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
                 >
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className=" font-semibold text-gray-800">{x.actionName}</p>
-                            <p className="text-sm text-gray-500 font-medium">Assigned To: <strong>{x.assignedEmployeeName}</strong></p>
+                            <p className=" text-gray-800">{x.actionName}</p>
+                            <p className="text-sm text-gray-500">Assigned To: <strong>{x.assignedEmployeeName}</strong></p>
                         </div>
 
                         <Badge variant="light" color={statusColors[x.status]}>
@@ -148,7 +148,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
                 closeOnClickOutside={false}
                 closeOnEscape={false}
                 title={
-                    <h1 className="text-lg font-medium text-blue-500">
+                    <h1 className="text-lg text-blue-500">
                         Add Action Plan
                     </h1>
                 }

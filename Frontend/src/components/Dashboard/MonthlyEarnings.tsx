@@ -16,19 +16,19 @@ const MonthlyEarnings = () => {
         <Card shadow="sm" p="md" radius="md" withBorder >
             <Stack gap="xs">
                 <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text size="md" fw={700}>Monthly Earnings</Text>
+                    <Text size="md">Monthly Earnings</Text>
                     <Button color="primary" radius="xl" size="sm">
                         <IconCurrencyDollar size={24} />
                     </Button>
                 </Box>
 
-                <Text size="md" fw={700}>$6,820</Text>
+                <Text size="md">$6,820</Text>
 
                 <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Avatar size={27} radius="xl" style={{ backgroundColor: errorLight }}>
                         <IconArrowDownRight size={20} color="#FA896B" />
                     </Avatar>
-                    <Text size="sm" fw={600}>+9%</Text>
+                    <Text size="sm">+9%</Text>
                     <Text size="sm" color="dimmed">last year</Text>
                 </Box>
 

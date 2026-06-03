@@ -250,7 +250,7 @@ const UpdateIncidents = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Update Incidents</div>
+                    <div className="text-2xl text-blue-500 w-fit">Update Incidents</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -264,7 +264,7 @@ const UpdateIncidents = () => {
             </div>
             {lockedInfo.locked && (
                 <Alert color={lockedInfo.status === 'CLOSED' ? 'green' : 'red'} variant="light" className="mb-4 border">
-                    <Text fw={600}>
+                    <Text>
                         {lockedInfo.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.'}
                     </Text>
                 </Alert>

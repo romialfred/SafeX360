@@ -1,13 +1,14 @@
-import { ActionIcon, Badge, Box, Breadcrumbs, Button, Card, Grid, Group, Select, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Button, Select, Text, Tooltip } from "@mantine/core";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getEmployeesWithPosition } from "../../services/HrmsService";
 import { mapIdToName } from "../../utility/OtherUtilities";
 import { getAllAssignmentCounts } from "../../services/PpeEmpService";
 import { getAllPPE } from "../../services/PPEService";
-import { IconEye, IconPackage, IconPlus } from "@tabler/icons-react";
+import { IconEye, IconHelmet, IconPackage, IconPlus } from "@tabler/icons-react";
+import PageHeader from "../UtilityComp/PageHeader";
 
 const PPEMonitoring = () => {
     const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
@@ -16,6 +17,7 @@ const PPEMonitoring = () => {
     const [ppe, setPpe] = useState<any[]>([]);
     const [ppeEmp, setPpeEmp] = useState<any[]>([]);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
+
     useEffect(() => {
         getAllPPE().then((res) => {
             setPpe(res);
@@ -28,24 +30,25 @@ const PPEMonitoring = () => {
         }).catch((err) => {
             console.error(err);
         });
+
         getEmployeesWithPosition().then((data) => {
             setEmpMap(mapIdToName(data));
-            console.log(data)
         }).catch((err) => {
             console.error(err);
         });
-    }, [])
+    }, []);
+
     const employeesTableData = useMemo(() => {
         return ppeEmp.map((emp) => ({
             ...emp,
-            name: empMap[emp?.empId]?.name ?? '-',
-            department: empMap[emp?.empId]?.department ?? 'Unknown',
-            position: empMap[emp?.empId]?.position ?? '-',
+            name: empMap[emp?.empId]?.name ?? '—',
+            department: empMap[emp?.empId]?.department ?? 'Non assigné',
+            position: empMap[emp?.empId]?.position ?? '—',
         }));
     }, [ppeEmp, empMap]);
 
     const departments = useMemo(() => {
-        return [...new Set(employeesTableData.map(emp => emp.department || 'Unknown'))];
+        return [...new Set(employeesTableData.map(emp => emp.department || 'Non assigné'))];
     }, [employeesTableData]);
 
     const categories = useMemo(() => {
@@ -55,163 +58,221 @@ const PPEMonitoring = () => {
     const filteredEmployees = useMemo(() => {
         return employeesTableData.filter(emp => !selectedDepartment || emp.department === selectedDepartment);
     }, [employeesTableData, selectedDepartment]);
+
     const tableData = ppe.filter((x) => !selectedCategory || selectedCategory == x.category).map((epp) => {
         const stockStatus =
             epp.stock === 0
-                ? "Out of stock"
+                ? "Rupture"
                 : epp.stock <= epp.minStock
-                    ? "Low stock"
+                    ? "Stock faible"
                     : "Normal";
 
         const stockColor =
-            stockStatus === "Out of stock"
+            stockStatus === "Rupture"
                 ? "red"
-                : stockStatus === "Low stock"
+                : stockStatus === "Stock faible"
                     ? "orange"
                     : "green";
-
 
         return {
             ...epp,
             stockStatus,
-            stockColor
+            stockColor,
         };
     });
 
     const actionBodyTemplate = (rowData: any) => {
-
         return (
-            <div className="flex gap-3">
-                <Tooltip label="View Details ">
+            <div className="flex gap-2">
+                <Tooltip label="Voir le détail">
                     <ActionIcon
                         onClick={() => navigate(`details/${rowData.empId}`)}
-                        color="yellow"
+                        color="teal"
+                        variant="light"
                         size="sm"
                     >
-                        <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
+                        <IconEye className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
             </div>
         );
     };
 
-    // Derived columns are precomputed in employeesTableData via useMemo
     return (
-        <div className="p-5">
-            <div className="flex items-center justify-between">
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des EPI' },
+                    { label: 'Suivi des EPI' },
+                ]}
+                icon={<IconHelmet size={22} stroke={2} />}
+                iconColor="amber"
+                title="Suivi des EPI"
+                subtitle="Tracer la dotation, les inspections et la conformité des équipements de protection individuelle"
+                actions={
+                    <>
+                        <Button
+                            leftSection={<IconPlus size={15} />}
+                            onClick={() => navigate('/ppe-management/create-ppe')}
+                            size="sm"
+                            radius="md"
+                            color="blue"
+                            variant="light"
+                        >
+                            Nouvel EPI
+                        </Button>
+                        <Button
+                            leftSection={<IconPackage size={15} />}
+                            onClick={() => navigate('/ppe-management/stock-form')}
+                            size="sm"
+                            radius="md"
+                            color="teal"
+                        >
+                            Entrée de stock
+                        </Button>
+                    </>
+                }
+            />
 
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">PPE Monitoring</div>
-                    <Breadcrumbs mt="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-
-                        <Text variant="gradient">PPE Monitoring</Text>
-                    </Breadcrumbs>
-                </div>
-
-                <div className="flex gap-5">
-
-                    <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/ppe-management/create-ppe')} color="blue">
-                        Create new PPE
-                    </Button>
-                    <Button leftSection={<IconPackage size={16} />} onClick={() => navigate('/ppe-management/stock-form')} color="teal">
-                        Stock entry
-                    </Button>
+            {/* === Section 1 : Dotations EPI par employé === */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-amber-50/60 border-b border-amber-200/70 flex flex-wrap items-center gap-3">
+                    <div className="p-1 rounded bg-amber-100">
+                        <IconHelmet size={14} className="text-amber-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Dotations EPI par employé
+                    </h2>
+                    <span className="text-[11px] text-slate-500">
+                        {filteredEmployees.length} {filteredEmployees.length > 1 ? 'employés' : 'employé'}
+                    </span>
+                    <div className="ml-auto">
+                        <Select
+                            placeholder="Filtrer par département"
+                            data={departments}
+                            value={selectedDepartment}
+                            onChange={setSelectedDepartment}
+                            clearable
+                            size="sm"
+                            radius="md"
+                            w={220}
+                        />
+                    </div>
+                </header>
+                <div className="p-3">
+                    <DataTable
+                        value={filteredEmployees}
+                        stripedRows
+                        paginator
+                        rows={10}
+                        size="small"
+                        tableStyle={{ minWidth: '50rem' }}
+                        dataKey="empId"
+                        emptyMessage="Aucune dotation EPI enregistrée"
+                    >
+                        <Column field="name" header="Employé" sortable />
+                        <Column field="department" header="Département" sortable />
+                        <Column field="position" header="Poste" sortable />
+                        <Column
+                            header="EPI dotés"
+                            body={(row) => (
+                                <Badge color="blue" variant="light" size="sm" radius="sm">
+                                    {row.count} EPI
+                                </Badge>
+                            )}
+                        />
+                        <Column
+                            headerStyle={{ width: '5rem', textAlign: 'center' }}
+                            bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
+                            header="Actions"
+                            body={actionBodyTemplate}
+                        />
+                    </DataTable>
                 </div>
             </div>
 
-            <p className=' italic my-3'>Track PPE usage, inspections, and compliance to ensure worker safety</p>
-            <Grid mb="xs">
-                <Grid.Col span={12}>
-                    <Card shadow="sm" padding="md" radius="md" withBorder>
-                        <Group justify="space-between" mb="md">
-                            <Title order={3}>Employees and PPE Assignments</Title>
-                            <Group>
-                                <Select
-                                    placeholder="Filter by department"
-                                    data={departments}
-                                    value={selectedDepartment}
-                                    onChange={setSelectedDepartment}
-                                    clearable
-                                    w={200}
-                                />
-                            </Group>
-                        </Group>
-                        <DataTable value={filteredEmployees} stripedRows tableStyle={{ minWidth: '50rem' }} dataKey="empId">
-                            <Column field="name" header="Employee" />
-                            <Column field="department" header="Department" />
-                            <Column field="position" header="Position" />
-                            <Column header="PPE Assigned" body={(row) =>
-                                <Badge color="blue" variant="light">{row.count} PPE</Badge>
-                            } />
-                            <Column
-                                style={{ fontWeight: 'normal', fontSize: '14px' }}
-                                headerStyle={{ width: '5rem', textAlign: 'center' }}
-                                bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
-                                header="Actions"
-                                body={actionBodyTemplate}
-                            />
-                        </DataTable>
-                    </Card>
-                </Grid.Col>
-            </Grid>
-            <Grid>
-                <Grid.Col span={12}>
-                    <Card shadow="sm" padding="md" radius="md" withBorder mb="md">
-                        <Group justify="space-between" mb="md">
-                            <Title order={3}>PPE Stock Tracking</Title>
-                            <Group>
-                                <Select
-                                    placeholder="Filter by category"
-                                    data={categories}
-                                    value={selectedCategory}
-                                    onChange={setSelectedCategory}
-                                    clearable
-                                    w={200}
-                                />
-                            </Group>
-                        </Group>
-                        <DataTable value={tableData} stripedRows tableStyle={{ minWidth: '70rem' }}>
-                            <Column field="name" header="PPE" body={(row) =>
-                                <Box>
-                                    <Text size="sm" fw={500}>{row.name}</Text>
-                                    {/* <Text size="xs" c="dimmed">{row.brand} {row.model}</Text> */}
-                                </Box>
-                            } />
-                            <Column field="category" header="Category" />
-                            <Column align="center" header="Current Stock" body={(row) =>
-                                <Text fw={500} c={row.stockColor}>{row.stock}</Text>
-                            } />
-                            <Column align="center" field="minStock" header="Minimum Stock" />
-                            <Column align="center" header="Stock Status" body={(row) =>
-                                <Badge color={row.stockColor} variant="light">{row.stockStatus}</Badge>
-                            } />
-                            {/* <Column align="center" header="Expiry Date" body={(row) =>
-                                        <Box>
-                                            <Text size="sm" c={row.isExpiringSoon ? 'red' : 'dimmed'}>
-                                                {row.expiryDate}
-                                            </Text>
-                                            {row.isExpiringSoon && (
-                                                <Badge color="red" variant="light" size="xs" mt="xs">
-                                                    Expiring soon
-                                                </Badge>
-                                            )}
-                                        </Box>
-                                    } /> */}
-                            <Column header="PPE Status" body={(row) =>
-                                <Badge color={row.status === 'ACTIVE' ? 'green' : 'gray'} variant="filled">
-                                    {row.status}
+            {/* === Section 2 : Suivi des stocks EPI === */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-200/70 flex flex-wrap items-center gap-3">
+                    <div className="p-1 rounded bg-blue-100">
+                        <IconPackage size={14} className="text-blue-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Suivi des stocks EPI
+                    </h2>
+                    <span className="text-[11px] text-slate-500">
+                        {tableData.length} {tableData.length > 1 ? 'références' : 'référence'}
+                    </span>
+                    <div className="ml-auto">
+                        <Select
+                            placeholder="Filtrer par catégorie"
+                            data={categories}
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            clearable
+                            size="sm"
+                            radius="md"
+                            w={220}
+                        />
+                    </div>
+                </header>
+                <div className="p-3">
+                    <DataTable
+                        value={tableData}
+                        stripedRows
+                        paginator
+                        rows={10}
+                        size="small"
+                        tableStyle={{ minWidth: '70rem' }}
+                        emptyMessage="Aucun EPI enregistré"
+                    >
+                        <Column
+                            field="name"
+                            header="EPI"
+                            sortable
+                            body={(row) => (
+                                <Text size="sm">{row.name}</Text>
+                            )}
+                        />
+                        <Column field="category" header="Catégorie" sortable />
+                        <Column
+                            align="center"
+                            header="Stock actuel"
+                            sortable
+                            body={(row) => (
+                                <Text c={row.stockColor} size="sm">{row.stock}</Text>
+                            )}
+                        />
+                        <Column align="center" field="minStock" header="Stock minimum" sortable />
+                        <Column
+                            align="center"
+                            header="Statut stock"
+                            body={(row) => (
+                                <Badge color={row.stockColor} variant="light" size="sm" radius="sm">
+                                    {row.stockStatus}
                                 </Badge>
-                            } />
-                            {/* <Column field="supplier" header="Supplier" /> */}
-                        </DataTable>
-                    </Card>
-                </Grid.Col>
-            </Grid>
+                            )}
+                        />
+                        <Column
+                            align="center"
+                            header="Statut EPI"
+                            body={(row) => (
+                                <Badge
+                                    color={row.status === 'ACTIVE' ? 'green' : 'gray'}
+                                    variant="filled"
+                                    size="sm"
+                                    radius="sm"
+                                >
+                                    {row.status === 'ACTIVE' ? 'Actif' : 'Inactif'}
+                                </Badge>
+                            )}
+                        />
+                    </DataTable>
+                </div>
+            </div>
         </div>
-    )
-}
+    );
+};
 
-export default PPEMonitoring
+export default PPEMonitoring;

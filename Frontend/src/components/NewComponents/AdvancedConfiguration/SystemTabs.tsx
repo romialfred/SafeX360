@@ -22,12 +22,12 @@ const SystemTabs = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center mb-6">
                         <IconDeviceDesktop className="w-6 h-6 text-blue-600 mr-3" />
-                        <h3 className="text-xl font-semibold text-gray-900">General Settings</h3>
+                        <h3 className="text-lg text-gray-900">General Settings</h3>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 System Language
                             </label>
                             <select
@@ -42,7 +42,7 @@ const SystemTabs = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Time Zone
                             </label>
                             <select
@@ -57,7 +57,7 @@ const SystemTabs = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Date Format
                             </label>
                             <select
@@ -72,7 +72,7 @@ const SystemTabs = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Time Format
                             </label>
                             <select
@@ -91,12 +91,12 @@ const SystemTabs = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center mb-6">
                         <IconShield className="w-6 h-6 text-green-600 mr-3" />
-                        <h3 className="text-xl font-semibold text-gray-900">Security & Sessions</h3>
+                        <h3 className="text-lg text-gray-900">Security & Sessions</h3>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Session Timeout (minutes)
                             </label>
                             <input
@@ -110,7 +110,7 @@ const SystemTabs = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Max File Size (MB)
                             </label>
                             <input

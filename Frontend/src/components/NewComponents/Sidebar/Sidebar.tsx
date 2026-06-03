@@ -30,14 +30,80 @@ import {
     IconUserCheck, // FolderOpen
     IconFolderOpen, // Bell
     IconBell, IconReport, IconCalculator, IconTrendingUp, // Sparkles
-    IconFileTextSpark
+    IconFileTextSpark, IconExternalLink
 } from '@tabler/icons-react';
 import { isModuleEnabled } from '../data/ModuleConfig';
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
 import { useDispatch } from 'react-redux';
 import { collapse, expand } from '../../../slices/CollapseSlice';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+
+/**
+ * Logo SafeX360 — wordmark texte premium (4K-sharp, sans bitmap).
+ * "SafeX" en blanc avec drop-shadow subtil + "360" placé dessous,
+ * chaque chiffre dans la couleur de marque historique :
+ *   3 → vert émeraude   (sécurité / conformité)
+ *   6 → bleu            (surveillance HSE)
+ *   0 → rouge           (alerte / criticité)
+ * Variantes : full (sidebar étendue) + compact (sidebar repliée).
+ */
+const LOGO_FONT_STACK = "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif";
+
+const SafeXLogo = ({ compact = false }: { compact?: boolean }) => {
+    if (compact) {
+        return (
+            <div className="flex flex-col items-center leading-[0.85] select-none py-0.5">
+                <span
+                    className="text-[22px] text-white antialiased"
+                    style={{
+                        fontFamily: LOGO_FONT_STACK,
+                        fontWeight: 900,
+                        textShadow: '0 1px 6px rgba(255,255,255,0.08)',
+                        letterSpacing: '-0.05em',
+                    }}
+                >
+                    S
+                </span>
+                <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-1px' }}>
+                    <span className="text-[11px] leading-none text-emerald-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>3</span>
+                    <span className="text-[11px] leading-none text-blue-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>6</span>
+                    <span className="text-[11px] leading-none text-red-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>0</span>
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div className="flex flex-col items-start leading-[0.82] select-none">
+            <span
+                className="text-[36px] text-white antialiased"
+                style={{
+                    fontFamily: LOGO_FONT_STACK,
+                    fontWeight: 900,
+                    textShadow: '0 2px 10px rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.5)',
+                    letterSpacing: '-0.045em',
+                    WebkitFontSmoothing: 'antialiased',
+                }}
+            >
+                SafeX
+            </span>
+            <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-2px', marginLeft: '1px' }}>
+                <span
+                    className="text-[28px] leading-none text-emerald-400"
+                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(52,211,153,0.32)' }}
+                >3</span>
+                <span
+                    className="text-[28px] leading-none text-blue-400"
+                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(96,165,250,0.32)' }}
+                >6</span>
+                <span
+                    className="text-[28px] leading-none text-red-400"
+                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(248,113,113,0.32)' }}
+                >0</span>
+            </div>
+        </div>
+    );
+};
 
 interface SubMenuItem {
     id: string;
@@ -53,179 +119,174 @@ interface MenuItem {
     subItems?: SubMenuItem[];
 }
 
+// Sidebar v2 Phase 2.a — Refonte traduite FR + palette HSE sémantique cohérente
+// Mapping couleurs (cohérent avec Home.tsx) :
+//   prévention (proactif)     → vert
+//   surveillance (incidents)  → bleu
+//   actions correctives       → orange
+//   risques (danger HSE)      → rouge
+//   EPI (vigilance)           → jaune/ambre
+//   audits ISO 19011          → indigo
+//   conformité                → vert (compliant)
+//   planification             → ambre
+//   communication             → rose (engagement)
+//   reports & analytics       → teal (brand)
+//   knowledge center          → cyan (savoir)
+//   administration            → ardoise (neutre, surtout PAS rouge "danger")
 const menuItems: MenuItem[] = [
     {
         id: 'home',
-        label: 'Home',
+        label: 'Accueil',
         icon: IconHome,
-        color: 'text-orange-500',
+        color: 'text-teal-600',
     },
     {
         id: 'dashboard',
-        label: 'Dashboard',
+        label: 'Tableau de bord',
         icon: IconChartBar,
-        color: 'text-blue-500',
+        color: 'text-teal-600',
     },
     {
         id: 'prevention',
-        label: 'Prevention Activities',
+        label: 'Activités Préventives',
         icon: IconShield,
-        color: 'text-red-500',
+        color: 'text-green-600',
         subItems: [
-            { id: 'non-conformity', label: 'Central Findings', icon: IconAlertTriangle },
-            { id: 'inspections', label: 'Inspections Managers', icon: IconSearch },
-            { id: 'meetings', label: 'Meeting Managers', icon: IconUsers },
-            { id: 'management-tour', label: 'Leadership Walk', icon: IconEye }
+            { id: 'non-conformity', label: 'Non-conformités', icon: IconAlertTriangle },
+            { id: 'inspections', label: 'Inspections HSE', icon: IconSearch },
+            { id: 'meetings', label: 'Réunions Sécurité', icon: IconUsers },
+            { id: 'management-tour', label: 'Tournées Leadership', icon: IconEye }
         ]
     },
     {
         id: 'monitoring',
-        label: 'Monitoring Activities',
+        label: 'Surveillance des Activités',
         icon: IconActivity,
-        color: 'text-purple-500',
+        color: 'text-blue-600',
         subItems: [
-            { id: 'incident-management', label: 'Incidents Management', icon: IconAlertTriangle },
+            { id: 'incident-management', label: 'Gestion des Incidents', icon: IconAlertTriangle },
             { id: 'investigations', label: 'Investigations', icon: IconSearch },
-            { id: 'action-plans-inc', label: 'Action Plans', icon: IconFileText }
+            { id: 'action-plans-inc', label: 'Plans d\'Actions', icon: IconFileText }
         ]
     },
     {
         id: 'actions',
-        label: 'Actions Managers',
+        label: 'Actions Correctives',
         icon: IconTarget,
-        color: 'text-gray-600',
+        color: 'text-orange-600',
         subItems: [
-            { id: 'pending-actions', label: 'Pending Actions', icon: IconClock },
-            { id: 'action-plan', label: 'Action Plan', icon: IconFileText },
-            { id: 'recommendations', label: 'Recommendations', icon: IconBulb },
-            { id: 'adhoc-actions', label: 'Improvement Ideas', icon: IconBolt }
+            { id: 'pending-actions', label: 'Actions en Attente', icon: IconClock },
+            { id: 'action-plan', label: 'Plan d\'Actions', icon: IconFileText },
+            { id: 'recommendations', label: 'Recommandations', icon: IconBulb },
+            { id: 'adhoc-actions', label: 'Suggestions d\'Amélioration', icon: IconBolt }
         ]
     },
     {
         id: 'risk',
-        label: 'Risk Management',
+        label: 'Gestion des Risques',
         icon: IconAlertTriangle,
-        color: 'text-orange-600',
+        color: 'text-red-600',
         subItems: [
-            { id: 'risk-overview', label: 'Risk Overview', icon: IconChartBar },
-            { id: 'risk-register', label: 'Risk Register', icon: IconFileText },
-            { id: 'risk-assessment', label: 'Risk Assessment', icon: IconClipboardCheck },
-            { id: 'chemical-register', label: 'Chemical Register', icon: IconFlask2 }
+            { id: 'risk-overview', label: 'Vue d\'Ensemble', icon: IconChartBar },
+            { id: 'risk-register', label: 'Registre des Risques', icon: IconFileText },
+            { id: 'risk-assessment', label: 'Évaluation des Risques', icon: IconClipboardCheck },
+            { id: 'chemical-register', label: 'Registre Chimique', icon: IconFlask2 }
         ]
     },
     {
         id: 'ppe',
-        label: 'PPE Management',
+        label: 'Gestion des EPI',
         icon: IconHelmet,
-        color: 'text-blue-600',
+        color: 'text-yellow-600',
         subItems: [
-            { id: 'ppe-overview', label: 'PPE Overview', icon: IconChartBar },
-            { id: 'ppe-monitoring', label: 'PPE Monitoring', icon: IconActivity },
-            { id: 'ppe-request', label: 'PPE Request', icon: IconPlus }
+            { id: 'ppe-overview', label: 'Vue d\'Ensemble EPI', icon: IconChartBar },
+            { id: 'ppe-monitoring', label: 'Suivi des EPI', icon: IconActivity },
+            { id: 'ppe-request', label: 'Demande d\'EPI', icon: IconPlus }
         ]
     },
     {
         id: 'audits',
-        label: 'Audits Management',
+        label: 'Gestion des Audits',
         icon: IconClipboardCheck,
-        color: 'text-orange-600',
+        color: 'text-indigo-600',
         subItems: [
-            { id: 'audit-plan', label: 'Annual audit plan', icon: IconCalendar },
-            { id: 'audits', label: 'Audits', icon: IconClipboardCheck },
-            { id: 'audit-recommendations', label: 'Recommendations', icon: IconBulb }
+            { id: 'audit-plan', label: 'Plan Annuel d\'Audits', icon: IconCalendar },
+            { id: 'audits', label: 'Audits ISO 19011', icon: IconClipboardCheck },
+            { id: 'audit-recommendations', label: 'Recommandations', icon: IconBulb }
         ]
     },
     {
         id: 'compliance',
-        label: 'Compliance Management',
+        label: 'Conformité Réglementaire',
         icon: IconSquareCheck,
-        color: 'text-green-500',
+        color: 'text-green-600',
         subItems: [
-            { id: 'compliance-dashboard', label: 'Dashboard', icon: IconChartBar },
-            { id: 'requirements', label: 'Requirements', icon: IconFileCheck },
-            { id: 'position-assignments', label: 'Positions Assignments', icon: IconUserCheck },
-            { id: 'employee-assignments', label: 'Employee Assignments', icon: IconUsers },
+            { id: 'compliance-dashboard', label: 'Tableau de Bord', icon: IconChartBar },
+            { id: 'requirements', label: 'Exigences Légales', icon: IconFileCheck },
+            { id: 'position-assignments', label: 'Affectations par Poste', icon: IconUserCheck },
+            { id: 'employee-assignments', label: 'Affectations Employés', icon: IconUsers },
             { id: 'documents', label: 'Documents', icon: IconFolderOpen },
-            { id: 'document-validation', label: 'Document Validation', icon: IconSquareCheck }
+            { id: 'document-validation', label: 'Validation Documents', icon: IconSquareCheck }
         ]
     },
     {
         id: 'planning',
-        label: 'Annual Planning',
+        label: 'Planification Annuelle',
         icon: IconCalendar,
-        color: 'text-yellow-500',
+        color: 'text-amber-600',
         subItems: [
-            { id: 'hs-activities-planning', label: 'HS activities Planning', icon: IconCalendar },
-            { id: 'month-theme-subjects', label: 'Month Theme / Subjects', icon: IconBook },
-            { id: 'annual-audit-plan', label: 'Annual Audit Plan', icon: IconClipboardCheck }
+            { id: 'hs-activities-planning', label: 'Activités HSE', icon: IconCalendar },
+            { id: 'month-theme-subjects', label: 'Thèmes Mensuels', icon: IconBook },
+            { id: 'annual-audit-plan', label: 'Plan Annuel Audits', icon: IconClipboardCheck }
         ]
     },
-
     {
         id: 'communication',
-        label: 'Safety Communication',
+        label: 'Communication Sécurité',
         icon: IconMessageCircle,
         color: 'text-pink-600',
         subItems: [
-            { id: 'comm-dashboard', label: 'Dashboard', icon: IconChartBar },
-            { id: 'employee-comm', label: 'HSE Communications', icon: IconMessageCircle },
-            { id: 'notifications', label: 'Notification Center', icon: IconBell }
+            { id: 'comm-dashboard', label: 'Tableau de Bord', icon: IconChartBar },
+            { id: 'employee-comm', label: 'Communications HSE', icon: IconMessageCircle },
+            { id: 'notifications', label: 'Centre de Notifications', icon: IconBell }
         ]
     },
     {
+        // Ouvre le SafeX Analytics Center dans un nouvel onglet
+        // (intercepté dans le onClick de l'item principal — voir plus bas)
         id: 'reports',
-        label: 'Reports & Analytics Center',
+        label: 'Rapports & Analytics',
         icon: IconReport,
-        color: 'text-green-600',
-        subItems: [
-            { id: 'monthly-reports', label: 'Monthly Report', icon: IconCalendar },
-            { id: 'KPI-reports', label: 'KPI Review', icon: IconChartBar },
-            { id: 'performance-reports', label: 'Performance Report', icon: IconTrendingUp },
-            { id: 'corporate-reports', label: 'Corporate Report', icon: IconCalculator },
-            { id: 'executive-reports', label: 'Executive Summary', icon: IconFileText },
-            { id: 'trend-analysis', label: 'Trend Analysis', icon: IconActivity }
-        ]
+        color: 'text-teal-600',
     },
     {
         id: 'knowledge',
-        label: 'Knowledge Center',
+        label: 'Centre de Connaissances',
         icon: IconBook,
-        color: 'text-cyan-500',
+        color: 'text-cyan-600',
         subItems: [
-            { id: 'lessons-learned', label: 'Lesson Learned', icon: IconBook },
-            { id: 'document-manager', label: 'Document Manager', icon: IconFolderOpen },
-            { id: 'iso-documents', label: 'ISO Standards', icon: IconFileText },
-            { id: 'process-docs', label: 'Work Process', icon: IconFileTextSpark }
+            { id: 'lessons-learned', label: 'Retours d\'Expérience', icon: IconBook },
+            { id: 'document-manager', label: 'Gestionnaire de Documents', icon: IconFolderOpen },
+            { id: 'iso-documents', label: 'Standards ISO', icon: IconFileText },
+            { id: 'process-docs', label: 'Processus de Travail', icon: IconFileTextSpark }
         ]
     },
-    // {
-    //     id: 'ai-assistant',
-    //     label: 'AI Assistant',
-    //     icon: IconSparkles,
-    //     color: 'text-purple-500',
-    // },
     {
         id: 'help',
-        label: 'Help Center',
+        label: 'Centre d\'Aide',
         icon: IconMessageCircle,
         color: 'text-emerald-600',
         subItems: [
-            { id: 'how-to', label: 'How To Guides', icon: IconBook },
-            { id: 'features-overview', label: 'Features Overview', icon: IconEye },
-            { id: 'technical-documentation', label: 'Technical Documentation', icon: IconFileText }
+            { id: 'how-to', label: 'Guides Pratiques', icon: IconBook },
+            { id: 'features-overview', label: 'Aperçu des Fonctionnalités', icon: IconEye },
+            { id: 'technical-documentation', label: 'Documentation Technique', icon: IconFileText }
         ]
     },
-    // {
-    //     id: 'users',
-    //     label: 'Users Management',
-    //     icon: IconUsers,
-    //     color: 'text-indigo-600',
-    // },
     {
         id: 'settings',
         label: 'Administration',
         icon: IconSettings,
-        color: 'text-blue-500',
+        color: 'text-slate-600',
     },
 ];
 
@@ -439,31 +500,39 @@ const Sidebar = () => {
       ${collapsed ? 'w-20' : 'w-72'} 
       bg-blackbg text-white h-screen scrollbar-hide fixed overflow-y-auto shadow-xl transition-all duration-300 ease-in-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
     `}>
-                {/* Header */}
-                <div className="p-4 border-b border-gray-700">
-                    <div className="flex items-center justify-between">
-                        {!collapsed && (
-                            <h1 className="text-lg font-bold ">My Applications</h1>
-                        )}
+                {/* Refonte sidebar header — Logo SafeX360 top-left + "Navigation HSE" sous-titre */}
+                <div className="p-4 border-b border-gray-700/60 bg-gradient-to-b from-gray-900/40 to-transparent">
+                    <div className="flex items-start justify-between gap-2">
+                        <Link to="/" className="flex flex-col items-start gap-1 hover:opacity-95 transition flex-1 min-w-0" title="SafeX360 — Plateforme HSE">
+                            {collapsed ? (
+                                <SafeXLogo compact />
+                            ) : (
+                                <>
+                                    <SafeXLogo />
+                                    <div className="flex items-center gap-1.5 mt-2.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        <h1 className="text-[10px] uppercase tracking-[0.18em] text-gray-300">Navigation HSE</h1>
+                                    </div>
+                                </>
+                            )}
+                        </Link>
                         <button
                             onClick={() => dispatch(collapsed ? expand() : collapse())}
-                            className="p-2 cursor-pointer hover:bg-gray-700 rounded-xl transition-all duration-300 hover:scale-110"
+                            className="p-1.5 cursor-pointer hover:bg-gray-700/70 rounded-lg transition-all duration-300 flex-shrink-0"
+                            title={collapsed ? "Étendre" : "Réduire"}
                         >
                             {collapsed ? (
-                                <IconChevronRight className="w-5 h-5" />
+                                <IconChevronRight className="w-4 h-4 text-gray-300" />
                             ) : (
-                                <IconChevronLeft className="w-5 h-5" />
+                                <IconChevronLeft className="w-4 h-4 text-gray-300" />
                             )}
                         </button>
                     </div>
-                    {!collapsed && (
-                        <div className="mt-3 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
-                    )}
                 </div>
 
-                {/* Navigation */}
-                <nav className="py-4">
-                    <div className="space-y-0">
+                {/* Navigation : padding équilibré, interlignes confortables, contrastes améliorés */}
+                <nav className="py-3 px-1">
+                    <div className="space-y-1">
                         {menuItems.map(item => {
                             const isActive = activeItem === item.id;
                             const isExpanded = expandedItems.has(item.id);
@@ -472,16 +541,22 @@ const Sidebar = () => {
 
                             return (
                                 <div key={item.id}>
-                                    {/* Main Menu Item */}
+                                    {/* Item principal : padding aéré, contraste renforcé */}
                                     <div
                                         className={`
-                    mx-2 flex items-center px-4 py-2 rounded-xl cursor-pointer transition-all duration-300
-                    ${isActive ? 'bg-gradient-to-r from-gray-600 to-gray-500 shadow-lg' : isEnabled ? 'hover:bg-gray-700 hover:shadow-lg hover:scale-[1.02]' : 'opacity-50'}
-                    ${hasSubItems && isExpanded ? 'bg-gray-700' : ''}
-                    group
-                    ${!isEnabled ? 'cursor-not-allowed' : ''}
-                  `}
+                                            mx-2 flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors duration-150
+                                            ${isActive ? 'bg-slate-700 text-white shadow-sm' : isEnabled ? 'text-slate-200 hover:bg-slate-800/60 hover:text-white' : 'text-slate-500 opacity-60'}
+                                            ${hasSubItems && isExpanded && !isActive ? 'bg-slate-800/40' : ''}
+                                            group
+                                            ${!isEnabled ? 'cursor-not-allowed' : ''}
+                                        `}
                                         onClick={(e) => {
+                                            // Rapports & Analytics : ouvre le SafeX Analytics Center dans un nouvel onglet
+                                            if (item.id === 'reports') {
+                                                const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/';
+                                                window.open(url, '_blank', 'noopener,noreferrer');
+                                                return;
+                                            }
                                             if (hasSubItems) {
                                                 toggleExpanded(item.id, e);
                                             } else {
@@ -489,37 +564,29 @@ const Sidebar = () => {
                                             }
                                         }}
                                     >
-                                        <div className="p-2 transition-all duration-300 group-hover:scale-110">
-                                            <item.icon className={`w-5 h-5 ${isEnabled ? item.color : 'text-gray-500'} transition-transform duration-300`} />
-                                        </div>
+                                        <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isEnabled ? item.color : 'text-slate-500'}`} stroke={1.75} />
                                         {!collapsed && (
                                             <>
-                                                <span className={`ml-3 font-medium flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-300 ${isEnabled
-                                                    ? 'text-gray-200 group-hover:text-white'
-                                                    : 'text-gray-500 italic'
-                                                    }`}>
+                                                <span className={`flex-1 text-[13px] leading-snug whitespace-nowrap overflow-hidden text-ellipsis ${isActive ? 'font-medium' : 'font-medium'}`}>
                                                     {item.label}
                                                 </span>
+                                                {item.id === 'reports' && (
+                                                    <span className="flex-shrink-0 text-teal-400 group-hover:text-teal-200 transition-colors" title="Ouvre dans un nouvel onglet">
+                                                        <IconExternalLink className="w-3.5 h-3.5" />
+                                                    </span>
+                                                )}
                                                 {hasSubItems && (
-                                                    <div className="flex-shrink-0 ml-2">
-                                                        {isExpanded ? (
-                                                            <div className="p-1 bg-gray-600 rounded-full transition-all duration-300 group-hover:bg-gray-500">
-                                                                <IconMinus className="w-3 h-3 text-gray-300" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-1 bg-gray-600 rounded-full transition-all duration-300 group-hover:bg-gray-500">
-                                                                <IconPlus className="w-3 h-3 text-gray-300" />
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                    <span className="flex-shrink-0 text-slate-400 group-hover:text-slate-100 transition-colors">
+                                                        {isExpanded ? <IconMinus className="w-3.5 h-3.5" /> : <IconPlus className="w-3.5 h-3.5" />}
+                                                    </span>
                                                 )}
                                             </>
                                         )}
                                     </div>
 
-                                    {/* Sub Menu Items */}
+                                    {/* Sous-items : indentation visible, bordure verticale colorée */}
                                     {!collapsed && hasSubItems && isExpanded && (
-                                        <div className={`ml-8 mt-2 space-y-1 pl-4 border-l-4 ${item.color.replace('text-', 'border-')}`}>
+                                        <div className={`ml-6 my-1 pl-3 border-l-2 ${item.color.replace('text-', 'border-').replace('-600', '-500/40').replace('-700', '-500/40')}`}>
                                             {item.subItems!.map(subItem => {
                                                 const isSubActive = activeItem === subItem.id;
                                                 const isSubEnabled = isModuleEnabled(subItem.id);
@@ -527,20 +594,16 @@ const Sidebar = () => {
                                                     <div
                                                         key={subItem.id}
                                                         className={`
-                            mx-2 flex items-center px-3 py-2 rounded-lg cursor-pointer transition-all duration-300
-                            ${isSubActive ? 'bg-gradient-to-r from-gray-600 to-gray-500 text-white shadow-md' :
-                                                                isSubEnabled ? 'text-gray-400 hover:bg-gray-700 hover:text-gray-200 hover:translate-x-1' :
-                                                                    'text-gray-500 opacity-50 cursor-not-allowed'}
-                            group
-                          `}
+                                                            mx-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded cursor-pointer transition-colors duration-150
+                                                            ${isSubActive ? 'bg-slate-700 text-white' :
+                                                                isSubEnabled ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white' :
+                                                                    'text-slate-500 opacity-50 cursor-not-allowed'}
+                                                            group
+                                                        `}
                                                         onClick={() => handleSubItemClick(subItem.id)}
                                                     >
-                                                        <div className={`w-2 h-2 rounded-full mr-3 transition-all duration-300 ${isSubEnabled ? 'bg-gray-500 group-hover:bg-gray-300' : 'bg-gray-600'
-                                                            }`}></div>
-                                                        <subItem.icon className={`w-4 h-4 mr-3 transition-transform duration-300 ${isSubEnabled ? `${item.color} group-hover:scale-110` : 'text-gray-500'
-                                                            }`} />
-                                                        <span className={`text-sm font-medium transition-colors duration-300 ${!isSubEnabled ? 'italic' : ''
-                                                            }`}>
+                                                        <subItem.icon className="w-3.5 h-3.5 flex-shrink-0" stroke={1.75} />
+                                                        <span className={`text-[12px] leading-snug ${!isSubEnabled ? 'italic' : ''}`}>
                                                             {subItem.label}
                                                         </span>
                                                     </div>

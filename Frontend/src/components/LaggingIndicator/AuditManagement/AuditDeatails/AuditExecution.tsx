@@ -125,7 +125,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
         let values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -169,7 +169,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             {!showForm ? (
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center">
-                        <p className="text-xl font-semibold text-gray-700">Execution of Audit </p>
+                        <p className="text-lg text-gray-700">Execution of Audit </p>
                         {audit.status !== "CLOSED" && audit.status != "CANCELLED" && <Button onClick={() => setShowForm(true)} leftSection={<IconPlus />}>New Observation</Button>}
                     </div>
 
@@ -184,7 +184,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                 {/* Top Info Row */}
                                 <div className="flex flex-wrap justify-between items-center">
                                     <div className="flex gap-3 flex-wrap items-center">
-                                        <span className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full uppercase">
+                                        <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full uppercase">
                                             {obs.type}
                                         </span>
                                         <Badge variant="outline" color={mantineColorToLevel[obs.severity]} >
@@ -197,7 +197,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
 
                                 {/* Observation Content */}
                                 <div className="space-y-2">
-                                    <h3 className="text-lg font-semibold text-gray-800 leading-snug">
+                                    <h3 className="text-lg text-gray-800 leading-snug">
                                         {obs.observedFact?.replace(/<\/?[^>]+(>|$)/g, "")}
                                     </h3>
                                     <p className="text-sm text-gray-600">Ref: {obs.reference}</p>
@@ -255,7 +255,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                     {/* New Observation Form */}
                     <div className="flex justify-between items-center">
 
-                        <h2 className="text-lg font-semibold text-gray-700 ">New Observation</h2>
+                        <h2 className="text-lg text-gray-700 ">New Observation</h2>
                         <Button color="red" onClick={handleCancel}>
                             Cancel
                         </Button>
@@ -290,7 +290,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <p className="font-medium ">Employees interviewed</p>
+                            <p className="">Employees interviewed</p>
                             <div className=" bg-blue-50 p-4 rounded-lg flex flex-col gap-5">
                                 <div className="grid grid-cols-2 gap-4">
                                     <Select

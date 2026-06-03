@@ -90,7 +90,7 @@ const RiskIdentification = () => {
     // }) => (
     //     <div className={`${className}`}>
     //         <div className="w-full">
-    //             <label className="block text-sm font-medium text-gray-700 mb-2">
+    //             <label className="block text-sm text-gray-700 mb-2">
     //                 {label}
     //                 {required && <span className="text-red-500 ml-1">*</span>}
     //             </label>
@@ -155,7 +155,7 @@ const RiskIdentification = () => {
                     <div className={`p-2 rounded-lg ${section.bgColor} mr-3`}>
                         <section.icon className={`w-6 h-6 ${section.color}`} />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">{section.title}</h3>
+                    <h3 className="text-lg text-gray-900">{section.title}</h3>
                 </div>
 
                 <div className={`rounded-lg p-4 ${section.bgColor}`}>
@@ -242,7 +242,7 @@ const RiskIdentification = () => {
                             <div className="flex-1">
                                 <div className="flex items-center mb-6">
                                     <IconBuilding className="w-6 h-6 text-blue-600 mr-3" />
-                                    <h3 className="text-xl font-semibold text-gray-900">
+                                    <h3 className="text-lg text-gray-900">
                                         General Information
                                     </h3>
                                 </div>
@@ -304,7 +304,7 @@ const RiskIdentification = () => {
                             <div className="flex-1">
                                 <div className="flex items-center mb-6">
                                     <IconFlask2 className="w-6 h-6 text-orange-600 mr-3" />
-                                    <h3 className="text-xl font-semibold text-gray-900">
+                                    <h3 className="text-lg text-gray-900">
                                         Hazard Information
                                     </h3>
                                 </div>
@@ -340,7 +340,7 @@ const RiskIdentification = () => {
                             <div className="flex-1">
                                 <div className="flex items-center mb-6">
                                     <IconAlertTriangle className="w-6 h-6 text-red-600 mr-3" />
-                                    <h3 className="text-xl font-semibold text-gray-900">
+                                    <h3 className="text-lg text-gray-900">
                                         Risk Description
                                     </h3>
                                 </div>
@@ -383,7 +383,7 @@ const RiskIdentification = () => {
                             <div className="flex-1">
                                 <div className="flex items-center mb-6">
                                     <IconLink className="w-6 h-6 text-purple-600 mr-3" />
-                                    <h3 className="text-xl font-semibold text-gray-900">
+                                    <h3 className="text-lg text-gray-900">
                                         Link to Assessments
                                     </h3>
                                 </div>

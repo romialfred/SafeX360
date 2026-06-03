@@ -525,7 +525,7 @@ const EditCommunication = () => {
     return (
         <div>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Edit Communication</div>
+                <div className="text-2xl text-blue-500 w-fit">Edit Communication</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -658,7 +658,7 @@ const EditCommunication = () => {
                                 />
                                 {selectedRecipients.length > 0 && (
                                     <Box mb="md">
-                                        <Text size="sm" fw={500} mb="xs">
+                                        <Text size="sm" mb="xs">
                                             Selected Recipients ({selectedRecipients.length})
                                         </Text>
                                         <Flex gap="xs" wrap="wrap">
@@ -695,7 +695,7 @@ const EditCommunication = () => {
                                                                 {recipient.name.split(' ').map((n: any) => n[0]).join('')}
                                                             </Avatar>
                                                             <Box>
-                                                                <Text size="sm" fw={500}>
+                                                                <Text size="sm">
                                                                     {recipient.name}
                                                                 </Text>
                                                                 <Text size="xs" c="dimmed">

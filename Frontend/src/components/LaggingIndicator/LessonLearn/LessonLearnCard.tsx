@@ -41,21 +41,21 @@ const LessonLearnCard = ({ lessonData }: { lessonData: LessonLearnedData }) => {
     return (
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
             <div className="flex gap-3  justify-between">
-                <span className={`flex items-center gap-2 text-sm px-2 py-1 rounded-lg font-medium capitalize ${categoryClass}`}>
+                <span className={`flex items-center gap-2 text-sm px-2 py-1 rounded-lg capitalize ${categoryClass}`}>
                     <IconTag size={16} /> {lessonData.category}
                 </span>
-                <span className={`text-sm px-2 py-1 rounded-lg font-medium ${statusInfo.class}`}>
+                <span className={`text-sm px-2 py-1 rounded-lg ${statusInfo.class}`}>
                     {statusInfo.label}
                 </span>
             </div>
 
-            <Link to={`/incidents/viewDetails/${lessonData.incidentId}`} className=" font-semibold text-blue-700 hover:underline">
+            <Link to={`/incidents/viewDetails/${lessonData.incidentId}`} className=" text-blue-700 hover:underline">
                 {lessonData.incidentTitle}
             </Link>
 
-            <p className="text-gray-600 text-sm font-medium">By: {lessonData.employeeName}</p>
+            <p className="text-gray-600 text-sm">By: {lessonData.employeeName}</p>
 
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Lesson Date: {formatDateWithDay(lessonData.date)}
             </div>
 

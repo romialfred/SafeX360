@@ -21,7 +21,7 @@ const TestimonialsCard = ({ name, position, feedback, rating, image }: ServiceCa
                 <div className="flex items-center  gap-4">
                     <Avatar src={image} radius="xl" size={70} />
                     <div>
-                        <Text size="xl" fw={700}>{name}</Text>
+                        <Text size="xl">{name}</Text>
                         <Text size="sm" color="dimmed">{position}</Text>
                     </div>
                 </div>

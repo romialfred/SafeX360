@@ -18,15 +18,15 @@ const YearlyBreakup = () => {
 
     return (
         <Card shadow="sm" p="md" radius="md" withBorder  >
-            <Text size="xl" fw={700} mb="sm">Yearly Breakup</Text>
+            <Text size="xl" mb="sm">Yearly Breakup</Text>
             <Grid>
                 <Grid.Col span={7}>
-                    <Text size="lg" fw={700}>$36,358</Text>
+                    <Text size="lg">$36,358</Text>
                     <Stack gap="md" mt="sm" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
                         <Avatar size={27} radius="xl" style={{ backgroundColor: successLight }}>
                             <IconArrowUpLeft size={20} color="#39B69A" />
                         </Avatar>
-                        <Text size="sm" fw={600}>+9%</Text>
+                        <Text size="sm">+9%</Text>
                         <Text size="sm" color="dimmed">last year</Text>
                     </Stack>
                     <Stack gap="sm" mt="lg" style={{ display: 'flex', flexDirection: 'row' }}>

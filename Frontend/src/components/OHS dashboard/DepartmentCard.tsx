@@ -73,8 +73,8 @@ const DepartmentCard = () => {
             <div className="flex items-center gap-3">
                 <IconBuildingFactory2 size={30} className="text-blue-600" />
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-800">{headerDepartment}</h2>
-                    <p className="text-sm text-gray-700 font-medium">{headerTeam}</p>
+                    <h2 className="text-lg text-gray-800">{headerDepartment}</h2>
+                    <p className="text-sm text-gray-700">{headerTeam}</p>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@ const DepartmentCard = () => {
 
             <div className="flex flex-col gap-2 text-sm text-gray-700">
                 <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-800">Team Members</span>
+                    <span className="text-gray-800">Team Members</span>
                     {loading && <span className="text-xs text-gray-500">Loading…</span>}
                 </div>
                 {fetchError && <p className="text-xs text-red-600">{fetchError}</p>}
@@ -106,7 +106,7 @@ const DepartmentCard = () => {
                                     <Avatar src={null} name={member.employeeName || "User Avatar"} color="initials" radius="xl" size={40} />
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2">
-                                            <p className="text-xs font-semibold text-gray-800">{member.employeeName || "Unnamed Member"}</p>
+                                            <p className="text-xs text-gray-800">{member.employeeName || "Unnamed Member"}</p>
                                             {member.role && (
                                                 <Tooltip label={`Role: ${formattedRole}`}
                                                     withArrow

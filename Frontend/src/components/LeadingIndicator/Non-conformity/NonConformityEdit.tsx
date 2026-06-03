@@ -355,7 +355,7 @@ const NonConformityEdit = () => {
         }
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -431,7 +431,7 @@ const NonConformityEdit = () => {
         <div className="p-5 flex flex-col" >
             <div className='flex items-center justify-between'>
                 <div>
-                    <div className="font-semibold  text-2xl text-blue-500 w-fit">Update Central Finding Declaration</div>
+                    <div className="text-2xl text-blue-500 w-fit">Update Central Finding Declaration</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
                         <Link className="hover:!underline" to="/non-conformity"><Text variant="gradient">Central Findings Dashboard</Text></Link>
@@ -462,7 +462,7 @@ const NonConformityEdit = () => {
                             <IconArrowLeft size={18} />
                         </ActionIcon>
                         <div>
-                            <Title order={2} className="text-slate-800 font-semibold tracking-tight">
+                            <Title order={2} className="text-slate-800 tracking-tight">
                                 New Health and Safety Event Declaration
                             </Title>
                         </div>
@@ -504,11 +504,11 @@ const NonConformityEdit = () => {
                         variant="light"
                         className="mb-3 border"
                     >
-                        <Text fw={600}>{lockedMessage}</Text>
+                        <Text>{lockedMessage}</Text>
                     </Alert>
                 )}
                 <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <Text fw={700} size="lg" className="text-slate-800">
+                    <Text size="lg" className="text-slate-800">
                         {form.values.nonConformity.title?.trim() || 'Untitled Central Finding'}
                     </Text>
                     <Badge
@@ -536,7 +536,7 @@ const NonConformityEdit = () => {
                             <Stepper.Step
                                 key={index}
                                 label={
-                                    <Text fw={500} size="sm" className="text-slate-800">
+                                    <Text size="sm" className="text-slate-800">
                                         {step.label}
                                     </Text>
                                 }

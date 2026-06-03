@@ -34,7 +34,7 @@ const PgiCard = ({ pgiData }: { pgiData: PgiData }) => {
     return (
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.0] mt-4 cursor-pointer hover:border-primary">
             <div className="flex gap-4 items-center flex-wrap">
-                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                     {pgiData.siteName}
                 </span>
                 <Badge
@@ -48,14 +48,14 @@ const PgiCard = ({ pgiData }: { pgiData: PgiData }) => {
                 </Badge>
             </div>
 
-            <Link to={`details-pgi/${pgiData.id}`} className="font-semibold text-gray-900">
+            <Link to={`details-pgi/${pgiData.id}`} className="text-gray-900">
                 {pgiData.title}
             </Link>
 
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Inspection Date: {formatDateWithDay(pgiData.plannedDate)}
             </div>
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Time: {formatTo12Hour(pgiData.startTime)} - {formatTo12Hour(pgiData.endTime)}
             </div>
 

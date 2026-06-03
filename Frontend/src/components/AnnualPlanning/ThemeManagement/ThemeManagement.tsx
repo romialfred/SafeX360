@@ -11,8 +11,9 @@ import {
     IconAlertTriangle,
     IconFlag,
 } from '@tabler/icons-react';
-import { Breadcrumbs, Button, Modal, Select, Text, Textarea, TextInput } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Button, Modal, Select, Textarea, TextInput } from '@mantine/core';
+import PageHeader from '../../UtilityComp/PageHeader';
+import { IconBookmark } from '@tabler/icons-react';
 import { themeData } from '../../../Data/DummyData';
 import { useForm } from '@mantine/form';
 import { useDispatch } from 'react-redux';
@@ -233,37 +234,29 @@ export default function ThemeManagement() {
     // };
 
     return (
-        <div className=" flex flex-col gap-5 p-5">
-            {/* Header */}
-
-            <div className="flex items-center justify-between">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Theme Management</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/hs-activities-planning" ><Text variant="gradient" className="hover:!underline cursor-pointer">HSE Planning</Text></Link>
-                        <Text variant="gradient">Theme Management</Text>
-                    </Breadcrumbs>
-
-                </div>
-
-                <Button leftSection={<IconPlus />}
-
-                    onClick={() => setOpened(true)}
-
-                >
-
-                    New Theme
-                </Button>
-            </div>
-            <p className=' italic '>
-                Organizing, scheduling, and standardizing meeting topics to align with safety objectives</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Planification annuelle', to: '/hs-activities-planning' },
+                    { label: 'Thèmes mensuels' },
+                ]}
+                icon={<IconBookmark size={22} stroke={2} />}
+                iconColor="amber"
+                title="Thèmes mensuels"
+                subtitle="Organisation et standardisation des sujets de causeries pour s'aligner avec les objectifs sécurité"
+                actions={
+                    <Button color="amber" size="sm" leftSection={<IconPlus size={15} />} onClick={() => setOpened(true)}>
+                        Nouveau thème
+                    </Button>
+                }
+            />
             <div className='border p-4 rounded-lg border-gray-300 shadow-sm flex flex-col gap-6'>
 
                 <div className="flex flex-col gap-5">
                     {/* Types Overview - En haut */}
                     <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-300">
-                        {/* <h3 className="text-lg font-semibold text-slate-800 mb-4">Distribution by Type</h3> */}
+                        {/* <h3 className="text-lg text-slate-800 mb-4">Distribution by Type</h3> */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             {types.map((type) => {
                                 const typeThemes = themes.filter(theme => theme.type === type.id);
@@ -273,7 +266,7 @@ export default function ThemeManagement() {
                                         <div className={`w-12 h-12 ${type.color} rounded-lg flex items-center justify-center mx-auto mb-2`}>
                                             <TypeIcon className="w-6 h-6 text-white" />
                                         </div>
-                                        <div className="text-lg font-bold text-slate-800">{typeThemes.length}</div>
+                                        <div className="text-lg text-slate-800">{typeThemes.length}</div>
                                         <div className="text-xs text-slate-600">{type.label}</div>
                                     </div>
                                 );
@@ -283,14 +276,14 @@ export default function ThemeManagement() {
 
                     {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
                         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4">Passed Themes</h3>
+                            <h3 className="text-lg text-slate-800 mb-4">Passed Themes</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <div className="text-2xl font-bold text-teal-600">{getTotalThemes()}</div>
+                                    <div className="text-2xl text-teal-600">{getTotalThemes()}</div>
                                     <div className="text-sm text-slate-600">Total Themes</div>
                                 </div>
                                 <div>
-                                    <div className="text-2xl font-bold text-blue-600">{getTotalParticipants()}</div>
+                                    <div className="text-2xl text-blue-600">{getTotalParticipants()}</div>
                                     <div className="text-sm text-slate-600">Total Participants</div>
                                 </div>
                             </div>
@@ -307,17 +300,17 @@ export default function ThemeManagement() {
                                             <CategoryIcon className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-slate-800">{category.label}</h3>
+                                            <h3 className="text-slate-800">{category.label}</h3>
                                             <p className="text-sm text-slate-600">{categoryThemes.length} thème(s) défini(s)</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <div className="text-2xl font-bold text-slate-800">{categoryThemes.length}</div>
+                                            <div className="text-2xl text-slate-800">{categoryThemes.length}</div>
                                             <div className="text-sm text-slate-600">Thèmes</div>
                                         </div>
                                         <div>
-                                            <div className="text-2xl font-bold text-blue-600">{categoryParticipants}</div>
+                                            <div className="text-2xl text-blue-600">{categoryParticipants}</div>
                                             <div className="text-sm text-slate-600">Participants</div>
                                         </div>
                                     </div>
@@ -328,7 +321,7 @@ export default function ThemeManagement() {
 
                     <div className="bg-white rounded-lg shadow-md border border-gray-300">
                         <div className="p-6 border-b border-slate-200">
-                            <h3 className="text-xl font-semibold text-slate-800">Themes by Month</h3>
+                            <h3 className="text-lg text-slate-800">Themes by Month</h3>
                             <p className="text-sm text-slate-600 mt-1">
                                 Theme management for health safety meetings and management tours
                             </p>
@@ -342,7 +335,7 @@ export default function ThemeManagement() {
                                     return (
                                         <div key={month} className="border border-slate-200 rounded-lg">
                                             <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                                                <h4 className="font-semibold text-slate-800">{month}</h4>
+                                                <h4 className="text-slate-800">{month}</h4>
                                                 <div className="flex items-center space-x-2">
                                                     <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
                                                         {monthThemes.length} theme(s)
@@ -397,7 +390,7 @@ export default function ThemeManagement() {
                     setOpened(false);
                     setSelectedActivity(null); // ✅ Reset edit mode
                 }}
-                title={<h1 className="text-lg font-medium text-blue-500">
+                title={<h1 className="text-lg text-blue-500">
                     {selectedActivity ? 'Edit Theme' : 'New Theme'}
                 </h1>
                 }

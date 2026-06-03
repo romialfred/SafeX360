@@ -13,7 +13,7 @@ const Pending = ({ items, label = "Pending Review", seeAllHref }: PendingProps) 
     if (!items.length) {
         return (
             <div className="bg-blue-50 h-[250px] rounded shadow-xl border border-gray-300 flex justify-center items-center">
-                <p className="text-xl font-medium text-gray-600">No items pending review</p>
+                <p className="text-lg text-gray-600">No items pending review</p>
             </div>
         );
     }
@@ -21,7 +21,7 @@ const Pending = ({ items, label = "Pending Review", seeAllHref }: PendingProps) 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
-                <Text fw={600} c="blue.6" size="sm">{label}</Text>
+                <Text c="blue.6" size="sm">{label}</Text>
                 {seeAllHref && (
                     <Button
                         component={Link}
@@ -41,7 +41,7 @@ const Pending = ({ items, label = "Pending Review", seeAllHref }: PendingProps) 
                             <IconCircleCheck size={18} color="#1d4ed8" />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <Text fw={500}>{item.requirementTitle}</Text>
+                            <Text>{item.requirementTitle}</Text>
                             <Text size="sm" c="gray">
                                 {item.employee?.name} - {item.employee?.role}
                             </Text>

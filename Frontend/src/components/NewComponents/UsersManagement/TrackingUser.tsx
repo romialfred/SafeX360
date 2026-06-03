@@ -68,7 +68,7 @@ const TrackingUser = () => {
                 )}
             </div>
             <div className="ml-3">
-                <div className="text-sm font-medium">{rowData.userName}</div>
+                <div className="text-sm">{rowData.userName}</div>
                 <div className="text-xs text-gray-500">{rowData.ipAddress}</div>
             </div>
         </div>
@@ -118,7 +118,7 @@ const TrackingUser = () => {
         <div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                 <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-primary">User Activity Tracking</h2>
+                    <h2 className="text-lg text-primary">User Activity Tracking</h2>
                     <p className="text-sm text-gray-600 mt-1">Monitor user sessions and activities</p>
                 </div>
 
@@ -165,7 +165,7 @@ const TrackingUser = () => {
                     <>
                         <div className="border-b border-gray-200 pb-4 mb-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-blue-500">User Activity Tracking</h2>
+                                <h2 className="text-lg text-blue-500">User Activity Tracking</h2>
 
                             </div>
                             <p className="text-sm text-gray-500 mt-1">
@@ -180,7 +180,7 @@ const TrackingUser = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* User Sessions */}
                                 <div className="bg-gray-50 rounded-lg p-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                         <IconDeviceDesktop className="w-5 h-5 mr-2 text-blue-500" />
                                         Sessions
                                     </h3>
@@ -192,7 +192,7 @@ const TrackingUser = () => {
                                             >
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span
-                                                        className={`px-2 py-1 text-xs font-semibold rounded-full ${session.isActive
+                                                        className={`px-2 py-1 text-xs rounded-full ${session.isActive
                                                             ? "bg-green-100 text-green-800"
                                                             : "bg-gray-100 text-gray-800"
                                                             }`}
@@ -233,7 +233,7 @@ const TrackingUser = () => {
 
                                 {/* User Activities */}
                                 <div className="bg-gray-50 rounded-lg p-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                         <IconActivity className="w-5 h-5 mr-2 text-purple-500" />
                                         Recent Activities
                                     </h3>
@@ -249,7 +249,7 @@ const TrackingUser = () => {
                                                     </div>
                                                     <div className="flex-1">
                                                         <div className="flex items-center justify-between">
-                                                            <h4 className="font-medium text-gray-900">{activity.action}</h4>
+                                                            <h4 className="text-gray-900">{activity.action}</h4>
                                                             <span className="text-sm text-gray-500">
                                                                 {formatTimeAgo(activity.timestamp)}
                                                             </span>

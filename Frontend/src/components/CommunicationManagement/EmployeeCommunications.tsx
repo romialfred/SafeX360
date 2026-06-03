@@ -486,7 +486,7 @@ const EmployeeCommunications = () => {
         <div className="flex flex-col gap-1">
             <a
                 onClick={() => navigate(`communications-details/${rowData.id}`)}
-                className="text-sm font-medium text-blue-700 hover:underline cursor-pointer transition"
+                className="text-sm text-blue-700 hover:underline cursor-pointer transition"
             >
                 {rowData.title}
             </a>
@@ -599,7 +599,7 @@ const EmployeeCommunications = () => {
             <div className='flex justify-between items-center'>
 
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Employee Communications</div>
+                    <div className="text-2xl text-blue-500 w-fit">Employee Communications</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -611,7 +611,7 @@ const EmployeeCommunications = () => {
 
                 <Button size="xs" onClick={() => navigate('create-communications')} leftSection={<IconPlus />} variant="gradient">New Communication</Button>
             </div>
-            <p className='italic font-medium text-gray-600'>Manage Health & Safety communications sent to employees</p>
+            <p className='italic text-gray-600'>Manage Health & Safety communications sent to employees</p>
             <div className='flex flex-col gap-8'>
                 <StatusSummaryCards cards={summaryCards} />
 

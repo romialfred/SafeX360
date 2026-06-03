@@ -81,7 +81,7 @@ const AddIncidents = () => {
     const itemTemplate = (item: any) => {
         return (
             <div className={`  flex gap-5 justify-between`}>
-                <span className="font-semibold text-sm">{item.name}</span>
+                <span className="text-sm">{item.name}</span>
                 <span className="text-400 text-xs">{item.empNumber}</span>
 
             </div>
@@ -104,7 +104,7 @@ const AddIncidents = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Report Incidents</div>
+                    <div className="text-2xl text-blue-500 w-fit">Report Incidents</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -120,7 +120,7 @@ const AddIncidents = () => {
             <div className="flex flex-col gap-5">
                 <Fieldset
                     className="grid grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
-                    legend={<div className="text-lg font-medium text-blue-500">Report Incidents Info</div>}
+                    legend={<div className="text-lg text-blue-500">Report Incidents Info</div>}
                 >
                     <TextInput withAsterisk label="Incident Title" placeholder="Enter Incident Title" {...form.getInputProps('title')} />
                     <Select withAsterisk label="Incident Type" placeholder="Select Incident Type" data={['Server Outage', 'Bug', 'Security', 'Other']} {...form.getInputProps('incidentType')} />
@@ -131,7 +131,7 @@ const AddIncidents = () => {
                     <Textarea withAsterisk label="Description" placeholder="Enter Description" {...form.getInputProps('description')} className='col-span-3 ' rows={3} />
                 </Fieldset>
 
-                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg font-medium text-blue-500 ">Witnesses & Invloved Persons</div>}>
+                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg text-blue-500 ">Witnesses & Invloved Persons</div>}>
                     <PickList
                         dataKey="id"
                         filter
@@ -172,7 +172,7 @@ const AddIncidents = () => {
                     />
                 </Fieldset>
 
-                <Fieldset legend={<div className="text-lg font-medium text-blue-500">Upload Image</div>}>
+                <Fieldset legend={<div className="text-lg text-blue-500">Upload Image</div>}>
                     <Dropzone
                         onDrop={(files: any) => setUploadedImages([...uploadedImages, ...files])}
                         accept={['image/*']}
@@ -191,7 +191,7 @@ const AddIncidents = () => {
                                     <IconCloudUpload size={50} stroke={1.5} />
                                 </Dropzone.Idle>
                             </Group>
-                            <Text ta="center" fw={700} fz="lg" mt="xl">
+                            <Text ta="center" fz="lg" mt="xl">
                                 <Dropzone.Accept>Drop image files here</Dropzone.Accept>
                                 <Dropzone.Reject>Only image files under 30MB are allowed</Dropzone.Reject>
                                 <Dropzone.Idle>Upload incident images</Dropzone.Idle>

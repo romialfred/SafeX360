@@ -30,7 +30,7 @@ const WitnessesSection = ({ form, employees }: any) => {
     const itemTemplate = (item: any) => {
         return (
             <div className={`  flex gap-5 justify-between`}>
-                <span className="font-semibold text-sm">{item.name}</span>
+                <span className="text-sm">{item.name}</span>
                 <span className="text-400 text-xs">{item.empNumber}</span>
 
             </div>
@@ -45,9 +45,9 @@ const WitnessesSection = ({ form, employees }: any) => {
     return (
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
 
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Witnesses & Involved Persons</h2>
+            <h2 className="text-lg text-gray-800 mb-4">Witnesses & Involved Persons</h2>
             <div className="flex flex-col gap-2 border border-gray-300  rounded-lg p-4">
-                <h1 className="text-xl font-semibold text-gray-800">Reporter</h1>
+                <h1 className="text-lg text-gray-800">Reporter</h1>
                 <Select {...form.getInputProps("reporterId")} label="Select Reporter" placeholder="Choose an employee" withAsterisk data={employees.map((x: any) => ({ label: x.name, value: "" + x.id }))} />
             </div>
             <PickList
@@ -89,7 +89,7 @@ const WitnessesSection = ({ form, employees }: any) => {
                 targetStyle={{ height: '24rem' }}
             />
             <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload Evidence</h2>
+                <h2 className="text-lg text-gray-800 mb-4">Upload Evidence</h2>
                 {/* <UpdateImageDropzone form={form} id="evidence" /> */}
                 <UpdateFileDropzone form={form} id="evidence" />
             </div >

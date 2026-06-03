@@ -14,13 +14,13 @@ const Customers = () => {
 
     return (
         <Card shadow="sm" p="lg" radius="md" withBorder >
-            <Text size="sm" fw={500}>Customers</Text>
-            <Text size="xl" fw={700}>36,358</Text>
+            <Text size="sm">Customers</Text>
+            <Text size="xl">36,358</Text>
             <Box style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                 <Avatar size={24} radius="xl" style={{ backgroundColor: errorLight }}>
                     <IconArrowDownRight size={18} color="#FA896B" />
                 </Avatar>
-                <Text size="sm" fw={600}>+9%</Text>
+                <Text size="sm">+9%</Text>
             </Box>
             <Box mt="sm">
                 <Sparkline

@@ -48,16 +48,16 @@ const FirstLogin = () => {
     }
 
     return <div style={{ backgroundImage: `url(${bgImg})` }} className="flex flex-col gap-5 items-center bg-light-bg min-h-screen justify-center bg-center bg-cover">
-        <div className="flex gap-2 text-2xl h-32 items-center font-semibold text-neutral-50">
+        <div className="flex gap-2 text-2xl h-32 items-center text-neutral-50">
             <img className="object-contain !h-24  rounded-2xl  !w-auto" src={name} alt="" />
         </div>
         <div className="w-[28rem] flex flex-col gap-5 bg-white p-7 shadow-md rounded-xl">
-            <div className="text-2xl self-center font-medium  bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Reset Password</div>
+            <div className="text-2xl self-center  bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Reset Password</div>
             <PasswordInput size="md" {...form.getInputProps("password")} leftSection={<IconLock size={16} />} label="Password" withAsterisk placeholder="Enter Password" />
             <PasswordInput size="md" {...form.getInputProps("confirmPassword")} leftSection={<IconLock size={16} />} label="Confirm Password" withAsterisk placeholder="Enter Password Again" />
 
             <Button onClick={handleSubmit} size="md" variant="gradient">Reset Password</Button>
-            <div className="text-center ">Done Already?  <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-medium hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
+            <div className="text-center ">Done Already?  <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
         </div>
     </div>
 }

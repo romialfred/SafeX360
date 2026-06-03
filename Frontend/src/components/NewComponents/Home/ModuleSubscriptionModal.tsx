@@ -32,7 +32,7 @@ const ModuleSubscriptionModal: React.FC<ModuleSubscriptionModalProps> = ({
                         <div className="p-2 bg-orange-100 rounded-lg mr-3">
                             <IconAlertCircle className="w-6 h-6 text-orange-600" />
                         </div>
-                        <h2 className="text-xl font-semibold text-gray-900">Module Not Available</h2>
+                        <h2 className="text-lg text-gray-900">Module Not Available</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -46,7 +46,7 @@ const ModuleSubscriptionModal: React.FC<ModuleSubscriptionModalProps> = ({
                 <div className="p-6">
                     <div className="mb-6">
                         <p className="text-gray-700 mb-4">
-                            The module <span className="font-semibold text-gray-900">"{moduleName}"</span> is not included in your current subscription.
+                            The module <span className="text-gray-900">"{moduleName}"</span> is not included in your current subscription.
                         </p>
                         <p className="text-gray-600 text-sm">
                             To access this module, please contact your administrator to upgrade your subscription or request module activation.

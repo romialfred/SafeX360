@@ -43,7 +43,7 @@ const LessonDetails = () => {
                 >
                     <Tabs.List className='!flex !gap-6'>
                         {Object.entries(tabData).map(([key, { label, icon: Icon }]) => (
-                            <Tabs.Tab key={key} value={key} leftSection={<Icon size={25} />} className="!text-lg !font-medium !text-gray-600 ">
+                            <Tabs.Tab key={key} value={key} leftSection={<Icon size={25} />} className="!text-lg !!text-gray-600 ">
                                 {label}
                             </Tabs.Tab>
                         ))}

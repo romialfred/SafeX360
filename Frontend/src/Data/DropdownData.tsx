@@ -274,27 +274,25 @@ const observationTypes = [
 ];
 
 const auditStatuses = [
-    { label: "Planning", value: "PLANNING" },
-    { label: "Preparation", value: "PREPARATION" },
-    { label: "Execution", value: "EXECUTION" },
-    { label: "Closed", value: "CLOSED" },
-    { label: "Cancelled", value: "CANCELLED" },
+    { label: "Planification", value: "PLANNING" },
+    { label: "Préparation", value: "PREPARATION" },
+    { label: "Exécution", value: "EXECUTION" },
+    { label: "Clôturés", value: "CLOSED" },
+    { label: "Annulés", value: "CANCELLED" },
 ]
 
 const inspectionStatuses = [
-    { label: "Pending", value: "PENDING" },
-    { label: "In-Progress", value: "IN_PROGRESS" },
-    { label: "Completed", value: "COMPLETED" },
-
-    { label: "Cancelled", value: "CANCELLED" },
+    { label: "En attente", value: "PENDING" },
+    { label: "En cours", value: "IN_PROGRESS" },
+    { label: "Terminée", value: "COMPLETED" },
+    { label: "Annulée", value: "CANCELLED" },
 ]
 const auditStatusMap: Record<string, string> = {
-    PLANNING: "Planning",
-    PREPARATION: "Preparation",
-
-    EXECUTION: "Execution",
-    CLOSED: "Closed",
-    CANCELLED: "Cancelled"
+    PLANNING: "Planification",
+    PREPARATION: "Préparation",
+    EXECUTION: "Exécution",
+    CLOSED: "Clôturé",
+    CANCELLED: "Annulé"
 }
 
 

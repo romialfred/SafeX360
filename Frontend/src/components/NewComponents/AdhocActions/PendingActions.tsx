@@ -14,9 +14,9 @@ import {
     IconUser, // Zap
     IconBuilding, IconTarget, IconBolt, IconBook, IconChevronRight, IconChevronDown
 } from '@tabler/icons-react';
-import { Badge, Breadcrumbs, Text } from '@mantine/core';
+import { Badge } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { Link } from 'react-router-dom';
+import PageHeader from '../../UtilityComp/PageHeader';
 import {
     approveCorrectiveAction,
     cancelCorrectiveAction,
@@ -77,14 +77,14 @@ const PendingActions = () => {
     const normalizeType = (value: string) => value?.toString?.().trim().toUpperCase().replace(/[\s-]+/g, '_') ?? '';
 
     const typeConfigMap: Record<string, { label: string; icon: typeof IconHelmet; iconColor: string; badgeColor: string }> = {
-        PPE_APPROVAL: { label: 'PPE Approval', icon: IconHelmet, iconColor: 'text-blue-600', badgeColor: 'blue' },
-        RISK_ASSESSMENT: { label: 'Risk Assessment', icon: IconShield, iconColor: 'text-orange-600', badgeColor: 'orange' },
-        DOCUMENT_APPROVAL: { label: 'Document Approval', icon: IconFileText, iconColor: 'text-green-600', badgeColor: 'green' },
-        INCIDENT_INVESTIGATION: { label: 'Incident Investigation', icon: IconAlertTriangle, iconColor: 'text-red-600', badgeColor: 'red' },
-        ACTION_ASSIGNMENT: { label: 'Action Assignment', icon: IconTarget, iconColor: 'text-purple-600', badgeColor: 'grape' },
-        AUDIT_REVIEW: { label: 'Audit Review', icon: IconCircleCheck, iconColor: 'text-indigo-600', badgeColor: 'indigo' },
-        TRAINING_APPROVAL: { label: 'Training Approval', icon: IconBook, iconColor: 'text-cyan-600', badgeColor: 'cyan' },
-        GENERAL_INSPECTION: { label: 'General Inspection', icon: IconSearch, iconColor: 'text-teal-600', badgeColor: 'teal' },
+        PPE_APPROVAL: { label: 'Validation EPI', icon: IconHelmet, iconColor: 'text-blue-600', badgeColor: 'blue' },
+        RISK_ASSESSMENT: { label: 'Évaluation de risque', icon: IconShield, iconColor: 'text-orange-600', badgeColor: 'orange' },
+        DOCUMENT_APPROVAL: { label: 'Validation document', icon: IconFileText, iconColor: 'text-green-600', badgeColor: 'green' },
+        INCIDENT_INVESTIGATION: { label: "Investigation d'incident", icon: IconAlertTriangle, iconColor: 'text-red-600', badgeColor: 'red' },
+        ACTION_ASSIGNMENT: { label: "Affectation d'action", icon: IconTarget, iconColor: 'text-purple-600', badgeColor: 'grape' },
+        AUDIT_REVIEW: { label: "Revue d'audit", icon: IconCircleCheck, iconColor: 'text-indigo-600', badgeColor: 'indigo' },
+        TRAINING_APPROVAL: { label: 'Validation formation', icon: IconBook, iconColor: 'text-cyan-600', badgeColor: 'cyan' },
+        GENERAL_INSPECTION: { label: 'Inspection générale', icon: IconSearch, iconColor: 'text-teal-600', badgeColor: 'teal' },
     };
 
     const statuses = ['pending', 'urgent', 'overdue'];
@@ -180,7 +180,7 @@ const PendingActions = () => {
     const handleApprove = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="font-semibold text-lg">Approve this action?</span>,
+            title: <span className="text-lg">Approve this action?</span>,
             centered: true,
             children: (
                 <span className="text-sm text-gray-700">
@@ -200,7 +200,7 @@ const PendingActions = () => {
     const handleCancel = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="font-semibold text-lg">Cancel this action?</span>,
+            title: <span className="text-lg">Annuler cette action ?</span>,
             centered: true,
             children: (
                 <span className="text-sm text-gray-700">
@@ -361,18 +361,18 @@ const PendingActions = () => {
 
 
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Pending Actions</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Pending Actions</Text>
-                    </Breadcrumbs>
-                </div>
-
-            </div>
-            <p className=' italic'>Review and resolve overdue, urgent, and critical hazard-related actions</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: 'Actions en attente' },
+                ]}
+                icon={<IconClock size={22} stroke={2} />}
+                iconColor="orange"
+                title="Actions en attente"
+                subtitle="Revue et résolution des actions en retard, urgentes ou critiques liées aux dangers HSE"
+            />
             {/* Content */}
             <div className="">
 
@@ -384,8 +384,8 @@ const PendingActions = () => {
                                 <IconClock className="w-6 h-6 text-blue-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">Total Pending</p>
-                                <p className="text-2xl font-bold text-gray-900">{totalActions}</p>
+                                <p className="text-sm text-gray-500">Total en attente</p>
+                                <p className="text-2xl text-gray-900">{totalActions}</p>
                             </div>
                         </div>
                     </div>
@@ -396,8 +396,8 @@ const PendingActions = () => {
                                 <IconAlertTriangle className="w-6 h-6 text-red-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">Overdue</p>
-                                <p className="text-2xl font-bold text-red-600">{overdueActions}</p>
+                                <p className="text-sm text-gray-500">En retard</p>
+                                <p className="text-2xl text-red-600">{overdueActions}</p>
                             </div>
                         </div>
                     </div>
@@ -408,8 +408,8 @@ const PendingActions = () => {
                                 <IconTarget className="w-6 h-6 text-purple-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">Critical Priority</p>
-                                <p className="text-2xl font-bold text-purple-600">{criticalActions}</p>
+                                <p className="text-sm text-gray-500">Priorité critique</p>
+                                <p className="text-2xl text-purple-600">{criticalActions}</p>
                             </div>
                         </div>
                     </div>
@@ -422,7 +422,7 @@ const PendingActions = () => {
                             <IconSearch className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search actions..."
+                                placeholder="Rechercher des actions..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -434,12 +434,12 @@ const PendingActions = () => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <option value="all">All Types</option>
+                            <option value="all">Tous les types</option>
                             {availableTypes.map((type) => {
                                 const config = getTypeConfig(type);
                                 return (
                                     <option key={type} value={type}>
-                                        {`Type: ${config.label}`}
+                                        {`Type : ${config.label}`}
                                     </option>
                                 );
                             })}
@@ -450,17 +450,18 @@ const PendingActions = () => {
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <option value="all">All Statuses</option>
-                            {statuses.map(status => (
-                                <option key={status} value={status}>
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </option>
-                            ))}
+                            <option value="all">Tous les statuts</option>
+                            {statuses.map(status => {
+                                const label = status === 'pending' ? 'En attente' : status === 'overdue' ? 'En retard' : 'Urgent';
+                                return (
+                                    <option key={status} value={status}>{label}</option>
+                                );
+                            })}
                         </select>
 
                         <div className="flex items-center text-sm text-gray-600">
                             <IconFilter className="w-4 h-4 mr-2" />
-                            {filteredActions.length} of {totalActions} actions
+                            {filteredActions.length} / {totalActions} actions
                         </div>
                     </div>
                 </div>
@@ -487,7 +488,7 @@ const PendingActions = () => {
                                                     <typeConfig.icon className={`w-5 h-5 ${typeConfig.iconColor}`} />
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="text-lg font-semibold text-gray-900">{action.title}</h3>
+                                                    <h3 className="text-lg text-gray-900">{action.title}</h3>
                                                     <Badge
                                                         color={typeConfig.badgeColor}
                                                         variant="light"
@@ -514,27 +515,27 @@ const PendingActions = () => {
                                                     <div className="flex items-center">
                                                         <IconUser className="w-4 h-4 text-gray-400 mr-2" />
                                                         <span className="text-gray-600">From:</span>
-                                                        <span className="ml-1 font-medium">{action.assignedBy}</span>
+                                                        <span className="ml-1">{action.assignedBy}</span>
                                                     </div>
                                                 )}
                                                 {action.ownerName && action.ownerName !== '-' && (
                                                     <div className="flex items-center">
                                                         <IconUser className="w-4 h-4 text-green-600 mr-2" />
                                                         <span className="text-gray-600">Owner:</span>
-                                                        <span className="ml-1 font-medium">{action.ownerName}</span>
+                                                        <span className="ml-1">{action.ownerName}</span>
                                                     </div>
                                                 )}
                                                 {action.departmentName && action.departmentName !== '-' && (
                                                     <div className="flex items-center">
                                                         <IconBuilding className="w-4 h-4 text-purple-600 mr-2" />
                                                         <span className="text-gray-600">Dept:</span>
-                                                        <span className="ml-1 font-medium">{action.departmentName}</span>
+                                                        <span className="ml-1">{action.departmentName}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center">
                                                     <IconCalendar className="w-4 h-4 text-gray-400 mr-2" />
                                                     <span className="text-gray-600">Due:</span>
-                                                    <span className={`ml-1 font-medium ${overdue ? 'text-red-600' : ''}`}>
+                                                    <span className={`ml-1 ${overdue ? 'text-red-600' : ''}`}>
                                                         {action.dueDate}
                                                     </span>
                                                 </div>
@@ -547,37 +548,37 @@ const PendingActions = () => {
                                                     {action.details.requestor && (
                                                         <div>
                                                             <span className="text-gray-500">Requestor:</span>
-                                                            <span className="ml-1 font-medium">{action.details.requestor}</span>
+                                                            <span className="ml-1">{action.details.requestor}</span>
                                                         </div>
                                                     )}
                                                     {action.details.location && (
                                                         <div>
                                                             <span className="text-gray-500">Location:</span>
-                                                            <span className="ml-1 font-medium">{action.details.location}</span>
+                                                            <span className="ml-1">{action.details.location}</span>
                                                         </div>
                                                     )}
                                                     {action.details.amount && (
                                                         <div>
                                                             <span className="text-gray-500">Amount:</span>
-                                                            <span className="ml-1 font-medium">{action.details.amount}</span>
+                                                            <span className="ml-1">{action.details.amount}</span>
                                                         </div>
                                                     )}
                                                     {action.details.riskLevel && (
                                                         <div>
                                                             <span className="text-gray-500">Risk Level:</span>
-                                                            <span className="ml-1 font-medium text-orange-600">{action.details.riskLevel}</span>
+                                                            <span className="ml-1 text-orange-600">{action.details.riskLevel}</span>
                                                         </div>
                                                     )}
                                                     {action.details.documentType && (
                                                         <div>
-                                                            <span className="text-gray-500">Document Type:</span>
-                                                            <span className="ml-1 font-medium">{action.details.documentType}</span>
+                                                            <span className="text-gray-500">Type de document :</span>
+                                                            <span className="ml-1">{action.details.documentType}</span>
                                                         </div>
                                                     )}
                                                     {action.details.incidentDate && (
                                                         <div>
                                                             <span className="text-gray-500">Incident Date:</span>
-                                                            <span className="ml-1 font-medium">{action.details.incidentDate}</span>
+                                                            <span className="ml-1">{action.details.incidentDate}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -586,7 +587,7 @@ const PendingActions = () => {
                                                     <div className="mt-3">
                                                         <div className="flex items-center justify-between mb-1">
                                                             <span className="text-sm text-gray-500">Current Progress</span>
-                                                            <span className="text-sm font-medium">{action.details.actionProgress}%</span>
+                                                            <span className="text-sm">{action.details.actionProgress}%</span>
                                                         </div>
                                                         <div className="w-full bg-gray-200 rounded-full h-2">
                                                             <div
@@ -602,7 +603,7 @@ const PendingActions = () => {
 
                                         <div className="flex flex-col items-end space-y-3 ml-6">
                                             <div className="flex flex-col space-y-2">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(action.status)}`}>
+                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(action.status)}`}>
                                                     {getStatusIcon(action.status)}
                                                     <span className="ml-1">{action.status.charAt(0).toUpperCase() + action.status.slice(1)}</span>
                                                 </span>
@@ -610,13 +611,13 @@ const PendingActions = () => {
 
                                             <div className="text-right text-sm">
                                                 {overdue ? (
-                                                    <span className="text-red-600 font-medium">
+                                                    <span className="text-red-600">
                                                         {Math.abs(daysUntilDue)} days overdue
                                                     </span>
                                                 ) : daysUntilDue === 0 ? (
-                                                    <span className="text-orange-600 font-medium">Due today</span>
+                                                    <span className="text-orange-600">Due today</span>
                                                 ) : daysUntilDue === 1 ? (
-                                                    <span className="text-orange-600 font-medium">Due tomorrow</span>
+                                                    <span className="text-orange-600">Due tomorrow</span>
                                                 ) : (
                                                     <span className="text-gray-600">
                                                         {daysUntilDue} days remaining
@@ -648,7 +649,7 @@ const PendingActions = () => {
                                 {expandedId === action.id && (
                                     <div className="px-6 pb-6 border-t border-gray-100">
                                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mt-4">
-                                            <p className="text-blue-600 text-sm font-medium mb-1">Action Details</p>
+                                            <p className="text-blue-600 text-sm mb-1">Action Details</p>
                                             {descMap[action.id]?.loading && (
                                                 <p className="text-sm text-gray-600">Loading description...</p>
                                             )}
@@ -672,7 +673,7 @@ const PendingActions = () => {
                 {filteredActions.length === 0 && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                         <IconCircleCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No pending actions found</h3>
+                        <h3 className="text-lg text-gray-900 mb-2">No pending actions found</h3>
                         <p className="text-gray-600">
                             {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
                                 ? 'Try adjusting your filters to see more actions.'

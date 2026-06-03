@@ -44,10 +44,10 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
     return (
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
             <div className="flex gap-4 ">
-                <span className={`text-sm px-2 py-1 rounded-lg font-medium ${getSeverityClass(incidentData.maxSeverityLevel)}`}>
+                <span className={`text-sm px-2 py-1 rounded-lg ${getSeverityClass(incidentData.maxSeverityLevel)}`}>
                     {incidentData.severityLevelName}
                 </span>
-                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                     {incidentData.incidentCategoryName}
                 </span>
                 <Badge radius="xs"
@@ -58,12 +58,12 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
 
                 >{incidentData.status ? incidentStatusMap[incidentData.status] : ""}</Badge>
             </div>
-            <Link to={`${incidentData.id}`} className=" font-semibold text-gray-900">{incidentData.title}</Link>
-            {/* <p className="font-medium text-gray-600">{incidentData.description}</p> */}
-            <div className=" text-gray-500 text-sm font-medium">
+            <Link to={`${incidentData.id}`} className=" text-gray-900">{incidentData.title}</Link>
+            {/* <p className="text-gray-600">{incidentData.description}</p> */}
+            <div className=" text-gray-500 text-sm">
                 Incident Date: {formatDateShort(incidentData.incidentDate)}
             </div>
-            <div className=" text-gray-500 text-sm font-medium">
+            <div className=" text-gray-500 text-sm">
                 Reporter: {emps ? emps[incidentData.reporterId]?.name || "Unknown" : "Unknown"}
             </div>
 

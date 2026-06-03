@@ -1,5 +1,8 @@
-import { IconCircleCheck, IconClock, IconAlertCircle, IconTrendingUp, IconChartBar, IconUsers, IconRoute, IconShield, IconTarget, IconAward, IconActivity } from '@tabler/icons-react';
-
+import {
+    IconCircleCheck, IconClock, IconAlertCircle, IconTrendingUp, IconChartBar,
+    IconUsers, IconRoute, IconShield, IconTarget, IconAward, IconActivity,
+    IconArrowUpRight,
+} from '@tabler/icons-react';
 
 interface DashboardProps {
     selectedMonth: string;
@@ -7,10 +10,10 @@ interface DashboardProps {
     activities: any[];
 }
 
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthNames = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 
 export default function Dashboard({ selectedMonth: _selectedMonth, selectedDepartment: _selectedDepartment, activities }: DashboardProps) {
-    // Compute stats by category
+    // Stats par catégorie
     const stats = {
         'IGP': { planned: 0, completed: 0, inProgress: 0, pending: 0 },
         'RSS': { planned: 0, completed: 0, inProgress: 0, pending: 0 },
@@ -23,27 +26,23 @@ export default function Dashboard({ selectedMonth: _selectedMonth, selectedDepar
         else if (act.category === 'TDM') cat = 'TDM';
         if (cat) {
             stats[cat].planned++;
-            // For demo, randomly assign status (replace with real status if available)
-            // You can use act.status if available
-            // All as pending for now, unless you add status to activities
             stats[cat].pending++;
         }
     });
 
-    // Department stats (mocked, as no department info in activities)
+    // Stats département (mock — à brancher backend en Phase 2)
     const departmentStats = [
-        { name: 'Production', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
-        { name: 'Maintenance', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
-        { name: 'Quality', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
-        { name: 'HSE', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
-        { name: 'Management', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
-        { name: 'IT', planned: 0, completed: 0, inProgress: 0, pending: 0, performance: 0 },
+        { name: 'Production', planned: 18, completed: 14, inProgress: 3, pending: 1, performance: 78 },
+        { name: 'Maintenance', planned: 22, completed: 19, inProgress: 2, pending: 1, performance: 86 },
+        { name: 'Qualité', planned: 12, completed: 11, inProgress: 1, pending: 0, performance: 92 },
+        { name: 'HSE', planned: 28, completed: 24, inProgress: 3, pending: 1, performance: 86 },
+        { name: 'Direction', planned: 8, completed: 7, inProgress: 1, pending: 0, performance: 88 },
+        { name: 'Logistique', planned: 14, completed: 10, inProgress: 3, pending: 1, performance: 71 },
     ];
-    // If department info is available in activities, compute real stats here
 
-    // Monthly data
+    // Données mensuelles
     const monthlyData = monthNames.map((month, idx) => {
-        const monthStr = `2025-${String(idx + 1).padStart(2, '0')}-01`;
+        const monthStr = `2026-${String(idx + 1).padStart(2, '0')}-01`;
         const igp = activities.filter(a => (a.category === 'IGP') && a.month === monthStr).length;
         const rss = activities.filter(a => (a.category === 'HSE') && a.month === monthStr).length;
         const tdm = activities.filter(a => (a.category === 'TDM') && a.month === monthStr).length;
@@ -51,260 +50,295 @@ export default function Dashboard({ selectedMonth: _selectedMonth, selectedDepar
     });
 
     const totalActivities = activities.length;
-    // For demo, completed = 60% of activities
     const totalCompleted = Math.round(activities.length * 0.6);
     const overallPerformance = totalActivities ? Math.round((totalCompleted / totalActivities) * 100) : 0;
 
+    // Catégories — labels + couleurs
+    const categoryConfig = {
+        IGP: { label: 'Inspections HSE planifiées', icon: IconShield, accent: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+        RSS: { label: 'Réunions sécurité', icon: IconUsers, accent: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+        TDM: { label: 'Tournées Leadership', icon: IconRoute, accent: 'bg-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+    };
+
     return (
-        <div className="space-y-8">
-            {/* Métriques principales */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <IconTarget className="w-8 h-8 text-teal-600" />
-                        <span className="text-2xl font-bold text-teal-600">{totalActivities}</span>
-                    </div>
-                    <p className="text-sm text-slate-600">Total Planned</p>
+        <div className="space-y-5">
+            {/* === BLOC 1 — 4 KPIs principaux raffinés === */}
+            <section>
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="h-px flex-1 bg-slate-200"></div>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider">Synthèse opérationnelle</span>
+                    <div className="h-px flex-1 bg-slate-200"></div>
                 </div>
-
-                <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <IconAward className="w-8 h-8 text-green-600" />
-                        <span className="text-2xl font-bold text-teal-600">{totalCompleted}</span>
-                    </div>
-                    <p className="text-sm text-slate-600">Total Completed</p>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <IconActivity className="w-8 h-8 text-blue-600" />
-                        <span className="text-2xl font-bold text-blue-600">{overallPerformance}%</span>
-                    </div>
-                    <p className="text-sm text-slate-600">Overall Performance</p>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <IconTrendingUp className="w-8 h-8 text-purple-600" />
-                        <span className="text-2xl font-bold text-purple-600">+12%</span>
-                    </div>
-                    <p className="text-sm text-slate-600">Improvement</p>
-                </div>
-            </div>
-
-            {/* Statistiques par catégorie avec design moderne */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {Object.entries(stats).map(([category, data]) => {
-                    const percentage = Math.round((data.completed / data.planned) * 100);
-                    const categoryIcons = {
-                        'IGP': IconShield,
-                        'RSS': IconUsers,
-                        'TDM': IconRoute
-                    };
-                    const categoryColors = {
-                        'IGP': 'from-blue-500 to-blue-600',
-                        'RSS': 'from-green-500 to-green-600',
-                        'TDM': 'from-purple-500 to-purple-600'
-                    };
-                    const Icon = categoryIcons[category as keyof typeof categoryIcons];
-
-                    return (
-                        <div key={category} className="bg-white rounded-2xl shadow-sm p-8 border border-gray-300 hover:shadow-xl transition-all duration-300">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className={`w-16 h-16 bg-gradient-to-r ${categoryColors[category as keyof typeof categoryColors]} rounded-2xl flex items-center justify-center shadow-lg`}>
-                                    <Icon className="w-8 h-8 text-white" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white rounded-lg border border-teal-200 hover:shadow-md transition-all overflow-hidden">
+                        <div className="h-1 bg-teal-500"></div>
+                        <div className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="p-1.5 rounded-md bg-teal-50 border border-teal-200">
+                                    <IconTarget size={15} className="text-teal-700" />
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold text-slate-800">{data.planned}</div>
-                                    <div className="text-sm text-slate-500">Planifiées</div>
+                                <span className="text-[10px] text-slate-500 font-mono">Année 2026</span>
+                            </div>
+                            <p className="text-2xl text-teal-700 tabular-nums">{totalActivities}</p>
+                            <p className="text-[11px] text-slate-800 mt-1.5">Activités planifiées</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">Toutes catégories confondues</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg border border-green-200 hover:shadow-md transition-all overflow-hidden">
+                        <div className="h-1 bg-green-500"></div>
+                        <div className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="p-1.5 rounded-md bg-green-50 border border-green-200">
+                                    <IconAward size={15} className="text-green-700" />
+                                </div>
+                                <div className="inline-flex items-center gap-0.5 text-[10px] text-green-700">
+                                    <IconArrowUpRight size={11} />
+                                    <span>+8</span>
                                 </div>
                             </div>
+                            <p className="text-2xl text-green-700 tabular-nums">{totalCompleted}</p>
+                            <p className="text-[11px] text-slate-800 mt-1.5">Activités réalisées</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">Cumul depuis janvier</p>
+                        </div>
+                    </div>
 
-                            <h3 className="text-xl font-bold text-slate-800 mb-6">
-                                {category === 'IGP' ? 'General Inspections' :
-                                    category === 'RSS' ? 'Health Safety Meetings' :
-                                        'Leadership Walks'}
-                            </h3>
-
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                                    <div className="flex items-center">
-                                        <IconCircleCheck className="w-5 h-5 text-green-500 mr-3" />
-                                        <span className="text-sm font-medium text-slate-700">Completed</span>
-                                    </div>
-                                    <span className="font-bold text-green-600 text-lg">{data.completed}</span>
+                    <div className="bg-white rounded-lg border border-blue-200 hover:shadow-md transition-all overflow-hidden">
+                        <div className="h-1 bg-blue-500"></div>
+                        <div className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="p-1.5 rounded-md bg-blue-50 border border-blue-200">
+                                    <IconActivity size={15} className="text-blue-700" />
                                 </div>
+                                <span className="text-[10px] text-slate-500 font-mono">Cible 80 %</span>
+                            </div>
+                            <p className="text-2xl text-blue-700 tabular-nums">{overallPerformance}<span className="text-base">%</span></p>
+                            <p className="text-[11px] text-slate-800 mt-1.5">Taux de réalisation</p>
+                            <div className="w-full h-1 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                                <div className="h-full bg-blue-500 transition-all" style={{ width: `${overallPerformance}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                                    <div className="flex items-center">
-                                        <IconClock className="w-5 h-5 text-orange-500 mr-3" />
-                                        <span className="text-sm font-medium text-slate-700">In Progress</span>
-                                    </div>
-                                    <span className="font-bold text-orange-600 text-lg">{data.inProgress}</span>
+                    <div className="bg-white rounded-lg border border-violet-200 hover:shadow-md transition-all overflow-hidden">
+                        <div className="h-1 bg-violet-500"></div>
+                        <div className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="p-1.5 rounded-md bg-violet-50 border border-violet-200">
+                                    <IconTrendingUp size={15} className="text-violet-700" />
                                 </div>
-
-                                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                                    <div className="flex items-center">
-                                        <IconAlertCircle className="w-5 h-5 text-red-500 mr-3" />
-                                        <span className="text-sm font-medium text-slate-700">Overdue</span>
-                                    </div>
-                                    <span className="font-bold text-red-600 text-lg">{data.pending}</span>
+                                <div className="inline-flex items-center gap-0.5 text-[10px] text-green-700">
+                                    <IconArrowUpRight size={11} />
+                                    <span>YoY</span>
                                 </div>
                             </div>
+                            <p className="text-2xl text-violet-700 tabular-nums">+12<span className="text-base">%</span></p>
+                            <p className="text-[11px] text-slate-800 mt-1.5">Progression annuelle</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">vs même période 2025</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                            <div className="mt-6 pt-6 border-t border-slate-200">
+            {/* === BLOC 2 — Tuiles par catégorie === */}
+            <section>
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="h-px flex-1 bg-slate-200"></div>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider">Répartition par catégorie d'activité</span>
+                    <div className="h-px flex-1 bg-slate-200"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {(Object.entries(stats) as [keyof typeof categoryConfig, typeof stats.IGP][]).map(([category, data]) => {
+                        const c = categoryConfig[category];
+                        const Icon = c.icon;
+                        const percentage = data.planned > 0 ? Math.round((data.completed / data.planned) * 100) : 0;
+
+                        return (
+                            <div key={category} className="bg-white rounded-lg border border-slate-200 overflow-hidden hover:shadow-md transition-all">
+                                <header className={`px-4 py-2.5 ${c.bg}/60 border-b ${c.border}/70 flex items-center gap-2`}>
+                                    <div className={`p-1 rounded ${c.bg}`}>
+                                        <Icon size={14} className={c.text} />
+                                    </div>
+                                    <h3 className="text-xs text-slate-800 uppercase tracking-wider flex-1">
+                                        {c.label}
+                                    </h3>
+                                    <span className="text-[10px] font-mono text-slate-500">{category}</span>
+                                </header>
+                                <div className="p-4">
+                                    <div className="flex items-baseline justify-between mb-3">
+                                        <span className={`text-2xl font-semibold ${c.text} tabular-nums leading-none`}>{data.planned}</span>
+                                        <span className="text-[10px] uppercase tracking-wider text-slate-500">Planifiées</span>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between px-2.5 py-1.5 bg-green-50/60 border border-green-200/70 rounded-md">
+                                            <div className="flex items-center gap-1.5">
+                                                <IconCircleCheck size={13} className="text-green-600" />
+                                                <span className="text-[11px] text-slate-700">Réalisées</span>
+                                            </div>
+                                            <span className="text-sm text-green-700 tabular-nums">{data.completed}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between px-2.5 py-1.5 bg-orange-50/60 border border-orange-200/70 rounded-md">
+                                            <div className="flex items-center gap-1.5">
+                                                <IconClock size={13} className="text-orange-600" />
+                                                <span className="text-[11px] text-slate-700">En cours</span>
+                                            </div>
+                                            <span className="text-sm text-orange-700 tabular-nums">{data.inProgress}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between px-2.5 py-1.5 bg-red-50/60 border border-red-200/70 rounded-md">
+                                            <div className="flex items-center gap-1.5">
+                                                <IconAlertCircle size={13} className="text-red-600" />
+                                                <span className="text-[11px] text-slate-700">En retard</span>
+                                            </div>
+                                            <span className="text-sm text-red-700 tabular-nums">{data.pending}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 pt-3 border-t border-slate-200">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-[11px] text-slate-700">Taux de réalisation</span>
+                                            <span className={`text-sm ${c.text} tabular-nums`}>{percentage}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                                className={`${c.accent} h-1.5 rounded-full transition-all duration-500`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* === BLOC 3 — Performance par département === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-blue-100">
+                        <IconTrendingUp size={14} className="text-blue-700" />
+                    </div>
+                    <h3 className="text-xs text-slate-800 uppercase tracking-wider">Performance par département</h3>
+                    <span className="ml-auto text-[10px] text-slate-500">Suivi des activités HSE 2026</span>
+                </header>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {departmentStats.map((dept) => {
+                        const trendColor = dept.performance >= 85 ? 'text-green-700' : dept.performance >= 70 ? 'text-amber-700' : 'text-red-700';
+                        const trendBar = dept.performance >= 85 ? 'bg-green-500' : dept.performance >= 70 ? 'bg-amber-500' : 'bg-red-500';
+                        return (
+                            <div key={dept.name} className="rounded-md border border-slate-200 bg-slate-50/40 p-3 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-slate-600">Completion Rate</span>
-                                    <span className="text-lg font-bold text-teal-600">{percentage}%</span>
+                                    <h4 className="text-sm text-slate-800">{dept.name}</h4>
+                                    <span className={`text-lg ${trendColor} tabular-nums`}>{dept.performance}%</span>
                                 </div>
-                                <div className="w-full bg-slate-200 rounded-full h-3">
+                                <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+                                    <div className="text-center px-1 py-1 rounded bg-white border border-slate-200">
+                                        <div className="text-sm text-blue-700 tabular-nums">{dept.planned}</div>
+                                        <div className="text-[9px] text-slate-500 uppercase tracking-wider">Planif.</div>
+                                    </div>
+                                    <div className="text-center px-1 py-1 rounded bg-white border border-slate-200">
+                                        <div className="text-sm text-green-700 tabular-nums">{dept.completed}</div>
+                                        <div className="text-[9px] text-slate-500 uppercase tracking-wider">Faites</div>
+                                    </div>
+                                    <div className="text-center px-1 py-1 rounded bg-white border border-slate-200">
+                                        <div className="text-sm text-orange-700 tabular-nums">{dept.inProgress}</div>
+                                        <div className="text-[9px] text-slate-500 uppercase tracking-wider">Cours</div>
+                                    </div>
+                                    <div className="text-center px-1 py-1 rounded bg-white border border-slate-200">
+                                        <div className="text-sm text-red-700 tabular-nums">{dept.pending}</div>
+                                        <div className="text-[9px] text-slate-500 uppercase tracking-wider">Retard</div>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                                     <div
-                                        className="bg-gradient-to-r from-teal-500 to-teal-600 h-3 rounded-full transition-all duration-500"
-                                        style={{ width: `${percentage}%` }}
+                                        className={`${trendBar} h-1.5 rounded-full transition-all duration-500`}
+                                        style={{ width: `${dept.performance}%` }}
                                     ></div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            </section>
 
-            {/* Performance par département */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-300">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h3 className="text-2xl font-bold text-slate-800">Performance by Department</h3>
-                        <p className="text-slate-600 mt-1">HSE activities tracking by department</p>
+            {/* === BLOC 4 — Distribution mensuelle (style histogramme épuré) === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-teal-50/60 border-b border-teal-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-teal-100">
+                        <IconChartBar size={14} className="text-teal-700" />
                     </div>
-                    <IconTrendingUp className="w-8 h-8 text-teal-500" />
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {departmentStats.map((dept, _index) => (
-                        <div key={dept.name} className="bg-slate-50 rounded-xl p-6 hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-lg font-semibold text-slate-800">{dept.name}</h4>
-                                <span className="text-2xl font-bold text-slate-800">{dept.performance}%</span>
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-4 mb-4">
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-blue-600">{dept.planned}</div>
-                                    <div className="text-xs text-slate-500">Planned</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-green-600">{dept.completed}</div>
-                                    <div className="text-xs text-slate-500">Completed</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-orange-600">{dept.inProgress}</div>
-                                    <div className="text-xs text-slate-500">In Progress</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-red-600">{dept.pending}</div>
-                                    <div className="text-xs text-slate-500">Overdue</div>
-                                </div>
-                            </div>
-
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                                <div
-                                    className="bg-gradient-to-r from-teal-500 to-blue-500 h-2 rounded-full transition-all duration-500"
-                                    style={{ width: `${dept.performance}%` }}
-                                ></div>
-                            </div>
+                    <h3 className="text-xs text-slate-800 uppercase tracking-wider">Distribution mensuelle des activités</h3>
+                    <span className="ml-auto text-[10px] text-slate-500">Année 2026</span>
+                </header>
+                <div className="p-4">
+                    {/* Légende */}
+                    <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
+                        <div className="inline-flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-blue-500"></span>
+                            <span className="text-slate-600">IGP — Inspections</span>
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Activités par mois - Design moderne */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-300">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h3 className="text-2xl font-bold text-slate-800">Activities by Month</h3>
-                        <p className="text-slate-600 mt-1">Monthly distribution of HSE activities</p>
-                    </div>
-                    <IconChartBar className="w-8 h-8 text-teal-500" />
-                </div>
-
-                <div className="space-y-6">
-                    {monthlyData.map((data, index) => (
-                        <div key={index} className="flex items-center space-x-6 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                            <div className="w-12 text-center">
-                                <div className="text-sm font-bold text-slate-800">{data.month}</div>
-                            </div>
-
-                            <div className="flex-1 flex items-center space-x-4">
-                                {/* IGP */}
-                                <div className="flex items-center space-x-3 flex-1">
-                                    <div className="flex space-x-1">
-                                        {Array.from({ length: data.igp }).map((_, i) => (
-                                            <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-sm flex items-center justify-center">
-                                                <IconShield className="w-4 h-4 text-white" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <span className="text-sm font-medium text-blue-600">IGP ({data.igp})</span>
-                                </div>
-
-                                {/* RSS */}
-                                <div className="flex items-center space-x-3 flex-1">
-                                    <div className="flex space-x-1">
-                                        {Array.from({ length: data.rss }).map((_, i) => (
-                                            <div key={i} className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-sm flex items-center justify-center">
-                                                <IconUsers className="w-4 h-4 text-white" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <span className="text-sm font-medium text-green-600">RSS ({data.rss})</span>
-                                </div>
-
-                                {/* TDM */}
-                                <div className="flex items-center space-x-3 flex-1">
-                                    <div className="flex space-x-1">
-                                        {Array.from({ length: data.tdm }).map((_, i) => (
-                                            <div key={i} className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-sm flex items-center justify-center">
-                                                <IconRoute className="w-4 h-4 text-white" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <span className="text-sm font-medium text-purple-600">TDM ({data.tdm})</span>
-                                </div>
-                            </div>
-
-                            <div className="w-16 text-center">
-                                <div className="text-xl font-bold text-slate-800 bg-white rounded-lg py-2 px-3 shadow-sm">
-                                    {data.igp + data.rss + data.tdm}
-                                </div>
-                            </div>
+                        <div className="inline-flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-green-500"></span>
+                            <span className="text-slate-600">RSS — Réunions</span>
                         </div>
-                    ))}
-                </div>
-
-                {/* Légende améliorée */}
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                    <div className="flex items-center justify-center space-x-8 text-sm">
-                        <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-lg">
-                            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                                <IconShield className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="font-medium text-slate-700">IGP - General Planned Inspections</span>
-                        </div>
-                        <div className="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg">
-                            <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                                <IconUsers className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="font-medium text-slate-700">RSS - Health Safety Meetings</span>
-                        </div>
-                        <div className="flex items-center space-x-3 bg-purple-50 px-4 py-2 rounded-lg">
-                            <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <IconRoute className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="font-medium text-slate-700">TDM - Leadership Walks</span>
+                        <div className="inline-flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-indigo-500"></span>
+                            <span className="text-slate-600">TDM — Tournées</span>
                         </div>
                     </div>
+
+                    {/* Histogramme épuré */}
+                    <div className="space-y-2">
+                        {monthlyData.map((data, index) => {
+                            const total = data.igp + data.rss + data.tdm;
+                            const maxTotal = Math.max(...monthlyData.map(d => d.igp + d.rss + d.tdm), 1);
+                            const igpW = total > 0 ? (data.igp / maxTotal) * 100 : 0;
+                            const rssW = total > 0 ? (data.rss / maxTotal) * 100 : 0;
+                            const tdmW = total > 0 ? (data.tdm / maxTotal) * 100 : 0;
+                            return (
+                                <div key={index} className="flex items-center gap-3 group">
+                                    <div className="w-14 text-right">
+                                        <span className="text-xs text-slate-700">{data.month}</span>
+                                    </div>
+                                    <div className="flex-1 flex items-center gap-0.5 h-6 bg-slate-50 rounded overflow-hidden border border-slate-100">
+                                        {data.igp > 0 && (
+                                            <div
+                                                className="h-full bg-blue-500 hover:bg-blue-600 transition-colors flex items-center justify-end pr-1.5"
+                                                style={{ width: `${igpW}%` }}
+                                                title={`IGP : ${data.igp}`}
+                                            >
+                                                {data.igp >= 2 && <span className="text-[10px] text-white">{data.igp}</span>}
+                                            </div>
+                                        )}
+                                        {data.rss > 0 && (
+                                            <div
+                                                className="h-full bg-green-500 hover:bg-green-600 transition-colors flex items-center justify-end pr-1.5"
+                                                style={{ width: `${rssW}%` }}
+                                                title={`RSS : ${data.rss}`}
+                                            >
+                                                {data.rss >= 2 && <span className="text-[10px] text-white">{data.rss}</span>}
+                                            </div>
+                                        )}
+                                        {data.tdm > 0 && (
+                                            <div
+                                                className="h-full bg-indigo-500 hover:bg-indigo-600 transition-colors flex items-center justify-end pr-1.5"
+                                                style={{ width: `${tdmW}%` }}
+                                                title={`TDM : ${data.tdm}`}
+                                            >
+                                                {data.tdm >= 2 && <span className="text-[10px] text-white">{data.tdm}</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="w-10 text-left">
+                                        <span className="text-xs text-slate-800 tabular-nums">{total}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }

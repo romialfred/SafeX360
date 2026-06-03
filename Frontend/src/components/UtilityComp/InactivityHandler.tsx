@@ -156,13 +156,13 @@ const InactivityHandler = ({ inactivityMinutes = DEFAULT_INACTIVITY_MINUTES }: {
                 </Text>
                 <Stack gap={4} w="100%">
                     <Group justify="space-between">
-                        <Text size="sm" fw={600}>Auto logout in</Text>
-                        <Text size="sm" fw={700} c="red">{countdown}s</Text>
+                        <Text size="sm">Auto logout in</Text>
+                        <Text size="sm" c="red">{countdown}s</Text>
                     </Group>
                     <Progress value={Math.max(0, (countdown / WARNING_DURATION_SECONDS) * 100)} color="red" radius="xl" size="lg" animated={false} />
                 </Stack>
                 <Text size="sm" ta="center">
-                    Click <Text span fw={600}>Stay Logged In</Text> to keep working.
+                    Click <Text span>Stay Logged In</Text> to keep working.
                 </Text>
                 <Group w="100%">
                     <Button variant="light" color="gray" fullWidth onClick={handleLogoutNow}>

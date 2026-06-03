@@ -1,6 +1,9 @@
-import { Grid, TextInput, Select, Group, Text, Card, Badge, MultiSelect } from '@mantine/core';
+import { TextInput, Select, Text, Badge, MultiSelect } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
-import { IconUser, IconTool, IconAlertTriangle } from '@tabler/icons-react';
+import {
+    IconUser, IconTool, IconAlertTriangle, IconClipboardList,
+    IconCategoryPlus, IconBookmark,
+} from '@tabler/icons-react';
 import TextEditor from '../../../UtilityComp/TextEditor';
 import { eventTypes, eventTypesMap } from '../../../../Data/DropdownData';
 import FileUpdateDropzone from '../../../UtilityComp/FileUpdateDropzone';
@@ -65,55 +68,55 @@ const DeclarationStep = ({ form, employees, locations, categories, workProcesses
     ];
 
     const nearMissTypes = [
-        'Fall avoided',
-        'Object drop',
-        'Vehicle conflict',
-        'Chemical exposure avoided',
-        'Equipment malfunction',
-        'Fire/explosion risk',
-        'Electrical hazard',
-        'Environmental release',
-        'Security breach',
-        'Other'
+        'Chute évitée',
+        'Chute d\'objet',
+        'Conflit véhicule / piéton',
+        'Exposition chimique évitée',
+        'Dysfonctionnement d\'équipement',
+        'Risque incendie / explosion',
+        'Danger électrique',
+        'Rejet environnemental',
+        'Atteinte à la sûreté',
+        'Autre'
     ];
 
     const contributingFactorsOptions = [
-        'Unsafe behavior',
-        'Environmental conditions',
-        'Equipment failure',
-        'Inadequate training',
-        'Poor communication',
-        'Time pressure',
-        'Inadequate procedures',
-        'Lack of supervision',
-        'Personal protective equipment issues',
-        'Workplace design'
+        'Comportement à risque',
+        'Conditions environnementales',
+        'Défaillance d\'équipement',
+        'Formation insuffisante',
+        'Communication défaillante',
+        'Pression temporelle',
+        'Procédures inadéquates',
+        'Manque de supervision',
+        'Problème d\'EPI',
+        'Conception du poste de travail'
     ];
 
     const requirementOptions = [
-        'ISO 45001 Standard',
-        'Company Safety Policy',
-        'Environmental Procedure',
-        'Quality Management System',
-        'Legal Requirement',
-        'Industry Standard',
-        'Training Requirement',
-        'Maintenance Procedure',
-        'Emergency Response Plan',
-        'Risk Assessment'
+        'Norme ISO 45001',
+        'Politique sécurité interne',
+        'Procédure environnementale',
+        'Système de management qualité',
+        'Exigence légale / réglementaire',
+        'Norme sectorielle',
+        'Exigence de formation',
+        'Procédure de maintenance',
+        'Plan d\'urgence',
+        'Analyse de risque (HIRA)'
     ];
 
     const detectionSources = [
-        'Internal Audit',
-        'Management Review',
-        'Customer Complaint',
-        'Supplier Audit',
-        'Regulatory Inspection',
-        'Self-Assessment',
-        'Incident Investigation',
-        'Routine Inspection',
-        'Employee Report',
-        'External Audit'
+        'Audit interne',
+        'Revue de direction',
+        'Réclamation client',
+        'Audit fournisseur',
+        'Inspection réglementaire',
+        'Auto-évaluation',
+        'Investigation d\'incident',
+        'Inspection de routine',
+        'Signalement d\'employé',
+        'Audit externe'
     ];
 
     const getSelectedDescriptions = () => {
@@ -124,334 +127,266 @@ const DeclarationStep = ({ form, employees, locations, categories, workProcesses
 
 
 
+    const isNearMiss = form.values.nonConformity.type === 'NEAR_MISS';
+    const accentColor = isNearMiss ? 'orange' : 'red';
+
     return (
-        <div className="space-y-6">
-            {/* Event Type Selection */}
-            <Card className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 !flex !flex-col gap-2">
-                <Group className="mb-6">
-                    <div className={`p-2 rounded-lg ${form.values.nonConformity.type === 'NON_CONFORMITY' ? 'bg-red-50' : 'bg-orange-50'
-                        }`}>
-                        <IconAlertTriangle size={20} className={
-                            form.values.nonConformity.type === 'NON_CONFORMITY' ? 'text-red-500' : 'text-orange-500'
-                        } />
+        <div className="space-y-4">
+            {/* Section 1 — Informations générales */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className={`px-4 py-2.5 ${isNearMiss ? 'bg-orange-50/60 border-orange-200/70' : 'bg-red-50/60 border-red-200/70'} border-b flex items-center gap-2`}>
+                    <div className={`p-1 rounded ${isNearMiss ? 'bg-orange-100' : 'bg-red-100'}`}>
+                        <IconClipboardList size={14} className={isNearMiss ? 'text-orange-700' : 'text-red-700'} />
                     </div>
-                    <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            HSE Event Declaration
-                        </Text>
-                        <Text size="sm" className="text-slate-600">
-                            Event type selection and basic information
-                        </Text>
-                    </div>
-                </Group>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Informations générales
+                    </h2>
+                </header>
+                <div className="p-4 space-y-3">
+                    <Select
+                        size="sm"
+                        disabled={edit}
+                        label="Type d'événement"
+                        placeholder="Sélectionner le type"
+                        {...form.getInputProps('nonConformity.type')}
+                        data={eventTypes}
+                        withAsterisk
+                        description="Non-conformité ou quasi-accident"
+                    />
 
-                <Grid >
-                    <Grid.Col span={12}>
-                        <Select disabled={edit}
-                            label="Event Type "
-                            placeholder="Select event type"
-                            {...form.getInputProps('nonConformity.type')}
-                            data={eventTypes}
-                            withAsterisk
+                    <TextInput
+                        size="sm"
+                        label="Titre"
+                        placeholder={`Titre court de ${eventTypesMap[form.values.nonConformity.type] || "l'événement"}`}
+                        {...form.getInputProps('nonConformity.title')}
+                        withAsterisk
+                    />
 
-                            description="Select whether this is a non-conformity or a near miss event"
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
-                        <TextInput
-                            label="Auto-Generated Number"
-                            value={form.values.nonConformity.number || ''}
-                            disabled
-
-
-
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
-                        <TextInput
-                            label="Title "
-                            placeholder={`Brief title of the ${eventTypesMap[form.values.nonConformity.type] || 'event'}`}
-                            {...form.getInputProps('nonConformity.title')}
-                            withAsterisk
-
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <DateInput
-                            label="Date of Event "
-                            placeholder="When was this reported"
+                            size="sm"
+                            label="Date de l'événement"
+                            placeholder="Sélectionner la date"
                             maxDate={form.values.nonConformity.detectionDate}
                             {...form.getInputProps('nonConformity.date')}
                             withAsterisk
                         />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
                         <DateInput
-                            label="Detection Date "
-                            placeholder="When was this detected"
-                            withAsterisk {...form.getInputProps('nonConformity.detectionDate')}
+                            size="sm"
+                            label="Date de détection"
+                            placeholder="Sélectionner la date"
+                            withAsterisk
+                            {...form.getInputProps('nonConformity.detectionDate')}
                             minDate={form.values.nonConformity.date}
-
                         />
-                    </Grid.Col>
+                    </div>
 
-                    <Grid.Col span={6}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Select
-                            label="Reported by "
-                            placeholder="Person who reported the event"
+                            size="sm"
+                            label="Déclarant"
+                            placeholder="Personne qui rapporte"
                             {...form.getInputProps('nonConformity.reportedBy')}
-                            leftSection={<IconUser size={16} className="text-slate-400" />}
+                            leftSection={<IconUser size={14} className="text-slate-400" />}
                             data={employees}
+                            searchable
                             withAsterisk
                         />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
                         <Select
-                            label="Work Process "
-                            placeholder="Select work process"
-                            withAsterisk {...form.getInputProps('nonConformity.workProcessId')}
+                            size="sm"
+                            label="Processus de travail"
+                            placeholder="Sélectionner le processus"
+                            withAsterisk
+                            {...form.getInputProps('nonConformity.workProcessId')}
                             data={workProcesses}
-                            leftSection={<IconTool size={16} className="text-slate-400" />}
-
+                            leftSection={<IconTool size={14} className="text-slate-400" />}
                         />
-                    </Grid.Col>
+                    </div>
 
-                    <Grid.Col span={6}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Select
-                            label="Location "
-                            placeholder="Select location"
+                            size="sm"
+                            label="Lieu"
+                            placeholder="Sélectionner le lieu"
                             {...form.getInputProps('nonConformity.locationId')}
                             data={locations}
                             withAsterisk
-
                         />
-                    </Grid.Col>
-
-                    <Grid.Col span={6}>
                         <Select
-                            label="Event Category "
-                            placeholder="Select event category"
+                            size="sm"
+                            label="Catégorie"
+                            placeholder="Sélectionner la catégorie"
                             {...form.getInputProps('nonConformity.categoryId')}
                             data={categories}
                             withAsterisk
-
                         />
-                    </Grid.Col>
+                    </div>
 
-                    <Grid.Col span={12}>
+                    <div>
                         <TextEditor form={form} id="nonConformity.description" title="Description" withAsterisk />
-                    </Grid.Col>
+                    </div>
 
-                    <Grid.Col span={12}>
+                    <div>
                         <FileUpdateDropzone form={form} id="nonConformity.evidence" />
-                    </Grid.Col>
-                </Grid>
-            </Card>
+                    </div>
+                </div>
+            </section>
 
-            {/* Event Type Specific Fields */}
+            {/* Section 2 — Spécifique Non-conformité */}
             {form.values.nonConformity.type === 'NON_CONFORMITY' && (
-                <Card className="bg-red-50 border border-red-200 shadow-sm rounded-xl p-6">
-                    <Group className="mb-6">
-                        <div className="p-2 rounded-lg bg-red-100">
-                            <IconAlertTriangle size={20} className="text-red-600" />
+                <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 bg-red-50/60 border-b border-red-200/70 flex items-center gap-2">
+                        <div className="p-1 rounded bg-red-100">
+                            <IconAlertTriangle size={14} className="text-red-700" />
                         </div>
-                        <div>
-                            <Text size="lg" fw={600} className="text-red-800">
-                                Non-Conformity Specific Information
-                            </Text>
-                            <Text size="sm" className="text-red-600">
-                                Additional details for non-conformity events
-                            </Text>
-                        </div>
-                    </Group>
-
-                    <Grid>
-                        <Grid.Col span={4}>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                            Spécifique non-conformité
+                        </h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">Exigence · Détection · Gravité</span>
+                    </header>
+                    <div className="p-4 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <Select
-                                label="Requirement Not Met "
-                                placeholder="Select requirement"
+                                size="sm"
+                                label="Exigence non respectée"
+                                placeholder="Sélectionner"
                                 {...form.getInputProps('nonConformity.requirement')}
                                 data={requirementOptions.map(req => ({ value: req, label: req }))}
                                 withAsterisk
-
                             />
-                        </Grid.Col>
-
-                        <Grid.Col span={4}>
                             <Select
-                                label="Source of Detection "
-                                placeholder="How was this detected"
+                                size="sm"
+                                label="Source de détection"
+                                placeholder="Sélectionner"
                                 {...form.getInputProps('nonConformity.detectionSource')}
                                 data={detectionSources.map(source => ({ value: source, label: source }))}
                                 withAsterisk
-
                             />
-                        </Grid.Col>
-
-                        <Grid.Col span={4}>
                             <Select
-                                label="Severity Level "
-                                placeholder="Select severity"
+                                size="sm"
+                                label="Gravité"
+                                placeholder="Sélectionner"
                                 {...form.getInputProps('nonConformity.severityLevel')}
                                 data={[
-                                    { value: 'Minor', label: 'Minor' },
-                                    { value: 'Major', label: 'Major' },
-                                    { value: 'Critical', label: 'Critical' }
+                                    { value: 'Minor', label: 'Mineure' },
+                                    { value: 'Major', label: 'Majeure' },
+                                    { value: 'Critical', label: 'Critique' }
                                 ]}
                                 withAsterisk
-
                             />
-                        </Grid.Col>
-
-                        <Grid.Col span={12}>
-
-
-                            <TextEditor form={form} id="nonConformity.actionTaken" title="Immediate Action Taken" withAsterisk />
-
-                        </Grid.Col>
-                    </Grid>
-                </Card>
+                        </div>
+                        <TextEditor form={form} id="nonConformity.actionTaken" title="Action immédiate prise" withAsterisk />
+                    </div>
+                </section>
             )}
 
+            {/* Section 3 — Spécifique Quasi-accident */}
             {form.values.nonConformity.type === 'NEAR_MISS' && (
-                <Card className="bg-orange-50 border border-orange-200 shadow-sm rounded-xl p-6">
-                    <Group className="mb-6">
-                        <div className="p-2 rounded-lg bg-orange-100">
-                            <IconAlertTriangle size={20} className="text-orange-600" />
+                <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 bg-orange-50/60 border-b border-orange-200/70 flex items-center gap-2">
+                        <div className="p-1 rounded bg-orange-100">
+                            <IconAlertTriangle size={14} className="text-orange-700" />
                         </div>
-                        <div>
-                            <Text size="lg" fw={600} className="text-orange-800">
-                                Near Miss Specific Information
-                            </Text>
-                            <Text size="sm" className="text-orange-600">
-                                Additional details for near miss events
-                            </Text>
-                        </div>
-                    </Group>
-
-                    <Grid>
-                        <Grid.Col span={12}>
-                            <Select
-                                label="Type of Near Miss "
-                                placeholder="Select near miss type"
-                                {...form.getInputProps('nonConformity.nearMissType')}
-                                data={nearMissTypes.map(type => ({ value: type, label: type }))}
-                                withAsterisk
-
-                            />
-                        </Grid.Col>
-
-                        <Grid.Col span={12}>
-                            <MultiSelect
-                                label="Contributing Factors "
-                                placeholder="Select contributing factors"
-                                data={contributingFactorsOptions.map(factor => ({ value: factor, label: factor }))}
-                                {...form.getInputProps('nonConformity.factors')}
-                                withAsterisk
-                                searchable
-                                clearable
-
-                                description="Select all factors that contributed to this near miss"
-                            />
-                        </Grid.Col>
-
-                        <Grid.Col span={12}>
-                            <TextEditor
-                                form={form}
-                                id="nonConformity.preventiveAction"
-                                title="Immediate Corrective or Preventive Action"
-                                withAsterisk
-                            />
-                        </Grid.Col>
-
-                        <Grid.Col span={12}>
-                            <TextEditor
-                                form={form}
-                                withAsterisk
-                                title="Opportunity for Improvement"
-                                id="nonConformity.improvement"
-
-                            />
-                        </Grid.Col>
-                    </Grid>
-                </Card>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                            Spécifique quasi-accident
+                        </h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">Type · Facteurs · Préventives</span>
+                    </header>
+                    <div className="p-4 space-y-3">
+                        <Select
+                            size="sm"
+                            label="Type de quasi-accident"
+                            placeholder="Sélectionner le type"
+                            {...form.getInputProps('nonConformity.nearMissType')}
+                            data={nearMissTypes.map(type => ({ value: type, label: type }))}
+                            withAsterisk
+                        />
+                        <MultiSelect
+                            size="sm"
+                            label="Facteurs contributifs"
+                            placeholder="Sélectionner les facteurs"
+                            data={contributingFactorsOptions.map(factor => ({ value: factor, label: factor }))}
+                            {...form.getInputProps('nonConformity.factors')}
+                            withAsterisk
+                            searchable
+                            clearable
+                            description="Sélectionner tous les facteurs ayant contribué"
+                        />
+                        <TextEditor
+                            form={form}
+                            id="nonConformity.preventiveAction"
+                            title="Action corrective ou préventive immédiate"
+                            withAsterisk
+                        />
+                        <TextEditor
+                            form={form}
+                            withAsterisk
+                            title="Opportunité d'amélioration"
+                            id="nonConformity.improvement"
+                        />
+                    </div>
+                </section>
             )}
 
-            {/* Common Nature Classification (for both types) */}
+            {/* Section 4 — Classification de la nature */}
             {form.values.nonConformity.type && (
-                <Card className="bg-white border border-slate-200 shadow-sm rounded-xl p-6">
-                    <Group className="mb-6">
-                        <div className="p-2 rounded-lg bg-blue-50">
-                            <IconTool size={20} className="text-blue-500" />
+                <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-200/70 flex items-center gap-2">
+                        <div className="p-1 rounded bg-blue-100">
+                            <IconCategoryPlus size={14} className="text-blue-700" />
                         </div>
-                        <div>
-                            <Text size="lg" fw={600} className="text-slate-800">
-                                Event Classification
-                            </Text>
-                            <Text size="sm" className="text-slate-600">
-                                Classify the nature of this event according to ISO 45001
-                            </Text>
-                        </div>
-                    </Group>
-
-                    <Grid>
-                        <Grid.Col span={12}>
-                            <MultiSelect
-                                label="Nature of the Event "
-                                placeholder="Select Nature of the Event"
-                                data={natureOptions}
-                                {...form.getInputProps('nonConformity.events')}
-                                withAsterisk
-                                searchable
-                                clearable
-
-                                description="You can select multiple event types according to ISO 45001"
-                            />
-                        </Grid.Col>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                            Classification de la nature
+                        </h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">Selon ISO 45001</span>
+                    </header>
+                    <div className="p-4 space-y-3">
+                        <MultiSelect
+                            size="sm"
+                            label="Nature de l'événement"
+                            placeholder="Sélectionner la (ou les) nature(s)"
+                            data={natureOptions}
+                            {...form.getInputProps('nonConformity.events')}
+                            withAsterisk
+                            searchable
+                            clearable
+                            description="Plusieurs natures peuvent être sélectionnées"
+                        />
 
                         {form.values.nonConformity.events.length > 0 && (
-                            <Grid.Col span={12}>
-                                <Card className={`border p-4 ${form.values.nonConformity.type === 'NON_CONFORMITY'
-                                    ? '!bg-red-50 !border-red-200'
-                                    : '!bg-orange-50 !border-orange-200'
-                                    }`}>
-                                    <Text size="sm" fw={500} className={`!mb-3 ${form.values.nonConformity.type === 'NON_CONFORMITY'
-                                        ? '!text-red-800'
-                                        : '!text-orange-800'
-                                        }`}>
-                                        Description of selected natures:
-                                    </Text>
-                                    <div className="space-y-2">
-                                        {getSelectedDescriptions().map((nature, index) => (
-                                            <div key={index} className="flex items-start space-x-2">
-                                                <Badge
-                                                    size="sm"
-                                                    className={`mt-0.5 flex-shrink-0 ${form.values.nonConformity.type === 'NON_CONFORMITY'
-                                                        ? '!bg-red-100 !text-red-700'
-                                                        : '!bg-orange-100 !text-orange-700'
-                                                        }`}
-                                                >
-                                                    {nature.label}
-                                                </Badge>
-                                                <Text size="xs" className={`leading-relaxed ${form.values.nonConformity.type === 'NON_CONFORMITY'
-                                                    ? '!text-red-700'
-                                                    : '!text-orange-700'
-                                                    }`}>
-                                                    {nature.description}
-                                                </Text>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </Card>
-                            </Grid.Col>
+                            <div className={`rounded-md border p-3 ${accentColor === 'red'
+                                ? 'bg-red-50/60 border-red-200'
+                                : 'bg-orange-50/60 border-orange-200'
+                                }`}>
+                                <div className="flex items-center gap-1.5 mb-2.5">
+                                    <IconBookmark size={12} className={accentColor === 'red' ? 'text-red-700' : 'text-orange-700'} />
+                                    <span className={`text-[11px] uppercase tracking-wider ${accentColor === 'red' ? 'text-red-800' : 'text-orange-800'}`}>
+                                        Descriptions des natures sélectionnées
+                                    </span>
+                                </div>
+                                <div className="space-y-1.5">
+                                    {getSelectedDescriptions().map((nature, index) => (
+                                        <div key={index} className="flex items-start gap-2">
+                                            <Badge
+                                                size="xs"
+                                                radius="sm"
+                                                className={`mt-0.5 flex-shrink-0 ${accentColor === 'red'
+                                                    ? '!bg-red-100 !text-red-700'
+                                                    : '!bg-orange-100 !text-orange-700'
+                                                    }`}
+                                            >
+                                                {nature.label}
+                                            </Badge>
+                                            <Text size="xs" className={`leading-relaxed ${accentColor === 'red' ? '!text-red-700' : '!text-orange-700'}`}>
+                                                {nature.description}
+                                            </Text>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         )}
-                    </Grid>
-                </Card>
+                    </div>
+                </section>
             )}
         </div>
     );

@@ -120,7 +120,7 @@ const AddCard = () => {
         <div className="flex flex-col gap-10">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">New MBA Card</div>
+                    <div className="text-2xl text-blue-500 w-fit">New MBA Card</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
                         <Link className="hover:!underline" to="/mba-management"><Text variant="gradient">MBA Cards</Text></Link>
@@ -132,7 +132,7 @@ const AddCard = () => {
             <div className="p-4 bg-white shadow-lg border border-gray-300 rounded-lg flex flex-col gap-5">
                 <Fieldset
                     className="[&>legend]:w-fit gap-5 flex-wrap flex flex-col"
-                    legend={<div className="text-lg font-medium text-blue-500">MBA Informations</div>}
+                    legend={<div className="text-lg text-blue-500">MBA Informations</div>}
                 >
                     <div className="grid grid-cols-3 gap-4">
                         <TextInput label="Company" placeholder="Enter Company" withAsterisk />
@@ -157,7 +157,7 @@ const AddCard = () => {
                 </Fieldset>
 
                 <div className="flex justify-between">
-                    <p className="text-xl font-medium text-gray-700">Tasks to Accomplish</p>
+                    <p className="text-lg text-gray-700">Tasks to Accomplish</p>
                     <Button leftSection={<IconPlus />} onClick={addTask}>Add Task</Button>
                 </div>
 
@@ -166,7 +166,7 @@ const AddCard = () => {
                         key={index}
                         legend={
                             <div className="flex gap-4 items-center">
-                                <span className="text-lg font-medium text-blue-500">Task {index + 1}</span>
+                                <span className="text-lg text-blue-500">Task {index + 1}</span>
                                 <ActionIcon variant="filled" color="red" onClick={() => removeTask(index)}>
                                     <IconTrash size={16} />
                                 </ActionIcon>
@@ -185,20 +185,20 @@ const AddCard = () => {
                 ))}
 
                 <div className="flex flex-col gap-5">
-                    <p className="text-xl font-medium text-gray-700">Inspection Items</p>
+                    <p className="text-lg text-gray-700">Inspection Items</p>
                     {inspectionItems.map((item) => (
                         <div
                             key={item.question}
                             className="p-4 bg-blue-50 shadow-lg border border-gray-300 rounded-lg flex justify-between items-center"
                         >
                             <div className="flex flex-col">
-                                <p className="text-md font-medium text-gray-600">{item.question}</p>
+                                <p className="text-md text-gray-600">{item.question}</p>
                                 <p className="text-blue-500">{item.category}</p>
                             </div>
                             <div className="flex gap-4 w-[400px]">
                                 {["worker", "supervisor"].map((role) => (
                                     <div key={role} className="flex flex-col">
-                                        <p className="font-medium capitalize">{role}</p>
+                                        <p className="capitalize">{role}</p>
                                         <div className="flex items-center border border-primary rounded px-2 py-1 bg-white shadow-sm">
                                             <Select
                                                 data={["Yes", "No"]}
@@ -219,7 +219,7 @@ const AddCard = () => {
                 </div>
 
                 <div className="flex justify-between">
-                    <p className="text-xl font-medium text-gray-700">Work Locations</p>
+                    <p className="text-lg text-gray-700">Work Locations</p>
                     <Button leftSection={<IconPlus />} onClick={addLocation}>Add Location</Button>
                 </div>
 
@@ -228,7 +228,7 @@ const AddCard = () => {
                         key={index}
                         legend={
                             <div className="flex gap-4 items-center">
-                                <span className="text-lg font-medium text-blue-500">Location {index + 1}</span>
+                                <span className="text-lg text-blue-500">Location {index + 1}</span>
                                 <ActionIcon variant="filled" color="red" onClick={() => removeLocation(index)}>
                                     <IconTrash size={16} />
                                 </ActionIcon>

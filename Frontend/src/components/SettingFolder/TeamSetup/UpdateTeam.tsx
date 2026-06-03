@@ -137,7 +137,7 @@ const UpdateTeam = () => {
         const members = form.values.members;
         if (members[idx].id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -205,7 +205,7 @@ const UpdateTeam = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Update Committee</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Update Committee</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/team-setup" ><Text variant="gradient" className="hover:!underline cursor-pointer">H&S Committee</Text></Link>
@@ -233,8 +233,8 @@ const UpdateTeam = () => {
 
                 <div className="flex flex-col gap-5">
                     <div className="flex justify-between items-center">
-                        <p className="text-xl font-medium">Team Members</p>
-                        <span className="bg-primary/20 p-1 px-3 font-medium text-blue-500 rounded-3xl">
+                        <p className="text-lg">Team Members</p>
+                        <span className="bg-primary/20 p-1 px-3 text-blue-500 rounded-3xl">
                             {form.values.members.length} Selected
                         </span>
                     </div>
@@ -266,7 +266,7 @@ const UpdateTeam = () => {
                             >
                                 <Popover.Target>
                                     <div>
-                                        <TextInput label="Add Team Members" placeholder="Add Team Members...." leftSection={<IconUserPlus color="gray" />} onClick={() => setPopoverOpened((o) => !o)} className=" text-gray-600 font-medium text-lg" />
+                                        <TextInput label="Add Team Members" placeholder="Add Team Members...." leftSection={<IconUserPlus color="gray" />} onClick={() => setPopoverOpened((o) => !o)} className=" text-gray-600 text-lg" />
 
                                     </div>
                                 </Popover.Target>
@@ -287,7 +287,7 @@ const UpdateTeam = () => {
                                                 <div className="flex gap-4 items-center ">
                                                     <Avatar name={empMap[user.value]?.name} color="initials" radius="xl" variant="filled" />
                                                     <div>
-                                                        <p className="font-semibold">{empMap[user.value]?.name}</p>
+                                                        <p className="font-medium">{empMap[user.value]?.name}</p>
                                                         <div className="flex items-center gap-1 text-sm text-gray-600">
                                                             {empMap[user.value]?.empNumber}
                                                         </div>
@@ -326,14 +326,14 @@ const UpdateTeam = () => {
                                                 <Avatar radius="xl" size={70} name={empMap[user.value]?.name} color="initials" variant="filled" />
                                             </Indicator>
                                             <div>
-                                                <p className="font-semibold text-xl">{empMap[user.value]?.name}</p>
+                                                <p className="text-xl">{empMap[user.value]?.name}</p>
                                                 <div className="flex items-center gap-1 text-sm text-gray-600">
                                                     <IconBriefcase size={14} /> {empMap[user.value]?.empNumber}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <p className="font-medium text-lg text-gray-500">Incident Level Notifications:</p>
+                                            <p className="text-lg text-gray-500">Incident Level Notifications:</p>
 
                                             <Chip.Group {...form.getInputProps(`members.${index}.notificationLevel`)} multiple={true} >
                                                 <Group gap={5}>

@@ -19,7 +19,7 @@ const WeeklyOverview = () => {
         <div className="flex justify-between p-5">
           <div>
             <Text color="dimmed" size="sm">Working Hours</Text>
-            <Text size="lg" fw={700}>Weekly Overview</Text>
+            <Text size="lg">Weekly Overview</Text>
           </div>
           <div className="flex gap-5 items-center">
             <Menu>

@@ -62,7 +62,7 @@ const MatrixModal = ({ opened, onClose, categories }: MatrixModalProps) => {
             onClose={onClose}
             size="70%"
             centered
-            title={<div className="text-lg font-medium text-blue-500">Severity Levels</div>}
+            title={<div className="text-lg text-blue-500">Severity Levels</div>}
             overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
         >
             <style>

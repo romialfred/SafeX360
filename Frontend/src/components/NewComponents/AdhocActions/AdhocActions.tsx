@@ -3,22 +3,13 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import {
-    // Plus
-    // Edit3
-    // Save
-    // Calendar
-    // User
-    // AlertTriangle
-    IconPlus, // CheckCircle
-    IconEdit, // Clock
-    IconX, // MessageSquare
-    IconCalendar, // Target
-    IconUser, // TrendingUp
-    IconAlertTriangle, // Filter
-    IconCircleCheck, IconClock, IconTarget, IconSearch, IconLayoutGrid, IconLayoutList, IconBuilding
+    IconPlus, IconEdit, IconX, IconCalendar, IconUser, IconAlertTriangle,
+    IconCircleCheck, IconClock, IconTarget, IconSearch, IconLayoutGrid, IconLayoutList,
+    IconBuilding, IconBolt,
 } from '@tabler/icons-react';
-import { ActionIcon, Breadcrumbs, Button, Select, Text, TextInput, Tooltip, Badge, Progress } from '@mantine/core';
-import { Link, useNavigate } from 'react-router-dom';
+import { ActionIcon, Button, Select, TextInput, Tooltip, Badge, Progress } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import PageHeader from '../../UtilityComp/PageHeader';
 import { getAllAdhoc } from '../../../services/CorrectiveActionService';
 import { getTwProgressColor, mapIdToName } from '../../../utility/OtherUtilities';
 import { formatDateShort } from '../../../utility/DateFormats';
@@ -223,26 +214,26 @@ const AdhocActions = () => {
     const rightToolbarTemplate = () => (
         <div className="flex gap-4 items-center">
             <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                <Tooltip label="Table View">
+                <Tooltip label="Vue tableau">
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
                         onClick={() => setViewType('table')}
-                        aria-label="Table View"
+                        aria-label="Vue tableau"
                         size="md"
                     >
-                        <IconLayoutList />
+                        <IconLayoutList size={16} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Card View">
+                <Tooltip label="Vue cartes">
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
                         onClick={() => setViewType('card')}
-                        aria-label="Card View"
+                        aria-label="Vue cartes"
                         size="md"
                     >
-                        <IconLayoutGrid />
+                        <IconLayoutGrid size={16} />
                     </ActionIcon>
                 </Tooltip>
             </div>
@@ -251,8 +242,8 @@ const AdhocActions = () => {
                 value={globalFilterValue}
                 onChange={onGlobalFilterChange}
                 size="sm"
-                placeholder="Search"
-                leftSection={<IconSearch />}
+                placeholder="Rechercher..."
+                leftSection={<IconSearch size={14} />}
             />
         </div>
     );
@@ -261,24 +252,25 @@ const AdhocActions = () => {
         <div className="flex items-center gap-2">
             <Select allowDeselect={false}
                 size='sm'
-                data={[{ label: "All", value: "All" }, ...actionStatuses]}
+                data={[{ label: "Tous statuts", value: "All" }, ...actionStatuses]}
                 value={selectedStatus}
                 onChange={setSelectedStatus}
-                placeholder="Status"
+                placeholder="Statut"
             />
             <Select allowDeselect={false}
                 size='sm'
-                data={[{ label: 'All', value: 'All' }, ...owners]}
+                data={[{ label: 'Tous responsables', value: 'All' }, ...owners]}
                 value={selectedOwner}
                 onChange={setSelectedOwner}
-                placeholder="Owner"
+                placeholder="Responsable"
+                searchable
             />
             <Select allowDeselect={false}
                 size='sm'
-                data={[{ label: 'All', value: 'All' }, ...departments]}
+                data={[{ label: 'Tous départements', value: 'All' }, ...departments]}
                 value={selectedDepartment}
                 onChange={setSelectedDepartment}
-                placeholder="Department"
+                placeholder="Département"
             />
         </div>
     );
@@ -294,29 +286,29 @@ const AdhocActions = () => {
     // };
 
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Improvement Ideas</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Improvement Ideas</Text>
-                    </Breadcrumbs>
-                </div>
-                <Button
-
-                    size='sm'
-                    radius="md"
-                    onClick={() => navigate('create-adhocAction')}
-
-                    leftSection={<IconPlus size={20} />}
-                >
-                    New Idea
-                </Button>
-            </div>
-            <div className="italic">
-                Capture, prioritize, and track improvement ideas contributed across the organization
-            </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: "Suggestions d'amélioration" },
+                ]}
+                icon={<IconBolt size={22} stroke={2} />}
+                iconColor="orange"
+                title="Suggestions d'amélioration HSE"
+                subtitle="Capture, priorisation et suivi des idées d'amélioration contribuées dans toute l'organisation"
+                actions={
+                    <Button
+                        size='sm'
+                        radius="md"
+                        onClick={() => navigate('create-adhocAction')}
+                        leftSection={<IconPlus size={14} />}
+                        color="orange"
+                    >
+                        Nouvelle suggestion
+                    </Button>
+                }
+            />
 
             {/* Content */}
             <div className="">
@@ -341,18 +333,18 @@ const AdhocActions = () => {
                             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
                             onFilter={(e) => setFilters(e.filters)}
                         >
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="actionName" body={nameBodyTemplate} header="Idea Title" sortable />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="assignedEmployeeName" header="Assignee" />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="ownerName" header="Owner" />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="departmentName" header="Department" />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="deadline" header="Due Date" body={(rowData: any) => formatDateShort(rowData.deadline)} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="progress" header="Progress" body={progressBodyTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={statusBodyTemplate} />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="actionName" body={nameBodyTemplate} header="Titre de la suggestion" sortable />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="assignedEmployeeName" header="Assigné à" sortable />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="ownerName" header="Responsable" />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="departmentName" header="Département" />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="deadline" header="Échéance" body={(rowData: any) => formatDateShort(rowData.deadline)} sortable />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="progress" header="Progression" body={progressBodyTemplate} sortable />
+                            <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="status" header="Statut" body={statusBodyTemplate} />
                             <Column bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                         </DataTable>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                            {filteredData.length == 0 && <div className='text-xl text-gray-600 col-span-3 mx-auto'>No ideas found.</div>}
+                            {filteredData.length == 0 && <div className='text-sm text-gray-500 italic col-span-3 mx-auto py-8'>Aucune suggestion trouvée.</div>}
                             {filteredData.map((action) => (
                                 <div key={action.id} onClick={() => navigate(`adhocAction-details/${action.id}`)} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
                                     {/* Action Header */}
@@ -370,12 +362,12 @@ const AdhocActions = () => {
                                             <div className="flex flex-col  space-y-2">
                                                 <div className="flex space-x-2">
                                                     {/* <span
-                                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(action.priority)}`}
+                                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getPriorityColor(action.priority)}`}
                                                     >
                                                         {(action.priority ?? "").charAt(0).toUpperCase() + (action.priority ?? "").slice(1)}
                                                     </span> */}
 
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(action.status)}`}>
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(action.status)}`}>
                                                         {getStatusIcon(action.status)}
                                                         <span className="ml-1">{actionStatusesMap[action.status]}</span>
                                                     </span>
@@ -390,26 +382,26 @@ const AdhocActions = () => {
 
                                             {action.assignedEmployeeName && <div className="flex ">
                                                 <IconUser className="w-4 h-4 text-blue-600 mr-2" />
-                                                <span className="text-gray-600">Assigned to:</span>
-                                                <span className="ml-1 font-medium text-gray-700">{action.assignedEmployeeName}</span>
+                                                <span className="text-gray-600">Assigné à :</span>
+                                                <span className="ml-1 text-gray-700">{action.assignedEmployeeName}</span>
                                             </div>}
                                             <div className="flex items-center">
                                                 <IconCalendar className="w-4 h-4 text-yellow-600 mr-2" />
-                                                <span className="text-gray-600">Due:</span>
-                                                <span className="ml-1 font-medium text-gray-700">{formatDateShort(action.deadline)}</span>
+                                                <span className="text-gray-600">Échéance :</span>
+                                                <span className="ml-1 text-gray-700">{formatDateShort(action.deadline)}</span>
                                             </div>
                                             {action.ownerName && action.ownerName !== '-' && (
                                                 <div className="flex items-center">
                                                     <IconUser className="w-4 h-4 text-green-600 mr-2" />
-                                                    <span className="text-gray-600">Owner:</span>
-                                                    <span className="ml-1 font-medium text-gray-700">{action.ownerName}</span>
+                                                    <span className="text-gray-600">Responsable :</span>
+                                                    <span className="ml-1 text-gray-700">{action.ownerName}</span>
                                                 </div>
                                             )}
                                             {action.departmentName && action.departmentName !== '-' && (
                                                 <div className="flex items-center">
                                                     <IconBuilding className="w-4 h-4 text-purple-600 mr-2" />
-                                                    <span className="text-gray-600">Department:</span>
-                                                    <span className="ml-1 font-medium text-gray-700">{action.departmentName}</span>
+                                                    <span className="text-gray-600">Département :</span>
+                                                    <span className="ml-1 text-gray-700">{action.departmentName}</span>
                                                 </div>
                                             )}
 
@@ -419,8 +411,8 @@ const AdhocActions = () => {
                                         {/* Progress Bar (full width in card view) */}
                                         <div className="mt-4">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium text-gray-700">Progress</span>
-                                                <span className="text-sm font-medium text-gray-900">{action.progress}%</span>
+                                                <span className="text-sm text-gray-700">Progression</span>
+                                                <span className="text-sm text-gray-900">{action.progress}%</span>
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div
@@ -435,49 +427,47 @@ const AdhocActions = () => {
                                             <Button
                                                 size='xs'
                                                 variant='subtle'
-                                                leftSection={<IconSearch size={15} />}
+                                                leftSection={<IconSearch size={14} />}
                                                 color='blue'
                                                 onClick={(e) => { e.stopPropagation(); navigate(`adhocAction-details/${action.id}`); }}
                                             >
-                                                Details
+                                                Détails
                                             </Button>
 
-                                            {/* Edit button: disabled unless Pending */}
                                             <Tooltip
                                                 label={String(action?.status).toUpperCase() === 'PENDING'
-                                                    ? 'Edit'
-                                                    : (String(action?.status).toUpperCase() === 'COMPLETED' ? 'Cannot edit a completed action'
-                                                        : String(action?.status).toUpperCase() === 'CANCELLED' ? 'Cannot edit a cancelled action'
-                                                            : 'Editing is only allowed while pending')}
+                                                    ? 'Modifier'
+                                                    : (String(action?.status).toUpperCase() === 'COMPLETED' ? "Impossible de modifier une suggestion clôturée"
+                                                        : String(action?.status).toUpperCase() === 'CANCELLED' ? "Impossible de modifier une suggestion annulée"
+                                                            : "Modification possible uniquement en attente")}
                                             >
                                                 <span className="inline-flex">
                                                     <Button
                                                         size='xs'
                                                         variant='subtle'
-                                                        leftSection={<IconEdit size={15} />}
+                                                        leftSection={<IconEdit size={14} />}
                                                         color='primary'
                                                         disabled={String(action?.status).toUpperCase() !== 'PENDING'}
                                                         onClick={(e) => { if (String(action?.status).toUpperCase() === 'PENDING') { e.stopPropagation(); navigate(`edit/${action.id}`); } }}
                                                     >
-                                                        Edit
+                                                        Modifier
                                                     </Button>
                                                 </span>
                                             </Tooltip>
 
-                                            {/* Update button: disabled unless allowed */}
                                             <Tooltip
                                                 label={(Number(action?.progress ?? 0) < 100
                                                     && !['COMPLETED', 'PENDING', 'CANCELLED'].includes(String(action?.status).toUpperCase()))
-                                                    ? 'Update Progress'
-                                                    : (String(action?.status).toUpperCase() === 'PENDING' ? 'Pending approval — cannot update yet'
-                                                        : String(action?.status).toUpperCase() === 'CANCELLED' ? 'Action cancelled — cannot update'
-                                                            : 'Already completed')}
+                                                    ? 'Mettre à jour la progression'
+                                                    : (String(action?.status).toUpperCase() === 'PENDING' ? "En attente de validation — non modifiable"
+                                                        : String(action?.status).toUpperCase() === 'CANCELLED' ? "Suggestion annulée — non modifiable"
+                                                            : 'Déjà clôturée')}
                                             >
                                                 <span className="inline-flex">
                                                     <Button
                                                         size='xs'
                                                         variant='subtle'
-                                                        leftSection={<IconClock size={15} />}
+                                                        leftSection={<IconClock size={14} />}
                                                         color='blue'
                                                         disabled={!(Number(action?.progress ?? 0) < 100
                                                             && !['COMPLETED', 'PENDING', 'CANCELLED'].includes(String(action?.status).toUpperCase()))}
@@ -487,7 +477,7 @@ const AdhocActions = () => {
                                                             if (canUpdate) { e.stopPropagation(); navigate(`updateAdhocAction-details/${action.id}`); }
                                                         }}
                                                     >
-                                                        Update
+                                                        Mettre à jour
                                                     </Button>
                                                 </span>
                                             </Tooltip>
@@ -497,7 +487,7 @@ const AdhocActions = () => {
                                     {/* Comments Section */}
                                     {/* {action?.comments?.length > 0 && (
                                         <div className="p-6 bg-gray-50 border-b border-gray-100">
-                                            <h4 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
+                                            <h4 className="text-sm text-gray-900 mb-4 flex items-center">
                                                 <IconMessageCircle className="w-4 h-4 mr-2" />
                                                 Recent Updates ({action.comments.length})
                                             </h4>
@@ -505,7 +495,7 @@ const AdhocActions = () => {
                                                 {action.comments.slice(-2).map((comment: any) => (
                                                     <div key={comment.id} className="bg-white p-3 rounded-lg border border-gray-200">
                                                         <div className="flex items-center justify-between mb-2">
-                                                            <span className="text-sm font-medium text-gray-900">{comment.author}</span>
+                                                            <span className="text-sm text-gray-900">{comment.author}</span>
                                                             <div className="flex items-center space-x-2">
                                                                 {comment.progressUpdate !== undefined && (
                                                                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full flex items-center">

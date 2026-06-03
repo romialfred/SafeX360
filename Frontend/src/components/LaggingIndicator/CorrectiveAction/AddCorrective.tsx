@@ -6,7 +6,7 @@ const AddCorrective = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-home w-fit">Report Actions</div>
+                    <div className="text-2xl text-home w-fit">Report Actions</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>

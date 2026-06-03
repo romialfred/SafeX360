@@ -94,7 +94,7 @@ const ChecklistInspection = () => {
     const handleRemove = (id: any) => {
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -170,7 +170,7 @@ const ChecklistInspection = () => {
             ) : (
                 <>
                     <Group justify="space-between">
-                        <div className="text-lg font-medium">Checklists</div>
+                        <div className="text-lg">Checklists</div>
                         <Button color="green" onClick={handleShowAddForm}>
                             Add Checklist
                         </Button>
@@ -189,7 +189,7 @@ const ChecklistInspection = () => {
                             <div>
                                 <div className="flex justify-between w-full">
                                     <div>
-                                        <Text size="lg" fw={600}>
+                                        <Text size="lg">
                                             {record[item.checkListId]?.name || "No name"}
                                         </Text>
                                         <Text size="sm" color="dimmed" mt={1}>
@@ -224,7 +224,7 @@ const ChecklistInspection = () => {
                                                 <Badge
                                                     key={doc.name}
                                                     size="sm"
-                                                    className="!cursor-pointer !capitalize !font-medium hover:!underline"
+                                                    className="!cursor-pointer !capitalize !hover:!underline"
                                                     onClick={() => handlePreview(doc)}
                                                     leftSection={<IconPhoto size={12} />}
                                                     color="orange"

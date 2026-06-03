@@ -172,7 +172,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
 
                 <Box p="md" mb="md" style={{ backgroundColor: '#e7f5ff', borderRadius: '8px', border: '1px solid #339af0' }}>
                     <Group mb="xs">
-                        <Text fw={600} size="sm" c="blue">ℹ️ Risk Level Matrix</Text>
+                        <Text size="sm" c="blue">ℹ️ Risk Level Matrix</Text>
                     </Group>
                     <Text size="xs" c="dimmed" mb="xs">
                         • Low (1-8): Acceptable risk<br />
@@ -183,7 +183,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                 </Box>
 
                 <Box p="md" mb="md" style={{ backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
-                    <Text fw={600} size="sm" mb="xs" c="orange">Probability Levels:</Text>
+                    <Text size="sm" mb="xs" c="orange">Probability Levels:</Text>
                     <Text size="xs" c="dimmed">
                         • Rare: May occur in exceptional circumstances<br />
                         • Unlikely: Could occur at some time<br />
@@ -194,7 +194,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                 </Box>
 
                 <Box p="md" mb="md" style={{ backgroundColor: '#f8d7da', borderRadius: '8px', border: '1px solid #f5c6cb' }}>
-                    <Text fw={600} size="sm" mb="xs" c="red">Severity Levels:</Text>
+                    <Text size="sm" mb="xs" c="red">Severity Levels:</Text>
                     <Text size="xs" c="dimmed">
                         • Negligible: No injuries, minimal impact<br />
                         • Minor: First aid treatment<br />
@@ -205,7 +205,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                 </Box>
 
                 <Box p="md" style={{ backgroundColor: '#d1ecf1', borderRadius: '8px', border: '1px solid #bee5eb' }}>
-                    <Text fw={600} size="sm" mb="xs" c="teal">Severity Formula:</Text>
+                    <Text size="sm" mb="xs" c="teal">Severity Formula:</Text>
                     <Text size="xs" c="dimmed" mb="xs">
                         Severity = Gravity × Probability
                     </Text>

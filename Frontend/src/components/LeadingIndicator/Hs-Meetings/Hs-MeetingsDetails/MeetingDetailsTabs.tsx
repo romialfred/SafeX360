@@ -1,11 +1,10 @@
 import {
     Alert,
-    Breadcrumbs,
+    Badge,
     Button,
     Modal,
     NumberInput,
     Select,
-    Tabs,
     Text,
     Textarea,
     Tooltip
@@ -18,9 +17,11 @@ import {
     IconHistory,
     IconLock,
     IconTrendingUp,
+    IconUsers,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import PageHeader from "../../../UtilityComp/PageHeader";
 
 import { useDisclosure } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
@@ -149,40 +150,29 @@ const MeetingDetailsTabs = () => {
 
     const tabData = {
         details: {
-            label: 'Meeting Details',
+            label: 'Détails de la réunion',
             icon: IconFileText,
             content: <ViewDetailsMeeting activity={activity} />,
-
             hide: false
         },
         activity: {
-            label: 'Activity Report',
+            label: "Compte rendu",
             icon: IconTrendingUp,
             content: <ActivityReport />,
             hide: false
         },
-        // recommendation: {
-        //     label: 'Recommendation',
-        //     icon: IconFileAnalytics,
-        //     content: <RecommendationFileTab employees={emps} empMap={empMap} />,
-        //     hide: false
-        // },
         actions: {
-            label: 'Corrective Actions',
+            label: 'Actions correctives',
             icon: IconFileCheck,
             content: <CorrectiveActions employee={emps} empMap={empMap} />,
             hide: false
         },
         history: {
-            label: 'History',
+            label: 'Historique',
             icon: IconHistory,
             content: <ActivityHistory meeting={meeting} history={history} empMap={empMap} />,
             hide: false
-
         },
-
-
-
     };
 
 
@@ -191,105 +181,111 @@ const MeetingDetailsTabs = () => {
         open();
     }
     return (
-        <div className=" space-y-6" >
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Hs-Meeting details</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/hs-Meetings" ><Text variant="gradient" className="hover:!underline cursor-pointer">Meeting Managers</Text></Link>
-                        <Text variant="gradient">Hs-Meeting details</Text>
-                    </Breadcrumbs>
-                </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto" >
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Réunions sécurité', to: '/hs-Meetings' },
+                    { label: 'Détails de la réunion' },
+                ]}
+                icon={<IconUsers size={22} stroke={2} />}
+                iconColor="green"
+                title="Détails de la réunion"
+                subtitle="Compte rendu, actions correctives et suivi de la réunion HSE"
+            />
 
-            </div>
-
-
-            <div className="  rounded-lg p-5 space-y-3 bg-home">
-                <div className="flex justify-between">
-                    <div className='flex flex-col gap-1'>
-                        <h2 className="text-2xl flex items-center gap-5 font-semibold text-white">{activity.title}</h2>
-
-                        <div className="flex items-center gap-1 text-white">
-                            <IconCalendarEvent size={18} />
-                            <span>{formatDateShort(activity?.plannedDate)}, {formatTimeToAmPm(activity?.startTime)} - {formatTimeToAmPm(activity?.endTime)}</span>
+            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-green-600 to-green-800 shadow-md">
+                <div className="flex justify-between items-start flex-wrap gap-4">
+                    <div className='flex flex-col gap-1.5'>
+                        <h2 className="text-lg text-white">{activity.title}</h2>
+                        <div className="flex items-center gap-1.5 text-green-50 text-sm">
+                            <IconCalendarEvent size={16} />
+                            <span>{formatDateShort(activity?.plannedDate)} — {formatTimeToAmPm(activity?.startTime)} à {formatTimeToAmPm(activity?.endTime)}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-end gap-2  flex-col">
-                        <Tooltip label={locked.locked ? (locked.status === 'COMPLETED' ? 'Completed — status cannot be changed' : 'Cancelled — status cannot be changed') : 'Change status'}>
+                    <div className="flex items-end gap-2 flex-col">
+                        <Tooltip label={locked.locked ? (locked.status === 'COMPLETED' ? 'Réunion clôturée : statut non modifiable' : 'Réunion annulée : statut non modifiable') : 'Changer le statut'}>
                             <span className="inline-flex">
-                                <Button leftSection={<IconClock />} onClick={handleStatusChange} disabled={locked.locked} className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm">{actionStatusesMap[activity?.status]}</Button>
+                                <Button
+                                    size="sm"
+                                    leftSection={<IconClock size={15} />}
+                                    onClick={handleStatusChange}
+                                    disabled={locked.locked}
+                                    className="!bg-white !text-green-700 hover:!bg-green-50"
+                                >
+                                    {actionStatusesMap[activity?.status] || "Statut"}
+                                </Button>
                             </span>
                         </Tooltip>
+                        {activity?.status && (
+                            <Badge color={activity.status === 'COMPLETED' ? 'green.2' : activity.status === 'CANCELLED' ? 'red.4' : 'yellow.4'} variant="filled" radius="sm" size="sm" className="!text-slate-900">
+                                {actionStatusesMap[activity?.status]}
+                            </Badge>
+                        )}
                     </div>
                 </div>
-
             </div>
 
             {locked.locked && (
                 <Alert color={locked.status === 'COMPLETED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text fw={600}>
-                        {locked.status === 'COMPLETED' ? 'This activity is completed. Modifications are not allowed.' : 'This activity is cancelled. Modifications are not allowed.'}
+                    <Text size="sm">
+                        {locked.status === 'COMPLETED' ? 'Cette réunion est clôturée. Aucune modification possible.' : 'Cette réunion est annulée. Aucune modification possible.'}
                     </Text>
                 </Alert>
             )}
 
-            <div className="">
-                <Tabs
-
-                    value={activeTab}
-                    onChange={(value) => value && setActiveTab(value)}
-
-                >
-                    <Tabs.List className='bg-white border border-slate-200 rounded-lg p-2 !flex !gap-1'>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <div className="inline-flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
                         {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
-                            !hide && <Tabs.Tab key={key} value={key} leftSection={<Icon size={15} />} className="!text-slate-600 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500 !rounded-lg px-3 py-1.5 text-sm transition-all duration-200">
-                                {label}
-                            </Tabs.Tab>
+                            !hide && (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setActiveTab(key)}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
+                                        ? 'bg-green-600 text-white shadow-sm'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <Icon size={14} />
+                                    {label}
+                                </button>
+                            )
                         ))}
-                    </Tabs.List>
-
-                    {Object.entries(tabData).map(([key, { content }]) => (
-                        <Tabs.Panel value={key} key={key} pt="md">
-
-
-
-                            <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                                <div className="p-2">{content}</div>
-                            </div>
-
-                        </Tabs.Panel>
+                    </div>
+                </div>
+                <div className="p-5">
+                    {Object.entries(tabData).map(([key, { content, hide }]) => (
+                        !hide && activeTab === key && (
+                            <div key={key}>{content}</div>
+                        )
                     ))}
-                </Tabs>
+                </div>
             </div>
 
             <Modal
                 opened={opened}
                 onClose={close}
                 title={
-                    <div className='text-lg flex items-center gap-2'>
-                        <span className='bg-gray-100 rounded-full p-2'><IconLock /></span>
-                        Manage Meeting Status
+                    <div className='text-base flex items-center gap-2'>
+                        <span className='bg-green-100 text-green-700 rounded-full p-2'><IconLock size={18} /></span>
+                        Changer le statut de la réunion
                     </div>
                 }
                 centered
                 size="xl"
                 classNames={{
                     body: 'p-6',
-                    header: 'text-lg font-semibold border-b border-gray-500 mx-2',
+                    header: 'text-lg border-b border-slate-200 mx-2',
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-                    {/* <div className="bg-blue-50 rounded-lg p-4 flex flex-col gap-2">
-                        <Checkbox label="All corrective actions have been completed and verified" />
-                        <p>Current status: 1/3 actions completed (33.3%)</p>
-                    </div> */}
-
                     <div className="grid grid-cols-2 gap-4">
                         <Select
-                            label="Owner"
-                            placeholder="Select owner"
+                            label="Responsable"
+                            placeholder="Sélectionner le responsable"
                             data={emps}
                             {...form.getInputProps("ownerId")}
                             withAsterisk
@@ -298,17 +294,15 @@ const MeetingDetailsTabs = () => {
                         <DateInput
                             maxDate={new Date()}
                             label="Date"
-                            placeholder='Select date'
+                            placeholder="Sélectionner la date"
                             {...form.getInputProps("date")}
                             withAsterisk
                         />
-
-
                     </div>
 
                     <Select
-                        label="Status"
-                        placeholder="Select Status"
+                        label="Statut"
+                        placeholder="Sélectionner le statut"
                         data={inspectionStatuses}
                         {...form.getInputProps("status")}
                         withAsterisk
@@ -317,44 +311,44 @@ const MeetingDetailsTabs = () => {
                     {form.values.status === 'CLOSED' ? (
                         <>
                             <NumberInput
-                                label="Quality Evaluation (1-10)"
-                                placeholder="Enter Quality Evaluation"
+                                label="Évaluation qualité (1-10)"
+                                placeholder="Note de la réunion"
                                 withAsterisk
                                 {...form.getInputProps("evaluation")}
                             />
 
                             <Textarea
-                                label="Closing Report"
-                                placeholder="Summary of the closure, validation of action, final comments....."
+                                label="Rapport de clôture"
+                                placeholder="Synthèse, validation des décisions, commentaires finaux..."
                                 withAsterisk
                                 minRows={3}
                                 {...form.getInputProps("closingReport")}
                             />
 
                             <Textarea
-                                label="Lessons Learned"
+                                label="Leçons apprises"
                                 withAsterisk
-                                placeholder="Points for improvements for future audits, best practices identified, recommendations for the organization"
+                                placeholder="Points d'amélioration, bonnes pratiques identifiées, recommandations"
                                 minRows={6}
                                 {...form.getInputProps("comment")}
                             />
                         </>
                     ) : (
                         <Textarea
-                            label="Comment"
+                            label="Commentaire"
                             withAsterisk
-                            placeholder="Enter your comment"
+                            placeholder="Saisir votre commentaire"
                             minRows={6}
                             {...form.getInputProps("comment")}
                         />
                     )}
 
                     <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="outline" onClick={close}>
-                            Cancel
+                        <Button variant="default" onClick={close}>
+                            Annuler
                         </Button>
-                        <Button color="primary" type='submit' disabled={locked.locked}>
-                            Submit
+                        <Button color="green" type='submit' disabled={locked.locked}>
+                            Soumettre
                         </Button>
                     </div>
                 </form>

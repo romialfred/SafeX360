@@ -68,7 +68,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
     const handleRemoveIncident = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -135,7 +135,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
             <div className="flex justify-between items-center mb-2">
 
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Incident Information</h2>
+                <h2 className="text-lg text-gray-800 mb-4">Incident Information</h2>
                 <Select {...form.getInputProps("status")} data={incidentStatuses} allowDeselect={false} />
             </div>
             <div className="grid grid-cols-1 gap-5">
@@ -169,7 +169,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                                         <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                         <Text
                                             size="xs"
-                                            className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                            className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                         >
                                             {item.name}
                                         </Text>
@@ -183,11 +183,11 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                 <div className="flex flex-col gap-5">
                     <div className="flex justify-between items-center">
 
-                        <h3 className="font-medium text-lg text-gray-800 mb-4">Incident Classification</h3>
+                        <h3 className="text-lg text-gray-800 mb-4">Incident Classification</h3>
                         <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient" >Add Incident</Button>
                     </div>
                     {form.values.incidentDetails && form.values.incidentDetails.map((x: any, index: any) => <Fieldset key={index} className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                        <div className="text-lg font-medium text-blue-500">Incident {index + 1}</div>
+                        <div className="text-lg text-blue-500">Incident {index + 1}</div>
                         <ActionIcon onClick={() => handleRemoveIncident(index, x.id)} variant="filled" color="red" aria-label="Settings">
                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                         </ActionIcon>
@@ -204,7 +204,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
 
                         {(incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Blessure avec traitement" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Premiers soins" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "First Aid" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Injury with treatment") &&
                             <div className="space-y-4 col-span-3 bg-red-50 p-4 rounded-lg mt-4">
-                                <h3 className="font-medium text-gray-800">Injury Details</h3>
+                                <h3 className="text-gray-800">Injury Details</h3>
 
                                 <BodyPartSelect bodyParts={bodyParts} form={form} id={`incidentDetails.${index}.affectedBodyParts`} />
 
@@ -213,7 +213,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         }
                         {
                             categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" && < div className="space-y-4 col-span-3 bg-green-50 p-4 rounded-lg mt-4">
-                                <h3 className="font-medium text-gray-800">Environment Incident Details</h3>
+                                <h3 className="text-gray-800">Environment Incident Details</h3>
                                 <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Environmental Impact" />
                                 <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Containment Measures" />
                             </div>
@@ -224,7 +224,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                 {/* <TextEditor withAsterisk form={form} id="description" title="Description" /> */}
 
                 <div className="flex flex-col gap-3">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Location and Work Context</h2>
+                    <h2 className="text-lg text-gray-800 mb-4">Location and Work Context</h2>
                     <div className="flex flex-col gap-4">
                         <div>
                             <Select {...form.getInputProps("locationId")} data={locations} label="Incident Location" placeholder="Select incident location" withAsterisk />

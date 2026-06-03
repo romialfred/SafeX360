@@ -45,7 +45,7 @@ const CommunicationDetails = () => {
     return (
         <div className='p-5'>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Communication Details</div>
+                <div className="text-2xl text-blue-500 w-fit">Communication Details</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>

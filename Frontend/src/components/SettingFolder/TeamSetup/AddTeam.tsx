@@ -138,7 +138,7 @@ const AddTeam = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Add Team</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Add Team</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/team-setup" ><Text variant="gradient" className="hover:!underline cursor-pointer">Team Setup</Text></Link>
@@ -165,8 +165,8 @@ const AddTeam = () => {
 
                 <div className="flex flex-col gap-5">
                     <div className="flex justify-between items-center">
-                        <p className="text-xl font-medium">Team Members</p>
-                        <span className="bg-primary/20 p-1 px-3 font-medium text-blue-500 rounded-3xl">
+                        <p className="text-lg">Team Members</p>
+                        <span className="bg-primary/20 p-1 px-3 text-blue-500 rounded-3xl">
                             {form.values.members.length} Selected
                         </span>
                     </div>
@@ -198,7 +198,7 @@ const AddTeam = () => {
                             >
                                 <Popover.Target>
                                     <div>
-                                        <TextInput label="Add Team Members" placeholder="Add Team Members...." leftSection={<IconUserPlus color="gray" />} onClick={() => setPopoverOpened((o) => !o)} className=" text-gray-600 font-medium text-lg" />
+                                        <TextInput label="Add Team Members" placeholder="Add Team Members...." leftSection={<IconUserPlus color="gray" />} onClick={() => setPopoverOpened((o) => !o)} className=" text-gray-600 text-lg" />
 
                                     </div>
                                 </Popover.Target>
@@ -219,7 +219,7 @@ const AddTeam = () => {
                                                 <div className="flex gap-4 items-center ">
                                                     <Avatar name={user.name} color="initials" radius="xl" variant="filled" />
                                                     <div>
-                                                        <p className="font-semibold">{user.name}</p>
+                                                        <p className="font-medium">{user.name}</p>
                                                         <div className="flex items-center gap-1 text-sm text-gray-600">
                                                             {user.empNumber}
                                                         </div>
@@ -258,14 +258,14 @@ const AddTeam = () => {
                                                 <Avatar radius="xl" size={70} name={user.name} color="initials" variant="filled" />
                                             </Indicator>
                                             <div>
-                                                <p className="font-semibold text-xl">{user.name}</p>
+                                                <p className="text-xl">{user.name}</p>
                                                 <div className="flex items-center gap-1 text-sm text-gray-600">
                                                     <IconBriefcase size={14} /> {user.empNumber}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <p className="font-medium text-lg text-gray-500">Incident Level Notifications:</p>
+                                            <p className="text-lg text-gray-500">Incident Level Notifications:</p>
 
                                             <Chip.Group {...form.getInputProps(`members.${index}.notificationLevel`)} multiple={true} >
                                                 <Group gap={5}>

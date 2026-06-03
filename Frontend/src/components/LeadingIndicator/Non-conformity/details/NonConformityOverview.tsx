@@ -19,7 +19,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                             <IconAlertTriangle size={20} className="text-blue-500" />
                         </div>
                         <div>
-                            <Text size="lg" fw={600} className="text-slate-800">
+                            <Text size="lg" className="text-slate-800">
                                 Basic Information
                             </Text>
                             <Text size="sm" className="text-slate-600">
@@ -32,19 +32,19 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                         <Grid>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Reference</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Reference</Text>
                                     <Text className="text-slate-800 font-mono">{showValue(nonConformity?.number)}</Text>
                                 </div>
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Title</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Title</Text>
                                     <Text className="text-slate-800">{showValue(nonConformity?.title)}</Text>
                                 </div>
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Detection Date</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Detection Date</Text>
                                     <Group gap="xs">
                                         <IconCalendar size={14} className="text-slate-400" />
                                         <Text className="text-slate-800">
@@ -55,7 +55,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Detected By</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Detected By</Text>
                                     <Group gap="xs">
                                         <IconUser size={14} className="text-slate-400" />
                                         <Text className="text-slate-800">{empMap?.[nonConformity?.reportedBy]?.name || '-'}</Text>
@@ -64,14 +64,14 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Detection Source</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Detection Source</Text>
 
                                     <Text className="text-slate-800">{showValue(nonConformity?.detectionSource)}</Text>
                                 </div>
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Location</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Location</Text>
                                     <Group gap="xs">
                                         <IconMapPin size={14} className="text-slate-400" />
                                         <Text className="text-slate-800">{locationMap?.[nonConformity?.locationId]?.name || '-'}</Text>
@@ -81,7 +81,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Work Process</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Work Process</Text>
                                     <Group gap="xs">
                                         <IconTool size={14} className="text-slate-400" />
                                         <Text className="text-slate-800">{processMap?.[nonConformity?.workProcessId]?.name || '-'}</Text>
@@ -90,7 +90,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                             </Grid.Col>
                             {/* <Grid.Col span={6}>
                                 <div>
-                                    <Text size="sm" fw={500} className="text-slate-700 mb-1">Emitter</Text>
+                                    <Text size="sm" className="text-slate-700 mb-1">Emitter</Text>
                                     <Text className="text-slate-800">{empMap?.[nonConformity?.reportedBy]?.name}</Text>
                                 </div>
                             </Grid.Col> */}
@@ -99,13 +99,13 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                         <Divider />
 
                         <div>
-                            <Text size="sm" fw={500} className="text-slate-700 mb-2">Description</Text>
+                            <Text size="sm" className="text-slate-700 mb-2">Description</Text>
 
                             <div dangerouslySetInnerHTML={{ __html: nonConformity?.description || '-' }} />
                         </div>
 
                         <div>
-                            <Text size="sm" fw={500} className="text-slate-700 mb-2">Impact</Text>
+                            <Text size="sm" className="text-slate-700 mb-2">Impact</Text>
                             <Text className="text-slate-800">{showArray(nonConformity?.indirectImpacts, 'No data available')}</Text>
                         </div>
                     </div>
@@ -121,7 +121,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                                 <IconUsers size={20} className="text-green-500" />
                             </div>
                             <div>
-                                <Text size="lg" fw={600} className="text-slate-800">
+                                <Text size="lg" className="text-slate-800">
                                     Analysis Team
                                 </Text>
                             </div>
@@ -134,7 +134,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                                 {Array.isArray(analysis?.team) && analysis.team.length > 0 ? (
                                     analysis.team.map((member: any, index: any) => (
                                         <div key={index}>
-                                            <Text size="sm" fw={500} className="text-slate-700 mb-1">{member?.role || '-'}</Text>
+                                            <Text size="sm" className="text-slate-700 mb-1">{member?.role || '-'}</Text>
                                             <Text size="sm" className="text-slate-600">{empMap?.[member?.id]?.name || '-'}</Text>
                                         </div>
                                     ))
@@ -152,7 +152,7 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                                 <IconTarget size={20} className="text-orange-500" />
                             </div>
                             <div>
-                                <Text size="lg" fw={600} className="text-slate-800">
+                                <Text size="lg" className="text-slate-800">
                                     Classification
                                 </Text>
                             </div>
@@ -160,15 +160,15 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
 
                         <div className="space-y-3">
                             {/* <div>
-                                <Text size="sm" fw={500} className="text-slate-700 mb-1">Process</Text>
+                                <Text size="sm" className="text-slate-700 mb-1">Process</Text>
                                 <Text size="sm" className="text-slate-600">{nonConformity?.workProcessName || ''}</Text>
                             </div> */}
                             <div className="flex gap-2 items-center">
-                                <Text size="sm" fw={500} className="text-slate-700 mb-1">Cause Defect</Text>
+                                <Text size="sm" className="text-slate-700 mb-1">Cause Defect</Text>
                                 <Text size="sm" className="text-slate-600">{showValue(analysis?.origin)}</Text>
                             </div>
                             <div className="flex gap-2 items-center">
-                                <Text size="sm" fw={500} className="text-slate-700 mb-1">Severity Level</Text>
+                                <Text size="sm" className="text-slate-700 mb-1">Severity Level</Text>
                                 <Badge
                                     color="grape"
                                     variant="light"

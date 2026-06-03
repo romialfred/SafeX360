@@ -215,7 +215,7 @@ const Investigation = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Incident Investigation</div>
+                    <div className="text-2xl text-blue-500 w-fit">Incident Investigation</div>
                     <Breadcrumbs my="xs" >
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -236,7 +236,7 @@ const Investigation = () => {
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-red-800 ">{incident.title}</h2>
+                        <h2 className="text-lg text-red-800 ">{incident.title}</h2>
                         <span className="bg-red-200 rounded-md text-sm p-1 text-red-600">
                             {incident.number}
                         </span>
@@ -255,7 +255,7 @@ const Investigation = () => {
 
             {lockedInfo.locked && (
                 <Alert color={lockedInfo.status === 'CLOSED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text fw={600}>
+                    <Text>
                         {lockedInfo.status === 'CLOSED' ? 'This incident is closed. Investigation is not allowed.' : 'This incident is rejected. Investigation is not allowed.'}
                     </Text>
                 </Alert>

@@ -76,7 +76,7 @@ const PPEStockEntryForm = () => {
     return (
         <Box className='flex flex-col gap-5'>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Stock Entry</div>
+                <div className="text-2xl text-blue-500 w-fit">Stock Entry</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -197,7 +197,7 @@ const PPEStockEntryForm = () => {
                             <Stack gap="md">
                                 <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Category:</Text>
-                                    <Text size="sm" fw={500}>{selectedPpe.category}</Text>
+                                    <Text size="sm">{selectedPpe.category}</Text>
                                 </Group>
 
                                 <Box>
@@ -207,12 +207,12 @@ const PPEStockEntryForm = () => {
 
                                 <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Minimum Stock:</Text>
-                                    <Text size="sm" fw={500}>{selectedPpe.minStock}</Text>
+                                    <Text size="sm">{selectedPpe.minStock}</Text>
                                 </Group>
 
                                 {selectedPpe.certificationStandard && <Group justify="space-between">
                                     <Text size="sm" c="dimmed">Certification:</Text>
-                                    <Text size="sm" fw={500}>{selectedPpe.certificationStandard}</Text>
+                                    <Text size="sm">{selectedPpe.certificationStandard}</Text>
                                 </Group>}
 
                                 <Group justify="space-between">
@@ -254,7 +254,7 @@ const PPEStockEntryForm = () => {
                                     return (
                                         <Box key={ppe.id}>
                                             <Group justify="space-between" mb="xs">
-                                                <Text size="sm" fw={500}>{ppe.name}</Text>
+                                                <Text size="sm">{ppe.name}</Text>
                                                 <Badge color="orange" variant="light" size="xs">
                                                     {percentage}%
                                                 </Badge>

@@ -23,13 +23,13 @@ const Projects = () => {
 
     return (
         <Card shadow="sm" p="lg" radius="md" withBorder >
-            <Text size="sm" fw={500}>Projects</Text>
-            <Text size="xl" fw={700}>78,298</Text>
+            <Text size="sm">Projects</Text>
+            <Text size="xl">78,298</Text>
             <Box style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                 <Avatar size={24} radius="xl" style={{ backgroundColor: successLight }}>
                     <IconArrowUpLeft size={18} color="#39B69A" />
                 </Avatar>
-                <Text size="sm" fw={600}>+9%</Text>
+                <Text size="sm">+9%</Text>
             </Box>
             <Box mt="sm">
                 <BarChart

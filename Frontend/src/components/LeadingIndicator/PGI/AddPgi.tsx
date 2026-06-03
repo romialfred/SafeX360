@@ -1,9 +1,7 @@
 import {
     ActionIcon,
-    Breadcrumbs,
     Button,
     Checkbox,
-    Fieldset,
     Group,
     Select,
     Text,
@@ -13,9 +11,22 @@ import { useForm } from "@mantine/form";
 import { PickList } from "primereact/picklist";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { DatePickerInput, TimeInput } from "@mantine/dates";
-import { IconClock } from "@tabler/icons-react";
+import {
+    IconClock,
+    IconSearch,
+    IconDeviceFloppy,
+    IconX,
+    IconCalendar,
+    IconMapPin,
+    IconAlertTriangle,
+    IconShield,
+    IconUsers,
+    IconTarget,
+    IconFileText,
+    IconActivity,
+} from "@tabler/icons-react";
 import TextEditor from "../../UtilityComp/TextEditor";
 import { getAllLocations } from "../../../services/LocationService";
 import { getEmployeeDropdown } from "../../../services/EmployeeService";
@@ -23,6 +34,8 @@ import { createPgi } from "../../../services/PgiService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { getActivitiesByYearStatusAndCategory } from "../../../services/HSEActivityService";
+import PageHeader from "../../UtilityComp/PageHeader";
+import FormWithHelp from "../../UtilityComp/FormWithHelp";
 
 
 
@@ -136,16 +149,16 @@ const AddPgi = () => {
                         {editingRoleId === item.id || !item.role ? (
                             <Select
                                 autoFocus
-                                label="Role"
-                                placeholder="Select role"
-                                data={['Lead Inspector', 'Inspector', 'Site Supervisor', 'HSE Manager', 'External Auditor']}
+                                label="Rôle"
+                                placeholder="Sélectionner le rôle"
+                                data={['Inspecteur principal', 'Inspecteur', 'Responsable de zone', 'Responsable HSE', 'Auditeur externe']}
                                 value={item.role}
                                 onChange={(val) => handleRoleChange(item.id, val!)}
                                 className="w-full"
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm font-medium px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -189,106 +202,226 @@ const AddPgi = () => {
 
 
     return (
-        <div className="p-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Report Inspections</div>
-                    <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/PGI">
-                            <Text variant="gradient">Planned General Inspections</Text>
-                        </Link>
-                        <Text variant="gradient">Report Inspections</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Inspections HSE', to: '/PGI' },
+                    { label: 'Nouvelle inspection' },
+                ]}
+                icon={<IconSearch size={22} stroke={2} />}
+                iconColor="green"
+                title="Nouvelle inspection HSE"
+                subtitle="Programmation d'une inspection planifiée — risques, EPI et équipe d'inspection"
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
+                            Annuler
+                        </Button>
+                        <Button color="green" size="sm" leftSection={<IconDeviceFloppy size={15} />} onClick={() => form.onSubmit(handleSubmit)()}>
+                            Enregistrer
+                        </Button>
+                    </>
+                }
+            />
 
-
-            <form onSubmit={form.onSubmit(handleSubmit)}>
-                <div className="flex flex-col gap-8">
-
-                    <Fieldset
-                        className="grid grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg font-medium text-blue-500">Inspections Informations</div>} >
-
-                        <Select withAsterisk label="Activity" placeholder="Select activity" data={activities} {...form.getInputProps('activityId')} />
-                        <Select withAsterisk label="Location" placeholder="Select location" data={location} {...form.getInputProps('siteId')} />
-                        <DatePickerInput label="Date" placeholder="dd-mm-yyyy" withAsterisk {...form.getInputProps('plannedDate')} />
-
-                        < div className="grid grid-cols-2 gap-4 self-center">
-
-                            <TimeInput label="Start Time" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
-                            <TimeInput label="End Time" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
-
+            <FormWithHelp
+                helpAccentColor="green"
+                helpTitle="Aide : Inspection HSE planifiée"
+                helpSubtitle="ISO 45001 §8.1 — Planification et contrôle opérationnels"
+                helpItems={[
+                    {
+                        key: 'activity',
+                        icon: IconActivity,
+                        iconColor: 'green',
+                        title: 'Activité de référence',
+                        content: "Sélectionner l'activité du plan annuel HSE à laquelle cette inspection est rattachée (catégorie IGP, statut PENDING).",
+                    },
+                    {
+                        key: 'location',
+                        icon: IconMapPin,
+                        iconColor: 'pink',
+                        title: 'Lieu d\'inspection',
+                        content: 'Site, zone ou installation à inspecter. Privilégier le niveau le plus précis disponible.',
+                    },
+                    {
+                        key: 'datetime',
+                        icon: IconCalendar,
+                        iconColor: 'orange',
+                        title: 'Date et heures',
+                        content: 'Date planifiée et créneau horaire (début / fin). Respecter une durée raisonnable (généralement 1 à 3 heures).',
+                    },
+                    {
+                        key: 'description',
+                        icon: IconFileText,
+                        iconColor: 'slate',
+                        title: 'Description',
+                        content: "Contexte de l'inspection : motif, événements ayant déclenché la planification, points d'attention particuliers.",
+                    },
+                    {
+                        key: 'objectives',
+                        icon: IconTarget,
+                        iconColor: 'teal',
+                        title: 'Objectif',
+                        content: "Résultat attendu de l'inspection. Exemple : « Vérifier la conformité des dispositifs LOTO sur l'atelier de maintenance ».",
+                    },
+                    {
+                        key: 'risks',
+                        icon: IconAlertTriangle,
+                        iconColor: 'red',
+                        title: 'Types de risques',
+                        content: "Risques HSE prioritaires à évaluer : mécanique, chimique, électrique, environnemental, ergonomique. Détermine la checklist applicable.",
+                    },
+                    {
+                        key: 'ppe',
+                        icon: IconShield,
+                        iconColor: 'yellow',
+                        title: 'EPI obligatoires',
+                        content: "Équipements de protection individuelle requis sur la zone inspectée. À vérifier auprès du responsable de zone avant intervention.",
+                        isoRef: 'ISO 45001 §8.1.2',
+                    },
+                    {
+                        key: 'participants',
+                        icon: IconUsers,
+                        iconColor: 'indigo',
+                        title: 'Équipe d\'inspection',
+                        content: "Inspecteur principal + inspecteurs + responsable de zone + représentant CHSCT si applicable. Attribuer un rôle à chacun.",
+                    },
+                ]}
+                helpTip="L'inspection peut être enregistrée en brouillon. Les EPI et risques doivent être validés avant la visite sur site."
+            >
+                <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-5">
+                    {/* Section 1 — Informations */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                                    <IconSearch size={16} className="text-green-700" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm text-slate-900">Informations sur l'inspection</h2>
+                                    <p className="text-xs text-slate-500">Lieu, date, créneau et activité de référence</p>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select withAsterisk label="Activité de référence" placeholder="Sélectionner l'activité" data={activities} {...form.getInputProps('activityId')} />
+                            <Select withAsterisk label="Lieu" placeholder="Sélectionner le lieu" data={location} {...form.getInputProps('siteId')} />
+                            <DatePickerInput label="Date planifiée" placeholder="JJ/MM/AAAA" withAsterisk {...form.getInputProps('plannedDate')} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <TimeInput label="Heure de début" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
+                                <TimeInput label="Heure de fin" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
+                            </div>
                         </div>
-                    </Fieldset>
+                    </section>
 
-                    <TextEditor form={form} id="description" title="Description" />
+                    {/* Section 2 — Description */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                                    <IconFileText size={16} className="text-green-700" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm text-slate-900">Description et contexte</h2>
+                                    <p className="text-xs text-slate-500">Motif et points d'attention de l'inspection</p>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="p-5">
+                            <TextEditor form={form} id="description" title="Description" />
+                        </div>
+                    </section>
 
-                    <Fieldset
-                        className="flex flex-col [&>legend]:w-fit gap-5 flex-wrap"
-                        legend={<div className="text-lg font-medium text-blue-500">Objective & Risk</div>} >
+                    {/* Section 3 — Objectif et risques */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                                    <IconTarget size={16} className="text-green-700" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm text-slate-900">Objectif et types de risques</h2>
+                                    <p className="text-xs text-slate-500">Résultat attendu et grille de risques à évaluer</p>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="p-5 space-y-4">
+                            <TextInput label="Objectif" placeholder="Ex. Vérifier la conformité des dispositifs LOTO" {...form.getInputProps('objectives')} />
+                            <Checkbox.Group {...form.getInputProps('riskTypes')} label="Types de risques à évaluer" withAsterisk>
+                                <Group my={2}>
+                                    <Checkbox value="mechanical" label="Mécanique" />
+                                    <Checkbox value="chemical" label="Chimique" />
+                                    <Checkbox value="electrical" label="Électrique" />
+                                    <Checkbox value="environmental" label="Environnemental" />
+                                    <Checkbox value="erogonomic" label="Ergonomique" />
+                                </Group>
+                            </Checkbox.Group>
+                        </div>
+                    </section>
 
-                        <TextInput label="Objective" placeholder="Enter Objective" {...form.getInputProps('objectives')} />
-                        <Checkbox.Group {...form.getInputProps('riskTypes')} label="Risk Types" withAsterisk >
-                            <Group my={2}>
-                                <Checkbox value="mechanical" label="Mechanical" />
-                                <Checkbox value="chemical" label="Chemical" />
-                                <Checkbox value="electrical" label="Electrical" />
-                                <Checkbox value="environmental" label="Environmental" />
-                                <Checkbox value="erogonomic" label="Erogonomic" />
-                            </Group>
-                        </Checkbox.Group>
-
-                    </Fieldset>
-                    <Fieldset
-                        className=" [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg font-medium text-blue-500">Personal Protective Equipment (PPE)</div>} >
-                        <Checkbox.Group size="md"
-                            {...form.getInputProps("ppe")}
-                            label=""
-                        >
-                            <div className="flex flex-wrap mt-5 gap-2">
-                                {ppe.map((item: any) => (
-                                    <div key={item.id} className="">
-
+                    {/* Section 4 — EPI */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                                    <IconShield size={16} className="text-green-700" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm text-slate-900">Équipements de protection individuelle (EPI)</h2>
+                                    <p className="text-xs text-slate-500">EPI obligatoires sur la zone inspectée</p>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="p-5">
+                            <Checkbox.Group size="md" {...form.getInputProps("ppe")} label="">
+                                <div className="flex flex-wrap gap-2">
+                                    {ppe.map((item: any) => (
                                         <Checkbox.Card key={item.id}
                                             value={item.id}
                                             radius="md"
-                                            className="group border border-gray-300 transition duration-150 cursor-pointer 
-                                 hover:!border-primary hover:!bg-primary/10 
-                                 data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                                 data-[checked]:shadow-sm"
+                                            className="group border border-slate-300 transition duration-150 cursor-pointer
+                                                hover:!border-green-500 hover:!bg-green-50
+                                                data-[checked]:!border-green-500 data-[checked]:!bg-green-50
+                                                data-[checked]:shadow-sm"
                                             p="xs"
                                         >
                                             <Group align="center" gap="xs">
-                                                <Checkbox.Indicator size="xs" className=" text-blue-600" />
+                                                <Checkbox.Indicator size="xs" className="text-green-600" />
                                                 <Text
                                                     size="xs"
-                                                    className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                    className="text-slate-800 group-data-[checked]:text-green-900 group-data-[checked]:font-medium"
                                                 >
                                                     {item.name}
                                                 </Text>
                                             </Group>
                                         </Checkbox.Card>
+                                    ))}
+                                </div>
+                            </Checkbox.Group>
+                        </div>
+                    </section>
 
-                                    </div>
-                                ))}
+                    {/* Section 5 — Participants */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                                    <IconUsers size={16} className="text-green-700" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm text-slate-900">Équipe d'inspection</h2>
+                                    <p className="text-xs text-slate-500">Inspecteurs et observateurs avec attribution des rôles</p>
+                                </div>
                             </div>
-                        </Checkbox.Group>
-                    </Fieldset>
-                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg font-medium text-blue-500 "> Participants</div>}>
-
-
-                        <div className=' [&>legend]:w-fit flex gap-5 flex-wrap'>
+                        </header>
+                        <div className="p-5">
                             <PickList
                                 dataKey="id"
                                 filter
                                 filterBy="name"
-                                sourceFilterPlaceholder="Search by name"
-                                targetFilterPlaceholder="Search by name"
+                                sourceFilterPlaceholder="Rechercher par nom"
+                                targetFilterPlaceholder="Rechercher par nom"
                                 showTargetControls={false}
                                 showSourceControls={false}
                                 source={emps}
@@ -296,24 +429,24 @@ const AddPgi = () => {
                                 onChange={onChange}
                                 itemTemplate={itemTemplate}
                                 breakpoint="1280px"
-                                sourceHeader={`Available Employees (${emps.length})`}
-                                targetHeader={`Participants  (${form.values.participants.length})`}
+                                sourceHeader={`Employés disponibles (${emps.length})`}
+                                targetHeader={`Équipe sélectionnée (${form.values.participants.length})`}
                                 sourceStyle={{ height: '24rem' }}
                                 targetStyle={{ height: '24rem' }}
                             />
                         </div>
-                    </Fieldset>
+                    </section>
 
-
-
-
-                </div>
-
-                <div className="flex gap-2 mt-8 justify-center">
-
-                    <Button type="submit" variant="gradient">Create Inspections</Button>
-                </div>
-            </form>
+                    <div className="flex gap-2 justify-end pt-2">
+                        <Button variant="default" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" color="green" leftSection={<IconDeviceFloppy size={15} />}>
+                            Créer l'inspection
+                        </Button>
+                    </div>
+                </form>
+            </FormWithHelp>
         </div>
     )
 }

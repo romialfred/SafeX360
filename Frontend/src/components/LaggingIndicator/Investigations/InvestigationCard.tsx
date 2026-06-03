@@ -23,17 +23,17 @@ const InvestigationCard = ({ investigation }: { investigation: InvestigationData
     return (
         <div className="rounded-xl border border-gray-300 shadow-sm mt-4 p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
             <div className="flex gap-4">
-                <span className="text-sm bg-indigo-100 text-indigo-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-sm bg-indigo-100 text-indigo-800 px-2 py-1 rounded-lg">
                     {methodLabel}
                 </span>
             </div>
 
-            <div className="text-lg font-semibold text-gray-900">{investigation.incidentTitle}</div>
+            <div className="text-lg text-gray-900">{investigation.incidentTitle}</div>
 
-            <div className="text-gray-500 font-medium">
+            <div className="text-gray-500">
                 Start: {formatDateWithDay(investigation.startDate)}
             </div>
-            <div className="text-gray-500 font-medium">
+            <div className="text-gray-500">
                 End: {formatDateWithDay(investigation.endDate)}
             </div>
 

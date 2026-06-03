@@ -236,7 +236,7 @@ const EditScheduleAudit: React.FC = () => {
             values = { ...values, auditors: auditors };
         }
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -281,7 +281,7 @@ const EditScheduleAudit: React.FC = () => {
 
 
             modals.openConfirmModal({
-                title: <span className="font-semibold text-2xl">Are you sure?</span>,
+                title: <span className="text-2xl">Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -345,7 +345,7 @@ const EditScheduleAudit: React.FC = () => {
                                     <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                     <Text
                                         size="sm"
-                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                     >
                                         {type}
                                     </Text>
@@ -362,7 +362,7 @@ const EditScheduleAudit: React.FC = () => {
 
             <Select {...form.getInputProps("audit.scopeId")} label="Audit Scope " placeholder="Select Audit Scope " data={auditAreas} withAsterisk />
             <div className="flex flex-col gap-2">
-                <h1 className="font-medium ">Planned Method <span className="text-red-500">*</span></h1>
+                <h1 className="">Planned Method <span className="text-red-500">*</span></h1>
                 <Checkbox.Group {...form.getInputProps("audit.methods")} className="p-4 border border-gray-300 rounded-lg ">
                     <Group className="!grid !grid-cols-4 gap-2">
 
@@ -387,7 +387,7 @@ const EditScheduleAudit: React.FC = () => {
     const renderAuditorItem = (item: ListItem, index: number) => (
         <div key={index} className="flex flex-col gap-6" >
             <Fieldset key={index} className="grid grid-cols-3 gap-6" legend={<div className="flex gap-5">
-                <div className="text-lg font-medium text-blue-500">Auditor {index + 1}</div>
+                <div className="text-lg text-blue-500">Auditor {index + 1}</div>
                 <ActionIcon onClick={() => handleRemoveAuditor(item, index)} variant="filled" color="red" aria-label="Settings">
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
@@ -455,7 +455,7 @@ const EditScheduleAudit: React.FC = () => {
 
                             {form.values.audit.types?.map((x, index) => (
                                 <Card key={index} shadow="sm" radius="md" withBorder className="!bg-green-50">
-                                    <Text size="md" fw={600} mb="sm" className="!text-green-700">
+                                    <Text size="md" mb="sm" className="!text-green-700">
                                         {x}
                                     </Text>
                                     <Checkbox.Group {...form.getInputProps(`audit.auditTypes.${x}`)} className="flex flex-col  text-gray-600">
@@ -509,7 +509,7 @@ const EditScheduleAudit: React.FC = () => {
 
                         {form.values.auditors.map(renderAuditorItem)}
                         <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-4">
-                            <h2 className="flex items-center gap-2 text-base font-semibold text-yellow-800 mb-2">
+                            <h2 className="flex items-center gap-2 text-base text-yellow-800 mb-2">
                                 <IconInfoCircle size={18} className="text-yellow-600" />
                                 Validation rules:
                             </h2>
@@ -522,7 +522,7 @@ const EditScheduleAudit: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <h1 className="font-medium ">Applicable internal literature references</h1>
+                            <h1 className="">Applicable internal literature references</h1>
                             <Checkbox.Group {...form.getInputProps("audit.references")} className="p-4 border border-gray-300 rounded-lg ">
                                 <Group className="!grid !grid-cols-4 gap-2">
                                     {documents.map((doc) => (
@@ -550,7 +550,7 @@ const EditScheduleAudit: React.FC = () => {
     return (
         <div>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Update Audit</div>
+                <div className="text-2xl text-blue-500 w-fit">Update Audit</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>

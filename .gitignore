@@ -1,0 +1,90 @@
+# ============================================================================
+# SafeX360 — .gitignore racine
+# ============================================================================
+
+# === SECRETS — NE JAMAIS COMMITER ===
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# === Logs ===
+*.log
+Backend/logs/
+**/logs/
+logs/
+
+# === Builds & dépendances ===
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+target/
+**/target/
+*.jar
+!**/maven-wrapper.jar
+
+# === Java / Maven / Spring Boot ===
+HELP.md
+*.class
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache
+**/spring-boot-application.log
+
+# === IDE ===
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.apt_generated/
+.factorypath
+.nb-gradle/
+nbproject/
+nbbuild/
+nbdist/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Claude / Outils internes ===
+.claude/
+.cursor/
+
+# === Documents et assets lourds non versionnés ===
+Documents/
+imgs/
+audit/
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# === Tests locaux et scripts SQL ad-hoc ===
+DDL_SafeX_Complete.sql
+seed-*.sql
+strip-*.py
+
+# === Frontend Vite ===
+Frontend/dist/
+Frontend/dist-ssr/
+Frontend/.vite/
+*.local
+
+# === Backend Spring Boot ===
+Backend/**/target/
+Backend/**/.mvn/wrapper/maven-wrapper.properties.bak
+Backend/.env
+
+# === Mac / Windows / Linux ===
+.AppleDouble
+.LSOverride
+$RECYCLE.BIN/
+*.lnk

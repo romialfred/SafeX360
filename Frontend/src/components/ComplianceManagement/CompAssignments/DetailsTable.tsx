@@ -49,7 +49,7 @@ const DetailsTable = () => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -184,7 +184,7 @@ const DetailsTable = () => {
                 opened={modalOpened}
                 onClose={() => setModalOpened(false)}
                 title={
-                    <div className="text-lg font-medium text-blue-500">
+                    <div className="text-lg text-blue-500">
                         Assign New Requirement
                     </div>
                 }

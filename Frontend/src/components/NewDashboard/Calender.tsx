@@ -171,7 +171,7 @@ const Calendar = () => {
                         <ThemeIcon color="blue" size={30}>
                             <IconInfoCircle size={20} />
                         </ThemeIcon>
-                        <Text fw={600}>Event Details</Text>
+                        <Text>Event Details</Text>
                     </Group>
                 }
                 centered
@@ -200,7 +200,7 @@ const Calendar = () => {
                         <ThemeIcon color="green" size={30}>
                             <IconCirclePlus size={20} />
                         </ThemeIcon>
-                        <Text fw={600}>Add New Event</Text>
+                        <Text>Add New Event</Text>
                     </Group>
                 }
                 centered

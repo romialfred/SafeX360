@@ -62,7 +62,7 @@ const DocumentTable = ({ documents }: DocumentTableProps) => {
 
         return (
             <span
-                className={`px-3 py-1  rounded-xl text-sm font-medium ${getStatusClasses(status)}`}
+                className={`px-3 py-1  rounded-xl text-sm ${getStatusClasses(status)}`}
             >
                 {capitalizeFirstLetter(status)}
             </span>

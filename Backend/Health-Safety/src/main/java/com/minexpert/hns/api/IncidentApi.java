@@ -77,4 +77,13 @@ public class IncidentApi {
         return ResponseEntity.ok(incidentService.getDepartmentIncidentStats(departmentId));
     }
 
+    /**
+     * Fix Phase 2.a — endpoint global pour utilisateurs sans département (ex: admin).
+     * Évite l'erreur "Failed to convert 'null' to Long" sur l'endpoint paramétré.
+     */
+    @GetMapping("/department/stats")
+    public ResponseEntity<DepartmentIncidentStats> getGlobalIncidentStats() {
+        return ResponseEntity.ok(incidentService.getDepartmentIncidentStats(null));
+    }
+
 }

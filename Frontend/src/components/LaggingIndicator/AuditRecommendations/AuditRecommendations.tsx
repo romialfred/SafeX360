@@ -80,7 +80,7 @@ const AuditRecommendations = () => {
     return (
         <div>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Recommendation Followup</div>
+                <div className="text-2xl text-blue-500 w-fit">Recommendation Followup</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
 
@@ -107,8 +107,8 @@ const AuditRecommendations = () => {
                         return (
                             <div key={index} className="flex justify-between p-6 shadow-lg rounded-xl border border-gray-200">
                                 <div>
-                                    <p className="text-gray-600 text-lg font-medium">{item.label}</p>
-                                    <h2 className="text-xl font-semibold text-gray-400">{item.value}</h2>
+                                    <p className="text-gray-600 text-lg">{item.label}</p>
+                                    <h2 className="text-lg text-gray-400">{item.value}</h2>
                                 </div>
                                 <div><Icon size={32} stroke={2} color={item.color} /></div>
                             </div>
@@ -158,7 +158,7 @@ const AuditRecommendations = () => {
                         <div className="flex gap-10 ">
                             <div className="flex flex-col gap-5 w-[700px]">
                                 <div>
-                                    <h1 className="text-xl font-medium">Enhance Risk Assessment Documentation</h1>
+                                    <h1 className="text-lg">Enhance Risk Assessment Documentation</h1>
                                 </div>
                                 <div>
                                     <p className="text-lg text-gray-400">Description</p>
@@ -184,17 +184,17 @@ const AuditRecommendations = () => {
                             <Divider size="xs" orientation="vertical" />
                             <div>
                                 <Card shadow="sm" padding="sm" radius="md" withBorder className="w-[250px]">
-                                    <p className="text-lg font-semibold mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
+                                    <p className="text-lg mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
                                     <div className="flex flex-col gap-4">
                                         <div className=" flex flex-col gap-8">
                                             <div className="flex justify-between items-center">
-                                                <p className="text-lg flex gap-1 text-blue-600 font-medium"><IconUser />3</p>
+                                                <p className="text-lg flex gap-1 text-blue-600"><IconUser />3</p>
                                                 <div className="bg-amber-200 rounded-4xl ">
-                                                    <p className="text-sm font-medium text-amber-800 flex gap-1 p-1 items-center"><IconClock />In-Progress</p>
+                                                    <p className="text-sm text-amber-800 flex gap-1 p-1 items-center"><IconClock />In-Progress</p>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-5">
-                                                <p className="font-semibold text-gray-800">1/4/2024, 3:30:00 PM</p>
+                                                <p className="text-gray-800">1/4/2024, 3:30:00 PM</p>
                                                 <div className="flex justify-between">
                                                     <Text size="md" className="text-gray-600">Status: In Progress</Text>
                                                     <Progress value={4} color="yellow" />

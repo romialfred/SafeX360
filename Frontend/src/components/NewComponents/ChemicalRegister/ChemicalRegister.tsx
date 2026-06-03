@@ -11,12 +11,13 @@ import {
     IconEye, // Clock
     IconEdit, IconSearch, IconAlertTriangle, IconFlask2, IconClock, IconCircleCheck, IconChartBar
 } from '@tabler/icons-react';
-import { Badge, Breadcrumbs, Button, Text } from '@mantine/core';
+import { Badge, Button } from '@mantine/core';
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Toolbar } from "primereact/toolbar";
 import { ActionIcon, Select, TextInput, Tooltip, SegmentedControl } from "@mantine/core";
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import PageHeader from '../../UtilityComp/PageHeader';
 import { getAllChemicalRisks } from '../../../services/RiskIdentificationService';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
@@ -49,8 +50,8 @@ const ChemicalRegister = () => {
     const [viewType, setViewType] = useState<'table' | 'card'>('table');
     const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'RISKS'>('DASHBOARD');
     const tabs = [
-        { value: 'DASHBOARD', label: 'Dashboard' },
-        { value: 'RISKS', label: `Risks (${risks.length})` },
+        { value: 'DASHBOARD', label: 'Tableau de bord' },
+        { value: 'RISKS', label: `Risques (${risks.length})` },
     ];
     const tabColorMap: Record<string, string> = { DASHBOARD: 'violet', RISKS: 'blue' };
 
@@ -138,8 +139,8 @@ const ChemicalRegister = () => {
     }, []);
 
     const riskMatrix = {
-        probabilityLevels: ['Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'],
-        severityLevels: ['Negligible', 'Minor', 'Moderate', 'Major', 'Catastrophic'],
+        probabilityLevels: ['Rare', 'Improbable', 'Possible', 'Probable', 'Quasi-certain'],
+        severityLevels: ['Négligeable', 'Mineure', 'Modérée', 'Majeure', 'Catastrophique'],
     };
 
     // Build cell meta (level/color) dynamically from `riskMap` using key `${probability}${severity}`
@@ -190,35 +191,45 @@ const ChemicalRegister = () => {
     const leftToolbarTemplate = () => (
         <div className="flex gap-5">
             <TextInput
-                placeholder="Search users..."
-                leftSection={<IconSearch size={16} />}
+                size="sm"
+                placeholder="Rechercher..."
+                leftSection={<IconSearch size={14} />}
                 value={globalFilterValue}
                 onChange={onGlobalFilterChange}
             />
 
             <Select
+                size="sm"
                 data={[
-                    { value: "all", label: "All Status" },
-                    { value: "OPEN", label: "Open" },
-                    { value: "IN_PROGRESS", label: "In Progress" },
-                    { value: "CLOSED", label: "Closed" },
+                    { value: "all", label: "Tous statuts" },
+                    { value: "OPEN", label: "Ouvert" },
+                    { value: "IN_PROGRESS", label: "En cours" },
+                    { value: "CLOSED", label: "Clôturé" },
                 ]}
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val || "all")}
-                placeholder="Filter by Status"
+                placeholder="Filtrer par statut"
             />
             <Select
+                size="sm"
                 data={department.map((dept) => ({ label: dept.name, value: "" + dept.id }))}
                 value={departmentFilter}
                 onChange={(val) => setDepartmentFilter(val || "all")}
-                placeholder="Filter by Department"
+                placeholder="Filtrer par département"
             />
 
             <Select
-                data={['Low', 'Low Med', 'Medium', 'Med High', 'High']}
+                size="sm"
+                data={[
+                    { value: 'Low', label: 'Faible' },
+                    { value: 'Low Med', label: 'Faible-Moyen' },
+                    { value: 'Medium', label: 'Moyen' },
+                    { value: 'Med High', label: 'Moyen-Élevé' },
+                    { value: 'High', label: 'Élevé' },
+                ]}
                 value={riskLevelFilter}
                 onChange={setRiskLevelFilter}
-                placeholder="Filter by Risk Level"
+                placeholder="Niveau de risque"
                 clearable
             />
 
@@ -228,24 +239,24 @@ const ChemicalRegister = () => {
     const rightToolbarTemplate = () => (
         <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                <Tooltip label="Table View">
+                <Tooltip label="Vue tableau">
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
                         size="sm"
                         onClick={() => setViewType('table')}
                     >
-                        <IconLayoutList size={18} />
+                        <IconLayoutList size={16} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Card View">
+                <Tooltip label="Vue cartes">
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
                         size="sm"
                         onClick={() => setViewType('card')}
                     >
-                        <IconLayoutGrid size={18} />
+                        <IconLayoutGrid size={16} />
                     </ActionIcon>
                 </Tooltip>
             </div>
@@ -254,22 +265,23 @@ const ChemicalRegister = () => {
 
 
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Chemical Register</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Chemical Register</Text>
-                    </Breadcrumbs>
-                </div>
-                {/* <Button size='xs' leftSection={<IconUpload size={20} />}>Export Register</Button> */}
-                <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('create-chemical')}>
-                    New Risk
-                </Button>
-            </div>
-
-            <p className=' italic'>Chemical risk identification and assessment register</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Risques' },
+                    { label: 'Registre chimique' },
+                ]}
+                icon={<IconFlask2 size={22} stroke={2} />}
+                iconColor="violet"
+                title="Registre chimique"
+                subtitle="Identification et évaluation des risques chimiques selon le règlement REACH/CLP"
+                actions={
+                    <Button size="sm" color="violet" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
+                        Nouveau risque chimique
+                    </Button>
+                }
+            />
 
             <div className='max-w-md'>
                 <SegmentedControl
@@ -292,8 +304,8 @@ const ChemicalRegister = () => {
                                 <IconFlask2 className="w-6 h-6 text-blue-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">Total Chemicals</p>
-                                <p className="text-2xl font-bold text-gray-900">{risks.length}</p>
+                                <p className="text-sm text-gray-500">Total produits chimiques</p>
+                                <p className="text-2xl text-gray-900">{risks.length}</p>
                             </div>
                         </div>
                     </div>
@@ -303,8 +315,8 @@ const ChemicalRegister = () => {
                                 <IconAlertTriangle className="w-6 h-6 text-red-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">High Risk</p>
-                                <p className="text-2xl font-bold text-red-600">
+                                <p className="text-sm text-gray-500">Risque élevé</p>
+                                <p className="text-2xl text-red-600">
                                     {risks.filter(r => r.riskCategory === 'High' || r.riskCategory === 'Med Hi').length}
                                 </p>
                             </div>
@@ -317,8 +329,8 @@ const ChemicalRegister = () => {
                                 <IconClock className="w-6 h-6 text-yellow-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">In Progress</p>
-                                <p className="text-2xl font-bold text-yellow-600">
+                                <p className="text-sm text-gray-500">En cours</p>
+                                <p className="text-2xl text-yellow-600">
                                     {risks.filter(r => r.status === 'In Progress').length}
                                 </p>
                             </div>
@@ -331,8 +343,8 @@ const ChemicalRegister = () => {
                                 <IconCircleCheck className="w-6 h-6 text-green-600" />
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm text-gray-500">Completed</p>
-                                <p className="text-2xl font-bold text-green-600">
+                                <p className="text-sm text-gray-500">Clôturés</p>
+                                <p className="text-2xl text-green-600">
                                     {risks.filter(r => r.status === 'Closed').length}
                                 </p>
                             </div>
@@ -344,7 +356,7 @@ const ChemicalRegister = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                         <div className="flex items-center mb-3">
                             <IconChartBar className="w-5 h-5 text-purple-600 mr-2" />
-                            <h2 className="text-xl font-semibold text-gray-900">Risk Matrix Map</h2>
+                            <h2 className="text-lg text-gray-900">Matrice des risques</h2>
                         </div>
 
                         <div className="overflow-x-auto">
@@ -352,11 +364,11 @@ const ChemicalRegister = () => {
                                 <table className="w-full border-collapse">
                                     <thead>
                                         <tr>
-                                            <th className="p-2 bg-gray-100 border border-gray-300 text-left font-semibold text-gray-900 text-sm">
-                                                Probability / Severity
+                                            <th className="p-2 bg-gray-100 border border-gray-300 text-left text-gray-900 text-sm">
+                                                Probabilité / Gravité
                                             </th>
                                             {riskMatrix.severityLevels.map((severity, index) => (
-                                                <th key={index} className="p-2 bg-gray-100 border border-gray-300 text-center font-semibold text-gray-900 text-sm min-w-24">
+                                                <th key={index} className="p-2 bg-gray-100 border border-gray-300 text-center text-gray-900 text-sm min-w-24">
                                                     {severity}
                                                 </th>
                                             ))}
@@ -365,17 +377,17 @@ const ChemicalRegister = () => {
                                     <tbody>
                                         {riskMatrix.probabilityLevels.map((probability, probIndex) => (
                                             <tr key={probIndex}>
-                                                <td className="p-2 bg-gray-100 border border-gray-300 font-semibold text-gray-900 text-sm min-w-28">
+                                                <td className="p-2 bg-gray-100 border border-gray-300 text-gray-900 text-sm min-w-28">
                                                     {probability}
                                                 </td>
                                                 {matrixMeta[probIndex].map((cell, sevIndex) => (
                                                     <td
                                                         key={sevIndex}
-                                                        className={`p-2 border border-gray-300 text-center font-semibold relative h-9`}
+                                                        className={`p-2 border border-gray-300 text-center relative h-9`}
                                                         style={{ backgroundColor: (cell as any).bg, color: (cell as any).text }}
                                                     >
                                                         <div className="text-xs mb-0.5 leading-none">{(cell as any).level}</div>
-                                                        <div className="text-lg font-bold leading-none">
+                                                        <div className="text-lg leading-none">
                                                             {matrixCounts[probIndex][sevIndex]}
                                                         </div>
                                                     </td>
@@ -388,7 +400,7 @@ const ChemicalRegister = () => {
                         </div>
 
                         <p className="text-xs text-gray-500 mt-2 text-center">
-                            Numbers in cells represent the count of risks in each probability/severity combination
+                            Les chiffres représentent le nombre de risques par combinaison probabilité / gravité
                         </p>
                     </div>
                 )}
@@ -397,36 +409,36 @@ const ChemicalRegister = () => {
                     <div className="flex flex-col gap-2 p-4 rounded-xl border border-gray-300 shadow-sm">
                         <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} />
                         {viewType === 'table' ? (
-                            <DataTable value={filteredRisks} paginator stripedRows removableSort rows={10} rowsPerPageOptions={[10, 25, 50]} emptyMessage="No chemical risks found." className="[&_.p-datatable-tbody]:!text-sm" tableStyle={{ minWidth: "60rem" }} size="small" dataKey="id" >
+                            <DataTable value={filteredRisks} paginator stripedRows removableSort rows={10} rowsPerPageOptions={[10, 25, 50]} emptyMessage="Aucun risque chimique trouvé." className="[&_.p-datatable-tbody]:!text-sm" tableStyle={{ minWidth: "60rem" }} size="small" dataKey="id" >
 
-                                <Column style={{ fontWeight: "normal", fontSize: "14px" }} header="Risk Title" body={(row: any) => (<div className="font-medium  text-blue-500">{row.title}</div>)} />
+                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Titre du risque" body={(row: any) => (<div className="text-blue-500">{row.title}</div>)} sortable />
 
-                                <Column style={{ fontWeight: "normal", fontSize: "14px" }} header="Department" field="departmentName" />
+                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Département" field="departmentName" />
 
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Process" field="processName" />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header="Processus" field="processName" />
 
-                                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Owner" field="ownerName" />
+                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header="Responsable" field="ownerName" />
 
-                                <Column align="center" style={{ fontWeight: 'normal', fontSize: "14px" }} header="Risk Level" field="riskLevel" body={(row) => row.riskLevel ? <Badge color={riskMap[row.riskLevel]?.color} variant="filled">{riskMap[row.riskLevel]?.level}</Badge> : "-"} />
+                                <Column align="center" style={{ fontWeight: 'normal', fontSize: "13px" }} header="Niveau" field="riskLevel" body={(row) => row.riskLevel ? <Badge color={riskMap[row.riskLevel]?.color} variant="filled">{riskMap[row.riskLevel]?.level}</Badge> : "-"} />
 
-                                <Column style={{ fontWeight: "normal", fontSize: "14px" }} header="Status" body={(row: any) => {
+                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Statut" body={(row: any) => {
                                     const status = row.status || "";
                                     return (
-                                        <Badge size="xs" color='gray' fw={500}>
+                                        <Badge size="xs" color='gray'>
                                             {status}
                                         </Badge>);
                                 }} />
-                                <Column style={{ fontWeight: "normal", fontSize: "14px" }}
+                                <Column style={{ fontWeight: "normal", fontSize: "13px" }}
                                     body={(row: any) => (
                                         <div className="flex items-center gap-2">
-                                            <Tooltip label="View">
+                                            <Tooltip label="Voir le détail">
                                                 <ActionIcon color="blue" variant="subtle" onClick={() => navigate(`chemicalRegister-details/${row.id}`)}>
-                                                    <IconEye size={16} />
+                                                    <IconEye size={14} />
                                                 </ActionIcon>
                                             </Tooltip>
-                                            <Tooltip label="Edit">
+                                            <Tooltip label="Modifier">
                                                 <ActionIcon color="indigo" variant="subtle" onClick={() => navigate(`edit/${row.id}`)}>
-                                                    <IconEdit size={16} />
+                                                    <IconEdit size={14} />
                                                 </ActionIcon>
                                             </Tooltip>
                                         </div>
@@ -436,62 +448,62 @@ const ChemicalRegister = () => {
                         ) : (
                             <div>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">Chemical Risks ({filteredRisks.length})</h3>
+                                    <h3 className="text-lg">Risques chimiques ({filteredRisks.length})</h3>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {filteredRisks.map((risk: any) => (
                                         <div key={risk.id} className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
                                             <div className="flex gap-2 items-center justify-between flex-wrap">
                                                 {risk.processName && (
-                                                    <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                                                    <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                                                         {risk.processName}
                                                     </span>
                                                 )}
-                                                <Badge size="xs" color="gray" fw={500}>
+                                                <Badge size="xs" color="gray">
                                                     {String(risk?.status || '').toLowerCase() || '-'}
                                                 </Badge>
                                             </div>
-                                            <div className="text-sm font-semibold text-gray-900">
+                                            <div className="text-sm text-gray-900">
                                                 {risk.title || risk.chemicalName}
                                             </div>
                                             {risk.description && (
                                                 <div className="text-gray-600 text-xs line-clamp-2">{risk.description}</div>
                                             )}
-                                            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                <span>Owner:</span> <span className="font-semibold">{risk.ownerName || '-'}</span>
+                                            <div className="text-gray-500 text-xs flex justify-between">
+                                                <span>Responsable :</span> <span className="font-medium">{risk.ownerName || '-'}</span>
                                             </div>
                                             {risk.riskLevel && (
-                                                <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                    <span>Risk Level:</span>
+                                                <div className="text-gray-500 text-xs flex justify-between">
+                                                    <span>Niveau de risque :</span>
                                                     <Badge color={riskMap[risk.riskLevel]?.color} variant="filled">{riskMap[risk.riskLevel]?.level}</Badge>
                                                 </div>
                                             )}
                                             {risk.chemicalName && (
-                                                <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                    <span>Chemical:</span> <span className="font-semibold">{risk.chemicalName}</span>
+                                                <div className="text-gray-500 text-xs flex justify-between">
+                                                    <span>Produit :</span> <span className="font-medium">{risk.chemicalName}</span>
                                                 </div>
                                             )}
                                             {risk.casNumber && (
-                                                <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                    <span>CAS:</span> <span className="font-semibold">{risk.casNumber}</span>
+                                                <div className="text-gray-500 text-xs flex justify-between">
+                                                    <span>N° CAS :</span> <span className="font-medium">{risk.casNumber}</span>
                                                 </div>
                                             )}
-                                            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                <span>Process:</span> <span className="font-semibold">{risk.processName || '-'}</span>
+                                            <div className="text-gray-500 text-xs flex justify-between">
+                                                <span>Processus :</span> <span className="font-medium">{risk.processName || '-'}</span>
                                             </div>
-                                            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                                                <span>Department:</span> <span className="font-semibold">{risk.departmentName || '-'}</span>
+                                            <div className="text-gray-500 text-xs flex justify-between">
+                                                <span>Département :</span> <span className="font-medium">{risk.departmentName || '-'}</span>
                                             </div>
 
                                             <div className="flex justify-center grow gap-4 mt-2">
-                                                <Button size="compact-xs" variant="subtle" color="yellow" onClick={() => navigate(`chemicalRegister-details/${risk.id}`)}>Details</Button>
-                                                <Button size="compact-xs" variant="subtle" color="primary" onClick={() => navigate(`edit/${risk.id}`)}>Edit</Button>
+                                                <Button size="compact-xs" variant="subtle" color="yellow" onClick={() => navigate(`chemicalRegister-details/${risk.id}`)}>Détails</Button>
+                                                <Button size="compact-xs" variant="subtle" color="primary" onClick={() => navigate(`edit/${risk.id}`)}>Modifier</Button>
                                             </div>
                                         </div>
                                     ))}
                                     {filteredRisks.length === 0 && (
-                                        <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                            No chemical risks found
+                                        <div className='text-sm text-gray-500 italic col-span-3 mx-auto py-8'>
+                                            Aucun risque chimique trouvé
                                         </div>
                                     )}
                                 </div>

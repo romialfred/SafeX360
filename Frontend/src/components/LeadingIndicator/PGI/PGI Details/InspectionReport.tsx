@@ -56,7 +56,7 @@ const InspectionReportTabs = () => {
         const values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: <span className="text-md">Do you want to submit this inspection report?</span>,
             labels: { confirm: `Yes, Submit`, cancel: "Cancel" },
@@ -102,7 +102,7 @@ const InspectionReportTabs = () => {
             {isEditing ? (
                 <Stack>
                     <Card shadow="md" withBorder>
-                        <p className="flex items-center text-lg mb-2 font-medium text-gray-600">
+                        <p className="flex items-center text-lg mb-2 text-gray-600">
                             <IconFilePencil stroke={1.5} size={20} /> Inspection Report Details
                         </p>
                         <Grid>
@@ -126,7 +126,7 @@ const InspectionReportTabs = () => {
                     </Card>
 
                     <Card shadow="md" withBorder>
-                        <p className="text-lg font-medium text-gray-600">Supporting Documents</p>
+                        <p className="text-lg text-gray-600">Supporting Documents</p>
                         <FileUpdateDropzone name="Supporting Documents" id="docs" form={form} />
                     </Card>
 
@@ -138,7 +138,7 @@ const InspectionReportTabs = () => {
                 <Stack>
                     <Card shadow="md" withBorder className="!rounded-lg !p-6">
                         <Group justify="space-between" className="mb-2">
-                            <h1 className="text-lg font-bold text-blue-700">Inspection Report Summary</h1>
+                            <h1 className="text-lg text-blue-700">Inspection Report Summary</h1>
                             <Button onClick={() => setIsEditing(true)} radius="xl" leftSection={<IconEdit size={16} />}>Edit</Button>
                         </Group>
 

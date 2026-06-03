@@ -53,7 +53,7 @@ const Hero = () => {
                     <p className="text-lg uppercase">
                         Welcome to <span className="text-2xl font-extrabold text-blue-500 italic uppercase">Mine Xpert</span>
                     </p>
-                    <h1 className="text-7xl font-bold leading-tight mt-4">
+                    <h1 className="text-7xl leading-tight mt-4">
                         Innovative Manufacturing & Construction Solutions
                     </h1>
                     <p className="text-lg max-w-2xl mt-4">
@@ -85,26 +85,26 @@ const Hero = () => {
                 {/* Statistics Section */}
                 <div className="flex gap-20 p-10 ">
                     <div className="flex flex-col  gap-2">
-                        <span className="text-7xl font-bold">15+ </span>
+                        <span className="text-7xl">15+ </span>
                         <span className="text-2xl text-gray-500">Awards</span>
                     </div>
                     <Divider size="sm" orientation="vertical" />
                     <div className="flex flex-col  gap-2">
-                        <span className="text-7xl font-bold">1K+ </span>
+                        <span className="text-7xl">1K+ </span>
                         <span className="text-2xl text-gray-500">Happy Clients</span>
                     </div>
                     <Divider size="sm" orientation="vertical" />
                     <div className="flex flex-col  gap-2">
-                        <span className="text-7xl font-bold">10+</span>
+                        <span className="text-7xl">10+</span>
                         <span className="text-2xl text-gray-500">Years of Expertise</span>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-5  shadow-2xl p-12 place-self-center bg-gray-100 w-[350px] absolute bottom-10 right-0 ">
                     <div className="flex justify-between">
-                        <p className="text-primary text-lg font-bold">{cardData[currentIndex].title}</p>
+                        <p className="text-primary text-lg">{cardData[currentIndex].title}</p>
                         <div>
-                            <p className="text-gray-400"><span className="text-black font-medium">{cardData[currentIndex].count}</span></p>
+                            <p className="text-gray-400"><span className="text-black">{cardData[currentIndex].count}</span></p>
                         </div>
                     </div>
                     <div>

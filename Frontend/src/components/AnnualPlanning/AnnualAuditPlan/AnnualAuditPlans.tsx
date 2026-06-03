@@ -189,7 +189,7 @@ const AnnualAuditPlans = () => {
 
             <div className="flex items-center justify-between">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Annual Audit Plan (AAP)</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Annual Audit Plan (AAP)</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/hs-activities-planning" ><Text variant="gradient" className="hover:!underline cursor-pointer">HSE Planning</Text></Link>
@@ -209,7 +209,7 @@ const AnnualAuditPlans = () => {
                             <button
                                 key={category.id}
                                 onClick={() => setSelectedCategory(category.id)}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${selectedCategory === category.id
+                                className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 ${selectedCategory === category.id
                                     ? 'bg-blue-500 text-white shadow-md'
                                     : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
                                     }`}
@@ -241,7 +241,7 @@ const AnnualAuditPlans = () => {
                             </button>
                         </div>
 
-                        <button className="flex items-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <button className="flex items-center bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
                             <IconPlus className="w-4 h-4 mr-2" />
                             New Audit Plan
                         </button>
@@ -255,37 +255,37 @@ const AnnualAuditPlans = () => {
                             <table className="w-full">
                                 <thead className="bg-slate-50 border-b border-slate-200">
                                     <tr>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Reference</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Audit Title</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Audit Area</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Lead Auditor</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Category</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Start Date</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">End Date</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Status</th>
-                                        <th className="text-left py-4 px-6 font-medium text-slate-600">Actions</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Reference</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Audit Title</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Audit Area</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Lead Auditor</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Category</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Start Date</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">End Date</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Status</th>
+                                        <th className="text-left py-4 px-6 text-slate-600">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {currentAudits.map((audit) => (
                                         <tr key={audit.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                            <td className="py-4 px-6 text-slate-800 font-medium">{audit.reference}</td>
+                                            <td className="py-4 px-6 text-slate-800">{audit.reference}</td>
                                             <td className="py-4 px-6">
-                                                <div className="text-blue-600 font-medium hover:text-blue-800 cursor-pointer">
+                                                <div className="text-blue-600 hover:text-blue-800 cursor-pointer">
                                                     {audit.title}
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 text-slate-600">{audit.auditArea}</td>
                                             <td className="py-4 px-6 text-slate-600">{audit.leadAuditor}</td>
                                             <td className="py-4 px-6">
-                                                <span className={`font-medium ${getCategoryColor(audit.category)}`}>
+                                                <span className={`${getCategoryColor(audit.category)}`}>
                                                     {audit.category}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6 text-slate-600">{formatDate(audit.startDate)}</td>
                                             <td className="py-4 px-6 text-slate-600">{formatDate(audit.endDate)}</td>
                                             <td className="py-4 px-6">
-                                                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(audit.status)}`}>
+                                                <span className={`px-3 py-1 rounded-full text-sm border ${getStatusColor(audit.status)}`}>
                                                     {audit.status}
                                                 </span>
                                             </td>
@@ -381,17 +381,17 @@ const AnnualAuditPlans = () => {
                             <div key={audit.id} className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center space-x-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(audit.category)} bg-slate-100`}>
+                                        <span className={`px-2 py-1 rounded text-xs ${getCategoryColor(audit.category)} bg-slate-100`}>
                                             {audit.category}
                                         </span>
-                                        <span className="text-purple-600 font-medium">{audit.auditArea}</span>
+                                        <span className="text-purple-600">{audit.auditArea}</span>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(audit.status)}`}>
+                                    <span className={`px-3 py-1 rounded-full text-sm border ${getStatusColor(audit.status)}`}>
                                         {audit.status}
                                     </span>
                                 </div>
 
-                                <h3 className="text-lg font-semibold text-slate-800 mb-3">{audit.title}</h3>
+                                <h3 className="text-lg text-slate-800 mb-3">{audit.title}</h3>
 
                                 <div className="space-y-2 text-sm text-slate-600 mb-4">
                                     <div>
@@ -436,7 +436,7 @@ const AnnualAuditPlans = () => {
             {showManageModal && selectedAudit && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                        <h3 className="text-lg font-semibold mb-4">Manage Audit</h3>
+                        <h3 className="text-lg mb-4">Manage Audit</h3>
 
                         <div className="mb-4">
                             <p className="text-sm text-slate-600 mb-2">Audit Reference:</p>
@@ -445,7 +445,7 @@ const AnnualAuditPlans = () => {
 
                         <div className="mb-4">
                             <p className="text-sm text-slate-600 mb-2">Current Status:</p>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedAudit.status)}`}>
+                            <span className={`px-3 py-1 rounded-full text-sm border ${getStatusColor(selectedAudit.status)}`}>
                                 {selectedAudit.status}
                             </span>
                         </div>

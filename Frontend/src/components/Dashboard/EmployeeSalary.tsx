@@ -21,14 +21,14 @@ const EmployeeSalary = () => {
         <Card shadow="sm" p="md" radius="md" withBorder>
 
             <div className='flex  justify-between flex-col  '>
-                <Text size="lg" fw={600} >Employee Salary</Text>
+                <Text size="lg" >Employee Salary</Text>
                 <Text size="sm" color="dimmed">Every month</Text>
             </div>
 
             <Stack gap={10}>
                 <Box className='flex justify-between '>
-                    <Text size="sm" fw={600}>Salary: $36,358</Text>
-                    <Text size="sm" fw={600}>Profit: $5,296</Text>
+                    <Text size="sm">Salary: $36,358</Text>
+                    <Text size="sm">Profit: $5,296</Text>
                 </Box>
 
                 <Box mt="md">

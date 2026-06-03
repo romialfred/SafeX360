@@ -1,54 +1,44 @@
-import { Text, Breadcrumbs, Button } from '@mantine/core';
+import { Button } from '@mantine/core';
 import RiskTable from './RiskRegister/RiskTable';
-import { Link, useNavigate } from 'react-router-dom';
-import { IconPlus } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { IconPlus, IconFileText } from '@tabler/icons-react';
+import PageHeader from '../UtilityComp/PageHeader';
 
 const RiskRegister = () => {
     const navigate = useNavigate();
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
-            case 'Uncontrolled': return 'red';
-            case 'Partially Controlled': return 'orange';
-            case 'Under Control': return 'green';
+            case 'uncontrolled': return 'red';
+            case 'partially controlled': return 'orange';
+            case 'under control': return 'green';
             default: return 'gray';
         }
     };
     return (
-        <div className='flex flex-col gap-5'>
-            <div className='flex justify-between items-center'>
-
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Risk Catalog & Tracking</div>
-                    <Breadcrumbs mt="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-
-                        <Text variant="gradient">Risk Catalog & Tracking</Text>
-                    </Breadcrumbs>
-                </div>
-                <Button
-                    leftSection={<IconPlus size={16} />}
-                    onClick={() => navigate('register-form')}
-                >
-                    New Risk
-                </Button>
-            </div>
-
-            <p className=' italic '>Comprehensive risk analysis and monitoring system</p>
-
-
-
-
-
-
-            <RiskTable
-
-
-                getStatusColor={getStatusColor}
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Risques' },
+                    { label: 'Registre des risques' },
+                ]}
+                icon={<IconFileText size={22} stroke={2} />}
+                iconColor="red"
+                title="Registre des risques"
+                subtitle="Catalogue complet et suivi des risques HSE — analyse, contrôles et plans d'action"
+                actions={
+                    <Button
+                        size="sm"
+                        color="red"
+                        leftSection={<IconPlus size={14} />}
+                        onClick={() => navigate('register-form')}
+                    >
+                        Nouveau risque
+                    </Button>
+                }
             />
 
-
+            <RiskTable getStatusColor={getStatusColor} />
         </div>
     );
 };

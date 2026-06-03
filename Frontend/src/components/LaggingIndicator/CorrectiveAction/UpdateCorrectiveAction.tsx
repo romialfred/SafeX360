@@ -139,7 +139,7 @@ const UpdateCorrectiveAction = () => {
     <div className="flex flex-col gap-5 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Action Plan</div>
+          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Action Plan</div>
           <Breadcrumbs mt="xs">
             <Link className="hover:!underline" to="/">
               <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
@@ -162,7 +162,7 @@ const UpdateCorrectiveAction = () => {
                 <div className="flex items-center gap-2">
                   <IconFileText className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-sm font-semibold text-blue-900">Action Plan Details</p>
+                    <p className="text-sm text-blue-900">Action Plan Details</p>
                     <p className="text-xs text-blue-700">Review the corrective action context and assignments.</p>
                   </div>
                 </div>
@@ -237,7 +237,7 @@ const UpdateCorrectiveAction = () => {
               <div className="flex items-center gap-2">
                 <IconClock className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm font-semibold text-blue-900">Status Update</p>
+                  <p className="text-sm text-blue-900">Status Update</p>
                   <p className="text-xs text-blue-700">Update progress and capture corrective actions taken.</p>
                 </div>
               </div>
@@ -246,9 +246,9 @@ const UpdateCorrectiveAction = () => {
 
           {cannotUpdate ? (
             <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-green-50 border-green-200' : isCancelled ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-              {isCompleted && (<Text c="green" fw={600}>This action is already completed (100% or status Completed). Further updates are not allowed.</Text>)}
-              {isPending && (<Text c="yellow" fw={600}>This action is pending approval. Updates are not allowed until it is approved.</Text>)}
-              {isCancelled && (<Text c="red" fw={600}>This action has been cancelled. Further updates are not allowed.</Text>)}
+              {isCompleted && (<Text c="green">This action is already completed (100% or status Completed). Further updates are not allowed.</Text>)}
+              {isPending && (<Text c="yellow">This action is pending approval. Updates are not allowed until it is approved.</Text>)}
+              {isCancelled && (<Text c="red">This action has been cancelled. Further updates are not allowed.</Text>)}
             </Card>
           ) : (
             <form className='space-y-3' onSubmit={form.onSubmit(handleSubmit)}>
@@ -269,10 +269,10 @@ const UpdateCorrectiveAction = () => {
         {/* Right Side: History */}
         {selectedRow.progress >= 0 && (
           <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200 ">
-            <p className="text-lg items-center font-semibold mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
+            <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
             {actionHistory.length === 0 && (
               <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Tips</h4>
+                <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Tips</h4>
                 <ul className="text-xs text-blue-700 space-y-1">
                   <li>• Update progress regularly</li>
                   <li>• Add details about obstacles encountered</li>
@@ -290,7 +290,7 @@ const UpdateCorrectiveAction = () => {
                     {/* Header */}
                     <div className="flex justify-between items-center">
                       <div className="rounded-4xl">
-                        <p className="text-sm font-medium text-amber-800 flex gap-1 p-1 items-center">
+                        <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
                           <IconClock /> {formatDateShort(x.createdAt)}
                         </p>
                       </div>

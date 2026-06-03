@@ -34,7 +34,7 @@ const DashboardLayout = () => {
                 <div className="flex flex-col w-full h-screen">
                     <Header />
 
-                    <div className={`relative pt-15 ${overlay ? "h-screen overflow-y-hidden" : ""} `}>
+                    <div className={`relative pt-[120px] ${overlay ? "h-screen overflow-y-hidden" : ""} `}>
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded}
                             zIndex={1000}

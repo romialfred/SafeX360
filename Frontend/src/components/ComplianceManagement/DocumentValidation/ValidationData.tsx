@@ -337,7 +337,7 @@ const ValidationData = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">{card.label}</p>
-                                    <p className={`text-2xl font-semibold ${card.valueColor}`}>{card.value}</p>
+                                    <p className={`text-2xl ${card.valueColor}`}>{card.value}</p>
                                 </div>
                             </div>
                         </div>

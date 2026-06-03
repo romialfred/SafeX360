@@ -11,7 +11,7 @@ const InvestigationReport = ({ form }: any) => {
             </div>
             <div className="bg-blue-50 border border-blue-600 rounded-xl shadow-sm p-4">
 
-                <Title order={4} className="text-blue-500 font-semibold">
+                <Title order={4} className="text-blue-500">
                     Report Guidelines
                 </Title>
 

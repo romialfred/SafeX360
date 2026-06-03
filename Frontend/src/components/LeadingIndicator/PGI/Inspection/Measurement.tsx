@@ -68,7 +68,7 @@ const Measurement = ({ form, employee }: any) => {
     const handleRemove = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className="font-semibold text-2xl">Are you sure?</span>,
+                title: <span className="text-2xl">Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -132,7 +132,7 @@ const Measurement = ({ form, employee }: any) => {
         console.log(values);
 
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -176,7 +176,7 @@ const Measurement = ({ form, employee }: any) => {
                     <Card key={index} shadow="sm" radius="md" withBorder className="bg-white p-4">
                         <Card.Section withBorder inheritPadding py="xs">
                             <Group justify="space-between" align="center">
-                                <Text size="lg" fw={500}>
+                                <Text size="lg">
                                     {record[x.measurementId]?.name}
                                 </Text>
 
@@ -243,7 +243,7 @@ const Measurement = ({ form, employee }: any) => {
                 closeOnClickOutside={false}
                 closeOnEscape={false}
                 title={
-                    <h1 className="text-lg font-medium text-blue-500">
+                    <h1 className="text-lg text-blue-500">
                         Add Action Plan
                     </h1>
                 }

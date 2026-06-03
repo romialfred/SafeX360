@@ -55,7 +55,7 @@ const EventsCard = ({ event }: EventsCardProps) => {
             </div>
 
             <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-800 leading-tight">{event.title}</h3>
+                <h3 className="text-lg text-gray-800 leading-tight">{event.title}</h3>
                 <div dangerouslySetInnerHTML={{ __html: description }} className="text-sm text-gray-600 font-light line-clamp-3" />
             </div>
 

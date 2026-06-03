@@ -13,7 +13,7 @@ const TopPerformers = () => {
         <Card shadow="sm" p="lg" radius="md" withBorder >
             <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <Box>
-                    <Text size="lg" fw={700}>Top Projects</Text>
+                    <Text size="lg">Top Projects</Text>
                     <Text size="sm" color="dimmed">Best Products</Text>
                 </Box>
                 <Select
@@ -41,7 +41,7 @@ const TopPerformers = () => {
                             <td style={{ padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
                                 <Avatar src={basic.imgsrc} alt={basic.name} radius="xl" size={40} />
                                 <Box>
-                                    <Text size="sm" fw={600}>{basic.name}</Text>
+                                    <Text size="sm">{basic.name}</Text>
                                     <Text size="xs" color="dimmed">{basic.post}</Text>
                                 </Box>
                             </td>

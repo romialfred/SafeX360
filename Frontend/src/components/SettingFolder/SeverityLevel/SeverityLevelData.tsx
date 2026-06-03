@@ -244,7 +244,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -397,10 +397,10 @@ const SeverityLevelData = ({ opened, close }: any) => {
             <div className="">
                 <div>
                     <div className="flex justify-between items-center gap-3 mb-1">
-                        <span className={`${levelColorMap[item.level]} text-sm font-semibold px-3 py-1 rounded-full`}>
+                        <span className={`${levelColorMap[item.level]} text-sm px-3 py-1 rounded-full`}>
                             {severityMap[item.level] || "Unknown"}
                         </span>
-                        <h2 className="text-xl font-semibold text-gray-800">{item.name}</h2>
+                        <h2 className="text-lg text-gray-800">{item.name}</h2>
                         <Tag severity={item.status === "ACTIVE" ? "success" : item.status === "INACTIVE" ? "danger" : "info"}> {item.status}</Tag>
                     </div>
                     <p className="text-gray-600 text-sm mt-2">{item.description}</p>
@@ -504,7 +504,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                 </div>
             )}
             <Modal opened={opened} size="auto" onClose={handleClose} centered title={
-                <div className="text-lg font-medium text-blue-500">
+                <div className="text-lg text-blue-500">
                     Create Severity Level
                 </div>
             }>
@@ -538,7 +538,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                                     />
                                     <div className="space-y-3">
 
-                                        <div className=" font-medium ">Examples</div>
+                                        <div className=" ">Examples</div>
                                         {
                                             item.examples?.map((_x, idx) => < TextInput key={idx} withAsterisk placeholder="Enter example" {...form.getInputProps(`catDesc.${index}.examples.${idx}.desc`)} rightSection={<ActionIcon onClick={() => form.removeListItem(`catDesc.${index}.examples`, idx)} color="red"><IconTrash /></ActionIcon>} />
                                             )}
@@ -555,7 +555,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                 </form>
             </Modal>
             <Modal opened={openedUpdate} size="xl" onClose={closeUpdate} centered title={
-                <div className="text-lg font-medium text-blue-500">
+                <div className="text-lg text-blue-500">
                     Update Severity Level
                 </div>
             }>
@@ -569,7 +569,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
             </Modal>
 
             <Modal opened={openedExample} size="md" onClose={closeExample} centered title={
-                <div className="text-lg font-medium text-blue-500">
+                <div className="text-lg text-blue-500">
                     Add New Example
                 </div>
             }>

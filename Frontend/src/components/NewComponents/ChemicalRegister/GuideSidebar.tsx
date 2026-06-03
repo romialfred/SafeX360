@@ -22,7 +22,7 @@ const GuideCard = ({ section }: { section: GuideSection }) => {
                 <div className={`p-2 rounded-lg border ${accentClasses}`}>
                     <Icon className={`w-5 h-5 ${color}`} />
                 </div>
-                <h4 className="text-base font-semibold text-gray-900">{title}</h4>
+                <h4 className="text-base text-gray-900">{title}</h4>
             </div>
             <div className={`rounded-lg p-4 border bg-white/60 ${accentClasses}`}>
                 <ul className="space-y-2 text-xs text-gray-700">

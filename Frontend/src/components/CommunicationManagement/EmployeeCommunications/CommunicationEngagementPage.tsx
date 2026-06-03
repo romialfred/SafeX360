@@ -41,25 +41,25 @@ const CommunicationEngagementPage = ({ communication }: any) => (
         <Grid mb="md">
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#E7F5FF' }}>
-                    <Text size="lg" fw={700} c="blue">{6}</Text>
+                    <Text size="lg" c="blue">{6}</Text>
                     <Text size="sm" c="dimmed">Total Recipients</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#D3F9D8' }}>
-                    <Text size="lg" fw={700} c="green">{5}</Text>
+                    <Text size="lg" c="green">{5}</Text>
                     <Text size="sm" c="dimmed">Read</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#D1F2EB' }}>
-                    <Text size="lg" fw={700} c="teal">{4}</Text>
+                    <Text size="lg" c="teal">{4}</Text>
                     <Text size="sm" c="dimmed">Acknowledged</Text>
                 </Card>
             </Grid.Col>
             <Grid.Col span={3}>
                 <Card withBorder p="md" style={{ backgroundColor: '#FFF3CD' }}>
-                    <Text size="lg" fw={700} c="orange">
+                    <Text size="lg" c="orange">
                         {2}
                     </Text>
                     <Text size="sm" c="dimmed">Pending</Text>
@@ -72,7 +72,7 @@ const CommunicationEngagementPage = ({ communication }: any) => (
         <Grid>
             <Grid.Col span={6}>
                 <Box mb="md">
-                    <Text size="sm" fw={500} mb="xs">Read Rate</Text>
+                    <Text size="sm" mb="xs">Read Rate</Text>
                     <Progress
                         value={(5 / 6) * 100}
                         color="blue"
@@ -85,7 +85,7 @@ const CommunicationEngagementPage = ({ communication }: any) => (
             </Grid.Col>
             <Grid.Col span={6}>
                 <Box mb="md">
-                    <Text size="sm" fw={500} mb="xs">Acknowledgment Rate</Text>
+                    <Text size="sm" mb="xs">Acknowledgment Rate</Text>
                     <Progress
                         value={(4 / 6) * 100}
                         color="green"

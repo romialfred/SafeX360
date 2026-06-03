@@ -50,16 +50,16 @@ const ResetPassword = () => {
 
 
     return <div style={{ backgroundImage: `url(${bgImg})` }} className="flex flex-col p-5 gap-5 items-center bg-light-bg min-h-screen justify-center bg-cover bg-center">
-        <div className="flex gap-2 text-2xl h-32 items-center font-semibold text-neutral-50">
+        <div className="flex gap-2 text-2xl h-32 items-center text-neutral-50">
             <img className="object-contain !h-24  rounded-2xl  !w-auto" src={name} alt="" />
         </div>
         <form onSubmit={form.onSubmit(handleSubmit)} className="w-[28rem] flex flex-col gap-5 bg-white p-7 shadow-md rounded-xl">
-            <div className="text-2xl self-center font-medium  bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Reset Password</div>
+            <div className="text-2xl self-center  bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Reset Password</div>
             <TextInput size="md" {...form.getInputProps("email")} leftSection={<IconUser size={16} />} label="Email" withAsterisk placeholder="Enter email" rightSectionWidth="xl" />
             <TextInput size="md" {...form.getInputProps("login")} leftSection={<IconUser size={16} />} label="Login" withAsterisk placeholder="Enter login" rightSectionWidth="xl" />
 
             <Button loading={loading} size="md" type="submit" variant="gradient">Send temporary Password</Button>
-            <div className="text-center ">Remember your password? <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-medium hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
+            <div className="text-center ">Remember your password? <span className=" bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hover:underline cursor-pointer" onClick={() => navigate("/login")}>Login</span> </div>
         </form>
     </div>
 }

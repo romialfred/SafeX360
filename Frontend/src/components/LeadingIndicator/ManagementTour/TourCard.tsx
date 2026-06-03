@@ -21,25 +21,25 @@ const TourCard = ({ tourData }: TourDataProps) => {
     return (
         <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-md hover:scale-[1.02] cursor-pointer">
             <div className="flex gap-4">
-                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                     {activityTypesMap[tourData.type] || "N/A"}
                 </span>
-                <span className={`text-sm px-2 py-1 rounded-lg font-medium ${statusColor}`}>
+                <span className={`text-sm px-2 py-1 rounded-lg ${statusColor}`}>
                     {actionStatusesMap[tourData.status] || tourData.status}
                 </span>
             </div>
 
-            <h2 className="font-semibold text-gray-900 text-base">{tourData.title}</h2>
+            <h2 className="text-gray-900 text-base">{tourData.title}</h2>
 
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Frequency: {tourData.frequency}
             </div>
 
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Planned Date: {formatDateWithDay(tourData.plannedDate)}
             </div>
 
-            <div className="text-gray-500 text-sm font-medium">
+            <div className="text-gray-500 text-sm">
                 Time: {formatTo12Hour(tourData.startTime)} - {formatTo12Hour(tourData.endTime)}
             </div>
 

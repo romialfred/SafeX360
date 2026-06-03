@@ -28,7 +28,7 @@ const AuditDashChart = ({ audits = [], auditAreaMap = {} as Record<string, any> 
         <Card shadow="xs" radius="md" withBorder p="lg" className="w-full">
             <div className="flex justify-between items-center">
                 <div className="mb-4">
-                    <h1 className="text-xl font-bold text-gray-600">Process Audits by Area</h1>
+                    <h1 className="text-lg text-gray-600">Process Audits by Area</h1>
                 </div>
             </div>
             <BarChart

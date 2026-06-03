@@ -1,13 +1,14 @@
-import { Breadcrumbs, Text, Tabs, Card, ScrollArea, rem, Loader, Center, Badge } from "@mantine/core";
+import { Text, Tabs, Card, ScrollArea, rem, Loader, Center, Badge } from "@mantine/core";
 import {
     IconClockHour4,
     IconAlertTriangle,
     IconFileX,
     IconCircleCheck,
     IconAlertOctagon,
+    IconShieldCheck,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import PageHeader from "../../UtilityComp/PageHeader";
 import ExpiredContent from "./ExpiredContent";
 import UpcomingExpiry from "./UpcomingExpiry";
 import MissingFile from "./MissingFile";
@@ -133,19 +134,20 @@ const CompDashboard = () => {
     };
 
     return (
-        <div className="flex flex-col gap-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Compliance Dashboard</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Compliance Dashboard</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-            <p className=' italic '>Real-time overview of regulatory requirements, assignments, and compliance performance tracking</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Conformité Réglementaire' },
+                    { label: 'Tableau de bord' },
+                ]}
+                icon={<IconShieldCheck size={22} stroke={2} />}
+                iconColor="teal"
+                title="Tableau de bord — Conformité Réglementaire"
+                subtitle="Suivi en temps réel des exigences légales, affectations et performance de conformité"
+            />
 
-            <Card shadow="xl" radius="lg" withBorder className="overflow-hidden border-slate-200">
+            <Card shadow="sm" radius="lg" withBorder className="overflow-hidden border-slate-200">
                 <Card.Section
                     className="px-6 py-5"
                     style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #e0f2fe 50%, #ede9fe 100%)' }}
@@ -153,17 +155,17 @@ const CompDashboard = () => {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="rounded-full bg-white/70 p-2 shadow-sm">
-                                <IconAlertOctagon size={26} className="text-blue-600" />
+                                <IconAlertOctagon size={22} className="text-blue-600" />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <Text size="lg" fw={700} c="blue.9">Action Required</Text>
-                                <Text size="sm" c="blue.7">
-                                    Track overdue, upcoming, and missing compliance tasks in real time.
+                                <Text size="md" c="blue.9">Actions requises</Text>
+                                <Text size="xs" c="blue.7">
+                                    Suivi des tâches de conformité en retard, à venir et manquantes.
                                 </Text>
                             </div>
                         </div>
                         <Badge size="lg" variant="light" color="blue" radius="sm" className="!bg-white/80 !text-blue-700 shadow-sm">
-                            {orderedStatuses.reduce((sum, status) => sum + (status.count ?? 0), 0)} open items
+                            {orderedStatuses.reduce((sum, status) => sum + (status.count ?? 0), 0)} éléments ouverts
                         </Badge>
                     </div>
                 </Card.Section>
@@ -184,10 +186,10 @@ const CompDashboard = () => {
                                         key={status.code}
                                         className={`rounded-xl border border-white/60 ${styles.bg} px-4 py-3 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] ${styles.hoverBg} hover:shadow-md`}
                                     >
-                                        <Text size="xs" fw={600} className={`uppercase tracking-wide ${styles.text}`}>
+                                        <Text size="xs" className={`uppercase tracking-wide ${styles.text}`}>
                                             {status.label}
                                         </Text>
-                                        <Text size="xl" fw={700} className={styles.text}>
+                                        <Text size="xl" className={styles.text}>
                                             {status.count ?? 0}
                                         </Text>
                                     </div>
@@ -205,7 +207,7 @@ const CompDashboard = () => {
                             keepMounted={false}
                             classNames={{
                                 list: "flex flex-wrap gap-3",
-                                tab: "data-[active=true]:!bg-blue-600 data-[active=true]:!text-white !bg-blue-50 !text-blue-600 !font-medium !px-5 !py-2 !rounded-full !shadow-sm transition-colors",
+                                tab: "data-[active=true]:!bg-blue-600 data-[active=true]:!text-white !bg-blue-50 !text-blue-600 !!px-5 !py-2 !rounded-full !shadow-sm transition-colors",
                             }}
                         >
                             <Tabs.List>
@@ -242,7 +244,7 @@ const CompDashboard = () => {
                                                     renderTabContent(status)
                                                 ) : (
                                                     <Center className="py-10">
-                                                        <Text className="text-gray-500">No records found for {status.label.toLowerCase()}.</Text>
+                                                        <Text className="text-gray-500">Aucun enregistrement pour : {status.label.toLowerCase()}.</Text>
                                                     </Center>
                                                 )}
                                             </div>
@@ -254,7 +256,7 @@ const CompDashboard = () => {
                     ) : (
                         <Card shadow="sm" radius="lg" withBorder style={{ maxHeight: rem(320), overflow: 'hidden' }}>
                             <Center className="py-10">
-                                {dashboardLoading ? <Loader color="blue" /> : <Text className="text-gray-500">No compliance action items available.</Text>}
+                                {dashboardLoading ? <Loader color="blue" /> : <Text className="text-gray-500">Aucune action de conformité en attente.</Text>}
                             </Center>
                         </Card>
                     )}

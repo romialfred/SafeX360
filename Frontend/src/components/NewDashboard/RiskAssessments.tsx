@@ -31,7 +31,7 @@ const RiskAssessments = () => {
     return (
         <div className="p-6 flex flex-col gap-5 bg-white rounded-xl shadow-lg border border-gray-200 ">
             {/* Header */}
-            <Text size="xl" fw={700} className="mb-4 text-gray-700">
+            <Text size="xl" className="mb-4 text-gray-700">
                 Risk Assessments
             </Text>
 
@@ -49,14 +49,14 @@ const RiskAssessments = () => {
                     <tbody className="divide-y divide-gray-200">
                         {riskAssessments.map((risk, index) => (
                             <tr key={index} className="hover:bg-gray-50 transition-all border-b border-gray-300">
-                                <td className="p-3 text-gray-600 font-medium">{risk.area}</td>
+                                <td className="p-3 text-gray-600">{risk.area}</td>
                                 <td className="p-3">
 
-                                    <Badge className={`p-3 rounded-lg text-center font-semibold ${risk.riskColor}`} >
+                                    <Badge className={`p-3 rounded-lg text-center ${risk.riskColor}`} >
                                         {risk.riskLevel}
                                     </Badge>
                                 </td>
-                                <td className="p-3 text-gray-600 font-medium">{risk.nextDue}</td>
+                                <td className="p-3 text-gray-600">{risk.nextDue}</td>
                                 <td className="p-3">
                                     <Badge className={`p-2 px-4 rounded-lg ${risk.statusColor}`} >
                                         {risk.status}

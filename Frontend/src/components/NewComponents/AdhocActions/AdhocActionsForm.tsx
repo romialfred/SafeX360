@@ -71,7 +71,7 @@ const AdhocActionsForm = () => {
         <div className="p-5 flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         New Improvement Idea
                     </div>
                     <Breadcrumbs mt="xs">
@@ -126,7 +126,7 @@ const AdhocActionsForm = () => {
                                 className="border border-indigo-200"
                             >
                                 <div className="flex flex-col gap-1">
-                                    <Text size="sm" c="indigo.9" fw={600}>Submission Notice</Text>
+                                    <Text size="sm" c="indigo.9">Submission Notice</Text>
                                     <Text size="sm" c="dimmed">This idea will be created as pending and routed for manager approval.</Text>
                                     <Group gap="xs" mt={4}>
                                         <Badge leftSection={<IconClockHour3 size={12} />} color="yellow" variant="light">Status: Pending</Badge>

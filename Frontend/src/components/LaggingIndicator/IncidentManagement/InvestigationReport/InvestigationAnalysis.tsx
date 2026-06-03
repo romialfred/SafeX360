@@ -38,7 +38,7 @@ const InvestigationAnalysis = ({ form }: any) => {
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-xl font-semibold  text-gray-800">Investigation Analysis</h2>
+                    <h2 className="text-lg  text-gray-800">Investigation Analysis</h2>
                     <p className='text-gray-500'>Incident Cause Analysis Method - Select potential causes and provide detailed analysis</p>
                 </div>
 
@@ -84,7 +84,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                                                     <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                                     <Text
                                                         size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                                     >
                                                         {type}
                                                     </Text>
@@ -126,7 +126,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                                                     <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                                     <Text
                                                         size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                                     >
                                                         {type}
                                                     </Text>
@@ -170,7 +170,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                                                     <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                                     <Text
                                                         size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                                     >
                                                         {type}
                                                     </Text>
@@ -215,7 +215,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                                                     <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                                     <Text
                                                         size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                                     >
                                                         {type}
                                                     </Text>
@@ -242,7 +242,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                             <FileUpdateDropzone form={form} id="evidence" />
                             <div className="bg-blue-50 border border-blue-600 rounded-xl shadow-sm p-4">
 
-                                <Title order={4} className="text-blue-500 font-semibold">
+                                <Title order={4} className="text-blue-500">
                                     Evidence Guidelines
                                 </Title>
 
@@ -261,7 +261,7 @@ const InvestigationAnalysis = ({ form }: any) => {
             </Accordion>
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-600 shadow-sm">
-                <h2 className="text-lg font-semibold text-blue-500 mb-4">Analysis Progress</h2>
+                <h2 className="text-lg text-blue-500 mb-4">Analysis Progress</h2>
 
                 <div className="flex  gap-3">
                     {progressItems.map((item, index) => (

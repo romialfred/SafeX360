@@ -13,10 +13,19 @@ import {
     IconTarget,
     IconChartBar,
     IconCircleCheck,
+    IconCalendar,
+    IconLifebuoy,
+    IconAlertOctagon,
+    IconFlame,
+    IconCircleDashedCheck,
+    IconChartPie,
+    IconHelp,
 } from '@tabler/icons-react';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
 import { isModuleEnabled } from '../data/ModuleConfig';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Tooltip } from '@mantine/core';
 
 type ModuleItem = string | { label: string; url: string; moduleId?: string };
 
@@ -25,53 +34,52 @@ interface ModuleCard {
     title: string;
     description: string;
     icon: React.ComponentType<any>;
-    color: string;
-    bgColor: string;
+    color: string;     // text color class (text-{color}-700)
+    bgColor: string;   // composite classes for translucent backgrounds
     items: ModuleItem[];
     url: string;
     requiredModuleId?: string;
 }
 
-
 const moduleGroups: ModuleCard[] = [
     {
         id: 'preventives-activities',
-        title: 'Preventives Activities',
-        description: 'Proactive risk management and prevention',
+        title: 'Activités Préventives',
+        description: 'Gestion proactive des risques et prévention',
         icon: IconShield,
-        color: 'text-red-600',
-        bgColor: 'bg-red-50/70 border-red-200/50 hover:bg-red-100/80 hover:border-red-300/70',
+        color: 'text-green-700',
+        bgColor: 'bg-green-50/70 border-green-200/60',
         items: ['Central Findings', 'Inspections Managers', 'Meeting Managers', 'Leadership Walk'],
         url: '/non-conformity'
     },
     {
         id: 'preventives-activities-2',
-        title: 'Monitoring Activities',
-        description: 'Incident management and investigations',
+        title: 'Surveillance des Activités',
+        description: 'Gestion et investigation des incidents',
         icon: IconActivity,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50/70 border-purple-200/50 hover:bg-purple-100/80 hover:border-purple-300/70',
+        color: 'text-blue-700',
+        bgColor: 'bg-blue-50/70 border-blue-200/60',
         items: ['Incidents Management', 'Investigations', 'Action Plans'],
         url: '/incidents'
     },
     {
         id: 'actions-managers',
-        title: 'Actions Managers',
-        description: 'Action plans tracking and management',
+        title: 'Actions Correctives',
+        description: "Suivi et pilotage des plans d'actions",
         icon: IconTarget,
-        color: 'text-gray-700',
-        bgColor: 'bg-gray-50/70 border-gray-200/50 hover:bg-gray-100/80 hover:border-gray-300/70',
+        color: 'text-orange-700',
+        bgColor: 'bg-orange-50/70 border-orange-200/60',
         items: ['Pending Actions', 'Action Plan', 'Recommendations', 'Improvement Ideas'],
         url: '/corrective'
     },
     {
         id: 'pending-actions-hub',
         requiredModuleId: 'pending-actions',
-        title: 'Action Follow-up Hub',
-        description: 'Stay on top of open reviews and approvals',
+        title: 'Hub de Suivi',
+        description: 'Validations et approbations en attente',
         icon: IconCircleCheck,
-        color: 'text-indigo-600',
-        bgColor: 'bg-indigo-50/70 border-indigo-200/50 hover:bg-indigo-100/80 hover:border-indigo-300/70',
+        color: 'text-teal-700',
+        bgColor: 'bg-teal-50/70 border-teal-200/60',
         items: [
             { label: 'Pending Actions', url: '/pending-actions', moduleId: 'pending-actions' },
             { label: 'PPE Requests', url: '/ppe-request', moduleId: 'ppe-request' },
@@ -82,321 +90,310 @@ const moduleGroups: ModuleCard[] = [
     },
     {
         id: 'risk-management',
-        title: 'Risk Management',
-        description: 'Risk assessment and control',
+        title: 'Gestion des Risques',
+        description: 'Évaluation et maîtrise des risques HSE',
         icon: IconAlertTriangle,
-        color: 'text-orange-600',
-        bgColor: 'bg-orange-50/70 border-orange-200/50 hover:bg-orange-100/80 hover:border-orange-300/70',
+        color: 'text-red-700',
+        bgColor: 'bg-red-50/70 border-red-200/60',
         items: ['Risk Overview', 'Risk Register', 'Risk Assessment', 'Chemical Register'],
         url: '/risks-overview'
     },
     {
         id: 'ppe-management',
-        title: 'PPE Management',
-        description: 'Personal protective equipment management',
+        title: 'Gestion des EPI',
+        description: 'Équipements de protection individuelle',
         icon: IconHelmet,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50/70 border-blue-200/50 hover:bg-blue-100/80 hover:border-blue-300/70',
+        color: 'text-yellow-700',
+        bgColor: 'bg-yellow-50/70 border-yellow-200/60',
         items: ['PPE Overview', 'PPE Monitoring', 'PPE Request'],
         url: '/ppe-management'
     },
-
     {
         id: 'audits-management',
-        title: 'Audits Management',
-        description: 'Audit planning and tracking',
+        title: 'Audits Internes',
+        description: "Programme d'audits ISO 19011",
         icon: IconClipboardCheck,
-        color: 'text-orange-600',
-        bgColor: 'bg-orange-50/70 border-orange-200/50 hover:bg-orange-100/80 hover:border-orange-300/70',
+        color: 'text-indigo-700',
+        bgColor: 'bg-indigo-50/70 border-indigo-200/60',
         items: ['Annual audit plan', 'Audits', 'Recommendations'],
         url: '/audit-management'
     },
     {
         id: 'compliance-management',
-        title: 'Compliance Management',
-        description: 'Regulatory and normative compliance',
+        title: 'Conformité Réglementaire',
+        description: 'Veille et conformité normative',
         icon: IconSquareCheck,
-        color: 'text-green-600',
-        bgColor: 'bg-green-50/70 border-green-200/50 hover:bg-green-100/80 hover:border-green-300/70',
-        items: [
-            'Requirements',
-            'Positions Assignments',
-            'Employee Assignments',
-
-        ],
+        color: 'text-emerald-700',
+        bgColor: 'bg-emerald-50/70 border-emerald-200/60',
+        items: ['Requirements', 'Positions Assignments', 'Employee Assignments'],
         url: '/compliance-dashboard'
     },
     {
+        id: 'planning',
+        title: 'Planification Annuelle',
+        description: 'Calendrier des activités HSE',
+        icon: IconCalendar,
+        color: 'text-amber-700',
+        bgColor: 'bg-amber-50/70 border-amber-200/60',
+        items: ['HS Activities Planning', 'Month Theme Subjects', 'Annual Audit Plan'],
+        url: '/hs-activities-planning'
+    },
+    {
         id: 'knowledge-management',
-        title: 'Knowledge Center',
-        description: 'Knowledge capitalization and sharing',
+        title: 'Centre de Connaissances',
+        description: 'Capitalisation et partage REX',
         icon: IconBook,
-        color: 'text-cyan-600',
-        bgColor: 'bg-cyan-50/70 border-cyan-200/50 hover:bg-cyan-100/80 hover:border-cyan-300/70',
+        color: 'text-cyan-700',
+        bgColor: 'bg-cyan-50/70 border-cyan-200/60',
         items: ['Lesson Learned', 'Document Manager'],
         url: '/lesson-learn'
     },
     {
         id: 'communication-management',
-        title: 'Safety Communication',
-        description: 'Communication and awareness',
+        title: 'Communication Sécurité',
+        description: 'Causeries, notifications, sensibilisation',
         icon: IconMessage,
-        color: 'text-pink-600',
-        bgColor: 'bg-pink-50/70 border-pink-200/50 hover:bg-pink-100/80 hover:border-pink-300/70',
+        color: 'text-pink-700',
+        bgColor: 'bg-pink-50/70 border-pink-200/60',
         items: ['Dashboard', 'HSE Communications', 'Notification Managers'],
         url: '/communication-dashboard'
     },
     {
         id: 'reports',
-        title: 'Report & Analytics Center',
-        description: 'Advanced reporting and business analytics',
+        title: 'Rapports & Analytics',
+        description: 'Reporting avancé et tableaux de bord',
         icon: IconChartBar,
-        color: 'text-emerald-600',
-        bgColor: 'bg-emerald-50/70 border-emerald-200/50 hover:bg-emerald-100/80 hover:border-emerald-300/70',
-        items: [
-            'Monthly Report',
-            'KPI Review',
-            'Performance Report',
-            'Corporate Report',
-
-        ],
+        color: 'text-teal-700',
+        bgColor: 'bg-teal-50/70 border-teal-200/60',
+        items: ['Monthly Report', 'KPI Review', 'Performance Report', 'Corporate Report'],
         url: '/monthly-reports'
     },
-    // {
-    //     id: 'users-management',
-    //     title: 'Users Management',
-    //     description: 'User access control and permissions',
-    //     icon: IconUsers,
-    //     color: 'text-indigo-600',
-    //     bgColor: 'bg-indigo-50/70 border-indigo-200/50 hover:bg-indigo-100/80 hover:border-indigo-300/70',
-    //     items: ['User Accounts', 'Role Management', 'Permission Control', 'Access Monitoring'],
-    //     url: '/users-management'
-    // },
-
+    {
+        id: 'help',
+        title: "Centre d'Aide",
+        description: 'Guides, documentation et support utilisateur',
+        icon: IconLifebuoy,
+        color: 'text-violet-700',
+        bgColor: 'bg-violet-50/70 border-violet-200/60',
+        items: ['Guides Pratiques', 'Aperçu Fonctionnalités', 'Documentation Technique'],
+        url: '/how-to'
+    },
     {
         id: 'iso-documents',
-        title: 'ISO Documents Review',
-        description: 'International standards documentation',
+        title: 'Documentation ISO',
+        description: 'Standards internationaux applicables',
         icon: IconFileText,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50/70 border-blue-200/50 hover:bg-blue-100/80 hover:border-blue-300/70',
-        items: [
-            'ISO 45001 - Occupational Health & Safety',
-            'ISO 19011 - Guidelines for Auditing',
-            'ISO 9001 - Quality Management Systems'
-        ],
+        color: 'text-slate-700',
+        bgColor: 'bg-slate-50/70 border-slate-200/60',
+        items: ['ISO 45001', 'ISO 19011', 'ISO 9001'],
         url: '/iso-documents'
-    }, {
+    },
+    {
         id: 'settings',
         title: 'Administration',
-        description: 'System configuration and preferences',
+        description: 'Configuration système et préférences',
         icon: IconSettings,
-        color: 'text-red-600',
-        bgColor: 'bg-red-50/70 border-red-200/50 hover:bg-red-100/80 hover:border-red-300/70',
-        items: [
-            'Incident Management',
-            'Places & Environment',
-            'Resources & Staff',
-            'Tools & Measurements',
-        ],
+        color: 'text-slate-700',
+        bgColor: 'bg-slate-50/70 border-slate-200/60',
+        items: ['Incident Management', 'Places & Environment', 'Resources & Staff', 'Tools & Measurements'],
         url: '/settings'
     }
 ];
 
+interface HSEKPIs {
+    openIncidents: number | null;
+    closedIncidents: number | null;
+    nearMisses: number | null;
+    capaCompletionRate: number | null;
+}
+
 const NewHomePage = () => {
     const [showModal, setShowModal] = React.useState(false);
     const [selectedModuleName, setSelectedModuleName] = React.useState('');
+    const [kpis, setKpis] = React.useState<HSEKPIs>({
+        openIncidents: null,
+        closedIncidents: null,
+        nearMisses: null,
+        capaCompletionRate: null,
+    });
     const navigate = useNavigate();
-    const alwaysAccessibleModuleIds = React.useMemo(() => new Set(['users-management', 'settings', 'iso-documents']), []);
+    const alwaysAccessibleModuleIds = React.useMemo(() => new Set(['users-management', 'settings', 'iso-documents', 'help']), []);
+
+    React.useEffect(() => {
+        const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:9000';
+        const opts = { withCredentials: true };
+        Promise.allSettled([
+            axios.get(`${apiBase}/hns/incidents/getAll`, opts),
+            axios.get(`${apiBase}/hns/corrective-action/getAll`, opts),
+        ]).then(([incidentsRes, capasRes]) => {
+            const incidents = incidentsRes.status === 'fulfilled' ? (incidentsRes.value.data || []) : [];
+            const capas = capasRes.status === 'fulfilled' ? (capasRes.value.data || []) : [];
+
+            const isOpen = (i: any) => {
+                const s = String(i.status || '').toUpperCase();
+                return s !== 'CLOSED' && s !== 'REJECTED';
+            };
+            const isClosed = (i: any) => String(i.status || '').toUpperCase() === 'CLOSED';
+
+            // Quasi-accidents : heuristique basée sur le titre des incidents seed (les vrais titres seed contiennent ces mots-clés)
+            const isNearMissTitle = (t: string) => {
+                if (!t) return false;
+                const low = t.toLowerCase();
+                return low.includes('quasi') || low.includes('near') || low.includes('manquant') || low.includes('non balisée') || low.includes('non porté') || low.includes('instable') || low.includes('mal arrimée');
+            };
+
+            const open = Array.isArray(incidents) ? incidents.filter(isOpen).length : 0;
+            const closed = Array.isArray(incidents) ? incidents.filter(isClosed).length : 0;
+            const nm = Array.isArray(incidents) ? incidents.filter((i: any) => isNearMissTitle(i.title)).length : 0;
+
+            const completedCapa = Array.isArray(capas) ? capas.filter((c: any) => {
+                const s = String(c.status || '').toUpperCase();
+                return s === 'COMPLETED' || s === '2';
+            }).length : 0;
+            const totalCapa = Array.isArray(capas) ? capas.length : 0;
+
+            setKpis({
+                openIncidents: open,
+                closedIncidents: closed,
+                nearMisses: nm,
+                capaCompletionRate: totalCapa > 0 ? Math.round((completedCapa / totalCapa) * 100) : null,
+            });
+        }).catch(() => { });
+    }, []);
 
     const isFeatureEnabled = React.useCallback((moduleId?: string) => {
-        if (!moduleId) {
-            return true;
-        }
-        if (alwaysAccessibleModuleIds.has(moduleId)) {
-            return true;
-        }
+        if (!moduleId) return true;
+        if (alwaysAccessibleModuleIds.has(moduleId)) return true;
         return isModuleEnabled(moduleId);
     }, [alwaysAccessibleModuleIds]);
 
     const handleModuleClick = (module: ModuleCard) => {
         const moduleKey = module.requiredModuleId ?? module.id;
         if (!isFeatureEnabled(moduleKey)) {
-            setSelectedModuleName(module.title || 'Unknown Module');
+            setSelectedModuleName(module.title || 'Module');
             setShowModal(true);
             return;
         }
         navigate(module.url);
     };
 
-    const handleItemClick = (module: ModuleCard, item: ModuleItem) => {
-        if (typeof item === 'string') {
-            return;
-        }
-        const targetModuleId = item.moduleId ?? module.requiredModuleId ?? module.id;
-        if (!isFeatureEnabled(targetModuleId)) {
-            setSelectedModuleName(item.label || module.title || 'Selected Module');
-            setShowModal(true);
-            return;
-        }
-        navigate(item.url);
-    };
-
     return (
         <>
             <div className="flex flex-col gap-5">
-                {/* Fixed Header */}
-                <div className="relative p-[2px] rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg">
-                    <div className="bg-gray-100 rounded-2xl p-3">
-                        <div className="flex flex-col items-center justify-center">
-                            {/* Gradient Text */}
-                            <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                                Health & Safety Management System
-                            </h1>
-                            <p className=" text-gray-700">
-                                Quick access to all your management modules
-                            </p>
+                {/* KPI : 4 cartes opérationnelles, design distinct des modules (gradient subtil, gros chiffre, accent gauche) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* 1. Incidents en cours */}
+                    <div className="relative bg-gradient-to-br from-orange-50 via-white to-white rounded-xl border border-orange-200/60 p-4 overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
+                        <div className="flex items-start justify-between mb-2">
+                            <div className="p-2 rounded-lg bg-orange-100/80">
+                                <IconAlertOctagon className="text-orange-700" size={18} stroke={2} />
+                            </div>
+                            <Tooltip label="Incidents dont le statut n'est ni clôturé ni rejeté" position="top" withArrow>
+                                <span className="text-[10px] uppercase tracking-wider text-orange-700 bg-orange-100/80 px-1.5 py-0.5 rounded">EN COURS</span>
+                            </Tooltip>
                         </div>
+                        <p className="text-2xl font-semibold text-slate-900 leading-none">{kpis.openIncidents ?? '·'}</p>
+                        <p className="text-xs text-slate-600 mt-1.5">Incidents en cours</p>
+                    </div>
+
+                    {/* 2. Incidents clôturés */}
+                    <div className="relative bg-gradient-to-br from-green-50 via-white to-white rounded-xl border border-green-200/60 p-4 overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+                        <div className="flex items-start justify-between mb-2">
+                            <div className="p-2 rounded-lg bg-green-100/80">
+                                <IconCircleDashedCheck className="text-green-700" size={18} stroke={2} />
+                            </div>
+                            <Tooltip label="Incidents totalement clôturés avec vérification d'efficacité" position="top" withArrow>
+                                <span className="text-[10px] uppercase tracking-wider text-green-700 bg-green-100/80 px-1.5 py-0.5 rounded">CLÔTURÉS</span>
+                            </Tooltip>
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 leading-none">{kpis.closedIncidents ?? '·'}</p>
+                        <p className="text-xs text-slate-600 mt-1.5">Incidents clôturés</p>
+                    </div>
+
+                    {/* 3. Quasi-accidents (Near Miss) */}
+                    <div className="relative bg-gradient-to-br from-blue-50 via-white to-white rounded-xl border border-blue-200/60 p-4 overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                        <div className="flex items-start justify-between mb-2">
+                            <div className="p-2 rounded-lg bg-blue-100/80">
+                                <IconFlame className="text-blue-700" size={18} stroke={2} />
+                            </div>
+                            <Tooltip label="Quasi-accidents et situations dangereuses signalés sans conséquence corporelle" position="top" withArrow>
+                                <span className="text-[10px] uppercase tracking-wider text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded">NEAR MISS</span>
+                            </Tooltip>
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 leading-none">{kpis.nearMisses ?? '·'}</p>
+                        <p className="text-xs text-slate-600 mt-1.5">Quasi-accidents recensés</p>
+                    </div>
+
+                    {/* 4. Taux clôture CAPA */}
+                    <div className="relative bg-gradient-to-br from-teal-50 via-white to-white rounded-xl border border-teal-200/60 p-4 overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500"></div>
+                        <div className="flex items-start justify-between mb-2">
+                            <div className="p-2 rounded-lg bg-teal-100/80">
+                                <IconChartPie className="text-teal-700" size={18} stroke={2} />
+                            </div>
+                            <Tooltip label="CAPA : Corrective and Preventive Actions. Pourcentage des actions correctives et préventives finalisées sur le total ouvert." position="top" withArrow multiline w={240}>
+                                <span className="text-[10px] uppercase tracking-wider text-teal-700 bg-teal-100/80 px-1.5 py-0.5 rounded cursor-help">CAPA <IconHelp size={10} style={{ display: 'inline', marginLeft: 1 }} /></span>
+                            </Tooltip>
+                        </div>
+                        <p className="text-2xl font-semibold text-slate-900 leading-none">{kpis.capaCompletionRate !== null ? `${kpis.capaCompletionRate}%` : '·'}</p>
+                        <p className="text-xs text-slate-600 mt-1.5">Taux de clôture CAPA</p>
                     </div>
                 </div>
 
+                {/* Section title */}
+                <div>
+                    <div className="mb-3 flex items-center gap-2">
+                        <h2 className="text-base text-slate-800">Accès aux modules HSE</h2>
+                        <span className="text-xs text-slate-500">· {moduleGroups.length} modules disponibles</span>
+                    </div>
 
-                {/* Content */}
-                < div className="" >
-                    {/* Quick Stats */}
-                    {/* < div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" >
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div className="flex items-center">
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <IconUsers className="text-blue-600" size={24} stroke={1.75} />
-                                </div>
-                                <div className="ml-4">
-                                    <p className="text-sm text-gray-500">Active Employees</p>
-                                    <p className="text-2xl font-bold text-gray-900">2,847</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div className="flex items-center">
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <IconSquareCheck className="text-green-600" size={24} stroke={1.75} />
-                                </div>
-                                <div className="ml-4">
-                                    <p className="text-sm text-gray-500">Completed Actions</p>
-                                    <p className="text-2xl font-bold text-gray-900">156</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div className="flex items-center">
-                                <div className="p-3 bg-orange-100 rounded-lg">
-                                    <IconAlertTriangle className="text-orange-600" size={24} stroke={1.75} />
-                                </div>
-                                <div className="ml-4">
-                                    <p className="text-sm text-gray-500">Open Incidents</p>
-                                    <p className="text-2xl font-bold text-gray-900">23</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div className="flex items-center">
-                                <div className="p-3 bg-purple-100 rounded-lg">
-                                    <IconChartBar className="text-purple-600" size={24} stroke={1.75} />
-                                </div>
-                                <div className="ml-4">
-                                    <p className="text-sm text-gray-500">Compliance Rate</p>
-                                    <p className="text-2xl font-bold text-gray-900">94.2%</p>
-                                </div>
-                            </div>
-                        </div>
-                    </ div> */}
-
-                    {/* Module Cards Grid */}
-                    < div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" >
-                        {
-                            moduleGroups.map((module) => {
-                                const moduleEnabled = isFeatureEnabled(module.requiredModuleId ?? module.id);
-
-                                return (
-                                    <div
-                                        key={module.id}
-                                        className={`
-                    bg-white rounded-xl shadow-sm border-2 ${module.bgColor} transition-all duration-300 cursor-pointer
-                    ${moduleEnabled ? 'hover:shadow-xl transform hover:-translate-y-0.5 hover:scale-[1.01]' : 'opacity-60 cursor-not-allowed'}
-                  `}
-                                        onClick={() => handleModuleClick(module)}
-                                    >
-                                        <div className="p-4">
-                                            <div className="flex items-center mb-4">
-                                                <div className={`p-2 rounded-lg ${module.bgColor} transition-transform duration-300 group-hover:scale-110`}>
-                                                    <module.icon
-                                                        className={`${moduleEnabled ? module.color : 'text-gray-400'} transition-transform duration-300`}
-                                                        size={25}
-                                                        stroke={1.75}
-                                                    />
-                                                </div>
-                                                <div className="ml-3">
-                                                    <h3 className={`text-base font-semibold ${moduleEnabled ? 'text-gray-900' : 'text-gray-500 italic'}`}>{module.title}</h3>
-                                                    {!moduleEnabled && (
-                                                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full mt-1 inline-block">Not included</span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <p className={`mb-4 text-sm ${moduleEnabled ? 'text-gray-600' : 'text-gray-400'}`}>{module.description}</p>
-
-                                            <div className="space-y-2">
-                                                {module.items.map((item, index) => {
-                                                    const itemEnabled = typeof item === 'string'
-                                                        ? moduleEnabled
-                                                        : isFeatureEnabled(item.moduleId ?? module.requiredModuleId ?? module.id);
-                                                    const itemLabel = typeof item === 'string' ? item : item.label;
-                                                    const itemClasses = (() => {
-                                                        if (typeof item === 'string') {
-                                                            return itemEnabled ? 'text-gray-500' : 'text-gray-400';
-                                                        }
-                                                        return itemEnabled ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 cursor-pointer' : 'text-gray-400 cursor-not-allowed';
-                                                    })();
-
-                                                    return (
-                                                        <div
-                                                            key={index}
-                                                            className={`flex items-center text-sm transition-colors duration-200 p-1 rounded ${itemClasses}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (typeof item !== 'string') {
-                                                                    handleItemClick(module, item);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <div
-                                                                className={`w-2 h-2 rounded-full mr-3 ${itemEnabled ? module.color.replace('text-', 'bg-') : 'bg-gray-400'}`}
-                                                            ></div>
-                                                            {itemLabel}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            <div className="mt-4 pt-4 border-t border-gray-200">
-                                                <span className={`text-sm font-medium ${moduleEnabled ? module.color : 'text-gray-400'}`}>
-                                                    {moduleEnabled ? 'Access module →' : 'Module disabled'}
-                                                </span>
-                                            </div>
-                                        </div>
+                    {/* Tuiles modules : fond translucide coloré, zoom hover, design distinct des KPI */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                        {moduleGroups.map((module) => {
+                            const moduleEnabled = isFeatureEnabled(module.requiredModuleId ?? module.id);
+                            const itemsCount = module.items?.length || 0;
+                            return (
+                                <button
+                                    key={module.id}
+                                    type="button"
+                                    disabled={!moduleEnabled}
+                                    className={`group flex flex-col text-left p-3 rounded-xl border backdrop-blur-sm transition-all duration-200 ${moduleEnabled
+                                        ? `${module.bgColor} hover:shadow-lg hover:scale-[1.04] hover:-translate-y-1 cursor-pointer`
+                                        : 'bg-slate-50/40 border-slate-100 opacity-50 cursor-not-allowed'
+                                        }`}
+                                    onClick={() => handleModuleClick(module)}
+                                >
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2.5 bg-white/60 border border-white/80 shadow-sm group-hover:scale-110 transition-transform`}>
+                                        <module.icon className={moduleEnabled ? module.color : 'text-slate-400'} size={18} stroke={2} />
                                     </div>
-                                );
-                            })
-                        }
-                    </ div>
-                </div >
-            </div >
+                                    <h3 className={`text-[13px] leading-tight ${moduleEnabled ? 'text-slate-900' : 'text-slate-500 italic'}`}>
+                                        {module.title}
+                                    </h3>
+                                    <div className="mt-2 pt-2 border-t border-white/60 flex items-center justify-between w-full">
+                                        {moduleEnabled ? (
+                                            <>
+                                                <span className="text-[11px] text-slate-600">
+                                                    {itemsCount > 0 ? `${itemsCount} sous-modules` : 'Module'}
+                                                </span>
+                                                <span className={`text-[11px] ${module.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                                    Ouvrir
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Non inclus</span>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
 
-            {/* Modal */}
-            < ModuleSubscriptionModal isOpen={showModal} onClose={() => setShowModal(false)} moduleName={selectedModuleName} />
+            <ModuleSubscriptionModal isOpen={showModal} onClose={() => setShowModal(false)} moduleName={selectedModuleName} />
         </>
     );
 };

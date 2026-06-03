@@ -14,8 +14,8 @@ const Service = () => {
         <div className="flex flex-col gap-5 p-20 bg-gray-100 r">
             <div className=" flex justify-between ">
                 <div className="flex flex-col gap-2">
-                    <p className="text-2xl font-medium text-primary">Our Services</p>
-                    <h1 className="text-4xl font-medium max-w-[400px]">Tailored Solutions for Industry Growth</h1>
+                    <p className="text-2xl text-primary">Our Services</p>
+                    <h1 className="text-4xl max-w-[400px]">Tailored Solutions for Industry Growth</h1>
 
                 </div>
                 <div className="flex flex-col gap-4">

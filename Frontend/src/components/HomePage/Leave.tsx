@@ -11,7 +11,7 @@ const Leave = () => {
 
     return (
         <div className=" bg-white rounded-lg shadow-xl p-4 flex flex-col gap-2  border border-gray-200">
-            <Text size="xl" fw={700} mb="md">
+            <Text size="xl" mb="md">
                 Leave Statistics
             </Text>
             <div className="flex  items-center gap-5 p-2">
@@ -36,11 +36,11 @@ const Leave = () => {
 
 
                                 <div className="flex flex-col gap-2 ">
-                                    <Text size="sm" fw={600} >
+                                    <Text size="sm" >
                                         {item.name}
                                     </Text>
 
-                                    <Text size="sm" fw={700} color='blue'>
+                                    <Text size="sm" color='blue'>
                                         {item.value}
                                     </Text>
 

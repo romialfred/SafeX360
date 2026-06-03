@@ -54,7 +54,7 @@ const LessonData = () => {
         return (
             <button
                 onClick={() => navigate(`/incidents/${rowData.incidentId}?tab=lessons`)}
-                className="text-blue-600 hover:underline font-medium text-left w-full cursor-pointer"
+                className="text-blue-600 hover:underline text-left w-full cursor-pointer"
             >
                 {shortTitle}
             </button>
@@ -119,7 +119,7 @@ const LessonData = () => {
             other: "bg-gray-100 text-gray-800",
         };
         return (
-            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm font-medium capitalize ${catStyles[cat] || "bg-gray-100 text-gray-800"}`}>
+            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm capitalize ${catStyles[cat] || "bg-gray-100 text-gray-800"}`}>
                 <IconTag size={16} /> {rowData.category}
             </span>
         );
@@ -139,7 +139,7 @@ const LessonData = () => {
         }
 
         return (
-            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm font-medium ${statusStyles}`}>
+            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm ${statusStyles}`}>
                 <IconComponent size={16} /> {capitalizeFirstLetter(rowData.status)}
             </span>
         );

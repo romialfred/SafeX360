@@ -43,7 +43,7 @@ const FooterCard = () => {
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
                 {footerLinks.map((section, index) => (
                     <div key={index} className="">
-                        <h3 className="text-2xl font-bold mb-4">{section.title}</h3>
+                        <h3 className="text-2xl mb-4">{section.title}</h3>
                         <ul className="space-y-6  ">
                             {section.links.map((link, idx) => (
                                 <li key={idx}><a href="#" className="hover:text-primary text-xl">{link}</a></li>
@@ -53,7 +53,7 @@ const FooterCard = () => {
                 ))}
 
                 <div>
-                    <h3 className="text-2xl font-bold mb-4">Contact Us</h3>
+                    <h3 className="text-2xl mb-4">Contact Us</h3>
                     {contactInfo.map((contact, index) => (
                         <div key={index} className="flex items-center gap-2 mb-2">
                             {contact.icon}

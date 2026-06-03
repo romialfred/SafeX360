@@ -37,12 +37,12 @@ const ActiveCard = ({ risk, owner }: ActiveCardProps) => {
         <div className="bg-white rounded-2xl border hover:shadow-xl cursor-pointer hover:scale-[1.02] transition-all duration-300 ease-in-out border-gray-300 shadow-md p-5 flex flex-col gap-5">
             {showRiskScale && <div className="flex flex-wrap items-center gap-2">
                 {showRiskScale && (
-                    <span className={`text-sm font-semibold px-3 py-1 rounded-full ${riskLevelClass}`}>
+                    <span className={`text-sm px-3 py-1 rounded-full ${riskLevelClass}`}>
                         {risk.riskLevelLabel}
                     </span>
                 )}
                 {showRiskScale && hasScore && (
-                    <span className="text-sm font-medium text-gray-700">Score: {risk.score}</span>
+                    <span className="text-sm text-gray-700">Score: {risk.score}</span>
                 )}
 
             </div>}
@@ -52,8 +52,8 @@ const ActiveCard = ({ risk, owner }: ActiveCardProps) => {
                     <div className="flex items-center gap-3 ">
 
 
-                        <h2 className="text-lg font-semibold text-gray-800">{risk.title}</h2>
-                        <span className={`text-sm font-semibold px-3 py-1 rounded-full uppercase ${statusClass} ml-auto`}>
+                        <h2 className="text-lg text-gray-800">{risk.title}</h2>
+                        <span className={`text-sm px-3 py-1 rounded-full uppercase ${statusClass} ml-auto`}>
                             {risk.statusLabel}
                         </span>
                     </div>
@@ -75,19 +75,19 @@ const ActiveCard = ({ risk, owner }: ActiveCardProps) => {
 
             <div className="text-sm text-gray-700 space-y-2">
                 <div className="flex justify-between gap-4">
-                    <span className="font-semibold">Hazard Source</span>
+                    <span className="font-medium">Hazard Source</span>
                     <span className="text-right">{risk.hazardSource || "Not specified"}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                    <span className="font-semibold">Consequences</span>
+                    <span className="font-medium">Consequences</span>
                     <span className="text-right">{risk.potentialConsequences || "Not specified"}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                    <span className="font-semibold">Owner</span>
+                    <span className="font-medium">Owner</span>
                     <span className="text-right">{owner}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                    <span className="font-semibold">Review Date</span>
+                    <span className="font-medium">Review Date</span>
                     <span className="text-right">{reviewDate || "Not scheduled"}</span>
                 </div>
             </div>

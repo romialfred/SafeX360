@@ -216,14 +216,14 @@ const DocumentManagement = () => {
         }
     };
     const categoryBodyTemplate = (rowData: any) => (
-        <Tag value={rowData.category} severity="info" className="text-xs px-2 py-1 rounded-full font-semibold" />
+        <Tag value={rowData.category} severity="info" className="text-xs px-2 py-1 rounded-full" />
     );
 
     const statusBodyTemplate = (rowData: any) => (
         <Tag
             value={documentStatusesMap[rowData.status]}
             severity={getStatusSeverity(rowData.status)}
-            className="text-xs px-2 py-1 rounded-full font-semibold"
+            className="text-xs px-2 py-1 rounded-full"
         />
     );
 
@@ -247,7 +247,7 @@ const DocumentManagement = () => {
 
         <Link
             to={`document-details/${rowData.id}`}
-            className="text-sm font-medium text-blue-700 hover:underline cursor-pointer transition"
+            className="text-sm text-blue-700 hover:underline cursor-pointer transition"
         >
             {rowData.documentName}
         </Link>
@@ -258,7 +258,7 @@ const DocumentManagement = () => {
             <div className='flex justify-between items-center'>
 
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Document Management</div>
+                    <div className="text-2xl text-blue-500 w-fit">Document Management</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -270,7 +270,7 @@ const DocumentManagement = () => {
                 <Button size="sm" leftSection={<IconPlus size={16} />}
                     variant="gradient" onClick={() => navigate('create-document')}>New Document</Button>
             </div>
-            <p className=' italic font-medium text-gray-600'>Centralized repository of all platform documents</p>
+            <p className=' italic text-gray-600'>Centralized repository of all platform documents</p>
             <div className='flex flex-col gap-8'>
 
                 <Grid>
@@ -278,7 +278,7 @@ const DocumentManagement = () => {
                         <Grid.Col span={{ base: 12, sm: 6, md: 3 }} key={index}>
                             <Card shadow="xs" radius="md" p="sm" withBorder>
                                 <Group justify="space-between">
-                                    <p className='textbase font-medium text-gray-600'>
+                                    <p className='textbase text-gray-600'>
                                         {item.label}
                                     </p>
                                     <ThemeIcon
@@ -290,7 +290,7 @@ const DocumentManagement = () => {
                                         <item.icon size={18} />
                                     </ThemeIcon>
                                 </Group>
-                                <Text size="xl" fw={700} c={item.valueColor}>
+                                <Text size="xl" c={item.valueColor}>
                                     {item.value}
                                 </Text>
                             </Card>

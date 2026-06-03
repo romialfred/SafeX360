@@ -1,29 +1,24 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import CorrectiveData from "./CorrectiveData"
-
+import { IconTarget } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import CorrectiveData from "./CorrectiveData";
 
 const Corrective = () => {
     return (
-        <div className=' '>
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Action Plans</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Action Plans</Text>
-                    </Breadcrumbs>
-                </div>
-
-            </div>
-            <p className=' italic my-3'>Assign, monitor, and complete corrective and preventive action plans</p>
-            <div className='mt-5   '>
-                <CorrectiveData />
-            </div>
-
-
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: "Plans d'actions" },
+                ]}
+                icon={<IconTarget size={22} stroke={2} />}
+                iconColor="orange"
+                title="Plans d'actions correctives & préventives"
+                subtitle="Affectation, suivi et clôture des CAPA — conformité ISO 45001 §10.2.1.d"
+            />
+            <CorrectiveData />
         </div>
-    )
-}
+    );
+};
 
-export default Corrective
+export default Corrective;

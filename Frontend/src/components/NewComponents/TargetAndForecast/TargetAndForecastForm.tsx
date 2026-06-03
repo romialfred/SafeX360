@@ -249,7 +249,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
             {showAddIndicator && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-semibold text-gray-900">Nouvel Indicateur</h3>
+                        <h3 className="text-lg text-gray-900">Nouvel Indicateur</h3>
                         <button
                             onClick={() => setShowAddIndicator(false)}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -260,7 +260,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Nom de l'Indicateur *
                             </label>
                             <input
@@ -273,7 +273,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Unité de Mesure
                             </label>
                             <input
@@ -286,7 +286,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Définition *
                             </label>
                             <textarea
@@ -299,7 +299,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Catégorie *
                             </label>
                             <select
@@ -314,7 +314,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Fréquence *
                             </label>
                             <select
@@ -373,7 +373,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                             <div className={`p-2 rounded-lg mr-3 ${getCategoryColor(category)}`}>
                                 {getCategoryIcon(category)}
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900">{category} Indicators</h3>
+                            <h3 className="text-lg text-gray-900">{category} Indicators</h3>
                             <span className="ml-3 px-2 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
                                 {categoryIndicators.length}
                             </span>
@@ -386,13 +386,13 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
                                                 <div className="flex items-center mb-2">
-                                                    <h4 className="text-lg font-medium text-gray-900 mr-3">{indicator.name}</h4>
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(indicator.category)}`}>
+                                                    <h4 className="text-lg text-gray-900 mr-3">{indicator.name}</h4>
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getCategoryColor(indicator.category)}`}>
                                                         {getCategoryIcon(indicator.category)}
                                                         <span className="ml-1">{indicator.category}</span>
                                                     </span>
                                                     {indicator.hasForecast && (
-                                                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 border border-purple-200">
                                                             <IconTarget className="w-3 h-3 mr-1" />
                                                             Prévision
                                                         </span>
@@ -441,7 +441,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Année de Planification
                             </label>
                             <select
@@ -456,7 +456,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Indicateur à Planifier
                             </label>
                             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -481,19 +481,19 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                 {/* Monthly Planning Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900">Planification Mensuelle - LTIFR {selectedYear}</h3>
+                        <h3 className="text-lg text-gray-900">Planification Mensuelle - LTIFR {selectedYear}</h3>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mois</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forecast</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Mois</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Target</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Forecast</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actual</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Variance</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -504,7 +504,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
 
                                     return (
                                         <tr key={index} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {month.month}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -535,19 +535,19 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {status === 'success' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
                                                         <IconCircleCheck className="w-3 h-3 mr-1" />
                                                         Atteint
                                                     </span>
                                                 )}
                                                 {status === 'warning' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">
                                                         <IconAlertTriangle className="w-3 h-3 mr-1" />
                                                         Dépassé
                                                     </span>
                                                 )}
                                                 {status === 'pending' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
                                                         <IconClock className="w-3 h-3 mr-1" />
                                                         En cours
                                                     </span>
@@ -591,7 +591,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                                 Retour aux Paramètres
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Target and Forecast Set</h1>
+                                <h1 className="text-2xl font-semibold text-gray-900 mb-2">Target and Forecast Set</h1>
                                 <p className="text-gray-600">Gestion des indicateurs de performance et planification</p>
                             </div>
                         </div>
@@ -605,7 +605,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                 <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-8 w-fit">
                     <button
                         onClick={() => setActiveTab('indicators')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'indicators'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'indicators'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -615,7 +615,7 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                     </button>
                     <button
                         onClick={() => setActiveTab('planning')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'planning'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'planning'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}

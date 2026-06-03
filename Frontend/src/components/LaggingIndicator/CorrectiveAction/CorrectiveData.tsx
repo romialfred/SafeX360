@@ -44,15 +44,13 @@ const CorrectiveData = () => {
     // const [loading, setLoading] = useState(false);
     const [tab, setTab] = useState('ALL');
     const tabs = [
-        { value: 'ALL', label: `All (${data.length})` },
+        { value: 'ALL', label: `Toutes (${data.length})` },
         { value: 'INCIDENT', label: `Incident (${data.filter((x) => x.type == "INCIDENT").length})` },
         { value: 'GENERAL_INSPECTION', label: `Inspection (${data.filter((x) => x.type == "GENERAL_INSPECTION").length})` },
-        { value: 'HS_ACTIVITY', label: `HS Activity (${data.filter((x) => x.type == "HS_ACTIVITY").length})` },
-        { value: "NON_CONFORMITY", label: `Non-conformity (${data.filter((x) => x.type == "NON_CONFORMITY").length})` },
-        { value: "NEAR_MISS", label: `Near Miss (${data.filter((x) => x.type == "NEAR_MISS").length})` },
-        { value: "HAZARD", label: `Hazard (${data.filter((x) => x.type == "HAZARD").length})` },
-
-
+        { value: 'HS_ACTIVITY', label: `Activité HSE (${data.filter((x) => x.type == "HS_ACTIVITY").length})` },
+        { value: "NON_CONFORMITY", label: `Non-conformité (${data.filter((x) => x.type == "NON_CONFORMITY").length})` },
+        { value: "NEAR_MISS", label: `Quasi-accident (${data.filter((x) => x.type == "NEAR_MISS").length})` },
+        { value: "HAZARD", label: `Danger (${data.filter((x) => x.type == "HAZARD").length})` },
     ]
     // Modal form removed
 
@@ -63,7 +61,7 @@ const CorrectiveData = () => {
                 setData(res);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch Action");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des actions");
             })
             .finally();
     }, []);
@@ -97,27 +95,27 @@ const CorrectiveData = () => {
         return (
             <div className="flex gap-4 items-center">
                 <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                    <Tooltip label="Table View">
+                    <Tooltip label="Vue tableau">
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
                             color="blue"
                             onClick={() => setViewType('table')}
                         >
-                            <IconLayoutList size={18} />
+                            <IconLayoutList size={16} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Card View">
+                    <Tooltip label="Vue cartes">
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
                             color="blue"
                             onClick={() => setViewType('card')}
                         >
-                            <IconLayoutGrid size={18} />
+                            <IconLayoutGrid size={16} />
                         </ActionIcon>
                     </Tooltip>
                 </div>
-                <Button size="sm" variant="outline" leftSection={<IconUpload />}>
-                    Export
+                <Button size="sm" variant="default" leftSection={<IconUpload size={14} />}>
+                    Exporter
                 </Button>
                 {/* <TextInput
                     value={globalFilterValue}
@@ -152,7 +150,7 @@ const CorrectiveData = () => {
                 />
                 <Select allowDeselect={false}
                     size='sm'
-                    data={[{ label: "All", value: "All" }, ...actionStatuses]}
+                    data={[{ label: "Tous statuts", value: "All" }, ...actionStatuses]}
                     value={selectedStatus}
                     onChange={setSelectedStatus}
                 />
@@ -211,51 +209,63 @@ const CorrectiveData = () => {
                 globalFilterFields={['incidentTitle', 'actionName', 'assignedEmployeeName', 'status']}
                 onFilter={(e) => setFilters(e.filters)}
             >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentTitle" header="Source of Action" body={nameBodyTemplate} />
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="actionName" header="Action Plan" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="assignedEmployeeName" header="Assigned To" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="deadline" header="Deadline" body={(rowData) => formatDateShort(rowData.deadline)} />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="incidentTitle" header="Source de l'action" body={nameBodyTemplate} sortable />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="actionName" header="Plan d'action" />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="assignedEmployeeName" header="Responsable" sortable />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="deadline" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} sortable />
                 <Column
-                    style={{ fontWeight: 'normal', fontSize: "14px" }}
+                    style={{ fontWeight: 'normal', fontSize: "13px" }}
                     field="progress"
-                    header="Progress"
+                    header="Progression"
                     body={(rowData: any) => (
-                        <Progress.Root size={15}>
+                        <Progress.Root size={14}>
                             <Tooltip label={`${rowData.progress}%`} withArrow>
                                 <Progress.Section
                                     value={rowData.progress}
                                     color={rowData.progress < 20 ? 'red' : rowData.progress < 70 ? 'orange' : 'green'}
                                 >
-                                    <Progress.Label>{rowData.progress}</Progress.Label>
+                                    <Progress.Label>{rowData.progress}%</Progress.Label>
                                 </Progress.Section>
                             </Tooltip>
                         </Progress.Root>
                     )}
+                    sortable
                 />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData: any) => statusLabels[rowData.status]} />
+                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="status" header="Statut"
+                    body={(rowData: any) => {
+                        const status = String(rowData.status).toUpperCase();
+                        const color =
+                            status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' :
+                            status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            status === 'CANCELLED' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                            'bg-slate-100 text-slate-600 border-slate-200';
+                        return <span className={`inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-wider rounded border ${color}`}>
+                            {statusLabels[rowData.status] || rowData.status}
+                        </span>;
+                    }} />
                 <Column
-                    style={{ fontWeight: 'normal', fontSize: "14px" }}
+                    style={{ fontWeight: 'normal', fontSize: "13px" }}
                     header="Actions"
                     body={(rowData: any) => {
                         const statusUpper = String(rowData?.status).toUpperCase();
                         const progress = Number(rowData?.progress ?? 0);
                         const canUpdate = progress < 100 && !['COMPLETED'].includes(statusUpper);
                         const tooltip = canUpdate
-                            ? 'Update progress'
-                            : statusUpper === 'PENDING' ? 'Pending approval — cannot update yet'
-                                : statusUpper === 'CANCELLED' ? 'Action cancelled — cannot update'
-                                    : 'Already completed';
+                            ? "Mettre à jour la progression"
+                            : statusUpper === 'PENDING' ? 'En attente de validation — non modifiable'
+                                : statusUpper === 'CANCELLED' ? 'Action annulée — non modifiable'
+                                    : 'Déjà clôturée';
                         return (
                             <div className="flex items-center gap-2">
                                 {canUpdate ? (
                                     <Link to={`update/${rowData.id}`}>
-                                        <Button variant="light" color="blue" size="xs">Update</Button>
+                                        <Button variant="light" color="blue" size="xs">Mettre à jour</Button>
                                     </Link>
                                 ) : (
                                     <Tooltip label={tooltip}>
                                         <span className="inline-flex">
-                                            <Button variant="light" color="blue" size="xs" disabled>Update</Button>
+                                            <Button variant="light" color="blue" size="xs" disabled>Mettre à jour</Button>
                                         </span>
                                     </Tooltip>
                                 )}

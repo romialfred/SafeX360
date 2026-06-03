@@ -40,7 +40,7 @@ const ImportantDates = () => {
     return (
         <div className="flex flex-col gap-6 p-6 bg-white rounded-lg shadow-xl border border-gray-200 ">
             {/* Heading */}
-            <Text size="xl" fw={700} className="text-gray-900">Important Dates</Text>
+            <Text size="xl" className="text-gray-900">Important Dates</Text>
 
             {/* Cards Section */}
             <Stack gap="md">
@@ -55,13 +55,13 @@ const ImportantDates = () => {
 
                             {/* Title & Date */}
                             <div className="flex flex-col">
-                                <Text size="md" fw={600}>{item.title}</Text>
+                                <Text size="md">{item.title}</Text>
                                 <Text size="sm" color="dimmed">{item.date}</Text>
                             </div>
                         </div>
 
                         {/* Label with Dynamic Colors */}
-                        <div className={`px-4 py-2 rounded-full ${item.textColor} ${item.bgColor} font-bold`}>
+                        <div className={`px-4 py-2 rounded-full ${item.textColor} ${item.bgColor}`}>
                             {item.salary}
                         </div>
                     </div>

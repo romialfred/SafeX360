@@ -11,7 +11,7 @@ const WorkProcess = () => {
     ];
     return (
         <div className="p-15 flex flex-col items-center  bg-gray-100 gap-8">
-            <div ><p className="text-9xl self-stretch font-bold">Work Process</p></div>
+            <div ><p className="text-9xl self-stretch">Work Process</p></div>
             <div className="grid grid-cols-3 flex-wrap gap-4">
                 {services.map((service, index) => (
                     <WorkProcessCard key={index} title={service.title} title1={service.title1} title2={service.title2} title3={service.title3} />

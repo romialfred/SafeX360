@@ -67,23 +67,23 @@ const CommunicationCard = ({ communication, departmentName, onViewDetails, actio
                     </Group>
                 </Group>
 
-                <Text fw={600} size="lg" c="dark">{communication.title}</Text>
+                <Text size="lg" c="dark">{communication.title}</Text>
 
                 <Stack gap={4} className="text-sm text-gray-600">
                     {departmentLabel && (
-                        <Text size="sm">Department: <Text span fw={500}>{departmentLabel}</Text></Text>
+                        <Text size="sm">Department: <Text span>{departmentLabel}</Text></Text>
                     )}
                     {typeof recipientsCount === 'number' && recipientsCount >= 0 && (
-                        <Text size="sm">Recipients: <Text span fw={500}>{recipientsCount}</Text></Text>
+                        <Text size="sm">Recipients: <Text span>{recipientsCount}</Text></Text>
                     )}
                     {scheduleTypeLabel && (
-                        <Text size="sm">Schedule: <Text span fw={500}>{scheduleTypeLabel}</Text></Text>
+                        <Text size="sm">Schedule: <Text span>{scheduleTypeLabel}</Text></Text>
                     )}
                     {nextRunLabel && (
-                        <Text size="sm">Next Run: <Text span fw={500}>{nextRunLabel}</Text></Text>
+                        <Text size="sm">Next Run: <Text span>{nextRunLabel}</Text></Text>
                     )}
                     {expiresAtLabel && (
-                        <Text size="sm">Expires At: <Text span fw={500}>{expiresAtLabel}</Text></Text>
+                        <Text size="sm">Expires At: <Text span>{expiresAtLabel}</Text></Text>
                     )}
                 </Stack>
 

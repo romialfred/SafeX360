@@ -147,7 +147,7 @@ const DocumentsTabs = () => {
             <div className="flex justify-between items-center">
 
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Document Details</div>
+                    <div className="text-2xl text-blue-500 w-fit">Document Details</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>

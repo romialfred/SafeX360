@@ -89,25 +89,25 @@ const NotificationTabs = () => {
                     <div key={category} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <div className="flex items-center mb-6">
                             <IconBell className="w-6 h-6 text-orange-600 mr-3" />
-                            <h3 className="text-xl font-semibold text-gray-900">Notifications - {category}</h3>
+                            <h3 className="text-lg text-gray-900">Notifications - {category}</h3>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                             Notification
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconMail className="w-4 h-4 mx-auto" />
                                             Email
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconDeviceMobile className="w-4 h-4 mx-auto" />
                                             SMS
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconBell className="w-4 h-4 mx-auto" />
                                             In-App
                                         </th>
@@ -120,7 +120,7 @@ const NotificationTabs = () => {
                                             <tr key={setting.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">{setting.name}</div>
+                                                        <div className="text-sm text-gray-900">{setting.name}</div>
                                                         <div className="text-sm text-gray-500">{setting.description}</div>
                                                     </div>
                                                 </td>

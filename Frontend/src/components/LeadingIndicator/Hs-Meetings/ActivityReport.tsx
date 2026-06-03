@@ -129,7 +129,7 @@ const ActivityReport = () => {
         <div>
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Activity Execution Report</div>
+                    <div className="text-2xl text-blue-500 w-fit">Activity Execution Report</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -172,7 +172,7 @@ const ActivityReport = () => {
                                         <IconCamera size={50} stroke={1.5} />
                                     </Dropzone.Idle>
                                 </Group>
-                                <Text ta="center" fw={700} fz="lg" mt="xl">
+                                <Text ta="center" fz="lg" mt="xl">
                                     <Dropzone.Accept>Drop image files here</Dropzone.Accept>
                                     <Dropzone.Reject>Only image files under 30MB are allowed</Dropzone.Reject>
                                     <Dropzone.Idle>Upload images</Dropzone.Idle>
@@ -244,7 +244,7 @@ const ActivityReport = () => {
                                         <IconFile size={50} stroke={1.5} />
                                     </Dropzone.Idle>
                                 </Group>
-                                <Text ta="center" fw={700} fz="lg" mt="xl">
+                                <Text ta="center" fz="lg" mt="xl">
                                     <Dropzone.Accept>Drop PDF files here</Dropzone.Accept>
                                     <Dropzone.Reject>Only PDF files under 30MB are allowed</Dropzone.Reject>
                                     <Dropzone.Idle>Upload documents</Dropzone.Idle>
@@ -322,7 +322,7 @@ const ActivityReport = () => {
                 <div className="space-y-4">
                     {form.values.actions.map((_item, index: any) => (
                         <Fieldset key={index} className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                            <div className="text-lg font-medium text-blue-500">Action {index + 1}</div>
+                            <div className="text-lg text-blue-500">Action {index + 1}</div>
                             <ActionIcon onClick={() => form.removeListItem('actions', index)} variant="filled" color="red" aria-label="Settings">
                                 <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                             </ActionIcon>
@@ -339,7 +339,7 @@ const ActivityReport = () => {
                     ))}
                 </div>
 
-                <Text className="!text-xl !font-semibold mb-2">Participant Sign-off ({form.values.report.signOff.length}/{participants.length})</Text>
+                <Text className="!text-xl !mb-2">Participant Sign-off ({form.values.report.signOff.length}/{participants.length})</Text>
                 <Text size="sm" color="dimmed" mb={16}>
                     Select the participants that were/are present
                 </Text>
@@ -363,7 +363,7 @@ const ActivityReport = () => {
                                             <Avatar radius="xl" size="md" color="blue" name={person.name} />
 
                                             <div className="flex flex-col">
-                                                <Text size="md" fw={600}>
+                                                <Text size="md">
                                                     {person.name}
                                                 </Text>
                                                 <Text size="sm" color="dimmed">

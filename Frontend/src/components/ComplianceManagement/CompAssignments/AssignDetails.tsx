@@ -73,7 +73,7 @@ const AssignDetails = () => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -158,7 +158,7 @@ const AssignDetails = () => {
 
     const leftToolbarTemplate = () => (
         <div className="flex gap-3">
-            <h1 className="text-2xl font-medium text-primary">{assignment?.position}</h1>
+            <h1 className="text-2xl text-primary">{assignment?.position}</h1>
         </div>
     );
 
@@ -166,7 +166,7 @@ const AssignDetails = () => {
         <div className="flex flex-col gap-10">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         Position Compliance Assignments Details
                     </div>
                     <Breadcrumbs mt="xs">
@@ -218,7 +218,7 @@ const AssignDetails = () => {
                         opened={modalOpened}
                         onClose={() => setModalOpened(false)}
                         title={
-                            <div className="text-lg font-medium text-blue-500">
+                            <div className="text-lg text-blue-500">
                                 Assign New Requirement
                             </div>
                         }

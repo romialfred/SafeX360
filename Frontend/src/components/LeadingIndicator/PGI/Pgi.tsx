@@ -1,37 +1,38 @@
-import { Breadcrumbs, Button, Text } from "@mantine/core";
-import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@mantine/core";
+import { useNavigate } from "react-router-dom";
 import PgiData from "./PgiData";
-import { IconAlertTriangle } from "@tabler/icons-react";
-
+import { IconPlus, IconSearch, IconFileExport, IconCalendar } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
 
 const Pgi = () => {
     const navigate = useNavigate();
     return (
-        <div className=' '>
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Planned General Inspections</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Planned General Inspections</Text>
-                    </Breadcrumbs>
-                </div>
-                <Button
-                    size="sm"
-                    onClick={() => navigate('report')}
-                    leftSection={<IconAlertTriangle />}
-                    variant="gradient"
-                >
-                    Add Inspections
-                </Button>
-            </div>
-            <p className=' italic my-3'>Plan, track, and monitor workplace safety and hazard inspections</p>
-
-            <div className='mt-5   '>
-                <PgiData />
-            </div>
-
-
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Activités préventives' },
+                    { label: 'Inspections HSE' },
+                ]}
+                icon={<IconSearch size={22} stroke={2} />}
+                iconColor="green"
+                title="Inspections HSE planifiées"
+                subtitle="Planification, suivi et contrôle des inspections de sécurité et des dangers en milieu de travail"
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconCalendar size={15} />} onClick={() => navigate('calendar')}>
+                            Calendrier
+                        </Button>
+                        <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />}>
+                            Exporter
+                        </Button>
+                        <Button color="green" size="sm" leftSection={<IconPlus size={15} />} onClick={() => navigate('report')}>
+                            Nouvelle inspection
+                        </Button>
+                    </>
+                }
+            />
+            <PgiData />
         </div>
     )
 }

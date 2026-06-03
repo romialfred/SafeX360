@@ -140,7 +140,7 @@ const ComplianceDocumentCard = ({ doc }: { doc: DocumentSummary }) => {
             </Group>
 
             <Stack gap={6}>
-                <Text size="lg" fw={600} c="gray.8" lineClamp={2}>
+                <Text size="lg" c="gray.8" lineClamp={2}>
                     {doc.documentName}
                 </Text>
                 <Text size="sm" c="gray.6" lineClamp={3}>

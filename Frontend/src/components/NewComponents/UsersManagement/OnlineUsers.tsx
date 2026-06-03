@@ -125,11 +125,11 @@ const OnlineUsers = () => {
         <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2 p-4 rounded-xl border border-gray-300 shadow-sm">
                 <div className="flex justify-between">
-                    <h2 className="text-lg font-semibold text-primary">
+                    <h2 className="text-lg text-primary">
                         Currently Online Users
                     </h2>
                     <div className="p-1 rounded-full border border-green-600 bg-green-50 text-green-500">
-                        <p className="text-sm font-medium">
+                        <p className="text-sm">
                             {onlineUsers.length} users currently active
                         </p>
                     </div>
@@ -193,7 +193,7 @@ const OnlineUsers = () => {
                     <>
                         <div className="border-b border-gray-200 pb-4 mb-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-blue-500">
+                                <h2 className="text-lg text-blue-500">
                                     User Activity Tracking
                                 </h2>
                             </div>
@@ -211,7 +211,7 @@ const OnlineUsers = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* User Sessions */}
                                 <div className="bg-gray-50 rounded-lg p-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                         <IconDeviceDesktop className="w-5 h-5 mr-2 text-blue-500" />
                                         Sessions
                                     </h3>
@@ -224,7 +224,7 @@ const OnlineUsers = () => {
                                                 >
                                                     <div className="flex items-center justify-between mb-2">
                                                         <span
-                                                            className={`px-2 py-1 text-xs font-semibold rounded-full ${session.isActive
+                                                            className={`px-2 py-1 text-xs rounded-full ${session.isActive
                                                                 ? "bg-green-100 text-green-800"
                                                                 : "bg-gray-100 text-gray-800"
                                                                 }`}
@@ -274,7 +274,7 @@ const OnlineUsers = () => {
 
                                 {/* User Activities */}
                                 <div className="bg-gray-50 rounded-lg p-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <h3 className="text-lg text-gray-900 mb-4 flex items-center">
                                         <IconActivity className="w-5 h-5 mr-2 text-purple-500" />
                                         Recent Activities
                                     </h3>
@@ -291,7 +291,7 @@ const OnlineUsers = () => {
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex items-center justify-between">
-                                                                <h4 className="font-medium text-gray-900">
+                                                                <h4 className="text-gray-900">
                                                                     {activity.action}
                                                                 </h4>
                                                                 <span className="text-sm text-gray-500">

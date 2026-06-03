@@ -40,7 +40,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                     <IconTool size={28} className={isNearMiss ? 'text-green-600' : 'text-orange-600'} />
                 </div>
                 <div>
-                    <Text size="xl" fw={700} className={isNearMiss ? 'text-green-700 tracking-tight' : 'text-orange-700 tracking-tight'}>
+                    <Text size="xl" className={isNearMiss ? 'text-green-700 tracking-tight' : 'text-orange-700 tracking-tight'}>
                         {isNearMiss ? 'Prevention Summary' : 'Treatment Summary'}
                     </Text>
                     <Text size="sm" className="text-slate-500">
@@ -52,7 +52,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
             <div className="space-y-5">
                 {/* Valuation Section */}
                 <Paper radius="md" shadow="xs" className={`p-5 ${isNearMiss ? 'bg-green-50/60 border border-green-100' : 'bg-orange-50/60 border border-orange-100'}`}>
-                    <Text size="md" fw={600} className={isNearMiss ? 'text-green-700 mb-3' : 'text-orange-700 mb-3'}>{labels.valorisationTitle}</Text>
+                    <Text size="md" className={isNearMiss ? 'text-green-700 mb-3' : 'text-orange-700 mb-3'}>{labels.valorisationTitle}</Text>
                     <Text size="sm" className="text-slate-600 mb-3">{labels.valorisationDescription}</Text>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -73,15 +73,15 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                         </div>
                     </div>
                     <div className="mt-4 flex items-center gap-2">
-                        <Text size="sm" fw={600} className={isNearMiss ? 'text-green-700' : 'text-orange-700'}>{labels.totalLabel}</Text>
-                        <Text size="lg" fw={700} className={isNearMiss ? 'text-green-900' : 'text-orange-900'}>{totalNCValue} {getCurrencySymbol(nonConformity.currency)}</Text>
+                        <Text size="sm" className={isNearMiss ? 'text-green-700' : 'text-orange-700'}>{labels.totalLabel}</Text>
+                        <Text size="lg" className={isNearMiss ? 'text-green-900' : 'text-orange-900'}>{totalNCValue} {getCurrencySymbol(nonConformity.currency)}</Text>
                     </div>
                 </Paper>
 
                 {/* Details */}
                 {nonConformity.details && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" fw={600} className="text-slate-800 mb-2">{labels.detailsTitle}</Text>
+                        <Text size="md" className="text-slate-800 mb-2">{labels.detailsTitle}</Text>
                         <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.details }} />
                     </Paper>
                 )}
@@ -89,7 +89,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {/* Docs */}
                 {nonConformity.docs && nonConformity.docs.length > 0 && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" mb={5} fw={600} className="text-slate-800 mb-2">{labels.docsTitle}</Text>
+                        <Text size="md" mb={5} className="text-slate-800 mb-2">{labels.docsTitle}</Text>
                         <Group className="flex flex-wrap gap-2">
                             {nonConformity.docs.map((doc: any) => (
                                 <Badge
@@ -111,7 +111,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {/* Indirect Impacts / Preventive Benefits */}
                 {nonConformity.indirectImpacts && nonConformity.indirectImpacts.length > 0 && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" fw={600} className="text-slate-800 mb-2">{labels.impactsTitle}</Text>
+                        <Text size="md" className="text-slate-800 mb-2">{labels.impactsTitle}</Text>
                         <Text size="sm" className="text-slate-600 mb-2">{labels.impactsDescription}</Text>
                         <div className="flex flex-col gap-2">
                             {nonConformity.indirectImpacts.map((impact: string, idx: number) => (
@@ -127,7 +127,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {/* Comments on indirect impacts / preventive benefits */}
                 {nonConformity.comments && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" fw={600} className="text-slate-800 mb-2">{labels.impactsCommentTitle}</Text>
+                        <Text size="md" className="text-slate-800 mb-2">{labels.impactsCommentTitle}</Text>
                         <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.comments }} />
                     </Paper>
                 )}
@@ -135,7 +135,7 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {/* Feedback on support */}
                 {/* {nonConformity.supportComments && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" fw={600} className="text-slate-800 mb-2">Feedback on support</Text>
+                        <Text size="md" className="text-slate-800 mb-2">Feedback on support</Text>
                         <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.supportComments }} />
                     </Paper>
                 )} */}

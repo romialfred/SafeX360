@@ -63,7 +63,7 @@ export default function ExpiredContent({ items }: ExpiredContentProps) {
                                     <IconAlertTriangle size={20} className='text-red-600' />
                                 </div>
                                 <div className='flex flex-col gap-1'>
-                                    <Text fw={600} c="dark.6">{item.requirementTitle}</Text>
+                                    <Text c="dark.6">{item.requirementTitle}</Text>
                                     <Text size="sm" c="gray.7">
                                         {item.employee?.name} &middot; {item.employee?.role}
                                     </Text>

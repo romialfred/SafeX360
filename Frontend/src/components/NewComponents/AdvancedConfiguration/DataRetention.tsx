@@ -85,26 +85,26 @@ const DataRetention = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center mb-6">
                         <IconDatabase className="w-6 h-6 text-purple-600 mr-3" />
-                        <h3 className="text-xl font-semibold text-gray-900">Data Retention Policies</h3>
+                        <h3 className="text-lg text-gray-900">Data Retention Policies</h3>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                         Data Type
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                         Retention Period
                                     </th>
-                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                         Auto Archive
                                     </th>
-                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                         Auto Delete
                                     </th>
-                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -114,7 +114,7 @@ const DataRetention = () => {
                                     <tr key={policy.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div>
-                                                <div className="text-sm font-medium text-gray-900">{policy.dataType}</div>
+                                                <div className="text-sm text-gray-900">{policy.dataType}</div>
                                                 <div className="text-sm text-gray-500">{policy.description}</div>
                                             </div>
                                         </td>

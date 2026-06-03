@@ -44,8 +44,8 @@ const Rate = () => {
                     <div className='flex gap-5 items-center'>
                         <div>{card.icon}</div>
                         <div className="flex flex-col gap-2">
-                            <p className="text-2xl font-bold">{card.incident}</p>
-                            <p className="text-4xl font-bold">{card.days}</p>
+                            <p className="text-2xl">{card.incident}</p>
+                            <p className="text-4xl">{card.days}</p>
                             <Text color={card.incrementColor} size="md" >{card.label}</Text>
                         </div>
 

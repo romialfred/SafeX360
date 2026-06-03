@@ -62,12 +62,12 @@ const IncidentCards = () => {
             <div key={index} className={`${card.bgColor} ${card.textColor} rounded-lg shadow-xl p-5 flex flex-col gap-4`}>
                 <div className='flex justify-between'>
                     <div>{card.icon}</div>
-                    <Text size="lg" fw={700}>Target: {card.target}</Text>
+                    <Text size="lg">Target: {card.target}</Text>
                 </div>
-                <Text mt="md" size="xl" fw={700}>{card.incident}</Text>
+                <Text mt="md" size="xl">{card.incident}</Text>
 
                 <div className='flex gap-2 items-center'>
-                    <Text size="xl" fw={500}>{card.days}</Text>
+                    <Text size="xl">{card.days}</Text>
                     <Text className={card.incrementColor} size="sm">{card.increment}</Text>
                 </div>
 
@@ -83,7 +83,7 @@ const NewDashboard = () => {
         <div className='flex flex-col gap-10'>
             {/* <div className="flex justify-between ">
                 <div>
-                    <p className="text-3xl font-bold text-blue-500 uppercase">Mine Xpert</p>
+                    <p className="text-2xl font-semibold text-blue-500 uppercase">Mine Xpert</p>
                 </div>
                 <div className="flex gap-4">
                     <Button leftSection={<IconAlertTriangle stroke={2} />} color="red">Report Incidents</Button>

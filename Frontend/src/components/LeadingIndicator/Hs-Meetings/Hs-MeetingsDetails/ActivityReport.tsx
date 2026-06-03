@@ -118,20 +118,20 @@ const ActivityReport = () => {
                             Edit
                         </Button>
                     </div>
-                    <Text size="md" fw={600} mt={6}>Summary</Text>
+                    <Text size="md" mt={6}>Summary</Text>
                     < div
                         className="prose max-w-none text-sm text-gray-700"
                         dangerouslySetInnerHTML={{ __html: activityReport.summary || "<span>-</span>" }
                         }
                     />
 
-                    < Text size="md" fw={600} mt={6} > Findings & Observations</Text >
+                    < Text size="md" mt={6} > Findings & Observations</Text >
                     <div
                         className="prose max-w-none text-sm text-gray-700"
                         dangerouslySetInnerHTML={{ __html: activityReport.findings || "<span>-</span>" }}
                     />
 
-                    <Text size="md" fw={600} mt={6}>Evidence & Documentation</Text>
+                    <Text size="md" mt={6}>Evidence & Documentation</Text>
                     {
                         activityReport.docs && activityReport.docs.length > 0 ? (
                             <Group className="flex flex-wrap flex-col !gap-1">
@@ -139,7 +139,7 @@ const ActivityReport = () => {
                                     <Badge
                                         key={doc.name}
                                         size="sm"
-                                        className="!cursor-pointer !capitalize !font-medium hover:!underline"
+                                        className="!cursor-pointer !capitalize !hover:!underline"
                                         onClick={() => handlePreview(doc)}
                                         leftSection={<IconPhoto size={12} />}
                                         color="orange"
@@ -154,7 +154,7 @@ const ActivityReport = () => {
                         )
                     }
 
-                    <Text className="!text-base !font-semibold mb-2 mt-6">
+                    <Text className="!text-base !mb-2 mt-6">
                         Participant Sign-off ({activityReport.signOff?.length || 0}/{participants.length})
                     </Text>
                     <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="lg" className="mt-4">
@@ -165,7 +165,7 @@ const ActivityReport = () => {
                             >
                                 <Avatar radius="xl" size="md" color="primary" name={participantsMap[person]?.name} />
                                 <div>
-                                    <Text size="sm" fw={700}>{participantsMap[person]?.name}</Text>
+                                    <Text size="sm">{participantsMap[person]?.name}</Text>
                                     <Text size="sm" color="dimmed">{participantsMap[person]?.role}</Text>
                                 </div>
                                 <IconCheck className="ml-auto text-primary" size={18} />
@@ -182,7 +182,7 @@ const ActivityReport = () => {
                     <TextEditor form={form} id="findings" title="Findings & Observations" />
                     <FileUpdateDropzone title="Evidence & Documentation" id="docs" form={form} />
 
-                    <Text className="!text-xl !font-semibold mb-2">
+                    <Text className="!text-xl !mb-2">
                         Participant Sign-off ({form.values.signOff.length}/{participants.length})
                     </Text>
                     <Text size="sm" color="dimmed" mb={16}>
@@ -228,7 +228,7 @@ const ActivityReport = () => {
                                                 )}
                                             </div>
                                             <div className="flex flex-col">
-                                                <Text size="sm" fw={700} className="text-gray-900">
+                                                <Text size="sm" className="text-gray-900">
                                                     {person.name}
                                                 </Text>
                                                 <Text size="sm" color="dimmed" className="text-gray-500">

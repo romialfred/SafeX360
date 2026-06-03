@@ -25,7 +25,7 @@ const TextEditor = ({ form, id, title, withAsterisk }: any) => {
     return (
         <div className='[&_.mantine-RichTextEditor-content]:min-h-[100px]'>
 
-            <h3 className="font-medium text-gray-800 mb-1 flex gap-1">{title} {withAsterisk && <Text color='red'>*</Text>}</h3>
+            <h3 className="text-gray-800 mb-1 flex gap-1">{title} {withAsterisk && <Text color='red'>*</Text>}</h3>
             <Text color='red'>{form.getInputProps(id).error}</Text>
             <RichTextEditor editor={editor} variant="default">
                 <BubbleMenu editor={editor}>

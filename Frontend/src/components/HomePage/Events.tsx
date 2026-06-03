@@ -50,7 +50,7 @@ const Events = () => {
             <div className="flex gap-5 items-center mb-6">
                 <div className="flex items-center gap-3">
                     <IconCalendarTime size={30} className="text-orange-500" />
-                    <Text size="lg" fw={700} className="text-gray-900">
+                    <Text size="lg" className="text-gray-900">
                         Upcoming Events
                     </Text>
                 </div>
@@ -88,10 +88,10 @@ const Events = () => {
 
                         {/* Event Details */}
                         <Stack p="md" className="flex-grow">
-                            <Text size="md" fw={700} className="text-gray-900">
+                            <Text size="md" className="text-gray-900">
                                 {event.title}
                             </Text>
-                            <Text size="sm" fw={500} className="!text-blue-600 !bg-hoverbg !p-2 w-fit !rounded-4xl">
+                            <Text size="sm" className="!text-blue-600 !bg-hoverbg !p-2 w-fit !rounded-4xl">
                                 {event.category}
                             </Text>
 

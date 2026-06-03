@@ -141,7 +141,7 @@ const EmpTable = ({ requirements, fetchData, docMap }: EmpTableProps) => {
             }
         };
 
-        return <span className={`px-3 py-1 rounded-xl text-sm font-medium ${getStatusClasses(status)}`}>{status}</span>;
+        return <span className={`px-3 py-1 rounded-xl text-sm ${getStatusClasses(status)}`}>{status}</span>;
     };
 
     const header = renderHeader();
@@ -181,7 +181,7 @@ const EmpTable = ({ requirements, fetchData, docMap }: EmpTableProps) => {
             <Modal
                 opened={modalOpened}
                 onClose={() => setModalOpened(false)}
-                title={<div className="text-lg font-medium text-blue-500">Upload Document</div>}
+                title={<div className="text-lg text-blue-500">Upload Document</div>}
                 centered
                 size="xl"
             >

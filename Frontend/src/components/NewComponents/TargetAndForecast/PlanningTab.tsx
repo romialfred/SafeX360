@@ -117,7 +117,7 @@ const PlanningTab = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Année de Planification
                             </label>
                             <select
@@ -132,7 +132,7 @@ const PlanningTab = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm text-gray-700 mb-2">
                                 Indicateur à Planifier
                             </label>
                             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -157,19 +157,19 @@ const PlanningTab = () => {
                 {/* Monthly Planning Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900">Planification Mensuelle - LTIFR {selectedYear}</h3>
+                        <h3 className="text-lg text-gray-900">Planification Mensuelle - LTIFR {selectedYear}</h3>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mois</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forecast</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Mois</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Target</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Forecast</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actual</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Variance</th>
+                                    <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -180,7 +180,7 @@ const PlanningTab = () => {
 
                                     return (
                                         <tr key={index} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {month.month}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -211,19 +211,19 @@ const PlanningTab = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {status === 'success' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
                                                         <IconCircleCheck className="w-3 h-3 mr-1" />
                                                         Atteint
                                                     </span>
                                                 )}
                                                 {status === 'warning' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">
                                                         <IconAlertTriangle className="w-3 h-3 mr-1" />
                                                         Dépassé
                                                     </span>
                                                 )}
                                                 {status === 'pending' && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
                                                         <IconClock className="w-3 h-3 mr-1" />
                                                         En cours
                                                     </span>

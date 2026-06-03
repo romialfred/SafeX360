@@ -89,289 +89,303 @@ const IncidentDetailsTab = ({
     const isPDF = (type: string) => type?.startsWith("data:application/pdf");
 
     return (
-        <div className="flex flex-col gap-5 p-2">
-
-
-            <div className="flex flex-col gap-6">
-                <div>
-                    <h1 className="text-lg font-semibold text-gray-800">Incident Classification</h1>
-                </div>
-                <div className="grid grid-cols-3 gap-5">
-
-                    {incident?.incidentDetails?.map((detail: any, index: number) => (
-                        <div
-                            key={index}
-                            className="flex flex-col gap-4 border border-gray-300 rounded-xl p-5 bg-white shadow-sm"
-                        >
-                            {/* Category and Severity */}
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <IconCategory className="text-gray-500" size={20} />
-                                    <span className="text-base font-medium text-gray-800">
-                                        {categories[detail.incidentCategoryId]?.name}
-                                    </span>
-                                </div>
-                                <Badge
-                                    color={mantineColorToLevel[severityLevels[detail.severityLevelId]?.level]}
-                                    size="xs"
-                                    variant="outline"
-                                    autoContrast
+        <div className="flex flex-col gap-4">
+            {/* === Section 1 — Classification de l'incident === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-red-50/60 border-b border-red-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-red-100">
+                        <IconCategory size={14} className="text-red-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Classification de l'incident
+                    </h2>
+                    <span className="ml-auto text-[10px] text-slate-500">
+                        {incident?.incidentDetails?.length || 0} classification{(incident?.incidentDetails?.length || 0) > 1 ? 's' : ''}
+                    </span>
+                </header>
+                <div className="p-4">
+                    {(!incident?.incidentDetails || incident.incidentDetails.length === 0) ? (
+                        <p className="text-xs text-slate-400 italic">Aucune classification renseignée pour cet incident.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {incident.incidentDetails.map((detail: any, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex flex-col gap-2 border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-all"
                                 >
-                                    {severityLevels[detail.severityLevelId]?.name}
-                                </Badge>
-                            </div>
-
-                            {/* Type and Body Parts */}
-                            <div className="space-y-3 text-sm text-gray-700">
-                                <div className="flex items-center gap-2">
-                                    <IconAlertTriangle size={18} className="text-blue-600" />
-                                    <span>
-                                        <span className="font-semibold">Type:</span>{" "}
-                                        {incidentTypes[detail.incidentTypeId]?.name}
-                                    </span>
-                                </div>
-
-                                {incidentTypes[detail.incidentTypeId]?.name === "Injury/Illness" && (
-                                    <div className="flex items-start gap-2">
-                                        <IconHeart size={18} className="text-red-600 mt-0.5" />
-                                        <div className="flex flex-wrap gap-2">
-                                            {detail.affectedBodyParts?.length > 0 ? (
-                                                detail.affectedBodyParts.map((x: any, i: number) => (
-                                                    <span
-                                                        key={i}
-                                                        className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full"
-                                                    >
-                                                        {bodyParts[x]?.name}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-gray-500 italic">None reported</span>
-                                            )}
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1.5">
+                                            <IconCategory className="text-slate-500" size={14} />
+                                            <span className="text-xs text-slate-800">
+                                                {categories[detail.incidentCategoryId]?.name || '—'}
+                                            </span>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Environmental Info */}
-                            {categories[detail.incidentCategoryId]?.name === "Environmental" && (
-                                <div className="space-y-4 pt-2">
-                                    {[
-                                        {
-                                            title: "Containment Measures",
-                                            content: detail.containmentMeasures,
-                                            icon: <IconListDetails size={18} className="text-green-600" />,
-                                            color: "green",
-                                        },
-                                        {
-                                            title: "Environmental Impact",
-                                            content: detail.environmentalImpact,
-                                            icon: <IconLeaf size={18} className="text-blue-600" />,
-                                            color: "blue",
-                                        },
-                                    ].map(({ title, content, color, icon }) => (
-                                        <div
-                                            key={title}
-                                            className={`bg-${color}-50 border-l-4 border-${color}-400 p-4 rounded-md`}
+                                        <Badge
+                                            color={mantineColorToLevel[severityLevels[detail.severityLevelId]?.level]}
+                                            size="xs"
+                                            variant="filled"
+                                            radius="sm"
                                         >
-                                            <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
-                                                {icon}
-                                                <h3 className={`text-${color}-700`}>{title}</h3>
+                                            {severityLevels[detail.severityLevelId]?.name || '—'}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-700">
+                                        <IconAlertTriangle size={13} className="text-blue-600 flex-shrink-0" />
+                                        <span className="text-slate-600">Type :</span>
+                                        <span className="text-slate-800 truncate">{incidentTypes[detail.incidentTypeId]?.name || '—'}</span>
+                                    </div>
+
+                                    {incidentTypes[detail.incidentTypeId]?.name === "Injury/Illness" && (
+                                        <div className="flex items-start gap-1.5 pt-1 border-t border-slate-200">
+                                            <IconHeart size={13} className="text-red-600 mt-0.5 flex-shrink-0" />
+                                            <div className="flex flex-wrap gap-1">
+                                                {detail.affectedBodyParts?.length > 0 ? (
+                                                    detail.affectedBodyParts.map((x: any, i: number) => (
+                                                        <span
+                                                            key={i}
+                                                            className="bg-red-100 text-red-800 text-[10px] px-1.5 py-0.5 rounded"
+                                                        >
+                                                            {bodyParts[x]?.name}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-slate-400 italic text-[11px]">Aucune partie du corps signalée</span>
+                                                )}
                                             </div>
-                                            <div
-                                                className="text-gray-700 text-sm pl-1"
-                                                dangerouslySetInnerHTML={{ __html: content }}
-                                            />
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {categories[detail.incidentCategoryId]?.name === "Environmental" && (
+                                        <div className="space-y-2 pt-2 border-t border-slate-200">
+                                            {[
+                                                { title: "Mesures de confinement", content: detail.containmentMeasures, icon: <IconListDetails size={13} />, color: "text-green-700 bg-green-50 border-green-200" },
+                                                { title: "Impact environnemental", content: detail.environmentalImpact, icon: <IconLeaf size={13} />, color: "text-blue-700 bg-blue-50 border-blue-200" },
+                                            ].map(({ title, content, color, icon }) => (
+                                                content && (
+                                                    <div key={title} className={`border-l-2 pl-2 py-1 ${color}`}>
+                                                        <div className="flex items-center gap-1 mb-0.5 text-[10px] uppercase tracking-wider">
+                                                            {icon}
+                                                            <span>{title}</span>
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-700 leading-snug" dangerouslySetInnerHTML={{ __html: content }} />
+                                                    </div>
+                                                )
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            ))}
                         </div>
-                    ))}
+                    )}
                 </div>
-            </div>
-            {/* <div>
-                <h4 className="text-2xl font-bold text-gray-800 mb-4">
-                    Incident Description
-                </h4>
+            </section>
 
-                <div className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition">
-                    <div
-                        className="text-gray-700 text-base leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: incident.description }}
-                    />
+            {/* === Section 2 — Équipements de protection individuelle === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-yellow-50/60 border-b border-yellow-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-yellow-100">
+                        <IconAlertTriangle size={14} className="text-yellow-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Équipements de protection individuelle (EPI)
+                    </h2>
+                    <span className="ml-auto text-[10px] text-slate-500">
+                        {incident.ppe?.length || 0} EPI signalé{(incident.ppe?.length || 0) > 1 ? 's' : ''}
+                    </span>
+                </header>
+                <div className="p-4">
+                    {(!incident.ppe || incident.ppe.length === 0) ? (
+                        <p className="text-xs text-slate-400 italic">Aucun EPI renseigné.</p>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {incident.ppe.map((x: any, index: any) => (
+                                <span key={index} className="inline-flex items-center px-2.5 py-1 text-xs rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800">
+                                    {ppeRecord[x] || x}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            </div> */}
+            </section>
 
-            <div className="">
-                <h4 className="text-lg font-semibold mb-2">
-                    PPE Status
-                </h4>
-                <div className='flex flex-wrap gap-4'>
-                    {incident.ppe?.map((x: any, index: any) => <div key={index} className=" border border-green-200 rounded-lg p-2 bg-green-50 flex justify-between">
-                        <p className='text-sm text-green-700'>{ppeRecord[x]}</p>
-                        {/* <IconCircleCheck color='green' /> */}
-                    </div>)}
-                </div>
-
-
-
-            </div>
-            <div className="">
-                <h4 className="text-lg font-semibold mb-2">
-                    Location and Work Context
-                </h4>
-                <div className='flex flex-wrap gap-4'>
-
-                    <div className="border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition flex gap-2 items-center p-2 " >
-                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-600 ">
-                            <IconMapPin size={15} className=" text-indigo-500" />
-                            Location:
-                        </h4>
-                        <p className="text-gray-800 text-sm font-medium">
-                            {locations[incident.locationId]?.name || "N/A"}
+            {/* === Section 3 — Lieu et contexte de travail === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-blue-50/60 border-b border-blue-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-blue-100">
+                        <IconMapPin size={14} className="text-blue-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Lieu et contexte de travail
+                    </h2>
+                </header>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-slate-50/60 border border-slate-200 rounded-md p-3">
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                            <IconMapPin size={12} className="text-indigo-600" />
+                            Lieu
+                        </div>
+                        <p className="text-sm text-slate-800">
+                            {locations[incident.locationId]?.name || <span className="text-slate-400 italic">Non renseigné</span>}
                         </p>
-                    </div >
-
-                    <div className="border border-gray-200 rounded-xl p-2 shadow-sm hover:shadow-md transition flex gap-2 items-center" >
-                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-600 ">
-                            <IconCloud size={15} className="text-sky-500" />
-                            Environment :
-                        </h4>
-                        <p className="text-gray-800 text-sm font-medium">
-                            {incident.weatherConditions?.map((x: any, index: any) => ((index != 0 ? ", " : "") + weatherConditions[x]?.name))}
-                            {incident.weatherConditions?.length === 0 ? "N/A" : ""}
+                    </div>
+                    <div className="bg-slate-50/60 border border-slate-200 rounded-md p-3">
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                            <IconCloud size={12} className="text-sky-600" />
+                            Conditions environnementales
+                        </div>
+                        <p className="text-sm text-slate-800">
+                            {incident.weatherConditions?.length > 0
+                                ? incident.weatherConditions.map((x: any, index: any) => (index != 0 ? ", " : "") + (weatherConditions[x]?.name || ''))
+                                : <span className="text-slate-400 italic">Non renseignées</span>}
                         </p>
-                    </div >
-
-                    <div className="border border-gray-200 rounded-xl p-2 shadow-sm hover:shadow-md transition flex gap-2 items-center" >
-                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-600 ">
-                            <IconBuilding size={15} className="text-red-500" />
-                            Work Area :
-                        </h4>
-                        <p className="text-gray-800 text-sm font-medium">
-                            {workAreas[incident.workAreaId]?.name || "N/A"}
+                    </div>
+                    <div className="bg-slate-50/60 border border-slate-200 rounded-md p-3">
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                            <IconBuilding size={12} className="text-red-600" />
+                            Zone de travail
+                        </div>
+                        <p className="text-sm text-slate-800">
+                            {workAreas[incident.workAreaId]?.name || <span className="text-slate-400 italic">Non renseignée</span>}
                         </p>
-                    </div >
-                    <div className="border border-gray-200 rounded-xl p-2 shadow-sm hover:shadow-md transition flex gap-2 items-center" >
-                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-600 ">
-                            <IconProgressHelp size={15} className="text-brown-500" />
-                            Work Process :
-                        </h4>
-                        <p className="text-gray-800 text-sm font-medium">
-                            {workProcesses[incident.workProcessId]?.name || "N/A"}
+                    </div>
+                    <div className="bg-slate-50/60 border border-slate-200 rounded-md p-3">
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+                            <IconProgressHelp size={12} className="text-amber-700" />
+                            Processus de travail
+                        </div>
+                        <p className="text-sm text-slate-800">
+                            {workProcesses[incident.workProcessId]?.name || <span className="text-slate-400 italic">Non renseigné</span>}
                         </p>
-                    </div >
-                </div>
-
-
-
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-
-                {/* Witnesses */}
-                <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition">
-                    <h5 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                        <IconUserCheck size={18} className="text-blue-500" /> Witnesses
-                    </h5>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {incident.witnesses?.map((id: any, index: number) => {
-                            const emp = employees[id];
-                            const initials = emp?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-
-                            return (
-                                <div key={index} className="flex items-center gap-4 p-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition duration-200 shadow-sm border border-blue-100">
-                                    <div className="w-7 h-7 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-medium text-xs">
-                                        {initials || 'NA'}
-                                    </div>
-                                    <div>
-                                        <p className="text-blue-600 font-semibold text-xs">{emp?.name || 'Unknown'}</p>
-                                        <p className="text-gray-500 text-xs">{emp?.empNumber ? `ID: ${emp.empNumber}` : 'No ID available'}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
+            </section>
 
-                {/* Participants */}
-                <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition">
-                    <h5 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                        <IconUsers size={18} className="text-purple-500" /> Involved Persons
-                    </h5>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {incident.involvedPersons?.map((id: any, index: number) => {
-                            const emp = employees[id];
-                            const initials = emp?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-
-                            return (
-                                <div key={index} className="flex items-center gap-4 p-2 rounded-xl bg-purple-50 hover:bg-purple-100 transition duration-200 shadow-sm border border-purple-100">
-                                    <div className="w-7 h-7 rounded-full bg-purple-200 flex items-center justify-center text-purple-800 font-medium text-xs">
-                                        {initials || 'NA'}
-                                    </div>
-                                    <div>
-                                        <p className="text-purple-600 font-semibold text-xs">{emp?.name || 'Unknown'}</p>
-                                        <p className="text-gray-500 text-xs">{emp?.empNumber ? `ID: ${emp.empNumber}` : 'No ID available'}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-            </div>
-            <div>
-                <h4 className="text-lg font-semibold mb-4 text-gray-800">Evidence & Attachments</h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 border border-gray-300 rounded-xl p-6 bg-gray-50">
-                    {incident?.evidence?.map((item: any, index: number) => (
-                        <div
-                            key={index}
-                            className="flex gap-4 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition duration-200 cursor-pointer"
-                            onClick={() => handlePreview(index)}
-                        >
-                            {isImage(item.type) ? (
-                                <img
-                                    src={`${item.type},${item.file}`}
-                                    alt={item.name}
-                                    className="w-20 h-20 object-cover rounded-md border"
-                                />
-                            ) : isPDF(item.type) ? (
-                                <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-md border text-red-600 font-bold text-xs text-center px-1">
-                                    PDF
-                                </div>
-                            ) : (
-                                <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-md border text-gray-600 font-bold text-xs text-center px-1">
-                                    File
-                                </div>
-                            )}
-
-                            <div className="flex flex-col justify-center overflow-x-hidden">
-                                <p className="text-sm font-semibold line-clamp-1 text-gray-800">{item.name}</p>
-                                <p className="text-sm text-gray-500">{getBase64FileSize(item.file)} KB</p>
+            {/* === Section 4 — Témoins et personnes impliquées === */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 bg-cyan-50/60 border-b border-cyan-200/70 flex items-center gap-2">
+                        <div className="p-1 rounded bg-cyan-100">
+                            <IconUserCheck size={14} className="text-cyan-700" />
+                        </div>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">Témoins</h2>
+                        <span className="ml-auto text-[10px] text-slate-500">
+                            {incident.witnesses?.length || 0}
+                        </span>
+                    </header>
+                    <div className="p-4">
+                        {(!incident.witnesses || incident.witnesses.length === 0) ? (
+                            <p className="text-xs text-slate-400 italic">Aucun témoin identifié.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {incident.witnesses.map((id: any, index: number) => {
+                                    const emp = employees[id];
+                                    const initials = emp?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                                    return (
+                                        <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-cyan-50/40 border border-cyan-100">
+                                            <div className="w-7 h-7 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-800 text-[10px] flex-shrink-0">
+                                                {initials || '?'}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs text-slate-800 truncate">{emp?.name || 'Inconnu'}</p>
+                                                <p className="text-[10px] text-slate-500 truncate">{emp?.empNumber ? `Matricule ${emp.empNumber}` : 'Identifiant inconnu'}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
+                        )}
+                    </div>
+                </section>
+
+                <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 bg-violet-50/60 border-b border-violet-200/70 flex items-center gap-2">
+                        <div className="p-1 rounded bg-violet-100">
+                            <IconUsers size={14} className="text-violet-700" />
                         </div>
-                    ))}
-                </div>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">Personnes impliquées</h2>
+                        <span className="ml-auto text-[10px] text-slate-500">
+                            {incident.involvedPersons?.length || 0}
+                        </span>
+                    </header>
+                    <div className="p-4">
+                        {(!incident.involvedPersons || incident.involvedPersons.length === 0) ? (
+                            <p className="text-xs text-slate-400 italic">Aucune personne impliquée identifiée.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {incident.involvedPersons.map((id: any, index: number) => {
+                                    const emp = employees[id];
+                                    const initials = emp?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                                    return (
+                                        <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-violet-50/40 border border-violet-100">
+                                            <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center text-violet-800 text-[10px] flex-shrink-0">
+                                                {initials || '?'}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs text-slate-800 truncate">{emp?.name || 'Inconnu'}</p>
+                                                <p className="text-[10px] text-slate-500 truncate">{emp?.empNumber ? `Matricule ${emp.empNumber}` : 'Identifiant inconnu'}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
+
+            {/* === Section 5 — Preuves et pièces jointes === */}
+            <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <div className="p-1 rounded bg-slate-200">
+                        <IconListDetails size={14} className="text-slate-700" />
+                    </div>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">Preuves et pièces jointes</h2>
+                    <span className="ml-auto text-[10px] text-slate-500">
+                        {incident?.evidence?.length || 0} pièce{(incident?.evidence?.length || 0) > 1 ? 's' : ''}
+                    </span>
+                </header>
+                <div className="p-4">
+                    {(!incident?.evidence || incident.evidence.length === 0) ? (
+                        <p className="text-xs text-slate-400 italic">Aucune pièce jointe.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {incident.evidence.map((item: any, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex gap-2 bg-slate-50/40 border border-slate-200 p-2 rounded-md hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer"
+                                    onClick={() => handlePreview(index)}
+                                >
+                                    {isImage(item.type) ? (
+                                        <img src={`${item.type},${item.file}`} alt={item.name} className="w-14 h-14 object-cover rounded border border-slate-200" />
+                                    ) : isPDF(item.type) ? (
+                                        <div className="w-14 h-14 flex items-center justify-center bg-red-50 rounded border border-red-200 text-red-700 text-[10px]">PDF</div>
+                                    ) : (
+                                        <div className="w-14 h-14 flex items-center justify-center bg-slate-100 rounded border border-slate-200 text-slate-600 text-[10px]">Fichier</div>
+                                    )}
+                                    <div className="flex flex-col justify-center overflow-hidden flex-1 min-w-0">
+                                        <p className="text-xs text-slate-800 line-clamp-2">{item.name}</p>
+                                        <p className="text-[10px] text-slate-500">{getBase64FileSize(item.file)} ko</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
 
             <Modal
                 opened={opened}
                 onClose={close}
                 size="xl"
-                title="Evidence Preview"
+                title="Aperçu de la pièce jointe"
                 centered
-                overlayProps={{
-                    backgroundOpacity: 0.55,
-                    blur: 3,
-                }}
+                overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
             >
                 <Carousel
                     className="[&_.mantine-Carousel-control]:!bg-primary [&_.mantine-Carousel-control]:!text-white"
                     classNames={{
-                        indicator:
-                            "mantine-Carousel-indicator bg-white opacity-80 data-[active=true]:!bg-primary transition",
+                        indicator: "mantine-Carousel-indicator bg-white opacity-80 data-[active=true]:!bg-primary transition",
                     }}
                     initialSlide={startIndex}
                     withIndicators
@@ -383,27 +397,17 @@ const IncidentDetailsTab = ({
                         <Carousel.Slide key={index}>
                             <div className="w-full h-full flex items-center justify-center">
                                 {isImage(item.type) ? (
-                                    <img
-                                        src={`${item.type},${item.file}`}
-                                        alt={item.name}
-                                        className="max-w-full max-h-[75vh] object-contain rounded-md"
-                                    />
+                                    <img src={`${item.type},${item.file}`} alt={item.name} className="max-w-full max-h-[75vh] object-contain rounded-md" />
                                 ) : isPDF(item.type) ? (
-                                    <iframe
-                                        title={item.name}
-                                        src={`${item.type},${item.file}`}
-                                        className="w-full h-[75vh] border rounded-md"
-                                    />
+                                    <iframe title={item.name} src={`${item.type},${item.file}`} className="w-full h-[75vh] border rounded-md" />
                                 ) : (
-                                    <p className="text-gray-700">Unsupported file format</p>
+                                    <p className="text-slate-700">Format de fichier non supporté</p>
                                 )}
                             </div>
                         </Carousel.Slide>
                     ))}
                 </Carousel>
             </Modal>
-
-
         </div>
     )
 }

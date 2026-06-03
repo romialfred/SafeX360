@@ -3,7 +3,6 @@ import {
     Card,
     Text,
     Select,
-    Breadcrumbs,
     Input,
     Tooltip,
     Loader,
@@ -11,6 +10,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconBell, IconCheck, IconAlertTriangle, IconBolt } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import PageHeader from '../UtilityComp/PageHeader';
 import { Toolbar } from 'primereact/toolbar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -264,7 +264,7 @@ const NotificationsManagement = () => {
         return [
             {
                 key: 'total',
-                title: 'Total Notifications',
+                title: 'Total notifications',
                 value: formatCount(total),
                 icon: IconBell,
                 color: 'blue',
@@ -303,7 +303,7 @@ const NotificationsManagement = () => {
     const toolbarTemplate = () => (
         <div className="flex gap-2 items-center overflow-x-auto">
             <Select
-                placeholder="Filter by Type"
+                placeholder="Filtrer par type"
                 data={typeOptions}
                 value={selectedType}
                 onChange={setSelectedType}
@@ -312,7 +312,7 @@ const NotificationsManagement = () => {
                 className="min-w-[160px]"
             />
             <Select
-                placeholder="Filter by Status"
+                placeholder="Filtrer par statut"
                 data={statusOptions}
                 value={selectedStatus}
                 onChange={setSelectedStatus}
@@ -321,7 +321,7 @@ const NotificationsManagement = () => {
                 className="min-w-[160px]"
             />
             <Select
-                placeholder="Filter by Urgency"
+                placeholder="Filtrer par urgence"
                 data={urgencyOptions}
                 value={selectedUrgency}
                 onChange={setSelectedUrgency}
@@ -330,7 +330,7 @@ const NotificationsManagement = () => {
                 className="min-w-[160px]"
             />
             <Select
-                placeholder="Filter by Zone"
+                placeholder="Filtrer par zone"
                 data={zoneOptions}
                 value={selectedZone}
                 onChange={setSelectedZone}
@@ -339,7 +339,7 @@ const NotificationsManagement = () => {
                 className="min-w-[160px]"
             />
             <Select
-                placeholder="Filter by Department"
+                placeholder="Filtrer par département"
                 data={departmentOptions}
                 value={selectedDepartment}
                 onChange={setSelectedDepartment}
@@ -349,7 +349,7 @@ const NotificationsManagement = () => {
             />
             <Input
                 leftSection={<IconSearch size={16} />}
-                placeholder="Search notifications..."
+                placeholder="Rechercher des notifications..."
                 type="search"
                 size="sm"
                 value={searchTerm}
@@ -376,7 +376,6 @@ const NotificationsManagement = () => {
                     component={Link}
                     to={`/communications/communications-details/${rowData.communicationId ?? rowData.id}`}
                     size="sm"
-                    fw={600}
                     c="blue"
                     className="hover:underline"
                 >
@@ -397,7 +396,7 @@ const NotificationsManagement = () => {
         <Tag
             value={formatEnumValue(rowData.status)}
             severity={getStatusSeverity(rowData.status)}
-            className="text-xs px-2 py-1 rounded-full font-semibold"
+            className="text-xs px-2 py-1 rounded-full"
         />
     );
 
@@ -405,7 +404,7 @@ const NotificationsManagement = () => {
         <Tag
             value={formatEnumValue(rowData.urgency)}
             severity={getUrgencySeverity(rowData.urgency)}
-            className="text-xs px-2 py-1 rounded-full font-semibold"
+            className="text-xs px-2 py-1 rounded-full"
         />
     );
 
@@ -414,7 +413,7 @@ const NotificationsManagement = () => {
         if (!recipients.length) return <Text size="sm">-</Text>;
         return (
             <Tooltip label={recipients.join(', ')} withArrow position="top">
-                <Text size="sm" fw={500} className="cursor-help">
+                <Text size="sm" className="cursor-help">
                     {recipients.length}
                 </Text>
             </Tooltip>
@@ -448,19 +447,18 @@ const NotificationsManagement = () => {
     );
 
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Notifications Center</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-                        <Text variant="gradient">Notifications Center</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-            <Text c="dimmed" size="sm">Manage and track all communication notifications across the organisation.</Text>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Communication Sécurité' },
+                    { label: 'Centre de notifications' },
+                ]}
+                icon={<IconBell size={22} stroke={2} />}
+                iconColor="pink"
+                title="Centre de notifications"
+                subtitle="Gestion et suivi de toutes les notifications de communication dans l'organisation"
+            />
 
             <StatusSummaryCards cards={summaryCards} />
 

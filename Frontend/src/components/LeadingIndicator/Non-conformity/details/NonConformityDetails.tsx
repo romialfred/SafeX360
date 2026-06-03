@@ -220,7 +220,7 @@ const NonConformityDetails = () => {
         <div className='p-5'>
 
             <div>
-                <div className="font-semibold  text-2xl text-blue-500 w-fit"> Central Finding Details</div>
+                <div className="text-2xl text-blue-500 w-fit"> Central Finding Details</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
                     <Link className="hover:!underline" to="/non-conformity"><Text variant="gradient">Central Findings Dashboard</Text></Link>
@@ -241,7 +241,7 @@ const NonConformityDetails = () => {
                             <IconArrowLeft size={18} />
                         </ActionIcon> */}
                         <div>
-                            <Title order={2} className="text-slate-800 flex items-center gap-10 font-bold">
+                            <Title order={2} className="text-slate-800 flex items-center gap-10">
                                 {nonConformity.number}  <div className='text-sm font-normal flex gap-2 items-center'>
                                     <span>Status :</span>
                                     <Badge
@@ -341,7 +341,7 @@ const NonConformityDetails = () => {
 
                     {/* <div>
                         <Group justify="space-between" className="mb-2">
-                            <Text size="sm" fw={500} className="text-slate-700">Progress</Text>
+                            <Text size="sm" className="text-slate-700">Progress</Text>
                             <Text size="sm" className="text-slate-600">{getStatusProgress(nonConformity.status)}%</Text>
                         </Group>
                         <Progress
@@ -423,7 +423,7 @@ const NonConformityDetails = () => {
                     ) : (
                         <div className="flex flex-col items-center justify-center py-10">
                             <IconClock size={40} className="text-blue-300 mb-2" />
-                            <Text size="md" fw={500} className="text-blue-400">No corrective actions found</Text>
+                            <Text size="md" className="text-blue-400">No corrective actions found</Text>
                             <Text size="sm" className="text-slate-400">There are currently no corrective actions for this event.</Text>
                         </div>
                     )}
@@ -435,7 +435,7 @@ const NonConformityDetails = () => {
                     ) : (
                         <div className="flex flex-col items-center justify-center py-10">
                             <IconHistory size={40} className="text-blue-300 mb-2" />
-                            <Text size="md" fw={500} className="text-blue-400">No history available</Text>
+                            <Text size="md" className="text-blue-400">No history available</Text>
                             <Text size="sm" className="text-slate-400">No status changes or updates have been recorded yet.</Text>
                         </div>
                     )}
@@ -452,7 +452,7 @@ const NonConformityDetails = () => {
                 size="lg"
                 classNames={{
                     body: 'p-6',
-                    header: 'text-lg font-semibold border-b border-gray-500 mx-2',
+                    header: 'text-lg border-b border-gray-500 mx-2',
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">

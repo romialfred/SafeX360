@@ -45,7 +45,7 @@ const TreatmentStep = ({ form, employees }: any) => {
     const handleRemoveActionPlan = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -99,37 +99,37 @@ const TreatmentStep = ({ form, employees }: any) => {
                 { value: 'Acceptation en l\'état', label: 'Acceptation en l\'état' },
                 { value: 'Reclassement', label: 'Reclassement' }
             ],
-            valorisationTitle: isNearMiss ? 'Prevention Cost' : 'Non-Conformity valuation',
-            valorisationDescription: isNearMiss ? 'Estimated costs of implementing preventive actions' : 'Direct costs related to the non-conformity',
-            impactsTitle: isNearMiss ? 'Preventive Benefits' : 'Indirect Impacts',
+            valorisationTitle: isNearMiss ? 'Coût de prévention' : "Valorisation de la non-conformité",
+            valorisationDescription: isNearMiss ? "Coûts estimés de mise en œuvre des actions préventives" : "Coûts directs liés à la non-conformité",
+            impactsTitle: isNearMiss ? 'Bénéfices préventifs' : 'Impacts indirects',
             impactsDescription: isNearMiss
-                ? 'Benefits obtained through prevention'
-                : 'Consequences that cannot be financially quantified',
+                ? "Bénéfices obtenus grâce à la prévention"
+                : "Conséquences ne pouvant pas être quantifiées financièrement",
             impactsOptions: isNearMiss ? [
-                { key: 'Prevention of potential accidents', label: 'Prevention of potential accidents' },
-                { key: 'Future cost savings', label: 'Future cost savings' },
-                { key: 'Improved safety', label: 'Improved safety' },
-                { key: 'Team awareness', label: 'Team awareness' },
-                { key: 'Process improvement', label: 'Process improvement' }
+                { key: 'Prévention d\'accidents potentiels', label: "Prévention d'accidents potentiels" },
+                { key: 'Économies futures', label: 'Économies futures' },
+                { key: 'Amélioration de la sécurité', label: 'Amélioration de la sécurité' },
+                { key: 'Sensibilisation de l\'équipe', label: "Sensibilisation de l'équipe" },
+                { key: 'Amélioration du processus', label: 'Amélioration du processus' }
             ] : [
-                { key: 'Temporary production shutdown', label: 'Temporary production shutdown' },
-                { key: 'Impact on employee health or safety', label: 'Impact on employee health or safety' },
-                { key: 'Legal or regulatory non-compliance', label: 'Legal or regulatory non-compliance' },
-                { key: 'Damage to company reputation', label: 'Damage to company reputation' },
-                { key: 'Loss of client or contract', label: 'Loss of client or contract' }
+                { key: 'Arrêt temporaire de production', label: 'Arrêt temporaire de production' },
+                { key: 'Impact sur la santé ou sécurité des employés', label: 'Impact sur la santé ou sécurité des employés' },
+                { key: 'Non-conformité légale ou réglementaire', label: 'Non-conformité légale ou réglementaire' },
+                { key: 'Atteinte à la réputation', label: 'Atteinte à la réputation' },
+                { key: 'Perte de client ou de contrat', label: 'Perte de client ou de contrat' }
             ],
-            actionsTitle: isNearMiss ? 'Actions Préventives' : 'Actions Correctives',
-            actionsDescription: isNearMiss ? 'Définir les actions pour prévenir la survenue d\'incidents similaires' : 'Définir les actions pour prévenir la récurrence de l\'incident',
-            actionButtonText: isNearMiss ? 'Add Prevention Plan' : 'Add Action Plan',
-            actionPlanLabel: isNearMiss ? 'Prevention Plan Name' : 'Action Plan Name',
-            actionPlanPlaceholder: isNearMiss ? 'Nom du plan de prévention' : 'Nom du plan d\'action',
-            actionDescriptionLabel: isNearMiss ? 'Description' : 'Description',
-            actionDescriptionPlaceholder: isNearMiss ? 'Description détaillée de l\'action préventive' : 'Description détaillée de l\'action corrective',
-            priseEnChargeTitle: isNearMiss ? 'Suivi et Communication' : 'Prise en charge',
-            priseEnChargeCheckbox: isNearMiss ? 'Partager les leçons apprises avec l\'équipe' : 'Demande << Avoir Prestataire externe >>',
-            priseEnChargeDescription: isNearMiss ? 'Cochez cette case pour partager les enseignements avec l\'équipe' : 'Cochez cette case si une demande d\'avoir doit être faite au prestataire externe',
+            actionsTitle: isNearMiss ? 'Actions préventives' : 'Actions correctives',
+            actionsDescription: isNearMiss ? "Définir les actions pour prévenir la survenue d'incidents similaires" : "Définir les actions pour prévenir la récurrence de l'incident",
+            actionButtonText: isNearMiss ? 'Ajouter un plan préventif' : 'Ajouter un plan correctif',
+            actionPlanLabel: isNearMiss ? 'Nom du plan préventif' : 'Nom du plan correctif',
+            actionPlanPlaceholder: isNearMiss ? 'Nom du plan de prévention' : "Nom du plan d'action",
+            actionDescriptionLabel: 'Description',
+            actionDescriptionPlaceholder: isNearMiss ? "Description détaillée de l'action préventive" : "Description détaillée de l'action corrective",
+            priseEnChargeTitle: isNearMiss ? 'Suivi et communication' : 'Prise en charge',
+            priseEnChargeCheckbox: isNearMiss ? "Partager les leçons apprises avec l'équipe" : 'Demande "Avoir prestataire externe"',
+            priseEnChargeDescription: isNearMiss ? "Cochez pour partager les enseignements avec l'équipe" : "Cochez si une demande d'avoir doit être faite au prestataire externe",
             priseEnChargeComments: isNearMiss ? 'Plan de communication et partage des bonnes pratiques' : 'Commentaires sur la prise en charge',
-            priseEnChargeCommentsPlaceholder: isNearMiss ? 'Détails sur la communication des leçons apprises et actions de sensibilisation' : 'Détails sur la prise en charge et les actions entreprises'
+            priseEnChargeCommentsPlaceholder: isNearMiss ? "Détails sur la communication des leçons apprises et actions de sensibilisation" : "Détails sur la prise en charge et les actions entreprises"
         };
     };
 
@@ -143,7 +143,7 @@ const TreatmentStep = ({ form, employees }: any) => {
     return (
         <div className="space-y-6">
             <Card shadow="sm" padding="md">
-                <Text size="lg" fw={600} className="text-slate-800 mb-4">
+                <Text size="lg" className="text-slate-800 mb-4">
                     {labels.valorisationTitle}
                 </Text>
                 <Text size="sm" className="text-slate-600 mb-4">
@@ -153,15 +153,15 @@ const TreatmentStep = ({ form, employees }: any) => {
                 <Group justify="space-between" className="mb-4 mt-2">
                     <div className='flex gap-5 items-center'>
 
-                        <Text size="sm" fw={500} className="text-slate-700">
-                            Currency
+                        <Text size="sm" className="text-slate-700">
+                            Devise
                         </Text>
                         <Select allowDeselect={false}
                             {...form.getInputProps('nonConformity.currency')}
                             data={[
                                 { value: 'EUR', label: 'Euro (€)' },
-                                { value: 'USD', label: 'US Dollar ($)' },
-                                { value: 'XOF', label: 'CFA Franc (CFA)' }
+                                { value: 'USD', label: 'Dollar US ($)' },
+                                { value: 'XOF', label: 'Franc CFA (CFA)' }
                             ]}
                             className="w-40"
                             size="sm"
@@ -173,9 +173,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                     <div className="grid grid-cols-2 gap-4">
                         <Group>
                             <Text size="sm" className="w-40 text-slate-700">
-                                {form.values.nonConformity.type === 'NEAR_MISS'
-                                    ? 'Equipment/Material Cost'
-                                    : 'Material/Equipment Cost'}
+                                Coût matériel / équipement
                             </Text>
                             <NumberInput
                                 thousandSeparator="," {...form.getInputProps('nonConformity.materialCost')}
@@ -192,9 +190,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                         </Group>
                         <Group>
                             <Text size="sm" className="w-40 text-slate-700">
-                                {form.values.nonConformity.type === 'NEAR_MISS'
-                                    ? 'Training/Personnel Cost'
-                                    : 'Labor Cost'}
+                                {form.values.nonConformity.type === 'NEAR_MISS' ? 'Coût formation / personnel' : "Coût main-d'œuvre"}
                             </Text>
                             <NumberInput
                                 thousandSeparator=","
@@ -216,9 +212,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                     <div className="grid grid-cols-2 gap-4">
                         <Group>
                             <Text size="sm" className="w-40 text-slate-700">
-                                {form.values.nonConformity.type === 'NEAR_MISS'
-                                    ? 'Communication Fees'
-                                    : 'Administrative Fees'}
+                                {form.values.nonConformity.type === 'NEAR_MISS' ? 'Frais de communication' : 'Frais administratifs'}
                             </Text>
                             <NumberInput
                                 thousandSeparator=","
@@ -236,7 +230,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                         </Group>
 
                         <Group>
-                            <Text size="sm" className="w-40 text-slate-700">Miscellaneous Expenses</Text>
+                            <Text size="sm" className="w-40 text-slate-700">Dépenses diverses</Text>
                             <NumberInput
                                 thousandSeparator=","
                                 {...form.getInputProps('nonConformity.expenses')}
@@ -257,10 +251,8 @@ const TreatmentStep = ({ form, employees }: any) => {
                     <div className="grid grid-cols-2 gap-4">
 
                         <Group >
-                            <Text size="sm" fw={500} className="text-slate-800 w-40">
-                                {form.values.nonConformity.type === 'NEAR_MISS'
-                                    ? 'Total Prevention:'
-                                    : 'Total NC Value:'}
+                            <Text size="sm" className="text-slate-800 w-40">
+                                {form.values.nonConformity.type === 'NEAR_MISS' ? 'Total prévention :' : 'Total NC :'}
                             </Text>
                             <NumberInput disabled
                                 thousandSeparator=","
@@ -269,13 +261,13 @@ const TreatmentStep = ({ form, employees }: any) => {
                                 className="w-48"
                                 size="sm"
                             />
-                            <Text size="sm" className="text-slate-600 font-semibold">
+                            <Text size="sm" className="text-slate-600">
                                 {currencySymbols[selectedCurrency as keyof typeof currencySymbols]}
                             </Text>
                         </Group>
                     </div>
                     <div>
-                        <TextEditor form={form} id="nonConformity.details" title="Details" withAsterisk />
+                        <TextEditor form={form} id="nonConformity.details" title="Détails" withAsterisk />
                     </div>
                     {/* File Upload */}
                     <div>
@@ -293,7 +285,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                         <IconAlertTriangle size={20} className={form.values.nonConformity.type === 'NEAR_MISS' ? 'text-green-500' : 'text-orange-500'} />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
+                        <Text size="lg" className="text-slate-800">
                             {labels.impactsTitle}
                         </Text>
                         <Text size="sm" className="text-slate-600">
@@ -302,7 +294,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                     </div>
                 </Group>
                 <Card className={`${form.values.nonConformity.type === 'NEAR_MISS' ? 'bg-green-50/30 border border-green-200' : 'bg-orange-50/30 border border-orange-200'} p-4`}>
-                    <Text size="sm" fw={500} className="!mb-3 text-slate-700">
+                    <Text size="sm" className="!mb-3 text-slate-700">
                         {form.values.nonConformity.type === 'NEAR_MISS'
                             ? 'Select applicable preventive benefits:'
                             : 'Select applicable indirect impacts:'}
@@ -333,23 +325,23 @@ const TreatmentStep = ({ form, employees }: any) => {
             <Card shadow="sm" padding="md">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h3 className="font-medium text-lg text-gray-800 ">{form.values.nonConformity.type == "NEAR_MISS" ? "Preventive Actions" : "Corrective Actions"}</h3>
+                        <h3 className="text-lg text-gray-800 ">{form.values.nonConformity.type == "NEAR_MISS" ? "Preventive Actions" : "Corrective Actions"}</h3>
                         <p>Define actions to prevent occurence of similar incidents</p>
                     </div>
 
 
-                    <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">Add {form.values.nonConformity.type == "NEAR_MISS" ? "Preventive Plan" : "Corrective Plan"}</Button>
+                    <Button size="sm" color="indigo" onClick={handleAddIncident} leftSection={<IconPlus size={14} />}>Ajouter un plan {form.values.nonConformity.type == "NEAR_MISS" ? "préventif" : "correctif"}</Button>
                 </div>
                 {form?.values.correctiveActions && form?.values.correctiveActions.map((x: any, index: any) => <Fieldset className="grid grid-cols-2 gap-6 mt-5" legend={<div className="flex gap-5">
-                    <div className="text-lg font-medium text-blue-500">Action {index + 1}</div>
-                    <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Settings">
-                        <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    <div className="text-sm text-indigo-700 uppercase tracking-wider">Action {index + 1}</div>
+                    <ActionIcon size="xs" onClick={() => handleRemoveActionPlan(index, x.id)} variant="light" color="red" aria-label="Retirer">
+                        <IconTrash size={11} stroke={1.5} />
                     </ActionIcon>
                 </div>}>
-                    <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label={`${form.values.nonConformity.type == "NEAR_MISS" ? "Preventive" : "Corrective"} Plan Name`} placeholder='Enter plan name' />
-                    <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={employees} label="Assign Employee" placeholder="Select assigned employee" />
-                    <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} label="Deadline" placeholder="Select deadline" />
-                    <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={[{ label: "Pending", value: "PENDING" }, { label: "In-Progress", value: "IN_PROGRESS" }, { label: "Canceled", value: "CANCELED" }, { label: "Completed", value: "COMPLETED" }]} label="Status" placeholder="Select status" />
+                    <TextInput size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label={`Nom du plan ${form.values.nonConformity.type == "NEAR_MISS" ? "préventif" : "correctif"}`} placeholder='Saisir le nom du plan' />
+                    <Select size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={employees} searchable label="Employé assigné" placeholder="Sélectionner l'employé" />
+                    <DateInput size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} label="Échéance" placeholder="Sélectionner la date" />
+                    <Select size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={[{ label: "En attente", value: "PENDING" }, { label: "En cours", value: "IN_PROGRESS" }, { label: "Annulée", value: "CANCELED" }, { label: "Terminée", value: "COMPLETED" }]} label="Statut" placeholder="Sélectionner le statut" />
                     <div className='col-span-2'>
 
                         <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title="Description" />
@@ -357,7 +349,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                 </Fieldset>)}
             </Card>
             {/* <Card shadow="sm" padding="md"> */}
-            {/* <Text size="lg" fw={500} className="!mb-4">
+            {/* <Text size="lg" className="!mb-4">
                     {labels.priseEnChargeTitle}
                 </Text>
                 <Checkbox
@@ -368,7 +360,7 @@ const TreatmentStep = ({ form, employees }: any) => {
                     {labels.priseEnChargeDescription}
                 </Text> */}
             {/* <div className="">
-                    <TextEditor form={form} withAsterisk id="nonConformity.supportComments" title="Feedback on support" />
+                    <TextEditor form={form} withAsterisk id="nonConformity.supportComments" title="Retour sur la prise en charge" />
                 </div> */}
             {/* </Card> */}
         </div>

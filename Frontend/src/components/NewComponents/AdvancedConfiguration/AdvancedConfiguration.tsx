@@ -320,12 +320,12 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center mb-6">
                     <IconDeviceDesktop className="w-6 h-6 text-blue-600 mr-3" />
-                    <h3 className="text-xl font-semibold text-gray-900">General Settings</h3>
+                    <h3 className="text-lg text-gray-900">General Settings</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             System Language
                         </label>
                         <select
@@ -340,7 +340,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             Time Zone
                         </label>
                         <select
@@ -355,7 +355,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             Date Format
                         </label>
                         <select
@@ -370,7 +370,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             Time Format
                         </label>
                         <select
@@ -389,12 +389,12 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center mb-6">
                     <IconShield className="w-6 h-6 text-green-600 mr-3" />
-                    <h3 className="text-xl font-semibold text-gray-900">Security & Sessions</h3>
+                    <h3 className="text-lg text-gray-900">Security & Sessions</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             Session Timeout (minutes)
                         </label>
                         <input
@@ -408,7 +408,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm text-gray-700 mb-2">
                             Max File Size (MB)
                         </label>
                         <input
@@ -475,25 +475,25 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     <div key={category} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <div className="flex items-center mb-6">
                             <IconBell className="w-6 h-6 text-orange-600 mr-3" />
-                            <h3 className="text-xl font-semibold text-gray-900">Notifications - {category}</h3>
+                            <h3 className="text-lg text-gray-900">Notifications - {category}</h3>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                             Notification
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconMail className="w-4 h-4 mx-auto" />
                                             Email
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconDeviceMobile className="w-4 h-4 mx-auto" />
                                             SMS
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                             <IconBell className="w-4 h-4 mx-auto" />
                                             In-App
                                         </th>
@@ -506,7 +506,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                             <tr key={setting.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">{setting.name}</div>
+                                                        <div className="text-sm text-gray-900">{setting.name}</div>
                                                         <div className="text-sm text-gray-500">{setting.description}</div>
                                                     </div>
                                                 </td>
@@ -556,26 +556,26 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center mb-6">
                     <IconDatabase className="w-6 h-6 text-purple-600 mr-3" />
-                    <h3 className="text-xl font-semibold text-gray-900">Data Retention Policies</h3>
+                    <h3 className="text-lg text-gray-900">Data Retention Policies</h3>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                     Data Type
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                                     Retention Period
                                 </th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                     Auto Archive
                                 </th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                     Auto Delete
                                 </th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -585,7 +585,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                 <tr key={policy.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{policy.dataType}</div>
+                                            <div className="text-sm text-gray-900">{policy.dataType}</div>
                                             <div className="text-sm text-gray-500">{policy.description}</div>
                                         </div>
                                     </td>
@@ -663,7 +663,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                             <div className="p-2 bg-blue-100 rounded-lg mr-3">
                                 {getCategoryIcon(category)}
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900">{category}</h3>
+                            <h3 className="text-lg text-gray-900">{category}</h3>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -673,11 +673,11 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                     <div key={param.id} className="border border-gray-200 rounded-lg p-4">
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex-1">
-                                                <h4 className="text-sm font-medium text-gray-900 mb-1">{param.name}</h4>
+                                                <h4 className="text-sm text-gray-900 mb-1">{param.name}</h4>
                                                 <p className="text-xs text-gray-600">{param.description}</p>
                                             </div>
                                             <div className="ml-4 text-right">
-                                                <div className="text-lg font-bold text-blue-600">{param.value}</div>
+                                                <div className="text-lg text-blue-600">{param.value}</div>
                                                 <div className="text-xs text-gray-500">{param.unit}</div>
                                             </div>
                                         </div>
@@ -732,7 +732,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                 Back to Settings
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Configuration</h1>
+                                <h1 className="text-2xl font-semibold text-gray-900 mb-2">Advanced Configuration</h1>
                                 <p className="text-gray-600">System settings and advanced configurations</p>
                             </div>
                         </div>
@@ -750,7 +750,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                 <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-8 w-fit">
                     <button
                         onClick={() => setActiveTab('system')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'system'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'system'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -760,7 +760,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </button>
                     <button
                         onClick={() => setActiveTab('notifications')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'notifications'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'notifications'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -770,7 +770,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </button>
                     <button
                         onClick={() => setActiveTab('retention')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'retention'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'retention'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -780,7 +780,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                     </button>
                     <button
                         onClick={() => setActiveTab('global')}
-                        className={`px-6 py-3 rounded-md font-medium transition-colors flex items-center ${activeTab === 'global'
+                        className={`px-6 py-3 rounded-md transition-colors flex items-center ${activeTab === 'global'
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}

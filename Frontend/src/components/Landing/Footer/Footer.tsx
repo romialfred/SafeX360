@@ -19,7 +19,7 @@ const Footer = () => {
                 </div>
 
                 <div className="absolute top-0 left-0 w-full h-full flex flex-col px-4 p-30 text-white bg-black/50 backdrop-blur-md gap-10">
-                    <h1 className="text-5xl font-bold uppercase text-blue-500">Mine Xpert</h1>
+                    <h1 className="text-5xl uppercase text-blue-500">Mine Xpert</h1>
                     <p className="text-xl max-w-[400px]">
                         Crafted with care and precision to deliver unmatched quality, innovation, and excellence in industrial services worldwide.
                     </p>
@@ -35,7 +35,7 @@ const Footer = () => {
                 {/* Floating Card on Image */}
                 <div className="absolute top-[-50px] right-10 w-[60%] h-[350px] bg-primary text-white p-10 shadow-lg flex flex-col gap-15">
                     <div className="max-w-[400px]">
-                        <h2 className="text-5xl font-bold">Transform Your Space with Us!</h2>
+                        <h2 className="text-5xl">Transform Your Space with Us!</h2>
                     </div>
 
                     <div>

@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@mantine/form';
-import { Button, Group, Stepper, Text, Badge, Paper, Breadcrumbs } from '@mantine/core';
-import { IconCheck, IconClipboardList, IconSearch, IconTool, IconArchive, IconSend } from '@tabler/icons-react';
+import { Button, Group, Stepper, Text, Badge, Paper, Tooltip } from '@mantine/core';
+import {
+    IconCheck, IconClipboardList, IconSearch, IconTool, IconArchive, IconSend,
+    IconAlertTriangle, IconDeviceFloppy, IconX, IconLayoutSidebarRightCollapse,
+    IconLayoutSidebarRightExpand, IconArrowLeft, IconArrowRight, IconHash,
+} from '@tabler/icons-react';
 import AnalysisStep from './steps/AnalysisStep';
 import TreatmentStep from './steps/TreatmentStep';
 import ClosureStep from './steps/ClosureStep';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DeclarationStep from './steps/DeclarationStep';
+import PageHeader from '../../UtilityComp/PageHeader';
 import { getAllActiveLocations } from '../../../services/LocationService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
 import { getAllActiveWorkProcess } from '../../../services/WorkProcessService';
@@ -25,6 +30,7 @@ import { useSelector } from 'react-redux';
 
 const NonConformityForm = () => {
     const [activeStep, setActiveStep] = useState(0);
+    const [helpPanelVisible, setHelpPanelVisible] = useState(true);
     const [employees, setEmployees] = useState<any[]>([]);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
@@ -120,39 +126,37 @@ const NonConformityForm = () => {
         },
         validate: {
             nonConformity: {
-                //first page
-                type: (value) => value ? null : 'Type is required',
-                title: (value) => value ? null : 'Title is required',
-                date: (value) => value ? null : 'Date is required',
-                detectionDate: (value) => value ? null : 'Detection date is required',
-                reportedBy: (value) => value ? null : 'Reported by is required',
-                workProcessId: (value) => value ? null : 'Work process is required',
-                locationId: (value) => value ? null : 'Location is required',
-                categoryId: (value) => value ? null : 'Category is required',
-                description: (value) => isValidRichText(value) ? null : 'Description is required',
-                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Requirement is required',
-                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Detection source is required',
-                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Action taken is required',
-                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Severity level is required',
-                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? 'Near miss type is required' : null,
-                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? 'At least one factor is required' : null,
-                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? 'Preventive action is required' : null,
-                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? 'Improvement is required' : null,
-                events: (value) => value.length === 0 ? 'At least one event is required' : null,
+                //première page
+                type: (value) => value ? null : "Le type d'événement est requis",
+                title: (value) => value ? null : "Le titre est requis",
+                date: (value) => value ? null : "La date de l'événement est requise",
+                detectionDate: (value) => value ? null : "La date de détection est requise",
+                reportedBy: (value) => value ? null : "Le déclarant est requis",
+                workProcessId: (value) => value ? null : "Le processus de travail est requis",
+                locationId: (value) => value ? null : "Le lieu est requis",
+                categoryId: (value) => value ? null : "La catégorie est requise",
+                description: (value) => isValidRichText(value) ? null : "La description est requise",
+                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'exigence non respectée est requise",
+                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "La source de détection est requise",
+                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'action immédiate est requise",
+                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "Le niveau de gravité est requis",
+                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? "Le type de quasi-accident est requis" : null,
+                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? "Au moins un facteur contributif est requis" : null,
+                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'action préventive est requise" : null,
+                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'opportunité d'amélioration est requise" : null,
+                events: (value) => value.length === 0 ? "Au moins une nature d'événement est requise" : null,
 
-                //third page
+                //troisième page
+                details: (value) => isValidRichText(value) || activeStep < 2 ? null : "Les détails sont requis",
+                comments: (value) => isValidRichText(value) || activeStep < 2 ? null : "Les commentaires sont requis",
 
-                details: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Details are required',
-                comments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Comments are required',
-                // supportComments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Support comments are required',
-
-                //fourth page
-                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Lessons learned are required',
-                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Knowledge sharing plan is required',
-                closingDate: (value) => value || activeStep < 3 ? null : 'Closing date is required',
-                finalStatus: (value) => value || activeStep < 3 ? null : 'Final status is required',
-                validator: (value) => value || activeStep < 3 ? null : 'Validator is required',
-                validationDate: (value) => value || activeStep < 3 ? null : 'Validation date is required',
+                //quatrième page
+                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : "Les leçons apprises sont requises",
+                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : "Le plan de diffusion est requis",
+                closingDate: (value) => value || activeStep < 3 ? null : "La date de clôture est requise",
+                finalStatus: (value) => value || activeStep < 3 ? null : "Le statut final est requis",
+                validator: (value) => value || activeStep < 3 ? null : "Le validateur est requis",
+                validationDate: (value) => value || activeStep < 3 ? null : "La date de validation est requise",
                 // validationComment: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Validation comment is required',
                 // effectiveness: (value) => value || activeStep < 3 ? null : 'Effectiveness is required',
                 // rating: (value) => value || activeStep < 3 ? null : 'Rating is required',
@@ -170,28 +174,27 @@ const NonConformityForm = () => {
 
             },
             analysis: {
-                method: (value) => value || activeStep < 1 ? null : 'Analysis method is required',
-                origin: (value) => value || activeStep < 1 ? null : 'Origin is required',
-                description: (value) => value || activeStep < 1 ? null : 'Description is required',
-                individualFactors: (value) => value || activeStep < 1 ? null : 'Individual factors are required',
-                technicalFactors: (value) => value || activeStep < 1 ? null : 'Technical factors are required',
-                organizationalFactors: (value) => value || activeStep < 1 ? null : 'Organizational factors are required',
-                rootCauses: (value) => value || activeStep < 1 ? null : 'Root causes are required',
-                startDate: (value) => value || activeStep < 1 ? null : 'Start date is required',
-                deadline: (value) => value || activeStep < 1 ? null : 'Deadline is required',
-                priority: (value) => value || activeStep < 1 ? null : 'Priority is required',
-                severityLevel: (value) => value || activeStep < 1 ? null : 'Severity level is required',
-                status: (value) => value || activeStep < 1 ? null : 'Status is required',
-                summary: (value) => isValidRichText(value) || activeStep < 1 ? null : 'Summary is required',
-                conclusion: (value) => isValidRichText(value) || activeStep < 1 ? null : 'Conclusion is required',
-
+                method: (value) => value || activeStep < 1 ? null : "La méthode d'analyse est requise",
+                origin: (value) => value || activeStep < 1 ? null : "L'origine est requise",
+                description: (value) => value || activeStep < 1 ? null : "La description est requise",
+                individualFactors: (value) => value || activeStep < 1 ? null : "Les facteurs individuels sont requis",
+                technicalFactors: (value) => value || activeStep < 1 ? null : "Les facteurs techniques sont requis",
+                organizationalFactors: (value) => value || activeStep < 1 ? null : "Les facteurs organisationnels sont requis",
+                rootCauses: (value) => value || activeStep < 1 ? null : "Les causes profondes sont requises",
+                startDate: (value) => value || activeStep < 1 ? null : "La date de début est requise",
+                deadline: (value) => value || activeStep < 1 ? null : "L'échéance est requise",
+                priority: (value) => value || activeStep < 1 ? null : "La priorité est requise",
+                severityLevel: (value) => value || activeStep < 1 ? null : "Le niveau de gravité est requis",
+                status: (value) => value || activeStep < 1 ? null : "Le statut est requis",
+                summary: (value) => isValidRichText(value) || activeStep < 1 ? null : "Le résumé est requis",
+                conclusion: (value) => isValidRichText(value) || activeStep < 1 ? null : "La conclusion est requise",
             },
             correctiveActions: {
-                actionName: (value) => value || activeStep < 2 ? null : 'Action name is required',
-                deadline: (value) => value || activeStep < 2 ? null : 'Deadline is required',
-                assignedEmployeeId: (value) => value || activeStep < 2 ? null : 'Assigned employee is required',
-                status: (value) => value || activeStep < 2 ? null : 'Status is required',
-                description: (value) => value || activeStep < 2 ? null : 'Description is required',
+                actionName: (value) => value || activeStep < 2 ? null : "Le nom de l'action est requis",
+                deadline: (value) => value || activeStep < 2 ? null : "L'échéance est requise",
+                assignedEmployeeId: (value) => value || activeStep < 2 ? null : "L'employé assigné est requis",
+                status: (value) => value || activeStep < 2 ? null : "Le statut est requis",
+                description: (value) => value || activeStep < 2 ? null : "La description est requise",
             }
 
         }, // No validation yet
@@ -258,36 +261,35 @@ const NonConformityForm = () => {
     // };
     const steps = [
         {
-            label: 'Declaration',
-            description: 'General Information',
+            label: 'Déclaration',
+            description: 'Informations générales',
             icon: IconClipboardList,
             color: getEventTypeColor(form.values.nonConformity.type || 'Non-Conformity')
         },
         {
-            label: 'Analysis',
-            description: 'Root Cause Analysis',
+            label: 'Analyse',
+            description: 'Analyse causale',
             icon: IconSearch,
             color: 'yellow'
         },
         {
-            label: 'Treatment',
-            description: 'Corrective Actions',
+            label: 'Traitement',
+            description: 'Actions correctives',
             icon: IconTool,
             color: 'orange'
         },
         {
-            label: 'Closure & Distribution',
-            description: 'Validation & Distribution',
+            label: 'Clôture & Diffusion',
+            description: 'Validation & partage',
             icon: IconArchive,
             color: 'green'
         }
     ];
 
     const handleNext = () => {
-
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before proceeding.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de continuer.");
             return;
         }
         if (activeStep < steps.length - 1) {
@@ -305,20 +307,20 @@ const NonConformityForm = () => {
     const handleFirstSubmit = () => {
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before submitting.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
             return;
         }
 
         modals.openConfirmModal({
-            title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+            title: <span className="text-lg">Confirmer la soumission</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to submit the form without filling next steps?
+                <span className="text-sm">
+                    Souhaitez-vous soumettre la déclaration sans renseigner les étapes suivantes ?
                 </span>
             ),
-            labels: { confirm: `Yes`, cancel: 'Cancel' },
-            cancelProps: { color: 'red', variant: "filled" },
+            labels: { confirm: "Oui, soumettre", cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: "default" },
             confirmProps: { color: 'green', variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
@@ -327,14 +329,12 @@ const NonConformityForm = () => {
                 handleSubmit();
             },
         });
-
     }
 
     const handleSubmit = async () => {
-
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before submitting.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
             return;
         }
         const values = form.values;
@@ -346,12 +346,10 @@ const NonConformityForm = () => {
             analysis: values.analysis,
             correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id })),
         }).then((_response) => {
-            successNotification("Non-conformity reported successfully!");
+            successNotification("Constat central déclaré avec succès !");
             navigate("/non-conformity");
-
         }).catch((error) => {
-
-            errorNotification(error?.response?.data?.errorMessage || "Failed to report non-conformity. Please try again.");
+            errorNotification(error?.response?.data?.errorMessage || "Échec de la déclaration. Veuillez réessayer.");
         }).finally(() => {
             dispatch(hideOverlay());
         })
@@ -379,123 +377,168 @@ const NonConformityForm = () => {
     // };
 
     return (
-        <div className="p-5 flex flex-col gap-6" >
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Constats centraux', to: '/non-conformity' },
+                    { label: "Nouvelle déclaration" },
+                ]}
+                icon={<IconAlertTriangle size={22} stroke={2} />}
+                iconColor="red"
+                title="Nouvelle déclaration de constat central"
+                subtitle="Non-conformité ou quasi-accident — ISO 45001 §10.2 et ISO 9001 §10.2"
+                badge={
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
+                        <IconHash size={13} className="text-slate-500" />
+                        <span className="text-xs font-mono text-slate-700">
+                            {form.values.nonConformity.number}
+                        </span>
+                    </div>
+                }
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
+                            Annuler
+                        </Button>
+                        <Tooltip label={helpPanelVisible ? "Masquer le volet d'aide" : "Afficher le volet d'aide"}>
+                            <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => setHelpPanelVisible((v) => !v)}
+                                leftSection={helpPanelVisible
+                                    ? <IconLayoutSidebarRightCollapse size={15} />
+                                    : <IconLayoutSidebarRightExpand size={15} />}
+                            >
+                                {helpPanelVisible ? "Masquer l'aide" : "Afficher l'aide"}
+                            </Button>
+                        </Tooltip>
+                        <Button
+                            color="green"
+                            size="sm"
+                            leftSection={<IconDeviceFloppy size={15} />}
+                            onClick={handleFirstSubmit}
+                        >
+                            Enregistrer
+                        </Button>
+                    </>
+                }
+            />
 
-            <div className='flex items-center justify-between'>
-                <div>
-                    <div className="font-semibold  text-2xl text-blue-500 w-fit">New Central Finding Declaration</div>
-                    <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-                        <Link className="hover:!underline" to="/non-conformity"><Text variant="gradient">Central Findings Dashboard</Text></Link>
-                        <Link className="hover:!underline" to=""><Text variant="gradient">New Central Finding Declaration</Text></Link>
+            {/* Stepper sobre et pro */}
+            <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-5">
+                <Stepper
+                    active={activeStep}
+                    onStepClick={setActiveStep}
+                    allowNextStepsSelect={true}
+                    size="sm"
+                    color="red"
+                    classNames={{
+                        step: 'hover:bg-slate-50 rounded-lg transition-colors duration-200',
+                        stepIcon: 'border-2',
+                        stepBody: 'ml-2'
+                    }}
+                >
+                    {steps.map((step, index) => (
+                        <Stepper.Step
+                            key={index}
+                            label={
+                                <Text size="sm" className="text-slate-900">
+                                    {step.label}
+                                </Text>
+                            }
+                            description={
+                                <Text size="xs" className="text-slate-500">
+                                    {step.description}
+                                </Text>
+                            }
+                            icon={<step.icon size={14} />}
+                            completedIcon={<IconCheck size={14} />}
+                        />
+                    ))}
+                </Stepper>
+            </Paper>
 
-                    </Breadcrumbs>
+            {/* Contenu du formulaire + volet d'aide collapsible */}
+            <div className={`grid grid-cols-1 gap-5 ${helpPanelVisible ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+                <div className={helpPanelVisible ? 'lg:col-span-2 space-y-5' : 'lg:col-span-1 space-y-5'}>
+                    {renderStepContent()}
+
+                    {/* Barre de navigation */}
+                    <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
+                        <Group justify="space-between" wrap="wrap">
+                            <Button
+                                variant="default"
+                                leftSection={<IconArrowLeft size={15} />}
+                                onClick={handlePrev}
+                                disabled={activeStep === 0}
+                            >
+                                Étape précédente
+                            </Button>
+
+                            <Group gap="md">
+                                <Badge
+                                    variant="light"
+                                    color="gray"
+                                    radius="sm"
+                                    size="md"
+                                >
+                                    Étape {activeStep + 1} sur {steps.length}
+                                </Badge>
+
+                                {activeStep === steps.length - 1 ? (
+                                    <Button
+                                        color="green"
+                                        leftSection={<IconSend size={15} />}
+                                        onClick={handleSubmit}
+                                    >
+                                        Soumettre et clôturer
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        color="red"
+                                        rightSection={<IconArrowRight size={15} />}
+                                        onClick={handleNext}
+                                    >
+                                        Étape suivante
+                                    </Button>
+                                )}
+                                {activeStep < 3 && (
+                                    <Button
+                                        variant="light"
+                                        color="green"
+                                        leftSection={<IconCheck size={15} />}
+                                        onClick={handleFirstSubmit}
+                                    >
+                                        Soumettre maintenant
+                                    </Button>
+                                )}
+                            </Group>
+                        </Group>
+                    </div>
                 </div>
 
-                <Button
-                    leftSection={<IconCheck size={16} />}
-                    onClick={handleFirstSubmit}
-                    className="!bg-gradient-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-white shadow-lg shadow-green-500/25 rounded-lg"
-                >
-                    Submit
-                </Button>
-            </div>
-            <div>
-                <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 mb-4">
-                    <Stepper
-                        active={activeStep}
-                        onStepClick={setActiveStep}
-                        allowNextStepsSelect={true}
-                        size="sm"
-                        classNames={{
-                            step: 'hover:bg-slate-50 rounded-lg transition-colors duration-200',
-                            stepIcon: 'border-2',
-                            stepCompletedIcon: 'bg-gradient-to-r from-emerald-500 to-cyan-500 border-emerald-500',
-                            stepBody: 'ml-2'
-                        }}
-                    >
-                        {steps.map((step, index) => (
-                            <Stepper.Step
-                                key={index}
-                                label={
-                                    <Text fw={500} size="sm" className="text-slate-800">
-                                        {step.label}
-                                    </Text>
-                                }
-                                description={
-                                    <Text size="xs" className="text-slate-600">
-                                        {step.description}
-                                    </Text>
-                                }
-                                icon={<step.icon size={14} />}
-                                completedIcon={<IconCheck size={14} />}
-                            />
-                        ))}
-                    </Stepper>
-                </Paper>
-
-                {/* Form Content + Help */}
-                <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 mb-4">
-                    <div className="grid grid-cols-3 gap-5">
-                        <div className="col-span-2 space-y-5">
-                            {renderStepContent()}
-                            <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-4">
-                                <Group justify="space-between">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handlePrev}
-                                        disabled={activeStep === 0}
-                                        className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg disabled:opacity-50"
-                                    >
-                                        Previous Step
-                                    </Button>
-
-                                    <Group gap="md">
-
-                                        <Badge
-                                            variant="light"
-                                            className="bg-slate-100 text-slate-700"
-                                        >
-                                            Step {activeStep + 1} of {steps.length}
-                                        </Badge>
-
-                                        {activeStep === steps.length - 1 ? (
-                                            <Button
-                                                leftSection={<IconSend size={16} />}
-                                                onClick={handleSubmit}
-                                                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-lg shadow-emerald-500/25 rounded-lg"
-                                            >
-                                                Submit & Close
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                onClick={handleNext}
-                                                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 rounded-lg"
-                                            >
-                                                Next Step
-                                            </Button>
-                                        )}
-                                        {activeStep < 3 && (
-                                            <Button
-                                                leftSection={<IconCheck size={16} />}
-                                                onClick={handleFirstSubmit}
-                                                className="!bg-gradient-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-white shadow-lg shadow-green-500/25 rounded-lg"
-                                            >
-                                                Submit
-                                            </Button>)}
-                                    </Group>
-                                </Group>
-                            </Paper>
-                        </div>
-                        <NcHelp activeStep={activeStep} />
+                {helpPanelVisible && (
+                    <div className="lg:col-span-1">
+                        <NcHelp activeStep={activeStep} onClose={() => setHelpPanelVisible(false)} />
                     </div>
-                </Paper>
-
-                {/* Navigation */}
-
+                )}
             </div>
 
-
+            {/* Bouton flottant pour rouvrir le volet d'aide */}
+            {!helpPanelVisible && (
+                <Tooltip label="Afficher le volet d'aide" position="left" withArrow>
+                    <button
+                        type="button"
+                        onClick={() => setHelpPanelVisible(true)}
+                        className="fixed right-0 top-1/3 z-40 bg-red-600 hover:bg-red-700 text-white px-3 py-3 rounded-l-lg shadow-xl flex flex-col items-center gap-1 transition-all"
+                        aria-label="Afficher le volet d'aide"
+                    >
+                        <IconLayoutSidebarRightExpand size={18} />
+                        <span className="text-[10px] uppercase tracking-wider">Aide</span>
+                    </button>
+                </Tooltip>
+            )}
         </div>
     );
 };

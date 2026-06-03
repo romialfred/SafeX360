@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +18,9 @@ public class JwtHelper {
 
     public static final long JWT_TOKEN_VALIDITY = 500 * 60 * 60;
 
-    private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
+    // R-001 Phase 2.a — Secret extrait du code source, injecté par Spring depuis JWT_SECRET env var
+    @Value("${JWT_SECRET}")
+    private String SECRET;
 
     // retrieve username from jwt token
     public String getUsernameFromToken(String token) {

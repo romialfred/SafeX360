@@ -9,7 +9,7 @@ const Safety = () => {
             radius="md"
             className="bg-white w-full h-[450px] flex gap-5 border border-gray-200"
         >
-            <Text size="xl" fw={700} className="mb-4 !text-3xl">
+            <Text size="xl" className="mb-4 !text-3xl">
                 Featured Safety Training
             </Text>
             <div className="flex gap-2 items-center h-full">
@@ -30,7 +30,7 @@ const Safety = () => {
 
                 {/* Right Section */}
                 <div className="w-1/2 flex flex-col p-8 gap-4">
-                    <Text size="xl" fw={700}>
+                    <Text size="xl">
                         Essential Workplace Safety Guidelines
                     </Text>
                     <Text size="sm" color="dimmed" className="overflow-auto">

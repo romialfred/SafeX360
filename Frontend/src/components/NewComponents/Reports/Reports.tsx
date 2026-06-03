@@ -285,7 +285,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                             <IconFileText className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Monthly Safety Report</h2>
+                            <h2 className="text-2xl text-gray-900">Monthly Safety Report</h2>
                             <p className="text-gray-600">January 2024 - Health & Safety Performance</p>
                         </div>
                     </div>
@@ -306,8 +306,8 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-green-600 font-medium">Days Without LTI</p>
-                                <p className="text-2xl font-bold text-green-700">47</p>
+                                <p className="text-sm text-green-600">Days Without LTI</p>
+                                <p className="text-2xl text-green-700">47</p>
                             </div>
                             <IconAward className="w-8 h-8 text-green-500" />
                         </div>
@@ -317,8 +317,8 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-blue-600 font-medium">Training Completion</p>
-                                <p className="text-2xl font-bold text-blue-700">96%</p>
+                                <p className="text-sm text-blue-600">Training Completion</p>
+                                <p className="text-2xl text-blue-700">96%</p>
                             </div>
                             <IconUsers className="w-8 h-8 text-blue-500" />
                         </div>
@@ -328,8 +328,8 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-yellow-600 font-medium">Near Miss Reports</p>
-                                <p className="text-2xl font-bold text-yellow-700">45</p>
+                                <p className="text-sm text-yellow-600">Near Miss Reports</p>
+                                <p className="text-2xl text-yellow-700">45</p>
                             </div>
                             <IconEye className="w-8 h-8 text-yellow-500" />
                         </div>
@@ -339,8 +339,8 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-red-600 font-medium">Open Incidents</p>
-                                <p className="text-2xl font-bold text-red-700">3</p>
+                                <p className="text-sm text-red-600">Open Incidents</p>
+                                <p className="text-2xl text-red-700">3</p>
                             </div>
                             <IconAlertTriangle className="w-8 h-8 text-red-500" />
                         </div>
@@ -350,7 +350,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
                 {/* Monthly Trends Chart */}
                 <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Safety Trends</h3>
+                    <h3 className="text-lg text-gray-900 mb-4">Monthly Safety Trends</h3>
                     <div className="grid grid-cols-12 gap-2">
                         {monthlyTrends.map((month, index) => (
                             <div key={index} className="text-center">
@@ -392,7 +392,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Department Performance */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Department Performance Summary</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Department Performance Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
                         { name: 'Production', ltifr: 1.2, incidents: 8, training: 94, color: 'blue' },
@@ -400,19 +400,19 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                         { name: 'Laboratory', ltifr: 1.5, incidents: 5, training: 96, color: 'purple' }
                     ].map((dept, index) => (
                         <div key={index} className={`border-2 border-${dept.color}-200 rounded-lg p-4 bg-${dept.color}-50`}>
-                            <h4 className={`font-semibold text-${dept.color}-900 mb-3`}>{dept.name}</h4>
+                            <h4 className={`text-${dept.color}-900 mb-3`}>{dept.name}</h4>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">LTIFR:</span>
-                                    <span className={`font-medium text-${dept.color}-700`}>{dept.ltifr}</span>
+                                    <span className={`text-${dept.color}-700`}>{dept.ltifr}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Incidents:</span>
-                                    <span className={`font-medium text-${dept.color}-700`}>{dept.incidents}</span>
+                                    <span className={`text-${dept.color}-700`}>{dept.incidents}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Training:</span>
-                                    <span className={`font-medium text-${dept.color}-700`}>{dept.training}%</span>
+                                    <span className={`text-${dept.color}-700`}>{dept.training}%</span>
                                 </div>
                             </div>
                         </div>
@@ -428,11 +428,11 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2">Health & Safety KPI Review</h2>
+                        <h2 className="text-2xl font-semibold mb-2">Health & Safety KPI Review</h2>
                         <p className="text-green-100">Leading and Lagging Indicators Performance Analysis</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-2xl font-bold">January 2024</div>
+                        <div className="text-2xl">January 2024</div>
                         <div className="text-green-100">Reporting Period</div>
                     </div>
                 </div>
@@ -442,7 +442,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">HEALTH & SAFETY</h3>
+                        <h3 className="text-lg text-gray-900">HEALTH & SAFETY</h3>
                         <div className="flex space-x-2">
                             <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm">
                                 Leading Indicators
@@ -458,49 +458,49 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Actual Month</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Forecast Month</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Variance %</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300 bg-blue-50">Metric Name</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Actual YTD</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Budget YTD</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Variance %</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Forecast FY</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700 border-r border-gray-300">Budget FY</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Variance %</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Actual Month</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Forecast Month</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Variance %</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300 bg-blue-50">Metric Name</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Actual YTD</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Budget YTD</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Variance %</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Forecast FY</th>
+                                <th className="px-4 py-3 text-left text-gray-700 border-r border-gray-300">Budget FY</th>
+                                <th className="px-4 py-3 text-left text-gray-700">Variance %</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* Leading Indicators Section */}
                             <tr className="bg-green-50">
-                                <td colSpan={10} className="px-4 py-2 font-semibold text-green-800 border-b border-green-200">
+                                <td colSpan={10} className="px-4 py-2 text-green-800 border-b border-green-200">
                                     Leading Indicators
                                 </td>
                             </tr>
                             {healthSafetyKPIs.filter(kpi => kpi.category === 'Leading').map((kpi, index) => (
                                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                    <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.actualMonth}
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.forecastMonth}
                                     </td>
-                                    <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
                                         {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
                                         <div className="flex items-center">
                                             {getStatusIcon(kpi.status)}
-                                            <span className="ml-2 font-medium text-gray-900">{kpi.name}</span>
+                                            <span className="ml-2 text-gray-900">{kpi.name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.actualYTD}
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.budgetYTD}
                                     </td>
-                                    <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
                                         {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
@@ -509,7 +509,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.budgetFY}
                                     </td>
-                                    <td className={`px-4 py-3 text-center font-medium ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
+                                    <td className={`px-4 py-3 text-center ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
                                         {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
                                     </td>
                                 </tr>
@@ -517,34 +517,34 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
                             {/* Lagging Indicators Section */}
                             <tr className="bg-red-50">
-                                <td colSpan={10} className="px-4 py-2 font-semibold text-red-800 border-b border-red-200">
+                                <td colSpan={10} className="px-4 py-2 text-red-800 border-b border-red-200">
                                     Lagging Indicators
                                 </td>
                             </tr>
                             {healthSafetyKPIs.filter(kpi => kpi.category === 'Lagging').map((kpi, index) => (
                                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                    <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.actualMonth}
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.forecastMonth}
                                     </td>
-                                    <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceMonth)} ${getVarianceBackground(kpi.varianceMonth)}`}>
                                         {kpi.varianceMonth > 0 ? '+' : ''}{kpi.varianceMonth.toFixed(1)}%
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 bg-blue-50">
                                         <div className="flex items-center">
                                             {getStatusIcon(kpi.status)}
-                                            <span className="ml-2 font-medium text-gray-900">{kpi.name}</span>
+                                            <span className="ml-2 text-gray-900">{kpi.name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 border-r border-gray-200 text-center font-medium">
+                                    <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.actualYTD}
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.budgetYTD}
                                     </td>
-                                    <td className={`px-4 py-3 border-r border-gray-200 text-center font-medium ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
+                                    <td className={`px-4 py-3 border-r border-gray-200 text-center ${getVarianceColor(kpi.varianceYTD)} ${getVarianceBackground(kpi.varianceYTD)}`}>
                                         {kpi.varianceYTD > 0 ? '+' : ''}{kpi.varianceYTD.toFixed(1)}%
                                     </td>
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
@@ -553,7 +553,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                                     <td className="px-4 py-3 border-r border-gray-200 text-center">
                                         {kpi.budgetFY}
                                     </td>
-                                    <td className={`px-4 py-3 text-center font-medium ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
+                                    <td className={`px-4 py-3 text-center ${getVarianceColor(kpi.varianceFY)} ${getVarianceBackground(kpi.varianceFY)}`}>
                                         {kpi.varianceFY > 0 ? '+' : ''}{kpi.varianceFY.toFixed(1)}%
                                     </td>
                                 </tr>
@@ -565,13 +565,13 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Key Insights */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Key Insights & Recommendations</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Key Insights & Recommendations</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200">
                             <IconCircleCheck className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-green-900">Positive Trends</h4>
+                                <h4 className="text-green-900">Positive Trends</h4>
                                 <ul className="text-sm text-green-800 mt-2 space-y-1">
                                     <li>• Safety meetings exceeded target by 15.4%</li>
                                     <li>• 47 days without lost time injury</li>
@@ -583,7 +583,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                         <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <IconInfoCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-blue-900">Opportunities</h4>
+                                <h4 className="text-blue-900">Opportunities</h4>
                                 <ul className="text-sm text-blue-800 mt-2 space-y-1">
                                     <li>• Increase near miss reporting culture</li>
                                     <li>• Enhance management safety visits</li>
@@ -597,7 +597,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                         <div className="flex items-start p-4 bg-red-50 rounded-lg border border-red-200">
                             <IconAlertTriangle className="w-5 h-5 text-red-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-red-900">Areas of Concern</h4>
+                                <h4 className="text-red-900">Areas of Concern</h4>
                                 <ul className="text-sm text-red-800 mt-2 space-y-1">
                                     <li>• DART rate 183% above forecast</li>
                                     <li>• TRIR increased by 88.9%</li>
@@ -609,7 +609,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                         <div className="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                             <IconTarget className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-yellow-900">Action Items</h4>
+                                <h4 className="text-yellow-900">Action Items</h4>
                                 <ul className="text-sm text-yellow-800 mt-2 space-y-1">
                                     <li>• Review incident investigation processes</li>
                                     <li>• Implement additional safety controls</li>
@@ -628,7 +628,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             {/* Performance Overview */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Safety Performance Analysis</h2>
+                    <h2 className="text-2xl text-gray-900">Safety Performance Analysis</h2>
                     <div className="flex items-center space-x-4">
                         <select className="px-3 py-2 border border-gray-300 rounded-lg">
                             <option>Last 12 Months</option>
@@ -642,10 +642,10 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-blue-900">Overall Safety Score</h3>
+                            <h3 className="text-blue-900">Overall Safety Score</h3>
                             <IconChartBar className="w-6 h-6 text-blue-600" />
                         </div>
-                        <div className="text-3xl font-bold text-blue-700 mb-2">87.5</div>
+                        <div className="text-2xl font-semibold text-blue-700 mb-2">87.5</div>
                         <div className="text-sm text-blue-600">↗ +5.2 from last quarter</div>
                         <div className="mt-4 bg-blue-200 rounded-full h-2">
                             <div className="bg-blue-600 h-2 rounded-full" style={{ width: '87.5%' }}></div>
@@ -654,10 +654,10 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
                     <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-green-900">Compliance Rate</h3>
+                            <h3 className="text-green-900">Compliance Rate</h3>
                             <IconShield className="w-6 h-6 text-green-600" />
                         </div>
-                        <div className="text-3xl font-bold text-green-700 mb-2">94.2%</div>
+                        <div className="text-2xl font-semibold text-green-700 mb-2">94.2%</div>
                         <div className="text-sm text-green-600">↗ +2.1% from target</div>
                         <div className="mt-4 bg-green-200 rounded-full h-2">
                             <div className="bg-green-600 h-2 rounded-full" style={{ width: '94.2%' }}></div>
@@ -666,10 +666,10 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-purple-900">Risk Maturity</h3>
+                            <h3 className="text-purple-900">Risk Maturity</h3>
                             <IconTarget className="w-6 h-6 text-purple-600" />
                         </div>
-                        <div className="text-3xl font-bold text-purple-700 mb-2">Level 4</div>
+                        <div className="text-2xl font-semibold text-purple-700 mb-2">Level 4</div>
                         <div className="text-sm text-purple-600">Advanced Risk Management</div>
                         <div className="mt-4 bg-purple-200 rounded-full h-2">
                             <div className="bg-purple-600 h-2 rounded-full" style={{ width: '80%' }}></div>
@@ -679,7 +679,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
                 {/* Benchmark Comparison */}
                 <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Industry Benchmark Comparison</h3>
+                    <h3 className="text-lg text-gray-900 mb-4">Industry Benchmark Comparison</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {[
                             { metric: 'LTIFR', our: 1.2, industry: 2.1, benchmark: 'Excellent' },
@@ -690,7 +690,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                             <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
                                 <div className="text-sm text-gray-600 mb-1">{item.metric}</div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-lg font-bold text-gray-900">{item.our}</span>
+                                    <span className="text-lg text-gray-900">{item.our}</span>
                                     <span className="text-sm text-gray-500">vs {item.industry}</span>
                                 </div>
                                 <div className={`text-xs px-2 py-1 rounded-full ${item.benchmark === 'Excellent' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
@@ -711,11 +711,11 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-lg p-8 text-white">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2">Corporate Safety Report</h2>
+                        <h2 className="text-2xl font-semibold mb-2">Corporate Safety Report</h2>
                         <p className="text-gray-300">Executive Level Health & Safety Performance</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-xl font-bold">Q4 2024</div>
+                        <div className="text-lg">Q4 2024</div>
                         <div className="text-gray-300">Quarterly Review</div>
                     </div>
                 </div>
@@ -723,30 +723,30 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Executive Summary */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Executive Summary</h3>
+                <h3 className="text-2xl text-gray-900 mb-6">Executive Summary</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Key Achievements</h4>
+                        <h4 className="text-lg text-gray-900 mb-4">Key Achievements</h4>
                         <div className="space-y-3">
                             <div className="flex items-center p-3 bg-green-50 rounded-lg">
                                 <IconCircleCheck className="w-5 h-5 text-green-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-green-900">Zero Fatalities</div>
+                                    <div className="text-green-900">Zero Fatalities</div>
                                     <div className="text-sm text-green-700">Maintained excellent safety record</div>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                                 <IconAward className="w-5 h-5 text-blue-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-blue-900">ISO 45001 Certification</div>
+                                    <div className="text-blue-900">ISO 45001 Certification</div>
                                     <div className="text-sm text-blue-700">Successfully renewed for 2024</div>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 bg-purple-50 rounded-lg">
                                 <IconTrendingUp className="w-5 h-5 text-purple-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-purple-900">Training Excellence</div>
+                                    <div className="text-purple-900">Training Excellence</div>
                                     <div className="text-sm text-purple-700">96% completion rate achieved</div>
                                 </div>
                             </div>
@@ -754,26 +754,26 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     </div>
 
                     <div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Areas for Improvement</h4>
+                        <h4 className="text-lg text-gray-900 mb-4">Areas for Improvement</h4>
                         <div className="space-y-3">
                             <div className="flex items-center p-3 bg-yellow-50 rounded-lg">
                                 <IconAlertTriangle className="w-5 h-5 text-yellow-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-yellow-900">DART Rate Increase</div>
+                                    <div className="text-yellow-900">DART Rate Increase</div>
                                     <div className="text-sm text-yellow-700">183% above forecast - requires attention</div>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 bg-orange-50 rounded-lg">
                                 <IconClock className="w-5 h-5 text-orange-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-orange-900">Management Visits</div>
+                                    <div className="text-orange-900">Management Visits</div>
                                     <div className="text-sm text-orange-700">14.8% below target - increase frequency</div>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 bg-red-50 rounded-lg">
                                 <IconTarget className="w-5 h-5 text-red-600 mr-3" />
                                 <div>
-                                    <div className="font-medium text-red-900">Site Inspections</div>
+                                    <div className="text-red-900">Site Inspections</div>
                                     <div className="text-sm text-red-700">8.1% below target - resource allocation needed</div>
                                 </div>
                             </div>
@@ -784,7 +784,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Strategic Initiatives */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Strategic Safety Initiatives 2024</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Strategic Safety Initiatives 2024</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
                         {
@@ -810,12 +810,12 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                         }
                     ].map((initiative, index) => (
                         <div key={index} className={`border-2 border-${initiative.color}-200 rounded-lg p-4 bg-${initiative.color}-50`}>
-                            <h4 className={`font-semibold text-${initiative.color}-900 mb-2`}>{initiative.title}</h4>
+                            <h4 className={`text-${initiative.color}-900 mb-2`}>{initiative.title}</h4>
                             <p className="text-sm text-gray-600 mb-4">{initiative.description}</p>
                             <div className="mb-3">
                                 <div className="flex justify-between text-sm mb-1">
                                     <span className="text-gray-600">Progress</span>
-                                    <span className={`font-medium text-${initiative.color}-700`}>{initiative.progress}%</span>
+                                    <span className={`text-${initiative.color}-700`}>{initiative.progress}%</span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
@@ -841,22 +841,22 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
         <div className="space-y-8">
             {/* Executive Dashboard */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-8 text-white">
-                <h2 className="text-3xl font-bold mb-4">Executive Safety Dashboard</h2>
+                <h2 className="text-2xl font-semibold mb-4">Executive Safety Dashboard</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-                        <div className="text-2xl font-bold">94.2%</div>
+                        <div className="text-2xl">94.2%</div>
                         <div className="text-indigo-100">Overall Compliance</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-                        <div className="text-2xl font-bold">1.2</div>
+                        <div className="text-2xl">1.2</div>
                         <div className="text-indigo-100">LTIFR Rate</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-                        <div className="text-2xl font-bold">47</div>
+                        <div className="text-2xl">47</div>
                         <div className="text-indigo-100">Days Without LTI</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-                        <div className="text-2xl font-bold">€2.1M</div>
+                        <div className="text-2xl">€2.1M</div>
                         <div className="text-indigo-100">Safety Investment</div>
                     </div>
                 </div>
@@ -864,13 +864,13 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Risk Heat Map */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Enterprise Risk Heat Map</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Enterprise Risk Heat Map</h3>
                 <div className="grid grid-cols-5 gap-2 mb-4">
                     {Array.from({ length: 25 }, (_, i) => {
                         const risk = Math.random();
                         const color = risk > 0.7 ? 'bg-red-500' : risk > 0.4 ? 'bg-yellow-500' : 'bg-green-500';
                         return (
-                            <div key={i} className={`${color} h-8 rounded flex items-center justify-center text-white text-xs font-bold`}>
+                            <div key={i} className={`${color} h-8 rounded flex items-center justify-center text-white text-xs`}>
                                 {Math.floor(risk * 10)}
                             </div>
                         );
@@ -884,40 +884,40 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Financial Impact */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Safety Financial Impact</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Safety Financial Impact</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Cost Avoidance (2024)</h4>
+                        <h4 className="text-gray-900 mb-4">Cost Avoidance (2024)</h4>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                                 <span className="text-green-900">Prevented Incidents</span>
-                                <span className="font-bold text-green-700">€850K</span>
+                                <span className="text-green-700">€850K</span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                                 <span className="text-blue-900">Insurance Savings</span>
-                                <span className="font-bold text-blue-700">€320K</span>
+                                <span className="text-blue-700">€320K</span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                                 <span className="text-purple-900">Productivity Gains</span>
-                                <span className="font-bold text-purple-700">€1.2M</span>
+                                <span className="text-purple-700">€1.2M</span>
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Safety Investments</h4>
+                        <h4 className="text-gray-900 mb-4">Safety Investments</h4>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                 <span className="text-gray-900">Training Programs</span>
-                                <span className="font-bold text-gray-700">€450K</span>
+                                <span className="text-gray-700">€450K</span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                 <span className="text-gray-900">Safety Equipment</span>
-                                <span className="font-bold text-gray-700">€680K</span>
+                                <span className="text-gray-700">€680K</span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                 <span className="text-gray-900">System Upgrades</span>
-                                <span className="font-bold text-gray-700">€290K</span>
+                                <span className="text-gray-700">€290K</span>
                             </div>
                         </div>
                     </div>
@@ -932,7 +932,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold mb-2">Safety Trend Analysis</h2>
+                        <h2 className="text-2xl font-semibold mb-2">Safety Trend Analysis</h2>
                         <p className="text-teal-100">12-Month Performance Trends & Predictive Analytics</p>
                     </div>
                     <IconActivity className="w-12 h-12 text-teal-200" />
@@ -942,7 +942,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
             {/* Trend Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">LTIFR Trend (12 Months)</h3>
+                    <h3 className="text-lg text-gray-900 mb-4">LTIFR Trend (12 Months)</h3>
                     <div className="h-64 bg-gray-50 rounded-lg flex items-end justify-around p-4">
                         {monthlyTrends.map((month, index) => (
                             <div key={index} className="flex flex-col items-center">
@@ -957,13 +957,13 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="mt-4 text-sm text-gray-600">
                         <div className="flex items-center justify-between">
                             <span>Target: 2.0</span>
-                            <span className="text-green-600 font-medium">Current: 1.2 ✓</span>
+                            <span className="text-green-600">Current: 1.2 ✓</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Training Completion Trend</h3>
+                    <h3 className="text-lg text-gray-900 mb-4">Training Completion Trend</h3>
                     <div className="h-64 bg-gray-50 rounded-lg flex items-end justify-around p-4">
                         {monthlyTrends.map((month, index) => (
                             <div key={index} className="flex flex-col items-center">
@@ -978,7 +978,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                     <div className="mt-4 text-sm text-gray-600">
                         <div className="flex items-center justify-between">
                             <span>Target: 95%</span>
-                            <span className="text-green-600 font-medium">Current: 96% ✓</span>
+                            <span className="text-green-600">Current: 96% ✓</span>
                         </div>
                     </div>
                 </div>
@@ -986,58 +986,58 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
 
             {/* Predictive Analytics */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Predictive Analytics & Forecasting</h3>
+                <h3 className="text-lg text-gray-900 mb-6">Predictive Analytics & Forecasting</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6">
-                        <h4 className="font-semibold text-blue-900 mb-3">Q1 2024 Forecast</h4>
+                        <h4 className="text-blue-900 mb-3">Q1 2024 Forecast</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span>Predicted LTIFR:</span>
-                                <span className="font-bold text-blue-700">1.1</span>
+                                <span className="text-blue-700">1.1</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Expected Incidents:</span>
-                                <span className="font-bold text-blue-700">6-8</span>
+                                <span className="text-blue-700">6-8</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Training Target:</span>
-                                <span className="font-bold text-blue-700">97%</span>
+                                <span className="text-blue-700">97%</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6">
-                        <h4 className="font-semibold text-green-900 mb-3">Risk Indicators</h4>
+                        <h4 className="text-green-900 mb-3">Risk Indicators</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span>High Risk Areas:</span>
-                                <span className="font-bold text-green-700">3</span>
+                                <span className="text-green-700">3</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Mitigation Plans:</span>
-                                <span className="font-bold text-green-700">12</span>
+                                <span className="text-green-700">12</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Completion Rate:</span>
-                                <span className="font-bold text-green-700">78%</span>
+                                <span className="text-green-700">78%</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6">
-                        <h4 className="font-semibold text-purple-900 mb-3">Investment ROI</h4>
+                        <h4 className="text-purple-900 mb-3">Investment ROI</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span>Safety ROI:</span>
-                                <span className="font-bold text-purple-700">340%</span>
+                                <span className="text-purple-700">340%</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Cost Avoidance:</span>
-                                <span className="font-bold text-purple-700">€2.1M</span>
+                                <span className="text-purple-700">€2.1M</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Investment:</span>
-                                <span className="font-bold text-purple-700">€620K</span>
+                                <span className="text-purple-700">€620K</span>
                             </div>
                         </div>
                     </div>
@@ -1073,7 +1073,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                                 Back to home
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                                <h1 className="text-2xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                                     Report & Analytics Center
                                 </h1>
                                 <p className="text-gray-600">Advanced reporting and business analytics for Health & Safety</p>
@@ -1111,7 +1111,7 @@ const ReportIntelligenceCenter: React.FC<ReportIntelligenceCenterProps> = ({ onB
                 `}
                             >
                                 <report.icon className={`w-8 h-8 ${activeReport === report.id ? 'text-blue-600' : report.color} mb-2`} />
-                                <span className={`text-sm font-medium text-center ${activeReport === report.id ? 'text-blue-900' : 'text-gray-700'
+                                <span className={`text-sm text-center ${activeReport === report.id ? 'text-blue-900' : 'text-gray-700'
                                     }`}>
                                     {report.name}
                                 </span>

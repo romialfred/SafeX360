@@ -41,245 +41,105 @@ interface SettingItem {
 const settingsCategories: SettingCategory[] = [
     {
         id: 'users-management',
-        title: 'Users Management',
-        description: 'Create user accounts and manage roles in compliance with SOX requirements.',
+        title: 'Gestion des utilisateurs',
+        description: "Création des comptes utilisateurs, attribution des rôles et permissions",
         icon: IconUserCheck,
         color: 'text-orange-600',
         bgColor: 'bg-orange-50 border-orange-200',
         items: [
-            {
-                id: 'new-user',
-                name: 'New User',
-                description: 'Create and manage user accounts',
-                type: 'category',
-                url: 'users-management',
-            },
-            {
-                id: 'user-roles',
-                name: 'User Roles',
-                description: 'Manage user roles and permissions',
-                type: 'category',
-                url: 'users-management',
-            },
-            {
-                id: 'user-permissions',
-                name: 'User Permissions',
-                description: 'Manage user permissions and access levels',
-                type: 'category',
-                url: 'users-management',
-            },
-
+            { id: 'new-user', name: 'Nouveaux comptes', description: "Création et gestion des comptes utilisateurs", type: 'category', url: 'users-management' },
+            { id: 'user-roles', name: 'Rôles utilisateurs', description: "Définition des rôles et permissions", type: 'category', url: 'users-management' },
+            { id: 'user-permissions', name: 'Permissions', description: "Gestion fine des autorisations d'accès", type: 'category', url: 'users-management' },
         ],
     },
     {
         id: 'module-manager',
-        title: 'Module Manager',
-        description: 'Enable or disable application modules and features',
+        title: 'Modules applicatifs',
+        description: "Activation/désactivation des modules et fonctionnalités",
         icon: IconLayersOff,
         color: 'text-indigo-600',
         bgColor: 'bg-indigo-50 border-indigo-200',
         items: [
-            {
-                id: 'module-activation',
-                name: 'Module Activation',
-                description: 'Enable or disable specific modules',
-                type: 'category',
-                url: null,
-            },
-            {
-                id: 'subscription-management',
-                name: 'Subscription Management',
-                description: 'Manage your subscription and available features',
-                type: 'category',
-                url: null,
-            },
+            { id: 'module-activation', name: 'Activation des modules', description: "Activer ou désactiver les modules HSE", type: 'category', url: null },
+            { id: 'subscription-management', name: 'Abonnement', description: "Gestion de l'abonnement et des licences", type: 'category', url: null },
         ],
     },
     {
         id: 'performance',
-        title: 'Performance',
-        description: 'Performance management, targets, and forecasting settings',
+        title: 'Performance & objectifs',
+        description: "Indicateurs cibles, prévisions et seuils de performance HSE",
         icon: IconTarget,
         color: 'text-teal-600',
         bgColor: 'bg-teal-50 border-teal-200',
         items: [
-            {
-                id: 'target-forecast-set',
-                name: 'Target and Forecast Set',
-                description: 'Gestion des indicateurs de performance et planification',
-                type: 'category',
-                url: 'performance',
-            },
-            {
-                id: 'global-variable',
-                name: 'Subscription Management',
-                description: 'Manage global variables and system parameters',
-                type: 'category',
-                url: null,
-            },
+            { id: 'target-forecast-set', name: 'Cibles & prévisions', description: "Définition des cibles HSE et planification", type: 'category', url: 'performance' },
+            { id: 'global-variable', name: 'Paramètres globaux', description: "Variables globales et paramètres système", type: 'category', url: null },
         ],
     },
     {
         id: 'incident-management',
-        title: 'Incident Management',
-        description: 'Configure incident types, categories, and severity levels',
+        title: 'Gestion des incidents',
+        description: "Types d'incidents, catégories et niveaux de gravité",
         icon: IconAlertTriangle,
         color: 'text-red-600',
         bgColor: 'bg-red-50 border-red-200',
         items: [
-            {
-                id: 'incident-category',
-                name: 'Incident Category',
-                description: 'Define incident categories for classification',
-                type: 'category',
-                url: 'incidentCategory',
-            },
-            {
-                id: 'incident-type',
-                name: 'Incident Type',
-                description: 'Configure different types of incidents',
-                type: 'category',
-                url: 'incidentType',
-            },
-            {
-                id: 'severity-level',
-                name: 'Severity Level',
-                description: 'Set up severity levels for incidents',
-                type: 'category',
-                url: 'severityLevel',
-            },
+            { id: 'incident-category', name: "Catégories d'incidents", description: "Classification fonctionnelle", type: 'category', url: 'incidentCategory' },
+            { id: 'incident-type', name: "Types d'incidents", description: "LTI, MTI, FAI, Near Miss, dangereux...", type: 'category', url: 'incidentType' },
+            { id: 'severity-level', name: 'Niveaux de gravité', description: "Matrice de criticité ISO 31000", type: 'category', url: 'severityLevel' },
         ],
     },
     {
         id: 'places-environment',
-        title: 'Places & Environment',
-        description: 'Manage locations, environmental conditions, and work areas',
+        title: 'Lieux & environnement',
+        description: "Sites, zones, conditions environnementales et processus",
         icon: IconMapPin,
         color: 'text-green-600',
         bgColor: 'bg-green-50 border-green-200',
         items: [
-            {
-                id: 'locations',
-                name: 'Locations',
-                description: 'Configure company locations and sites',
-                type: 'category',
-                url: 'location',
-            },
-            {
-                id: 'environmental-conditions',
-                name: 'Environmental Conditions',
-                description: 'Set up environmental monitoring parameters',
-                type: 'category',
-                url: 'weatherCondition',
-            },
-            {
-                id: 'audit-area',
-                name: 'Audit Area',
-                description: 'Define areas for audit activities',
-                type: 'category',
-                url: 'audit-area',
-            },
-            {
-                id: 'work-area',
-                name: 'Work Area',
-                description: 'Configure work areas and zones',
-                type: 'category',
-                url: 'work-area',
-            },
-            {
-                id: 'work-process',
-                name: 'Work Process',
-                description: 'Define and manage work processes',
-                type: 'category',
-                url: 'work-process',
-            }
+            { id: 'locations', name: 'Sites & emplacements', description: "Configuration des sites de la mine", type: 'category', url: 'location' },
+            { id: 'environmental-conditions', name: 'Conditions environnementales', description: "Paramètres de surveillance météo", type: 'category', url: 'weatherCondition' },
+            { id: 'audit-area', name: "Zones d'audit", description: "Définition des périmètres auditables", type: 'category', url: 'audit-area' },
+            { id: 'work-area', name: 'Zones de travail', description: "Configuration des zones et niveaux de risque", type: 'category', url: 'work-area' },
+            { id: 'work-process', name: 'Processus de travail', description: "Cartographie des processus opérationnels", type: 'category', url: 'work-process' },
         ],
     },
     {
         id: 'resources-staff',
-        title: 'Resources & Staff',
-        description: 'Manage human resources and staffing configurations',
+        title: 'Ressources humaines',
+        description: "Équipes, départements, postes et compétences",
         icon: IconUsers,
         color: 'text-blue-600',
         bgColor: 'bg-blue-50 border-blue-200',
         items: [
-            {
-                id: 'teams',
-                name: 'Teams',
-                description: 'Manage teams and their configurations',
-                type: 'category',
-                url: 'team-setup',
-            },
-            {
-                id: 'departments',
-                name: 'Departments',
-                description: 'Configure organizational departments',
-                type: 'category',
-                url: null,
-            },
-            {
-                id: 'positions',
-                name: 'Positions',
-                description: 'Define job positions and roles',
-                type: 'category',
-                url: null,
-            },
-            {
-                id: 'competencies',
-                name: 'Competencies',
-                description: 'Set up required competencies and skills',
-                type: 'category',
-                url: null,
-            },
+            { id: 'teams', name: 'Équipes', description: "Constitution et gestion des équipes", type: 'category', url: 'team-setup' },
+            { id: 'departments', name: 'Départements', description: "Structure organisationnelle", type: 'category', url: null },
+            { id: 'positions', name: 'Postes', description: "Définition des fonctions et rôles", type: 'category', url: null },
+            { id: 'competencies', name: 'Compétences', description: "Référentiel des compétences HSE", type: 'category', url: null },
         ],
     },
     {
         id: 'tools-measurements',
-        title: 'Tools & Measurements',
-        description: 'Configure measurement tools and monitoring equipment',
+        title: 'Outils & mesures',
+        description: "Équipements de mesure et calibration",
         icon: IconTools,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50 border-purple-200',
+        color: 'text-violet-600',
+        bgColor: 'bg-violet-50 border-violet-200',
         items: [
-            {
-                id: 'measurement-tools',
-                name: 'Measurement Tools',
-                description: 'Configure measurement and monitoring tools',
-                type: 'category',
-                url: null,
-            },
-            {
-                id: 'calibration-schedule',
-                name: 'Calibration Schedule',
-                description: 'Set up equipment calibration schedules',
-                type: 'category',
-                url: null,
-            },
-            {
-                id: 'monitoring-parameters',
-                name: 'Monitoring Parameters',
-                description: 'Define parameters for monitoring activities',
-                type: 'category',
-                url: null,
-            },
+            { id: 'measurement-tools', name: 'Outils de mesure', description: "Configuration des appareils de mesure", type: 'category', url: null },
+            { id: 'calibration-schedule', name: 'Planning de calibration', description: "Échéances de vérification métrologique", type: 'category', url: null },
+            { id: 'monitoring-parameters', name: 'Paramètres de surveillance', description: "Seuils et alarmes des capteurs", type: 'category', url: null },
         ],
     },
     {
         id: 'advanced-configuration',
-        title: 'Advanced Configuration',
-        description: 'System-wide settings and advanced configurations',
+        title: 'Configuration avancée',
+        description: "Paramètres système et configurations avancées",
         icon: IconSettingsCog,
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-50 border-gray-200',
+        color: 'text-slate-600',
+        bgColor: 'bg-slate-50 border-slate-200',
         items: [
-            {
-                id: 'advanced-configuration',
-                name: 'Advanced Configuration',
-                description: 'System-wide settings and advanced configurations',
-                type: 'category',
-                url: 'advanced-configuration',
-            },
-
+            { id: 'advanced-configuration', name: 'Paramètres système', description: "Configuration globale de la plateforme", type: 'category', url: 'advanced-configuration' },
         ],
     },
 ];
@@ -324,7 +184,7 @@ const SettingsPage = () => {
 
                         {/* Title + Description */}
                         <div className="flex-1 text-center">
-                            <h1 className="text-3xl font-medium text-blue-500 mb-2 tracking-tight">
+                            <h1 className="text-2xl font-semibold text-blue-500 mb-2 tracking-tight">
                                 {category.title}
                             </h1>
                             <p className="text-gray-600 text-sm max-w-2xl mx-auto">
@@ -347,7 +207,7 @@ const SettingsPage = () => {
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-primary mb-1">
+                                            <h3 className="text-lg text-primary mb-1">
                                                 {item.name}
                                             </h3>
                                             <p className="text-gray-600 text-sm">{item.description}</p>
@@ -364,58 +224,72 @@ const SettingsPage = () => {
     }
 
     return (
-        <div className="p-5 flex flex-col gap-5">
-
-            <div className=" ">
-                <h1 className="text-3xl font-medium mb-2">Administration</h1>
-                <p className="text-gray-600 italic">System administration, configuration and preferences</p>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            {/* Page header sobre */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pb-3 border-b border-slate-200">
+                <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-slate-500 uppercase tracking-wider">SafeX360 · Configuration</div>
+                    <div className="flex items-center gap-3 mt-2">
+                        <div className="p-2 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0">
+                            <IconSettingsCog size={22} className="text-slate-700" stroke={2} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl text-slate-900 tracking-tight leading-tight">Administration</h1>
+                            <p className="text-sm text-slate-500 mt-0.5">Configuration système, modules, référentiels et paramètres avancés</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500">Modules</span>
+                    <span className="text-xs text-slate-700">{settingsCategories.length}</span>
+                </div>
             </div>
-            <div className="">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {settingsCategories.map((category) => (
-                        <div
+
+            {/* Grille de tuiles raffinées */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {settingsCategories.map((category) => {
+                    const dotColor = category.color.replace('text-', 'bg-');
+                    return (
+                        <button
                             key={category.id}
-                            className={`
-                bg-white rounded-xl shadow-sm border-2 ${category.bgColor} 
-                hover:shadow-xl transition-all duration-300 cursor-pointer
-                transform hover:-translate-y-0.5 hover:scale-0.5
-              `}
+                            type="button"
                             onClick={() => handleCategoryClick(category.id)}
+                            className="group text-left bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all overflow-hidden"
                         >
-                            <div className="p-6">
-                                <div className="flex items-center mb-4">
-                                    <div className={`p-3 rounded-lg ${category.bgColor} transition-transform duration-300`}>
-                                        <category.icon className={`w-8 h-8 ${category.color} transition-transform duration-300`} />
-                                    </div>
-                                    <div className="ml-4">
-                                        <h3 className="text-lg font-semibold text-gray-900">{category.title}</h3>
-                                    </div>
+                            <div className={`px-4 py-2.5 ${category.bgColor.split(' ')[0]}/60 border-b ${category.bgColor.split(' ')[1]}/70 flex items-center gap-2`}>
+                                <div className={`p-1 rounded ${category.bgColor.split(' ')[0]}`}>
+                                    <category.icon size={14} className={category.color} />
                                 </div>
-
-                                <p className="text-gray-600 mb-4 text-sm">{category.description}</p>
-
-                                <div className="space-y-2">
+                                <h3 className="text-xs text-slate-800 uppercase tracking-wider flex-1 truncate">
+                                    {category.title}
+                                </h3>
+                                <IconChevronRight size={13} className="text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                            <div className="p-3">
+                                <p className="text-xs text-slate-600 leading-snug mb-3 line-clamp-2 min-h-[2.6em]">
+                                    {category.description}
+                                </p>
+                                <div className="space-y-1">
                                     {category.items.slice(0, 3).map((item, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200 cursor-pointer p-1 rounded hover:bg-gray-50"
-                                        >
-                                            <div className={`w-2 h-2 rounded-full ${category.color.replace('text-', 'bg-')} mr-3`}></div>
-                                            {item.name}
+                                        <div key={index} className="flex items-center gap-2 text-[11px] text-slate-600">
+                                            <span className={`w-1.5 h-1.5 rounded-full ${dotColor} flex-shrink-0`}></span>
+                                            <span className="truncate">{item.name}</span>
                                         </div>
                                     ))}
                                     {category.items.length > 3 && (
-                                        <div className="text-sm text-gray-400 italic">+{category.items.length - 3} more settings</div>
+                                        <div className="text-[10px] text-slate-400 italic pl-3.5">
+                                            +{category.items.length - 3} autres
+                                        </div>
                                     )}
                                 </div>
-
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                    <span className={`text-sm font-medium ${category.color}`}>Configure settings →</span>
+                                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <span className={`text-[11px] ${category.color}`}>Configurer</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">{category.items.length} {category.items.length > 1 ? 'options' : 'option'}</span>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

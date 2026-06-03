@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Box, Title, Grid, Card, Text, Group, SimpleGrid, Button, Breadcrumbs } from '@mantine/core';
+import { Box, Title, Grid, Card, Text, Group, Button } from '@mantine/core';
 import { BarChart } from '@mantine/charts';
 import {
     IconShield,
@@ -8,9 +8,12 @@ import {
     IconPlus,
     IconClipboardList,
     IconClock,
+    IconShieldCheck,
+    IconDownload,
 } from '@tabler/icons-react';
 import { employeesData, eppAssignments, eppRequests } from '../../Data/dummyData/eppData';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import PageHeader from '../UtilityComp/PageHeader';
 import { getAllPPE } from '../../services/PPEService';
 import { getAllAssignmentCounts } from '../../services/PpeEmpService';
 import { getEmployeesWithPosition } from '../../services/HrmsService';
@@ -115,100 +118,55 @@ const PPEManagementDashboard = () => {
 
 
     return (
-        <div className='flex flex-col gap-5'>
-            <div className="flex items-center justify-between">
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des EPI' },
+                    { label: "Vue d'ensemble" },
+                ]}
+                icon={<IconShieldCheck size={22} stroke={2} />}
+                iconColor="yellow"
+                title="Vue d'ensemble — Équipements de protection individuelle"
+                subtitle="Contrôle centralisé du cycle de vie, conformité et disponibilité des EPI"
+                actions={
+                    <>
+                        <Button variant="default" size="sm" leftSection={<IconDownload size={14} />}>
+                            Exporter
+                        </Button>
+                        <Button size="sm" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-ppe')} color="blue">
+                            Nouveau EPI
+                        </Button>
+                        <Button size="sm" leftSection={<IconPackage size={14} />} onClick={() => navigate('stock-form')} color="teal">
+                            Entrée stock
+                        </Button>
+                        <Button size="sm" leftSection={<IconClipboardList size={14} />} onClick={() => navigate('request-table')} color="amber">
+                            Demandes
+                        </Button>
+                    </>
+                }
+            />
 
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">PPE Dashboard</div>
-                    <Breadcrumbs mt="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-
-                        <Text variant="gradient">PPE Dashboard</Text>
-                    </Breadcrumbs>
-                </div>
-
-
-                <div className="flex gap-5">
-
-                    <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('create-ppe')} color="blue">
-                        Create new PPE
-                    </Button>
-                    <Button leftSection={<IconPackage size={16} />} onClick={() => navigate('stock-form')} color="teal">
-                        Stock entry
-                    </Button>
-                    <Button leftSection={<IconClipboardList size={16} />} onClick={() => navigate('request-table')} color="yellow">
-                        View Requests
-                    </Button>
-                </div>
+            {/* KPIs raffinés */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile color="blue" label="Total EPI en stock" value={dashboardMetrics.totalEPP} icon={IconPackage} />
+                <KpiTile color="green" label="EPI disponibles" value={dashboardMetrics.availableEPP} icon={IconShield} />
+                <KpiTile color="orange" label="Stock faible" value={dashboardMetrics.lowStockCount} icon={IconAlertTriangle} />
+                <KpiTile color="amber" label="Demandes en attente" value={dashboardMetrics.pendingRequests} icon={IconClock} />
             </div>
-            <div className="italic">
-                Centralized control of personal protective equipment lifecycle, compliance, and availability
-            </div>
-
-
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb="xl" spacing="md">
-                <Card shadow="sm" padding="md" radius="md" withBorder h={120}>
-                    <Group justify="space-between">
-                        <Box>
-                            <Text c="dimmed" size="sm">Total PPE</Text>
-                            <Title order={2}>{dashboardMetrics.totalEPP}</Title>
-                        </Box>
-                        <IconPackage size={24} color="#1971C2" />
-                    </Group>
-                </Card>
-                <Card shadow="sm" padding="md" radius="md" withBorder h={120}>
-                    <Group justify="space-between">
-                        <Box>
-                            <Text c="dimmed" size="sm">PPE Available</Text>
-                            <Title order={2}>{dashboardMetrics.availableEPP}</Title>
-                        </Box>
-                        <IconShield size={24} color="#51CF66" />
-                    </Group>
-                </Card>
-                <Card shadow="sm" padding="md" radius="md" withBorder h={120}>
-                    <Group justify="space-between">
-                        <Box>
-                            <Text c="dimmed" size="sm">Low Stock</Text>
-                            <Title order={2} c="orange">{dashboardMetrics.lowStockCount}</Title>
-                        </Box>
-                        <IconAlertTriangle size={24} color="#FF922B" />
-                    </Group>
-                </Card>
-                {/* <Card shadow="sm" padding="md" radius="md" withBorder h={120}>
-                    <Group justify="space-between">
-                        <Box>
-                            <Text c="dimmed" size="sm">Expiring Soon</Text>
-                            <Title order={2} c="red">{dashboardMetrics.expiringCount}</Title>
-                        </Box>
-                        <IconTool size={24} color="#FF6B6B" />
-                    </Group>
-                </Card> */}
-                <Card shadow="sm" padding="md" radius="md" withBorder h={120}>
-                    <Group justify="space-between">
-                        <Box>
-                            <Text c="dimmed" size="sm">Pending Requests</Text>
-                            <Title order={2} c="blue">{dashboardMetrics.pendingRequests}</Title>
-                        </Box>
-                        <IconClock size={24} color="#1971C2" />
-                    </Group>
-                </Card>
-            </SimpleGrid>
 
             <Grid mb="xl">
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Card shadow="sm" padding="md" radius="md" withBorder>
-                        <Title order={5} mb="sm">PPE per Category</Title>
+                        <Title order={5} mb="sm" className="text-slate-800">EPI par catégorie</Title>
                         <Box h={330} style={{ position: 'relative' }}>
                             <BarChart
                                 gridAxis='none'
-
                                 h={300}
                                 maxBarWidth={40}
                                 data={categoryChartData}
                                 dataKey="category"
-                                series={[{ name: 'quantity', color: 'color', label: 'Quantity' }]}
+                                series={[{ name: 'quantity', color: 'color', label: 'Quantité' }]}
                                 withLegend={false}
                                 withTooltip={false}
                             />
@@ -217,25 +175,45 @@ const PPEManagementDashboard = () => {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, md: 6 }}>
                     <Card shadow="sm" padding="md" radius="md" withBorder>
-                        <Title order={5} mb="sm">Department Assignments</Title>
+                        <Title order={5} mb="sm" className="text-slate-800">Affectations par département</Title>
                         <Box h={330} style={{ position: 'relative' }}>
                             <BarChart
                                 h={300}
                                 gridAxis='none'
-
                                 withTooltip={false}
                                 maxBarWidth={40}
                                 data={departmentChartData}
                                 dataKey="department"
-                                series={[{ name: 'assignments', color: 'color', label: 'Active Assignments' }]}
+                                series={[{ name: 'assignments', color: 'color', label: 'Affectations actives' }]}
                                 withLegend={false}
                             />
                         </Box>
                     </Card>
                 </Grid.Col>
             </Grid>
+        </div>
+    );
+};
 
-
+// === KPI tile compact ===
+const KpiTile = ({ color, label, value, icon: Icon }: any) => {
+    const colors: Record<string, any> = {
+        blue: { bg: 'bg-blue-50/60', border: 'border-blue-200', text: 'text-blue-700', accent: 'bg-blue-500' },
+        green: { bg: 'bg-green-50/60', border: 'border-green-200', text: 'text-green-700', accent: 'bg-green-500' },
+        orange: { bg: 'bg-orange-50/60', border: 'border-orange-200', text: 'text-orange-700', accent: 'bg-orange-500' },
+        amber: { bg: 'bg-amber-50/60', border: 'border-amber-200', text: 'text-amber-700', accent: 'bg-amber-500' },
+    };
+    const c = colors[color];
+    return (
+        <div className={`bg-white rounded-lg border ${c.border} overflow-hidden hover:shadow-md transition-all`}>
+            <div className={`h-1 ${c.accent}`}></div>
+            <div className="p-3">
+                <div className={`p-1.5 rounded-md ${c.bg} ${c.border} border inline-block mb-2`}>
+                    <Icon size={14} className={c.text} />
+                </div>
+                <p className={`text-2xl ${c.text} tabular-nums`}>{value}</p>
+                <p className="text-[11px] text-slate-700 mt-0.5">{label}</p>
+            </div>
         </div>
     );
 };

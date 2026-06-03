@@ -101,7 +101,7 @@ const NotificationDetails: React.FC<NotificationDetailsProps> = ({ notification 
                                     <Group>
                                         <IconPaperclip size={16} />
                                         <Box>
-                                            <Text size="sm" fw={500}>{attachment.name}</Text>
+                                            <Text size="sm">{attachment.name}</Text>
                                             <Text size="xs" c="dimmed">{attachment.type} • {formatFileSize(attachment.size)}</Text>
                                         </Box>
                                     </Group>
@@ -122,7 +122,7 @@ const NotificationDetails: React.FC<NotificationDetailsProps> = ({ notification 
                         <Group>
                             <IconUsers size={20} color="#339AF0" />
                             <Box>
-                                <Text size="lg" fw={700}>{notification.recipientCount}</Text>
+                                <Text size="lg">{notification.recipientCount}</Text>
                                 <Text size="sm" c="dimmed">Recipients</Text>
                             </Box>
                         </Group>
@@ -131,7 +131,7 @@ const NotificationDetails: React.FC<NotificationDetailsProps> = ({ notification 
                         <Group>
                             <IconEye size={20} color="#51CF66" />
                             <Box>
-                                <Text size="lg" fw={700}>{notification.readCount}</Text>
+                                <Text size="lg">{notification.readCount}</Text>
                                 <Text size="sm" c="dimmed">Read</Text>
                             </Box>
                         </Group>
@@ -140,7 +140,7 @@ const NotificationDetails: React.FC<NotificationDetailsProps> = ({ notification 
                         <Group>
                             <IconCheck size={20} color="#20C997" />
                             <Box>
-                                <Text size="lg" fw={700}> {((notification.readCount / notification.recipientCount) * 100).toFixed(1)}%</Text>
+                                <Text size="lg"> {((notification.readCount / notification.recipientCount) * 100).toFixed(1)}%</Text>
                                 <Text size="sm" c="dimmed">Read Rate</Text>
                             </Box>
                         </Group>

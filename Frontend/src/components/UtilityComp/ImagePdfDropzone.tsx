@@ -25,7 +25,7 @@ const ImagePdfDropzone = ({ title, id, form, withAsterisk, single }: any) => {
     const handleRemoveFile = (index: number, fileId: any) => {
         if (fileId) {
             modals.openConfirmModal({
-                title: <span className="font-semibold text-2xl">Are you sure?</span>,
+                title: <span className="text-2xl">Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -81,7 +81,7 @@ const ImagePdfDropzone = ({ title, id, form, withAsterisk, single }: any) => {
 
     return (
         <div>
-            <h3 className="font-medium flex gap-2 text-gray-800 mb-1">{title} {withAsterisk && <Text color='red'>*</Text>}</h3>
+            <h3 className="flex gap-2 text-gray-800 mb-1">{title} {withAsterisk && <Text color='red'>*</Text>}</h3>
             <Text color='red'>{form.getInputProps(id).error}</Text>
             <Dropzone
                 onDrop={(files: File[]) => {
@@ -110,7 +110,7 @@ const ImagePdfDropzone = ({ title, id, form, withAsterisk, single }: any) => {
                             <IconCloudUpload size={50} stroke={1.5} />
                         </Dropzone.Idle>
                     </Group>
-                    <Text ta="center" fw={700} fz="lg" mt="xl">
+                    <Text ta="center" fz="lg" mt="xl">
                         <Dropzone.Accept>Drop image or PDF files here</Dropzone.Accept>
                         <Dropzone.Reject>
                             Only files under 30MB are allowed

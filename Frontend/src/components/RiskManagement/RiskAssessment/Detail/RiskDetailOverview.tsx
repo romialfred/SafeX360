@@ -11,7 +11,7 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
                 <Grid>
                     <Grid.Col span={12}>
                         <Text size="sm" c="dimmed">Title:</Text>
-                        <Text size="sm" fw={500} mb="md">{risk.title}</Text>
+                        <Text size="sm" mb="md">{risk.title}</Text>
                     </Grid.Col>
                     <Grid.Col span={12}>
                         <Text size="sm" c="dimmed">Description:</Text>

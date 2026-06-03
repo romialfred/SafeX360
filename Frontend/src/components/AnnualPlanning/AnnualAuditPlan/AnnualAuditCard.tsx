@@ -74,12 +74,12 @@ const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditArea
         <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 flex flex-col h-full">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryStyles(capitalizeFirstLetter(audit.category))}`}>{capitalizeFirstLetter(audit.category)}</span>
+                    <span className={`px-2 py-1 rounded text-xs ${getCategoryStyles(capitalizeFirstLetter(audit.category))}`}>{capitalizeFirstLetter(audit.category)}</span>
                     <span className="text-gray-600 text-sm">{auditAreaMap[audit?.scopeId || ""]?.name}</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyles(audit.planningStatus)}`}>{capitalizeFirstLetter(audit.planningStatus)}</span>
+                <span className={`px-3 py-1 rounded-full text-sm ${getStatusStyles(audit.planningStatus)}`}>{capitalizeFirstLetter(audit.planningStatus)}</span>
             </div>
-            <h3 className="text-lg font-semibold !line-clamp-1 text-slate-800 mb-3 ">{audit.title}</h3>
+            <h3 className="text-lg !line-clamp-1 text-slate-800 mb-3 ">{audit.title}</h3>
             <div className="space-y-2 text-sm text-slate-600 mb-4">
                 <div>
                     <span className="font-medium">Audit Date:</span> {formatDate(audit.startDate)}

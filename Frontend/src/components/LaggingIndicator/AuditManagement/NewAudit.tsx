@@ -146,7 +146,7 @@ const NewAudit: React.FC = () => {
             values = { ...values, auditors: auditors };
         }
         modals.openConfirmModal({
-            title: <span className="font-semibold text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Are you sure?</span>,
             centered: true,
             children: (
                 <span className="text-md">
@@ -203,7 +203,7 @@ const NewAudit: React.FC = () => {
         return (
             <div className={`  flex gap-5 justify-between self-center`}>
                 <div className='flex flex-col gap-1'>
-                    <span className="font-bold">{item.name}</span>
+                    <span className="font-medium">{item.name}</span>
                     <span className="text-400">{item.empNumber}</span>
                 </div>
                 {item.pos === "Target" && (
@@ -220,7 +220,7 @@ const NewAudit: React.FC = () => {
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm font-medium px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -260,7 +260,7 @@ const NewAudit: React.FC = () => {
                                     <Checkbox.Indicator className="mt-1 text-blue-600" />
                                     <Text
                                         size="md"
-                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                     >
                                         {type}
                                     </Text>
@@ -283,7 +283,7 @@ const NewAudit: React.FC = () => {
 
     const renderAuditorItem = (_item: ListItem, index: number) => (
         <Fieldset key={index} className="grid grid-cols-3 gap-6" legend={<div className="flex gap-5">
-            <div className="text-lg font-medium text-blue-500">Auditor {index + 1}</div>
+            <div className="text-lg text-blue-500">Auditor {index + 1}</div>
             <ActionIcon onClick={() => form.removeListItem("auditors", index)} variant="filled" color="red" aria-label="Settings">
                 <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
@@ -314,7 +314,7 @@ const NewAudit: React.FC = () => {
     const renderAreaItem = (_item: ListItem, index: number) => (
 
         <Fieldset className="grid grid-cols-2 gap-6" key={index} legend={<div className="flex gap-5">
-            <div className="text-lg font-medium text-blue-500">Area {index + 1}</div>
+            <div className="text-lg text-blue-500">Area {index + 1}</div>
             <ActionIcon onClick={() => form.removeListItem("areas", index)} variant="filled" color="red" aria-label="Settings"> <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
         </div>}>
@@ -348,7 +348,7 @@ const NewAudit: React.FC = () => {
 
     const renderCommitteeMeeting = (mt: MeetingItem, index: number) => (
         <Fieldset className="grid grid-cols-3 gap-6" key={index} legend={<div className="flex gap-5">
-            <div className="text-lg font-medium text-blue-500">Meeting {index + 1}</div>
+            <div className="text-lg text-blue-500">Meeting {index + 1}</div>
             <ActionIcon onClick={() => form.removeListItem("meetings", index)} variant="filled" color="red" aria-label="Settings"> <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
         </div>}>
@@ -423,7 +423,7 @@ const NewAudit: React.FC = () => {
     return (
         <div>
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">New Audit</div>
+                <div className="text-2xl text-blue-500 w-fit">New Audit</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>

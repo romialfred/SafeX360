@@ -41,7 +41,7 @@ const InvestigationPlan = ({ form, incident }: any) => {
     const handleRemoveActionPlan = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -77,7 +77,7 @@ const InvestigationPlan = ({ form, incident }: any) => {
         <div className="flex flex-col p-5 gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="font-medium text-lg text-gray-800 ">Corrective Actions Plan</h3>
+                    <h3 className="text-lg text-gray-800 ">Corrective Actions Plan</h3>
                     <p>Define actions to prevent incident recurrence</p>
                 </div>
 
@@ -85,7 +85,7 @@ const InvestigationPlan = ({ form, incident }: any) => {
                 <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">Add Action Plan</Button>
             </div>
             {form?.values.correctiveActions && form?.values.correctiveActions.map((x: any, index: any) => <Fieldset className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                <div className="text-lg font-medium text-blue-500">Action {index + 1}</div>
+                <div className="text-lg text-blue-500">Action {index + 1}</div>
                 <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Settings">
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
@@ -101,7 +101,7 @@ const InvestigationPlan = ({ form, incident }: any) => {
             </Fieldset>)}
 
             {/* <div className="bg-blue-50 p-4 rounded-lg border border-blue-600 shadow-sm">
-                <h2 className="text-lg font-semibold text-blue-500 mb-4">Action Plans Summary</h2>
+                <h2 className="text-lg text-blue-500 mb-4">Action Plans Summary</h2>
 
                 <div className="flex  gap-3">
                     <ul className="space-y-3 flex items-center gap-4 text-gray-700">

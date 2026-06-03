@@ -68,7 +68,7 @@ const EmployeeDetails = () => {
             {/* Header and Breadcrumbs */}
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Employee Assignments Details</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Employee Assignments Details</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/employee-assignment" ><Text variant="gradient" className="hover:!underline cursor-pointer">Employee Assignments</Text></Link>
@@ -81,17 +81,17 @@ const EmployeeDetails = () => {
             <div className="bg-white rounded-lg border border-gray-300 shadow-lg p-4 flex flex-col gap-5">
                 <div className="flex justify-between items-center">
                     <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-medium text-primary">{employeeInfo?.empName || "Loading..."}</h1>
-                        <p className="font-medium text-gray-500 text-lg">{employeeInfo?.position || "-"}</p>
+                        <h1 className="text-2xl text-primary">{employeeInfo?.empName || "Loading..."}</h1>
+                        <p className="text-gray-500 text-lg">{employeeInfo?.position || "-"}</p>
                     </div>
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <p className="text-lg text-blue-800">Department:</p>
-                            <p className="text-gray-500 font-medium">{employeeInfo?.department || "-"}</p>
+                            <p className="text-gray-500">{employeeInfo?.department || "-"}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <p className="text-lg text-blue-800">Email:</p>
-                            <p className="text-gray-500 font-medium">{employeeInfo?.email || "-"}</p>
+                            <p className="text-gray-500">{employeeInfo?.email || "-"}</p>
                         </div>
                     </div>
                 </div>
@@ -104,7 +104,7 @@ const EmployeeDetails = () => {
                 >
                     <Tabs.List>
                         {Object.entries(tabData).map(([key, { label }]) => (
-                            <Tabs.Tab key={key} value={key} className="!text-lg !font-medium !text-gray-600">
+                            <Tabs.Tab key={key} value={key} className="!text-lg !!text-gray-600">
                                 {label}
                             </Tabs.Tab>
                         ))}

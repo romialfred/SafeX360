@@ -81,7 +81,7 @@ const PPEEmployeeDetails = () => {
                                         return (
                                             <Card key={assignment.id} shadow="xs" padding="md" radius="md" withBorder>
                                                 <Group justify="space-between">
-                                                    <Text size="sm" fw={500}>{epp?.name}</Text>
+                                                    <Text size="sm">{epp?.name}</Text>
                                                     <Badge color="blue" variant="light">{assignment.status}</Badge>
                                                 </Group>
                                                 <Text size="xs" c="dimmed">{epp?.category} </Text>
@@ -135,27 +135,27 @@ const PPEEmployeeDetails = () => {
                                 <Stack gap="sm">
                                     {/* <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Number:</Text>
-                                        <Text size="sm" fw={500}>{emp?.employeeNumber}</Text>
+                                        <Text size="sm">{emp?.employeeNumber}</Text>
                                     </Group> */}
                                     <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Department:</Text>
-                                        <Text size="sm" fw={500}>{emp?.department}</Text>
+                                        <Text size="sm">{emp?.department}</Text>
                                     </Group>
                                     <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Position:</Text>
-                                        <Text size="sm" fw={500}>{emp?.position}</Text>
+                                        <Text size="sm">{emp?.position}</Text>
                                     </Group>
                                     {/* <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Hire Date:</Text>
-                                        <Text size="sm" fw={500}>{employee?.hireDate}</Text>
+                                        <Text size="sm">{employee?.hireDate}</Text>
                                     </Group> */}
                                     <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Email:</Text>
-                                        <Text size="sm" fw={500}>{emp?.email}</Text>
+                                        <Text size="sm">{emp?.email}</Text>
                                     </Group>
                                     {/* <Group justify="space-between">
                                         <Text size="sm" c="dimmed">Phone:</Text>
-                                        <Text size="sm" fw={500}>{emp?.phone}</Text>
+                                        <Text size="sm">{emp?.phone}</Text>
                                     </Group> */}
                                 </Stack>
                             </Card>

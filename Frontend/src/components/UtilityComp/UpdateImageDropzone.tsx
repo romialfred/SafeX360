@@ -15,7 +15,7 @@ const UpdateImageDropzone = ({ title, id, form }: any) => {
     const handleRemoveImage = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='font-semibold text-2xl'>Are you sure?</span>,
+                title: <span className='text-2xl'>Are you sure?</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
@@ -60,7 +60,7 @@ const UpdateImageDropzone = ({ title, id, form }: any) => {
     }, [form.values[id]]);
     return (
         <div>
-            <h3 className="font-medium text-gray-800 mb-1">{title}</h3>
+            <h3 className="text-gray-800 mb-1">{title}</h3>
 
             <Dropzone
                 onDrop={(files: any) => {
@@ -84,7 +84,7 @@ const UpdateImageDropzone = ({ title, id, form }: any) => {
                             <IconCloudUpload size={50} stroke={1.5} />
                         </Dropzone.Idle>
                     </Group>
-                    <Text ta="center" fw={700} fz="lg" mt="xl">
+                    <Text ta="center" fz="lg" mt="xl">
                         <Dropzone.Accept>Drop image files here</Dropzone.Accept>
                         <Dropzone.Reject>Only image files under 30MB are allowed</Dropzone.Reject>
                         <Dropzone.Idle>Upload images</Dropzone.Idle>

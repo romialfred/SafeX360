@@ -1,39 +1,37 @@
 import {
-    Card,
-    Group,
     Badge,
     Button,
     Text,
     Modal,
     Textarea,
     Select,
-    Breadcrumbs,
     MultiSelect,
     LoadingOverlay,
 } from '@mantine/core';
-import { IconCheck, IconX, IconEye, IconClipboardList } from '@tabler/icons-react';
+import { IconCheck, IconX, IconEye, IconClipboardList, IconHelmet } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { useForm } from '@mantine/form';
 import { DateInput } from '@mantine/dates';
-import { Link } from 'react-router-dom';
-import { getActivePPE } from '../../services/PPEService';
+import { getActivePPE, getAllPPE } from '../../services/PPEService';
 import { getEmployeesWithDepartment } from '../../services/EmployeeService';
 import { createPpeRequest, getAllPpeRequests, approvePpeRequest, rejectPpeRequest } from '../../services/PpeRequestService';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { mapIdToName } from '../../utility/OtherUtilities';
+import PageHeader from '../UtilityComp/PageHeader';
 
 const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
+    switch ((priority || '').toLowerCase()) {
         case 'high': return 'red';
         case 'medium': return 'orange';
         case 'low': return 'green';
         default: return 'gray';
     }
 };
+
 const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || '').toLowerCase()) {
         case 'pending': return 'yellow';
         case 'approved': return 'green';
         case 'rejected': return 'red';
@@ -41,115 +39,145 @@ const getStatusColor = (status: string) => {
     }
 };
 
+const priorityLabels: Record<string, string> = {
+    HIGH: 'Élevée',
+    MEDIUM: 'Moyenne',
+    LOW: 'Faible',
+    High: 'Élevée',
+    Medium: 'Moyenne',
+    Low: 'Faible',
+    high: 'Élevée',
+    medium: 'Moyenne',
+    low: 'Faible',
+    NORMAL: 'Normale',
+    Normal: 'Normale',
+    normal: 'Normale',
+};
+
+const statusLabels: Record<string, string> = {
+    PENDING: 'En attente',
+    APPROVED: 'Approuvée',
+    REJECTED: 'Rejetée',
+    Pending: 'En attente',
+    Approved: 'Approuvée',
+    Rejected: 'Rejetée',
+};
+
 const PPERequestsTable = () => {
-    // State and form for creating new request
     const [showRequestForm, setShowRequestForm] = useState(false);
     const [employees, setEmployees] = useState<any>([]);
-    const [ppe, setPpe] = useState<any>([]);
+    // PPE actifs : pour le formulaire de demande (on ne demande que des EPI encore en catalogue)
+    const [activePpe, setActivePpe] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [requests, setRequests] = useState<any[]>([]);
-    // State for modals and selected request
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [viewData, setViewData] = useState<any>(null);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
+    // ppeMap est construit à partir de TOUS les EPI (actifs + inactifs) pour résoudre
+    // les références historiques. Sans ça, les demandes liées à un EPI désactivé
+    // affichaient "N/A" dans la colonne EPI demandés.
     const [ppeMap, setPpeMap] = useState<Record<string, any>>({});
+
     const requestForm = useForm({
         initialValues: {
             empIds: [] as string[],
             ppeIds: [] as string[],
             desiredDate: null as Date | null,
             priority: 'Medium',
-            reason: ''
+            reason: '',
         },
         validate: {
-            empIds: (value) => (value.length > 0 ? null : 'Please select at least one employee'),
-            ppeIds: (value) => (value.length > 0 ? null : 'Please select at least one PPE'),
-            desiredDate: (value) => (value ? null : 'Please select a desired date'),
-            priority: (value) => (value ? null : 'Please select a priority'),
-            reason: (value) => (value ? null : 'Please provide a reason')
-        }
+            empIds: (value) => (value.length > 0 ? null : 'Veuillez sélectionner au moins un employé'),
+            ppeIds: (value) => (value.length > 0 ? null : 'Veuillez sélectionner au moins un EPI'),
+            desiredDate: (value) => (value ? null : 'Veuillez choisir une date souhaitée'),
+            priority: (value) => (value ? null : 'Veuillez sélectionner une priorité'),
+            reason: (value) => (value ? null : 'Veuillez préciser un motif'),
+        },
     });
-    // Forms for approve and reject
+
     const approveForm = useForm({ initialValues: { comment: '' } });
     const rejectForm = useForm({
         initialValues: { comment: '' },
-        validate: { comment: (val) => (val.trim() ? null : 'Comment is required') }
+        validate: { comment: (val) => (val.trim() ? null : 'Le commentaire est requis') },
     });
 
-
-
-
     useEffect(() => {
-        getEmployeesWithDepartment().then((data) => {
-            setEmployees(data);
-            setEmpMap(mapIdToName(data));
-        }).catch((_err) => { })
-        getActivePPE().then((data) => {
-            setPpe(data);
-            setPpeMap(mapIdToName(data));
-        }).catch((_err) => { })
+        getEmployeesWithDepartment()
+            .then((data) => {
+                setEmployees(data);
+                setEmpMap(mapIdToName(data));
+            })
+            .catch(() => { });
+
+        // Catalogue complet (actifs + inactifs) → table de correspondance ID → nom
+        getAllPPE()
+            .then((data) => {
+                setPpeMap(mapIdToName(data));
+            })
+            .catch(() => { });
+
+        // EPI actifs uniquement → utilisés dans le formulaire de demande
+        getActivePPE()
+            .then((data) => {
+                setActivePpe(data);
+            })
+            .catch(() => { });
+
         fetchRequests();
     }, []);
 
-
     const fetchRequests = () => {
         getAllPpeRequests()
-            .then((data) => {
-                setRequests(data);
-                console.log("Fetched PPE Requests: ", data);
-            })
+            .then((data) => setRequests(data))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "Failed to fetch PPE requests");
-            })
-
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des demandes EPI');
+            });
     };
 
-    // Handlers for modals
     const openApproveModal = (row: any) => { setSelectedRequest(row); approveForm.reset(); setShowApproveModal(true); };
     const openRejectModal = (row: any) => { setSelectedRequest(row); rejectForm.reset(); setShowRejectModal(true); };
-    const openViewModal = async (row: any) => {
-        setViewData(row);
-        setShowViewModal(true);
-    };
+    const openViewModal = (row: any) => { setViewData(row); setShowViewModal(true); };
 
     const handleApprove = async (values: typeof approveForm.values) => {
         try {
             setLoading(true);
             await approvePpeRequest(selectedRequest.id, values.comment);
-            successNotification('Request approved');
+            successNotification('Demande approuvée');
             setShowApproveModal(false);
             fetchRequests();
-            setLoading(false);
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || 'Approval failed');
+            errorNotification(err.response?.data?.errorMessage || "Échec de l'approbation");
+        } finally {
+            setLoading(false);
         }
     };
+
     const handleReject = async (values: typeof rejectForm.values) => {
         try {
             setLoading(true);
             await rejectPpeRequest(selectedRequest.id, values.comment);
-            successNotification('Request rejected');
+            successNotification('Demande rejetée');
             setShowRejectModal(false);
             fetchRequests();
-            setLoading(false);
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || 'Rejection failed');
+            errorNotification(err.response?.data?.errorMessage || 'Échec du rejet');
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleSubmitRequest = (values: typeof requestForm.values) => {
-
         const empSize = values.empIds?.length || 0;
-        let error = "";
+        let error = '';
 
         for (const x of values.ppeIds) {
-            const ppe = ppeMap[x];
-            if (ppe.stock < empSize) {
-                error = `Not enough stock for ${ppe.name}`;
-                break; // stops checking further
+            const ppeItem = ppeMap[x];
+            if (ppeItem && ppeItem.stock < empSize) {
+                error = `Stock insuffisant pour ${ppeItem.name}`;
+                break;
             }
         }
 
@@ -161,249 +189,375 @@ const PPERequestsTable = () => {
         setLoading(true);
         createPpeRequest(values)
             .then(() => {
-                successNotification("PPE request created successfully");
+                successNotification('Demande EPI créée avec succès');
                 setShowRequestForm(false);
                 requestForm.reset();
                 fetchRequests();
             })
-            .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "Failed to create PPE request");
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec de la création de la demande EPI');
             })
-            .finally(() => {
-                setLoading(false);
-            });
+            .finally(() => setLoading(false));
     };
 
+    // === Templates DataTable ===
+    const priorityTemplate = (rowData: any) => (
+        <Badge color={getPriorityColor(rowData.priority)} variant="light" size="sm" radius="sm">
+            {priorityLabels[rowData.priority] || rowData.priority || '—'}
+        </Badge>
+    );
 
+    const statusTemplate = (rowData: any) => (
+        <Badge color={getStatusColor(rowData.status)} variant="filled" size="sm" radius="sm">
+            {statusLabels[rowData.status] || rowData.status || '—'}
+        </Badge>
+    );
 
-    // --- Priority Badge ---
-    const priorityTemplate = (rowData: any) => {
-        return <Badge color={getPriorityColor(rowData.priority)} variant="light">
-            {rowData.priority}
-        </Badge>;
-    };
-
-    // --- Status Badge ---
-    const statusTemplate = (rowData: any) => {
-        return (
-            <Badge color={getStatusColor(rowData.status)} variant="filled">
-                {rowData.status.charAt(0).toUpperCase() + rowData.status.slice(1).toLowerCase()}
-            </Badge>
-        );
-    };
-
-    // --- Employee Name ---
     const employeeTemplate = (rowData: any) => {
-        const emps = rowData.empIds;
+        const ids: any[] = rowData.empIds || [];
+        if (!ids.length) return <Text size="xs" c="dimmed">—</Text>;
         return (
-            <div>
-                {emps.map((id: any) => {
+            <div className="flex flex-col gap-0.5">
+                {ids.map((id: any) => {
                     const employee = empMap[id];
                     return (
-                        <div key={id} style={{ fontSize: "0.8rem" }}>
-                            {employee ? `${employee.name}` : "N/A"}
-                        </div>
+                        <span key={id} className="text-xs text-slate-700">
+                            {employee ? employee.name : `Employé #${id}`}
+                        </span>
                     );
                 })}
             </div>
         );
     };
 
-    // --- Requested PPEs ---
     const requestedEppTemplate = (rowData: any) => {
-        const requestedEPPs = rowData.ppeIds;
+        const ids: any[] = rowData.ppeIds || [];
+        if (!ids.length) return <Text size="xs" c="dimmed">—</Text>;
         return (
-            <div>
-                {requestedEPPs.map((eppId: any) => {
+            <div className="flex flex-col gap-0.5">
+                {ids.map((eppId: any) => {
                     const epp = ppeMap[eppId];
                     return (
-                        <div key={eppId} style={{ fontSize: "0.8rem" }}>
-                            {epp ? `${epp.name}` : "N/A"}
-                        </div>
+                        <span key={eppId} className="text-xs text-slate-700">
+                            {epp ? epp.name : `EPI #${eppId}`}
+                        </span>
                     );
                 })}
             </div>
         );
     };
 
-    // --- Reason (truncate with ellipsis) ---
-    const reasonTemplate = (rowData: any) => {
-        return (
-            <span
-                style={{
-                    display: "block",
-                    maxWidth: "200px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                }}
-                title={rowData.reason}
+    const reasonTemplate = (rowData: any) => (
+        <span
+            className="block max-w-[240px] text-xs text-slate-700"
+            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            title={rowData.reason}
+        >
+            {rowData.reason || '—'}
+        </span>
+    );
+
+    const dateTemplate = (rowData: any) => {
+        if (!rowData.desiredDate) return <Text size="xs" c="dimmed">—</Text>;
+        try {
+            const d = new Date(rowData.desiredDate);
+            return <span className="text-xs text-slate-700 tabular-nums">{d.toLocaleDateString('fr-FR')}</span>;
+        } catch {
+            return <span className="text-xs text-slate-700">{rowData.desiredDate}</span>;
+        }
+    };
+
+    const actionTemplate = (rowData: any) => (
+        <div className="flex flex-wrap gap-1">
+            {rowData.status === 'PENDING' && (
+                <>
+                    <Button
+                        variant="light"
+                        color="green"
+                        size="compact-xs"
+                        leftSection={<IconCheck size={14} />}
+                        onClick={() => openApproveModal(rowData)}
+                    >
+                        Approuver
+                    </Button>
+                    <Button
+                        variant="light"
+                        color="red"
+                        size="compact-xs"
+                        leftSection={<IconX size={14} />}
+                        onClick={() => openRejectModal(rowData)}
+                    >
+                        Rejeter
+                    </Button>
+                </>
+            )}
+            <Button
+                variant="light"
+                color="blue"
+                size="compact-xs"
+                leftSection={<IconEye size={14} />}
+                onClick={() => openViewModal(rowData)}
             >
-                {rowData.reason}
-            </span>
-        );
-    };
-
-    // --- Actions ---
-    const actionTemplate = (rowData: any) => {
-        return <Group gap="xs">
-            {rowData.status === 'PENDING' && <>
-                <Button variant="light" color="green" size='compact-xs' leftSection={<IconCheck size={16} />} onClick={() => openApproveModal(rowData)}>Approve</Button>
-                <Button variant="light" color="red" size='compact-xs' leftSection={<IconX size={16} />} onClick={() => openRejectModal(rowData)}>Reject</Button>
-            </>
-            }
-            <Button variant="light" color="blue" size='compact-xs' leftSection={<IconEye size={16} />} onClick={() => openViewModal(rowData)}>View</Button>
-        </Group>
-    };
-
+                Détails
+            </Button>
+        </div>
+    );
 
     return (
-        <div className='flex flex-col gap-5'>
-            <div className='flex justify-between items-center'>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des EPI' },
+                    { label: "Demandes d'EPI" },
+                ]}
+                icon={<IconClipboardList size={22} stroke={2} />}
+                iconColor="amber"
+                title="Demandes d'EPI"
+                subtitle="Workflow de demande, validation et délivrance des équipements de protection individuelle"
+                actions={
+                    <Button
+                        leftSection={<IconClipboardList size={15} />}
+                        color="teal"
+                        size="sm"
+                        radius="md"
+                        onClick={() => setShowRequestForm(true)}
+                    >
+                        Nouvelle demande
+                    </Button>
+                }
+            />
 
-                <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Pending PPE Requests</div>
-                    <Breadcrumbs mt="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/ppe-management">
-                            <Text variant="gradient">PPE Dashboard</Text>
-                        </Link>
-                        <Text variant="gradient">Pending PPE Requests</Text>
-                    </Breadcrumbs>
-                </div>
-                <Button leftSection={<IconClipboardList size={16} />} color="green" onClick={() => setShowRequestForm(true)}>
-                    New Request
-                </Button>
-            </div>
-            <p className=' italic'>Streamlined process for employees to request and receive required PPE</p>
-            {/* New Request Modal */}
-            <Modal opened={showRequestForm} onClose={() => setShowRequestForm(false)} title="New PPE Request" size="xl" centered>
-                <LoadingOverlay visible={loading} />
-                <form className='grid grid-cols-1 gap-5' onSubmit={requestForm.onSubmit(handleSubmitRequest)}>
-
-                    <MultiSelect
-                        label="Employees"
-                        placeholder="Select employees"
-                        data={employees.map((emp: any) => ({ value: "" + emp.id, label: `${emp.name}` }))}
-                        multiple
-                        searchable
-                        hidePickedOptions
-                        withAsterisk
-                        {...requestForm.getInputProps('empIds')}
-                    />
-                    <MultiSelect
-                        label="PPE Requested"
-                        placeholder="Select PPE"
-                        data={ppe.map((epp: any) => ({ value: "" + epp.id, label: `${epp.name} - ${epp.category} (Stock: ${epp.stock})` }))}
-                        multiple
-                        hidePickedOptions
-                        searchable
-                        withAsterisk
-                        {...requestForm.getInputProps('ppeIds')}
-                    />
-                    <div className='grid grid-cols-2 gap-4'>
-
-                        <DateInput
-                            label="Requested Date"
-                            placeholder="When do you need the PPE?"
-                            withAsterisk
-                            {...requestForm.getInputProps('desiredDate')}
-                            minDate={new Date()}
-                        />
-                        <Select
-                            label="Priority"
-                            placeholder="Select priority"
-                            data={['Low', 'Medium', 'High']}
-                            withAsterisk
-                            {...requestForm.getInputProps('priority')}
-                        />
+            {/* === Tableau des demandes === */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <header className="px-4 py-2.5 bg-amber-50/60 border-b border-amber-200/70 flex items-center gap-2">
+                    <div className="p-1 rounded bg-amber-100">
+                        <IconHelmet size={14} className="text-amber-700" />
                     </div>
-                    <Textarea
-                        label="Reason"
-                        placeholder="Explain why these PPE are needed"
-                        rows={3}
-                        withAsterisk
-                        {...requestForm.getInputProps('reason')}
-                    />
-                    <Group justify="flex-end" mt="md">
-                        <Button variant="outline" onClick={() => setShowRequestForm(false)}>Cancel</Button>
-                        <Button type="submit" leftSection={<IconClipboardList size={16} />}>Submit Request</Button>
-                    </Group>
-                </form>
-            </Modal>
-            {/* Approve Modal */}
-            <Modal opened={showApproveModal} onClose={() => setShowApproveModal(false)} title="Approve PPE Request" centered>
-                <LoadingOverlay visible={loading} />
-                <form onSubmit={approveForm.onSubmit(handleApprove)}>
-                    <Textarea label="Comment (optional)" placeholder="Add a comment" {...approveForm.getInputProps('comment')} />
-                    <Group justify="flex-end" mt="md">
-                        <Button variant="outline" onClick={() => setShowApproveModal(false)}>Cancel</Button>
-                        <Button type="submit" leftSection={<IconCheck size={16} />}>Approve</Button>
-                    </Group>
-                </form>
-            </Modal>
-
-            {/* Reject Modal */}
-            <Modal opened={showRejectModal} onClose={() => setShowRejectModal(false)} title="Reject PPE Request" centered>
-                <LoadingOverlay visible={loading} />
-                <form onSubmit={rejectForm.onSubmit(handleReject)}>
-                    <Textarea label="Comment (required)" placeholder="Provide reason for rejection" withAsterisk {...rejectForm.getInputProps('comment')} />
-                    <Group justify="flex-end" mt="md">
-                        <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
-                        <Button type="submit" color="red" leftSection={<IconX size={16} />}>Reject</Button>
-                    </Group>
-                </form>
-            </Modal>
-
-            {/* View Modal */}
-            <Modal opened={showViewModal} onClose={() => setShowViewModal(false)} title="Request Details" size="lg" centered>
-                <LoadingOverlay visible={loading} />
-                {viewData ? (
-                    <div className="flex flex-col gap-2">
-                        <Text><strong>Employees:</strong> {viewData.empIds.map((id: string) => empMap[id]?.name).join(', ')}</Text>
-                        <Text><strong>PPE:</strong> {viewData.ppeIds.map((id: string) => ppeMap[id]?.name).join(', ')}</Text>
-                        <Text><strong>Reason:</strong> {viewData.reason}</Text>
-                        <Text><strong>Priority:</strong> {viewData.priority}</Text>
-                        <Text><strong>Date:</strong> {viewData.desiredDate}</Text>
-                        <Text><strong>Status:</strong> {viewData.status}</Text>
-                        {viewData.comment && <Text><strong>Comment:</strong> {viewData.comment}</Text>}
-                    </div>
-                ) : <LoadingOverlay visible />}
-                <Group justify="flex-end" mt="md">
-                    <Button variant="outline" onClick={() => setShowViewModal(false)}>Close</Button>
-                </Group>
-            </Modal>
-            <div className='flex flex-col gap-2' >
-
-
-
-
-
-
-                <Card shadow="sm" padding="md" radius="md" withBorder>
+                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
+                        Liste des demandes EPI
+                    </h2>
+                    <span className="ml-auto text-[11px] text-slate-500">
+                        {requests.length} {requests.length > 1 ? 'demandes' : 'demande'}
+                    </span>
+                </header>
+                <div className="p-3">
                     <DataTable
                         value={requests}
                         stripedRows
                         paginator
                         rows={10}
                         responsiveLayout="scroll"
-                        size='small'
+                        size="small"
+                        emptyMessage="Aucune demande EPI enregistrée"
                     >
-                        {/* <Column field="id" header="Request ID" sortable /> */}
-                        <Column header="Employee" body={employeeTemplate} />
-                        <Column header="PPE Requested" body={requestedEppTemplate} />
-                        <Column header="Reason" body={reasonTemplate} />
-                        <Column header="Priority" body={priorityTemplate} />
-                        <Column field="desiredDate" header="Date" />
-                        <Column header="Status" body={statusTemplate} />
+                        <Column header="Employé(s)" body={employeeTemplate} />
+                        <Column header="EPI demandé(s)" body={requestedEppTemplate} />
+                        <Column header="Motif" body={reasonTemplate} />
+                        <Column header="Priorité" body={priorityTemplate} />
+                        <Column header="Date souhaitée" body={dateTemplate} />
+                        <Column header="Statut" body={statusTemplate} />
                         <Column header="Actions" body={actionTemplate} />
                     </DataTable>
-
-                </Card>
+                </div>
             </div>
 
+            {/* === Modal Nouvelle demande === */}
+            <Modal
+                opened={showRequestForm}
+                onClose={() => setShowRequestForm(false)}
+                title={<span className="text-slate-900">Nouvelle demande d'EPI</span>}
+                size="xl"
+                centered
+                radius="md"
+            >
+                <LoadingOverlay visible={loading} />
+                <form className="grid grid-cols-1 gap-4" onSubmit={requestForm.onSubmit(handleSubmitRequest)}>
+                    <MultiSelect
+                        label="Employés concernés"
+                        placeholder="Sélectionner les employés"
+                        data={employees.map((emp: any) => ({ value: '' + emp.id, label: emp.name }))}
+                        multiple
+                        searchable
+                        hidePickedOptions
+                        withAsterisk
+                        size="sm"
+                        radius="md"
+                        {...requestForm.getInputProps('empIds')}
+                    />
+                    <MultiSelect
+                        label="EPI demandés"
+                        placeholder="Sélectionner les EPI"
+                        data={activePpe.map((epp: any) => ({
+                            value: '' + epp.id,
+                            label: `${epp.name} • ${epp.category} (Stock : ${epp.stock})`,
+                        }))}
+                        multiple
+                        hidePickedOptions
+                        searchable
+                        withAsterisk
+                        size="sm"
+                        radius="md"
+                        {...requestForm.getInputProps('ppeIds')}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                        <DateInput
+                            label="Date souhaitée"
+                            placeholder="Quand les EPI sont-ils requis ?"
+                            withAsterisk
+                            size="sm"
+                            radius="md"
+                            valueFormat="DD/MM/YYYY"
+                            {...requestForm.getInputProps('desiredDate')}
+                            minDate={new Date()}
+                        />
+                        <Select
+                            label="Priorité"
+                            placeholder="Sélectionner une priorité"
+                            data={[
+                                { value: 'Low', label: 'Faible' },
+                                { value: 'Medium', label: 'Moyenne' },
+                                { value: 'High', label: 'Élevée' },
+                            ]}
+                            withAsterisk
+                            size="sm"
+                            radius="md"
+                            {...requestForm.getInputProps('priority')}
+                        />
+                    </div>
+                    <Textarea
+                        label="Motif"
+                        placeholder="Expliquez pourquoi ces EPI sont nécessaires"
+                        rows={3}
+                        withAsterisk
+                        size="sm"
+                        radius="md"
+                        {...requestForm.getInputProps('reason')}
+                    />
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                        <Button variant="default" size="sm" onClick={() => setShowRequestForm(false)}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" size="sm" color="teal" leftSection={<IconClipboardList size={14} />}>
+                            Soumettre la demande
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* === Modal Approuver === */}
+            <Modal
+                opened={showApproveModal}
+                onClose={() => setShowApproveModal(false)}
+                title={<span className="text-slate-900">Approuver la demande EPI</span>}
+                centered
+                radius="md"
+            >
+                <LoadingOverlay visible={loading} />
+                <form onSubmit={approveForm.onSubmit(handleApprove)}>
+                    <Textarea
+                        label="Commentaire (facultatif)"
+                        placeholder="Ajouter un commentaire"
+                        size="sm"
+                        radius="md"
+                        {...approveForm.getInputProps('comment')}
+                    />
+                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
+                        <Button variant="default" size="sm" onClick={() => setShowApproveModal(false)}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" size="sm" color="green" leftSection={<IconCheck size={14} />}>
+                            Approuver
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* === Modal Rejeter === */}
+            <Modal
+                opened={showRejectModal}
+                onClose={() => setShowRejectModal(false)}
+                title={<span className="text-slate-900">Rejeter la demande EPI</span>}
+                centered
+                radius="md"
+            >
+                <LoadingOverlay visible={loading} />
+                <form onSubmit={rejectForm.onSubmit(handleReject)}>
+                    <Textarea
+                        label="Commentaire (requis)"
+                        placeholder="Précisez le motif du rejet"
+                        withAsterisk
+                        size="sm"
+                        radius="md"
+                        {...rejectForm.getInputProps('comment')}
+                    />
+                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
+                        <Button variant="default" size="sm" onClick={() => setShowRejectModal(false)}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" size="sm" color="red" leftSection={<IconX size={14} />}>
+                            Rejeter
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* === Modal Détails === */}
+            <Modal
+                opened={showViewModal}
+                onClose={() => setShowViewModal(false)}
+                title={<span className="text-slate-900">Détails de la demande</span>}
+                size="lg"
+                centered
+                radius="md"
+            >
+                <LoadingOverlay visible={loading} />
+                {viewData ? (
+                    <div className="flex flex-col gap-2 text-sm">
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">Employés</span>
+                            <span className="text-slate-800">
+                                {(viewData.empIds || []).map((id: any) => empMap[id]?.name || `#${id}`).join(', ') || '—'}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">EPI demandés</span>
+                            <span className="text-slate-800">
+                                {(viewData.ppeIds || []).map((id: any) => ppeMap[id]?.name || `#${id}`).join(', ') || '—'}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">Motif</span>
+                            <span className="text-slate-800">{viewData.reason || '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">Priorité</span>
+                            <span className="text-slate-800">{priorityLabels[viewData.priority] || viewData.priority || '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">Date souhaitée</span>
+                            <span className="text-slate-800">{viewData.desiredDate ? new Date(viewData.desiredDate).toLocaleDateString('fr-FR') : '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-slate-600">Statut</span>
+                            <span className="text-slate-800">{statusLabels[viewData.status] || viewData.status || '—'}</span>
+                        </div>
+                        {viewData.comment && (
+                            <div className="grid grid-cols-[140px_1fr] gap-2">
+                                <span className="text-slate-600">Commentaire</span>
+                                <span className="text-slate-800">{viewData.comment}</span>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <LoadingOverlay visible />
+                )}
+                <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
+                    <Button variant="default" size="sm" onClick={() => setShowViewModal(false)}>
+                        Fermer
+                    </Button>
+                </div>
+            </Modal>
         </div>
     );
 };

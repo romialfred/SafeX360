@@ -17,7 +17,7 @@ const RiskAssessment = () => {
             <div className='flex justify-between items-center'>
 
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Risk Assessment</div>
+                    <div className="text-2xl text-blue-500 w-fit">Risk Assessment</div>
                     <Breadcrumbs mt="xs" >
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>

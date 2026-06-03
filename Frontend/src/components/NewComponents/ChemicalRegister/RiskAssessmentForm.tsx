@@ -81,7 +81,7 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
             <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <div className="flex items-center mb-6">
                     <IconFileText className="w-6 h-6 text-blue-600 mr-3" />
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-lg text-gray-900">
                         Assessment Information
                     </h3>
                 </div>
@@ -130,7 +130,7 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
             <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <div className="flex items-center mb-6">
                     <IconShield className="w-6 h-6 text-blue-600 mr-3" />
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-lg text-gray-900">
                         Risk Controls
                     </h3>
                 </div>

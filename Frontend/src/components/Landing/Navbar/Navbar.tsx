@@ -36,7 +36,7 @@ const Navbar = () => {
                     {["Home", "About Us", "Services", "Projects"].map((item) => (
                         <li
                             key={item}
-                            className="list-none text-lg font-medium cursor-pointer px-4 py-2 hover:text-primary"
+                            className="list-none text-lg cursor-pointer px-4 py-2 hover:text-primary"
 
                         >
                             {item}
@@ -47,7 +47,7 @@ const Navbar = () => {
                     <Popover opened={opened} onChange={setOpened} position="bottom" shadow="md">
                         <Popover.Target>
                             <li
-                                className="flex gap-2 items-center list-none text-lg font-medium cursor-pointer px-4 py-2 hover:text-primary"
+                                className="flex gap-2 items-center list-none text-lg cursor-pointer px-4 py-2 hover:text-primary"
                                 onMouseEnter={() => setOpened(true)}
                                 onMouseLeave={() => setOpened(false)}
                             >

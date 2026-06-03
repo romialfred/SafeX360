@@ -73,7 +73,7 @@ const IncidentGraph = () => {
                 <div className="flex justify-between p-5">
                     <div>
 
-                        <Text size="xl" fw={700}>Incident Trends & Closure Rate</Text>
+                        <Text size="xl">Incident Trends & Closure Rate</Text>
                     </div>
 
                 </div>

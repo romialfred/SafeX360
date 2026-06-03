@@ -24,9 +24,9 @@ const CorrectiveActionCard = ({ action }: any) => {
         <div className="rounded-2xl border shadow-sm border-gray-200 p-5 bg-white flex flex-col gap-5 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.01] cursor-pointer hover:border-primary/50">
             {/* Title and related info */}
             <div className="flex flex-col gap-1">
-                <h2 className="text-lg line-clamp-1 font-semibold text-gray-800">{action.actionName}</h2>
+                <h2 className="text-lg line-clamp-1 text-gray-800">{action.actionName}</h2>
                 {action.incidentTitle && (
-                    <p className="text-sm text-gray-500">Related to: <span className="font-medium text-gray-700">{action.incidentTitle}</span></p>
+                    <p className="text-sm text-gray-500">Related to: <span className="text-gray-700">{action.incidentTitle}</span></p>
                 )}
             </div>
 
@@ -41,7 +41,7 @@ const CorrectiveActionCard = ({ action }: any) => {
             <Progress value={action.progress} radius="xl" size="md" color="blue" />
 
             {/* Badges */}
-            <div className="flex gap-3 text-xs font-semibold">
+            <div className="flex gap-3 text-xs">
                 <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
                     {actionTypesMap[action.type]}
                 </span>

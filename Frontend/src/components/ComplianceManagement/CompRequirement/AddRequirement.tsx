@@ -104,7 +104,7 @@ const AddRequirement = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Add New Requirement</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Add New Requirement</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/compliance-requirements" ><Text variant="gradient" className="hover:!underline cursor-pointer">Compliance Requirements</Text></Link>
@@ -142,7 +142,7 @@ const AddRequirement = () => {
                                     <IconHelpCircle size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-blue-600 font-semibold uppercase">Requirement guidance</p>
+                                    <p className="text-sm text-blue-600 uppercase">Requirement guidance</p>
                                     <p className="text-sm text-gray-500">Best practices to help you capture complete compliance records.</p>
                                 </div>
                             </div>
@@ -157,7 +157,7 @@ const AddRequirement = () => {
                                                     <IconComponent size={18} />
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-gray-700">{card.title}</p>
+                                                    <p className="text-gray-700">{card.title}</p>
                                                     <p className="text-xs text-gray-500">{card.description}</p>
                                                 </div>
                                             </div>

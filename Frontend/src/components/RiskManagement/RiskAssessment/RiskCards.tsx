@@ -20,18 +20,18 @@ const RiskCards = ({ risk, department, process, owner, getStatusColor }: any) =>
         >
             {/* Badges row */}
             <div className="flex gap-2 items-center justify-between flex-wrap">
-                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
                     {process}
                 </span>
 
-                <Badge size="xs" color={getStatusColor(risk.status)} fw={500}>
+                <Badge size="xs" color={getStatusColor(risk.status)}>
                     {risk?.status?.toLowerCase()}
                 </Badge>
             </div>
 
             {/* Title */}
             <div
-                className="text-sm font-semibold text-gray-900"
+                className="text-sm text-gray-900"
                 onClick={() => navigate("")}
             >
                 {risk.title}
@@ -43,17 +43,17 @@ const RiskCards = ({ risk, department, process, owner, getStatusColor }: any) =>
             </div>
 
             {/* Extra Info */}
-            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                <span>Owner:</span> <span className="font-semibold">{owner}</span>
+            <div className="text-gray-500 text-xs flex justify-between">
+                <span>Owner:</span> <span className="font-medium">{owner}</span>
             </div>
-            {risk.riskLevel && <div className="text-gray-500 text-xs flex justify-between font-medium">
+            {risk.riskLevel && <div className="text-gray-500 text-xs flex justify-between">
                 <span>Risk Level:</span> <Badge color={riskMap[risk.riskLevel]?.color} variant="filled">{riskMap[risk.riskLevel]?.level}</Badge>
             </div>}
-            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                <span>Process:</span> <span className="font-semibold">{process}</span>
+            <div className="text-gray-500 text-xs flex justify-between">
+                <span>Process:</span> <span className="font-medium">{process}</span>
             </div>
-            <div className="text-gray-500 text-xs flex justify-between font-medium">
-                <span>Department:</span> <span className="font-semibold">{department}</span>
+            <div className="text-gray-500 text-xs flex justify-between">
+                <span>Department:</span> <span className="font-medium">{department}</span>
             </div>
 
 

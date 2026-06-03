@@ -81,7 +81,7 @@ const DocumentDetails = ({ document, version, empMap, departmentMap }: any) => {
                         </Grid.Col>
                         <Grid.Col span={6}>
                             <Text size="sm" c="dimmed">Current Version:</Text>
-                            <Text size="sm" fw={500} mb="md">v{version?.version}</Text>
+                            <Text size="sm" mb="md">v{version?.version}</Text>
                         </Grid.Col>
                     </Grid>
 
@@ -102,7 +102,7 @@ const DocumentDetails = ({ document, version, empMap, departmentMap }: any) => {
                             <Group>
                                 <IconEye size={20} color="#339AF0" />
                                 <Box>
-                                    <Text size="lg" fw={700}>{86}</Text>
+                                    <Text size="lg">{86}</Text>
                                     <Text size="sm" c="dimmed">Views</Text>
                                 </Box>
                             </Group>
@@ -111,7 +111,7 @@ const DocumentDetails = ({ document, version, empMap, departmentMap }: any) => {
                             <Group>
                                 <IconDownload size={20} color="#51CF66" />
                                 <Box>
-                                    <Text size="lg" fw={700}>{10}</Text>
+                                    <Text size="lg">{10}</Text>
                                     <Text size="sm" c="dimmed">Downloads</Text>
                                 </Box>
                             </Group>

@@ -1,10 +1,43 @@
 @import "tailwindcss";
-/* @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap'); */
 
-body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+/* ===========================================================================
+   SafeX360 — Police globale Inter (corps) + Inter Black (logo)
+   Inter offre un rendu plus net et léger que Plus Jakarta Sans,
+   avec de vraies graisses 300/400 sans synthèse browser.
+   =========================================================================== */
+html, body {
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
+/* Force tous les éléments à 400 sauf titres principaux (font-bold explicite via Tailwind) */
+*:not(.font-bold):not(.font-black):not(strong):not(b) {
+  font-weight: 400;
+}
+
+/* Réservé aux titres de page h1 (PageHeader.tsx + h1 sur LoginsPage) */
+h1.font-bold {
+  font-weight: 700 !important;
+}
+
+/* Wordmark logo (Inter 900 inline style) doit absolument rester */
+[style*="fontWeight: 900"], [style*="font-weight: 900"] {
+  font-weight: 900 !important;
+}
+
+/* Mantine : neutraliser les poids hérités */
+.mantine-Text-root, .mantine-Title-root, .mantine-Button-label,
+.mantine-Anchor-root, .mantine-Badge-label, .mantine-Tabs-tabLabel {
+  font-weight: 400;
+}
+
+/* Boutons Mantine restent légèrement appuyés pour lisibilité CTA */
+.mantine-Button-root {
+  font-weight: 500;
+}
 
 @layer base {
   ul {
@@ -37,4 +70,65 @@ body {
 
 
 
+}
+/* ===========================================================================
+   SafeX360 — Animations gyrophare (boutons d'urgence SOS et Alerte Générale)
+   Anneaux concentriques pulsés en continu pour attirer l'attention
+   sans utiliser de couleurs trop vives sur les boutons standards.
+   =========================================================================== */
+
+@keyframes safex-gyrophare-pulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  80%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes safex-gyrophare-glow {
+  0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  50%      { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25), 0 1px 2px rgba(0,0,0,0.15); }
+}
+
+@keyframes safex-gyrophare-glow-orange {
+  0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  50%      { box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.25), 0 1px 2px rgba(0,0,0,0.15); }
+}
+
+.safex-gyrophare-sos {
+  animation: safex-gyrophare-glow 2s ease-in-out infinite;
+}
+
+.safex-gyrophare-alert {
+  animation: safex-gyrophare-glow-orange 2.2s ease-in-out infinite;
+}
+
+.safex-gyrophare-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.375rem; /* matches rounded-md */
+  pointer-events: none;
+  opacity: 0;
+  animation: safex-gyrophare-pulse 2s ease-out infinite;
+}
+
+.safex-gyrophare-ring--red {
+  background-color: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+}
+
+.safex-gyrophare-ring--orange {
+  background-color: transparent;
+  border: 1px solid rgba(251, 146, 60, 0.55);
+}
+
+.safex-gyrophare-ring--delay-1 {
+  animation-delay: 0.6s;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .safex-gyrophare-sos,
+  .safex-gyrophare-alert,
+  .safex-gyrophare-ring {
+    animation: none !important;
+  }
 }

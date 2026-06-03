@@ -53,7 +53,7 @@ const WeeklyStats: React.FC = () => {
 
     return (
         <Card shadow="sm" p="lg" radius="md" withBorder>
-            <Text size="lg" fw={700}>Weekly Stats</Text>
+            <Text size="lg">Weekly Stats</Text>
             <Text size="sm" color="dimmed">Average sales</Text>
 
             <Box mt="md">
@@ -76,12 +76,12 @@ const WeeklyStats: React.FC = () => {
                                 {stat.icon}
                             </Avatar>
                             <Box>
-                                <Text size="md" fw={600}>{stat.title}</Text>
+                                <Text size="md">{stat.title}</Text>
                                 <Text size="sm" color="dimmed">{stat.subtitle}</Text>
                             </Box>
                         </Box>
                         <Avatar size={42} radius="sm" style={{ backgroundColor: stat.lightcolor, color: stat.color }}>
-                            <Text size="sm" fw={600} color='white'>+{stat.percent}</Text>
+                            <Text size="sm" color='white'>+{stat.percent}</Text>
                         </Avatar>
                     </Box>
                 ))}

@@ -256,7 +256,7 @@ const IncidentManagementData = () => {
         const level = rowData.maxSeverityLevel;
         const severityLevelName = rowData.severityLevelName || 'Unknown';
         return (
-            <span className={`px-2 py-1 rounded text-xs font-medium w-fit capitalize ${getTailwindColorForSeverityLevel(level)}`}>
+            <span className={`px-2 py-1 rounded text-xs w-fit capitalize ${getTailwindColorForSeverityLevel(level)}`}>
                 {`${level} - ${severityLevelName}`}
             </span>
         );

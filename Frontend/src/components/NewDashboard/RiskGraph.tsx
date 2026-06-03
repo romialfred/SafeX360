@@ -43,7 +43,7 @@ const RiskGraph = () => {
                 <div className="flex justify-between p-5">
                     <div>
 
-                        <Text size="xl" fw={700}>Risk Trends & Safety Performance</Text>
+                        <Text size="xl">Risk Trends & Safety Performance</Text>
                     </div>
 
                 </div>

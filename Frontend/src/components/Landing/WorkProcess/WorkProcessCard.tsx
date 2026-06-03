@@ -10,16 +10,16 @@ const WorkProcessCard = ({ title, title1, title2, title3 }: ServiceCardProps) =>
     return (
         <div className="flex flex-col gap-7 p-10 bg-white shadow-2xl w-[400px]">
             <div>
-                <p className="text-8xl font-bold">{title}</p>
+                <p className="text-8xl">{title}</p>
             </div>
             <div>
-                <p className="text-xl text-primary font-medium">{title1}</p>
+                <p className="text-xl text-primary">{title1}</p>
             </div>
             <div>
-                <p className="text-3xl font-medium max-w-[400px] ">{title2}</p>
+                <p className="text-2xl font-semibold max-w-[400px] ">{title2}</p>
             </div>
             <div>
-                <p className="text-xl font-medium text-gray-400 max-w-[300px] ">{title3}</p>
+                <p className="text-lg text-gray-400 max-w-[300px] ">{title3}</p>
             </div>
         </div>
     )

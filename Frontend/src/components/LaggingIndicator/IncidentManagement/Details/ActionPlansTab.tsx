@@ -5,7 +5,7 @@ import { formatDateWithDay } from "../../../../utility/DateFormats"
 const ActionPlansTab = ({ actions }: any) => {
     return (
         <div>
-            <h4 className="text-lg font-semibold mb-4 text-gray-800">Action Plans</h4>
+            <h4 className="text-lg mb-4 text-gray-800">Action Plans</h4>
 
             {actions?.map((x: any, index: any) => (
                 <div
@@ -14,8 +14,8 @@ const ActionPlansTab = ({ actions }: any) => {
                 >
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className=" font-semibold text-gray-800">{x.actionName}</p>
-                            <p className="text-sm text-gray-500 font-medium">Assigned To: <strong>{x.assignedEmployeeName}</strong></p>
+                            <p className=" text-gray-800">{x.actionName}</p>
+                            <p className="text-sm text-gray-500">Assigned To: <strong>{x.assignedEmployeeName}</strong></p>
                         </div>
 
                         <Badge variant="light" color={statusColors[x.status]}>

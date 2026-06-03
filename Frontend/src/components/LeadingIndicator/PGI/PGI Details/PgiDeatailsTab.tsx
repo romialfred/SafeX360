@@ -1,7 +1,8 @@
-import { Alert, Breadcrumbs, Button, Modal, NumberInput, Select, Tabs, Text, Textarea, Tooltip } from "@mantine/core";
-import { IconCalendarEvent, IconCheckbox, IconClock, IconFileAnalytics, IconFileCheck, IconFileText, IconHistory, IconLock } from "@tabler/icons-react";
+import { Alert, Badge, Button, Modal, NumberInput, Select, Text, Textarea, Tooltip } from "@mantine/core";
+import { IconCalendarEvent, IconCheckbox, IconClock, IconFileAnalytics, IconFileCheck, IconFileText, IconHistory, IconLock, IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import PageHeader from "../../../UtilityComp/PageHeader";
 
 import { useDisclosure } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
@@ -152,40 +153,35 @@ const PgiDeatailsTab = () => {
 
     const tabData = {
         details: {
-            label: 'PGI Details',
+            label: "Détails de l'inspection",
             icon: IconFileText,
             content: <ViewDetailsPgi inspection={inspection} />,
-
             hide: false
         },
         execution: {
-            label: 'Inspection Checklist',
+            label: 'Checklist',
             icon: IconCheckbox,
             content: <ChecklistInspection />,
             hide: false
         },
         recommendation: {
-            label: 'Measurements',
+            label: 'Mesures',
             icon: IconFileAnalytics,
             content: <Measurements employee={emps} empMap={empMap} />,
             hide: false
         },
         report: {
-            label: 'Report',
+            label: 'Rapport',
             icon: IconFileCheck,
             content: <InspectionReport />,
             hide: false
         },
         history: {
-            label: 'History',
+            label: 'Historique',
             icon: IconHistory,
             content: <InspectionHistory inspection={inspection} history={history} empMap={empMap} />,
             hide: false
-
         },
-
-
-
     };
 
 
@@ -207,105 +203,111 @@ const PgiDeatailsTab = () => {
         open();
     }
     return (
-        <div className=" space-y-6" >
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">PGI details</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/PGI" ><Text variant="gradient" className="hover:!underline cursor-pointer">Planned General Inspections</Text></Link>
-                        <Text variant="gradient">PGI details</Text>
-                    </Breadcrumbs>
-                </div>
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto" >
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Inspections HSE', to: '/PGI' },
+                    { label: "Détails de l'inspection" },
+                ]}
+                icon={<IconSearch size={22} stroke={2} />}
+                iconColor="green"
+                title="Détails de l'inspection"
+                subtitle="Checklist, mesures, rapport et historique de l'inspection planifiée"
+            />
 
-            </div>
-
-
-            <div className="  rounded-lg p-5 space-y-3 bg-home">
-                <div className="flex justify-between">
-                    <div className='flex flex-col gap-1'>
-                        <h2 className="text-2xl flex items-center gap-5 font-semibold text-white">{inspection?.title}</h2>
-
-                        <div className="flex items-center gap-1 text-white">
-                            <IconCalendarEvent size={18} />
-                            <span>{formatDateShort(inspection?.plannedDate)}, {formatTimeToAmPm(inspection?.startTime)} - {formatTimeToAmPm(inspection?.endTime)}</span>
+            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-green-600 to-green-800 shadow-md">
+                <div className="flex justify-between items-start flex-wrap gap-4">
+                    <div className='flex flex-col gap-1.5'>
+                        <h2 className="text-lg text-white">{inspection?.title}</h2>
+                        <div className="flex items-center gap-1.5 text-green-50 text-sm">
+                            <IconCalendarEvent size={16} />
+                            <span>{formatDateShort(inspection?.plannedDate)} — {formatTimeToAmPm(inspection?.startTime)} à {formatTimeToAmPm(inspection?.endTime)}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-end gap-2  flex-col">
-
-                        <Tooltip label={(locked.locked || isFinalStatus) ? ((locked.status || normalizedStatus) === 'COMPLETED' ? 'Completed — status cannot be changed' : 'Cancelled — status cannot be changed') : 'Change status'}>
+                    <div className="flex items-end gap-2 flex-col">
+                        <Tooltip label={(locked.locked || isFinalStatus) ? ((locked.status || normalizedStatus) === 'COMPLETED' ? 'Inspection clôturée : statut non modifiable' : 'Inspection annulée : statut non modifiable') : 'Changer le statut'}>
                             <span className="inline-flex">
-                                <Button leftSection={<IconClock />} onClick={handleStatusChange} disabled={locked.locked || isFinalStatus} className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm">{actionStatusesMap[inspection?.status]}</Button>
+                                <Button
+                                    size="sm"
+                                    leftSection={<IconClock size={15} />}
+                                    onClick={handleStatusChange}
+                                    disabled={locked.locked || isFinalStatus}
+                                    className="!bg-white !text-green-700 hover:!bg-green-50"
+                                >
+                                    {actionStatusesMap[inspection?.status] || "Statut"}
+                                </Button>
                             </span>
                         </Tooltip>
-
+                        {inspection?.status && (
+                            <Badge color={inspection.status === 'COMPLETED' ? 'green.2' : inspection.status === 'CANCELLED' ? 'red.4' : 'yellow.4'} variant="filled" radius="sm" size="sm" className="!text-slate-900">
+                                {actionStatusesMap[inspection?.status]}
+                            </Badge>
+                        )}
                     </div>
                 </div>
-
             </div>
 
             {locked.locked && (
                 <Alert color={locked.status === 'COMPLETED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text fw={600}>
-                        {locked.status === 'COMPLETED' ? 'This inspection is completed. Modifications are not allowed.' : 'This inspection is cancelled. Modifications are not allowed.'}
+                    <Text size="sm">
+                        {locked.status === 'COMPLETED' ? 'Cette inspection est clôturée. Aucune modification possible.' : 'Cette inspection est annulée. Aucune modification possible.'}
                     </Text>
                 </Alert>
             )}
 
-            <div className="">
-                <Tabs
-
-                    value={activeTab}
-                    onChange={(value) => value && setActiveTab(value)}
-
-                >
-                    <Tabs.List className='bg-white border border-slate-200 rounded-lg p-2 !flex !gap-1'>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <div className="inline-flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
                         {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
-                            !hide && <Tabs.Tab key={key} value={key} leftSection={<Icon size={15} />} className="!text-slate-600 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500 !rounded-lg px-3 py-1.5 text-sm transition-all duration-200">
-                                {label}
-                            </Tabs.Tab>
+                            !hide && (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setActiveTab(key)}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
+                                        ? 'bg-green-600 text-white shadow-sm'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <Icon size={14} />
+                                    {label}
+                                </button>
+                            )
                         ))}
-                    </Tabs.List>
-
-                    {Object.entries(tabData).map(([key, { content }]) => (
-                        <Tabs.Panel value={key} key={key} pt="md">
-
-                            <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                                <div className="p-2">{content}</div>
-                            </div>
-
-                        </Tabs.Panel>
+                    </div>
+                </div>
+                <div className="p-5">
+                    {Object.entries(tabData).map(([key, { content, hide }]) => (
+                        !hide && activeTab === key && (
+                            <div key={key}>{content}</div>
+                        )
                     ))}
-                </Tabs>
+                </div>
             </div>
 
             <Modal
                 opened={opened}
                 onClose={close}
                 title={
-                    <div className='text-lg flex items-center gap-2'>
-                        <span className='bg-gray-100 rounded-full p-2'><IconLock /></span>
-                        Manage PGI Status
+                    <div className='text-base flex items-center gap-2'>
+                        <span className='bg-green-100 text-green-700 rounded-full p-2'><IconLock size={18} /></span>
+                        Changer le statut de l'inspection
                     </div>
                 }
                 centered
                 size="xl"
                 classNames={{
                     body: 'p-6',
-                    header: 'text-lg font-semibold border-b border-gray-500 mx-2',
+                    header: 'text-lg border-b border-slate-200 mx-2',
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-                    {/* <div className="bg-blue-50 rounded-lg p-4 flex flex-col gap-2">
-                        <Checkbox label="All corrective actions have been completed and verified" />
-                        <p>Current status: 1/3 actions completed (33.3%)</p>
-                    </div> */}
-
                     <div className="grid grid-cols-2 gap-4">
                         <Select
-                            label="Owner"
-                            placeholder="Select owner"
+                            label="Responsable"
+                            placeholder="Sélectionner le responsable"
                             data={emps}
                             {...form.getInputProps("ownerId")}
                             withAsterisk
@@ -314,17 +316,15 @@ const PgiDeatailsTab = () => {
                         <DateInput
                             maxDate={new Date()}
                             label="Date"
-                            placeholder='Select date'
+                            placeholder="Sélectionner la date"
                             {...form.getInputProps("date")}
                             withAsterisk
                         />
-
-
                     </div>
 
                     <Select
-                        label="Status"
-                        placeholder="Select Status"
+                        label="Statut"
+                        placeholder="Sélectionner le statut"
                         data={statusSelectOptions}
                         {...form.getInputProps("status")}
                         withAsterisk
@@ -333,44 +333,44 @@ const PgiDeatailsTab = () => {
                     {form.values.status === 'CLOSED' ? (
                         <>
                             <NumberInput
-                                label="Quality Evaluation (1-10)"
-                                placeholder="Enter Quality Evaluation"
+                                label="Évaluation qualité (1-10)"
+                                placeholder="Note de l'inspection"
                                 withAsterisk
                                 {...form.getInputProps("evaluation")}
                             />
 
                             <Textarea
-                                label="Closing Report"
-                                placeholder="Summary of the closure, validation of action, final comments....."
+                                label="Rapport de clôture"
+                                placeholder="Synthèse, validation des actions, commentaires finaux..."
                                 withAsterisk
                                 minRows={3}
                                 {...form.getInputProps("closingReport")}
                             />
 
                             <Textarea
-                                label="Lessons Learned"
+                                label="Leçons apprises"
                                 withAsterisk
-                                placeholder="Points for improvements for future audits, best practices identified, recommendations for the organization"
+                                placeholder="Points d'amélioration, bonnes pratiques identifiées, recommandations"
                                 minRows={6}
                                 {...form.getInputProps("comment")}
                             />
                         </>
                     ) : (
                         <Textarea
-                            label="Comment"
+                            label="Commentaire"
                             withAsterisk
-                            placeholder="Enter your comment"
+                            placeholder="Saisir votre commentaire"
                             minRows={6}
                             {...form.getInputProps("comment")}
                         />
                     )}
 
                     <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="outline" onClick={close}>
-                            Cancel
+                        <Button variant="default" onClick={close}>
+                            Annuler
                         </Button>
-                        <Button color="primary" type='submit' disabled={locked.locked}>
-                            Submit
+                        <Button color="green" type='submit' disabled={locked.locked}>
+                            Soumettre
                         </Button>
                     </div>
                 </form>

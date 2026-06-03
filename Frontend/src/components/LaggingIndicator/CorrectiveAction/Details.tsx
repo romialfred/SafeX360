@@ -50,7 +50,7 @@ const Details = () => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Corrective Action Details</div>
+                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Corrective Action Details</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/corrective" ><Text variant="gradient" className="hover:!underline cursor-pointer">Corrective Action</Text></Link>
@@ -61,7 +61,7 @@ const Details = () => {
             </div>
             <Card shadow="xs" radius="md" withBorder className="bg-white flex flex-col gap-1 p-4">
                 <div className='flex items-center justify-between'>
-                    <Title order={4} className="text-gray-800 font-semibold">{incident.title}</Title>
+                    <Title order={4} className="text-gray-800">{incident.title}</Title>
                 </div>
 
                 {type != "NON_CONFORMITY" && (
@@ -73,13 +73,13 @@ const Details = () => {
             </Card>
             <div className='flex gap-2 items-center'>
                 <IconClock color='gray' size={18} />
-                <h2 className='text-lg font-medium text-gray-700'>Action Plans History</h2>
+                <h2 className='text-lg text-gray-700'>Action Plans History</h2>
             </div>
 
             {correctiveActions?.map((action: any, idx: number) => <Card key={action.id ?? idx} shadow="xs" radius="md" withBorder className="bg-white flex flex-col gap-4 p-4">
 
                 <Group className="mb-1 !flex !justify-between">
-                    <h3 className='text-lg font-semibold text-primary'>{action.actionName}</h3>
+                    <h3 className='text-lg text-primary'>{action.actionName}</h3>
                     <Badge size='md' variant="light" color={statusColors[action.status]}>{statusLabels[action.status]}</Badge>
                 </Group>
 

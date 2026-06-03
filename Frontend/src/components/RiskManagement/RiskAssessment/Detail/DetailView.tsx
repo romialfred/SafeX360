@@ -109,7 +109,7 @@ const DetailView = () => {
 
     return <Box>
         <div>
-            <div className="font-semibold text-2xl text-blue-500 w-fit">Risk Details</div>
+            <div className="text-2xl text-blue-500 w-fit">Risk Details</div>
             <Breadcrumbs mt="xs" mb="lg">
                 <Link className="hover:!underline" to="/">
                     <Text variant="gradient">Home</Text>
@@ -125,7 +125,7 @@ const DetailView = () => {
             <Group justify="space-between" mb="md">
                 <Group>
 
-                    <p className='text-xl font-medium text-blue-500'>{risk?.title}</p>
+                    <p className='text-lg text-blue-500'>{risk?.title}</p>
                 </Group>
                 <Button
                     leftSection={<IconPlus size={16} />}

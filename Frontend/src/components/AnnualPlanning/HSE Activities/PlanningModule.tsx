@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { IconCalendar, IconChartBar, IconDownload } from '@tabler/icons-react';
 import Dashboard from './Dashboard';
 import AnnualPlanningGrid from './AnnualPlanningGrid';
-import { Breadcrumbs, Button, Text, Select } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { Button, Select } from '@mantine/core';
+import PageHeader from '../../UtilityComp/PageHeader';
+import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
+import { IconCalendarStats } from '@tabler/icons-react';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
 import { getActivitiesByYear } from '../../../services/HSEActivityService';
@@ -22,19 +24,19 @@ export default function PlanningModule() {
     const [empMap, setEmpMap] = useState<any>({});
     const [activities, setActivities] = useState<any[]>([]);
     const categories = [
-        { id: 'all', label: 'All Activities', color: 'bg-slate-500' },
-        { id: 'IGP', label: 'IGP (General Inspection)', color: 'bg-blue-500' },
-        { id: 'HSE', label: 'RSS (Health Safety Meeting)', color: 'bg-green-500' },
-        { id: 'TDM', label: 'TDM (Leadership Walk)', color: 'bg-purple-500' },
+        { id: 'all', label: 'Toutes activités', color: 'slate' as const },
+        { id: 'IGP', label: 'IGP — Inspections HSE', color: 'blue' as const },
+        { id: 'HSE', label: 'RSS — Réunions sécurité', color: 'green' as const },
+        { id: 'TDM', label: 'TDM — Tournées Leadership', color: 'indigo' as const },
     ];
 
     const departments = [
-        { value: 'all', label: 'All Departments' },
+        { value: 'all', label: 'Tous départements' },
         { value: 'Production', label: 'Production' },
         { value: 'Maintenance', label: 'Maintenance' },
-        { value: 'Quality', label: 'Quality' },
+        { value: 'Quality', label: 'Qualité' },
         { value: 'HSE', label: 'HSE' },
-        { value: 'Management', label: 'Management' }
+        { value: 'Management', label: 'Direction' }
     ];
 
     useEffect(() => {
@@ -64,51 +66,49 @@ export default function PlanningModule() {
 
 
     return (
-        <div className="  p-5 flex flex-col gap-5">
-            {/* Header */}
-            <div className="bg-white  flex flex-col ">
+        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Planification annuelle' },
+                    { label: 'Activités HSE' },
+                ]}
+                icon={<IconCalendarStats size={22} stroke={2} />}
+                iconColor="amber"
+                title="Planification des activités HSE"
+                subtitle="Programmation et suivi des causeries, formations, tournées et campagnes de sensibilisation"
+                actions={<Button size="sm" leftSection={<IconDownload size={15} />} variant="default">Exporter</Button>}
+            />
 
-                <div className="flex justify-between items-center">
-                    <div>
-                        <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">HSE Planning</div>
-                        <Breadcrumbs mt="xs">
-                            <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
+            <div className="bg-white border border-slate-200 rounded-xl p-4">
 
-                            <Text variant="gradient">HSE Planning</Text>
-                        </Breadcrumbs>
-                    </div>
-                </div>
-                <p className=' italic my-3'>
-                    Organizing and scheduling safety meetings, trainings, and awareness events to enhance workplace safety culture
-                </p>
-
-                <div className='flex justify-between items-center p-3  rounded-lg shadow-sm'>
-
-                    <div className="flex items-center  space-x-1">
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
+                    <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'dashboard'
-                                ? 'bg-primary text-white'
-                                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === 'dashboard'
+                                ? 'bg-teal-600 text-white'
+                                : 'text-slate-600 hover:bg-white hover:text-slate-900'
                                 }`}
                         >
-                            <IconChartBar className="w-4 h-4 mr-2" />
-                            Dashboard
+                            <IconChartBar className="w-3.5 h-3.5" />
+                            Tableau de bord
                         </button>
                         <button
                             onClick={() => setActiveTab('planning')}
-                            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${activeTab === 'planning'
-                                ? 'bg-primary text-white'
-                                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === 'planning'
+                                ? 'bg-teal-600 text-white'
+                                : 'text-slate-600 hover:bg-white hover:text-slate-900'
                                 }`}
                         >
-                            <IconCalendar className="w-4 h-4 mr-2" />
+                            <IconCalendar className="w-3.5 h-3.5" />
                             Planning
                         </button>
                     </div>
 
                     <div className="flex items-center space-x-3">
 
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Select
                             value={String(currentYear)}
                             onChange={(val) => val && setCurrentYear(parseInt(val))}
@@ -116,70 +116,55 @@ export default function PlanningModule() {
                                 const year = new Date().getFullYear() + offset;
                                 return { value: String(year), label: String(year) };
                             })}
-                            className="w-28"
-                            size="sm"
-                            label={undefined}
-                            placeholder="Year"
+                            w={90}
+                            size="xs"
+                            placeholder="Année"
                         />
-
                         <Select
                             value={selectedMonth}
                             onChange={(val) => val && setSelectedMonth(val)}
                             data={[
-                                { value: 'all', label: 'All Months' },
-                                { value: '1', label: 'January' },
-                                { value: '2', label: 'February' },
-                                { value: '3', label: 'March' },
-                                { value: '4', label: 'April' },
-                                { value: '5', label: 'May' },
-                                { value: '6', label: 'June' },
-                                { value: '7', label: 'July' },
-                                { value: '8', label: 'August' },
-                                { value: '9', label: 'September' },
-                                { value: '10', label: 'October' },
-                                { value: '11', label: 'November' },
-                                { value: '12', label: 'December' },
+                                { value: 'all', label: 'Tous mois' },
+                                { value: '1', label: 'Janvier' },
+                                { value: '2', label: 'Février' },
+                                { value: '3', label: 'Mars' },
+                                { value: '4', label: 'Avril' },
+                                { value: '5', label: 'Mai' },
+                                { value: '6', label: 'Juin' },
+                                { value: '7', label: 'Juillet' },
+                                { value: '8', label: 'Août' },
+                                { value: '9', label: 'Septembre' },
+                                { value: '10', label: 'Octobre' },
+                                { value: '11', label: 'Novembre' },
+                                { value: '12', label: 'Décembre' },
                             ]}
-                            className="w-36"
-                            size="sm"
-                            label={undefined}
-                            placeholder="Month"
+                            w={130}
+                            size="xs"
+                            placeholder="Mois"
                         />
-
                         <Select
                             value={selectedDepartment}
                             onChange={(val) => val && setSelectedDepartment(val)}
                             data={departments}
-                            className="w-40"
-                            size="sm"
-                            label={undefined}
-                            placeholder="Department"
+                            w={150}
+                            size="xs"
+                            placeholder="Département"
                         />
-
                         <Select
                             value={selectedEmployee}
                             onChange={(val) => val && setSelectedEmployee(val)}
                             data={[
-                                { value: 'all', label: 'All Employees' },
+                                { value: 'all', label: 'Tous employés' },
                                 ...emps
                             ]}
-                            className="w-44"
-                            size="sm"
-                            label={undefined}
-                            placeholder="Employee"
+                            w={170}
+                            size="xs"
+                            placeholder="Employé"
                             searchable
                         />
-
-                        <Button leftSection={<IconDownload />}>
-
-
-                            Export
-                        </Button>
+                    </div>
                     </div>
                 </div>
-
-
-
             </div>
 
             <div className="">
@@ -190,39 +175,20 @@ export default function PlanningModule() {
                         activities={activities}
                     />
                 ) : (
-                    <div className="space-y-2">
-                        {/* Category tabs styled like severity tabs */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-300  p-3">
-                            <div className="flex space-x-1">
-                                {categories.map(category => {
-                                    let count = 0;
-                                    if (category.id === 'all') {
-                                        count = activities.length;
-                                    } else {
-                                        count = activities.filter(a => a.category === category.id).length;
-                                    }
-                                    return (
-                                        <button
-                                            key={category.id}
-                                            onClick={() => setSelectedCategory(category.id)}
-                                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${selectedCategory === category.id
-                                                ? 'bg-yellow-100 text-yellow-800 shadow-md border border-yellow-200'
-                                                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
-                                                }`}
-                                        >
-                                            {category.id === 'all' ? 'All Activities' :
-                                                category.id === 'IGP' ? 'IGP (General Inspection)' :
-                                                    category.id === 'HSE' ? 'RSS (Health Safety Meeting)' :
-                                                        'TDM (Leadership Walk)'}
-                                            <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-200 text-xs font-semibold text-slate-700 align-middle">{count}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-
-                        </div>
-
+                    <div className="space-y-4">
+                        {/* Filtre catégories pill-style pro */}
+                        <SegmentedFilter
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            options={categories.map(cat => ({
+                                value: cat.id,
+                                label: cat.label,
+                                color: cat.color,
+                                count: cat.id === 'all'
+                                    ? activities.length
+                                    : activities.filter(a => a.category === cat.id).length,
+                            }))}
+                        />
 
                         {/* Annual Planning Grid */}
                         <AnnualPlanningGrid

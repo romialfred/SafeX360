@@ -38,7 +38,7 @@ const DonutChartFile = ({ data, total, loading = false }: DonutChartFileProps) =
                         <IconChartPie size={28} className="text-blue-600" />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <Text size="lg" fw={700} c="blue.9">Overall Compliance Snapshot</Text>
+                        <Text size="lg" c="blue.9">Overall Compliance Snapshot</Text>
                         <Text size="sm" c="blue.7">
                             Visualize how your requirements are distributed across statuses right now.
                         </Text>
@@ -49,16 +49,16 @@ const DonutChartFile = ({ data, total, loading = false }: DonutChartFileProps) =
             <div className="flex flex-1 flex-col items-center gap-6 px-6 py-6">
                 <div className="grid w-full gap-3 sm:grid-cols-3">
                     <div className="flex flex-col gap-1 rounded-xl border border-white/60 bg-slate-50 px-4 py-3 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:bg-slate-100/70 hover:shadow-md">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Requirements</span>
-                        <span className="text-3xl font-semibold text-slate-800">{total ?? 0}</span>
+                        <span className="text-xs uppercase tracking-wide text-slate-500">Total Requirements</span>
+                        <span className="text-2xl font-semibold text-slate-800">{total ?? 0}</span>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-white/60 bg-emerald-50 px-4 py-3 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:bg-emerald-100/70 hover:shadow-md">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Compliance Rate</span>
-                        <span className="text-3xl font-semibold text-emerald-500">{complianceRate}%</span>
+                        <span className="text-xs uppercase tracking-wide text-emerald-600">Compliance Rate</span>
+                        <span className="text-2xl font-semibold text-emerald-500">{complianceRate}%</span>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-white/60 bg-indigo-50 px-4 py-3 shadow-sm transition-all duration-200 ease-out hover:scale-[1.02] hover:bg-indigo-100/70 hover:shadow-md">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Top Status</span>
-                        <span className="text-lg font-semibold text-indigo-500">
+                        <span className="text-xs uppercase tracking-wide text-indigo-600">Top Status</span>
+                        <span className="text-lg text-indigo-500">
                             {topStatus ? `${topStatus.name} (${topStatus.value})` : "—"}
                         </span>
                     </div>
@@ -95,7 +95,7 @@ const DonutChartFile = ({ data, total, loading = false }: DonutChartFileProps) =
                                 className="inline-block h-2.5 w-2.5 rounded-full"
                                 style={{ backgroundColor: item.color }}
                             />
-                            <span className="font-medium text-slate-700">
+                            <span className="text-slate-700">
                                 {item.name} <span className="text-xs text-slate-500">({item.value})</span>
                             </span>
                         </div>

@@ -57,7 +57,9 @@ public class AuthAPI {
 
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
-    private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
+    // R-001 Phase 2.a — Secret extrait du code source
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET}")
+    private String SECRET;
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,
@@ -76,13 +78,9 @@ public class AuthAPI {
                     LocalDateTime.now(), "Successfully Logged In"));
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
-                    // .secure(false)
-                    .secure(true)
+                    .secure(false)
                     .path("/")
-                    .domain(".data-univers.com")
-                    // .domain(".localtest.me")
-                    .sameSite("None")
-                    // .sameSite("Lax")
+                    .sameSite("Lax")
                     .maxAge(Duration.ofDays(30))
                     .build();
 
@@ -139,14 +137,10 @@ public class AuthAPI {
     public ResponseEntity<String> logout(HttpServletResponse response) {
         ResponseCookie expiredCookie = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
-                .secure(true) // or true in production
-                // .secure(false) // or true in production
-                // .domain(".localtest.me")
-                .domain(".data-univers.com")
+                .secure(false)
                 .path("/")
-                // .sameSite("Lax")
-                .sameSite("None")
-                .maxAge(0) // expires immediately
+                .sameSite("Lax")
+                .maxAge(0)
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());

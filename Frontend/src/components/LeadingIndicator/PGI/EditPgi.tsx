@@ -167,7 +167,7 @@ const EditPgi = () => {
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm font-medium px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -220,7 +220,7 @@ const EditPgi = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Update Inspections</div>
+                    <div className="text-2xl text-blue-500 w-fit">Update Inspections</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -235,7 +235,7 @@ const EditPgi = () => {
 
             {isLocked && (
                 <Alert color={lockedInfo.status === 'COMPLETED' ? 'green' : 'red'} variant="light" className="mb-4 border">
-                    <Text fw={600}>
+                    <Text>
                         {lockedInfo.status === 'COMPLETED' ? 'This inspection is completed. Modifications are not allowed.' : 'This inspection is cancelled. Modifications are not allowed.'}
                     </Text>
                 </Alert>
@@ -246,7 +246,7 @@ const EditPgi = () => {
 
                     <Fieldset
                         className="grid grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg font-medium text-blue-500">Inspections Informations</div>} >
+                        legend={<div className="text-lg text-blue-500">Inspections Informations</div>} >
 
                         <Select disabled withAsterisk label="Activity" placeholder="Select activity" data={activities} {...form.getInputProps('activityId')} />
                         <Select withAsterisk label="Location" placeholder="Select location" data={location} {...form.getInputProps('siteId')} />
@@ -264,7 +264,7 @@ const EditPgi = () => {
 
                     <Fieldset
                         className="flex flex-col [&>legend]:w-fit gap-5 flex-wrap"
-                        legend={<div className="text-lg font-medium text-blue-500">Objective & Risk</div>} >
+                        legend={<div className="text-lg text-blue-500">Objective & Risk</div>} >
 
                         <TextInput label="Objective" placeholder="Enter Objective" {...form.getInputProps('objectives')} />
                         <Checkbox.Group {...form.getInputProps('riskTypes')} label="Risk Types" withAsterisk >
@@ -280,7 +280,7 @@ const EditPgi = () => {
                     </Fieldset>
                     <Fieldset
                         className=" [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg font-medium text-blue-500">Personal Protective Equipment (PPE)</div>} >
+                        legend={<div className="text-lg text-blue-500">Personal Protective Equipment (PPE)</div>} >
                         <Checkbox.Group size="md"
                             {...form.getInputProps("ppe")}
                             label=""
@@ -302,7 +302,7 @@ const EditPgi = () => {
                                                 <Checkbox.Indicator size="xs" className=" text-blue-600" />
                                                 <Text
                                                     size="xs"
-                                                    className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-semibold"
+                                                    className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                                 >
                                                     {item.name}
                                                 </Text>
@@ -314,7 +314,7 @@ const EditPgi = () => {
                             </div>
                         </Checkbox.Group>
                     </Fieldset>
-                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg font-medium text-blue-500 "> Participants</div>}>
+                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg text-blue-500 "> Participants</div>}>
 
 
                         <div className=' [&>legend]:w-fit flex gap-5 flex-wrap'>

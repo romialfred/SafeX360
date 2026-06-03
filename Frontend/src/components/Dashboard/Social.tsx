@@ -10,7 +10,7 @@ const Social = () => {
             <Group gap="md" align="center" style={{ display: 'flex', flexWrap: 'nowrap' }}>
                 {/* <Avatar src={ProfileImg} alt="Profile" size={70} radius="md" /> */}
                 <Box>
-                    <Text size="lg" fw={700}>Super awesome, Vue coming soon!</Text>
+                    <Text size="lg">Super awesome, Vue coming soon!</Text>
                     <Text size="sm" color="dimmed">22 March, 2025</Text>
                 </Box>
             </Group>

@@ -49,12 +49,12 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case '5 Pourquoi':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" fw={500} className="text-slate-700">
+                        <Text size="md" className="text-slate-700">
                             Méthode des 5 Pourquoi
                         </Text>
                         {[1, 2, 3, 4, 5].map((num) => (
                             <div key={num}>
-                                <Text size="sm" fw={500} className="mb-1 text-slate-700">
+                                <Text size="sm" className="mb-1 text-slate-700">
                                     Pourquoi {num} ?
                                 </Text>
                                 <Textarea
@@ -70,7 +70,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case 'Ishikawa':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" fw={500} className="text-slate-700">
+                        <Text size="md" className="text-slate-700">
                             Diagramme d'Ishikawa (Causes et Effets)
                         </Text>
                         <Grid>
@@ -129,14 +129,15 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case 'ICAM':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" mb={2} fw={500} className="text-slate-700">
-                            ICAM Analysis (Incident Cause Analysis Method)
+                        <Text size="md" mb={2} className="text-slate-700">
+                            Analyse ICAM (Incident Cause Analysis Method)
                         </Text>
                         <Grid>
                             <Grid.Col span={12}>
                                 <Textarea
+                                    size="sm"
                                     label="Description"
-                                    placeholder="Factual description "
+                                    placeholder="Description factuelle de l'événement"
                                     {...form.getInputProps('analysis.description')}
                                     minRows={2}
                                     withAsterisk
@@ -144,8 +145,9 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <Textarea
-                                    label="Individual Factors"
-                                    placeholder="Factors related to people (skills, training, fatigue, etc.)"
+                                    size="sm"
+                                    label="Facteurs individuels"
+                                    placeholder="Facteurs liés aux personnes (compétences, formation, fatigue...)"
                                     {...form.getInputProps('analysis.individualFactors')}
                                     minRows={3}
                                     withAsterisk
@@ -153,8 +155,9 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             </Grid.Col>
                             <Grid.Col span={6}>
                                 <Textarea
-                                    label="Technical Factors"
-                                    placeholder="Factors related to equipment, tools, physical environment"
+                                    size="sm"
+                                    label="Facteurs techniques"
+                                    placeholder="Facteurs liés aux équipements, outils, environnement physique"
                                     {...form.getInputProps('analysis.technicalFactors')}
                                     minRows={3}
                                     withAsterisk
@@ -162,8 +165,9 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             </Grid.Col>
                             <Grid.Col span={12}>
                                 <Textarea
-                                    label="Organizational Factors"
-                                    placeholder="Factors related to procedures, management, safety culture, communication"
+                                    size="sm"
+                                    label="Facteurs organisationnels"
+                                    placeholder="Procédures, management, culture sécurité, communication..."
                                     {...form.getInputProps('analysis.organizationalFactors')}
                                     minRows={3}
                                     withAsterisk
@@ -171,8 +175,9 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             </Grid.Col>
                             <Grid.Col span={12}>
                                 <Textarea
-                                    label="Identified Root Causes"
-                                    placeholder="Summary of root causes according to ICAM analysis"
+                                    size="sm"
+                                    label="Causes profondes identifiées"
+                                    placeholder="Synthèse des causes profondes selon l'analyse ICAM"
                                     {...form.getInputProps('analysis.rootCauses')}
                                     minRows={3}
                                     withAsterisk
@@ -184,7 +189,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case 'AMDEC':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" fw={500} className="text-slate-700">
+                        <Text size="md" className="text-slate-700">
                             Analyse AMDEC (Analyse des Modes de Défaillance, de leurs Effets et de leur Criticité)
                         </Text>
                         <Grid>
@@ -243,7 +248,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case 'Arbre des causes':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" fw={500} className="text-slate-700">
+                        <Text size="md" className="text-slate-700">
                             Arbre des Causes
                         </Text>
                         <Grid>
@@ -286,7 +291,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
             case 'Brainstorming':
                 return (
                     <div className="space-y-4">
-                        <Text size="md" fw={500} className="text-slate-700">
+                        <Text size="md" className="text-slate-700">
                             Brainstorming
                         </Text>
                         <Grid>
@@ -360,61 +365,59 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                         <IconUsers size={20} className="text-green-500" />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            Analysis Team
+                        <Text size="lg" className="text-slate-800">
+                            Équipe d'analyse
                         </Text>
 
                     </div>
                 </Group>
 
                 <div className="flex flex-col gap-2">
-                    <Text size="md" fw={500} className="text-slate-700">
-                        Team Member
+                    <Text size="md" className="text-slate-700">
+                        Ajouter un membre
                     </Text>
 
                     <div className="grid grid-cols-12 gap-3 items-center">
                         <div className="col-span-4">
-                            {/* <Text size="sm" fw={500} className="mb-1 text-slate-700">Employee</Text> */}
                             <Select
-                                placeholder="Select Employee"
+                                size="sm"
+                                placeholder="Sélectionner l'employé"
                                 value={employee}
                                 onChange={setEmployee}
+                                searchable
                                 data={employees.filter((emp: any) =>
                                     !form.values.analysis.team.some((m: any) => m.id == emp.value)
                                 )}
-                                classNames={{
-                                    input: 'border-slate-300 focus:border-green-500'
-                                }}
+                                classNames={{ input: 'border-slate-300 focus:border-green-500' }}
                             />
                         </div>
 
                         <div className="col-span-4">
-                            {/* <Text size="sm" fw={500} className="mb-1 text-slate-700">Role in the analysis</Text> */}
                             <Select
-                                placeholder="Select Role"
+                                size="sm"
+                                placeholder="Sélectionner le rôle"
                                 value={role}
                                 onChange={setRole}
                                 data={[
-                                    'Chef d\'équipe',
+                                    "Chef d'équipe",
                                     'Analyste principal',
                                     'Expert technique',
                                     'Témoin',
-                                    'Support'
-                                ].map((role) => ({ value: role, label: role }))}
-                                classNames={{
-                                    input: 'border-slate-300 focus:border-green-500'
-                                }}
+                                    'Support',
+                                ].map((r) => ({ value: r, label: r }))}
+                                classNames={{ input: 'border-slate-300 focus:border-green-500' }}
                             />
                         </div>
 
                         <div className="col-span-4">
                             <Button
+                                size="sm"
+                                color="green"
                                 onClick={handleAddMember}
                                 disabled={!employee || !role}
-                                leftSection={<IconPlus size={16} />}
-                                className=" hover:from-green-600 hover:to-green-700 text-white shadow-lg  rounded-lg"
+                                leftSection={<IconPlus size={14} />}
                             >
-                                Add
+                                Ajouter
                             </Button>
                         </div>
                     </div>
@@ -431,8 +434,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                         <Text size="sm" className="text-slate-700">{empMap[member.id]?.name}</Text>
                                     </Group>
                                     <Text size='sm'>
-
-                                        Department: {empMap[member.id]?.department}
+                                        Département : {empMap[member.id]?.department}
                                     </Text>
                                     <ActionIcon
                                         variant="light"
@@ -456,44 +458,40 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                         <IconCalendar size={20} className="text-blue-500" />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            Analysis dates
+                        <Text size="lg" className="text-slate-800">
+                            Calendrier de l'analyse
                         </Text>
-
                     </div>
                 </Group>
 
                 <Grid>
                     <Grid.Col span={4}>
                         <DateInput
-                            label="Start Date "
-                            placeholder="Select Start Date "
+                            size="sm"
+                            label="Date de début"
+                            placeholder="Sélectionner la date"
                             withAsterisk
                             {...form.getInputProps('analysis.startDate')}
-                            leftSection={<IconCalendar size={16} className="text-slate-400" />}
-                            classNames={{
-                                input: 'border-slate-300 focus:border-blue-500'
-                            }}
+                            leftSection={<IconCalendar size={14} className="text-slate-400" />}
                         />
                     </Grid.Col>
 
                     <Grid.Col span={4}>
                         <DateInput
-                            label="Deadline "
-                            placeholder="Select Deadline"
+                            size="sm"
+                            label="Échéance"
+                            placeholder="Sélectionner la date"
                             withAsterisk
                             {...form.getInputProps('analysis.deadline')}
-                            leftSection={<IconCalendar size={16} className="text-slate-400" />}
-                            classNames={{
-                                input: 'border-slate-300 focus:border-blue-500'
-                            }}
+                            leftSection={<IconCalendar size={14} className="text-slate-400" />}
                         />
                     </Grid.Col>
 
                     <Grid.Col span={4}>
                         <Select
-                            label="Priority"
-                            placeholder="Select Priority"
+                            size="sm"
+                            label="Priorité"
+                            placeholder="Sélectionner la priorité"
                             data={[
                                 { value: 'Urgente', label: 'Urgente' },
                                 { value: 'Élevée', label: 'Élevée' },
@@ -502,9 +500,6 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             ]}
                             {...form.getInputProps('analysis.priority')}
                             withAsterisk
-                            classNames={{
-                                input: 'border-slate-300 focus:border-blue-500'
-                            }}
                         />
                     </Grid.Col>
                 </Grid>
@@ -517,18 +512,18 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                         <IconTarget size={20} className="text-orange-500" />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            Status and severity
+                        <Text size="lg" className="text-slate-800">
+                            Statut et gravité
                         </Text>
-
                     </div>
                 </Group>
 
                 <Grid>
                     <Grid.Col span={6}>
                         <Select
-                            label="Severity Level"
-                            placeholder="Select severity level"
+                            size="sm"
+                            label="Niveau de gravité"
+                            placeholder="Sélectionner la gravité"
                             data={[
                                 { value: 'Insignifiante', label: 'Insignifiante' },
                                 { value: 'Mineure', label: 'Mineure' },
@@ -538,14 +533,14 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             ]}
                             withAsterisk
                             {...form.getInputProps('analysis.severityLevel')}
-
                         />
                     </Grid.Col>
 
                     <Grid.Col span={6}>
                         <Select
-                            label="Processing status"
-                            placeholder="Select Processing status"
+                            size="sm"
+                            label="Statut de traitement"
+                            placeholder="Sélectionner le statut"
                             data={[
                                 { value: 'En attente', label: 'En attente' },
                                 { value: 'En cours', label: 'En cours' },
@@ -567,18 +562,18 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                         <IconSearch size={20} className="text-yellow-600" />
                     </div>
                     <div>
-                        <Text size="lg" fw={600} className="text-slate-800">
-                            Analysis
+                        <Text size="lg" className="text-slate-800">
+                            Analyse causale
                         </Text>
-
                     </div>
                 </Group>
 
                 <Grid>
                     <Grid.Col span={6}>
                         <Select
-                            label="Method of analysis"
-                            placeholder="Select Method of analysis"
+                            size="sm"
+                            label="Méthode d'analyse"
+                            placeholder="Sélectionner la méthode"
                             defaultValue={selectedMethod}
                             data={[
                                 { value: '5 Pourquoi', label: '5 Pourquoi' },
@@ -595,8 +590,9 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
 
                     <Grid.Col span={6}>
                         <Select
-                            label="Origin of the cause"
-                            placeholder="Select Origin of the cause"
+                            size="sm"
+                            label="Origine de la cause"
+                            placeholder="Sélectionner l'origine"
                             withAsterisk
                             data={[
                                 { value: 'Interne', label: 'Interne' },
@@ -630,7 +626,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     <IconTarget size={18} className="text-yellow-600" />
                                 </div>
                                 <div>
-                                    <Text size="md" fw={600} className="text-yellow-800">
+                                    <Text size="md" className="text-yellow-800">
                                         Summary of the causes identified
                                     </Text>
                                     <Text size="xs" className="text-yellow-600">
@@ -653,7 +649,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     <IconSearch size={18} className="text-emerald-600" />
                                 </div>
                                 <div>
-                                    <Text size="md" fw={600} className="text-emerald-800">
+                                    <Text size="md" className="text-emerald-800">
                                         Conclusions of the analysis
                                     </Text>
                                     <Text size="xs" className="text-emerald-600">

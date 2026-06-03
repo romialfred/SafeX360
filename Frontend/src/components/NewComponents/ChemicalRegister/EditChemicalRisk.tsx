@@ -114,7 +114,7 @@ const EditChemicalRisk = () => {
           <div className={`p-2 rounded-lg ${section.bgColor} mr-3`}>
             <section.icon className={`w-6 h-6 ${section.color}`} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">{section.title}</h3>
+          <h3 className="text-lg text-gray-900">{section.title}</h3>
         </div>
         <div className={`rounded-lg p-4 ${section.bgColor}`}>
           <div className="space-y-3 text-sm text-gray-700">
@@ -218,7 +218,7 @@ const EditChemicalRisk = () => {
     <div className="flex flex-col gap-5 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-3xl font-medium text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Edit Chemical Risk</div>
+          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Edit Chemical Risk</div>
           <Breadcrumbs mt="xs">
             <Link className="hover:!underline" to="/"><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
             <Link className="hover:!underline" to="/chemical-register"><Text variant="gradient" className="hover:!underline cursor-pointer">Chemical Register</Text></Link>
@@ -235,7 +235,7 @@ const EditChemicalRisk = () => {
               <div className="flex-1">
                 <div className="flex items-center mb-6">
                   <IconBuilding className="w-6 h-6 text-blue-600 mr-3" />
-                  <h3 className="text-xl font-semibold text-gray-900">General Information</h3>
+                  <h3 className="text-lg text-gray-900">General Information</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <DateInput required label="Date of Identification" {...form.getInputProps('reviewDate')} />
@@ -256,7 +256,7 @@ const EditChemicalRisk = () => {
               <div className="flex-1">
                 <div className="flex items-center mb-6">
                   <IconFlask2 className="w-6 h-6 text-orange-600 mr-3" />
-                  <h3 className="text-xl font-semibold text-gray-900">Hazard Information</h3>
+                  <h3 className="text-lg text-gray-900">Hazard Information</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <TextInput required label="Chemical Name" placeholder="Official product name" {...form.getInputProps('chemicalName')} />
@@ -278,7 +278,7 @@ const EditChemicalRisk = () => {
               <div className="flex-1">
                 <div className="flex items-center mb-6">
                   <IconAlertTriangle className="w-6 h-6 text-red-600 mr-3" />
-                  <h3 className="text-xl font-semibold text-gray-900">Risk Description</h3>
+                  <h3 className="text-lg text-gray-900">Risk Description</h3>
                 </div>
                 <div className="flex flex-col gap-5">
                   <Textarea label="Risk Description" placeholder="Describe the identified risk..." required rows={3} {...form.getInputProps('description')} />

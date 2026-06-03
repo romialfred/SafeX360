@@ -1,68 +1,72 @@
-import { useState, useEffect } from 'react';
+import { Button } from '@mantine/core';
+import { IconAlertTriangle, IconArrowLeft, IconHome } from '@tabler/icons-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+/**
+ * Page 404 sobre — affichée pour toute URL non définie.
+ * Remplace l'ancien écran "Coming Soon" qui faisait croire à des fonctionnalités manquantes.
+ */
 const ComingSoonPage = () => {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  // Set the launch date
-  const launchDate = new Date('2025-09-10T00:00:00').getTime();
+    return (
+        <div className="flex w-full flex-col items-center justify-center min-h-[calc(100vh-60px)] bg-slate-50 p-6">
+            <div className="max-w-md w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 bg-gradient-to-r from-amber-50 to-white border-b border-amber-200/70">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-amber-100 border border-amber-200">
+                            <IconAlertTriangle size={22} className="text-amber-700" stroke={2} />
+                        </div>
+                        <div>
+                            <h1 className="text-base text-slate-900">Page introuvable</h1>
+                            <p className="text-xs text-slate-500 mt-0.5">Erreur 404 · Ressource non disponible</p>
+                        </div>
+                    </div>
+                </div>
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = launchDate - now;
+                <div className="p-6 space-y-4">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                        La page demandée n'existe pas ou a été déplacée. Vérifiez l'URL ou utilisez
+                        les liens de navigation pour retourner à une zone fonctionnelle.
+                    </p>
 
-      if (distance > 0) {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-      } else {
-        clearInterval(timer);
-      }
-    }, 1000);
+                    <div className="bg-slate-50 border border-slate-200 rounded-md p-3">
+                        <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+                            Adresse demandée
+                        </p>
+                        <p className="text-xs font-mono text-slate-700 break-all">
+                            {location.pathname}
+                        </p>
+                    </div>
 
-    return () => clearInterval(timer);
-  }, [launchDate]);
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            leftSection={<IconArrowLeft size={14} />}
+                            onClick={() => navigate(-1)}
+                        >
+                            Page précédente
+                        </Button>
+                        <Button
+                            component={Link}
+                            to="/"
+                            color="teal"
+                            size="sm"
+                            leftSection={<IconHome size={14} />}
+                        >
+                            Tableau de bord
+                        </Button>
+                    </div>
+                </div>
 
-  return (
-    <div className="flex w-full flex-col items-center justify-center h-[calc(100vh-60px)] bg-gradient-to-r from-primary to-secondary">
-      <div className="mb-8 animate-bounce">
-        <svg className="w-32 h-32 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8V12m0 4h.01M21 12a9 9 0 10-9 9 9 9 0 009-9z"></path>
-        </svg>
-      </div>
-
-      <h1 className="text-5xl font-bold text-white mb-4 animate-fadeIn">Coming Soon!</h1>
-      <p className="text-lg text-white mb-8">We’re working hard to bring you something amazing. Stay tuned!</p>
-
-      {/* Countdown Timer */}
-      <div className="grid grid-cols-4 gap-4 text-white text-center animate-fadeIn">
-        <div>
-          <p className="text-6xl font-bold">{timeLeft.days}</p>
-          <p className="text-lg">Days</p>
+                <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500">
+                    Si cette page devrait exister, signalez-le à l'équipe HSE Platform.
+                </div>
+            </div>
         </div>
-        <div>
-          <p className="text-6xl font-bold">{timeLeft.hours}</p>
-          <p className="text-lg">Hours</p>
-        </div>
-        <div>
-          <p className="text-6xl font-bold">{timeLeft.minutes}</p>
-          <p className="text-lg">Minutes</p>
-        </div>
-        <div>
-          <p className="text-6xl font-bold">{timeLeft.seconds}</p>
-          <p className="text-lg">Seconds</p>
-        </div>
-      </div>
-
-      <button className="mt-8 bg-white text-primary-600 font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300">
-        Notify Me!
-      </button>
-    </div>
-  );
+    );
 };
 
 export default ComingSoonPage;

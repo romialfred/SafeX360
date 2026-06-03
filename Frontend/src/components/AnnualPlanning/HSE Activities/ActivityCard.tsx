@@ -31,7 +31,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         >
             {/* Category badge at the top */}
             <div className="flex items-start justify-between mb-2">
-                <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border  ${getCategoryColor(activity.category)}`}>
+                <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs border  ${getCategoryColor(activity.category)}`}>
                     <CategoryIcon className="w-3 h-3 mr-1" />
                     {getCategoryLabel(activity.category)}
                 </div>
@@ -58,7 +58,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 </div>
             </div>
 
-            <h5 className="font-medium text-sm mb-2 leading-tight">{activity.title}</h5>
+            <h5 className="text-sm mb-2 leading-tight">{activity.title}</h5>
 
             <div className="space-y-1 text-xs">
                 {activity.dateTime && (

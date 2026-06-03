@@ -66,7 +66,7 @@ const EditAudit = () => {
         return (
             <div className={` ${item.pos === "Target" ? "w-[500px]" : "w-[400px]"} flex gap-5 justify-between`}>
                 <div className='flex flex-col gap-1'>
-                    <span className="font-bold">{item.name}</span>
+                    <span className="font-medium">{item.name}</span>
                     <span className="text-400">{item.empNumber}</span>
                 </div>
                 {item.pos === "Target" && (
@@ -83,7 +83,7 @@ const EditAudit = () => {
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm font-medium px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -98,7 +98,7 @@ const EditAudit = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="font-semibold text-2xl text-blue-500 w-fit">Edit Audit</div>
+                    <div className="text-2xl text-blue-500 w-fit">Edit Audit</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -114,7 +114,7 @@ const EditAudit = () => {
             <div className="flex flex-col gap-5">
                 <Fieldset
                     className="grid grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
-                    legend={<div className="text-lg font-medium text-blue-500">Audit Info</div>}
+                    legend={<div className="text-lg text-blue-500">Audit Info</div>}
                 >
                     <TextInput withAsterisk label="Audit Title" placeholder="Enter Audit Title" {...form.getInputProps('name')} />
 
@@ -141,7 +141,7 @@ const EditAudit = () => {
                     <Select withAsterisk label="PPE(Personal Protective Equipment)" placeholder="Select Personal Protective Equipment " data={PPE} {...form.getInputProps('ppe')} />
                 </Fieldset>
 
-                <Fieldset className="[&>legend]:w-fit" legend={<div className="text-lg font-medium text-blue-500">Participants</div>}>
+                <Fieldset className="[&>legend]:w-fit" legend={<div className="text-lg text-blue-500">Participants</div>}>
                     <div className='flex gap-5 flex-wrap'>
                         <PickList
                             dataKey="id"

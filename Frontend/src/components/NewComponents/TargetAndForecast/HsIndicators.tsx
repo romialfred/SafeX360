@@ -198,7 +198,7 @@ const HsIndicators = () => {
                 {showAddIndicator && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-semibold text-gray-900">Nouvel Indicateur</h3>
+                            <h3 className="text-lg text-gray-900">Nouvel Indicateur</h3>
                             <button
                                 onClick={() => setShowAddIndicator(false)}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -209,7 +209,7 @@ const HsIndicators = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm text-gray-700 mb-2">
                                     Nom de l'Indicateur *
                                 </label>
                                 <input
@@ -222,7 +222,7 @@ const HsIndicators = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm text-gray-700 mb-2">
                                     Unité de Mesure
                                 </label>
                                 <input
@@ -235,7 +235,7 @@ const HsIndicators = () => {
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm text-gray-700 mb-2">
                                     Définition *
                                 </label>
                                 <textarea
@@ -248,7 +248,7 @@ const HsIndicators = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm text-gray-700 mb-2">
                                     Catégorie *
                                 </label>
                                 <select
@@ -263,7 +263,7 @@ const HsIndicators = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm text-gray-700 mb-2">
                                     Fréquence *
                                 </label>
                                 <select
@@ -322,7 +322,7 @@ const HsIndicators = () => {
                                 <div className={`p-2 rounded-lg mr-3 ${getCategoryColor(category)}`}>
                                     {getCategoryIcon(category)}
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900">{category} Indicators</h3>
+                                <h3 className="text-lg text-gray-900">{category} Indicators</h3>
                                 <span className="ml-3 px-2 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
                                     {categoryIndicators.length}
                                 </span>
@@ -335,13 +335,13 @@ const HsIndicators = () => {
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center mb-2">
-                                                        <h4 className="text-lg font-medium text-gray-900 mr-3">{indicator.name}</h4>
-                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(indicator.category)}`}>
+                                                        <h4 className="text-lg text-gray-900 mr-3">{indicator.name}</h4>
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getCategoryColor(indicator.category)}`}>
                                                             {getCategoryIcon(indicator.category)}
                                                             <span className="ml-1">{indicator.category}</span>
                                                         </span>
                                                         {indicator.hasForecast && (
-                                                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 border border-purple-200">
                                                                 <IconTarget className="w-3 h-3 mr-1" />
                                                                 Prévision
                                                             </span>

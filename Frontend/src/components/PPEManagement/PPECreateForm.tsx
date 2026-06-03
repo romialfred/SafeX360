@@ -80,7 +80,7 @@ const PPECreateForm = () => {
         <div className='flex flex-col gap-5'>
 
             <div>
-                <div className="font-semibold text-2xl text-blue-500 w-fit">Create New PPE</div>
+                <div className="text-2xl text-blue-500 w-fit">Create New PPE</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -178,7 +178,7 @@ const PPECreateForm = () => {
                             {ppe.slice(0, 5).map((epp: any) => (
                                 <Box key={epp.id} p="sm" style={{ border: '1px solid #e9ecef', borderRadius: '8px' }}>
                                     <Group justify="space-between" mb="xs">
-                                        <Text size="xs" fw={500} lineClamp={1}>{epp.name}</Text>
+                                        <Text size="xs" lineClamp={1}>{epp.name}</Text>
                                     </Group>
                                     <Badge variant="light" color="blue" size="xs" mb="xs">
                                         {epp.category}

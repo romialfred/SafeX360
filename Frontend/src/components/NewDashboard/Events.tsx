@@ -62,7 +62,7 @@ const Events = () => {
     return (
         <div className="bg-white rounded-lg shadow-xl p-10 flex flex-col gap-10 border border-gray-200 ">
             <div>
-                <p className="text-3xl  font-bold">Safety Events Calendar</p>
+                <p className="text-2xl font-semibold">Safety Events Calendar</p>
             </div>
 
 
@@ -70,7 +70,7 @@ const Events = () => {
                 {/* <div className="p-6 col-span-1 bg-white rounded-lg shadow-xl border border-gray-300">
                     <Group>
                         <IconCalendarWeek size={30} color="gray" />
-                        <Text className="!text-2xl !font-bold !text-gray-400">Upcoming Events</Text>
+                        <Text className="!text-2xl !!text-gray-400">Upcoming Events</Text>
                     </Group>
 
                     {eventsData.map((event, index) => (
