@@ -18,12 +18,14 @@ public class BodyPartDTO {
     private String name;
     private String file;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public BodyPart toEntity() {
         return new BodyPart(this.id, this.name, this.file != null ? Base64.getDecoder().decode(file) : null,
                 this.status,
+                this.companyId,
                 this.createdAt,
                 this.updatedAt);
     }

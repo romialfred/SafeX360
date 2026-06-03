@@ -19,11 +19,13 @@ public class CheckListDTO {
     private String description;
     private Status status;
     private Long incidentCategoryId;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public CheckList toEntity() {
-        return new CheckList(id, name, description, status, new IncidentCategory(incidentCategoryId), createdAt,
+        return new CheckList(id, name, description, status, new IncidentCategory(incidentCategoryId), companyId,
+                createdAt,
                 updatedAt);
     }
 }

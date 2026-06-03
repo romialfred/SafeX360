@@ -7,19 +7,19 @@ import com.minexpert.hns.dto.response.LocationResponse;
 import com.minexpert.hns.exception.HSException;
 
 public interface LocationService {
-    public Long addLocation(LocationDTO locationDTO) throws HSException;
+    Long addLocation(Long companyId, LocationDTO locationDTO) throws HSException;
 
-    public void updateLocation(LocationDTO locationDTO) throws HSException;
+    void updateLocation(Long companyId, LocationDTO locationDTO) throws HSException;
 
-    public void deleteLocation(Long id);
+    void deleteLocation(Long companyId, Long id) throws HSException;
 
-    public LocationDTO getLocationById(Long id) throws HSException;
+    LocationDTO getLocationById(Long companyId, Long id) throws HSException;
 
-    public void activateLocation(Long id) throws HSException;
+    void activateLocation(Long companyId, Long id) throws HSException;
 
-    public List<LocationResponse> getAllLocations() throws HSException;
+    List<LocationResponse> getAllLocations(Long companyId) throws HSException;
 
-    public List<LocationResponse> getAllActiveLocations() throws HSException;
+    List<LocationResponse> getAllActiveLocations(Long companyId) throws HSException;
 
-    public void deactivateLocation(Long id) throws HSException;
+    void deactivateLocation(Long companyId, Long id) throws HSException;
 }

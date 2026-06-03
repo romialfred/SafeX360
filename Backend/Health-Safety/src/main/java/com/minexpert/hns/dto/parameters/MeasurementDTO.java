@@ -19,12 +19,13 @@ public class MeasurementDTO {
     private Double normalValue;
     private Double threshold;
     private String description;
+    private Long companyId;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Measurement toEntity() {
         return new Measurement(this.id, this.name, this.unit, this.normalValue, this.threshold, this.description,
-                this.status, this.createdAt, this.updatedAt);
+                this.companyId, this.status, this.createdAt, this.updatedAt);
     }
 }

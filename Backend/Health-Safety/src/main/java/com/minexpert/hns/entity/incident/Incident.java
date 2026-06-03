@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import com.minexpert.hns.dto.IncidentDTO;
 import com.minexpert.hns.entity.parameters.Location;
-import com.minexpert.hns.entity.parameters.WeatherCondition;
 import com.minexpert.hns.entity.parameters.WorkArea;
 import com.minexpert.hns.entity.parameters.WorkProcess;
 import com.minexpert.hns.enums.IncidentStatus;
@@ -39,6 +38,8 @@ public class Incident {
         private Location location;
         private String weatherConditions;
         private Long departmentId;
+        @Column(name = "company_id", nullable = false)
+        private Long companyId;
         private LocalDateTime occurredAt;
         private LocalDateTime discoveryTime;
         @ManyToOne(fetch = FetchType.LAZY)
@@ -56,15 +57,24 @@ public class Incident {
         private LocalDateTime updatedAt;
 
         public IncidentDTO toDTO() {
-                return new IncidentDTO(id, number, title, StringListConverter.convertToStringList(ppe),
-                                location != null ? location.getId() : null,
-                                StringListConverter.convertToLongList(weatherConditions), departmentId,
-                                status, occurredAt, discoveryTime, workArea != null ? workArea.getId() : null,
-                                workProcess != null ? workProcess.getId() : null, null, reporterId,
-                                StringListConverter.convertToLongList(involvedPersons),
-                                StringListConverter.convertToLongList(witnesses),
-                                null, null, null, null, null, null, null,
-                                null, null, null, null, null, null);
+                IncidentDTO dto = new IncidentDTO();
+                dto.setId(id);
+                dto.setNumber(number);
+                dto.setTitle(title);
+                dto.setPpe(StringListConverter.convertToStringList(ppe));
+                dto.setLocationId(location != null ? location.getId() : null);
+                dto.setWeatherConditions(StringListConverter.convertToLongList(weatherConditions));
+                dto.setDepartmentId(departmentId);
+                dto.setCompanyId(companyId);
+                dto.setStatus(status);
+                dto.setOccurredAt(occurredAt);
+                dto.setDiscoveryTime(discoveryTime);
+                dto.setWorkAreaId(workArea != null ? workArea.getId() : null);
+                dto.setWorkProcessId(workProcess != null ? workProcess.getId() : null);
+                dto.setReporterId(reporterId);
+                dto.setInvolvedPersons(StringListConverter.convertToLongList(involvedPersons));
+                dto.setWitnesses(StringListConverter.convertToLongList(witnesses));
+                return dto;
         }
 
         public Incident(Long id) {

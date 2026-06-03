@@ -6,10 +6,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.config.AuditCacheNames;
 import com.minexpert.hns.dto.audit.ObservationDTO;
 import com.minexpert.hns.dto.request.EmployeeNameDTO;
 import com.minexpert.hns.dto.response.ObsTitle;
@@ -31,6 +35,10 @@ public class ObservationServiceImpl implements ObservationService {
     private final HrmsClient hrmsClient;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.OBSERVATIONS_BY_AUDIT, key = "#observationDTO.auditId", condition = "#observationDTO.auditId != null"),
+            @CacheEvict(cacheNames = AuditCacheNames.OBSERVATION_TITLES_BY_AUDIT, key = "#observationDTO.auditId", condition = "#observationDTO.auditId != null")
+    })
     public Long createObservation(ObservationDTO observationDTO) throws HSException {
         observationDTO.setCreatedAt(LocalDateTime.now());
         observationDTO.setUpdatedAt(LocalDateTime.now());
@@ -49,6 +57,7 @@ public class ObservationServiceImpl implements ObservationService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.OBSERVATIONS_BY_AUDIT, key = "#auditId")
     public List<ObservationDTO> getAllObservationsByAuditId(Long auditId) throws HSException {
         List<Observation> observations = observationRepository.findByAudit_Id(auditId);
 
@@ -81,6 +90,7 @@ public class ObservationServiceImpl implements ObservationService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.OBSERVATION_TITLES_BY_AUDIT, key = "#auditId")
     public List<ObsTitle> getObservationTitlesByAuditId(Long auditId) throws HSException {
         return observationRepository.findTitlesByAuditId(auditId);
     }

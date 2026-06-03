@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.inspections.InspectionInterviewsDTO;
@@ -18,6 +21,11 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     private InspectionInterviewsRepository inspectionInterviewsRepository;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "inspectionInterviewById", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionInterviewsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionInterviewByInspection", key = "#interviewDTO.inspectionId", condition = "#interviewDTO.inspectionId != null")
+    })
     public Long createInterview(InspectionInterviewsDTO interviewDTO) throws HSException {
         interviewDTO.setCreatedAt(LocalDateTime.now());
         interviewDTO.setUpdatedAt(LocalDateTime.now());
@@ -25,12 +33,18 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionInterviewById", key = "#id")
     public InspectionInterviewsDTO getInterviewById(Long id) throws HSException {
         return inspectionInterviewsRepository.findById(id)
                 .orElseThrow(() -> new HSException("INTERVIEW_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionInterviewById", key = "#interviewDTO.id"),
+            @CacheEvict(cacheNames = "inspectionInterviewsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionInterviewByInspection", allEntries = true)
+    })
     public void updateInterview(InspectionInterviewsDTO interviewDTO) throws HSException {
         InspectionInterviews existingInterview = inspectionInterviewsRepository.findById(interviewDTO.getId())
                 .orElseThrow(() -> new HSException("INTERVIEW_NOT_FOUND"));
@@ -42,17 +56,24 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionInterviewById", key = "#id"),
+            @CacheEvict(cacheNames = "inspectionInterviewsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionInterviewByInspection", allEntries = true)
+    })
     public void deleteInterview(Long id) throws HSException {
         inspectionInterviewsRepository.deleteById(id);
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionInterviewsAll")
     public List<InspectionInterviewsDTO> getAllInterviews() throws HSException {
         return ((List<InspectionInterviews>) inspectionInterviewsRepository.findAll()).stream()
                 .map(InspectionInterviews::toDTO).toList();
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionInterviewByInspection", key = "#inspectionId")
     public InspectionInterviewsDTO getInterviewsByInspectionId(Long inspectionId) throws HSException {
         InspectionInterviews interviews = inspectionInterviewsRepository.findByGeneralInspection_Id(inspectionId)
                 .orElse(null);

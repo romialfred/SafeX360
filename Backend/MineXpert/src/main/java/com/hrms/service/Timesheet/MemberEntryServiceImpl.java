@@ -10,7 +10,9 @@ import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.method.P;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.hrms.DataInterface.MemberEntries;
@@ -49,6 +51,15 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     private HolidayRepository holidayRepository;
 
     @Override
+    @CacheEvict(cacheNames = {
+            "memberEntryComments",
+            "memberEntriesByTimesheet",
+            "memberEntriesByEmployeeMonth",
+            "memberEntryMinMax",
+            "timesheetDatesByEmployee",
+            "memberEntriesByEmployeeWeek",
+            "memberEntriesByTimesheets"
+    }, allEntries = true)
     public void createMemberEntry(Long timesheetId, Long memberId, Long empId, LocalDate date, boolean working,
             Integer hours, boolean isHoliday, Shifts shift)
             throws HRMSException {
@@ -79,17 +90,26 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntryComments", key = "#id")
     public String getMemberEntryComments(Long id) throws HRMSException {
         String memberEntry = memberEntryRepository.findCommentsById(id).get();
         return memberEntry;
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntriesByTimesheet", key = "#timesheetId")
     public List<MemberEntryDetails> getMemberEntries(Long timesheetId) {
         return memberEntryRepository.getMemberEntries(timesheetId);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "memberEntryComments", key = "#id"),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheet", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeMonth", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeWeek", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheets", allEntries = true)
+    })
     public void updateMemberEntry(Long id, EntryComment entryComment) throws HRMSException {
         Optional<MemberEntry> optional = memberEntryRepository.findById(id);
         if (optional.isEmpty()) {
@@ -113,6 +133,13 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "memberEntryComments", key = "#id"),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheet", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeMonth", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeWeek", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheets", allEntries = true)
+    })
     public void updateMemberEntry(Long id, String attendance) throws HRMSException {
         Optional<MemberEntry> optional = memberEntryRepository.findById(id);
         if (optional.isEmpty()) {
@@ -125,6 +152,13 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "memberEntryComments", key = "#id"),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheet", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeMonth", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeWeek", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheets", allEntries = true)
+    })
     public String addComment(Long id, Comment comment) throws HRMSException {
         Optional<MemberEntry> optional = memberEntryRepository.findById(id);
         if (optional.isEmpty()) {
@@ -148,16 +182,27 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntryMinMax", key = "#empId")
     public Object getMinAndMaxTimesheetMonth(Long empId) {
         return memberEntryRepository.findMinAndMaxDateByEmployeeId(empId);
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntriesByEmployeeMonth", key = "{#empId, #date}")
     public List<MemberEntryDetails> getMemberEntriesByMonth(Long empId, LocalDate date) {
         return memberEntryRepository.findEntriesByEmployeeAndMonth(empId, date);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "memberEntryComments", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheet", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeMonth", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntryMinMax", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetDatesByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByEmployeeWeek", allEntries = true),
+            @CacheEvict(cacheNames = "memberEntriesByTimesheets", allEntries = true)
+    })
     public void createEntryforAddedMember(Long teamId, Long memberId, Long empId, Shifts shift) throws HRMSException {
         memberEntryRepository.deleteByDateGreaterThanEqualAndEmployeeId(LocalDate.now(), empId);
         if (timesheetRepository.isTeamHavingTimesheets(teamId)) {
@@ -204,16 +249,19 @@ public class MemberEntryServiceImpl implements MemberEntryService {
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetDatesByEmployee", key = "#empId")
     public Object[] getTimesheetDatesByEmployeeId(Long empId) {
         return memberEntryRepository.findTimesheetDatesByEmployeeId(empId);
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntriesByEmployeeWeek", key = "{#empId, #startDate, #endDate}")
     public List<MemberEntryDetails> getMemberEntriesByWeek(Long empId, LocalDate startDate, LocalDate endDate) {
         return memberEntryRepository.findEntriesByEmployeeAndDateRange(empId, startDate, endDate);
     }
 
     @Override
+    @Cacheable(cacheNames = "memberEntriesByTimesheets", key = "#timesheetIds")
     public List<MemberEntries> getMemberEntriesByTimesheets(List<Long> timesheetIds) {
         List<MemberEntryDetails> entries = memberEntryRepository.getMemberEntries(timesheetIds);
         return entries.stream()

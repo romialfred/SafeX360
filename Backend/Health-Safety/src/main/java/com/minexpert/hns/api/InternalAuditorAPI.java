@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -31,34 +32,39 @@ public class InternalAuditorAPI {
     private final InternalAuditorService internalAuditorService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createInternalAuditor(@RequestBody InternalAuditorDTO internalAuditorDTO)
+    public ResponseEntity<Long> createInternalAuditor(@RequestParam Long companyId,
+            @RequestBody InternalAuditorDTO internalAuditorDTO)
             throws HSException {
-        Long id = internalAuditorService.createInternalAuditor(internalAuditorDTO);
+        Long id = internalAuditorService.createInternalAuditor(companyId, internalAuditorDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateInternalAuditor(@RequestBody InternalAuditorDTO internalAuditorDTO)
+    public ResponseEntity<ResponseDTO> updateInternalAuditor(@RequestParam Long companyId,
+            @RequestBody InternalAuditorDTO internalAuditorDTO)
             throws HSException {
-        internalAuditorService.updateInternalAuditor(internalAuditorDTO);
+        internalAuditorService.updateInternalAuditor(companyId, internalAuditorDTO);
         return ResponseEntity.ok(new ResponseDTO("Internal Auditor updated successfully."));
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateInternalAuditor(@PathVariable Long id) throws HSException {
-        internalAuditorService.activateInternalAuditor(id);
+    public ResponseEntity<ResponseDTO> activateInternalAuditor(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        internalAuditorService.activateInternalAuditor(companyId, id);
         return ResponseEntity.ok(new ResponseDTO("Internal Auditor activated successfully."));
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateInternalAuditor(@PathVariable Long id) throws HSException {
-        internalAuditorService.deactivateInternalAuditor(id);
+    public ResponseEntity<ResponseDTO> deactivateInternalAuditor(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        internalAuditorService.deactivateInternalAuditor(companyId, id);
         return ResponseEntity.ok(new ResponseDTO("Internal Auditor deactivated successfully."));
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<InternalAuditorResponse>> getAllInternalAuditors() throws HSException {
-        List<InternalAuditorResponse> auditors = internalAuditorService.getAllInternalAuditors();
+    public ResponseEntity<List<InternalAuditorResponse>> getAllInternalAuditors(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        List<InternalAuditorResponse> auditors = internalAuditorService.getAllInternalAuditors(companyId);
         return ResponseEntity.ok(auditors);
     }
 

@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.inspections.InspectionMeasurementDTO;
@@ -18,6 +21,11 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     private InspectionMeasurementRepository inspectionMeasurementRepository;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "inspectionMeasurementById", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionMeasurementsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", key = "#measurementDTO.inspectionId", condition = "#measurementDTO.inspectionId != null")
+    })
     public Long createMeasurement(InspectionMeasurementDTO measurementDTO) throws HSException {
         measurementDTO.setCreatedAt(LocalDateTime.now());
         measurementDTO.setUpdatedAt(LocalDateTime.now());
@@ -25,12 +33,18 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionMeasurementById", key = "#id")
     public InspectionMeasurementDTO getMeasurementById(Long id) throws HSException {
         return inspectionMeasurementRepository.findById(id)
                 .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionMeasurementById", key = "#measurementDTO.id"),
+            @CacheEvict(cacheNames = "inspectionMeasurementsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", allEntries = true)
+    })
     public void updateMeasurement(InspectionMeasurementDTO measurementDTO) throws HSException {
         InspectionMeasurement existingMeasurement = inspectionMeasurementRepository.findById(measurementDTO.getId())
                 .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
@@ -40,11 +54,17 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionMeasurementById", key = "#id"),
+            @CacheEvict(cacheNames = "inspectionMeasurementsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", allEntries = true)
+    })
     public void deleteMeasurement(Long id) throws HSException {
         inspectionMeasurementRepository.deleteById(id);
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionMeasurementsAll")
     public List<InspectionMeasurementDTO> getAllMeasurement() throws HSException {
         return ((List<InspectionMeasurement>) inspectionMeasurementRepository.findAll()).stream()
                 .map(InspectionMeasurement::toDTO)
@@ -52,6 +72,7 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionMeasurementsByInspection", key = "#inspectionId")
     public List<InspectionMeasurementDTO> getMeasurementByInspectionId(Long inspectionId) throws HSException {
         return ((List<InspectionMeasurement>) inspectionMeasurementRepository.findByGeneralInspection_Id(inspectionId))
                 .stream()

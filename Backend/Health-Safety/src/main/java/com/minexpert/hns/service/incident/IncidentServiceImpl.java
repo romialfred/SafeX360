@@ -10,6 +10,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,7 +43,14 @@ import com.minexpert.hns.service.MediaService;
 
 @Service
 public class IncidentServiceImpl implements IncidentService {
-    private static final String[] MONTH_LABELS = { "Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec" };
+
+    public static final String CACHE_INCIDENTS_ALL = "incidentsAll";
+    public static final String CACHE_INCIDENT_BY_ID = "incidentById";
+    public static final String CACHE_INCIDENT_RESPONSE_BY_ID = "incidentResponseById";
+    public static final String CACHE_INCIDENT_YEARLY_CLOSURE = "incidentYearlyClosure";
+    public static final String CACHE_DEPARTMENT_INCIDENT_STATS = "departmentIncidentStats";
+    private static final String[] MONTH_LABELS = { "Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept",
+            "Oct", "Nov", "Dec" };
 
     @Autowired
     private IncidentRepository incidentRepository;
@@ -68,11 +78,26 @@ public class IncidentServiceImpl implements IncidentService {
     private InvestigationRepository investigationRepository;
 
     @Override
-    public void reportIncident(IncidentDTO incidentDTO) {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INCIDENTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_YEARLY_CLOSURE, allEntries = true),
+            // @CacheEvict(cacheNames = CACHE_INCIDENT_BY_ID, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_RESPONSE_BY_ID, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS, allEntries = true)
+    })
+    public void reportIncident(Long companyId, IncidentDTO incidentDTO) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         // incidentDTO.setStatus(IncidentStatus.REPORTED);
 
+        incidentDTO.setCompanyId(companyId);
         Incident incident = incidentDTO.toIncident();
-        incident.setNumber(generateIncidentNumber());
+        incident.setNumber(generateIncidentNumber(companyId));
         incident.setCreatedAt(LocalDateTime.now());
         incident.setUpdatedAt(LocalDateTime.now());
         incident.setEvidence(mediaService.saveAllMedia(incidentDTO.getEvidence()));
@@ -105,16 +130,32 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public List<IncidentResponse> getAllIncidents() {
-        return incidentRepository.findAllIncidentsWithMaxSeverity();
+    @Cacheable(cacheNames = CACHE_INCIDENTS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<IncidentResponse> getAllIncidents(Long companyId) {
+        return incidentRepository.findAllIncidentsWithMaxSeverity(companyId);
     }
 
     @Override
-    public void updateIncident(IncidentDTO incidentDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INCIDENT_BY_ID, key = "#companyId != null ? (#companyId + '-' + #incidentDTO.id) : 'ALL-' + #incidentDTO.id"),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_RESPONSE_BY_ID, key = "#companyId != null ? (#companyId + '-' + #incidentDTO.id) : 'ALL-' + #incidentDTO.id"),
+            @CacheEvict(cacheNames = CACHE_INCIDENTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_YEARLY_CLOSURE, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, key = "#incidentDTO.id"),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS, allEntries = true),
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS, allEntries = true)
+    })
+    public void updateIncident(Long companyId, IncidentDTO incidentDTO) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
 
         // incident
-        Incident incident = incidentRepository.findById(incidentDTO.getId())
+        Incident incident = incidentRepository.findByIdAndCompanyId(incidentDTO.getId(), companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        incidentDTO.setCompanyId(companyId);
         Incident updatedIncident = incidentDTO.toIncident();
         updatedIncident.setStatus(incident.getStatus());
         updatedIncident.setCreatedAt(incident.getCreatedAt());
@@ -169,8 +210,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public IncidentDTO getIncidentById(Long id) throws HSException {
-        Incident incident = incidentRepository.findById(id)
+    @Cacheable(cacheNames = CACHE_INCIDENT_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public IncidentDTO getIncidentById(Long companyId, Long id) throws HSException {
+        Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
         IncidentDTO incidentDTO = incident.toDTO();
         incidentDTO.setEvidence(mediaService.getAllMediaByArray(incident.getEvidence()));
@@ -198,14 +240,22 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public IncidentResponse getIncidentResponseById(Long id) throws HSException {
-        return incidentRepository.findByIncidentId(id)
+    @Cacheable(cacheNames = CACHE_INCIDENT_RESPONSE_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public IncidentResponse getIncidentResponseById(Long companyId, Long id) throws HSException {
+        return incidentRepository.findByIncidentId(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
     }
 
     @Override
-    public void updateIncidentStatus(Long id, IncidentStatus status) throws HSException {
-        Incident incident = incidentRepository.findById(id)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INCIDENT_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_RESPONSE_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = CACHE_INCIDENTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INCIDENT_YEARLY_CLOSURE, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
+    })
+    public void updateIncidentStatus(Long companyId, Long id, IncidentStatus status) throws HSException {
+        Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
@@ -213,8 +263,9 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public List<YearlyClosureData> getYearlyClosureData(int year) {
-        List<MonthlyClosureSummary> summaries = incidentRepository.findMonthlyClosureSummaryByYear(year);
+    @Cacheable(cacheNames = CACHE_INCIDENT_YEARLY_CLOSURE, key = "#companyId != null ? (#companyId + '-' + #year) : 'ALL-' + #year")
+    public List<YearlyClosureData> getYearlyClosureData(Long companyId, int year) {
+        List<MonthlyClosureSummary> summaries = incidentRepository.findMonthlyClosureSummaryByYear(year, companyId);
 
         Map<Integer, MonthlyClosureSummary> summaryByMonth = summaries.stream()
                 .filter(summary -> summary.getMonth() != null)
@@ -236,7 +287,8 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     @Override
-    public DepartmentIncidentStats getDepartmentIncidentStats(Long departmentId) {
+    @Cacheable(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, key = "#companyId != null ? (#companyId + '-' + #departmentId) : 'ALL-' + #departmentId")
+    public DepartmentIncidentStats getDepartmentIncidentStats(Long companyId, Long departmentId) {
         LocalDateTime windowEnd = LocalDateTime.now();
         LocalDateTime windowStart = windowEnd.minusDays(30);
 
@@ -244,32 +296,51 @@ public class IncidentServiceImpl implements IncidentService {
             return new DepartmentIncidentStats(null, windowStart, windowEnd, 0L, 0L, 0L);
         }
 
-        long incidentCount = incidentRepository
-                .countByDepartmentIdAndCreatedAtGreaterThanEqual(departmentId, windowStart);
+        long incidentCount = companyId != null
+                ? incidentRepository.countByCompanyIdAndDepartmentIdAndCreatedAtGreaterThanEqual(companyId,
+                        departmentId, windowStart)
+                : incidentRepository.countByDepartmentIdAndCreatedAtGreaterThanEqual(departmentId, windowStart);
 
-        long completedInvestigations = investigationRepository
-                .countByStatusAndIncident_DepartmentIdAndUpdatedAtGreaterThanEqual(InvestigationStatus.COMPLETED,
-                        departmentId, windowStart);
+        long completedInvestigations = companyId != null
+                ? investigationRepository
+                        .countByStatusAndIncident_CompanyIdAndIncident_DepartmentIdAndUpdatedAtGreaterThanEqual(
+                                InvestigationStatus.COMPLETED,
+                                companyId,
+                                departmentId,
+                                windowStart)
+                : investigationRepository.countByStatusAndIncident_DepartmentIdAndUpdatedAtGreaterThanEqual(
+                        InvestigationStatus.COMPLETED,
+                        departmentId,
+                        windowStart);
 
         LocalDate today = windowEnd.toLocalDate();
         LocalDate deadlineStart = today.minusDays(30);
 
-        long correctiveActionCount = correctiveActionRepository.countByDepartmentIdAndStatusInAndDeadlineBetween(
-                departmentId,
-                List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS),
-                deadlineStart,
-                today);
+        long correctiveActionCount = companyId != null
+                ? correctiveActionRepository.countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(
+                        companyId,
+                        departmentId,
+                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS),
+                        deadlineStart,
+                        today)
+                : correctiveActionRepository.countByDepartmentIdAndStatusInAndDeadlineBetween(
+                        departmentId,
+                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS),
+                        deadlineStart,
+                        today);
 
         return new DepartmentIncidentStats(departmentId, windowStart, windowEnd, incidentCount, completedInvestigations,
                 correctiveActionCount);
     }
 
-    private String generateIncidentNumber() {
+    private String generateIncidentNumber(Long companyId) {
         int currentYear = Year.now().getValue();
 
         // Fetch last incident for the current year
         Pageable limitOne = PageRequest.of(0, 1);
-        List<Incident> latestIncidents = incidentRepository.findTopByYearOrderByIdDesc(currentYear, limitOne);
+        // Generate numbers globally, so fetch without company filter
+        List<Incident> latestIncidents = incidentRepository.findTopByYearOrderByIdDesc(currentYear, null,
+                limitOne);
 
         int nextNumber = 1;
         if (!latestIncidents.isEmpty()) {

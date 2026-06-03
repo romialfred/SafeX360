@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.IncidentDTO;
@@ -33,35 +34,47 @@ public class IncidentApi {
     private IncidentService incidentService;
 
     @PostMapping("/report")
-    public ResponseEntity<ResponseDTO> reportIncident(@RequestBody IncidentDTO incidentDTO) throws HSException {
-        incidentService.reportIncident(incidentDTO);
+    public ResponseEntity<ResponseDTO> reportIncident(@RequestParam("companyId") Long companyId,
+            @RequestBody IncidentDTO incidentDTO) throws HSException {
+        incidentService.reportIncident(companyId, incidentDTO);
         return new ResponseEntity<>(new ResponseDTO("Incident reported successfully."), HttpStatus.OK);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateIncident(@RequestBody IncidentDTO incidentDTO) throws HSException {
-        incidentService.updateIncident(incidentDTO);
+    public ResponseEntity<ResponseDTO> updateIncident(@RequestParam("companyId") Long companyId,
+            @RequestBody IncidentDTO incidentDTO) throws HSException {
+        incidentService.updateIncident(companyId, incidentDTO);
         return new ResponseEntity<>(new ResponseDTO("Incident updated successfully."), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<IncidentResponse>> getAllIncidents() throws HSException {
-        return new ResponseEntity<>(incidentService.getAllIncidents(), HttpStatus.OK);
+    public ResponseEntity<List<IncidentResponse>> getAllIncidents(
+            @RequestParam(name = "companyId", required = false) Long companyId)
+            throws HSException {
+        System.out.println("Received request to get all incidents for companyId: " + companyId);
+        return new ResponseEntity<>(incidentService.getAllIncidents(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<IncidentDTO> getIncidentById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(incidentService.getIncidentById(id), HttpStatus.OK);
+    public ResponseEntity<IncidentDTO> getIncidentById(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long id)
+            throws HSException {
+        return new ResponseEntity<>(incidentService.getIncidentById(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/getDetails/{id}")
-    public ResponseEntity<IncidentResponse> getIncidentResponseById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(incidentService.getIncidentResponseById(id), HttpStatus.OK);
+    public ResponseEntity<IncidentResponse> getIncidentResponseById(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(incidentService.getIncidentResponseById(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/yearly-closure/{year}")
-    public ResponseEntity<List<YearlyClosureData>> getYearlyClosureData(@PathVariable int year) {
-        return new ResponseEntity<>(incidentService.getYearlyClosureData(year), HttpStatus.OK);
+    public ResponseEntity<List<YearlyClosureData>> getYearlyClosureData(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable int year) {
+        return new ResponseEntity<>(incidentService.getYearlyClosureData(companyId, year), HttpStatus.OK);
     }
 
     /**
@@ -73,17 +86,10 @@ public class IncidentApi {
      * @return aggregated counts for the last 30 days
      */
     @GetMapping("/department/stats/{departmentId}")
-    public ResponseEntity<DepartmentIncidentStats> getDepartmentIncidentStats(@PathVariable Long departmentId) {
-        return ResponseEntity.ok(incidentService.getDepartmentIncidentStats(departmentId));
-    }
-
-    /**
-     * Fix Phase 2.a — endpoint global pour utilisateurs sans département (ex: admin).
-     * Évite l'erreur "Failed to convert 'null' to Long" sur l'endpoint paramétré.
-     */
-    @GetMapping("/department/stats")
-    public ResponseEntity<DepartmentIncidentStats> getGlobalIncidentStats() {
-        return ResponseEntity.ok(incidentService.getDepartmentIncidentStats(null));
+    public ResponseEntity<DepartmentIncidentStats> getDepartmentIncidentStats(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long departmentId) {
+        return ResponseEntity.ok(incidentService.getDepartmentIncidentStats(companyId, departmentId));
     }
 
 }

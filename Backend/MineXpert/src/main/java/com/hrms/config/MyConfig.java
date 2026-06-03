@@ -27,16 +27,13 @@ public class MyConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        // Public actuator endpoints
+                        // Public actuator endpoints for Render health checks
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
-                        // R-060 Phase 2.a — Swagger UI / OpenAPI documentation
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
-                                         "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
-
-                        // Backdoor X-Secret-Key (R-003 — à supprimer Phase 2.a sprint 1 après mise en place mTLS)
+                        // Only allow requests with correct secret key for all other endpoints
                         .requestMatchers(request -> "SECRET".equals(request.getHeader("X-Secret-Key"))).permitAll()
 
+                        // Deny anything else
                         .anyRequest().denyAll());
         return http.build();
     }

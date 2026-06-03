@@ -27,7 +27,8 @@ public class ModuleManagementController {
     }
 
     @PutMapping("/status/{id}")
-    public ResponseEntity<ModuleManagementDTO> updateStatus(@PathVariable Long id, @RequestParam Status status) throws HSException {
+    public ResponseEntity<ModuleManagementDTO> updateStatus(@PathVariable Long id, @RequestParam Status status)
+            throws HSException {
         return ResponseEntity.ok(service.updateStatus(id, status));
     }
 
@@ -46,4 +47,3 @@ public class ModuleManagementController {
         return ResponseEntity.ok(service.getAll());
     }
 }
-

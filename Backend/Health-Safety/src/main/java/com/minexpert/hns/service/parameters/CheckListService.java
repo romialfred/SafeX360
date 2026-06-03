@@ -7,19 +7,19 @@ import com.minexpert.hns.dto.response.CheckListDetails;
 import com.minexpert.hns.exception.HSException;
 
 public interface CheckListService {
-    public Long addCheckList(CheckListDTO checkListDTO) throws HSException;
+    public Long addCheckList(Long companyId, CheckListDTO checkListDTO) throws HSException;
 
-    public void updateCheckList(CheckListDTO checkListDTO) throws HSException;
+    public void updateCheckList(Long companyId, CheckListDTO checkListDTO) throws HSException;
 
-    public void deleteCheckList(Long id);
+    public void deleteCheckList(Long companyId, Long id) throws HSException;
 
-    public CheckListDTO getCheckListById(Long id) throws HSException;
+    public CheckListDTO getCheckListById(Long companyId, Long id) throws HSException;
 
-    public List<CheckListDetails> getAllCheckLists() throws HSException;
+    public List<CheckListDetails> getAllCheckLists(Long companyId) throws HSException;
 
-    public List<CheckListDetails> getAllActiveCheckLists() throws HSException;
+    public List<CheckListDetails> getAllActiveCheckLists(Long companyId) throws HSException;
 
-    public void activateCheckList(Long id) throws HSException;
+    public void activateCheckList(Long companyId, Long id) throws HSException;
 
-    public void deactivateCheckList(Long id) throws HSException;
+    public void deactivateCheckList(Long companyId, Long id) throws HSException;
 }

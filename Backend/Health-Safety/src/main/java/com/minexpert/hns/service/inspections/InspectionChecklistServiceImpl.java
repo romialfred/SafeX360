@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.inspections.InspectionChecklistDTO;
@@ -26,6 +29,11 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     private MediaService mediaService;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "inspectionChecklistById", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionChecklistsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionChecklistsByInspection", allEntries = true)
+    })
     public Long createChecklist(InspectionChecklistDTO checklistDTO) {
         checklistDTO.setCreatedAt(LocalDateTime.now());
         checklistDTO.setUpdatedAt(LocalDateTime.now());
@@ -37,6 +45,7 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionChecklistById", key = "#id")
     public InspectionChecklistDTO getChecklistById(Long id) throws HSException {
         InspectionChecklist checklist = inspectionChecklistRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECKLIST_NOT_FOUND"));
@@ -46,6 +55,11 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionChecklistById", key = "#checklistDTO.id", condition = "#checklistDTO.id != null"),
+            @CacheEvict(cacheNames = "inspectionChecklistsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionChecklistsByInspection", allEntries = true)
+    })
     public void updateChecklist(InspectionChecklistDTO checklistDTO) throws HSException {
         InspectionChecklist existingChecklist = inspectionChecklistRepository.findById(checklistDTO.getId())
                 .orElseThrow(() -> new HSException("CHECKLIST_NOT_FOUND"));
@@ -60,11 +74,17 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionChecklistById", key = "#id"),
+            @CacheEvict(cacheNames = "inspectionChecklistsAll", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionChecklistsByInspection", allEntries = true)
+    })
     public void deleteChecklist(Long id) {
         inspectionChecklistRepository.deleteById(id);
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionChecklistsAll")
     public List<InspectionChecklistDTO> getAllChecklists() {
         List<InspectionChecklistDTO> checklists = ((List<InspectionChecklist>) inspectionChecklistRepository.findAll())
                 .stream().map(x -> {
@@ -76,6 +96,7 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionChecklistsByInspection", key = "#inspectionId")
     public List<InspectionChecklistDTO> getChecklistsByInspectionId(Long inspectionId) {
         List<InspectionChecklistDTO> checklists = ((List<InspectionChecklist>) inspectionChecklistRepository
                 .findByGeneralInspection_Id(inspectionId)).stream().map(x -> {

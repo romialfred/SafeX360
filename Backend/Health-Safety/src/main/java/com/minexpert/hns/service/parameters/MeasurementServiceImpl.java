@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.parameters.MeasurementDTO;
@@ -19,12 +22,30 @@ public class MeasurementServiceImpl implements MeasurementService {
     @Autowired
     private MeasurementRepository measurementRepository;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
+    private Measurement loadMeasurement(Long companyId, Long id) throws HSException {
+        return measurementRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
+    }
+
     @Override
-    public Long addMeasurement(MeasurementDTO measurementDTO) throws HSException {
-        Optional<Measurement> optional = measurementRepository.findByNameIgnoreCase(measurementDTO.getName());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addMeasurement(Long companyId, MeasurementDTO measurementDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<Measurement> optional = measurementRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                measurementDTO.getName());
         if (optional.isPresent()) {
             throw new HSException("MEASUREMENT_ALREADY_EXISTS");
         }
+        measurementDTO.setCompanyId(companyId);
         measurementDTO.setStatus(Status.ACTIVE);
         measurementDTO.setCreatedAt(LocalDateTime.now());
         measurementDTO.setUpdatedAt(LocalDateTime.now());
@@ -32,11 +53,17 @@ public class MeasurementServiceImpl implements MeasurementService {
     }
 
     @Override
-    public void updateMeasurement(MeasurementDTO measurementDTO) throws HSException {
-        Measurement measurement = measurementRepository.findById(measurementDTO.getId())
-                .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementById", key = "#companyId != null && #measurementDTO.id != null ? (#companyId + '-' + #measurementDTO.id) : 'ALL-' + #measurementDTO.id", condition = "#measurementDTO.id != null")
+    })
+    public void updateMeasurement(Long companyId, MeasurementDTO measurementDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Measurement measurement = loadMeasurement(companyId, measurementDTO.getId());
         if (!measurementDTO.getName().equalsIgnoreCase(measurement.getName())) {
-            Optional<Measurement> optional = measurementRepository.findByNameIgnoreCase(measurementDTO.getName());
+            Optional<Measurement> optional = measurementRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                    measurementDTO.getName());
             if (optional.isPresent() && !optional.get().getId().equals(measurement.getId())) {
                 throw new HSException("MEASUREMENT_ALREADY_EXISTS");
             }
@@ -45,47 +72,70 @@ public class MeasurementServiceImpl implements MeasurementService {
         measurement.setName(measurementDTO.getName());
         measurement.setDescription(measurementDTO.getDescription());
         measurement.setUnit(measurementDTO.getUnit());
-        measurement.setUpdatedAt(LocalDateTime.now());
+        measurement.setNormalValue(measurementDTO.getNormalValue());
         measurement.setThreshold(measurementDTO.getThreshold());
+        measurement.setCompanyId(companyId);
+        measurement.setUpdatedAt(LocalDateTime.now());
         measurementRepository.save(measurement);
     }
 
     @Override
-    public void deleteMeasurement(Long id) {
-        measurementRepository.deleteById(id);
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    })
+    public void deleteMeasurement(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Measurement measurement = loadMeasurement(companyId, id);
+        measurementRepository.delete(measurement);
     }
 
     @Override
-    public MeasurementDTO getMeasurementById(Long id) throws HSException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMeasurementById'");
+    @Cacheable(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public MeasurementDTO getMeasurementById(Long companyId, Long id) throws HSException {
+        return loadMeasurement(companyId, id).toDTO();
     }
 
     @Override
-    public List<MeasurementDTO> getAllMeasurements() throws HSException {
-        List<Measurement> measurements = (List<Measurement>) measurementRepository.findAll();
+    @Cacheable(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<MeasurementDTO> getAllMeasurements(Long companyId) throws HSException {
+        List<Measurement> measurements = measurementRepository.findAllWithCompany(companyId);
         return measurements.stream().map(Measurement::toDTO).toList();
     }
 
     @Override
-    public List<MeasurementDTO> getAllActiveMeasurements() throws HSException {
-        List<Measurement> measurements = (List<Measurement>) measurementRepository.findByStatus(Status.ACTIVE);
+    @Cacheable(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<MeasurementDTO> getAllActiveMeasurements(Long companyId) throws HSException {
+        List<Measurement> measurements = measurementRepository.findAllByStatus(companyId, Status.ACTIVE);
         return measurements.stream().map(Measurement::toDTO).toList();
     }
 
     @Override
-    public void activateMeasurement(Long id) throws HSException {
-        Measurement measurement = measurementRepository.findById(id)
-                .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    })
+    public void activateMeasurement(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Measurement measurement = loadMeasurement(companyId, id);
         measurement.setStatus(Status.ACTIVE);
+        measurement.setUpdatedAt(LocalDateTime.now());
         measurementRepository.save(measurement);
     }
 
     @Override
-    public void deactivateMeasurement(Long id) throws HSException {
-        Measurement measurement = measurementRepository.findById(id)
-                .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "measurementsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    })
+    public void deactivateMeasurement(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Measurement measurement = loadMeasurement(companyId, id);
         measurement.setStatus(Status.INACTIVE);
+        measurement.setUpdatedAt(LocalDateTime.now());
         measurementRepository.save(measurement);
     }
 

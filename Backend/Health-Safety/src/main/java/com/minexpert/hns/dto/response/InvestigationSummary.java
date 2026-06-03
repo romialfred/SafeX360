@@ -23,4 +23,6 @@ public interface InvestigationSummary {
     InvestigationStatus getStatus();
 
     Integer getProgress();
+
+    Long getCompanyId();
 }

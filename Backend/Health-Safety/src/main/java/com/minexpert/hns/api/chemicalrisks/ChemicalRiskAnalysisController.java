@@ -40,4 +40,3 @@ public class ChemicalRiskAnalysisController {
         return ResponseEntity.ok(analysisService.getById(id));
     }
 }
-

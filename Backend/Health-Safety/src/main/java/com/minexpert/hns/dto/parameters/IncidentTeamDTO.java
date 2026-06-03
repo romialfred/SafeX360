@@ -17,10 +17,12 @@ public class IncidentTeamDTO {
     private String departmentName;
     private String name;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public IncidentTeam toEntity() {
-        return new IncidentTeam(this.id, this.departmentId, this.name, status, this.createdAt, this.updatedAt);
+        return new IncidentTeam(this.id, this.departmentId, this.name, status, this.companyId, this.createdAt,
+                this.updatedAt);
     }
 }

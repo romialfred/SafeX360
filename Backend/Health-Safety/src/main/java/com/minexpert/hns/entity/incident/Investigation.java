@@ -8,6 +8,7 @@ import com.minexpert.hns.dto.response.InvestResponse;
 import com.minexpert.hns.enums.InvestigationStatus;
 import com.minexpert.hns.utility.StringListConverter;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -54,6 +55,8 @@ public class Investigation {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_id", nullable = false)
     private Incident incident;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -68,6 +71,6 @@ public class Investigation {
                 StringListConverter.convertToStringList(taskCauses), taskAnalysis,
                 StringListConverter.convertToStringList(workingCauses), workingAnalysis,
                 StringListConverter.convertToStringList(organizationCauses), organizationAnalysis,
-                null, report, progress, status, incident.getId(), createdAt, updatedAt);
+                null, report, progress, status, incident.getId(), companyId, createdAt, updatedAt);
     }
 }

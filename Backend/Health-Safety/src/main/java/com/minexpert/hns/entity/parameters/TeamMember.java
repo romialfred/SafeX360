@@ -7,6 +7,7 @@ import com.minexpert.hns.enums.Role;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.utility.StringListConverter;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -33,11 +34,14 @@ public class TeamMember {
     private String notificationLevel;
     private Role role;
     private Status status;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public TeamMemberDTO toDTO() {
         return new TeamMemberDTO(id, employeeId, null, team != null ? team.getId() : null,
-                StringListConverter.convertToLongList(notificationLevel), role, status, createdAt, updatedAt);
+                StringListConverter.convertToLongList(notificationLevel), role, status, companyId, createdAt,
+                updatedAt);
     }
 }

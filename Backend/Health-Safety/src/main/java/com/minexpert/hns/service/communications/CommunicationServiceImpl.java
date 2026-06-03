@@ -1,5 +1,6 @@
 package com.minexpert.hns.service.communications;
 
+import com.minexpert.hns.config.CommunicationCacheNames;
 import com.minexpert.hns.dto.communications.CommTimeDTO;
 import com.minexpert.hns.dto.communications.CommunicationDTO;
 import com.minexpert.hns.dto.communications.CommunicationStatsDTO;
@@ -14,12 +15,6 @@ import com.minexpert.hns.repository.communications.projection.CommunicationSumma
 import com.minexpert.hns.service.MediaService;
 import com.minexpert.hns.utility.StringListConverter;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -28,6 +23,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +44,12 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {
+            CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            CommunicationCacheNames.COMMUNICATION_STATS
+    }, allEntries = true)
     public CommunicationDTO create(CommunicationDTO dto) throws HSException {
         Communication comm = dto.toEntity();
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
@@ -63,6 +74,15 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, key = "#dto.id"),
+            @CacheEvict(cacheNames = {
+                    CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+                    CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+                    CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+                    CommunicationCacheNames.COMMUNICATION_STATS
+            }, allEntries = true)
+    })
     public CommunicationDTO update(CommunicationDTO dto) throws HSException {
         Communication existing = communicationRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
@@ -83,6 +103,7 @@ public class CommunicationServiceImpl implements CommunicationService {
     }
 
     @Override
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, key = "#id")
     public CommunicationDTO getById(Long id) throws HSException {
         Communication comm = communicationRepository.findById(id)
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
@@ -91,23 +112,27 @@ public class CommunicationServiceImpl implements CommunicationService {
     }
 
     @Override
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_SUMMARIES)
     public List<CommunicationSummaryView> getAll() throws HSException {
         return communicationRepository.findAllSummaries();
     }
 
     @Override
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES, key = "#limit")
     public List<CommunicationSummaryView> getRecentSummaries(int limit) throws HSException {
         int size = limit > 0 ? limit : 5;
         return communicationRepository.findSummaries(PageRequest.of(0, size));
     }
 
     @Override
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT, key = "#departmentId")
     public List<CommunicationDTO> getByDepartmentId(Long departmentId) throws HSException {
         List<Communication> communications = communicationRepository.findByDepartmentId(departmentId);
         return mapToDtos(communications);
     }
 
     @Override
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_STATS)
     public CommunicationStatsDTO getCounts() throws HSException {
         List<CommunicationStatsDTO.TypeCount> byType = communicationRepository.countByType()
                 .stream()
@@ -129,6 +154,12 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {
+            CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            CommunicationCacheNames.COMMUNICATION_STATS
+    }, allEntries = true)
     public CommunicationDTO resumeSchedule(Long communicationId) throws HSException {
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
@@ -139,6 +170,13 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {
+            CommunicationCacheNames.COMMUNICATION_BY_ID,
+            CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            CommunicationCacheNames.COMMUNICATION_STATS
+    }, allEntries = true)
     public CommunicationDTO pauseSchedule(Long communicationId) throws HSException {
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
@@ -151,6 +189,13 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {
+            CommunicationCacheNames.COMMUNICATION_BY_ID,
+            CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            CommunicationCacheNames.COMMUNICATION_STATS
+    }, allEntries = true)
     public CommunicationDTO cancelSchedule(Long communicationId) throws HSException {
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
@@ -163,6 +208,13 @@ public class CommunicationServiceImpl implements CommunicationService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {
+            CommunicationCacheNames.COMMUNICATION_BY_ID,
+            CommunicationCacheNames.COMMUNICATION_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            CommunicationCacheNames.COMMUNICATION_STATS
+    }, allEntries = true)
     public CommTimeDTO sendNow(Long communicationId) throws HSException {
         Communication communication = communicationRepository.findById(communicationId)
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));

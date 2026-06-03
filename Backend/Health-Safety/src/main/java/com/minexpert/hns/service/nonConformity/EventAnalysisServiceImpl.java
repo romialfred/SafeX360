@@ -2,6 +2,9 @@ package com.minexpert.hns.service.nonConformity;
 
 import java.time.LocalDateTime;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,13 @@ public class EventAnalysisServiceImpl implements EventAnalysisService {
     private final EventAnalysisRepository eventAnalysisRepository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", key = "#eventAnalysisDTO.nonConformityId"),
+            @CacheEvict(cacheNames = "nonConformityById", key = "#eventAnalysisDTO.nonConformityId"),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#eventAnalysisDTO.nonConformityId")
+    })
     public Long createEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException {
 
         if (eventAnalysisRepository.existsByNonConformityId(eventAnalysisDTO.getNonConformityId())) {
@@ -31,12 +41,20 @@ public class EventAnalysisServiceImpl implements EventAnalysisService {
     }
 
     @Override
+    @Cacheable(cacheNames = "eventAnalysisByNonConformity", key = "#nonConformityId")
     public EventAnalysisDTO getEventAnalysisByNonConformityId(Long nonConformityId) throws HSException {
         return eventAnalysisRepository.findByNonConformityId(nonConformityId)
                 .orElseThrow(() -> new HSException("EVENT_ANALYSIS_NOT_FOUND_FOR_NON_CONFORMITY")).toDTO();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", key = "#eventAnalysisDTO.nonConformityId"),
+            @CacheEvict(cacheNames = "nonConformityById", key = "#eventAnalysisDTO.nonConformityId"),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#eventAnalysisDTO.nonConformityId")
+    })
     public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException {
         EventAnalysis eventAnalysis = eventAnalysisRepository.findById(eventAnalysisDTO.getId())
                 .orElseThrow(() -> new HSException("EVENT_ANALYSIS_NOT_FOUND"));

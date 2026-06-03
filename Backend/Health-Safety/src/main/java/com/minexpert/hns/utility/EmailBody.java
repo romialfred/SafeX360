@@ -1,8 +1,8 @@
 package com.minexpert.hns.utility;
 
 public class EmailBody {
-    public static String buildDemoEmailBody() {
-        return """
+    public static String buildDemoEmailBody(String content) {
+        return String.format("""
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -66,7 +66,7 @@ public class EmailBody {
                         </div>
                         <div class="content">
                             <p>Hello,</p>
-                            <p>This is a sample email body to demonstrate sending HTML emails using Spring Boot. You can customize this layout for announcements, notifications, or newsletters.</p>
+                            <p>%s</p>
                             <p>
                                 <a href="https://your-company.com" class="button">Visit Website</a>
                             </p>
@@ -77,7 +77,7 @@ public class EmailBody {
                     </div>
                 </body>
                 </html>
-                """;
+                """, content);
     }
 
 }

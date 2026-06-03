@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.parameters.CheckListDTO;
@@ -20,13 +23,26 @@ public class CheckListServiceImpl implements CheckListService {
     @Autowired
     private CheckListRepository checkListRepository;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
     @Override
-    public Long addCheckList(CheckListDTO checkListDTO) throws HSException {
-        Optional<CheckList> optional = checkListRepository.findByNameIgnoreCase(checkListDTO.getName());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addCheckList(Long companyId, CheckListDTO checkListDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<CheckList> optional = checkListRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                checkListDTO.getName());
         if (optional.isPresent()) {
             throw new HSException("CHECK_LIST_ALREADY_EXISTS");
         }
         checkListDTO.setStatus(Status.ACTIVE);
+        checkListDTO.setCompanyId(companyId);
         checkListDTO.setCreatedAt(LocalDateTime.now());
         checkListDTO.setUpdatedAt(LocalDateTime.now());
         CheckList savedCheckList = checkListRepository.save(checkListDTO.toEntity());
@@ -35,11 +51,21 @@ public class CheckListServiceImpl implements CheckListService {
     }
 
     @Override
-    public void updateCheckList(CheckListDTO checkListDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "checkListById", key = "#companyId != null ? (#companyId + '-' + #checkListDTO.id) : 'ALL-' + #checkListDTO.id", condition = "#checkListDTO.id != null"),
+            @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateCheckList(Long companyId, CheckListDTO checkListDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(checkListDTO.getId())
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
+        if (!companyId.equals(existingCheckList.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
         if (!existingCheckList.getName().equalsIgnoreCase(checkListDTO.getName())) {
-            Optional<CheckList> optional = checkListRepository.findByNameIgnoreCase(checkListDTO.getName());
+            Optional<CheckList> optional = checkListRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                    checkListDTO.getName());
             if (optional.isPresent()) {
                 throw new HSException("CHECK_LIST_ALREADY_EXISTS");
             }
@@ -51,43 +77,78 @@ public class CheckListServiceImpl implements CheckListService {
     }
 
     @Override
-    public void deleteCheckList(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteCheckList'");
-    }
-
-    @Override
-    public CheckListDTO getCheckListById(Long id) throws HSException {
-        return checkListRepository.findById(id).map(CheckList::toDTO)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "checkListById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteCheckList(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        CheckList checkList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
+        if (!companyId.equals(checkList.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
+        checkListRepository.delete(checkList);
     }
 
     @Override
-    public void activateCheckList(Long id) throws HSException {
+    @Cacheable(cacheNames = "checkListById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public CheckListDTO getCheckListById(Long companyId, Long id) throws HSException {
+        CheckList checkList = checkListRepository.findById(id)
+                .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(checkList.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
+        return checkList.toDTO();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "checkListById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateCheckList(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
+        if (!companyId.equals(existingCheckList.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
         existingCheckList.setStatus(Status.ACTIVE);
         existingCheckList.setUpdatedAt(LocalDateTime.now());
         checkListRepository.save(existingCheckList);
     }
 
     @Override
-    public void deactivateCheckList(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "checkListById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateCheckList(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
+        if (!companyId.equals(existingCheckList.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
         existingCheckList.setStatus(Status.INACTIVE);
         existingCheckList.setUpdatedAt(LocalDateTime.now());
         checkListRepository.save(existingCheckList);
     }
 
     @Override
-    public List<CheckListDetails> getAllCheckLists() throws HSException {
-        return checkListRepository.findAllWithName();
+    @Cacheable(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CheckListDetails> getAllCheckLists(Long companyId) throws HSException {
+        return checkListRepository.findAllWithName(companyId);
     }
 
     @Override
-    public List<CheckListDetails> getAllActiveCheckLists() throws HSException {
-        return checkListRepository.findAllActiveTypes();
+    @Cacheable(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CheckListDetails> getAllActiveCheckLists(Long companyId) throws HSException {
+        return checkListRepository.findAllByStatus(companyId, Status.ACTIVE);
     }
 
 }

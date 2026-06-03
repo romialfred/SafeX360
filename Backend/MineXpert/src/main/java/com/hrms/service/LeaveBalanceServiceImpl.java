@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.hrms.DataInterface.EmployeeLeaveBalance;
-import com.hrms.dto.EmployeeDTO;
 import com.hrms.dto.LeaveBalanceDTO;
 import com.hrms.entity.LeaveBalance;
 import com.hrms.exception.HRMSException;
@@ -17,41 +19,72 @@ import com.hrms.repository.LeaveBalanceRepository;
 
 @Service
 public class LeaveBalanceServiceImpl implements LeaveBalanceService {
+
     @Autowired
     private LeaveBalanceRepository leaveBalanceRepository;
+
     @Autowired
     private EmployeeRepository employeeRepository;
+
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "leaveBalancesAll", allEntries = true),
+            @CacheEvict(cacheNames = "leaveBalanceLatestByEmp", allEntries = true)
+    })
     public void addAllRecords(List<LeaveBalanceDTO> leaveBalanceDTOs) throws HRMSException {
-        leaveBalanceRepository.saveAll(leaveBalanceDTOs.stream().map((x) -> {
-            x.setLoadDate(LocalDateTime.now());
-            return x.toEntity();
+        leaveBalanceRepository.saveAll(leaveBalanceDTOs.stream().map(leaveBalance -> {
+            leaveBalance.setLoadDate(LocalDateTime.now());
+            return leaveBalance.toEntity();
         }).toList());
-    }
-    @Override
-    public void updateRecord(LeaveBalanceDTO leaveBalanceDTO) throws HRMSException {
-       leaveBalanceRepository.save(leaveBalanceDTO.toEntity());
-    }
-    @Override
-    public void deductLeaveBalance(LeaveBalanceDTO leaveBalanceDTO) throws HRMSException {
-       LeaveBalance leaveBalance = leaveBalanceRepository.findById(leaveBalanceDTO.getId()).orElseThrow(() ->new HRMSException("RECORD_NOT_FOUND"));
-       if(leaveBalance.getTotalLeaveBalance()<leaveBalanceDTO.getTotalLeaveBalance())throw new HRMSException("NOT_ENOUGH_LEAVE");
-       leaveBalance.setTotalLeaveBalance(leaveBalance.getTotalLeaveBalance()-leaveBalanceDTO.getTotalLeaveBalance());
-       leaveBalanceRepository.save(leaveBalance);
     }
 
     @Override
-    public List<LeaveBalanceDTO> getAllRecords() throws HRMSException {
-       return ((List<LeaveBalance>)leaveBalanceRepository.findAll()).stream().map((x)->x.toDTO()).toList();
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "leaveBalancesAll", allEntries = true),
+            @CacheEvict(cacheNames = "leaveBalanceLatestByEmp", key = "#leaveBalanceDTO.empNumber", condition = "#leaveBalanceDTO.empNumber != null")
+    })
+    public void updateRecord(LeaveBalanceDTO leaveBalanceDTO) throws HRMSException {
+        leaveBalanceRepository.save(leaveBalanceDTO.toEntity());
     }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "leaveBalancesAll", allEntries = true),
+            @CacheEvict(cacheNames = "leaveBalanceLatestByEmp", key = "#leaveBalanceDTO.empNumber", condition = "#leaveBalanceDTO.empNumber != null")
+    })
+    public void deductLeaveBalance(LeaveBalanceDTO leaveBalanceDTO) throws HRMSException {
+        LeaveBalance leaveBalance = leaveBalanceRepository.findById(leaveBalanceDTO.getId())
+                .orElseThrow(() -> new HRMSException("RECORD_NOT_FOUND"));
+        if (leaveBalance.getTotalLeaveBalance() < leaveBalanceDTO.getTotalLeaveBalance()) {
+            throw new HRMSException("NOT_ENOUGH_LEAVE");
+        }
+        leaveBalance.setTotalLeaveBalance(
+                leaveBalance.getTotalLeaveBalance() - leaveBalanceDTO.getTotalLeaveBalance());
+        leaveBalanceRepository.save(leaveBalance);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "leaveBalancesAll")
+    public List<LeaveBalanceDTO> getAllRecords() throws HRMSException {
+        return ((List<LeaveBalance>) leaveBalanceRepository.findAll()).stream()
+                .map(LeaveBalance::toDTO)
+                .toList();
+    }
+
     public EmployeeLeaveBalance checkEmployeeLeaveBalance(LeaveBalanceDTO leaveBalanceDTO) throws HRMSException {
-        EmployeeLeaveBalance employeeDTO=employeeRepository.findByUniqueNumber(leaveBalanceDTO.getEmpNumber()).orElseThrow(()->new HRMSException("EMPLOYEE_NOT_FOUND"));
-        Optional <LeaveBalance> opt=leaveBalanceRepository.findByAsOfDateAndEmpNumber(leaveBalanceDTO.getAsOfDate(),leaveBalanceDTO.getEmpNumber());
-        if(opt.isPresent())throw new HRMSException("DUPLICATE_ENTRY");
+        EmployeeLeaveBalance employeeDTO = employeeRepository.findByUniqueNumber(leaveBalanceDTO.getEmpNumber())
+                .orElseThrow(() -> new HRMSException("EMPLOYEE_NOT_FOUND"));
+        Optional<LeaveBalance> opt = leaveBalanceRepository
+                .findByAsOfDateAndEmpNumber(leaveBalanceDTO.getAsOfDate(), leaveBalanceDTO.getEmpNumber());
+        if (opt.isPresent())
+            throw new HRMSException("DUPLICATE_ENTRY");
         return employeeDTO;
     }
+
     @Override
-    public LeaveBalanceDTO getLatestLeaveBalance(String empNumber) throws HRMSException{
-        return leaveBalanceRepository.findLatestByEmpNumber(empNumber).orElseThrow(()->new HRMSException(empNumber)).toDTO();
+    @Cacheable(cacheNames = "leaveBalanceLatestByEmp", key = "#empNumber")
+    public LeaveBalanceDTO getLatestLeaveBalance(String empNumber) throws HRMSException {
+        return leaveBalanceRepository.findLatestByEmpNumber(empNumber)
+                .orElseThrow(() -> new HRMSException(empNumber)).toDTO();
     }
 }

@@ -73,8 +73,7 @@ public class CommunicationSendService {
         // for (Recipient recipient : recipients) {
         // messageSender.send(recipient.email(), subject, body);
         // }
-        System.out.println(recipients);
-        String body = EmailBody.buildDemoEmailBody();
+        String body = EmailBody.buildDemoEmailBody(communication.getContent());
         emailService.sendWithToCcBcc(recipients, List.of(), List.of(), subject, body, attachments)
                 .whenComplete((res, ex) -> {
                     if (ex != null) {

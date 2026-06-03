@@ -35,6 +35,7 @@ public class InvestResponse {
     private Integer progress;
     private InvestigationStatus status;
     private Long incidentId;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

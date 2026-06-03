@@ -16,12 +16,13 @@ public class WorkProcessDTO {
     private Long id;
     private String name;
     private Long departmentId;
+    private Long companyId;
     private String departmentName;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public WorkProcess toEntity() {
-        return new WorkProcess(id, name, departmentId, status, createdAt, updatedAt);
+        return new WorkProcess(id, name, departmentId, companyId, status, createdAt, updatedAt);
     }
 }

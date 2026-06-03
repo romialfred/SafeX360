@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.clients.HrmsClient;
@@ -26,13 +29,26 @@ public class AuditAreasServiceImpl implements AuditAreasService {
     private final AuditAreasRepository auditAreasRepository;
     private final HrmsClient hrmsClient;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
     @Override
-    public Long addAuditArea(AuditAreasDTO auditAreasDTO) throws HSException {
-        Optional<AuditAreas> opt = auditAreasRepository.findByNameIgnoreCase(auditAreasDTO.getName());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addAuditArea(Long companyId, AuditAreasDTO auditAreasDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<AuditAreas> opt = auditAreasRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                auditAreasDTO.getName());
         if (opt.isPresent()) {
             throw new HSException("AUDIT_AREA_NAME_ALREADY_EXISTS");
         }
         auditAreasDTO.setStatus(Status.ACTIVE);
+        auditAreasDTO.setCompanyId(companyId);
         auditAreasDTO.setCreatedAt(LocalDateTime.now());
         auditAreasDTO.setUpdatedAt(LocalDateTime.now());
         return auditAreasRepository.save(auditAreasDTO.toEntity()).getId();
@@ -40,19 +56,36 @@ public class AuditAreasServiceImpl implements AuditAreasService {
     }
 
     @Override
-    public void deleteAuditArea(Long id) {
-        auditAreasRepository.deleteById(id);
-    }
-
-    @Override
-    public AuditAreasDTO getAuditAreaById(Long id) throws HSException {
-        return auditAreasRepository.findById(id).map(AuditAreas::toDTO)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "auditAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteAuditArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
+        if (!companyId.equals(auditAreas.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
+        auditAreasRepository.delete(auditAreas);
     }
 
     @Override
-    public List<AuditAreasDTO> getAllAuditAreas() {
-        List<AuditAreasDTO> areas = ((List<AuditAreas>) auditAreasRepository.findAll())
+    @Cacheable(cacheNames = "auditAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public AuditAreasDTO getAuditAreaById(Long companyId, Long id) throws HSException {
+        AuditAreas auditAreas = auditAreasRepository.findById(id)
+                .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(auditAreas.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
+        return auditAreas.toDTO();
+    }
+
+    @Override
+    @Cacheable(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<AuditAreasDTO> getAllAuditAreas(Long companyId) throws HSException {
+        List<AuditAreasDTO> areas = auditAreasRepository.findAllByCompanyId(companyId)
                 .stream()
                 .map(AuditAreas::toDTO)
                 .toList();
@@ -61,8 +94,9 @@ public class AuditAreasServiceImpl implements AuditAreasService {
     }
 
     @Override
-    public List<AuditAreasDTO> getAllActiveAuditAreas() {
-        List<AuditAreasDTO> areas = ((List<AuditAreas>) auditAreasRepository.findByStatus(Status.ACTIVE))
+    @Cacheable(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<AuditAreasDTO> getAllActiveAuditAreas(Long companyId) throws HSException {
+        List<AuditAreasDTO> areas = auditAreasRepository.findAllByStatus(companyId, Status.ACTIVE)
                 .stream()
                 .map(AuditAreas::toDTO)
                 .toList();
@@ -89,29 +123,57 @@ public class AuditAreasServiceImpl implements AuditAreasService {
     }
 
     @Override
-    public void activateAuditArea(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "auditAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateAuditArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
+        if (!companyId.equals(auditAreas.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
         auditAreas.setStatus(Status.ACTIVE);
         auditAreas.setUpdatedAt(LocalDateTime.now());
         auditAreasRepository.save(auditAreas);
     }
 
     @Override
-    public void deactivateAuditArea(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "auditAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateAuditArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
+        if (!companyId.equals(auditAreas.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
         auditAreas.setStatus(Status.INACTIVE);
         auditAreas.setUpdatedAt(LocalDateTime.now());
         auditAreasRepository.save(auditAreas);
     }
 
     @Override
-    public void updateAuditArea(AuditAreasDTO auditAreasDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "auditAreaById", key = "#companyId != null ? (#companyId + '-' + #auditAreasDTO.id) : 'ALL-' + #auditAreasDTO.id", condition = "#auditAreasDTO.id != null"),
+            @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateAuditArea(Long companyId, AuditAreasDTO auditAreasDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(auditAreasDTO.getId())
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
+        if (!companyId.equals(auditAreas.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
         if (!auditAreas.getName().equalsIgnoreCase(auditAreasDTO.getName())) {
-            Optional<AuditAreas> opt = auditAreasRepository.findByNameIgnoreCase(auditAreasDTO.getName());
+            Optional<AuditAreas> opt = auditAreasRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                    auditAreasDTO.getName());
             if (opt.isPresent()) {
                 throw new HSException("AUDIT_AREA_NAME_ALREADY_EXISTS");
             }

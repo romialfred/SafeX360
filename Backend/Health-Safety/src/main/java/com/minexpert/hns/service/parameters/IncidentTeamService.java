@@ -8,22 +8,22 @@ import com.minexpert.hns.dto.parameters.TeamResponse;
 import com.minexpert.hns.exception.HSException;
 
 public interface IncidentTeamService {
-    public void addIncidentTeam(TeamRequest teamRequest) throws HSException;
+    public void addIncidentTeam(Long companyId, TeamRequest teamRequest) throws HSException;
 
-    public void updateIncidentTeam(TeamRequest teamRequest) throws HSException;
+    public void updateIncidentTeam(Long companyId, TeamRequest teamRequest) throws HSException;
 
-    public void deleteIncidentTeam(Long id);
+    public void deleteIncidentTeam(Long companyId, Long id) throws HSException;
 
-    public IncidentTeamDTO getIncidentTeamById(Long id) throws HSException;
+    public IncidentTeamDTO getIncidentTeamById(Long companyId, Long id) throws HSException;
 
-    public List<IncidentTeamDTO> getAllIncidentTeams() throws HSException;
+    public List<IncidentTeamDTO> getAllIncidentTeams(Long companyId) throws HSException;
 
-    public List<IncidentTeamDTO> getAllActiveIncidentTeams() throws HSException;
+    public List<IncidentTeamDTO> getAllActiveIncidentTeams(Long companyId) throws HSException;
 
-    public void activateIncidentTeam(Long id) throws HSException;
+    public void activateIncidentTeam(Long companyId, Long id) throws HSException;
 
-    public void deactivateIncidentTeam(Long id) throws HSException;
+    public void deactivateIncidentTeam(Long companyId, Long id) throws HSException;
 
-    public TeamResponse getTeamDetailsById(Long id) throws HSException;
+    public TeamResponse getTeamDetailsById(Long companyId, Long id) throws HSException;
 
 }

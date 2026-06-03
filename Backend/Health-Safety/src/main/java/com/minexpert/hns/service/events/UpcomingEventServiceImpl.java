@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,8 @@ import com.minexpert.hns.repository.nonConformity.NonConformityRepository;
 
 @Service
 public class UpcomingEventServiceImpl implements UpcomingEventService {
+
+    public static final String CACHE_UPCOMING_EVENTS = "upcomingEvents";
 
     private static final List<EventStatus> EXCLUDED_NON_CONFORMITY_STATUSES =
             List.of(EventStatus.CLOSED, EventStatus.CANCELLED);
@@ -44,6 +47,7 @@ public class UpcomingEventServiceImpl implements UpcomingEventService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CACHE_UPCOMING_EVENTS)
     public List<UpcomingEventDTO> getUpcomingEvents() {
         LocalDate today = LocalDate.now();
         List<UpcomingEventDTO> events = new ArrayList<>();

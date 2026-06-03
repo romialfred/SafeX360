@@ -8,25 +8,25 @@ import com.minexpert.hns.dto.response.IncidentTypeDetails;
 import com.minexpert.hns.exception.HSException;
 
 public interface IncidentTypeService {
-    public Long addIncidentType(IncidentTypeDTO incidentTypeDTO) throws HSException;
+    Long addIncidentType(Long companyId, IncidentTypeDTO incidentTypeDTO) throws HSException;
 
-    public void updateIncidentType(IncidentTypeDTO incidentTypeDTO) throws HSException;
+    void updateIncidentType(Long companyId, IncidentTypeDTO incidentTypeDTO) throws HSException;
 
-    public void deleteIncidentType(Long id);
+    void deleteIncidentType(Long companyId, Long id) throws HSException;
 
-    public IncidentTypeDTO getIncidentTypeById(Long id) throws HSException;
+    IncidentTypeDTO getIncidentTypeById(Long companyId, Long id) throws HSException;
 
-    public List<IncidentTypeDetails> getAllIncidentTypes() throws HSException;
+    List<IncidentTypeDetails> getAllIncidentTypes(Long companyId) throws HSException;
 
-    public List<IncidentTypeDetails> getAllActiveIncidentTypes() throws HSException;
+    List<IncidentTypeDetails> getAllActiveIncidentTypes(Long companyId) throws HSException;
 
-    public void activateIncidentType(Long id) throws HSException;
+    void activateIncidentType(Long companyId, Long id) throws HSException;
 
-    public void deactivateIncidentType(Long id) throws HSException;
+    void deactivateIncidentType(Long companyId, Long id) throws HSException;
 
-    public List<CategorySeverityCount> countIncidentTypesBySeverityLevel() throws HSException;
+    List<CategorySeverityCount> countIncidentTypesBySeverityLevel(Long companyId) throws HSException;
 
-    public List<CategorySeverityCount> countIncidentTypesByCategory() throws HSException;
+    List<CategorySeverityCount> countIncidentTypesByCategory(Long companyId) throws HSException;
 
-    public List<CategorySeverityCount> countByCategoryAndSeverityLevel() throws HSException;
+    List<CategorySeverityCount> countByCategoryAndSeverityLevel(Long companyId) throws HSException;
 }

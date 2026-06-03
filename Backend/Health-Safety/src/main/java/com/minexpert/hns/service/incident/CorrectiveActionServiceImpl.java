@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.clients.HrmsClient;
@@ -21,28 +24,73 @@ import com.minexpert.hns.repository.incident.CorrectiveActionRepository;
 @Service
 public class CorrectiveActionServiceImpl implements CorrectiveActionService {
 
+    public static final String CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT = "correctiveActionDtosByIncident";
+    public static final String CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT = "correctiveActionResponsesByIncident";
+    public static final String CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION = "correctiveActionsByInspection";
+    public static final String CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY = "correctiveActionsByActivity";
+    public static final String CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT = "correctiveActionsByDepartment";
+    public static final String CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY = "correctiveActionsByNonConformity";
+    public static final String CACHE_CORRECTIVE_ACTIONS_ALL = "correctiveActionsAll";
+    public static final String CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL = "correctiveActionsAdhocAll";
+    public static final String CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING = "correctiveActionsAdhocPending";
+    public static final String CACHE_CORRECTIVE_ACTION_BY_ID = "correctiveActionById";
+    public static final String CACHE_CORRECTIVE_ACTIONS_PENDING = "correctiveActionsPendingAll";
+
     @Autowired
     private CorrectiveActionRepository correctiveActionRepository;
 
     @Autowired
     private HrmsClient hrmsClient;
 
-    @Override
-    public List<CorrectiveActionDTO> getCorrectiveActionsByIncidentId(Long incidentId) throws HSException {
-        return ((List<CorrectiveAction>) correctiveActionRepository.findByIncidentId(incidentId)).stream()
-                .map(CorrectiveAction::toDTO)
-                .toList();
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
 
+    private CorrectiveAction loadActionForCompany(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        CorrectiveAction action = correctiveActionRepository.findById(id)
+                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(action.getCompanyId())) {
+            throw new HSException("CORRECTIVE_ACTION_NOT_FOUND");
+        }
+        return action;
     }
 
     @Override
-    public void deleteCorrectiveAction(Long id) throws HSException {
-        correctiveActionRepository.deleteById(id);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #incidentId) : 'ALL-' + #incidentId")
+    public List<CorrectiveActionDTO> getCorrectiveActionsByIncidentId(Long companyId, Long incidentId)
+            throws HSException {
+        List<CorrectiveAction> actions = correctiveActionRepository.findByIncidentId(companyId, incidentId);
+        return actions.stream().map(CorrectiveAction::toDTO).toList();
     }
 
     @Override
-    public List<CorrectiveActionResponse> getAllActions() throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findAllActions();
+    @Caching(evict = {
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTION_BY_ID,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public void deleteCorrectiveAction(Long companyId, Long id) throws HSException {
+        CorrectiveAction action = loadActionForCompany(companyId, id);
+        correctiveActionRepository.delete(action);
+    }
+
+    @Override
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CorrectiveActionResponse> getAllActions(Long companyId) throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository.findAllActions(companyId);
 
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
@@ -61,8 +109,9 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getAllAdhocActions() throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findAdhocActions();
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CorrectiveActionResponse> getAllAdhocActions(Long companyId) throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository.findAdhocActions(companyId);
 
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
@@ -80,9 +129,10 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getAllPendingAdhocActions() throws HSException {
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CorrectiveActionResponse> getAllPendingAdhocActions(Long companyId) throws HSException {
         List<CorrectiveActionResponse> actions = correctiveActionRepository
-                .findAdhocActionsByStatus(ActionStatus.PENDING);
+                .findAdhocActionsByStatus(companyId, ActionStatus.PENDING);
 
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
@@ -100,8 +150,11 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getActionsByIncidentId(Long incidentId) throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findActionsByIncidentId(incidentId);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #incidentId) : 'ALL-' + #incidentId")
+    public List<CorrectiveActionResponse> getActionsByIncidentId(Long companyId, Long incidentId)
+            throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository.findActionsByIncidentId(companyId,
+                incidentId);
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -118,18 +171,39 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public Long addCorrectiveAction(CorrectiveActionDTO correctiveActionDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTION_BY_ID,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public Long addCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        correctiveActionDTO.setCompanyId(companyId);
         CorrectiveAction correctiveAction = correctiveActionDTO.toEntity();
         correctiveAction.setCreatedAt(LocalDateTime.now());
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveAction.setProgress(0);
+        correctiveAction.setCompanyId(companyId);
         correctiveActionRepository.save(correctiveAction);
         return correctiveAction.getId();
     }
 
     @Override
-    public List<CorrectiveActionResponse> getActionsByInspectionId(Long inspectionId) throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findActionsByInspectionId(inspectionId);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION, key = "#companyId != null ? (#companyId + '-' + #inspectionId) : 'ALL-' + #inspectionId")
+    public List<CorrectiveActionResponse> getActionsByInspectionId(Long companyId, Long inspectionId)
+            throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository
+                .findActionsByInspectionId(companyId, inspectionId);
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -146,8 +220,10 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getActionsByActivityId(Long activityId) throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findActionsByActivityId(activityId);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY, key = "#companyId != null ? (#companyId + '-' + #activityId) : 'ALL-' + #activityId")
+    public List<CorrectiveActionResponse> getActionsByActivityId(Long companyId, Long activityId) throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository
+                .findActionsByActivityId(companyId, activityId);
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -164,8 +240,11 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getActionsByDepartmentId(Long departmentId) throws HSException {
-        List<CorrectiveActionResponse> actions = correctiveActionRepository.findActionsByDepartmentId(departmentId);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT, key = "#companyId != null ? (#companyId + '-' + #departmentId) : 'ALL-' + #departmentId")
+    public List<CorrectiveActionResponse> getActionsByDepartmentId(Long companyId, Long departmentId)
+            throws HSException {
+        List<CorrectiveActionResponse> actions = correctiveActionRepository
+                .findActionsByDepartmentId(companyId, departmentId);
         if (actions.isEmpty()) {
             return actions;
         }
@@ -188,9 +267,23 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public void updateCorrectiveAction(CorrectiveActionDTO correctiveActionDTO) throws HSException {
-        CorrectiveAction correctiveAction = correctiveActionRepository.findById(correctiveActionDTO.getId())
-                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_CORRECTIVE_ACTION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #correctiveActionDTO.id) : 'ALL-' + #correctiveActionDTO.id"),
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public void updateCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException {
+        CorrectiveAction correctiveAction = loadActionForCompany(companyId, correctiveActionDTO.getId());
         correctiveAction.setActionName(correctiveActionDTO.getActionName());
         correctiveAction.setDescription(correctiveActionDTO.getDescription());
         correctiveAction.setAssignedEmployeeId(correctiveActionDTO.getAssignedEmployeeId());
@@ -199,31 +292,62 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         correctiveAction.setDeadline(correctiveActionDTO.getDeadline());
         correctiveAction.setStatus(correctiveActionDTO.getStatus());
         correctiveAction.setUpdatedAt(LocalDateTime.now());
+        correctiveAction.setCompanyId(companyId);
         correctiveActionRepository.save(correctiveAction);
     }
 
     @Override
-    public void approveAction(Long id) throws HSException {
-        CorrectiveAction correctiveAction = correctiveActionRepository.findById(id)
-                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_CORRECTIVE_ACTION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public void approveAction(Long companyId, Long id) throws HSException {
+        CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
         correctiveAction.setStatus(ActionStatus.IN_PROGRESS);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
     }
 
     @Override
-    public void cancelAction(Long id) throws HSException {
-        CorrectiveAction correctiveAction = correctiveActionRepository.findById(id)
-                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_CORRECTIVE_ACTION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public void cancelAction(Long companyId, Long id) throws HSException {
+        CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
         correctiveAction.setStatus(ActionStatus.CANCELLED);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
     }
 
     @Override
-    public List<CorrectiveActionResponse> getActionsByNonConformityId(Long nonConformityId) throws HSException {
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY, key = "#companyId != null ? (#companyId + '-' + #nonConformityId) : 'ALL-' + #nonConformityId")
+    public List<CorrectiveActionResponse> getActionsByNonConformityId(Long companyId, Long nonConformityId)
+            throws HSException {
         List<CorrectiveActionResponse> actions = correctiveActionRepository
-                .findActionsByNonConformityId(nonConformityId);
+                .findActionsByNonConformityId(companyId, nonConformityId);
         List<Long> empIds = actions.stream().map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -240,13 +364,30 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<Long> saveOrUpdateCorrectiveActions(List<CorrectiveActionDTO> correctiveActionDTOs) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTION_BY_ID,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public List<Long> saveOrUpdateCorrectiveActions(Long companyId, List<CorrectiveActionDTO> correctiveActionDTOs)
+            throws HSException {
+        ensureCompanyIdProvided(companyId);
         List<Long> ids = new java.util.ArrayList<>();
         for (CorrectiveActionDTO dto : correctiveActionDTOs) {
             if (dto.getId() == null) {
-                ids.add(addCorrectiveAction(dto));
+                ids.add(addCorrectiveAction(companyId, dto));
             } else {
-                updateCorrectiveAction(dto);
+                updateCorrectiveAction(companyId, dto);
                 ids.add(dto.getId());
             }
         }
@@ -254,8 +395,9 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public CorrectiveActionResponse getCorrectiveActionById(Long id) throws HSException {
-        CorrectiveActionResponse action = correctiveActionRepository.getCorrectiveActionById(id);
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public CorrectiveActionResponse getCorrectiveActionById(Long companyId, Long id) throws HSException {
+        CorrectiveActionResponse action = correctiveActionRepository.getCorrectiveActionById(companyId, id);
         if (action == null) {
             throw new HSException("CORRECTIVE_ACTION_NOT_FOUND");
         }
@@ -271,9 +413,10 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionResponse> getAllPendingActions() throws HSException {
+    @Cacheable(cacheNames = CACHE_CORRECTIVE_ACTIONS_PENDING, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CorrectiveActionResponse> getAllPendingActions(Long companyId) throws HSException {
         List<CorrectiveActionResponse> actions = correctiveActionRepository
-                .findAllActionsByStatus(ActionStatus.PENDING);
+                .findAllActionsByStatus(companyId, ActionStatus.PENDING);
         List<Long> empIds = actions.stream()
                 .map(CorrectiveActionResponse::getAssignedEmployeeId)
                 .filter(Objects::nonNull)

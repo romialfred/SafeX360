@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -31,50 +32,59 @@ public class TeamMemberAPI {
     private TeamMemberService teamMemberService;
 
     @PostMapping("/add")
-    public ResponseEntity<Long> addTeamMember(@RequestBody TeamMemberDTO teamMemberDTO) throws HSException {
-        return new ResponseEntity<>(teamMemberService.addTeamMember(teamMemberDTO),
+    public ResponseEntity<Long> addTeamMember(@RequestParam Long companyId, @RequestBody TeamMemberDTO teamMemberDTO)
+            throws HSException {
+        return new ResponseEntity<>(teamMemberService.addTeamMember(companyId, teamMemberDTO),
                 HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateTeamMember(@RequestBody TeamMemberDTO teamMemberDTO) throws HSException {
-        teamMemberService.updateTeamMember(teamMemberDTO);
+    public ResponseEntity<ResponseDTO> updateTeamMember(@RequestParam Long companyId,
+            @RequestBody TeamMemberDTO teamMemberDTO) throws HSException {
+        teamMemberService.updateTeamMember(companyId, teamMemberDTO);
         return new ResponseEntity<>(new ResponseDTO("Team Member updated successfully."),
                 HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteTeamMember(@PathVariable Long id) throws HSException {
-        teamMemberService.deleteTeamMember(id);
+    public ResponseEntity<ResponseDTO> deleteTeamMember(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        teamMemberService.deleteTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member deleted successfully."),
                 HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<TeamMemberDTO>> getAllTeamMembers() throws HSException {
-        return new ResponseEntity<>(teamMemberService.getAllTeamMembers(), HttpStatus.OK);
+    public ResponseEntity<List<TeamMemberDTO>> getAllTeamMembers(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(teamMemberService.getAllTeamMembers(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<TeamMemberDTO>> getAllActiveTeamMembers() throws HSException {
-        return new ResponseEntity<>(teamMemberService.getAllActiveTeamMembers(), HttpStatus.OK);
+    public ResponseEntity<List<TeamMemberDTO>> getAllActiveTeamMembers(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(teamMemberService.getAllActiveTeamMembers(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<TeamMemberDTO> getTeamMemberByEmployeeId(@PathVariable Long employeeId) throws HSException {
-        return new ResponseEntity<>(teamMemberService.getTeamMemberByEmployeeId(employeeId), HttpStatus.OK);
+    public ResponseEntity<TeamMemberDTO> getTeamMemberByEmployeeId(@RequestParam Long companyId,
+            @PathVariable Long employeeId) throws HSException {
+        return new ResponseEntity<>(teamMemberService.getTeamMemberByEmployeeId(companyId, employeeId),
+                HttpStatus.OK);
     }
 
     @PutMapping("/activate")
-    public ResponseEntity<ResponseDTO> activateTeamMember(@RequestBody Long id) throws HSException {
-        teamMemberService.activateTeamMember(id);
+    public ResponseEntity<ResponseDTO> activateTeamMember(@RequestParam Long companyId, @RequestBody Long id)
+            throws HSException {
+        teamMemberService.activateTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member activated successfully."),
                 HttpStatus.OK);
     }
 
     @PutMapping("/deactivate")
-    public ResponseEntity<ResponseDTO> deactivateTeamMember(@RequestBody Long id) throws HSException {
-        teamMemberService.deactivateTeamMember(id);
+    public ResponseEntity<ResponseDTO> deactivateTeamMember(@RequestParam Long companyId, @RequestBody Long id)
+            throws HSException {
+        teamMemberService.deactivateTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member deactivated successfully."),
                 HttpStatus.OK);
     }

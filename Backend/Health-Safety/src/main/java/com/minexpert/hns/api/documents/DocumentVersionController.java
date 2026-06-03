@@ -2,8 +2,8 @@ package com.minexpert.hns.api.documents;
 
 import com.minexpert.hns.dto.documents.DocumentVersionDTO;
 import com.minexpert.hns.dto.documents.DocumentVersionDetails;
-import com.minexpert.hns.dto.MediaDTO;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.dto.MediaDTO;
 import com.minexpert.hns.service.documents.DocumentVersionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

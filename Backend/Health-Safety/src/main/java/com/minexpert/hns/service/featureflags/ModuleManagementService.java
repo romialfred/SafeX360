@@ -19,4 +19,3 @@ public interface ModuleManagementService {
 
     List<ModuleManagementDTO> getAll() throws HSException;
 }
-

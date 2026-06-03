@@ -26,7 +26,8 @@ public class ChemicalRiskController {
     }
 
     @PutMapping("/status/{id}")
-    public ResponseEntity<ChemicalRiskDTO> updateStatus(@PathVariable Long id, @RequestParam String status) throws HSException {
+    public ResponseEntity<ChemicalRiskDTO> updateStatus(@PathVariable Long id, @RequestParam String status)
+            throws HSException {
         return ResponseEntity.ok(chemicalRiskService.updateStatus(id, status));
     }
 
@@ -40,4 +41,3 @@ public class ChemicalRiskController {
         return ResponseEntity.ok(chemicalRiskService.getAll());
     }
 }
-

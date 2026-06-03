@@ -21,6 +21,7 @@ public class InternalAuditor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long employeeId;
+    private Long companyId;
     private String role;
     private Status status;
     private LocalDateTime createdAt;

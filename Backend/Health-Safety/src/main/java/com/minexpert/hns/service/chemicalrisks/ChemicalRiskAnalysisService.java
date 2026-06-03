@@ -16,4 +16,3 @@ public interface ChemicalRiskAnalysisService {
 
     ChemicalRiskAnalysisDTO getById(Long id) throws HSException;
 }
-

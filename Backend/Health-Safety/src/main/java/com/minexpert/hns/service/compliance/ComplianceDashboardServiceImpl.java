@@ -18,10 +18,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.example.mail.EmailService;
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.config.ComplianceCacheNames;
 import com.minexpert.hns.dto.compliance.dashboard.ComplianceDashboardActionItemsResponse;
 import com.minexpert.hns.dto.compliance.dashboard.ComplianceDashboardBreakdownDTO;
 import com.minexpert.hns.dto.compliance.dashboard.ComplianceDashboardCompliantEmployeesResponse;
@@ -63,6 +65,7 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     private final EmailService emailService;
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_ACTION_ITEMS)
     public ComplianceDashboardActionItemsResponse getActionItems() throws HSException {
         List<AssignmentContext> contexts = loadAssignmentContexts();
         if (contexts.isEmpty()) {
@@ -134,6 +137,7 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY, key = "#asOf != null ? #asOf : 'DEFAULT'")
     public ComplianceDashboardDepartmentSummaryResponse getDepartmentSummary(LocalDate asOf) throws HSException {
         List<AssignmentContext> contexts = loadAssignmentContexts();
         if (contexts.isEmpty()) {
@@ -159,6 +163,7 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_OVERALL_STATUS, key = "#departmentId != null ? #departmentId : 'ALL'")
     public ComplianceDashboardOverallStatusResponse getOverallStatus(Long departmentId) throws HSException {
         List<AssignmentContext> contexts = loadAssignmentContexts();
         if (contexts.isEmpty()) {
@@ -279,8 +284,8 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
         String compositeId = safeRequirementId(assignment.requirementId()) + "-" + safeId(employee.getId());
         String id = (doc != null && classification != ComplianceClassification.EXPIRED
                 && classification != ComplianceClassification.UPCOMING)
-                ? String.valueOf(doc.getId())
-                : compositeId;
+                        ? String.valueOf(doc.getId())
+                        : compositeId;
         ComplianceDashboardEmployeeDTO employeeDTO = new ComplianceDashboardEmployeeDTO(
                 safeId(employee.getId()),
                 Optional.ofNullable(employee.getName()).orElse(""),
@@ -515,7 +520,8 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
 
     private ComplianceDashboardActionItemsResponse emptyActionItemsResponse() {
         List<ComplianceDashboardStatusDTO> statuses = ComplianceClassification.actionItemOrder().stream()
-                .map(classification -> new ComplianceDashboardStatusDTO(classification.code(), classification.label(), 0,
+                .map(classification -> new ComplianceDashboardStatusDTO(classification.code(), classification.label(),
+                        0,
                         List.of()))
                 .toList();
         return new ComplianceDashboardActionItemsResponse(statuses, OffsetDateTime.now(ZoneOffset.UTC));
@@ -571,7 +577,8 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
         StringBuilder timeline = new StringBuilder();
         if (doc != null && doc.getExpiryDate() != null) {
             String label = classification == ComplianceClassification.EXPIRED ? "Expired on" : "Due on";
-            timeline.append("<li><strong>").append(label).append(":</strong> ").append(doc.getExpiryDate()).append("</li>");
+            timeline.append("<li><strong>").append(label).append(":</strong> ").append(doc.getExpiryDate())
+                    .append("</li>");
         }
 
         return """
@@ -594,8 +601,9 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
                   </div>
                 </body>
                 </html>
-                """.formatted(employeeName, requirementTitle, department, classification.label(), statusDetail,
-                timeline.toString());
+                """
+                .formatted(employeeName, requirementTitle, department, classification.label(), statusDetail,
+                        timeline.toString());
     }
 
     private enum SummaryBucket {

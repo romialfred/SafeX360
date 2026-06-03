@@ -26,13 +26,14 @@ public class Measurement {
     private Double normalValue;
     private Double threshold;
     private String description;
+    private Long companyId;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public MeasurementDTO toDTO() {
         return new MeasurementDTO(this.id, this.name, this.unit, this.normalValue, this.threshold, this.description,
-                this.status, this.createdAt, this.updatedAt);
+                this.companyId, this.status, this.createdAt, this.updatedAt);
     }
 
     public Measurement(Long id) {

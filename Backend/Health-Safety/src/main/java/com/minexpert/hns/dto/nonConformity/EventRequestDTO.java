@@ -15,4 +15,5 @@ public class EventRequestDTO {
     private EventAnalysisDTO analysis;
     private NonConformityDTO nonConformity;
     private List<CorrectiveActionDTO> correctiveActions;
+    private Long companyId;
 }

@@ -21,6 +21,7 @@ public class CorrectiveActionResponse {
     private String assignedEmployeeName;
     private Long departmentId;
     private Long ownerId;
+    private Long companyId;
     private LocalDate deadline;
     private ActionStatus status;
     private String description;
@@ -28,7 +29,7 @@ public class CorrectiveActionResponse {
     private String type;
 
     public CorrectiveActionResponse(Long id, String actionName, Long incidentId, String incidentTitle,
-            Long assignedEmployeeId, String assignedEmployeeName, Long departmentId, Long ownerId,
+            Long assignedEmployeeId, String assignedEmployeeName, Long departmentId, Long ownerId, Long companyId,
             LocalDate deadline, ActionStatus status, String description, Integer progress, EventType type) {
         this.id = id;
         this.actionName = actionName;
@@ -38,6 +39,7 @@ public class CorrectiveActionResponse {
         this.assignedEmployeeName = assignedEmployeeName;
         this.departmentId = departmentId;
         this.ownerId = ownerId;
+        this.companyId = companyId;
         this.deadline = deadline;
         this.status = status;
         this.description = description;

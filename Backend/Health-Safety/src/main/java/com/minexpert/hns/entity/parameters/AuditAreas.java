@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.dto.parameters.AuditAreasDTO;
 import com.minexpert.hns.enums.Status;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,6 +26,8 @@ public class AuditAreas {
     private String type;
     private Long owner;
     private Status status;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -33,7 +36,7 @@ public class AuditAreas {
     }
 
     public AuditAreasDTO toDTO() {
-        return new AuditAreasDTO(this.id, this.name, this.type, this.owner, null, this.status, this.createdAt,
-                this.updatedAt);
+        return new AuditAreasDTO(this.id, this.name, this.type, this.owner, null, this.status, this.companyId,
+                this.createdAt, this.updatedAt);
     }
 }

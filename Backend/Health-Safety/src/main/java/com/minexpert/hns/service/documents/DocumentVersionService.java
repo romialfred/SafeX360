@@ -2,8 +2,9 @@ package com.minexpert.hns.service.documents;
 
 import com.minexpert.hns.dto.documents.DocumentVersionDTO;
 import com.minexpert.hns.dto.documents.DocumentVersionDetails;
-import com.minexpert.hns.dto.MediaDTO;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.dto.MediaDTO;
+
 import java.util.List;
 
 public interface DocumentVersionService {

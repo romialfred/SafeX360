@@ -16,10 +16,12 @@ public class IncidentCategoryDTO {
     private Long id;
     private String name;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public IncidentCategory toEntity() {
-        return new IncidentCategory(this.id, this.name, this.status, this.createdAt, this.updatedAt);
+        return new IncidentCategory(this.id, this.name, this.status, this.companyId, this.createdAt,
+                this.updatedAt);
     }
 }

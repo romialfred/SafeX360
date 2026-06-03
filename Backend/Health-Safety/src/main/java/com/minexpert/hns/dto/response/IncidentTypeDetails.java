@@ -9,6 +9,8 @@ public interface IncidentTypeDetails {
 
     public String getDescription();
 
+    public Long getCompanyId();
+
     public Long getIncidentCategoryId();
 
     public Long getSeverityLevelId();

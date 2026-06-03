@@ -26,6 +26,7 @@ public class IncidentType {
     private Long id;
     private String name;
     private String description;
+    private Long companyId;
     private Status status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_category_id", nullable = false)
@@ -41,7 +42,7 @@ public class IncidentType {
     }
 
     public IncidentTypeDTO toDTO() {
-        return new IncidentTypeDTO(this.id, this.name, this.description, this.status,
+        return new IncidentTypeDTO(this.id, this.name, this.description, this.companyId, this.status,
                 incidentCategory != null ? this.incidentCategory.getId() : null,
                 severityLevel != null ? this.severityLevel.getId() : null,
                 this.createdAt, this.updatedAt);

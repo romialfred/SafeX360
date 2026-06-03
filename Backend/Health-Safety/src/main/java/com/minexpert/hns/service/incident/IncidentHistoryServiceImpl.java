@@ -25,15 +25,18 @@ public class IncidentHistoryServiceImpl implements IncidentHistoryService {
     private final HrmsClient hrmsClient;
 
     @Override
-    public Long saveIncidentHistory(IncidentHistoryDTO incidentHistoryDTO) throws HSException {
+    public Long saveIncidentHistory(Long companyId, IncidentHistoryDTO incidentHistoryDTO) throws HSException {
         incidentHistoryDTO.setCreatedAt(LocalDateTime.now());
-        incidentService.updateIncidentStatus(incidentHistoryDTO.getIncidentId(), incidentHistoryDTO.getStatus());
+        incidentService.updateIncidentStatus(companyId, incidentHistoryDTO.getIncidentId(),
+                incidentHistoryDTO.getStatus());
         return incidentHistoryRepository.save(incidentHistoryDTO.toEntity()).getId();
     }
 
     @Override
-    public List<IncidentHistoryDetails> getIncidentHistoryByIncidentId(Long incidentId) throws HSException {
-        List<IncidentHistoryDetails> details = incidentHistoryRepository.findByIncidentId(incidentId);
+    public List<IncidentHistoryDetails> getIncidentHistoryByIncidentId(Long companyId, Long incidentId)
+            throws HSException {
+        List<IncidentHistoryDetails> details = incidentHistoryRepository.findByIncidentIdAndCompanyId(incidentId,
+                companyId);
         List<Long> empIds = details.stream()
                 .map(IncidentHistoryDetails::getOwnerId)
                 .distinct()

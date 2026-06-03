@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.hrms.dto.Timesheet.WorkCategoryDTO;
@@ -18,6 +20,11 @@ public class WorkCategoryServiceImpl implements WorkCategoryService {
     private WorkCategoryRepository workCategoryRepository;
 
     @Override
+    @CacheEvict(cacheNames = {
+            "workCategoryById",
+            "workCategoryByCompany",
+            "workCategoriesAll"
+    }, allEntries = true)
     public void saveWorkCategory(WorkCategoryDTO workCategoryDTO) throws HRMSException {
         Optional<WorkCategory> optional = workCategoryRepository.findByCompany_Id(workCategoryDTO.getCompany().getId());
         if (optional.isPresent()) {
@@ -27,23 +34,31 @@ public class WorkCategoryServiceImpl implements WorkCategoryService {
     }
 
     @Override
+    @Cacheable(cacheNames = "workCategoriesAll")
     public List<WorkCategoryDTO> getAllWorkCategories() {
         return ((List<WorkCategory>) workCategoryRepository.findAll()).stream().map(WorkCategory::toDTO).toList();
     }
 
     @Override
+    @Cacheable(cacheNames = "workCategoryById", key = "#id")
     public WorkCategoryDTO getWorkCategoryById(Long id) throws HRMSException {
         return workCategoryRepository.findById(id).orElseThrow(() -> new HRMSException("WORK_CATEGORY_NOT_FOUND"))
                 .toDTO();
     }
 
     @Override
+    @Cacheable(cacheNames = "workCategoryByCompany", key = "#companyId")
     public WorkCategoryDTO getWorkCategoryByCompanyId(Long companyId) throws HRMSException {
         return workCategoryRepository.findByCompany_Id(companyId)
                 .orElseThrow(() -> new HRMSException("WORK_CATEGORY_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            "workCategoryById",
+            "workCategoryByCompany",
+            "workCategoriesAll"
+    }, allEntries = true)
     public void updateWorkCategory(WorkCategoryDTO workCategoryDTO) throws HRMSException {
         Optional<WorkCategory> optional = workCategoryRepository.findById(workCategoryDTO.getId());
         if (optional.isEmpty()) {

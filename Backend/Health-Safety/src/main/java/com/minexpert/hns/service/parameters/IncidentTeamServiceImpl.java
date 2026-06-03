@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,47 +34,76 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
     private final TeamMemberService teamMemberService;
     private final HrmsClient hrmsClient;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
     @Override
-    public void addIncidentTeam(TeamRequest teamRequest) throws HSException {
-        Optional<IncidentTeam> opt = incidentTeamRepository.findByDepartmentId(teamRequest.getDepartmentId());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
+    })
+    public void addIncidentTeam(Long companyId, TeamRequest teamRequest) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<IncidentTeam> opt = incidentTeamRepository.findByCompanyIdAndDepartmentId(companyId,
+                teamRequest.getDepartmentId());
         if (opt.isPresent()) {
             throw new HSException("INCIDENT_TEAM_DEPARTMENT_ALREADY_EXISTS");
         }
-        Optional<IncidentTeam> opt2 = incidentTeamRepository.findByNameIgnoreCase(teamRequest.getName());
+        Optional<IncidentTeam> opt2 = incidentTeamRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                teamRequest.getName());
         if (opt2.isPresent()) {
             throw new HSException("INCIDENT_TEAM_NAME_ALREADY_EXISTS");
         }
         IncidentTeamDTO incidentTeamDTO = new IncidentTeamDTO();
         incidentTeamDTO.setName(teamRequest.getName());
         incidentTeamDTO.setDepartmentId(teamRequest.getDepartmentId());
+        incidentTeamDTO.setCompanyId(companyId);
         incidentTeamDTO.setCreatedAt(LocalDateTime.now());
         incidentTeamDTO.setUpdatedAt(LocalDateTime.now());
         incidentTeamDTO.setStatus(Status.ACTIVE);
         Long id = incidentTeamRepository.save(incidentTeamDTO.toEntity()).getId();
-        teamRequest.getMembers().stream().forEach(member -> {
-            member.setTeamId(id);
-            try {
-                teamMemberService.addTeamMember(member);
-            } catch (HSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        });
+        if (teamRequest.getMembers() != null) {
+            teamRequest.getMembers().forEach(member -> {
+                member.setTeamId(id);
+                member.setCompanyId(companyId);
+                try {
+                    teamMemberService.addTeamMember(companyId, member);
+                } catch (HSException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
     @Override
-    public void updateIncidentTeam(TeamRequest teamRequest) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTeamById", key = "#companyId != null && #teamRequest.id != null ? (#companyId + '-' + #teamRequest.id) : 'ALL-' + #teamRequest.id", condition = "#teamRequest.id != null"),
+            @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
+    })
+    public void updateIncidentTeam(Long companyId, TeamRequest teamRequest) throws HSException {
+        ensureCompanyIdProvided(companyId);
 
         IncidentTeam incidentTeam = incidentTeamRepository.findById(teamRequest.getId())
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
-        if (incidentTeam.getDepartmentId() != teamRequest.getDepartmentId()) {
-            Optional<IncidentTeam> opt = incidentTeamRepository.findByDepartmentId(teamRequest.getDepartmentId());
+        if (!companyId.equals(incidentTeam.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
+        if (!java.util.Objects.equals(incidentTeam.getDepartmentId(), teamRequest.getDepartmentId())) {
+            Optional<IncidentTeam> opt = incidentTeamRepository.findByCompanyIdAndDepartmentId(companyId,
+                    teamRequest.getDepartmentId());
             if (opt.isPresent()) {
                 throw new HSException("INCIDENT_TEAM_DEPARTMENT_ALREADY_EXISTS");
             }
         }
         if (!incidentTeam.getName().equalsIgnoreCase(teamRequest.getName())) {
-            Optional<IncidentTeam> opt2 = incidentTeamRepository.findByNameIgnoreCase(teamRequest.getName());
+            Optional<IncidentTeam> opt2 = incidentTeamRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                    teamRequest.getName());
             if (opt2.isPresent()) {
                 throw new HSException("INCIDENT_TEAM_NAME_ALREADY_EXISTS");
             }
@@ -80,33 +111,52 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
         incidentTeam.setName(teamRequest.getName());
         incidentTeam.setDepartmentId(teamRequest.getDepartmentId());
         incidentTeam.setUpdatedAt(LocalDateTime.now());
-        teamRequest.getMembers().stream().forEach(member -> {
-            member.setTeamId(teamRequest.getId());
-            try {
-                teamMemberService.updateOrAddMember(member);
-            } catch (HSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        });
+        if (teamRequest.getMembers() != null) {
+            teamRequest.getMembers().forEach(member -> {
+                member.setTeamId(teamRequest.getId());
+                member.setCompanyId(companyId);
+                try {
+                    teamMemberService.updateOrAddMember(companyId, member);
+                } catch (HSException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
         incidentTeamRepository.save(incidentTeam);
     }
 
     @Override
-    public void deleteIncidentTeam(Long id) {
-        incidentTeamRepository.deleteById(id);
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTeamById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
+    })
+    public void deleteIncidentTeam(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        IncidentTeam team = incidentTeamRepository.findById(id)
+                .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
+        if (!companyId.equals(team.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
+        incidentTeamRepository.delete(team);
     }
 
     @Override
-    public IncidentTeamDTO getIncidentTeamById(Long id) throws HSException {
+    @Cacheable(cacheNames = "incidentTeamById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public IncidentTeamDTO getIncidentTeamById(Long companyId, Long id) throws HSException {
         IncidentTeam incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(incidentTeam.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
         return incidentTeam.toDTO();
     }
 
     @Override
-    public List<IncidentTeamDTO> getAllIncidentTeams() throws HSException {
-        List<IncidentTeamDTO> incidentTeamDTOs = ((List<IncidentTeam>) incidentTeamRepository.findAll()).stream()
+    @Cacheable(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<IncidentTeamDTO> getAllIncidentTeams(Long companyId) throws HSException {
+        List<IncidentTeamDTO> incidentTeamDTOs = incidentTeamRepository.findAllByCompanyId(companyId).stream()
                 .map(IncidentTeam::toDTO)
                 .toList();
         List<Long> empIds = incidentTeamDTOs.stream()
@@ -127,40 +177,72 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
     }
 
     @Override
-    public List<IncidentTeamDTO> getAllActiveIncidentTeams() throws HSException {
-        return ((List<IncidentTeam>) incidentTeamRepository.findByStatus(Status.ACTIVE)).stream()
+    @Cacheable(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<IncidentTeamDTO> getAllActiveIncidentTeams(Long companyId) throws HSException {
+        return incidentTeamRepository.findAllByStatus(companyId, Status.ACTIVE).stream()
                 .map(IncidentTeam::toDTO)
                 .toList();
     }
 
     @Override
-    public void activateIncidentTeam(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTeamById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
+    })
+    public void activateIncidentTeam(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         IncidentTeam incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
+        if (!companyId.equals(incidentTeam.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
         incidentTeam.setStatus(Status.ACTIVE);
         incidentTeam.setUpdatedAt(LocalDateTime.now());
         incidentTeamRepository.save(incidentTeam);
     }
 
     @Override
-    public void deactivateIncidentTeam(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTeamById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
+    })
+    public void deactivateIncidentTeam(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         IncidentTeam incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
+        if (!companyId.equals(incidentTeam.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
         incidentTeam.setStatus(Status.INACTIVE);
         incidentTeam.setUpdatedAt(LocalDateTime.now());
         incidentTeamRepository.save(incidentTeam);
     }
 
     @Override
-    public TeamResponse getTeamDetailsById(Long id) throws HSException {
+    @Cacheable(cacheNames = "incidentTeamDetails", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public TeamResponse getTeamDetailsById(Long companyId, Long id) throws HSException {
         IncidentTeamDTO incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND")).toDTO();
-        List<DepartmentNames> deptNames = hrmsClient.getDepartmentNames(List.of(incidentTeam.getDepartmentId()));
+        if (companyId != null && !companyId.equals(incidentTeam.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
+        String departmentName = null;
+        Long departmentId = incidentTeam.getDepartmentId();
+        if (departmentId != null) {
+            List<DepartmentNames> deptNames = hrmsClient.getDepartmentNames(List.of(departmentId));
+            if (!deptNames.isEmpty()) {
+                departmentName = deptNames.get(0).getName();
+            }
+        }
 
-        List<TeamMemberDTO> teamMembers = teamMemberService.getTeamMemberByTeam(id).stream()
+        List<TeamMemberDTO> teamMembers = teamMemberService.getTeamMemberByTeam(companyId, id).stream()
                 .filter(member -> member.getTeamId().equals(id))
                 .collect(Collectors.toList());
-        return new TeamResponse(id, incidentTeam.getName(), deptNames.get(0).getName(), teamMembers);
+        return new TeamResponse(id, incidentTeam.getName(), departmentName, companyId, teamMembers);
     }
 
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -31,48 +32,56 @@ public class MeasurementAPI {
     private MeasurementService measurementService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createMeasurement(@RequestBody MeasurementDTO measurementDTO) throws HSException {
-        return new ResponseEntity<>(measurementService.addMeasurement(measurementDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> createMeasurement(@RequestParam Long companyId,
+            @RequestBody MeasurementDTO measurementDTO) throws HSException {
+        return new ResponseEntity<>(measurementService.addMeasurement(companyId, measurementDTO), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateMeasurement(@RequestBody MeasurementDTO measurementDTO)
+    public ResponseEntity<ResponseDTO> updateMeasurement(@RequestParam Long companyId,
+            @RequestBody MeasurementDTO measurementDTO)
             throws HSException {
-        measurementService.updateMeasurement(measurementDTO);
+        measurementService.updateMeasurement(companyId, measurementDTO);
         return new ResponseEntity<>(new ResponseDTO("Measurement Updated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateMeasurement(@PathVariable Long id) throws HSException {
-        measurementService.activateMeasurement(id);
+    public ResponseEntity<ResponseDTO> activateMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        measurementService.activateMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateMeasurement(@PathVariable Long id) throws HSException {
-        measurementService.deactivateMeasurement(id);
+    public ResponseEntity<ResponseDTO> deactivateMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        measurementService.deactivateMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Deactivated Successfully"), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteMeasurement(@PathVariable Long id) throws HSException {
-        measurementService.deleteMeasurement(id);
+    public ResponseEntity<ResponseDTO> deleteMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        measurementService.deleteMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Deleted Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<MeasurementDTO> getMeasurementById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(measurementService.getMeasurementById(id), HttpStatus.OK);
+    public ResponseEntity<MeasurementDTO> getMeasurementById(@RequestParam(required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(measurementService.getMeasurementById(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<MeasurementDTO>> getAllMeasurements() throws HSException {
-        return new ResponseEntity<>(measurementService.getAllMeasurements(), HttpStatus.OK);
+    public ResponseEntity<List<MeasurementDTO>> getAllMeasurements(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(measurementService.getAllMeasurements(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<MeasurementDTO>> getAllActiveMeasurements() throws HSException {
-        return new ResponseEntity<>(measurementService.getAllActiveMeasurements(), HttpStatus.OK);
+    public ResponseEntity<List<MeasurementDTO>> getAllActiveMeasurements(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(measurementService.getAllActiveMeasurements(companyId), HttpStatus.OK);
     }
 
 }

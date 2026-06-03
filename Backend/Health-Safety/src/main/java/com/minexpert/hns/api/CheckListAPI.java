@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.parameters.CheckListDTO;
@@ -30,40 +31,47 @@ public class CheckListAPI {
     private CheckListService checkListService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createCheckList(@RequestBody CheckListDTO checkListDTO) throws HSException {
-        return new ResponseEntity<>(checkListService.addCheckList(checkListDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> createCheckList(@RequestParam Long companyId, @RequestBody CheckListDTO checkListDTO)
+            throws HSException {
+        return new ResponseEntity<>(checkListService.addCheckList(companyId, checkListDTO), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateCheckList(@RequestBody CheckListDTO checkListDTO) throws HSException {
-        checkListService.updateCheckList(checkListDTO);
+    public ResponseEntity<String> updateCheckList(@RequestParam Long companyId,
+            @RequestBody CheckListDTO checkListDTO) throws HSException {
+        checkListService.updateCheckList(companyId, checkListDTO);
         return new ResponseEntity<>("Incident Type Updated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<CheckListDTO> getCheckListById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(checkListService.getCheckListById(id), HttpStatus.OK);
+    public ResponseEntity<CheckListDTO> getCheckListById(@RequestParam(required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(checkListService.getCheckListById(companyId, id), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<String> activateCheckList(@PathVariable Long id) throws HSException {
-        checkListService.activateCheckList(id);
+    public ResponseEntity<String> activateCheckList(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        checkListService.activateCheckList(companyId, id);
         return new ResponseEntity<>("Incident Type Activated Successfully", HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<String> deactivateCheckList(@PathVariable Long id) throws HSException {
-        checkListService.deactivateCheckList(id);
+    public ResponseEntity<String> deactivateCheckList(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        checkListService.deactivateCheckList(companyId, id);
         return new ResponseEntity<>("Incident Type Deactivated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<CheckListDetails>> getAllCheckLists() throws HSException {
-        return new ResponseEntity<>(checkListService.getAllCheckLists(), HttpStatus.OK);
+    public ResponseEntity<List<CheckListDetails>> getAllCheckLists(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(checkListService.getAllCheckLists(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<CheckListDetails>> getAllActiveCheckLists() throws HSException {
-        return new ResponseEntity<>(checkListService.getAllActiveCheckLists(), HttpStatus.OK);
+    public ResponseEntity<List<CheckListDetails>> getAllActiveCheckLists(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(checkListService.getAllActiveCheckLists(companyId), HttpStatus.OK);
     }
 }

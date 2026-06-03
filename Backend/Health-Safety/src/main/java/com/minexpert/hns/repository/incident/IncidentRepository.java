@@ -14,8 +14,13 @@ import com.minexpert.hns.entity.incident.Incident;
 import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
 
 public interface IncidentRepository extends CrudRepository<Incident, Long> {
-    @Query("SELECT i.id as id, i.title AS title, i.location AS location, i.occurredAt AS occurredAt, i.status AS status FROM Incident i")
-    List<IncidentResponse> findAllIncidents();
+    Optional<Incident> findByIdAndCompanyId(Long id, Long companyId);
+
+    @Query("SELECT i FROM Incident i WHERE i.id = :id AND (:companyId IS NULL OR i.companyId = :companyId)")
+    Optional<Incident> findByIdWithCompanyContext(@Param("id") Long id, @Param("companyId") Long companyId);
+
+    @Query("SELECT i.id as id, i.title AS title, i.location AS location, i.occurredAt AS occurredAt, i.status AS status FROM Incident i WHERE (:companyId IS NULL OR i.companyId = :companyId)")
+    List<IncidentResponse> findAllIncidents(@Param("companyId") Long companyId);
 
     @Query(value = """
                             SELECT
@@ -38,7 +43,6 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                 severity_info.name AS severityLevelName,
                                 severity_info.incident_category_name AS incidentCategoryName
                             FROM incident i
-
                             LEFT JOIN (
                                 SELECT
                                     idt.incident_id,
@@ -57,8 +61,9 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                     GROUP BY idt2.incident_id
                                 )
                             ) AS severity_info ON severity_info.incident_id = i.id
+                            WHERE (:companyId IS NULL OR i.company_id = :companyId)
                         """, nativeQuery = true)
-    List<IncidentResponse> findAllIncidentsWithMaxSeverity();
+    List<IncidentResponse> findAllIncidentsWithMaxSeverity(@Param("companyId") Long companyId);
 
     @Query(value = """
                             SELECT
@@ -97,25 +102,32 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                     GROUP BY idt2.incident_id
                                 )
                             ) AS severity_info ON severity_info.incident_id = i.id
-                            WHERE severity_info.level > 3
+                                                        WHERE (:companyId IS NULL OR i.company_id = :companyId)
+                                                            AND severity_info.level > 3
                         """, nativeQuery = true)
-    List<IncidentResponse> findIncidentsWithSeverityAboveThree();
+    List<IncidentResponse> findIncidentsWithSeverityAboveThree(@Param("companyId") Long companyId);
 
-    @Query("SELECT i.id as id, i.title AS title, i.location.name AS location,  i.occurredAt AS incidentDate,i.status as status, i.number as number , i.discoveryTime as discoveryDate, i.reporterId as reporterId FROM Incident i where i.id=:id")
-    Optional<IncidentResponse> findByIncidentId(Long id);
+    @Query("SELECT i.id as id, i.title AS title, i.location.name AS location,  i.occurredAt AS incidentDate,i.status as status, i.number as number , i.discoveryTime as discoveryDate, i.reporterId as reporterId FROM Incident i where i.id=:id AND (:companyId IS NULL OR i.companyId = :companyId)")
+    Optional<IncidentResponse> findByIncidentId(@Param("id") Long id, @Param("companyId") Long companyId);
 
-    @Query("SELECT i FROM Incident i WHERE FUNCTION('YEAR', i.createdAt) = :year ORDER BY i.id DESC")
-    List<Incident> findTopByYearOrderByIdDesc(@Param("year") int year, Pageable pageable);
+    @Query("SELECT i FROM Incident i WHERE FUNCTION('YEAR', i.createdAt) = :year AND (:companyId IS NULL OR i.companyId = :companyId) ORDER BY i.id DESC")
+    List<Incident> findTopByYearOrderByIdDesc(@Param("year") int year, @Param("companyId") Long companyId,
+            Pageable pageable);
 
     @Query("""
             SELECT FUNCTION('MONTH', COALESCE(i.occurredAt, i.createdAt)) AS month,
                    COUNT(i.id) AS totalIncidents,
                    SUM(CASE WHEN i.status = com.minexpert.hns.enums.IncidentStatus.CLOSED THEN 1 ELSE 0 END) AS closedIncidents
             FROM Incident i
-            WHERE FUNCTION('YEAR', COALESCE(i.occurredAt, i.createdAt)) = :year
+                        WHERE FUNCTION('YEAR', COALESCE(i.occurredAt, i.createdAt)) = :year
+                            AND (:companyId IS NULL OR i.companyId = :companyId)
             GROUP BY FUNCTION('MONTH', COALESCE(i.occurredAt, i.createdAt))
             """)
-    List<MonthlyClosureSummary> findMonthlyClosureSummaryByYear(@Param("year") int year);
+    List<MonthlyClosureSummary> findMonthlyClosureSummaryByYear(@Param("year") int year,
+            @Param("companyId") Long companyId);
+
+    long countByCompanyIdAndDepartmentIdAndCreatedAtGreaterThanEqual(Long companyId, Long departmentId,
+            LocalDateTime fromDate);
 
     long countByDepartmentIdAndCreatedAtGreaterThanEqual(Long departmentId, LocalDateTime fromDate);
 }
