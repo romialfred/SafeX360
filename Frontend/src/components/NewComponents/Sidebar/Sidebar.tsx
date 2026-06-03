@@ -38,71 +38,29 @@ import { useAppSelector } from '../../../slices/hooks';
 import { useDispatch } from 'react-redux';
 import { collapse, expand } from '../../../slices/CollapseSlice';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import SafeXBrandMark from '../../UtilityComp/SafeXBrandMark';
 
 /**
- * Logo SafeX360 — wordmark texte premium (4K-sharp, sans bitmap).
- * "SafeX" en blanc avec drop-shadow subtil + "360" placé dessous,
- * chaque chiffre dans la couleur de marque historique :
- *   3 → vert émeraude   (sécurité / conformité)
- *   6 → bleu            (surveillance HSE)
- *   0 → rouge           (alerte / criticité)
- * Variantes : full (sidebar étendue) + compact (sidebar repliée).
+ * Logo SafeX360 — wrapper de compatibilité autour du SafeXBrandMark unifié.
+ *
+ * L'identité historique (wordmark Inter Black + chiffres tricolores) est remplacée
+ * par la marque héraldique (bouclier + double chevron) définie dans
+ * components/UtilityComp/SafeXBrandMark.tsx. Le bouclier porte désormais
+ * toute la charge visuelle, la sidebar peut donc rester sobre.
+ *
+ * Variantes conservées :
+ *  - compact : icône seule, centrée, pour la sidebar repliée.
+ *  - full    : bouclier + wordmark serif "SafeX 360", aligné à gauche.
  */
-const LOGO_FONT_STACK = "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif";
-
 const SafeXLogo = ({ compact = false }: { compact?: boolean }) => {
     if (compact) {
         return (
-            <div className="flex flex-col items-center leading-[0.85] select-none py-0.5">
-                <span
-                    className="text-[22px] text-white antialiased"
-                    style={{
-                        fontFamily: LOGO_FONT_STACK,
-                        fontWeight: 900,
-                        textShadow: '0 1px 6px rgba(255,255,255,0.08)',
-                        letterSpacing: '-0.05em',
-                    }}
-                >
-                    S
-                </span>
-                <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-1px' }}>
-                    <span className="text-[11px] leading-none text-emerald-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>3</span>
-                    <span className="text-[11px] leading-none text-blue-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>6</span>
-                    <span className="text-[11px] leading-none text-red-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>0</span>
-                </div>
+            <div className="flex justify-center w-full">
+                <SafeXBrandMark variant="icon" tone="light" size={36} />
             </div>
         );
     }
-    return (
-        <div className="flex flex-col items-start leading-[0.82] select-none">
-            <span
-                className="text-[36px] text-white antialiased"
-                style={{
-                    fontFamily: LOGO_FONT_STACK,
-                    fontWeight: 900,
-                    textShadow: '0 2px 10px rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.045em',
-                    WebkitFontSmoothing: 'antialiased',
-                }}
-            >
-                SafeX
-            </span>
-            <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-2px', marginLeft: '1px' }}>
-                <span
-                    className="text-[28px] leading-none text-emerald-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(52,211,153,0.32)' }}
-                >3</span>
-                <span
-                    className="text-[28px] leading-none text-blue-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(96,165,250,0.32)' }}
-                >6</span>
-                <span
-                    className="text-[28px] leading-none text-red-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(248,113,113,0.32)' }}
-                >0</span>
-            </div>
-        </div>
-    );
+    return <SafeXBrandMark variant="full" tone="light" size={32} />;
 };
 
 interface SubMenuItem {

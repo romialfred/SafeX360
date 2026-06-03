@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!--
+    SafeX 360 — Marque héraldique HSE
+    Forme : bouclier moderne, coins arrondis (référence sécurité/protection)
+    Intérieur : double chevron ascendant + point centré
+      → symbole d'élévation maîtrisée (montée), de progression,
+        et de vigilance (le point = œil/repère).
+    Scalable de 16 px (favicon) à 512 px sans perte.
+    Couleur : currentColor → s'adapte au contexte (dark, light, header).
+  -->
+  <defs>
+    <linearGradient id="safex-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="currentColor" stop-opacity="1" />
+      <stop offset="100%" stop-color="currentColor" stop-opacity="0.85" />
+    </linearGradient>
+  </defs>
+
+  <!-- Bouclier — pentagone héraldique aux coins arrondis -->
+  <path
+    d="M32 3
+       L56 11
+       C56.5 11.2, 57 11.6, 57 12.3
+       L57 30
+       C57 44, 36 60, 32.7 61.6
+       C32.3 61.8, 31.7 61.8, 31.3 61.6
+       C28 60, 7 44, 7 30
+       L7 12.3
+       C7 11.6, 7.5 11.2, 8 11
+       Z"
+    fill="url(#safex-grad)"
+  />
+
+  <!-- Chevron principal (large) -->
+  <path
+    d="M19 33 L32 20 L45 33"
+    stroke="#FFFFFF"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- Chevron secondaire (plus fin, en dessous) -->
+  <path
+    d="M22 43 L32 33 L42 43"
+    stroke="#FFFFFF"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.6"
+  />
+</svg>

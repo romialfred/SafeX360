@@ -1,7 +1,7 @@
 
 import { Icon } from "@iconify-icon/react";
 import { Avatar, Indicator, Drawer, Button, ScrollArea, SegmentedControl, Tooltip } from "@mantine/core";
-import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconSparkles, IconUrgent, IconBroadcast } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconUrgent, IconBroadcast } from '@tabler/icons-react';
 
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
@@ -76,16 +76,21 @@ const Header = () => {
             {/* Première ligne : titre plateforme + sélecteur mine + cloche + profil */}
             <div className="bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-16 flex justify-between items-center px-6">
                 <div className="flex items-center gap-3 relative">
-                    <div className="flex items-center gap-2 text-white">
-                        <IconSparkles size={22} className="text-amber-200" stroke={2} />
-                        <div className="leading-tight">
-                            <h2 className="text-base md:text-lg tracking-tight text-white">
-                                Next Generation HSE Platform
-                            </h2>
-                            <p className="text-[10px] md:text-[11px] uppercase tracking-wider text-teal-100/90">
-                                ISO 45001 · 14001 · 9001 · 19011 · ICMM
-                            </p>
-                        </div>
+                    <div className="leading-tight">
+                        <h2
+                            className="text-white tracking-tight"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 500,
+                                fontSize: '18px',
+                                letterSpacing: '-0.012em',
+                            }}
+                        >
+                            Tableau de bord HSE
+                        </h2>
+                        <p className="text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-teal-100/85 mt-0.5">
+                            ISO 45001 · 14001 · 9001 · 19011
+                        </p>
                     </div>
                 </div>
 
