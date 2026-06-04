@@ -511,25 +511,33 @@ export function DocSection({
     /** 1 = h2 (section), 2 = h3 (sous-section) */
     level?: 1 | 2;
 }) {
-    const Tag = (level === 2 ? 'h3' : 'h2') as keyof JSX.IntrinsicElements;
+    // LOT 41 hotfix : remplacer `keyof JSX.IntrinsicElements` (déprécié TS 5.7+
+    // qui requiert explicit JSX import) par un rendu conditionnel direct des
+    // 2 cas possibles (h2 / h3). Plus simple et zéro dépendance JSX namespace.
     const fontSize = level === 2 ? '20px' : '26px';
+    const headingStyle = {
+        fontFamily: "'Source Serif 4', Georgia, serif",
+        fontWeight: 500,
+        fontSize,
+        letterSpacing: '-0.012em',
+        lineHeight: 1.2,
+    } as const;
 
     return (
         <section id={id} className={level === 2 ? 'mt-8 scroll-mt-20' : 'mt-12 first:mt-0 scroll-mt-20'}>
-            <Tag
-                className="text-slate-900 group"
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    fontWeight: 500,
-                    fontSize,
-                    letterSpacing: '-0.012em',
-                    lineHeight: 1.2,
-                }}
-            >
-                <a href={`#${id}`} className="hover:text-teal-700 transition-colors no-underline">
-                    {title}
-                </a>
-            </Tag>
+            {level === 2 ? (
+                <h3 className="text-slate-900 group" style={headingStyle}>
+                    <a href={`#${id}`} className="hover:text-teal-700 transition-colors no-underline">
+                        {title}
+                    </a>
+                </h3>
+            ) : (
+                <h2 className="text-slate-900 group" style={headingStyle}>
+                    <a href={`#${id}`} className="hover:text-teal-700 transition-colors no-underline">
+                        {title}
+                    </a>
+                </h2>
+            )}
             <div className="mt-4 space-y-4 text-[15px] text-slate-700 leading-relaxed">
                 {children}
             </div>

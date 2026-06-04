@@ -78,6 +78,7 @@ import NewAuditPlanPage from '../pages/dashboard/LaggingIndicator/AuditManagemen
 import AuditDetailsTabsPage from '../pages/dashboard/LaggingIndicator/AuditManagement/AuditDetailsTabsPage';
 import NonConformityDashboard from '../components/LeadingIndicator/Non-conformity/NonConformityDashboard';
 import ModuleGuard from './ModuleGuard';
+import DemoPermissionGuard from './DemoPermissionGuard';
 import NonConformityForm from '../components/LeadingIndicator/Non-conformity/NonConformityForm';
 import NonConformityDetails from '../components/LeadingIndicator/Non-conformity/details/NonConformityDetails';
 import NonConformityEditPage from '../pages/NonConformityEditPage';
