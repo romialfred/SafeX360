@@ -2,12 +2,14 @@ package com.minexpert.hns.service.inspections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.inspections.InspectionInterviewsDTO;
 import com.minexpert.hns.dto.inspections.ProcessDTO;
 import com.minexpert.hns.exception.HSException;
 
 @Service
+@Transactional
 public class ProcessServiceImpl implements ProcessService {
 
     @Autowired

@@ -118,7 +118,7 @@ const PPEManagementDashboard = () => {
 
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },

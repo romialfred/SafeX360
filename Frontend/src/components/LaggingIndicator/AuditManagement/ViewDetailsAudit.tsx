@@ -7,6 +7,7 @@ import { formatDateWithDay } from '../../../utility/DateFormats';
 import { capitalizeFirstLetter } from '../../../utility/OtherUtilities';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
+import SafeHtml from '../../UtilityComp/SafeHtml';
 
 const ViewDetailsAudit = () => {
     const { id } = useParams();
@@ -90,7 +91,8 @@ const ViewDetailsAudit = () => {
                 <div className='flex flex-col gap-4'>
                     <p className='text-lg'>Purpose & Objectives</p>
                     <div className='bg-gray-100 p-3 rounded-lg shadow-sm'>
-                        <div dangerouslySetInnerHTML={{ __html: audit.purpose }}></div>
+                        {/* LOT 41 P0 XSS fix */}
+                        <SafeHtml html={audit.purpose} />
 
                     </div>
                 </div>

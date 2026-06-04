@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.minexpert.hns.api.ActionProcessAPI;
 import com.minexpert.hns.dto.inspections.InspectionReportDTO;
 import com.minexpert.hns.entity.inspections.InspectionReport;
@@ -15,6 +16,7 @@ import com.minexpert.hns.service.MediaService;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class InspectionReportServiceImpl implements InspectionReportService {
 

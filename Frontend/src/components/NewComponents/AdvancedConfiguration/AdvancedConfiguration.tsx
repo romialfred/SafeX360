@@ -328,7 +328,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             System Language
                         </label>
+                        {/* LOT 40 P1: aria-label for select */}
                         <select
+                            aria-label="System Language"
                             value={systemPrefs.language}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, language: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -343,7 +345,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             Time Zone
                         </label>
+                        {/* LOT 40 P1: aria-label for select */}
                         <select
+                            aria-label="Time Zone"
                             value={systemPrefs.timezone}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, timezone: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -358,7 +362,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             Date Format
                         </label>
+                        {/* LOT 40 P1: aria-label for select */}
                         <select
+                            aria-label="Date Format"
                             value={systemPrefs.dateFormat}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, dateFormat: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -373,7 +379,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             Time Format
                         </label>
+                        {/* LOT 40 P1: aria-label for select */}
                         <select
+                            aria-label="Time Format"
                             value={systemPrefs.timeFormat}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, timeFormat: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -397,7 +405,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             Session Timeout (minutes)
                         </label>
+                        {/* LOT 40 P1: aria-label for raw number input */}
                         <input
+                            aria-label="Session Timeout (minutes)"
                             type="number"
                             value={systemPrefs.sessionTimeout}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) }))}
@@ -411,7 +421,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                         <label className="block text-sm text-gray-700 mb-2">
                             Max File Size (MB)
                         </label>
+                        {/* LOT 40 P1: aria-label for raw number input */}
                         <input
+                            aria-label="Max File Size (MB)"
                             type="number"
                             value={systemPrefs.maxFileSize}
                             onChange={(e) => setSystemPrefs(prev => ({ ...prev, maxFileSize: parseInt(e.target.value) }))}
@@ -590,8 +602,10 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
+                                        {/* LOT 40 P1: aria-labels for retention inputs */}
                                         <div className="flex items-center space-x-2">
                                             <input
+                                                aria-label={`Retention period for ${policy.dataType}`}
                                                 type="number"
                                                 value={policy.retentionPeriod}
                                                 onChange={(e) => handleRetentionChange(policy.id, 'retentionPeriod', parseInt(e.target.value))}
@@ -600,6 +614,7 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                                 className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             />
                                             <select
+                                                aria-label={`Retention unit for ${policy.dataType}`}
                                                 value={policy.unit}
                                                 onChange={(e) => handleRetentionChange(policy.id, 'unit', e.target.value)}
                                                 className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -611,7 +626,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
+                                        {/* LOT 40 P1: aria-label for toggle button */}
                                         <button
+                                            aria-label={`Toggle auto-archive for ${policy.dataType}`}
                                             onClick={() => handleRetentionChange(policy.id, 'autoArchive', !policy.autoArchive)}
                                             className={`w-8 h-4 rounded-full transition-colors ${policy.autoArchive ? 'bg-blue-500' : 'bg-gray-300'
                                                 } relative`}
@@ -621,7 +638,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                         </button>
                                     </td>
                                     <td className="px-6 py-4 text-center">
+                                        {/* LOT 40 P1: aria-label for toggle button */}
                                         <button
+                                            aria-label={`Toggle auto-delete for ${policy.dataType}`}
                                             onClick={() => handleRetentionChange(policy.id, 'autoDelete', !policy.autoDelete)}
                                             className={`w-8 h-4 rounded-full transition-colors ${policy.autoDelete ? 'bg-red-500' : 'bg-gray-300'
                                                 } relative`}
@@ -631,14 +650,15 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                         </button>
                                     </td>
                                     <td className="px-6 py-4 text-center">
+                                        {/* LOT 40 P1: aria-labels for icon-only action buttons */}
                                         <div className="flex items-center justify-center space-x-2">
-                                            <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                                            <button aria-label={`Archive ${policy.dataType}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                                                 <IconArchive className="w-4 h-4" />
                                             </button>
-                                            <button className="p-1 text-green-600 hover:bg-green-50 rounded">
+                                            <button aria-label={`Download ${policy.dataType}`} className="p-1 text-green-600 hover:bg-green-50 rounded">
                                                 <IconDownload className="w-4 h-4" />
                                             </button>
-                                            <button className="p-1 text-red-600 hover:bg-red-50 rounded">
+                                            <button aria-label={`Delete ${policy.dataType}`} className="p-1 text-red-600 hover:bg-red-50 rounded">
                                                 <IconTrash className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -685,7 +705,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-3">
                                                 <span className="text-xs text-gray-500 w-8">{param.minValue}</span>
+                                                {/* LOT 40 P1: aria-label for range slider */}
                                                 <input
+                                                    aria-label={`${param.name} slider`}
                                                     type="range"
                                                     min={param.minValue}
                                                     max={param.maxValue}
@@ -697,7 +719,9 @@ const AdvancedConfiguration: React.FC<AdvancedConfigurationProps> = ({ onBackToS
                                             </div>
 
                                             <div className="flex items-center space-x-2">
+                                                {/* LOT 40 P1: aria-label for number input */}
                                                 <input
+                                                    aria-label={`${param.name} value`}
                                                     type="number"
                                                     value={param.value}
                                                     onChange={(e) => handleGlobalParameterChange(param.id, parseInt(e.target.value))}

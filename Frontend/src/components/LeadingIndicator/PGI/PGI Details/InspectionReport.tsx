@@ -13,6 +13,7 @@ import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 
 import { formatDateShort } from "../../../../utility/DateFormats";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { addInspectionReport, getInspectionReportByInspectionId } from "../../../../services/PgiReportService";
 import dayjs from "dayjs";
 
@@ -150,7 +151,8 @@ const InspectionReportTabs = () => {
                             </div>
 
                             <div className="border-blue-200 border rounded-md px-4 py-3 text-sm">
-                                <div dangerouslySetInnerHTML={{ __html: report?.description || "" }} />
+                                {/* LOT 41 P0 XSS fix */}
+                                <SafeHtml html={report?.description || ""} />
                             </div>
 
                             {report?.docs?.length > 0 && (

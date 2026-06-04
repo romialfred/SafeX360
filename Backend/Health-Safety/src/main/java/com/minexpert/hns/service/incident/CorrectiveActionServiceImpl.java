@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.CorrectiveActionDTO;
@@ -19,6 +20,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.incident.CorrectiveActionRepository;
 
 @Service
+@Transactional
 public class CorrectiveActionServiceImpl implements CorrectiveActionService {
 
     @Autowired

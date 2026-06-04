@@ -39,12 +39,19 @@ public class AccountAPI {
     @org.springframework.beans.factory.annotation.Value("${JWT_SECRET}")
     private String SECRET;
 
+    // LOT 41 P0 SECURITY TODO: cet endpoint doit être restreint aux ADMIN/SUPER_ADMIN.
+    // ABORT @PreAuthorize : (1) @EnableMethodSecurity absent, (2) le flux cookie n'alimente
+    // pas le SecurityContext (JwtAuthenticationFilter ne traite que "Authorization: Bearer"),
+    // (3) CustomUserDetails.authorities = empty ArrayList. Implémentation à faire en LOT 42 :
+    // ajouter un filtre cookie-JWT qui peuple authorities depuis le claim "role".
     @PostMapping("/add")
     public ResponseEntity<ResponseDTO> addAccount(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
         accountService.addAccount(accountDTO);
         return new ResponseEntity<>(new ResponseDTO("Account added Successfully."), HttpStatus.CREATED);
     }
 
+    // LOT 41 P0 SECURITY TODO: idem addAccount — restreindre ADMIN/SUPER_ADMIN après mise en place
+    // d'un filtre cookie-JWT qui peuple le SecurityContext. Cf. commentaire au-dessus de /add.
     @PostMapping("/update")
     public ResponseEntity<ResponseDTO> updateAccount(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
         accountService.updateAccount(accountDTO);
@@ -138,6 +145,9 @@ public class AccountAPI {
         return new ResponseEntity<>(accountService.getAccountPermissions(id), HttpStatus.OK);
     }
 
+    // LOT 41 P0 SECURITY TODO: endpoint critique d'élévation de privilèges — doit être restreint
+    // ADMIN/SUPER_ADMIN. ABORT @PreAuthorize même raison que /add (SecurityContext vide via cookie).
+    // Implémentation à faire en LOT 42 (filtre cookie-JWT alimentant authorities).
     @PutMapping("/updatePermissions")
     public ResponseEntity<ResponseDTO> updatePermissions(@RequestBody AccountDTO accountDTO) throws HRMSException {
         accountService.updateAccountPermissions(accountDTO);

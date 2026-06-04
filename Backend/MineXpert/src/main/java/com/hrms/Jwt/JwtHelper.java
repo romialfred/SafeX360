@@ -16,11 +16,20 @@ import java.util.function.Function;
 @Component
 public class JwtHelper {
 
-    public static final long JWT_TOKEN_VALIDITY = 500 * 60 * 60;
+    // LOT 41 P1 SECURITY: durée de vie JWT externalisée via JWT_EXPIRATION_HOURS (défaut 8h).
+    // L'ancienne constante codée en dur valait 500h (~20 jours) — bien trop long pour un cookie de session.
+    @Value("${JWT_EXPIRATION_HOURS:8}")
+    private long expirationHours;
 
     // R-001 Phase 2.a — Secret extrait du code source, injecté par Spring depuis JWT_SECRET env var
     @Value("${JWT_SECRET}")
     private String SECRET;
+
+    // LOT 41 P1 SECURITY: durée de vie effective du JWT en millisecondes.
+    // Exposée pour que les couches API (cookie max-age) et JWT (setExpiration) restent cohérentes.
+    public long getExpirationMillis() {
+        return expirationHours * 60L * 60L * 1000L;
+    }
 
     // retrieve username from jwt token
     public String getUsernameFromToken(String token) {
@@ -73,8 +82,9 @@ public class JwtHelper {
     // compaction of the JWT to a URL-safe string
     private String doGenerateToken(Map<String, Object> claims, String subject) {
 
+        // LOT 41 P1 SECURITY: utilise getExpirationMillis() basé sur JWT_EXPIRATION_HOURS
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + getExpirationMillis()))
                 .signWith(SignatureAlgorithm.HS512, SECRET).compact();
     }
 

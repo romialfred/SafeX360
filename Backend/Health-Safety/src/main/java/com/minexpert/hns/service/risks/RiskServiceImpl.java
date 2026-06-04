@@ -7,6 +7,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.risks.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RiskServiceImpl implements RiskService {
     private final RiskRepository riskRepository;

@@ -85,7 +85,9 @@ const PPEMonitoring = () => {
         return (
             <div className="flex gap-2">
                 <Tooltip label="Voir le détail">
+                    {/* LOT 40 P1: aria-label ajouté pour l'accessibilité */}
                     <ActionIcon
+                        aria-label="Voir les détails de la dotation EPI"
                         onClick={() => navigate(`details/${rowData.empId}`)}
                         color="teal"
                         variant="light"
@@ -99,7 +101,7 @@ const PPEMonitoring = () => {
     };
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },

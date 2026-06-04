@@ -2,6 +2,7 @@ import { Badge, Button } from "@mantine/core";
 import { IconCalendarEvent, IconInfoCircle, IconMapPin, IconUser } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { type UpcomingEventDTO } from "../../services/EventService";
+import SafeHtml from "../UtilityComp/SafeHtml";
 
 const typeLabels: Record<UpcomingEventDTO["type"], string> = {
     INSPECTION: "Inspection",
@@ -56,7 +57,8 @@ const EventsCard = ({ event }: EventsCardProps) => {
 
             <div className="space-y-2">
                 <h3 className="text-lg text-gray-800 leading-tight">{event.title}</h3>
-                <div dangerouslySetInnerHTML={{ __html: description }} className="text-sm text-gray-600 font-light line-clamp-3" />
+                {/* LOT 41 P0 XSS fix */}
+                <SafeHtml html={description} className="text-sm text-gray-600 font-light line-clamp-3" />
             </div>
 
             <div className="space-y-3 text-sm text-gray-700">

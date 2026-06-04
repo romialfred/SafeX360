@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.dto.PositionCategoryDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.exception.HRMSException;
+import jakarta.validation.Valid;
 import com.hrms.service.PositionCategoryService;
 
 @RestController
@@ -30,12 +31,12 @@ public class PositionCategoryAPI {
     private PositionCategoryService positionCategoryService;
     
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO> addPositionCategory(@RequestBody PositionCategoryDTO positionCategoryDTO)  throws HRMSException{
+    public ResponseEntity<ResponseDTO> addPositionCategory(@RequestBody @Valid PositionCategoryDTO positionCategoryDTO)  throws HRMSException{
         positionCategoryService.addPositionCategory(positionCategoryDTO);
         return new ResponseEntity<>(new ResponseDTO("Position Category added Successfully."), HttpStatus.CREATED);
     }
     @PostMapping("/update")
-    public ResponseEntity<ResponseDTO> updatePositionCategory(@RequestBody PositionCategoryDTO positionCategoryDTO)  throws HRMSException{
+    public ResponseEntity<ResponseDTO> updatePositionCategory(@RequestBody @Valid PositionCategoryDTO positionCategoryDTO)  throws HRMSException{
         positionCategoryService.updatePositionCategory(positionCategoryDTO);
         return new ResponseEntity<>(new ResponseDTO("Position Category updated Successfully."), HttpStatus.OK);
     }

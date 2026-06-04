@@ -599,7 +599,8 @@ const EmployeeCommunications = () => {
             <div className='flex justify-between items-center'>
 
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Employee Communications</div>
+                    {/* LOT 40 P1: text-blue-500 -> text-slate-900 for consistent header tokens */}
+                    <div className="text-2xl text-slate-900 w-fit">Employee Communications</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>

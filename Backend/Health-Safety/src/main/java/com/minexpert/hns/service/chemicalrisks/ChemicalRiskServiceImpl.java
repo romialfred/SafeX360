@@ -7,10 +7,12 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.chemicalrisks.ChemicalRiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     private final ChemicalRiskRepository chemicalRiskRepository;

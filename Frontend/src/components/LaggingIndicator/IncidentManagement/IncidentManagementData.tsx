@@ -25,6 +25,8 @@ import { Toolbar } from 'primereact/toolbar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import IncidentCard from './IncidentCard';
+import EmptyState from '../../UtilityComp/EmptyState';
+import { IconShieldExclamation } from '@tabler/icons-react';
 
 import { getAllIncidents } from '../../../services/IncidentService';
 import { incidentStatuses, incidentStatusMap } from '../../../Data/DropdownData';
@@ -362,10 +364,17 @@ const IncidentManagementData = () => {
                         {filteredData.map((incidentData) => (
                             <IncidentCard key={incidentData.id} incidentData={incidentData} emps={emps} />
                         ))}
-                        {filteredData.length === 0 &&
-                            <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                No incident available
-                            </div>}
+                        {/* LOT 41 E: EmptyState unifié pour la vue carte */}
+                        {filteredData.length === 0 && (
+                            <div className="col-span-full">
+                                <EmptyState
+                                    icon={<IconShieldExclamation size={28} />}
+                                    title="Aucun incident à afficher"
+                                    description="Aucun incident ne correspond aux filtres sélectionnés."
+                                    iconColor="slate"
+                                />
+                            </div>
+                        )}
                     </div>
                 )
             }

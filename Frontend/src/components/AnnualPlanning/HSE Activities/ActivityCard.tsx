@@ -38,11 +38,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
                 <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
 
+                    {/* LOT 40 P1: a11y labels on action icons */}
                     <ActionIcon
                         size="sm"
                         variant="light"
                         color="blue"
                         onClick={() => onEdit(activity)}
+                        aria-label="Modifier l'activité"
                     >
                         <IconEdit size={12} />
                     </ActionIcon>
@@ -52,6 +54,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                         variant="light"
                         color="red"
                         onClick={() => onDelete(activity.id)}
+                        aria-label="Supprimer l'activité"
                     >
                         <IconTrash size={12} />
                     </ActionIcon>

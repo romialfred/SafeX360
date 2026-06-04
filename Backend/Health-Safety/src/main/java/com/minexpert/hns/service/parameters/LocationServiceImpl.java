@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.LocationDTO;
 import com.minexpert.hns.dto.response.LocationResponse;
@@ -15,6 +16,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.LocationRepository;
 
 @Service
+@Transactional
 public class LocationServiceImpl implements LocationService {
 
     @Autowired

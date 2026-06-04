@@ -68,7 +68,7 @@ const EmployeeDetails = () => {
             {/* Header and Breadcrumbs */}
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Employee Assignments Details</div>
+                    <div className="text-2xl font-semibold text-slate-900">Employee Assignments Details</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/employee-assignment" ><Text variant="gradient" className="hover:!underline cursor-pointer">Employee Assignments</Text></Link>

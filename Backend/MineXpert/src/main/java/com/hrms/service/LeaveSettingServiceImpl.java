@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.dto.LeaveSettingDTO;
 import com.hrms.entity.LeaveSetting;
@@ -11,6 +12,7 @@ import com.hrms.exception.HRMSException;
 import com.hrms.repository.LeaveSettingRepository;
 
 @Service
+@Transactional
 public class LeaveSettingServiceImpl implements LeaveSettingService {
 
     @Autowired

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getAllAudit, getPendingRecommendations } from "../../../../services/AuditService";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { Link } from "react-router-dom";
+import EmptyState from "../../../UtilityComp/EmptyState";
 
 type DonutItem = { name: string; value: number; color: string };
 
@@ -125,10 +126,14 @@ const AuditDashPlanned = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                            <IconAlertTriangle size={32} stroke={1.5} />
-                            <p className="text-sm mt-2">Aucun audit enregistré</p>
-                        </div>
+                        /* LOT 41 E: EmptyState unifié pour le donut audit */
+                        <EmptyState
+                            icon={<IconAlertTriangle size={28} />}
+                            title="Aucun audit enregistré"
+                            description="Les audits planifiés s'afficheront ici une fois créés."
+                            iconColor="slate"
+                            compact
+                        />
                     )}
                 </div>
             </div>
@@ -203,11 +208,15 @@ const AuditDashPlanned = () => {
                             </div>
                         );
                     })}
+                    {/* LOT 41 E: EmptyState unifié pour la liste des recommandations */}
                     {pendingRecs.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                            <IconCircleCheck size={28} stroke={1.5} className="text-green-400" />
-                            <p className="text-sm mt-2 text-slate-500">Aucune recommandation en attente</p>
-                        </div>
+                        <EmptyState
+                            icon={<IconCircleCheck size={28} />}
+                            title="Aucune recommandation en attente"
+                            description="Toutes les recommandations d'audit sont traitées."
+                            iconColor="emerald"
+                            compact
+                        />
                     )}
                 </div>
             </div>

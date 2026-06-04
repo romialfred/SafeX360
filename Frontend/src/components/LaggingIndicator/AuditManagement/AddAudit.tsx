@@ -69,7 +69,8 @@ const AddAudit = () => {
 
     const itemTemplate = (item: any) => {
         return (
-            <div className={`${item.pos === "Target" ? "w-[500px]" : "w-[400px]"} flex gap-5 justify-between self-center`}>
+            // LOT 40 P1: remove hardcoded widths, use responsive flex layout
+            <div className={`w-full flex flex-col sm:flex-row gap-5 justify-between self-center`}>
                 <div className="flex flex-col gap-1">
                     <span className="text-slate-800">{item.name}</span>
                     <span className="text-xs text-slate-500">{item.empNumber}</span>
@@ -101,7 +102,7 @@ const AddAudit = () => {
     };
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Badge, Button, Text } from '@mantine/core';
-import { IconFileX, IconMail } from '@tabler/icons-react';
+import { IconFileX, IconMail, IconFileCheck } from '@tabler/icons-react';
 import { ActionItem, notifyActionItem } from '../../../services/ComplianceDashboardService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import EmptyState from '../../UtilityComp/EmptyState';
 
 interface MissingFileProps {
     items: ActionItem[];
@@ -85,9 +86,16 @@ const MissingFile = ({ items }: MissingFileProps) => {
                         )}
                     </div>
                 ))}
+                {/* LOT 41 E: EmptyState unifié pour la liste des documents manquants */}
                 {!items.length && (
-                    <div className="rounded-xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm text-gray-600">
-                        No missing documentation flagged.
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-white/60">
+                        <EmptyState
+                            icon={<IconFileCheck size={28} />}
+                            title="Aucun document manquant"
+                            description="Toutes les pièces justificatives requises sont déposées."
+                            iconColor="slate"
+                            compact
+                        />
                     </div>
                 )}
             </div>

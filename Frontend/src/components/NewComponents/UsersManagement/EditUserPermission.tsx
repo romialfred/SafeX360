@@ -214,11 +214,13 @@ const EditUserPermission: React.FC = () => {
     <div className="flex flex-col gap-8 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Edit User</div>
+          {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
+          <div className="text-2xl font-semibold text-slate-900">Edit User</div>
           <Breadcrumbs mt="xs">
-            <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-            <Link className="hover:!underline" to="/users-management"><Text variant="gradient">Users Management</Text></Link>
-            <Text variant="gradient">Edit</Text>
+            {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
+            <Link className="hover:!underline" to="/"><Text c="dimmed">Home</Text></Link>
+            <Link className="hover:!underline" to="/users-management"><Text c="dimmed">Users Management</Text></Link>
+            <Text c="teal" fw={500}>Edit</Text>
           </Breadcrumbs>
         </div>
       </div>

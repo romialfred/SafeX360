@@ -8,10 +8,12 @@ import com.minexpert.hns.repository.chemicalrisks.ChemicalRiskAnalysisRepository
 import com.minexpert.hns.repository.chemicalrisks.ChemicalRiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ChemicalRiskAnalysisServiceImpl implements ChemicalRiskAnalysisService {
     private final ChemicalRiskAnalysisRepository analysisRepository;

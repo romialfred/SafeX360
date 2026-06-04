@@ -45,11 +45,13 @@ const AdvancedConfigurationTabs = () => {
         <div className=" space-y-6">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Advanced Configuration</div>
+                    {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
+                    <div className="text-2xl font-semibold text-slate-900">Advanced Configuration</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/settings" ><Text variant="gradient" className="hover:!underline cursor-pointer">Setting</Text></Link>
-                        <Text variant="gradient">Advanced Configuration</Text>
+                        {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        <Link className="hover:!underline" to="/settings" ><Text c="dimmed" className="hover:!underline cursor-pointer">Setting</Text></Link>
+                        <Text c="teal" fw={500}>Advanced Configuration</Text>
                     </Breadcrumbs>
                 </div>
 

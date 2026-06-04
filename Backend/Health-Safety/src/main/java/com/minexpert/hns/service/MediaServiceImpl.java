@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.MediaDTO;
 import com.minexpert.hns.entity.Media;
@@ -12,6 +13,7 @@ import com.minexpert.hns.repository.MediaRepository;
 import com.minexpert.hns.utility.StringListConverter;
 
 @Service
+@Transactional
 public class MediaServiceImpl implements MediaService {
 
     @Autowired

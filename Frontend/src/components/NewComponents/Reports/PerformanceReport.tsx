@@ -4,7 +4,7 @@ import PageHeader from "../../UtilityComp/PageHeader";
 
 const PerformanceReport = () => {
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -37,7 +37,8 @@ const PerformanceReport = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
                     {/* Grille des indicateurs de performance */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-blue-900">Score sécurité global</h3>
@@ -78,7 +79,8 @@ const PerformanceReport = () => {
                     {/* Comparaison benchmark sectoriel */}
                     <div className="bg-gray-50 rounded-lg p-6">
                         <h3 className="text-lg text-slate-900 mb-4">Comparaison benchmark sectoriel</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                             {[
                                 { metric: 'LTIFR', our: 1.2, industry: 2.1, benchmark: 'Excellent' },
                                 { metric: 'TRIR', our: 2.8, industry: 4.2, benchmark: 'Bon' },

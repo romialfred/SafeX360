@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.inspections.InspectionHistoryDTO;
 import com.minexpert.hns.entity.GeneralInspection;
@@ -15,6 +16,7 @@ import com.minexpert.hns.repository.inspections.InspectionHistoryRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class InspectionHistoryServiceImpl implements InspectionHistoryService {
 

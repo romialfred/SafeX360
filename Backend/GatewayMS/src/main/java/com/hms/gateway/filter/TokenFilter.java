@@ -13,6 +13,12 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     @org.springframework.beans.factory.annotation.Value("${JWT_SECRET}")
     private String SECRET;
 
+    // LOT 41 P0 SECURITY: secret partagé entre Gateway et microservices.
+    // Permet aux microservices de rejeter toute requête qui ne provient pas du Gateway.
+    // L'attaquant doit désormais (1) atteindre le port backend ET (2) connaître ce secret.
+    @org.springframework.beans.factory.annotation.Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    private String INTERNAL_GATEWAY_SECRET;
+
     public TokenFilter() {
         super(Config.class);
     }
@@ -32,8 +38,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             }
 
             if (path.equals("/hrms/auth/login") || path.equals("/hrms/account/reset-password")) {
+                // LOT 41 P0 SECURITY: injecte la valeur secrète externalisée plutôt que le littéral "SECRET"
                 return chain.filter(exchange.mutate()
-                        .request(r -> r.header("X-Secret-Key", "SECRET"))
+                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
                         .build());
             }
 
@@ -52,8 +59,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         .parseClaimsJws(token)
                         .getBody();
 
+                // LOT 41 P0 SECURITY: injecte la valeur secrète externalisée plutôt que le littéral "SECRET"
                 exchange = exchange.mutate()
-                        .request(r -> r.header("X-Secret-Key", "SECRET"))
+                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
                         .build();
 
             } catch (Exception e) {

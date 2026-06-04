@@ -4,12 +4,19 @@ import { useAppSelector } from "../slices/hooks";
 import { Affix, LoadingOverlay } from "@mantine/core";
 import Sidebar from "../components/NewComponents/Sidebar/Sidebar";
 import FloatingAIAssistant from "../components/NewComponents/AiAssistant/FloatingAiAssistant";
+import AppFooter from "../components/UtilityComp/AppFooter";
 import { useEffect, useMemo, useState } from "react";
 import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConfig";
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
 
-
-
+/**
+ * DashboardLayout — Coque générale post-login.
+ *
+ * LOT 41 :
+ *   - Footer pleine largeur ajouté (AppFooter)
+ *   - Marges du contenu réduites (px-4 → px-6) avec breakpoints
+ *   - Conteneur d'app passé en flex column pour le footer collant
+ */
 const DashboardLayout = () => {
     const overlay = useAppSelector((state) => state.overlay);
     const [flagsLoaded, setFlagsLoaded] = useState(false);
@@ -26,15 +33,19 @@ const DashboardLayout = () => {
         });
         return () => { mounted = false; };
     }, []);
+
     return (
         <>
             <InactivityHandler inactivityMinutes={inactivityMinutes} />
-            <div className="flex  w-full">
+            <div className="flex w-full">
                 <Sidebar />
-                <div className="flex flex-col w-full h-screen">
+                <div className="flex flex-col min-h-screen w-full">
                     <Header />
 
-                    <div className={`relative pt-[120px] ${overlay ? "h-screen overflow-y-hidden" : ""} `}>
+                    {/* Contenu principal — pleine largeur, padding rationnel */}
+                    <main
+                        className={`relative flex-1 pt-[120px] ${overlay ? "overflow-y-hidden" : ""}`}
+                    >
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded}
                             zIndex={1000}
@@ -42,14 +53,17 @@ const DashboardLayout = () => {
                             loaderProps={{ color: 'red', type: 'bars' }}
                         />
                         <Outlet />
-                    </div>
+                    </main>
+
+                    {/* LOT 41 — Footer institutionnel pleine largeur */}
+                    <AppFooter />
                 </div>
-                <Affix position={{ bottom: 20, right: 20 }}>
+                <Affix position={{ bottom: 80, right: 20 }}>
                     <FloatingAIAssistant />
                 </Affix>
-            </div >
+            </div>
         </>
-    )
-}
+    );
+};
 
-export default DashboardLayout
+export default DashboardLayout;

@@ -13,6 +13,7 @@ import {
     Title,
     ScrollArea,
     Badge,
+    Skeleton,
 } from '@mantine/core';
 import { DonutChart, BarChart } from '@mantine/charts';
 import {
@@ -25,6 +26,7 @@ import {
     IconMessageCircle,
 } from '@tabler/icons-react';
 import PageHeader from '../UtilityComp/PageHeader';
+import ErrorBanner from '../UtilityComp/ErrorBanner';
 import { getCommunicationStats, getRecentCommunications } from '../../services/CommunicationService';
 import { getAllDepartments } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
@@ -349,7 +351,7 @@ const CommunicationDashboard = () => {
     );
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -362,15 +364,16 @@ const CommunicationDashboard = () => {
                 subtitle="Vue en temps réel sur la portée, l'engagement et la distribution des communications"
             />
 
+            {/* LOT 41 E: ErrorBanner unifié */}
             {error && (
-                <Card shadow="sm" padding="sm" radius="md" withBorder>
-                    <Text size="sm" c="red">{error}</Text>
-                </Card>
+                <ErrorBanner tone="error" title="Échec du chargement">
+                    {error}
+                </ErrorBanner>
             )}
 
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+                {/* LOT 40 P1: removed dead commented ThemeIcon block from metric cards */}
                 {metricCards.map((metric) => {
-                    // const Icon = metric.icon;
                     return (
                         <Card
                             key={metric.label}
@@ -394,9 +397,6 @@ const CommunicationDashboard = () => {
                                         {metric.secondary}
                                     </Text>
                                 </Box>
-                                {/* <ThemeIcon radius="xl" size={44} color={metric.iconColor} variant="light">
-                                    <Icon size={22} />
-                                </ThemeIcon> */}
                             </Group>
                         </Card>
                     );
@@ -518,8 +518,13 @@ const CommunicationDashboard = () => {
                     <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
                         <Group justify="space-between" mb="md">
                             <Title order={4}>Department Distribution</Title>
-                            {!loading && topDepartmentShare && (
+                            {/* LOT 40 P1: loading skeleton + dash fallback for null state */}
+                            {loading ? (
+                                <Skeleton h={20} w={120} />
+                            ) : topDepartmentShare ? (
                                 <Text size="sm" c="dimmed">Top share: {topDepartmentShare}%</Text>
+                            ) : (
+                                <Text size="sm" c="dimmed">—</Text>
                             )}
                         </Group>
                         <Grid align="stretch">

@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.CheckListDTO;
 import com.minexpert.hns.dto.response.CheckListDetails;
@@ -15,6 +16,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.CheckListRepository;
 
 @Service
+@Transactional
 public class CheckListServiceImpl implements CheckListService {
 
     @Autowired

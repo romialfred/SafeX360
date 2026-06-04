@@ -135,12 +135,14 @@ const UserDetails = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Users Management Details</div>
+                    {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
+                    <div className="text-2xl font-semibold text-slate-900">Users Management Details</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
 
-                        <Link className="hover:!underline" to="/users-management" ><Text variant="gradient" className="hover:!underline cursor-pointer">Users Management</Text></Link>
-                        <Text variant="gradient">Users Management Details</Text>
+                        <Link className="hover:!underline" to="/users-management" ><Text c="dimmed" className="hover:!underline cursor-pointer">Users Management</Text></Link>
+                        <Text c="teal" fw={500}>Users Management Details</Text>
                     </Breadcrumbs>
                 </div>
 

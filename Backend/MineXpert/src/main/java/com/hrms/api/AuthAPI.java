@@ -76,12 +76,14 @@ public class AuthAPI {
             empDTO.setId(user.getEmpId());
             auditLogService.logAudit(new AuditLogDTO(null, user.getEmpId() != null ? empDTO : null, request.getLogin(),
                     LocalDateTime.now(), "Successfully Logged In"));
+            // LOT 41 P1 SECURITY: max-age cookie aligné sur JWT_EXPIRATION_HOURS (défaut 8h)
+            // au lieu de 30 jours, pour limiter la fenêtre d'exploitation d'un vol de cookie.
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
                     .secure(false)
                     .path("/")
                     .sameSite("Lax")
-                    .maxAge(Duration.ofDays(30))
+                    .maxAge(Duration.ofMillis(helper.getExpirationMillis()))
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

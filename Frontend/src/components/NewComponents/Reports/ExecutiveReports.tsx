@@ -3,7 +3,7 @@ import PageHeader from '../../UtilityComp/PageHeader';
 
 const ExecutiveReports = () => {
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -18,7 +18,8 @@ const ExecutiveReports = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg text-slate-900 mb-6">Tableau de bord sécurité exécutif</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                     {/* Conformité globale */}
                     <div className="relative rounded-xl p-6 bg-green-50 border border-green-200 shadow-sm hover:shadow-md transition-transform duration-200">
                         <div className="absolute top-4 right-4 bg-green-100 rounded-full p-2">

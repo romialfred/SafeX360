@@ -212,7 +212,7 @@ const SteeringTourDetails = () => {
         open();
     }
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto" >
+        <div className="p-5 space-y-5 w-full" >
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -307,7 +307,8 @@ const SteeringTourDetails = () => {
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* LOT 40 P1: grille responsive (mobile→single col) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
                             label="Responsable"
                             placeholder="Sélectionner le responsable"

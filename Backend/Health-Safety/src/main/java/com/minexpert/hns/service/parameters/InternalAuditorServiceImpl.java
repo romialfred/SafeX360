@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.parameters.InternalAuditorDTO;
@@ -21,6 +22,7 @@ import com.minexpert.hns.repository.parameters.InternalAuditorRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class InternalAuditorServiceImpl implements InternalAuditorService {
     private final InternalAuditorRepository internalAuditorRepository;

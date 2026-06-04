@@ -315,7 +315,7 @@ const ReportIncidents = () => {
     );
 
     return (
-        <div className="p-5 flex flex-col gap-5 max-w-[1600px] mx-auto">
+        <div className="p-5 flex flex-col gap-5 w-full">
             {/* Page header avec breadcrumb + N° auto + chrono + actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pb-3 border-b border-slate-200">
                 <div className="flex-1 min-w-0">

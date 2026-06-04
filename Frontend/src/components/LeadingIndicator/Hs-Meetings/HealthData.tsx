@@ -67,19 +67,23 @@ const HealthData = () => {
             <div className='flex gap-5 items-center'>
                 <div className='flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100'>
                     <Tooltip label='Table View'>
+                        {/* LOT 40 P1: aria-label ajouté pour accessibilité */}
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
                             color='blue'
                             onClick={() => setViewType('table')}
+                            aria-label="Vue tableau"
                         >
                             <IconLayoutList size={18} />
                         </ActionIcon>
                     </Tooltip>
                     <Tooltip label='Card View'>
+                        {/* LOT 40 P1: aria-label ajouté pour accessibilité */}
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
                             color='blue'
                             onClick={() => setViewType('card')}
+                            aria-label="Vue cartes"
                         >
                             <IconLayoutGrid size={18} />
                         </ActionIcon>

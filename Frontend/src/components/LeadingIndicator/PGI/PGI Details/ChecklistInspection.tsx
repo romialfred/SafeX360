@@ -11,6 +11,7 @@ import { addInspectionChecklist, getChecklistsByInspectionId, removeInsChecklist
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { useForm } from "@mantine/form";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { convertFilesToBase64New, handlePreview } from "../../../../utility/DocumentUtility";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
@@ -215,7 +216,8 @@ const ChecklistInspection = () => {
                                     )}
                                 </div>
                                 <Text size="sm" mt={4}><b>Observation</b></Text>
-                                <div dangerouslySetInnerHTML={{ __html: item.observation }} />
+                                {/* LOT 41 P0 XSS fix */}
+                                <SafeHtml html={item.observation} />
                                 {item.docs && item.docs?.length > 0 && (
                                     <div className="md:col-span-2">
                                         <p className="block text-sm my-2">Attachments:</p>

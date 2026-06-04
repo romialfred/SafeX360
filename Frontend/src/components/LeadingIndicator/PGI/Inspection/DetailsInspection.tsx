@@ -7,6 +7,7 @@ import { getPgiById } from "../../../../services/PgiService";
 import { formatDateWithDay, formatTo12Hour } from "../../../../utility/DateFormats";
 import { capitalizeFirstLetter, getSeverity } from "../../../../utility/OtherUtilities";
 import { inspectionTypesMap } from "../../../../Data/DropdownData";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 const DetailsInspection = () => {
 
@@ -47,7 +48,8 @@ const DetailsInspection = () => {
 
                 <div>
                     <p className="text-xl"> Description</p>
-                    <p dangerouslySetInnerHTML={{ __html: inspection.description }} className="text-gray-500 text-lg" />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={inspection.description} className="text-gray-500 text-lg" />
                 </div>
 
                 <div>

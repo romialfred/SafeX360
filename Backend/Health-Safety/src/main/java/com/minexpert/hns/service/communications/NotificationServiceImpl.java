@@ -12,9 +12,11 @@ import com.minexpert.hns.repository.communications.NotificationRepository;
 import com.minexpert.hns.repository.communications.projection.NotificationSummaryView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;

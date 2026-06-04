@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.compliance.AssignReqResponse;
@@ -22,6 +23,7 @@ import com.minexpert.hns.repository.compliance.PositionAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class PositionAssignmentServiceImpl implements PositionAssignmentService {
 

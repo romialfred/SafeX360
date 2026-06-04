@@ -111,15 +111,16 @@ const CreateDocument = () => {
     return (
         <div >
             <div>
-                <div className="text-2xl text-blue-500 w-fit">Create New Document</div>
+                {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+                <div className="text-2xl text-slate-900 w-fit">Create New Document</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
-                        <Text variant="gradient">Home</Text>
+                        <Text c="dimmed">Home</Text>
                     </Link>
                     <Link className="hover:!underline" to="/document-management">
-                        <Text variant="gradient">Document Management</Text>
+                        <Text c="dimmed">Document Management</Text>
                     </Link>
-                    <Text variant="gradient">Create New Document</Text>
+                    <Text c="teal" fw={500}>Create New Document</Text>
                 </Breadcrumbs>
             </div>
 
@@ -264,6 +265,7 @@ const CreateDocument = () => {
 
                             <Group justify="flex-end" mt="xl">
                                 <Button
+                                    type="button" // LOT 40 P1: explicit type for non-submit button
                                     variant="outline"
                                     onClick={() => setShowNewDocumentForm(false)}
                                     size="md"

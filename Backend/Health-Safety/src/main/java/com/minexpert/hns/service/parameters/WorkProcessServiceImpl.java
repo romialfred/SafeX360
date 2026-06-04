@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.parameters.WorkProcessDTO;
@@ -20,6 +21,7 @@ import com.minexpert.hns.repository.parameters.WorkProcessRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class WorkProcessServiceImpl implements WorkProcessService {
     private final WorkProcessRepository workProcessRepository;

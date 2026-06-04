@@ -10,12 +10,14 @@ import lombok.RequiredArgsConstructor;
 import com.minexpert.hns.exception.HSException;
 import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
     private final ActivityRepository activityRepository;

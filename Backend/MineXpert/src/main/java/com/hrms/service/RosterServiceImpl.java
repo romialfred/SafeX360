@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.dto.RosterDTO;
 import com.hrms.entity.Roster;
@@ -12,6 +13,7 @@ import com.hrms.exception.HRMSException;
 import com.hrms.repository.RosterRepository;
 
 @Service
+@Transactional
 public class RosterServiceImpl implements RosterService {
 
     @Autowired

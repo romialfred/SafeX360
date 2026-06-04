@@ -264,7 +264,7 @@ const ViewDetails = () => {
     const isLoading = !incident?.id;
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             {/* Page header — breadcrumb + titre + actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pb-3 border-b border-slate-200">
                 <div className="flex-1 min-w-0">

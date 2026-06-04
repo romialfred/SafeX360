@@ -7,6 +7,7 @@ import { getBase64FileSize, handlePreview } from "../../../../utility/DocumentUt
 import { investMethodMap } from "../../../../Data/DropdownData";
 import { formatDateWithDay } from "../../../../utility/DateFormats";
 import { statusColors, statusLabels } from "../../../../Data/IncidentsData";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 const InvestigationDetailsTab = ({ investigation, processes }: any) => {
     const [opened, { open, close }] = useDisclosure(false);
@@ -123,11 +124,10 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                             )}
                         </div>
                     </List>
-                    <div
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml
+                        html={investigation[`${type}Analysis`] || "<p>No analysis provided.</p>"}
                         className="prose max-w-none mt-3 text-gray-800"
-                        dangerouslySetInnerHTML={{
-                            __html: investigation[`${type}Analysis`] || "<p>No analysis provided.</p>",
-                        }}
                     />
                 </div>
             ))}
@@ -135,9 +135,10 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
             {/* Final Report */}
             <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
                 <h4 className="text-lg text-gray-700 mb-2">Investigation Report</h4>
-                <div
+                {/* LOT 41 P0 XSS fix */}
+                <SafeHtml
+                    html={investigation.report || "<p>No report available.</p>"}
                     className="prose max-w-none text-gray-800"
-                    dangerouslySetInnerHTML={{ __html: investigation.report || "<p>No report available.</p>" }}
                 />
             </div>
 

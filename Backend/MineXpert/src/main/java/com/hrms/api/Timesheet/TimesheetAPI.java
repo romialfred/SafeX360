@@ -80,27 +80,49 @@ public class TimesheetAPI {
         return new ResponseEntity<>(new ResponseDTO("Member Entry updated successfully"), HttpStatus.OK);
     }
 
+    // LOT 40 P1 fix : ces 2 endpoints avalaient silencieusement les
+    // HRMSException levées dans parallelStream() — défaillance invisible
+    // côté utilisateur. On comptabilise désormais les échecs et on les
+    // remonte dans le message de réponse si nécessaire.
     @PutMapping("/updateEntries")
     public ResponseEntity<ResponseDTO> updateMemberEntry(@RequestBody EntriesDTO entriesDTO)
             throws HRMSException {
+        java.util.concurrent.atomic.AtomicInteger failures = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.List<String> errorSamples = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         entriesDTO.getMemberIds().parallelStream().forEach((x) -> {
             try {
                 memberEntryService.updateMemberEntry(x, entriesDTO.getAttendance());
             } catch (HRMSException e) {
+                failures.incrementAndGet();
+                if (errorSamples.size() < 3) errorSamples.add(e.getMessage());
             }
         });
+        if (failures.get() > 0) {
+            String msg = String.format("Updated with %d failure(s)%s", failures.get(),
+                    errorSamples.isEmpty() ? "" : " — sample: " + String.join("; ", errorSamples));
+            return new ResponseEntity<>(new ResponseDTO(msg), HttpStatus.MULTI_STATUS);
+        }
         return new ResponseEntity<>(new ResponseDTO("Member Entry updated successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/addComments")
     public ResponseEntity<ResponseDTO> addComments(@RequestBody EntriesDTO entriesDTO)
             throws HRMSException {
+        java.util.concurrent.atomic.AtomicInteger failures = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.List<String> errorSamples = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         entriesDTO.getMemberIds().parallelStream().forEach((x) -> {
             try {
                 memberEntryService.addComment(x, entriesDTO.getComment());
             } catch (HRMSException e) {
+                failures.incrementAndGet();
+                if (errorSamples.size() < 3) errorSamples.add(e.getMessage());
             }
         });
+        if (failures.get() > 0) {
+            String msg = String.format("Added with %d failure(s)%s", failures.get(),
+                    errorSamples.isEmpty() ? "" : " — sample: " + String.join("; ", errorSamples));
+            return new ResponseEntity<>(new ResponseDTO(msg), HttpStatus.MULTI_STATUS);
+        }
         return new ResponseEntity<>(new ResponseDTO("Comments added successfully"), HttpStatus.OK);
     }
 

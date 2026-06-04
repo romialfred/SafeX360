@@ -17,6 +17,8 @@ import {
 import { Badge } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import PageHeader from '../../UtilityComp/PageHeader';
+import SafeHtml from '../../UtilityComp/SafeHtml';
+import EmptyState from '../../UtilityComp/EmptyState';
 import {
     approveCorrectiveAction,
     cancelCorrectiveAction,
@@ -361,7 +363,7 @@ const PendingActions = () => {
 
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -657,7 +659,8 @@ const PendingActions = () => {
                                                 <p className="text-sm text-red-600">{descMap[action.id]?.error}</p>
                                             )}
                                             {descMap[action.id]?.value && (
-                                                <div className="text-gray-700 text-sm" dangerouslySetInnerHTML={{ __html: descMap[action.id]?.value || '' }} />
+                                                /* LOT 41 P0 XSS fix */
+                                                <SafeHtml html={descMap[action.id]?.value || ''} className="text-gray-700 text-sm" />
                                             )}
                                             {!isNumericId(action.id) && !descMap[action.id] && (
                                                 <p className="text-sm text-gray-600">Details not available for mock items.</p>
@@ -670,16 +673,19 @@ const PendingActions = () => {
                     })}
                 </div>
 
+                {/* LOT 41 E: EmptyState unifié pour la liste des actions en attente */}
                 {filteredActions.length === 0 && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                        <IconCircleCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg text-gray-900 mb-2">No pending actions found</h3>
-                        <p className="text-gray-600">
-                            {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
-                                ? 'Try adjusting your filters to see more actions.'
-                                : 'Great job! You\'re all caught up with your pending actions.'
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <EmptyState
+                            icon={<IconCircleCheck size={28} />}
+                            title="Aucune action en attente"
+                            description={
+                                searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
+                                    ? 'Aucune action ne correspond aux filtres sélectionnés.'
+                                    : 'Toutes les actions correctives sont à jour.'
                             }
-                        </p>
+                            iconColor="emerald"
+                        />
                     </div>
                 )}
             </div>

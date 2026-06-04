@@ -8,6 +8,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.dto.AccountDTO;
 import com.hrms.dto.LeaveDTO;
@@ -27,6 +28,7 @@ import com.hrms.utility.PdfUtils;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
+@Transactional
 public class LeaveServiceImpl implements LeaveService {
 
     @Autowired

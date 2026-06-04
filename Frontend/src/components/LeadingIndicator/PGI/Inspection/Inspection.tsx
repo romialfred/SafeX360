@@ -134,13 +134,15 @@ const Inspection = () => {
         <div className='flex flex-col gap-10'>
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Inspections Details</div>
+                    {/* LOT 40 P1: titre page passé en text-slate-900 */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Inspections Details</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        {/* LOT 40 P1: breadcrumbs Mantine 7 — couleurs sémantiques au lieu de variant="gradient" */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/PGI">
-                            <Text variant="gradient">Planned General Inspections</Text>
+                            <Text c="dimmed">Planned General Inspections</Text>
                         </Link>
-                        <Text variant="gradient">Inspections Details</Text>
+                        <Text c="teal" fw={500}>Inspections Details</Text>
                     </Breadcrumbs>
                 </div>
 

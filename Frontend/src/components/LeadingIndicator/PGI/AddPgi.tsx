@@ -202,7 +202,7 @@ const AddPgi = () => {
 
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -308,7 +308,8 @@ const AddPgi = () => {
                             <Select withAsterisk label="Activité de référence" placeholder="Sélectionner l'activité" data={activities} {...form.getInputProps('activityId')} />
                             <Select withAsterisk label="Lieu" placeholder="Sélectionner le lieu" data={location} {...form.getInputProps('siteId')} />
                             <DatePickerInput label="Date planifiée" placeholder="JJ/MM/AAAA" withAsterisk {...form.getInputProps('plannedDate')} />
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* LOT 40 P1: grille responsive pour créneaux horaires */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <TimeInput label="Heure de début" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
                                 <TimeInput label="Heure de fin" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
                             </div>

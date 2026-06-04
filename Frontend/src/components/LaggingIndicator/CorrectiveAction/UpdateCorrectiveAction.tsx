@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { getActionById } from "../../../services/CorrectiveActionService";
 import TextEditor from "../../UtilityComp/TextEditor";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
 
 const UpdateCorrectiveAction = () => {
@@ -139,7 +140,7 @@ const UpdateCorrectiveAction = () => {
     <div className="flex flex-col gap-5 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Action Plan</div>
+          <div className="text-2xl font-semibold text-slate-900">Update Action Plan</div>
           <Breadcrumbs mt="xs">
             <Link className="hover:!underline" to="/">
               <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
@@ -222,7 +223,8 @@ const UpdateCorrectiveAction = () => {
               {selectedRow?.description && (
                 <div className="rounded-md border border-gray-200 p-3">
                   <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
-                  <Text size="sm" className="text-gray-700" dangerouslySetInnerHTML={{ __html: selectedRow?.description }} />
+                  {/* LOT 41 P0 XSS fix */}
+                  <SafeHtml html={selectedRow?.description} className="text-gray-700 text-sm" />
                 </div>
               )}
             </div>
@@ -309,7 +311,8 @@ const UpdateCorrectiveAction = () => {
                     </Progress.Root>
                     <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                       <p className="text-blue-400">Update Details</p>
-                      <Text dangerouslySetInnerHTML={{ __html: x.description || "-" }} size="sm" className="text-gray-700 mt-1" />
+                      {/* LOT 41 P0 XSS fix */}
+                      <SafeHtml html={x.description || "-"} className="text-gray-700 mt-1 text-sm" />
                     </div>
                   </div>
                 </Card>

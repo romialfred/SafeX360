@@ -220,15 +220,17 @@ const EditPgi = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Update Inspections</div>
+                    {/* LOT 40 P1: titre page passé en text-slate-900 */}
+                    <div className="text-2xl text-slate-900 w-fit">Update Inspections</div>
                     <Breadcrumbs mt="xs" mb="lg">
+                        {/* LOT 40 P1: breadcrumbs Mantine 7 — couleurs sémantiques au lieu de variant="gradient" */}
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text c="dimmed">Home</Text>
                         </Link>
                         <Link className="hover:!underline" to="/PGI">
-                            <Text variant="gradient">Planned General Inspections</Text>
+                            <Text c="dimmed">Planned General Inspections</Text>
                         </Link>
-                        <Text variant="gradient">Update Inspections</Text>
+                        <Text c="teal" fw={500}>Update Inspections</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -244,15 +246,17 @@ const EditPgi = () => {
             <form onSubmit={form.onSubmit(handleSubmit)}>
                 <div className="flex flex-col gap-8">
 
+                    {/* LOT 40 P1: grille responsive du fieldset (mobile→single col) */}
                     <Fieldset
-                        className="grid grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg text-blue-500">Inspections Informations</div>} >
+                        className="grid grid-cols-1 md:grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
+                        legend={<div className="text-lg text-teal-700">Inspections Informations</div>} >
 
                         <Select disabled withAsterisk label="Activity" placeholder="Select activity" data={activities} {...form.getInputProps('activityId')} />
                         <Select withAsterisk label="Location" placeholder="Select location" data={location} {...form.getInputProps('siteId')} />
                         <DatePickerInput label="Date" placeholder="dd-mm-yyyy" withAsterisk {...form.getInputProps('plannedDate')} />
 
-                        < div className="grid grid-cols-2 gap-4 self-center">
+                        {/* LOT 40 P1: sous-grille horaires responsive */}
+                        < div className="grid grid-cols-1 md:grid-cols-2 gap-4 self-center">
 
                             <TimeInput label="Start Time" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
                             <TimeInput label="End Time" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
@@ -264,7 +268,7 @@ const EditPgi = () => {
 
                     <Fieldset
                         className="flex flex-col [&>legend]:w-fit gap-5 flex-wrap"
-                        legend={<div className="text-lg text-blue-500">Objective & Risk</div>} >
+                        legend={<div className="text-lg text-teal-700">Objective & Risk</div>} >
 
                         <TextInput label="Objective" placeholder="Enter Objective" {...form.getInputProps('objectives')} />
                         <Checkbox.Group {...form.getInputProps('riskTypes')} label="Risk Types" withAsterisk >
@@ -280,7 +284,7 @@ const EditPgi = () => {
                     </Fieldset>
                     <Fieldset
                         className=" [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg text-blue-500">Personal Protective Equipment (PPE)</div>} >
+                        legend={<div className="text-lg text-teal-700">Personal Protective Equipment (PPE)</div>} >
                         <Checkbox.Group size="md"
                             {...form.getInputProps("ppe")}
                             label=""
@@ -314,7 +318,7 @@ const EditPgi = () => {
                             </div>
                         </Checkbox.Group>
                     </Fieldset>
-                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg text-blue-500 "> Participants</div>}>
+                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg text-teal-700 "> Participants</div>}>
 
 
                         <div className=' [&>legend]:w-fit flex gap-5 flex-wrap'>

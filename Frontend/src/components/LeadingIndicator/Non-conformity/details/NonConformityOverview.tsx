@@ -1,6 +1,7 @@
 import { Badge, Card, Divider, Grid, Group, Stack, Text } from "@mantine/core";
 import { IconAlertTriangle, IconCalendar, IconMapPin, IconTarget, IconTool, IconUser, IconUsers } from "@tabler/icons-react";
 import { formatDateShort } from "../../../../utility/DateFormats";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 
 const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, processMap }: any) => {
@@ -101,7 +102,8 @@ const NonConformityOverview = ({ nonConformity, empMap, analysis, locationMap, p
                         <div>
                             <Text size="sm" className="text-slate-700 mb-2">Description</Text>
 
-                            <div dangerouslySetInnerHTML={{ __html: nonConformity?.description || '-' }} />
+                            {/* LOT 41 P0 XSS fix */}
+                            <SafeHtml html={nonConformity?.description || '-'} />
                         </div>
 
                         <div>

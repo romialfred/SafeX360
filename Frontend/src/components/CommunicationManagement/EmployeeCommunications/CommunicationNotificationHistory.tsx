@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Center, Loader, ScrollArea, Stack, Table, Text } from '@mantine/core';
+import { Badge, Center, ScrollArea, Stack, Table, Text } from '@mantine/core';
+import { IconBellRinging } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { getNotificationsByCommunication } from '../../../services/NotificationService';
+import EmptyState from '../../UtilityComp/EmptyState';
+import { SkeletonTable } from '../../UtilityComp/LoadingSkeleton';
 
 type NotificationHistoryProps = {
     communicationId?: number | string;
@@ -111,13 +114,16 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
     return (
         <Stack>
             {loading ? (
-                <Center py="xl">
-                    <Loader color="blue" />
-                </Center>
+                /* LOT 41 E: SkeletonTable pendant le chargement */
+                <SkeletonTable rows={5} cols={3} />
             ) : data.length === 0 ? (
-                <Center py="xl">
-                    <Text c="dimmed">No notifications have been generated for this communication yet.</Text>
-                </Center>
+                /* LOT 41 E: EmptyState unifié */
+                <EmptyState
+                    icon={<IconBellRinging size={28} />}
+                    title="Aucune notification générée"
+                    description="Aucune notification n'a encore été envoyée pour cette communication."
+                    iconColor="slate"
+                />
             ) : (
                 <ScrollArea>
                     <Table striped highlightOnHover withTableBorder>

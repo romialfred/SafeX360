@@ -43,8 +43,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    private static final String UPLOAD_DIR = "M:/hrmsDocs/";
-    // private static final String UPLOAD_DIR = "C:/apps/HRMSAppDocuments/";
+    /**
+     * LOT 40 P1 fix : UPLOAD_DIR externalisé via configuration.
+     *
+     * Avant : chemin Windows hardcodé ("M:/hrmsDocs/") qui :
+     *   - cassait sur Linux (Render)
+     *   - bloquait les déploiements multi-environnement
+     *   - mélangeait config et code
+     *
+     * Désormais lu depuis la propriété `app.upload-dir` (application.yml),
+     * elle-même injectable via la variable d'environnement UPLOAD_DIR.
+     * Valeur par défaut : "./uploads" (relatif au working dir, portable).
+     */
+    @org.springframework.beans.factory.annotation.Value("${app.upload-dir:./uploads/}")
+    private String UPLOAD_DIR;
 
     @Override
     public void addEmployee(EmployeeDTO employeeDTO) throws HRMSException {
@@ -156,33 +168,69 @@ public class EmployeeServiceImpl implements EmployeeService {
         return HexFormat.of().formatHex(hash);
     }
 
+    /**
+     * LOT 40 P0 Security fix : path traversal protection.
+     *
+     * Audit a découvert que getDocument(String doc) et getProfilePicture(String doc)
+     * concatenaient le filename utilisateur directement avec UPLOAD_DIR sans
+     * validation, permettant `GET /hrms/employee/files/..%2F..%2F..%2Fetc%2Fpasswd`
+     * pour lire des fichiers arbitraires.
+     *
+     * On valide désormais :
+     *   1. Le filename ne contient pas `..`, `/`, `\`, ni byte null.
+     *   2. Le path résolu reste dans UPLOAD_DIR (Files.isSameFile ou startsWith).
+     */
+    private Path validateAndResolveUploadPath(String userSuppliedFilename) throws HRMSException {
+        if (userSuppliedFilename == null || userSuppliedFilename.isBlank()) {
+            throw new HRMSException("INVALID_FILE");
+        }
+        // Reject obvious traversal attempts before resolution.
+        if (userSuppliedFilename.contains("..")
+                || userSuppliedFilename.contains("/")
+                || userSuppliedFilename.contains("\\")
+                || userSuppliedFilename.contains("\0")) {
+            throw new HRMSException("INVALID_FILE");
+        }
+        try {
+            Path base = Paths.get(UPLOAD_DIR).toAbsolutePath().normalize();
+            Path candidate = base.resolve(userSuppliedFilename).normalize();
+            // Belt and suspenders : confirm the resolved path is under the base.
+            if (!candidate.startsWith(base)) {
+                throw new HRMSException("INVALID_FILE");
+            }
+            return candidate;
+        } catch (Exception e) {
+            throw new HRMSException("INVALID_FILE");
+        }
+    }
+
     @Override
     public Resource getDocument(String doc) throws Exception {
-        Path path = Paths.get(UPLOAD_DIR + doc);
+        Path path = validateAndResolveUploadPath(doc);
         if (Files.exists(path)) {
             Resource resource = new UrlResource(path.toUri());
             String contentType = Files.probeContentType(path);
             if (contentType == null) {
-                contentType = "application/octet-stream"; // Default content type if not found
+                contentType = "application/octet-stream";
             }
             return resource;
         } else {
-            throw new Exception("File not found.");
+            throw new HRMSException("FILE_NOT_FOUND");
         }
     }
 
     @Override
     public Resource getProfilePicture(String doc) throws Exception {
-        Path path = Paths.get(UPLOAD_DIR + doc);
+        Path path = validateAndResolveUploadPath(doc);
         if (Files.exists(path)) {
             Resource resource = new UrlResource(path.toUri());
             String contentType = Files.probeContentType(path);
             if (contentType == null) {
-                contentType = "application/octet-stream"; // Default content type if not found
+                contentType = "application/octet-stream";
             }
             return resource;
         } else {
-            throw new Exception("File not found.");
+            throw new HRMSException("FILE_NOT_FOUND");
         }
     }
 

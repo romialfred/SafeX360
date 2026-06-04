@@ -1,8 +1,8 @@
 import { BarChart } from "@mantine/charts";
-import { Alert, Badge, Box, Card, Center, Grid, Group, Loader, Paper, Select, Stack, Text } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
+import { Badge, Box, Card, Center, Grid, Group, Loader, Paper, Select, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getYearlyClosureSummary, type YearlyClosureResponse } from "../../services/IncidentService";
+import ErrorBanner from "../UtilityComp/ErrorBanner";
 
 type MonthlyClosure = YearlyClosureResponse;
 
@@ -93,10 +93,11 @@ const ClosureRateGraph = () => {
                     />
                 </Group>
 
+                {/* LOT 41 E: ErrorBanner unifié */}
                 {error && (
-                    <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md">
+                    <ErrorBanner tone="error" title="Échec du chargement">
                         {error}
-                    </Alert>
+                    </ErrorBanner>
                 )}
 
                 <Paper withBorder radius="md" p="md" shadow="xs">

@@ -6,6 +6,7 @@ import {
 import { useEffect, useState } from 'react';
 import { getAllActiveWorkProcess } from '../../../../services/WorkProcessService';
 import { mapIdToName } from '../../../../utility/OtherUtilities';
+import SafeHtml from '../../../UtilityComp/SafeHtml';
 
 /**
  * Onglet "Détails de l'audit" — refonte raffinée FR avec sections délimitées
@@ -120,8 +121,8 @@ const AuditInfoTabs = ({ audit, auditors }: any) => {
 
             <Section title="Description de la méthodologie" icon={IconFlag} accent="amber">
                 {audit.description ? (
-                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: audit.description }} />
+                    /* LOT 41 P0 XSS fix */
+                    <SafeHtml html={audit.description} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                 ) : (
                     <p className="text-xs text-slate-400 italic">Description non renseignée.</p>
                 )}

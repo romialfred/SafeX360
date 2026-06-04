@@ -102,7 +102,7 @@ const ChemicalDetails = () => {
     return (
         <div className='p-5 flex flex-col gap-10'>
             <div>
-                <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Chemical Risk Assesment</div>
+                <div className="text-2xl font-semibold text-slate-900 ">Chemical Risk Assesment</div>
                 <Breadcrumbs className="" mt="xs">
                     <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                     <Link className="hover:!underline" to="/chemical-register" ><Text variant="gradient" className="hover:!underline cursor-pointer">Chemical Register</Text></Link>

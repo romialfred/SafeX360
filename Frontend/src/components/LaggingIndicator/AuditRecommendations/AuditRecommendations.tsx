@@ -80,7 +80,8 @@ const AuditRecommendations = () => {
     return (
         <div>
             <div>
-                <div className="text-2xl text-blue-500 w-fit">Recommendation Followup</div>
+                {/* LOT 40 P1: page title color */}
+                <div className="text-2xl text-slate-900 w-fit">Recommendation Followup</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
 
@@ -93,7 +94,8 @@ const AuditRecommendations = () => {
             <div className="flex flex-col gap-10">
                 {/* Filter Section */}
                 <Card className="bg-white" shadow="sm" withBorder radius="md">
-                    <div className="grid grid-cols-3 gap-3">
+                    {/* LOT 40 P1: responsive grid breakpoints */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <TextInput label="Search" placeholder="Search recommendations..." leftSection={<IconSearch />} />
                         <Select label="Status" placeholder="Select Status" data={["All status", "Pending", "In Progress", "Implemented", "Closed", "Rejected"]} />
                         <Select label="Departments" placeholder="Select Departments" data={["All Departments", "Safety", "IT"]} />

@@ -5,12 +5,12 @@ import {
     Select,
     Input,
     Tooltip,
-    Loader,
-    Center,
 } from '@mantine/core';
 import { IconSearch, IconBell, IconCheck, IconAlertTriangle, IconBolt } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../UtilityComp/PageHeader';
+import { SkeletonTable } from '../UtilityComp/LoadingSkeleton';
+import EmptyState from '../UtilityComp/EmptyState';
 import { Toolbar } from 'primereact/toolbar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -447,7 +447,7 @@ const NotificationsManagement = () => {
     );
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -465,9 +465,8 @@ const NotificationsManagement = () => {
             <Card shadow="sm" padding="md" radius="md" withBorder>
                 <Toolbar className="mb-3 !p-2" left={toolbarTemplate}></Toolbar>
                 {loading ? (
-                    <Center py="xl">
-                        <Loader color="blue" />
-                    </Center>
+                    /* LOT 41 E: SkeletonTable pendant le chargement */
+                    <SkeletonTable rows={6} cols={7} />
                 ) : (
                     <DataTable
                         value={filteredNotifications}
@@ -478,7 +477,16 @@ const NotificationsManagement = () => {
                         rowsPerPageOptions={[10, 25, 50]}
                         responsiveLayout="scroll"
                         className="[&_.p-datatable-tbody]:!text-sm"
-                        emptyMessage="No notifications found."
+                        /* LOT 41 E: EmptyState unifié dans la DataTable */
+                        emptyMessage={
+                            <EmptyState
+                                icon={<IconBell size={28} />}
+                                title="Aucune notification trouvée"
+                                description="Aucune notification ne correspond aux filtres sélectionnés."
+                                iconColor="slate"
+                                compact
+                            />
+                        }
                     >
                         <Column style={{ fontWeight: 'normal', fontSize: '14px', maxWidth: '360px' }} header="Notification" body={titleTemplate} />
                         <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Type" body={(rowData: NotificationSummary) => <Text size="sm">{formatEnumValue(rowData.type)}</Text>} />

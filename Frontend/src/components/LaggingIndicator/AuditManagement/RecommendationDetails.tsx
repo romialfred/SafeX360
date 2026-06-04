@@ -14,6 +14,7 @@ import {
     getRecommendationFollowups,
 } from "../../../services/AuditService";
 import { formatDate } from "../../../utility/DateFormats";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 
 const RecommendationDetails = () => {
     const { id } = useParams();
@@ -94,11 +95,8 @@ const RecommendationDetails = () => {
                             <p className="text-lg text-gray-600">Description</p>
                             <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                                 {recommendation.description ? (
-                                    <div
-                                        dangerouslySetInnerHTML={{
-                                            __html: recommendation.description,
-                                        }}
-                                    />
+                                    /* LOT 41 P0 XSS fix */
+                                    <SafeHtml html={recommendation.description} />
                                 ) : (
                                     <p className="text-gray-400 italic">No description provided.</p>
                                 )}
@@ -141,11 +139,8 @@ const RecommendationDetails = () => {
                                             <div className="flex gap-1 bg-gray-50 rounded-xl p-2 shadow-sm">
                                                 <IconMessageCircle color="blue" />
                                                 <div className="flex flex-col gap-1 text-lg text-gray-500 w-1/2">
-                                                    <div
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: item.comment,
-                                                        }}
-                                                    />
+                                                    {/* LOT 41 P0 XSS fix */}
+                                                    <SafeHtml html={item.comment} />
                                                 </div>
                                             </div>
                                         )}

@@ -2,37 +2,26 @@ spring:
   application:
     name: Health-Safety
 
+  # LOT 40 P0 fix : suppression des credentials Aiven commentés en clair
+  # (clés API exposées même en commentaires = leak si repo public).
+  # Toute config sensible passe désormais exclusivement par .env.
   datasource:
-    # Local MySQL connection (commented)
-    # url: jdbc:mysql://localhost:3306/health_safety
-    # username: root
-    # password: Marshal9758@
-
-    # Environment variable-based config (commented)
     username: ${DB_USERNAME}
     url: ${DB_URL}
     password: ${DB_PASSWORD}
-
-    # Active MySQL Aiven config
-    # url: jdbc:mysql://avnadmin:AVNS_WyMuze10sX31GeYVJY2@hrms-roxgold-hrms-roxgold.g.aivencloud.com:12254/healthsafety?ssl-mode=REQUIRED
-    # username: avnadmin
-    # password: AVNS_WyMuze10sX31GeYVJY2
-
-    # Alternate Aiven MySQL config (commented)
-    # url: jdbc:mysql://avnadmin:AVNS_J2VSkRIZfCanFADRGaK@datauniversmysql01-minex-360.g.aivencloud.com:23891/healthsafety?ssl-mode=REQUIRED
-    # username: avnadmin
-    # password: AVNS_J2VSkRIZfCanFADRGaK
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  # LOT 40 P0 fix : credentials mail externalisés vers .env
+  # (était hardcodé en clair = security leak).
   mail:
-    username: no-replay@data-univers.com
-    password: Connex@ted001$
-    host: mail.data-univers.com
-    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    host: ${MAIL_HOST:mail.data-univers.com}
+    port: ${MAIL_PORT:465}
     protocol: smtp
     properties:
       mail:

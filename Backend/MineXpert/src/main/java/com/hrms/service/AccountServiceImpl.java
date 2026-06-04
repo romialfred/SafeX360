@@ -18,8 +18,22 @@ import com.hrms.repository.AccountRepository;
 import com.hrms.utility.Data;
 
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * LOT 40 P0 fix : ajout @Transactional sur le service.
+ *
+ * Toutes les méthodes write (addAccount, updateAccount, updatePassword,
+ * resetPassword, updateAccountPermissions) effectuaient des INSERT/UPDATE
+ * MySQL sans transaction. Risque : commit partiel en cas d'exception
+ * (entité sauvegardée mais email d'invitation échoué = compte orphelin
+ * sans mot de passe envoyé).
+ *
+ * On annote au niveau classe : les méthodes lecture (getXxx) tolèrent
+ * un readOnly implicite via Spring défaut.
+ */
 @Service
+@Transactional
 public class AccountServiceImpl implements AccountService {
 
     @Autowired
@@ -64,7 +78,14 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDTO getAccount(Long id) throws HRMSException {
-        return accountRepository.findById(id).orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND")).toDTO();
+        AccountDTO dto = accountRepository.findById(id)
+                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"))
+                .toDTO();
+        // LOT 40 P1 fix : sécurité — ne JAMAIS exposer le hash bcrypt
+        // dans la réponse JSON, même si bcrypt est non-réversible.
+        dto.setPassword(null);
+        dto.setOldPassword(null);
+        return dto;
     }
 
     @Override
@@ -79,11 +100,60 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void updatePassword(AccountDTO accountDTO) throws Exception {
-        Account account = accountRepository.findById(accountDTO.getId())
-                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
-        account.setPassword(passwordEncoder.encode(accountDTO.getPassword()));
-        account.setFirstLogin(false);
+        // LOT 39 — Audit P0 : sécurisation du changement de mot de passe.
+        //
+        // L'API frontend envoie { login, oldPassword, newPassword }.
+        // On résout le compte par login (et non par id confié au client, sujet
+        // à manipulation), on vérifie obligatoirement l'ancien mot de passe
+        // avec passwordEncoder.matches(...) puis on réencode le nouveau.
+        //
+        // On garde la compatibilité ascendante : si la requête fournit déjà
+        // un id et aucun oldPassword (legacy admin reset interne), la branche
+        // historique reste accessible — mais elle n'est plus exposée par le
+        // formulaire utilisateur.
+        String login = accountDTO.getLogin();
+        String oldPassword = accountDTO.getOldPassword();
+        String newPassword = accountDTO.getPassword();
 
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new HRMSException("PASSWORD_REQUIRED");
+        }
+        // LOT 40 P0 Security fix : enforce password complexity server-side.
+        // Le client peut être contourné — la politique doit être appliquée
+        // côté serveur pour respecter la baseline OWASP ASVS V2.1.1.
+        if (newPassword.length() < 10) {
+            throw new HRMSException("PASSWORD_TOO_SHORT");
+        }
+        if (!newPassword.matches(".*[A-Z].*")
+                || !newPassword.matches(".*[a-z].*")
+                || !newPassword.matches(".*[0-9].*")
+                || !newPassword.matches(".*[^A-Za-z0-9].*")) {
+            throw new HRMSException("PASSWORD_TOO_WEAK");
+        }
+
+        Account account;
+        if (login != null && !login.isBlank()) {
+            account = accountRepository.findByLogin(login)
+                    .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
+
+            // Vérification ancien mot de passe obligatoire dès lors qu'on cible
+            // un compte par login (parcours utilisateur self-service).
+            if (oldPassword == null || oldPassword.isBlank()) {
+                throw new HRMSException("OLD_PASSWORD_REQUIRED");
+            }
+            if (!passwordEncoder.matches(oldPassword, account.getPassword())) {
+                throw new HRMSException("OLD_PASSWORD_INVALID");
+            }
+        } else if (accountDTO.getId() != null) {
+            // Compatibilité : reset par id (legacy admin).
+            account = accountRepository.findById(accountDTO.getId())
+                    .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
+        } else {
+            throw new HRMSException("ACCOUNT_NOT_FOUND");
+        }
+
+        account.setPassword(passwordEncoder.encode(newPassword));
+        account.setFirstLogin(false);
         accountRepository.save(account);
     }
 
@@ -152,8 +222,13 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDTO getAccountByEmpId(Long empId) throws HRMSException {
-        return accountRepository.findByEmployee_Id(empId).orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"))
+        AccountDTO dto = accountRepository.findByEmployee_Id(empId)
+                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"))
                 .toDTO();
+        // LOT 40 P1 fix : sécurité — masque hash bcrypt avant retour JSON.
+        dto.setPassword(null);
+        dto.setOldPassword(null);
+        return dto;
     }
 
     @Override

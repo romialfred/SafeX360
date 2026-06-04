@@ -294,24 +294,27 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
 
     return (
         <div className={combineClassNames("relative", className)}>
+            {/* LOT 41 — Trigger CompanySelector : pilule blanche pleine pour vraie lisibilité sur teal */}
             <div
                 onClick={canSelect ? handleToggleDropdown : undefined}
                 className={combineClassNames(
-                    "flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-white/25 px-3 py-1.5 rounded-lg transition shadow-sm",
-                    canSelect ? "cursor-pointer hover:bg-white/25 hover:border-white/40" : "cursor-default"
+                    "flex items-center gap-2.5 bg-white border border-white/40 px-3.5 py-2 rounded-lg transition shadow-sm",
+                    canSelect ? "cursor-pointer hover:bg-slate-50 hover:border-white/60" : "cursor-default"
                 )}
             >
-                <div className={`w-2 h-2 rounded-full ${selectedStatusColor} shadow-sm`}></div>
-                <div className="flex flex-col leading-tight">
-                    <span className="text-[10px] uppercase tracking-wider text-white/70">
+                <div className={`w-2 h-2 rounded-full ${selectedStatusColor} shadow-sm flex-shrink-0`}></div>
+                <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-[10px] uppercase tracking-wider text-teal-700 font-medium">
                         {selectedCompanyId === null ? "Vue consolidée" : "Mine active"}
                     </span>
-                    <span className="text-white text-sm">{displayLabel}</span>
+                    <span className="text-slate-900 text-[13px] font-medium truncate max-w-[200px]">
+                        {displayLabel}
+                    </span>
                 </div>
                 {canSelect && (
                     <IconChevronDown
                         size={16}
-                        className={`text-white/90 transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
+                        className={`text-slate-600 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}
                     />
                 )}
             </div>

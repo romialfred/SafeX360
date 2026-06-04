@@ -23,6 +23,7 @@ import {
     IconTrendingUp,
 } from "@tabler/icons-react";
 import PageHeader from "../../UtilityComp/PageHeader";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
@@ -357,7 +358,7 @@ const Recommendation = () => {
     );
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -466,7 +467,8 @@ const Recommendation = () => {
                                 <div>
                                     <p className="text-lg text-gray-400">Description</p>
                                     <div className="bg-blue-50 rounded-lg shadow-sm p-4 ">
-                                        <div dangerouslySetInnerHTML={{ __html: recommendation?.description }}></div>
+                                        {/* LOT 41 P0 XSS fix */}
+                                        <SafeHtml html={recommendation?.description} />
                                     </div>
                                 </div>
 
@@ -528,11 +530,8 @@ const Recommendation = () => {
 
                                                             <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                                                                 <p className="text-blue-400">Update Details</p>
-                                                                <Text
-                                                                    dangerouslySetInnerHTML={{ __html: x.comment || "-" }}
-                                                                    size="sm"
-                                                                    className="text-gray-700 mt-1"
-                                                                />
+                                                                {/* LOT 41 P0 XSS fix */}
+                                                                <SafeHtml html={x.comment || "-"} className="text-gray-700 mt-1 text-sm" />
                                                             </div>
                                                         </div>
                                                     </Card>

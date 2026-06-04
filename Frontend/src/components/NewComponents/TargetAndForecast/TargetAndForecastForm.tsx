@@ -202,7 +202,8 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
         <div className="space-y-6">
             {/* Filters and Controls */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                {/* LOT 40 P1: responsive grid — explicit sm/lg steps (was md→4 only) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="relative">
                         <IconSearch className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
                         <input
@@ -214,7 +215,9 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         />
                     </div>
 
+                    {/* LOT 40 P1: aria-label for category filter */}
                     <select
+                        aria-label="Category filter"
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -225,7 +228,9 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                         ))}
                     </select>
 
+                    {/* LOT 40 P1: aria-label for year filter */}
                     <select
+                        aria-label="Year filter"
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -508,7 +513,9 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                                                 {month.month}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
+                                                {/* LOT 40 P1: aria-label for monthly target input */}
                                                 <input
+                                                    aria-label={`Target for ${month.month}`}
                                                     type="number"
                                                     value={month.target}
                                                     step="0.1"
@@ -516,7 +523,9 @@ const TargetForecastForm: React.FC<TargetForecastFormProps> = ({ onBackToSetting
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
+                                                {/* LOT 40 P1: aria-label for monthly forecast input */}
                                                 <input
+                                                    aria-label={`Forecast for ${month.month}`}
                                                     type="number"
                                                     value={month.forecast}
                                                     step="0.1"

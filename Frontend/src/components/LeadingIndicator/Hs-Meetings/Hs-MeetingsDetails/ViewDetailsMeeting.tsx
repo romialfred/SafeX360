@@ -4,6 +4,7 @@ import {
 } from '@tabler/icons-react';
 import { formatDateWithDay, formatTo12Hour } from "../../../../utility/DateFormats";
 import { ppeRecord } from "../../../../Data/IncidentsData";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 const Section = ({ title, icon: Icon, accent = 'green', hint, children, count }: {
     title: string; icon: any; accent?: 'green' | 'blue' | 'amber' | 'teal' | 'violet' | 'slate' | 'yellow';
@@ -86,8 +87,8 @@ const ViewDetailsMeeting = ({ activity }: any) => {
             {/* Objectifs */}
             <Section title="Objectifs de la réunion" icon={IconTarget} accent="teal" hint="ISO 45001 §5.4.b">
                 {activity.objectives ? (
-                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: activity.objectives }} />
+                    /* LOT 41 P0 XSS fix */
+                    <SafeHtml html={activity.objectives} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                 ) : (
                     <p className="text-xs text-slate-400 italic">Aucun objectif renseigné.</p>
                 )}
@@ -96,8 +97,8 @@ const ViewDetailsMeeting = ({ activity }: any) => {
             {/* Agenda */}
             <Section title="Agenda" icon={IconFileText} accent="amber">
                 {activity.agenda ? (
-                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: activity.agenda }} />
+                    /* LOT 41 P0 XSS fix */
+                    <SafeHtml html={activity.agenda} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                 ) : (
                     <p className="text-xs text-slate-400 italic">Aucun agenda défini.</p>
                 )}
@@ -106,8 +107,8 @@ const ViewDetailsMeeting = ({ activity }: any) => {
             {/* Résultats attendus */}
             <Section title="Résultats attendus" icon={IconChecks} accent="blue">
                 {activity.expectedResults ? (
-                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: activity.expectedResults }} />
+                    /* LOT 41 P0 XSS fix */
+                    <SafeHtml html={activity.expectedResults} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                 ) : (
                     <p className="text-xs text-slate-400 italic">Aucun résultat attendu défini.</p>
                 )}

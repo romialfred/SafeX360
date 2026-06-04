@@ -1,463 +1,341 @@
-import { IconAlertTriangle, IconBook, IconChevronDown, IconChevronRight, IconClipboardCheck, IconClock, IconFileText, IconHelmet, IconPlayerPlay, IconSearch, IconSettings, IconShield, IconVideo } from "@tabler/icons-react";
-import { useState } from "react";
-import PageHeader from "../../UtilityComp/PageHeader";
+import {
+    IconAlertTriangle,
+    IconClipboardCheck,
+    IconShieldExclamation,
+    IconHelmet,
+    IconCertificate,
+    IconChartBar,
+    IconBook2,
+    IconExternalLink,
+    IconBolt,
+    IconUsers,
+    IconWifi,
+} from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
+import DocsShell, {
+    DocSection,
+    Callout,
+} from '../../UtilityComp/DocsShell';
+import { DOCS_NAVIGATION } from '../../../Data/DocsNavigation';
 
-interface HelpItem {
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    type: 'guide' | 'video' | 'documentation';
-    duration?: string;
-    difficulty: 'beginner' | 'intermediate' | 'advanced';
-    tags: string[];
-    content?: string;
-    videoUrl?: string;
-    lastUpdated: string;
-}
+/**
+ * Guide — Page d'accueil du Centre de connaissances SafeX 360.
+ *
+ * LOT 41 : refonte complète avec DocsShell (layout GitBook/Stripe Docs)
+ *   - Sidebar navigation hiérarchique
+ *   - TOC sticky avec scrollspy
+ *   - Breadcrumbs
+ *   - Recherche
+ *   - Navigation prev/next
+ *   - Mobile : drawer pour la sidebar
+ *
+ * Cette page est la porte d'entrée — elle présente les modules métier
+ * et oriente l'utilisateur vers les ressources appropriées.
+ */
 
-interface FeatureCategory {
-    id: string;
-    name: string;
-    icon: React.ComponentType<any>;
-    color: string;
-    bgColor: string;
-    description: string;
-    items: HelpItem[];
-}
-
-const helpContent: FeatureCategory[] = [
+const HSE_MODULES = [
     {
-        id: 'getting-started',
-        name: 'Démarrage',
-        icon: IconPlayerPlay,
-        color: 'text-green-600',
-        bgColor: 'bg-green-50 border-green-200',
-        description: 'Guides essentiels pour démarrer avec la plateforme',
-        items: [
-            {
-                id: 'platform-overview',
-                title: 'Présentation de la plateforme',
-                description: 'Introduction complète au système de management Santé & Sécurité',
-                category: 'Démarrage',
-                type: 'video',
-                duration: '8 min',
-                difficulty: 'beginner',
-                tags: ['présentation', 'introduction', 'bases'],
-                videoUrl: 'https://example.com/platform-overview',
-                lastUpdated: '2026-01-20',
-                content: 'Apprenez les fondamentaux de notre plateforme de management Santé & Sécurité au travail.'
-            },
-            {
-                id: 'first-login',
-                title: 'Votre première connexion',
-                description: 'Guide pas à pas pour les nouveaux utilisateurs',
-                category: 'Démarrage',
-                type: 'guide',
-                duration: '5 min',
-                difficulty: 'beginner',
-                tags: ['connexion', 'configuration', 'compte'],
-                lastUpdated: '2026-01-18',
-                content: 'Bienvenue sur la plateforme. Ce guide vous accompagne lors de votre première connexion.'
-            },
-            {
-                id: 'navigation-basics',
-                title: 'Bases de la navigation',
-                description: 'Comprendre la structure du menu et la navigation',
-                category: 'Démarrage',
-                type: 'guide',
-                duration: '3 min',
-                difficulty: 'beginner',
-                tags: ['navigation', 'menu', 'interface'],
-                lastUpdated: '2026-01-15',
-                content: "Apprenez à naviguer efficacement dans l'application via le menu latéral."
-            }
-        ]
-    },
-    {
-        id: 'incident-management',
-        name: 'Gestion des incidents',
+        id: 'incidents',
+        title: 'Gestion des incidents',
+        description: 'Déclaration rapide, investigation, lessons learned.',
         icon: IconAlertTriangle,
-        color: 'text-red-600',
-        bgColor: 'bg-red-50 border-red-200',
-        description: 'Gérer les incidents, investigations et actions correctives',
-        items: [
-            {
-                id: 'report-incident',
-                title: 'Comment déclarer un incident',
-                description: "Guide complet du processus de déclaration d'incident",
-                category: 'Gestion des incidents',
-                type: 'video',
-                duration: '12 min',
-                difficulty: 'beginner',
-                tags: ['incident', 'déclaration', 'sécurité'],
-                videoUrl: 'https://example.com/report-incident',
-                lastUpdated: '2026-01-22',
-                content: "Apprenez la procédure étape par étape pour déclarer les incidents."
-            },
-            {
-                id: 'investigation-process',
-                title: "Processus d'investigation",
-                description: "Mener des investigations rigoureuses",
-                category: 'Gestion des incidents',
-                type: 'guide',
-                duration: '15 min',
-                difficulty: 'intermediate',
-                tags: ['investigation', 'analyse', 'cause-racine'],
-                lastUpdated: '2026-01-20',
-                content: "Maîtrisez l'investigation d'incidents avec notre méthodologie (5 Pourquoi, Ishikawa)."
-            },
-            {
-                id: 'corrective-actions',
-                title: 'Gestion des actions correctives',
-                description: 'Suivre et mettre en œuvre les actions correctives',
-                category: 'Gestion des incidents',
-                type: 'guide',
-                duration: '10 min',
-                difficulty: 'intermediate',
-                tags: ['actions', 'suivi', 'mise en œuvre'],
-                lastUpdated: '2026-01-19',
-                content: "Gestion efficace des actions correctives, de l'identification à la clôture."
-            }
-        ]
+        color: 'red',
+        to: '/incidents',
     },
     {
-        id: 'risk-management',
-        name: 'Gestion des risques',
-        icon: IconShield,
-        color: 'text-orange-600',
-        bgColor: 'bg-orange-50 border-orange-200',
-        description: 'Évaluation des risques, produits chimiques et mesures de maîtrise',
-        items: [
-            {
-                id: 'risk-assessment-basics',
-                title: "Fondamentaux de l'évaluation des risques",
-                description: "Comprendre la méthodologie selon ISO 31000",
-                category: 'Gestion des risques',
-                type: 'video',
-                duration: '18 min',
-                difficulty: 'intermediate',
-                tags: ['risque', 'évaluation', 'méthodologie'],
-                videoUrl: 'https://example.com/risk-assessment',
-                lastUpdated: '2026-01-21',
-                content: "Aperçu complet des principes d'évaluation des risques."
-            },
-            {
-                id: 'chemical-risk-forms',
-                title: "Fiches d'évaluation des risques chimiques",
-                description: "Outils d'évaluation REACH/CLP",
-                category: 'Gestion des risques',
-                type: 'guide',
-                duration: '20 min',
-                difficulty: 'advanced',
-                tags: ['chimique', 'fiches', 'évaluation'],
-                lastUpdated: '2026-01-23',
-                content: "Guide détaillé pour compléter les fiches d'identification des risques chimiques."
-            },
-            {
-                id: 'control-measures',
-                title: 'Mise en œuvre des mesures de maîtrise',
-                description: "Hiérarchie des contrôles (STOP)",
-                category: 'Gestion des risques',
-                type: 'guide',
-                duration: '12 min',
-                difficulty: 'intermediate',
-                tags: ['contrôles', 'hiérarchie', 'mise en œuvre'],
-                lastUpdated: '2026-01-17',
-                content: 'Apprenez à mettre en œuvre les mesures de maîtrise.'
-            }
-        ]
-    },
-    {
-        id: 'ppe-management',
-        name: 'Gestion des EPI',
-        icon: IconHelmet,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50 border-blue-200',
-        description: "Demandes d'EPI, suivi et conformité",
-        items: [
-            {
-                id: 'ppe-request-process',
-                title: "Processus de demande d'EPI",
-                description: 'Comment demander des équipements de protection individuelle',
-                category: 'Gestion des EPI',
-                type: 'video',
-                duration: '6 min',
-                difficulty: 'beginner',
-                tags: ['epi', 'demande', 'équipement'],
-                videoUrl: 'https://example.com/ppe-request',
-                lastUpdated: '2026-01-19',
-                content: 'Guide étape par étape pour demander des EPI.'
-            },
-            {
-                id: 'ppe-monitoring',
-                title: 'Suivi et conformité des EPI',
-                description: "Suivre l'utilisation des EPI",
-                category: 'Gestion des EPI',
-                type: 'guide',
-                duration: '8 min',
-                difficulty: 'intermediate',
-                tags: ['suivi', 'conformité', 'traçabilité'],
-                lastUpdated: '2026-01-16',
-                content: "Stratégies efficaces pour surveiller l'utilisation des EPI."
-            }
-        ]
-    },
-    {
-        id: 'audits-compliance',
-        name: 'Audits & Conformité',
+        id: 'audits',
+        title: 'Audits & inspections',
+        description: 'Programmation, exécution, recommandations ISO 19011.',
         icon: IconClipboardCheck,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50 border-purple-200',
-        description: "Planification, exécution des audits et conformité",
-        items: [
-            {
-                id: 'audit-planning',
-                title: "Planification annuelle des audits",
-                description: "Créer le planning d'audits selon ISO 19011",
-                category: 'Audits & Conformité',
-                type: 'guide',
-                duration: '14 min',
-                difficulty: 'intermediate',
-                tags: ['audit', 'planification', 'calendrier'],
-                lastUpdated: '2026-01-18',
-                content: "Guide complet pour la planification des audits annuels."
-            },
-            {
-                id: 'conducting-audits',
-                title: "Mener des audits efficaces",
-                description: "Bonnes pratiques pour l'exécution des audits",
-                category: 'Audits & Conformité',
-                type: 'video',
-                duration: '22 min',
-                difficulty: 'advanced',
-                tags: ['audit', 'exécution', 'bonnes-pratiques'],
-                videoUrl: 'https://example.com/conducting-audits',
-                lastUpdated: '2026-01-20',
-                content: "Compétences pour mener des audits approfondis et efficaces."
-            }
-        ]
+        color: 'indigo',
+        to: '/audit-management',
     },
     {
-        id: 'system-administration',
-        name: 'Administration système',
-        icon: IconSettings,
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-50 border-gray-200',
-        description: 'Gestion des utilisateurs, paramètres et configuration',
-        items: [
-            {
-                id: 'user-management',
-                title: 'Gestion des utilisateurs',
-                description: 'Gérer les utilisateurs, rôles et permissions',
-                category: 'Administration système',
-                type: 'guide',
-                duration: '16 min',
-                difficulty: 'advanced',
-                tags: ['utilisateurs', 'rôles', 'permissions'],
-                lastUpdated: '2026-01-21',
-                content: "Guide complet pour la gestion des utilisateurs et des droits d'accès."
-            },
-            {
-                id: 'module-configuration',
-                title: 'Configuration des modules',
-                description: 'Activer et configurer les modules du système',
-                category: 'Administration système',
-                type: 'guide',
-                duration: '10 min',
-                difficulty: 'intermediate',
-                tags: ['modules', 'configuration', 'paramètres'],
-                lastUpdated: '2026-01-17',
-                content: 'Apprenez à configurer les modules du système.'
-            }
-        ]
-    }
+        id: 'risks',
+        title: 'Gestion des risques',
+        description: 'Identification, évaluation, traitement selon ISO 31000.',
+        icon: IconShieldExclamation,
+        color: 'amber',
+        to: '/risks-overview',
+    },
+    {
+        id: 'ppe',
+        title: 'Équipements de protection',
+        description: 'Catalogue, dotations, suivi des EPI par employé.',
+        icon: IconHelmet,
+        color: 'yellow',
+        to: '/ppe-management',
+    },
+    {
+        id: 'compliance',
+        title: 'Conformité réglementaire',
+        description: 'Suivi des exigences légales, documents, attestations.',
+        icon: IconCertificate,
+        color: 'emerald',
+        to: '/compliance-dashboard',
+    },
+    {
+        id: 'reports',
+        title: 'Rapports & analytics',
+        description: 'KPI HSE, rapports périodiques, analyse de tendances.',
+        icon: IconChartBar,
+        color: 'teal',
+        to: '/monthly-reports',
+    },
 ];
 
-const difficultyLabels: Record<string, string> = {
-    beginner: 'Débutant',
-    intermediate: 'Intermédiaire',
-    advanced: 'Avancé',
+const TOC = [
+    { id: 'intro', label: 'Introduction' },
+    { id: 'first-login', label: 'Première connexion' },
+    { id: 'platform-overview', label: 'Vue d\'ensemble' },
+    { id: 'concepts-hse', label: 'Concepts clés HSE' },
+    { id: 'modules', label: 'Modules métier' },
+    { id: 'next-steps', label: 'Aller plus loin' },
+];
+
+const COLOR_MAP: Record<string, { bg: string; border: string; text: string }> = {
+    red:     { bg: 'bg-red-50',     border: 'border-red-200',     text: 'text-red-700' },
+    indigo:  { bg: 'bg-indigo-50',  border: 'border-indigo-200',  text: 'text-indigo-700' },
+    amber:   { bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700' },
+    yellow:  { bg: 'bg-yellow-50',  border: 'border-yellow-200',  text: 'text-yellow-700' },
+    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
+    teal:    { bg: 'bg-teal-50',    border: 'border-teal-200',    text: 'text-teal-700' },
 };
 
 const Guide = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['getting-started']));
-
-    const filteredContent = helpContent.filter(category => {
-        if (selectedCategory !== 'all' && category.id !== selectedCategory) return false;
-
-        if (searchTerm) {
-            return category.items.some(item =>
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        }
-        return true;
-    });
-    const toggleCategory = (categoryId: string) => {
-        const newExpanded = new Set(expandedCategories);
-        if (newExpanded.has(categoryId)) {
-            newExpanded.delete(categoryId);
-        } else {
-            newExpanded.add(categoryId);
-        }
-        setExpandedCategories(newExpanded);
-    };
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case 'video': return <IconVideo className="w-4 h-4" />;
-            case 'guide': return <IconBook className="w-4 h-4" />;
-            case 'documentation': return <IconFileText className="w-4 h-4" />;
-            default: return <IconFileText className="w-4 h-4" />;
-        }
-    };
-    const getDifficultyColor = (difficulty: string) => {
-        switch (difficulty) {
-            case 'beginner': return 'bg-green-100 text-green-800';
-            case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-            case 'advanced': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
-            <PageHeader
-                breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: "Centre d'aide" },
-                    { label: 'Guides pratiques' },
-                ]}
-                icon={<IconBook size={22} stroke={2} />}
-                iconColor="cyan"
-                title="Guides pratiques"
-                subtitle="Tutoriels, vidéos et documentation pas à pas pour maîtriser la plateforme"
-            />
+        <DocsShell
+            navigation={DOCS_NAVIGATION}
+            activeId="intro"
+            breadcrumbs={[
+                { label: 'Accueil', to: '/' },
+                { label: 'Centre de connaissances', to: '/how-to' },
+                { label: 'Démarrage' },
+            ]}
+            title="Démarrage avec SafeX 360"
+            description="Tout ce qu'il faut savoir pour exploiter pleinement la plateforme HSE. Ce guide est destiné aux nouveaux utilisateurs comme aux référents experts."
+            difficulty="beginner"
+            toc={TOC}
+            nextPage={{
+                label: 'Vue d\'ensemble de la plateforme',
+                to: '/features-overview',
+                description: 'Cartographie fonctionnelle complète',
+            }}
+        >
+            <DocSection id="intro" title="Introduction">
+                <p>
+                    <strong>SafeX 360</strong> est une plateforme intégrée de management de la santé,
+                    de la sécurité et de l'environnement (HSE) conçue pour les exploitations
+                    minières d'Afrique de l'Ouest. Elle couvre la totalité du cycle
+                    de vie HSE : prévention, déclaration, investigation, action corrective,
+                    conformité réglementaire et reporting.
+                </p>
+                <p>
+                    La plateforme s'appuie sur les normes internationales <Link to="/iso-mapping" className="text-teal-700 hover:underline">ISO 45001, 14001, 9001, 19011 et 31000</Link> et
+                    sur les bonnes pratiques de l'ICMM.
+                </p>
 
-            <div className="space-y-6">
-                {/* Recherche et filtres */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="relative md:col-span-2">
-                            <IconSearch className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher dans les guides, vidéos et documentation…"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-                            />
-                        </div>
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-                        >
-                            <option value="all">Toutes les catégories</option>
-                            {helpContent.map(category => (
-                                <option key={category.id} value={category.id}>{category.name}</option>
-                            ))}
-                        </select>
+                <Callout tone="info" title="Public cible">
+                    Ce guide s'adresse aux <strong>responsables HSE, chefs d'équipe, auditeurs internes
+                    et auditeurs externes</strong> des sites miniers. Il ne nécessite aucun prérequis
+                    technique particulier.
+                </Callout>
+            </DocSection>
+
+            <DocSection id="first-login" title="Première connexion">
+                <p>
+                    Pour vous connecter à la plateforme :
+                </p>
+                <ol className="list-decimal pl-6 space-y-2 my-4">
+                    <li>Rendez-vous sur l'URL fournie par votre administrateur (généralement <code className="text-[13px] px-1 py-0.5 rounded bg-slate-100 text-slate-800">mine-xpert.data-univers.com</code>).</li>
+                    <li>Saisissez votre identifiant et votre mot de passe initial.</li>
+                    <li>Au premier accès, vous serez invité à <strong>modifier votre mot de passe</strong>.</li>
+                    <li>Une fois connecté, vous arrivez sur le tableau de bord HSE.</li>
+                </ol>
+
+                <Callout tone="warning" title="Mot de passe oublié ?">
+                    Cliquez sur le lien « Mot de passe oublié » sur l'écran de connexion.
+                    Un nouveau mot de passe vous sera envoyé par email à l'adresse
+                    enregistrée par votre administrateur.
+                </Callout>
+            </DocSection>
+
+            <DocSection id="platform-overview" title="Vue d'ensemble">
+                <p>
+                    La plateforme est organisée en trois grandes zones :
+                </p>
+                <ul className="list-disc pl-6 space-y-2 my-4">
+                    <li>
+                        <strong>La barre latérale</strong> à gauche : accès rapide aux 12 modules métier
+                        et au tableau de bord. Elle se replie pour gagner de l'espace.
+                    </li>
+                    <li>
+                        <strong>L'en-tête</strong> : sélecteur de mine, alertes système, profil utilisateur
+                        et bouton SOS en cas d'urgence.
+                    </li>
+                    <li>
+                        <strong>L'espace de travail</strong> au centre : affiche le module sélectionné.
+                    </li>
+                </ul>
+                <p>
+                    Pour une cartographie détaillée des fonctionnalités, consultez la
+                    <Link to="/features-overview" className="text-teal-700 hover:underline ml-1">vue d'ensemble fonctionnelle</Link>.
+                </p>
+            </DocSection>
+
+            <DocSection id="concepts-hse" title="Concepts clés HSE">
+                <p>
+                    Voici les concepts fondamentaux que la plateforme manipule. Une bonne
+                    compréhension de ces termes facilitera votre prise en main.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                        <h4 className="text-[14.5px] text-slate-900 mb-1.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                            Incident HSE
+                        </h4>
+                        <p className="text-[13px] text-slate-600">
+                            Tout événement non planifié ayant entraîné — ou pouvant entraîner — un
+                            dommage corporel, matériel ou environnemental. Inclut : LTI, MTI, FAI,
+                            Near Miss, conditions dangereuses.
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                        <h4 className="text-[14.5px] text-slate-900 mb-1.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                            Risque
+                        </h4>
+                        <p className="text-[13px] text-slate-600">
+                            Combinaison de la probabilité d'occurrence d'un événement dangereux et de
+                            la sévérité de ses conséquences. Évalué selon une matrice 5×5 (ISO 31000).
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                        <h4 className="text-[14.5px] text-slate-900 mb-1.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                            Action corrective
+                        </h4>
+                        <p className="text-[13px] text-slate-600">
+                            Action entreprise pour éliminer la cause d'une non-conformité ou d'un
+                            incident, et éviter sa récurrence (ISO 45001 §10.2).
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                        <h4 className="text-[14.5px] text-slate-900 mb-1.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                            Audit interne
+                        </h4>
+                        <p className="text-[13px] text-slate-600">
+                            Processus systématique d'évaluation de la conformité aux exigences
+                            internes et normatives, mené selon les lignes directrices ISO 19011.
+                        </p>
                     </div>
                 </div>
+            </DocSection>
 
-                {/* Catégories de contenu */}
-                <div className="space-y-4">
-                    {filteredContent.map(category => {
-                        const isExpanded = expandedCategories.has(category.id);
-                        const filteredItems = category.items.filter(item => {
-                            if (!searchTerm) return true;
-                            return item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-                        });
+            <DocSection id="modules" title="Modules métier">
+                <p>
+                    Voici les 6 modules les plus utilisés. Chacun dispose de sa propre documentation
+                    détaillée accessible depuis la barre latérale.
+                </p>
 
-                        if (filteredItems.length === 0) return null;
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                    {HSE_MODULES.map((mod) => {
+                        const colors = COLOR_MAP[mod.color];
                         return (
-                            <div key={category.id} className={`rounded-xl shadow-sm border-2 ${category.bgColor} overflow-hidden`}>
-                                <div
-                                    className="p-6 cursor-pointer hover:bg-opacity-80 transition-colors"
-                                    onClick={() => toggleCategory(category.id)}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center">
-                                            <div className={`p-3 rounded-lg ${category.bgColor} mr-4`}>
-                                                <category.icon className={`w-6 h-6 ${category.color}`} />
-                                            </div>
-                                            <div>
-                                                <h2 className="text-lg text-gray-900">{category.name}</h2>
-                                                <p className="text-gray-600 mt-1 text-sm">{category.description}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">
-                                                {filteredItems.length} {filteredItems.length > 1 ? 'éléments' : 'élément'}
-                                            </span>
-                                            {isExpanded ? (
-                                                <IconChevronDown className="w-5 h-5 text-gray-600" />
-                                            ) : (
-                                                <IconChevronRight className="w-5 h-5 text-gray-600" />
-                                            )}
-                                        </div>
-                                    </div>
+                            <Link
+                                key={mod.id}
+                                to={mod.to}
+                                className="group rounded-xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-md transition-all"
+                            >
+                                <div className={`w-10 h-10 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center mb-3`}>
+                                    <mod.icon size={18} className={colors.text} aria-hidden="true" />
                                 </div>
-
-                                {isExpanded && (
-                                    <div className="bg-white bg-opacity-60 divide-y divide-gray-100">
-                                        {filteredItems.map(item => (
-                                            <div
-                                                key={item.id}
-                                                className="p-6 hover:bg-white hover:bg-opacity-80 transition-colors"
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center mb-2">
-                                                            <div className={`p-2 rounded-lg ${category.bgColor} mr-3`}>
-                                                                {getTypeIcon(item.type)}
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="text-base text-gray-900">{item.title}</h3>
-                                                                <p className="text-gray-600 text-sm">{item.description}</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center space-x-4 mt-3">
-                                                            <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(item.difficulty)}`}>
-                                                                {difficultyLabels[item.difficulty] || item.difficulty}
-                                                            </span>
-                                                            {item.duration && (
-                                                                <span className="flex items-center text-xs text-gray-500">
-                                                                    <IconClock className="w-4 h-4 mr-1" />
-                                                                    {item.duration}
-                                                                </span>
-                                                            )}
-                                                            <span className="text-xs text-gray-500">
-                                                                Mis à jour le {item.lastUpdated}
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-2 mt-3">
-                                                            {item.tags.map(tag => (
-                                                                <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                <h4
+                                    className="text-slate-900 group-hover:text-teal-700 transition-colors"
+                                    style={{
+                                        fontFamily: "'Source Serif 4', Georgia, serif",
+                                        fontWeight: 500,
+                                        fontSize: '16px',
+                                    }}
+                                >
+                                    {mod.title}
+                                </h4>
+                                <p className="text-[13px] text-slate-600 mt-1.5 leading-relaxed">
+                                    {mod.description}
+                                </p>
+                                <span className="inline-flex items-center gap-1 mt-3 text-[12px] text-teal-700 group-hover:text-teal-900">
+                                    Ouvrir le module
+                                    <IconExternalLink size={11} aria-hidden="true" />
+                                </span>
+                            </Link>
                         );
                     })}
                 </div>
-            </div>
-        </div>
+            </DocSection>
+
+            <DocSection id="next-steps" title="Aller plus loin">
+                <p>
+                    Une fois cette introduction maîtrisée, nous vous recommandons d'explorer :
+                </p>
+
+                <ul className="space-y-3 my-5">
+                    <li className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center mt-0.5">
+                            <IconBolt size={14} className="text-teal-700" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <Link to="/features-overview" className="text-[14.5px] text-slate-900 hover:text-teal-700 transition-colors" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                                Vue d'ensemble fonctionnelle
+                            </Link>
+                            <p className="text-[13px] text-slate-600 mt-0.5">
+                                Cartographie complète des 200+ fonctionnalités de la plateforme.
+                            </p>
+                        </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center mt-0.5">
+                            <IconBook2 size={14} className="text-indigo-700" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <Link to="/iso-mapping" className="text-[14.5px] text-slate-900 hover:text-teal-700 transition-colors" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                                Cartographie ISO ↔ modules
+                            </Link>
+                            <p className="text-[13px] text-slate-600 mt-0.5">
+                                Traçabilité des clauses ISO 45001 / 14001 / 9001 / 19011 / 31000.
+                            </p>
+                        </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center mt-0.5">
+                            <IconUsers size={14} className="text-emerald-700" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <Link to="/iso-documents" className="text-[14.5px] text-slate-900 hover:text-teal-700 transition-colors" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                                Documents ISO de référence
+                            </Link>
+                            <p className="text-[13px] text-slate-600 mt-0.5">
+                                Bibliothèque des documents normatifs et internes.
+                            </p>
+                        </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center mt-0.5">
+                            <IconWifi size={14} className="text-amber-700" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <Link to="/technical-docs" className="text-[14.5px] text-slate-900 hover:text-teal-700 transition-colors" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                                Documentation technique
+                            </Link>
+                            <p className="text-[13px] text-slate-600 mt-0.5">
+                                Architecture, API REST, modèle de données, intégrations.
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+
+                <Callout tone="success" title="Besoin d'aide ?">
+                    Notre équipe support est disponible par email à <a href="mailto:support@safex360.com" className="text-emerald-700 hover:underline">support@safex360.com</a> du lundi au vendredi, 8h–17h GMT.
+                </Callout>
+            </DocSection>
+        </DocsShell>
     );
 };
 

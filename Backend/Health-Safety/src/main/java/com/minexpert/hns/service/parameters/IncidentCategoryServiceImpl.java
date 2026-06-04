@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.IncidentCategoryDTO;
 import com.minexpert.hns.dto.response.IncidentCategoryResponse;
@@ -14,6 +15,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.IncidentCategoryRepository;
 
 @Service
+@Transactional
 public class IncidentCategoryServiceImpl implements IncidentCategoryService {
 
     @Autowired

@@ -4,12 +4,14 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.dto.AuditLogDTO;
 import com.hrms.exception.HRMSException;
 import com.hrms.repository.AuditLogRepository;
 
 @Service
+@Transactional
 public class AuditLogServiceImpl implements AuditLogService {
 
     @Autowired

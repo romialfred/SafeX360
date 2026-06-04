@@ -1,6 +1,7 @@
 import { Badge } from "@mantine/core"
 import { statusColors, statusLabels } from "../../../../Data/IncidentsData"
 import { formatDateWithDay } from "../../../../utility/DateFormats"
+import SafeHtml from "../../../UtilityComp/SafeHtml"
 
 const ActionPlansTab = ({ actions }: any) => {
     return (
@@ -23,10 +24,8 @@ const ActionPlansTab = ({ actions }: any) => {
                         </Badge>
                     </div>
 
-                    <div
-                        dangerouslySetInnerHTML={{ __html: x.description }}
-                        className="text-gray-600 text-sm"
-                    />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={x.description} className="text-gray-600 text-sm" />
 
                     <div className="text-sm text-gray-700">
                         <b>Deadline:</b>{' '}

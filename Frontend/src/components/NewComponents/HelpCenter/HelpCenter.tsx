@@ -294,10 +294,11 @@ const helpContent: FeatureCategory[] = [
     }
 ];
 
+// LOT 40 P1: préfixe étoiles pour ne pas reposer uniquement sur la couleur (a11y)
 const difficultyLabels: Record<string, string> = {
-    beginner: 'Débutant',
-    intermediate: 'Intermédiaire',
-    advanced: 'Avancé',
+    beginner: '★ Débutant',
+    intermediate: '★★ Intermédiaire',
+    advanced: '★★★ Avancé',
 };
 
 const HelpCenter = () => {
@@ -359,8 +360,10 @@ const HelpCenter = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative md:col-span-2">
                         <IconSearch className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                        {/* LOT 40 P1: aria-label pour lecteurs d'écran (input sans label visible) */}
                         <input
                             type="text"
+                            aria-label="Rechercher dans le centre d'aide"
                             placeholder="Rechercher dans les guides, vidéos et documentation…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -1148,7 +1151,7 @@ const HelpCenter = () => {
     );
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },

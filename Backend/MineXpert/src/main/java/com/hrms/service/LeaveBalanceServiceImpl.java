@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.DataInterface.EmployeeLeaveBalance;
 import com.hrms.dto.EmployeeDTO;
@@ -16,6 +17,7 @@ import com.hrms.repository.EmployeeRepository;
 import com.hrms.repository.LeaveBalanceRepository;
 
 @Service
+@Transactional
 public class LeaveBalanceServiceImpl implements LeaveBalanceService {
     @Autowired
     private LeaveBalanceRepository leaveBalanceRepository;

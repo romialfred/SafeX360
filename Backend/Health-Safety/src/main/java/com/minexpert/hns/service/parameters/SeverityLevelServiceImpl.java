@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.SeverityLevelDTO;
 import com.minexpert.hns.dto.response.SeverityLevelResponse;
@@ -16,6 +17,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.SeverityLevelRepository;
 
 @Service
+@Transactional
 public class SeverityLevelServiceImpl implements SeverityLevelService {
 
     @Autowired

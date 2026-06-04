@@ -205,6 +205,9 @@ public class EmployeeAPI {
         return new ResponseEntity<>(new ResponseDTO("Profile Picture deleted Successfully."), HttpStatus.OK);
     }
 
+    // LOT 41 P0 SECURITY TODO: promotion = action sensible RH ; doit être restreinte ADMIN/SUPER_ADMIN.
+    // ABORT @PreAuthorize : SecurityContext non alimenté via cookie JWT (cf. AccountAPI). Implémentation
+    // à faire en LOT 42 après ajout d'un filtre cookie-JWT qui peuple authorities depuis claim "role".
     @PostMapping("/promote")
     public ResponseEntity<ResponseDTO> promoteEmployee(@RequestBody EmployeeDTO employeeDTO,
             @RequestParam(name = "recommendedBy", required = false) Long recommendedBy,

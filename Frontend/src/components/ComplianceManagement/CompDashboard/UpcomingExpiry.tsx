@@ -1,9 +1,10 @@
 import { Badge, Button, Text } from '@mantine/core';
-import { IconClock, IconMail } from '@tabler/icons-react';
+import { IconClock, IconMail, IconCircleCheck } from '@tabler/icons-react';
 import { ActionItem } from '../../../services/ComplianceDashboardService';
 import { notifyActionItem } from '../../../services/ComplianceDashboardService';
 import { useState } from 'react';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import EmptyState from '../../UtilityComp/EmptyState';
 
 interface UpcomingExpiryProps {
     items: ActionItem[];
@@ -102,9 +103,16 @@ const UpcomingExpiry = ({ items }: UpcomingExpiryProps) => {
                         )}
                     </div>
                 ))}
+                {/* LOT 41 E: EmptyState unifié pour la liste des échéances à venir */}
                 {!items.length && (
-                    <div className="rounded-xl border border-dashed border-yellow-200 bg-white/60 p-6 text-center text-sm text-yellow-600">
-                        No upcoming expiries detected.
+                    <div className="rounded-xl border border-dashed border-yellow-200 bg-white/60">
+                        <EmptyState
+                            icon={<IconCircleCheck size={28} />}
+                            title="Aucune échéance à venir"
+                            description="Aucune exigence n'arrive à échéance prochainement."
+                            iconColor="amber"
+                            compact
+                        />
                     </div>
                 )}
             </div>

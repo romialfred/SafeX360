@@ -7,6 +7,7 @@ import { getAllActionProcessByActionId } from "../../../services/ActionProcessSe
 import { actionStatusesMap } from "../../../Data/DropdownData";
 import { formatDateShort } from "../../../utility/DateFormats";
 import { handlePreview, getFriendlyFileType } from "../../../utility/DocumentUtility";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 
 const AdhocActionDetails = () => {
   const { id } = useParams();
@@ -27,20 +28,22 @@ const AdhocActionDetails = () => {
     <div className="flex flex-col gap-5 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Improvement Idea Details</div>
+          {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+          <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Improvement Idea Details</div>
           <Breadcrumbs mt="xs">
             <Link className="hover:!underline" to="/">
-              <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
+              <Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text>
             </Link>
             <Link className="hover:!underline" to="/adhoc-actions">
-              <Text variant="gradient" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
+              <Text c="dimmed" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
             </Link>
-            <Text variant="gradient">Details</Text>
+            <Text c="teal" fw={500}>Details</Text>
           </Breadcrumbs>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      {/* LOT 40 P1: responsive grid for details layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Left: Full details, no inputs */}
         <div className="col-span-2 self-start p-5 space-y-4 rounded-md border shadow-sm border-gray-200 bg-white">
           <div className="flex items-start justify-between gap-3">
@@ -73,7 +76,8 @@ const AdhocActionDetails = () => {
           {action?.description && (
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
               <p className="text-blue-600 text-sm mb-1">Description</p>
-              <Text size="sm" className="text-gray-700" dangerouslySetInnerHTML={{ __html: action.description }} />
+              {/* LOT 41 P0 XSS fix */}
+              <SafeHtml html={action.description} className="text-gray-700 text-sm" />
             </div>
           )}
 
@@ -129,7 +133,8 @@ const AdhocActionDetails = () => {
 
                   <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                     <p className="text-blue-400">Update Details</p>
-                    <Text size="sm" className="text-gray-700 mt-1" dangerouslySetInnerHTML={{ __html: x?.description || '-' }} />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={x?.description || '-'} className="text-gray-700 mt-1 text-sm" />
                   </div>
 
                   {Array.isArray(x?.docs) && x.docs.length > 0 && (

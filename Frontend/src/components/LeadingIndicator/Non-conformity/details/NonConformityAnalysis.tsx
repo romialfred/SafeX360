@@ -2,6 +2,7 @@ import { Badge, Card, Group, Text } from "@mantine/core"
 import { IconTarget } from "@tabler/icons-react"
 import { analysisMethodsMap } from "../../../../Data/DropdownData"
 import { formatDateShort } from "../../../../utility/DateFormats"
+import SafeHtml from "../../../UtilityComp/SafeHtml"
 
 
 const NonConformityAnalysis = ({ analysis }: any) => {
@@ -87,13 +88,15 @@ const NonConformityAnalysis = ({ analysis }: any) => {
                 {/* Summary */}
                 <div>
                     <Text size="sm" className="text-slate-700 mb-2">Summary</Text>
-                    <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: analysis?.summary || '-' }} />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={analysis?.summary || '-'} className="prose prose-sm max-w-none text-slate-600" />
                 </div>
 
                 {/* Conclusion */}
                 <div>
                     <Text size="sm" className="text-slate-700 mb-2">Conclusion</Text>
-                    <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: analysis?.conclusion || '-' }} />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={analysis?.conclusion || '-'} className="prose prose-sm max-w-none text-slate-600" />
                 </div>
             </div>
         </Card>

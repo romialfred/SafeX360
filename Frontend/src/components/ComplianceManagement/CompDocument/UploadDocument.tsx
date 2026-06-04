@@ -170,7 +170,7 @@ const UploadDocument = () => {
         <div className="flex flex-col gap-10">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    <div className="text-2xl font-semibold text-slate-900">
                         Upload Documents
                     </div>
                     <Breadcrumbs mt="xs">

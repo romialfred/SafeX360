@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.nonConformity.NcHistoryDTO;
 import com.minexpert.hns.exception.HSException;
@@ -12,6 +13,7 @@ import com.minexpert.hns.repository.nonConformity.NcHistoryRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NcHistoryServiceImpl implements NcHistoryService {
     private final NcHistoryRepository ncHistoryRepository;

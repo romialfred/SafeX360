@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.inspections.InspectionChecklistDTO;
 import com.minexpert.hns.entity.inspections.InspectionChecklist;
@@ -14,6 +15,7 @@ import com.minexpert.hns.repository.inspections.InspectionChecklistRepository;
 import com.minexpert.hns.service.MediaService;
 
 @Service
+@Transactional
 public class InspectionChecklistServiceImpl implements InspectionChecklistService {
 
     @Autowired

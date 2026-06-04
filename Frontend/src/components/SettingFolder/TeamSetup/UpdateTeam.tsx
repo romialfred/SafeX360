@@ -205,11 +205,13 @@ const UpdateTeam = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Update Committee</div>
+                    {/* LOT 40 P1: title color blue-500 -> slate-900 */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Update Committee</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/team-setup" ><Text variant="gradient" className="hover:!underline cursor-pointer">H&S Committee</Text></Link>
-                        <Text variant="gradient">Update Committee</Text>
+                        {/* LOT 40 P1: breadcrumb variant=gradient -> c=dimmed / c=teal fw=500 */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        <Link className="hover:!underline" to="/team-setup" ><Text c="dimmed" className="hover:!underline cursor-pointer">H&S Committee</Text></Link>
+                        <Text c="teal" fw={500}>Update Committee</Text>
                     </Breadcrumbs>
                 </div>
 
@@ -217,7 +219,8 @@ const UpdateTeam = () => {
 
 
             <div className="bg-white p-5 shadow-xl rounded-xl border-none flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-5">
+                {/* LOT 40 P1: grid-cols-2 -> grid-cols-1 md:grid-cols-2 (responsive form) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <Select {...form.getInputProps("departmentId")}
                         withAsterisk
                         label="Department"

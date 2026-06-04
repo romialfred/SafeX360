@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.WeatherConditionDTO;
 import com.minexpert.hns.dto.response.WeatherConditionResponse;
@@ -15,6 +16,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.WeatherConditionRepository;
 
 @Service
+@Transactional
 public class WeatherConditionServiceImpl implements WeatherConditionService {
 
     @Autowired

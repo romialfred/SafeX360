@@ -105,15 +105,15 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                     <Menu.Label>Mon Compte</Menu.Label>
                     <Menu.Item
                         leftSection={<IconUser size={15} />}
-                        onClick={() => { setDrawerOpened(false); navigate('/profile'); }}
+                        onClick={() => { setDrawerOpened(false); navigate('/profile?tab=info'); }}
                     >
                         Mon profil
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconSettings size={15} />}
-                        onClick={() => { setDrawerOpened(false); navigate('/settings'); }}
+                        onClick={() => { setDrawerOpened(false); navigate('/profile?tab=preferences'); }}
                     >
-                        Paramètres du compte
+                        Préférences
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconKey size={15} />}
@@ -123,7 +123,7 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconBell size={15} />}
-                        onClick={() => { setDrawerOpened(false); navigate('/notifications'); }}
+                        onClick={() => { setDrawerOpened(false); navigate('/profile?tab=notifications'); }}
                     >
                         Préférences de notifications
                     </Menu.Item>
@@ -134,14 +134,16 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                     <Menu.Item
                         leftSection={<IconLanguage size={15} />}
                         rightSection={<Text size="xs" c="dimmed">FR</Text>}
+                        onClick={() => { setDrawerOpened(false); navigate('/profile?tab=preferences'); }}
                     >
                         Langue (Français)
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconShield size={15} />}
-                        rightSection={<Badge size="xs" color="teal" variant="light">v2.a</Badge>}
+                        rightSection={<Badge size="xs" color="teal" variant="light">v2.4</Badge>}
+                        onClick={() => { setDrawerOpened(false); navigate('/about'); }}
                     >
-                        À propos de SafeX360
+                        À propos de SafeX&nbsp;360
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconHelp size={15} />}

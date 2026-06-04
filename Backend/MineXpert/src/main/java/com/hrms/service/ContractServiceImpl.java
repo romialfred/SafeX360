@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hrms.dto.ContractDTO;
 import com.hrms.entity.Contract;
@@ -14,6 +15,7 @@ import com.hrms.repository.ContractRepository;
 import com.hrms.repository.EmployeeRepository;
 
 @Service
+@Transactional
 public class ContractServiceImpl implements ContractService {
 
     @Autowired

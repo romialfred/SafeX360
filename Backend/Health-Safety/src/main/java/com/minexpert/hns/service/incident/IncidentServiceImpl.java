@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.IncidentDTO;
@@ -39,6 +40,7 @@ import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
 import com.minexpert.hns.service.MediaService;
 
 @Service
+@Transactional
 public class IncidentServiceImpl implements IncidentService {
     private static final String[] MONTH_LABELS = { "Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec" };
 

@@ -1,55 +1,118 @@
 @import "tailwindcss";
 
 /* ===========================================================================
-   SafeX360 — Police globale Inter (corps) + Inter Black (logo)
-   Inter offre un rendu plus net et léger que Plus Jakarta Sans,
-   avec de vraies graisses 300/400 sans synthèse browser.
+   SafeX 360 — Système typographique unifié
+   --------------------------------------------------------------------------
+   Inspiration : Mirka Portail Assurés.
+   - Corps : Inter 400, lisible et neutre.
+   - Titres : Source Serif 4 weight 500, élégants sans criard.
+   - Fond : cream #FAF8F3 pour réchauffer le ton institutionnel.
+   - ZÉRO graisse 700+ visible : on bannit le "bold partout" qui infantilise.
+
+   Les polices sont chargées via <link rel="stylesheet"> dans index.html
+   (preconnect + display=swap pour éviter FOIT).
    =========================================================================== */
+
 html, body {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-weight: 400;
+  background-color: #FAF8F3;
+  color: #1e293b;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* Force tous les éléments à 400 sauf titres principaux (font-bold explicite via Tailwind) */
-*:not(.font-bold):not(.font-black):not(strong):not(b) {
+/* Pattern radial très subtil pour éviter l'effet "blanc plat" */
+body {
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(15, 118, 110, 0.025) 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(217, 119, 6, 0.025) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ---------------------------------------------------------------------------
+   Règle de NORMALISATION
+   --------------------------------------------------------------------------
+   LOT 39 audit P1 fix : on cible explicitement les éléments de contenu plutôt
+   que d'utiliser `*` (qui aplatissait silencieusement Menu.Label, Tabs actifs,
+   etc.). Mantine garde sa hiérarchie typographique propre.
+   --------------------------------------------------------------------------- */
+:where(p, span, div, li, td, th, a, label, button, input, textarea, select):not(.safex-bold):not(strong):not(b):not([style*="fontWeight: 900"]):not([style*="font-weight: 900"]) {
   font-weight: 400;
 }
 
-/* Réservé aux titres de page h1 (PageHeader.tsx + h1 sur LoginsPage) */
-h1.font-bold {
-  font-weight: 700 !important;
+/* ---------------------------------------------------------------------------
+   Titres : Source Serif 4 — élégance institutionnelle
+   --------------------------------------------------------------------------- */
+h1, h2, h3, h4 {
+  font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #0f172a;
 }
 
-/* Wordmark logo (Inter 900 inline style) doit absolument rester */
+/* font-bold (legacy Tailwind) DEVIENT serif 500 — pas gras */
+.font-bold:not([style*="fontWeight: 900"]):not([style*="font-weight: 900"]) {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 500 !important;
+}
+
+.font-extrabold:not([style*="fontWeight: 900"]):not([style*="font-weight: 900"]) {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 600 !important;
+}
+
+/* font-black reste pour le wordmark logo (rare cas justifié) */
+.font-black {
+  font-weight: 900 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Wordmark logo (Inter 900 via inline style) — ne JAMAIS toucher
+   --------------------------------------------------------------------------- */
 [style*="fontWeight: 900"], [style*="font-weight: 900"] {
   font-weight: 900 !important;
 }
 
-/* Mantine : neutraliser les poids hérités */
-.mantine-Text-root, .mantine-Title-root, .mantine-Button-label,
-.mantine-Anchor-root, .mantine-Badge-label, .mantine-Tabs-tabLabel {
+/* ---------------------------------------------------------------------------
+   Mantine — neutraliser les graisses héritées
+   --------------------------------------------------------------------------- */
+.mantine-Text-root,
+.mantine-Title-root,
+.mantine-Anchor-root,
+.mantine-Badge-label,
+.mantine-Tabs-tabLabel,
+.mantine-Tooltip-tooltip {
   font-weight: 400;
 }
 
-/* Boutons Mantine restent légèrement appuyés pour lisibilité CTA */
-.mantine-Button-root {
+/* Boutons : légèrement appuyés (500) pour différencier le CTA du texte courant.
+   Inter 500 — pas serif (les boutons restent sans-serif, propre). */
+.mantine-Button-root,
+.mantine-Button-label {
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 500;
 }
 
-@layer base {
-  ul {
-    @apply list-disc pl-5;
-  }
-
-  ol {
-    @apply list-decimal pl-5;
-  }
+/* Mantine Title — serif quand c'est un vrai titre */
+.mantine-Title-root {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.012em;
 }
 
+/* ---------------------------------------------------------------------------
+   Listes
+   --------------------------------------------------------------------------- */
+@layer base {
+  ul { @apply list-disc pl-5; }
+  ol { @apply list-decimal pl-5; }
+}
 
+/* ---------------------------------------------------------------------------
+   Tokens couleurs custom (legacy compat)
+   --------------------------------------------------------------------------- */
 @theme {
   --color-avocado-100: oklch(0.99 0 0);
   --color-avocado-200: oklch(0.98 0.04 113.22);
@@ -57,26 +120,17 @@ h1.font-bold {
   --color-avocado-400: oklch(0.92 0.19 114.08);
   --color-avocado-500: oklch(0.84 0.18 117.33);
   --color-avocado-600: oklch(0.53 0.12 118.34);
-  /* --color-primary: #5D87FF;   */
-  --color-primary: #38BDF8;
+  --color-primary: #0F766E;       /* teal-700 — couleur de marque sobre */
   --color-secondary: #10B981;
-  --color-textprimary: #2A3547;
-  --color-hoverbg: rgb(236, 242, 255);
+  --color-textprimary: #1e293b;
+  --color-hoverbg: rgb(241, 245, 249);
   --color-home: #5D688A;
-  --color-blackbg: rgb(33, 37, 41);
-
-
-
-
-
-
+  --color-blackbg: rgb(15, 23, 42);
 }
-/* ===========================================================================
-   SafeX360 — Animations gyrophare (boutons d'urgence SOS et Alerte Générale)
-   Anneaux concentriques pulsés en continu pour attirer l'attention
-   sans utiliser de couleurs trop vives sur les boutons standards.
-   =========================================================================== */
 
+/* ===========================================================================
+   SafeX 360 — Animations gyrophare (boutons SOS et Alerte Générale)
+   =========================================================================== */
 @keyframes safex-gyrophare-pulse {
   0%   { transform: scale(1);   opacity: 0.55; }
   80%  { transform: scale(1.25); opacity: 0; }
@@ -93,42 +147,129 @@ h1.font-bold {
   50%      { box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.25), 0 1px 2px rgba(0,0,0,0.15); }
 }
 
-.safex-gyrophare-sos {
-  animation: safex-gyrophare-glow 2s ease-in-out infinite;
-}
-
-.safex-gyrophare-alert {
-  animation: safex-gyrophare-glow-orange 2.2s ease-in-out infinite;
-}
+.safex-gyrophare-sos   { animation: safex-gyrophare-glow 2s ease-in-out infinite; }
+.safex-gyrophare-alert { animation: safex-gyrophare-glow-orange 2.2s ease-in-out infinite; }
 
 .safex-gyrophare-ring {
   position: absolute;
   inset: 0;
-  border-radius: 0.375rem; /* matches rounded-md */
+  border-radius: 0.375rem;
   pointer-events: none;
   opacity: 0;
   animation: safex-gyrophare-pulse 2s ease-out infinite;
 }
 
-.safex-gyrophare-ring--red {
-  background-color: transparent;
-  border: 1px solid rgba(248, 113, 113, 0.55);
-}
+.safex-gyrophare-ring--red    { background-color: transparent; border: 1px solid rgba(248, 113, 113, 0.55); }
+.safex-gyrophare-ring--orange { background-color: transparent; border: 1px solid rgba(251, 146, 60, 0.55); }
+.safex-gyrophare-ring--delay-1 { animation-delay: 0.6s; }
 
-.safex-gyrophare-ring--orange {
-  background-color: transparent;
-  border: 1px solid rgba(251, 146, 60, 0.55);
-}
-
-.safex-gyrophare-ring--delay-1 {
-  animation-delay: 0.6s;
-}
-
-/* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .safex-gyrophare-sos,
   .safex-gyrophare-alert,
   .safex-gyrophare-ring {
     animation: none !important;
   }
+}
+
+/* ===========================================================================
+   SafeX 360 — Skeleton loaders (LOT 40)
+   =========================================================================== */
+@keyframes safex-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+.safex-skeleton {
+  animation: safex-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .safex-skeleton { animation: none !important; }
+}
+
+/* ===========================================================================
+   SafeX 360 — Focus rings universels WCAG 2.2 AA (LOT 40)
+   Apply to keyboard-only focus (:focus-visible) — préserve la souris.
+   =========================================================================== */
+:focus-visible {
+  outline: 2px solid #0F766E;       /* teal-700 brand */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Mantine + boutons custom — focus-visible explicite (sans interférer) */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #0F766E;
+  outline-offset: 2px;
+}
+
+/* Inputs déjà gérés par Mantine — on amplifie subtilement */
+.mantine-Input-input:focus-visible,
+.mantine-TextInput-input:focus-visible,
+.mantine-PasswordInput-input:focus-visible,
+.mantine-Select-input:focus-visible {
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+}
+
+/* ===========================================================================
+   SafeX 360 — Cibles tactiles ≥ 44px (WCAG 2.5.5) sur mobile (LOT 40)
+   =========================================================================== */
+@media (max-width: 767px) {
+  .mantine-Button-root {
+    min-height: 44px;
+  }
+  .mantine-ActionIcon-root {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ===========================================================================
+   SafeX 360 — Utility classes responsives (LOT 40)
+   =========================================================================== */
+/* Container pages standardisé */
+.safex-page {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+@media (min-width: 640px) {
+  .safex-page { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .safex-page { padding-left: 2rem; padding-right: 2rem; padding-top: 1.5rem; }
+}
+
+/* Forcer l'élision propre sur les longs textes (table / cards) */
+.safex-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.safex-truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===========================================================================
+   Scrollbar discrète
+   =========================================================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
 }

@@ -71,21 +71,22 @@ const AdhocActionsForm = () => {
         <div className="p-5 flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         New Improvement Idea
                     </div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">
+                            <Text c="dimmed" className="hover:!underline cursor-pointer">
                                 Home
                             </Text>
                         </Link>
                         <Link className="hover:!underline" to="/adhoc-actions">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">
+                            <Text c="dimmed" className="hover:!underline cursor-pointer">
                                 Improvement Ideas
                             </Text>
                         </Link>
-                        <Text variant="gradient">New Improvement Idea</Text>
+                        <Text c="teal" fw={500}>New Improvement Idea</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -135,7 +136,8 @@ const AdhocActionsForm = () => {
                                 </div>
                             </Alert>
                             <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
-                                <Button variant="default">Cancel</Button>
+                                {/* LOT 40 P1: explicit type for non-submit cancel button */}
+                                <Button type="button" variant="default">Cancel</Button>
                                 <Button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">Create Idea</Button>
                             </div>
                         </form>

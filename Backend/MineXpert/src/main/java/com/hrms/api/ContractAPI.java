@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.dto.ContractDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.exception.HRMSException;
+import jakarta.validation.Valid;
 import com.hrms.service.ContractService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,12 +31,12 @@ public class ContractAPI {
 
 
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO> addContract(@RequestBody ContractDTO contractDTO) throws HRMSException {
+    public ResponseEntity<ResponseDTO> addContract(@RequestBody @Valid ContractDTO contractDTO) throws HRMSException {
         contractService.addContract(contractDTO);
         return new ResponseEntity<>(new ResponseDTO("Contract added Successfully."), HttpStatus.CREATED);
     }
     @PostMapping("/update")
-    public ResponseEntity<ResponseDTO> updateContract(@RequestBody ContractDTO contractDTO) throws HRMSException {
+    public ResponseEntity<ResponseDTO> updateContract(@RequestBody @Valid ContractDTO contractDTO) throws HRMSException {
         contractService.updateContract(contractDTO);
         return new ResponseEntity<>(new ResponseDTO("Contract updated Successfully."), HttpStatus.OK);
     }

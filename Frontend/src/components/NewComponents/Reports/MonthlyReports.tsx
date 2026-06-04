@@ -37,7 +37,7 @@ const MonthlyReports = () => {
     ];
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -70,7 +70,8 @@ const MonthlyReports = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
                     {/* Points clés */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -152,7 +153,8 @@ const MonthlyReports = () => {
                 {/* Performance par département */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 className="text-lg text-slate-900 mb-6">Synthèse performance par département</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {[
                             { name: 'Production', ltifr: 1.2, incidents: 8, training: 94, color: 'blue' },
                             { name: 'Maintenance', ltifr: 0.8, incidents: 3, training: 98, color: 'green' },

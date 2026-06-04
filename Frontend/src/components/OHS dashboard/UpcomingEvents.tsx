@@ -1,9 +1,12 @@
 import { Carousel } from "@mantine/carousel";
-import { Alert, Center, Loader, Text } from "@mantine/core";
+import { Text } from "@mantine/core";
 import { IconChevronLeft, IconChevronRight, IconCalendarPlus } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getUpcomingEvents, type UpcomingEventDTO } from "../../services/EventService";
 import EventsCard from "./EventsCard";
+import EmptyState from "../UtilityComp/EmptyState";
+import ErrorBanner from "../UtilityComp/ErrorBanner";
+import { SkeletonCardList } from "../UtilityComp/LoadingSkeleton";
 
 const UpcomingEvents = () => {
     const [events, setEvents] = useState<UpcomingEventDTO[]>([]);
@@ -43,22 +46,24 @@ const UpcomingEvents = () => {
                 </div>
             </div>
 
-            {loading && (
-                <Center h={220}>
-                    <Loader color="red" />
-                </Center>
-            )}
+            {/* LOT 41 E: SkeletonCardList pendant le chargement */}
+            {loading && <SkeletonCardList items={3} columns={3} />}
 
+            {/* LOT 41 E: ErrorBanner unifié */}
             {!loading && error && (
-                <Alert color="red" radius="md">
+                <ErrorBanner tone="error" title="Échec du chargement">
                     {error}
-                </Alert>
+                </ErrorBanner>
             )}
 
+            {/* LOT 41 E: EmptyState unifié */}
             {!loading && !error && events.length === 0 && (
-                <Center h={180}>
-                    <Text size="sm" c="gray.6">No upcoming events found. Check back soon.</Text>
-                </Center>
+                <EmptyState
+                    icon={<IconCalendarPlus size={28} />}
+                    title="No upcoming events found"
+                    description="Check back soon — planned inspections and audits will appear here."
+                    iconColor="slate"
+                />
             )}
 
             {!loading && !error && events.length > 0 && (

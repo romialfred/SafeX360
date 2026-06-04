@@ -30,7 +30,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 System Language
                             </label>
+                            {/* LOT 40 P1: aria-label for select (visual label not associated via htmlFor) */}
                             <select
+                                aria-label="System Language"
                                 value={systemPrefs.language}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, language: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -45,7 +47,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 Time Zone
                             </label>
+                            {/* LOT 40 P1: aria-label for select */}
                             <select
+                                aria-label="Time Zone"
                                 value={systemPrefs.timezone}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, timezone: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -60,7 +64,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 Date Format
                             </label>
+                            {/* LOT 40 P1: aria-label for select */}
                             <select
+                                aria-label="Date Format"
                                 value={systemPrefs.dateFormat}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, dateFormat: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -75,7 +81,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 Time Format
                             </label>
+                            {/* LOT 40 P1: aria-label for select */}
                             <select
+                                aria-label="Time Format"
                                 value={systemPrefs.timeFormat}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, timeFormat: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -99,7 +107,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 Session Timeout (minutes)
                             </label>
+                            {/* LOT 40 P1: aria-label for raw number input */}
                             <input
+                                aria-label="Session Timeout (minutes)"
                                 type="number"
                                 value={systemPrefs.sessionTimeout}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) }))}
@@ -113,7 +123,9 @@ const SystemTabs = () => {
                             <label className="block text-sm text-gray-700 mb-2">
                                 Max File Size (MB)
                             </label>
+                            {/* LOT 40 P1: aria-label for raw number input */}
                             <input
+                                aria-label="Max File Size (MB)"
                                 type="number"
                                 value={systemPrefs.maxFileSize}
                                 onChange={(e) => setSystemPrefs(prev => ({ ...prev, maxFileSize: parseInt(e.target.value) }))}

@@ -1,7 +1,7 @@
 
 import { Icon } from "@iconify-icon/react";
 import { Avatar, Indicator, Drawer, Button, ScrollArea, SegmentedControl, Tooltip } from "@mantine/core";
-import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconSparkles, IconUrgent, IconBroadcast } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconUrgent, IconBroadcast } from '@tabler/icons-react';
 
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
@@ -13,6 +13,7 @@ import { setProfile } from "../../../slices/ProfileSlice";
 import CompanySelector from "./CompanySelector";
 import SosButton from "./SosButton";
 import GeneralAlertButton from "./GeneralAlertButton";
+import { useActivePageTitle } from "./useActivePageTitle";
 
 const Header = () => {
     const collapsed = useSelector((state: any) => state.collapse);
@@ -23,6 +24,9 @@ const Header = () => {
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const dispatch = useDispatch();
+    // LOT 41 — titre dynamique du module métier actif (gardé pour usage interne / SEO)
+    const activePageTitle = useActivePageTitle();
+    void activePageTitle;
     const isMultiSiteEnabled = true;
     // false karoge to sirf site name dikhega
 
@@ -73,19 +77,36 @@ const Header = () => {
 
     return (
         <div className={`fixed right-0 ${collapsed ? "left-20" : "left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
-            {/* Première ligne : titre plateforme + sélecteur mine + cloche + profil */}
+            {/* LOT 41 — Header : titre principal = positionnement plateforme, sous-titre = slogan signature */}
             <div className="bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-16 flex justify-between items-center px-6">
-                <div className="flex items-center gap-3 relative">
-                    <div className="flex items-center gap-2 text-white">
-                        <IconSparkles size={22} className="text-amber-200" stroke={2} />
-                        <div className="leading-tight">
-                            <h2 className="text-base md:text-lg tracking-tight text-white">
-                                Next Generation HSE Platform
-                            </h2>
-                            <p className="text-[10px] md:text-[11px] uppercase tracking-wider text-teal-100/90">
-                                ISO 45001 · 14001 · 9001 · 19011 · ICMM
-                            </p>
-                        </div>
+                <div className="flex items-center gap-4 relative min-w-0">
+                    <div className="leading-tight min-w-0">
+                        {/* Titre principal — large et raffiné */}
+                        <h1
+                            className="text-white tracking-tight"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 600,
+                                fontSize: 'clamp(18px, 1.85vw, 24px)',
+                                letterSpacing: '-0.022em',
+                                lineHeight: 1.05,
+                                textShadow: '0 1px 2px rgba(0,0,0,0.18)',
+                            }}
+                        >
+                            Plateforme HSE pour l'industrie minière
+                        </h1>
+                        {/* Sous-titre — slogan signature */}
+                        <p
+                            className="mt-1 text-teal-50/95 truncate italic"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontSize: '12.5px',
+                                fontWeight: 400,
+                                letterSpacing: '0.005em',
+                            }}
+                        >
+                            La Santé &amp; Sécurité au cœur des opérations minières
+                        </p>
                     </div>
                 </div>
 

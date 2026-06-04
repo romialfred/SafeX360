@@ -8,6 +8,7 @@ import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
 import TextEditor from "../../../UtilityComp/TextEditor";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { IconAlertCircle } from "@tabler/icons-react";
@@ -128,10 +129,8 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
                         </Badge>
                     </div>
 
-                    <div
-                        dangerouslySetInnerHTML={{ __html: x.description }}
-                        className="text-gray-600 text-sm"
-                    />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={x.description} className="text-gray-600 text-sm" />
 
                     <div className="text-sm text-gray-700">
                         <b>Deadline:</b>{' '}

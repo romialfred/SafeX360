@@ -189,7 +189,7 @@ const AnnualAuditPlans = () => {
 
             <div className="flex items-center justify-between">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Annual Audit Plan (AAP)</div>
+                    <div className="text-2xl font-semibold text-slate-900">Annual Audit Plan (AAP)</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/hs-activities-planning" ><Text variant="gradient" className="hover:!underline cursor-pointer">HSE Planning</Text></Link>

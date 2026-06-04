@@ -324,15 +324,15 @@ const EditNewAuditPlans: React.FC = () => {
 
     const renderAuditInfo = () => (
         <div className="p-2 flex flex-col gap-8">
-            <div className="grid grid-cols-3 gap-4">
+            {/* LOT 40 P0 fix : grilles responsive (mobile=1 col, tablet=2 cols, desktop=3 cols) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <DateInput label="Start Date" {...form.getInputProps("audit.startDate")} leftSection={<IconCalendar />} maxDate={form.values.audit.endDate ? new Date(form.values.audit.endDate) : undefined} placeholder="Enter Start Date" withAsterisk />
                 <DateInput label="End Date" {...form.getInputProps("audit.endDate")} leftSection={<IconCalendar />} minDate={form.values.audit.startDate ? new Date(form.values.audit.startDate) : undefined} placeholder="Enter End Date" withAsterisk />
                 <NumberInput value={getDateDifferenceInDays(form.values.audit.startDate, form.values.audit.endDate)} disabled label="Estimated time (days)" placeholder="Enter Time" withAsterisk />
             </div>
-            <div className="grid grid-cols-2 gap-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput disabled {...form.getInputProps("audit.refNumber")} label="Audit Reference" placeholder="Enter reference number" withAsterisk />
                 <TextInput label="Audit Title" placeholder="Enter audit title" {...form.getInputProps("audit.title")} withAsterisk />
-
             </div>
             <Checkbox.Group size="md"
                 {...form.getInputProps('audit.objectives')}
@@ -393,7 +393,7 @@ const EditNewAuditPlans: React.FC = () => {
 
     const renderAuditorItem = (item: ListItem, index: number) => (
         <div key={index} className="flex flex-col gap-6" >
-            <Fieldset key={index} className="grid grid-cols-3 gap-6" legend={<div className="flex gap-5">
+            <Fieldset key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" legend={<div className="flex gap-5">
                 <div className="text-lg text-blue-500">Auditor {index + 1}</div>
                 <ActionIcon onClick={() => handleRemoveAuditor(item, index)} variant="filled" color="red" aria-label="Settings">
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
@@ -466,7 +466,7 @@ const EditNewAuditPlans: React.FC = () => {
                                         {x}
                                     </Text>
                                     <Checkbox.Group {...form.getInputProps(`audit.auditTypes.${x}`)} className="flex flex-col  text-gray-600">
-                                        <Group className="!grid !grid-cols-2 !gap-2">
+                                        <Group className="!grid !grid-cols-1 sm:!grid-cols-2 !gap-2">
                                             {criteriaByLabel[x].map((item: any) => (
                                                 <Checkbox size="xs"
                                                     key={item}
@@ -508,7 +508,7 @@ const EditNewAuditPlans: React.FC = () => {
                                 Add Auditor
                             </Button>
                         </div>
-                        {form.values.audit.category === "EXTERNAL" && <div className="grid grid-cols-2 gap-5">
+                        {form.values.audit.category === "EXTERNAL" && <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <TextInput withAsterisk {...form.getInputProps(`company`)} placeholder="Company" label="Auditors Company" />
                             <TextInput withAsterisk {...form.getInputProps(`companyEmail`)} placeholder="Email" label="Company Email" />
                         </div>
@@ -520,7 +520,7 @@ const EditNewAuditPlans: React.FC = () => {
                                 <IconInfoCircle size={18} className="text-yellow-600" />
                                 Validation rules:
                             </h2>
-                            <ul className="list-disc pl-6 text-sm grid grid-cols-2  text-yellow-700 space-y-1">
+                            <ul className="list-disc pl-6 text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-yellow-700 space-y-1">
                                 <li>Only one head of audit per audit team</li>
                                 <li>Can't add the same employee multiple times</li>
                                 <li>All fields are required</li>

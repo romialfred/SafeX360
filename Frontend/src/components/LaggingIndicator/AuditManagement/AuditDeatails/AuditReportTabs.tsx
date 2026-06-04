@@ -25,6 +25,7 @@ import {
 } from "@tabler/icons-react";
 import { DateInput } from "@mantine/dates";
 import TextEditor from "../../../UtilityComp/TextEditor";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import { useParams } from "react-router-dom";
@@ -273,7 +274,8 @@ const AuditReportTabs = () => {
 
 
                             <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-blue-200 border rounded-md px-4 py-3 text-sm">
-                                <div dangerouslySetInnerHTML={{ __html: report?.description || "" }} />
+                                {/* LOT 41 P0 XSS fix */}
+                                <SafeHtml html={report?.description || ""} />
 
                             </div>
 

@@ -8,6 +8,10 @@ import PageHeader from '../UtilityComp/PageHeader';
 import { getAllDepartments } from '../../services/HrmsService';
 import { getRiskOverview, RiskOverviewResponse } from '../../services/RiskRegisterService';
 
+// LOT 40 P1: Extract hardcoded fallback labels to module-top constants for consistency / reuse
+const DEFAULT_PROBABILITY_LABELS = ['Rare', 'Improbable', 'Possible', 'Probable', 'Quasi-certain'];
+const DEFAULT_IMPACT_LABELS = ['Négligeable', 'Mineure', 'Modérée', 'Majeure', 'Catastrophique'];
+
 const RiskOverview: React.FC = () => {
     // Detail view state (not used yet in overview)
     const [showDetails, _setShowDetails] = useState(false);
@@ -32,8 +36,9 @@ const RiskOverview: React.FC = () => {
             .catch((_e) => { /* ignore */ });
     }, []);
 
-    const probabilityLabels = overview?.matrix?.probabilityLabels || ['Rare', 'Improbable', 'Possible', 'Probable', 'Quasi-certain'];
-    const severityLabels = overview?.matrix?.severityLabels || ['Négligeable', 'Mineure', 'Modérée', 'Majeure', 'Catastrophique'];
+    // LOT 40 P1: Use module-level constants instead of inline arrays
+    const probabilityLabels = overview?.matrix?.probabilityLabels || DEFAULT_PROBABILITY_LABELS;
+    const severityLabels = overview?.matrix?.severityLabels || DEFAULT_IMPACT_LABELS;
 
     // Donuts
     const departmentDonut = (overview?.distributions?.byDepartment || []).map((d) => ({ name: d.label || departmentMap[d.key]?.name || String(d.key), value: d.count, color: '' }));
@@ -59,7 +64,7 @@ const RiskOverview: React.FC = () => {
 
 
             {!showDetails ? (
-                <div className="space-y-5 max-w-[1600px] mx-auto">
+                <div className="space-y-5 w-full">
                     <PageHeader
                         breadcrumbs={[
                             { label: 'Accueil', to: '/' },

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hrms.dto.NotificationDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.exception.HRMSException;
+import jakarta.validation.Valid;
 import com.hrms.service.NotificationService;
 
 @RestController
@@ -30,7 +31,7 @@ public class NotificationAPI {
 	 
 
 	@PostMapping("/send")
-	public ResponseEntity<ResponseDTO>sendNotification(@RequestBody NotificationDTO notificationDTO) throws HRMSException{
+	public ResponseEntity<ResponseDTO>sendNotification(@RequestBody @Valid NotificationDTO notificationDTO) throws HRMSException{
         notificationService.sendNotification(notificationDTO);
 		return new ResponseEntity<>(new ResponseDTO("Notfication Sent."), HttpStatus.OK);
 	}

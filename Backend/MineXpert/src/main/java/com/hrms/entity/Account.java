@@ -125,7 +125,8 @@ public class Account {
                 this.workHourCodes,
                 this.timesheetPermissions,
                 this.firstLogin,
-                this.status);
+                this.status,
+                null /* oldPassword — jamais persisté, présent uniquement pour update-password */);
     }
 
 }

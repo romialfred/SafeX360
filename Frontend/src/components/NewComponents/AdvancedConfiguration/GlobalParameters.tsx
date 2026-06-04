@@ -153,7 +153,9 @@ const GlobalParameters = () => {
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-3">
                                                 <span className="text-xs text-gray-500 w-8">{param.minValue}</span>
+                                                {/* LOT 40 P1: aria-label for range slider */}
                                                 <input
+                                                    aria-label={`${param.name} slider`}
                                                     type="range"
                                                     min={param.minValue}
                                                     max={param.maxValue}
@@ -165,7 +167,9 @@ const GlobalParameters = () => {
                                             </div>
 
                                             <div className="flex items-center space-x-2">
+                                                {/* LOT 40 P1: aria-label for number input */}
                                                 <input
+                                                    aria-label={`${param.name} value`}
                                                     type="number"
                                                     value={param.value}
                                                     onChange={(e) => handleGlobalParameterChange(param.id, parseInt(e.target.value))}

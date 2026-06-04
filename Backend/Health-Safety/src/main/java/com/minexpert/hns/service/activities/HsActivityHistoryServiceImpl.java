@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.HsActivityHistoryDTO;
 import com.minexpert.hns.entity.activities.HsActivityHistory;
@@ -14,6 +15,7 @@ import com.minexpert.hns.repository.activities.HsActivityHistoryRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class HsActivityHistoryServiceImpl implements HsActivityHistoryService {
 

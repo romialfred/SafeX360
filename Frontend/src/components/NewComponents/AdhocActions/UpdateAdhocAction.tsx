@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { getActionById } from "../../../services/CorrectiveActionService";
 import TextEditor from "../../UtilityComp/TextEditor";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
 
 const UpdateAdhocAction = () => {
@@ -150,20 +151,22 @@ const UpdateAdhocAction = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Improvement Idea</div>
+                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Improvement Idea</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
+                            <Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text>
                         </Link>
                         <Link className="hover:!underline" to="/adhoc-actions">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
+                            <Text c="dimmed" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
                         </Link>
-                        <Text variant="gradient">Update Improvement Idea</Text>
+                        <Text c="teal" fw={500}>Update Improvement Idea</Text>
                     </Breadcrumbs>
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-5">
+            {/* LOT 40 P1: responsive grid for update layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {/* Left Side: Form column with details box above */}
                 <div className='flex self-start flex-col col-span-2 gap-3 shadow-sm p-5 rounded-md border border-gray-200'>
                     {/* Idea Details box */}
@@ -233,7 +236,8 @@ const UpdateAdhocAction = () => {
                             {selectedRow?.description && (
                                 <div className="rounded-md border border-gray-200 p-3">
                                     <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
-                                    <Text size="sm" className="text-gray-700" dangerouslySetInnerHTML={{ __html: selectedRow?.description }} />
+                                    {/* LOT 41 P0 XSS fix */}
+                                    <SafeHtml html={selectedRow?.description} className="text-gray-700 text-sm" />
                                 </div>
                             )}
                         </div>
@@ -264,14 +268,16 @@ const UpdateAdhocAction = () => {
                         </Card>
                     ) : (
                         <form className='space-y-3' onSubmit={form.onSubmit(handleSubmit)}>
-                            <div className="grid grid-cols-2 gap-3">
+                            {/* LOT 40 P1: responsive 2-col grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
                                 <Select size="sm" disabled={cannotUpdate} label="Status" data={actionStatuses.slice(actionStatuses.findIndex((item) => item.value === (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status)))}  {...form.getInputProps('status')} />
                             </div>
                             <TextEditor form={form} id="description" title="Description" withAsterisk />
                             {!cannotUpdate && <FileDropzone form={form} id="docs" />}
                             <div className="flex gap-2 mt-2">
-                                <Button variant='default' onClick={() => navigate('/adhoc-actions')}>Cancel</Button>
+                                {/* LOT 40 P1: explicit type for non-submit cancel button */}
+                                <Button type="button" variant='default' onClick={() => navigate('/adhoc-actions')}>Cancel</Button>
                                 <Button disabled={cannotUpdate} variant='gradient' type='submit'>Save</Button>
                             </div>
                         </form>
@@ -321,7 +327,8 @@ const UpdateAdhocAction = () => {
                                         </Progress.Root>
                                         <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                                             <p className="text-blue-400">Update Details</p>
-                                            <Text dangerouslySetInnerHTML={{ __html: x.description || "-" }} size="sm" className="text-gray-700 mt-1" />
+                                            {/* LOT 41 P0 XSS fix */}
+                                            <SafeHtml html={x.description || "-"} className="text-gray-700 mt-1 text-sm" />
                                         </div>
                                     </div>
                                 </Card>

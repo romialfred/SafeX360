@@ -104,7 +104,7 @@ const AddRequirement = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Add New Requirement</div>
+                    <div className="text-2xl font-semibold text-slate-900">Add New Requirement</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/compliance-requirements" ><Text variant="gradient" className="hover:!underline cursor-pointer">Compliance Requirements</Text></Link>

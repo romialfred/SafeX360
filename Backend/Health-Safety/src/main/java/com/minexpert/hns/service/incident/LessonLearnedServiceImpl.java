@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
 import com.minexpert.hns.dto.LessonLearnedDTO;
@@ -21,6 +22,7 @@ import com.minexpert.hns.repository.incident.LessonLearnedRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class LessonLearnedServiceImpl implements LessonLearnedService {
 

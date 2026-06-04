@@ -148,6 +148,7 @@ import AdhocActionDetails from '../components/NewComponents/AdhocActions/AdhocAc
 import EditAdhocAction from '../components/NewComponents/AdhocActions/EditAdhocAction';
 import ChemicalDetails from '../components/NewComponents/ChemicalRegister/ChemicalDetails';
 import ModuleNotFoundPage from '../pages/dashboard/ModuleNotFoundPage';
+import IsoMappingPage from '../pages/dashboard/IsoMappingPage';
 
 
 
@@ -166,10 +167,6 @@ const router = createBrowserRouter([
     {
         path: '/landing',
         element: <LayoutPage />,
-    },
-    {
-        path: '/about',
-        element: <AboutPage />,
     },
     {
         path: '/login',
@@ -191,6 +188,8 @@ const router = createBrowserRouter([
             { path: 'old', element: <DashboardPage /> },
             { path: 'dashboard', element: <OhsDashboardPage /> },
             { path: 'profile', element: <ProfilePage /> },
+            { path: 'about', element: <AboutPage /> },
+            { path: 'iso-mapping', element: <IsoMappingPage /> },
             { path: 'incidents', element: <ModuleGuard moduleId='incident-management'><LaggingIndicatorPage /></ModuleGuard>, },
             { path: 'incidents/report', element: <ModuleGuard moduleId='incident-management'><AddIncidentsPage /></ModuleGuard> },
             { path: 'incidents/:id', element: <ModuleGuard moduleId='incident-management'><ViewDetailsPage /></ModuleGuard> },
@@ -377,9 +376,12 @@ const router = createBrowserRouter([
             { path: "executive-reports", element: <ExecutiveReports /> },
             { path: "trend-analysis", element: <TrendAnalysis /> },
 
+            // LOT 40 P0 fix : route catch-all interne au layout
+            // affiche une vraie page 404 (NotFound) avec le shell propre,
+            // au lieu d'un placeholder ComingSoon.
             {
                 path: '*',
-                element: <ComingSoonPage />,
+                element: <NotFound />,
             }
 
 
@@ -390,9 +392,11 @@ const router = createBrowserRouter([
         path: '/not-found',
         element: <NotFound />,
     },
+    // LOT 40 P0 fix : catch-all racine — fallback pour les URLs hors layout
+    // (ex: bug de redirect). Renvoie sur la page 404 dédiée.
     {
         path: '*',
-        element: <ComingSoonPage />,
+        element: <NotFound />,
     }
 ]);
 

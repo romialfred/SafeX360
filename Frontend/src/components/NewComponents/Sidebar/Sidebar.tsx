@@ -38,71 +38,27 @@ import { useAppSelector } from '../../../slices/hooks';
 import { useDispatch } from 'react-redux';
 import { collapse, expand } from '../../../slices/CollapseSlice';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 
 /**
- * Logo SafeX360 — wordmark texte premium (4K-sharp, sans bitmap).
- * "SafeX" en blanc avec drop-shadow subtil + "360" placé dessous,
- * chaque chiffre dans la couleur de marque historique :
- *   3 → vert émeraude   (sécurité / conformité)
- *   6 → bleu            (surveillance HSE)
- *   0 → rouge           (alerte / criticité)
- * Variantes : full (sidebar étendue) + compact (sidebar repliée).
+ * Logo SafeX360 — utilise le composant unifié SafeXLogoColor (LOT 41).
+ *
+ * Cohérence visuelle garantie entre sidebar / login / 404 : même bouclier
+ * gradient teal→rouge, même wordmark "Safe[X]360" avec X teal et 360 rouge.
+ *
+ * Variantes :
+ *  - compact : bouclier seul (sidebar repliée)
+ *  - full    : bouclier + wordmark coloré (sidebar dépliée)
  */
-const LOGO_FONT_STACK = "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif";
-
 const SafeXLogo = ({ compact = false }: { compact?: boolean }) => {
     if (compact) {
         return (
-            <div className="flex flex-col items-center leading-[0.85] select-none py-0.5">
-                <span
-                    className="text-[22px] text-white antialiased"
-                    style={{
-                        fontFamily: LOGO_FONT_STACK,
-                        fontWeight: 900,
-                        textShadow: '0 1px 6px rgba(255,255,255,0.08)',
-                        letterSpacing: '-0.05em',
-                    }}
-                >
-                    S
-                </span>
-                <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-1px' }}>
-                    <span className="text-[11px] leading-none text-emerald-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>3</span>
-                    <span className="text-[11px] leading-none text-blue-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>6</span>
-                    <span className="text-[11px] leading-none text-red-400" style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em' }}>0</span>
-                </div>
+            <div className="flex justify-center w-full">
+                <SafeXLogoColor variant="icon" tone="light" size={36} />
             </div>
         );
     }
-    return (
-        <div className="flex flex-col items-start leading-[0.82] select-none">
-            <span
-                className="text-[36px] text-white antialiased"
-                style={{
-                    fontFamily: LOGO_FONT_STACK,
-                    fontWeight: 900,
-                    textShadow: '0 2px 10px rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.5)',
-                    letterSpacing: '-0.045em',
-                    WebkitFontSmoothing: 'antialiased',
-                }}
-            >
-                SafeX
-            </span>
-            <div className="flex items-baseline" style={{ gap: '0px', marginTop: '-2px', marginLeft: '1px' }}>
-                <span
-                    className="text-[28px] leading-none text-emerald-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(52,211,153,0.32)' }}
-                >3</span>
-                <span
-                    className="text-[28px] leading-none text-blue-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(96,165,250,0.32)' }}
-                >6</span>
-                <span
-                    className="text-[28px] leading-none text-red-400"
-                    style={{ fontFamily: LOGO_FONT_STACK, fontWeight: 900, letterSpacing: '-0.04em', textShadow: '0 0 12px rgba(248,113,113,0.32)' }}
-                >0</span>
-            </div>
-        </div>
-    );
+    return <SafeXLogoColor variant="full" tone="light" size={34} />;
 };
 
 interface SubMenuItem {
@@ -500,38 +456,51 @@ const Sidebar = () => {
       ${collapsed ? 'w-20' : 'w-72'} 
       bg-blackbg text-white h-screen scrollbar-hide fixed overflow-y-auto shadow-xl transition-all duration-300 ease-in-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
     `}>
-                {/* Refonte sidebar header — Logo SafeX360 top-left + "Navigation HSE" sous-titre */}
-                <div className="p-4 border-b border-gray-700/60 bg-gradient-to-b from-gray-900/40 to-transparent">
-                    <div className="flex items-start justify-between gap-2">
-                        <Link to="/" className="flex flex-col items-start gap-1 hover:opacity-95 transition flex-1 min-w-0" title="SafeX360 — Plateforme HSE">
-                            {collapsed ? (
-                                <SafeXLogo compact />
-                            ) : (
-                                <>
-                                    <SafeXLogo />
-                                    <div className="flex items-center gap-1.5 mt-2.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                        <h1 className="text-[10px] uppercase tracking-[0.18em] text-gray-300">Navigation HSE</h1>
-                                    </div>
-                                </>
-                            )}
+                {/* LOT 41 — Sidebar header : logo coloré (sans point lumineux), pas de marge inutile */}
+                <div className="px-4 pt-3 pb-2 border-b border-gray-700/60 bg-gradient-to-b from-gray-900/40 to-transparent">
+                    <div className="flex items-center justify-between gap-2">
+                        <Link to="/" className="flex items-center gap-2 hover:opacity-95 transition flex-1 min-w-0" title="SafeX360 — Plateforme HSE">
+                            {collapsed ? <SafeXLogo compact /> : <SafeXLogo />}
                         </Link>
+                        {/* LOT 40 a11y fix : aria-label + aria-expanded + aria-controls
+                            pour permettre aux lecteurs d'écran de comprendre l'état de la sidebar. */}
                         <button
+                            type="button"
                             onClick={() => dispatch(collapsed ? expand() : collapse())}
                             className="p-1.5 cursor-pointer hover:bg-gray-700/70 rounded-lg transition-all duration-300 flex-shrink-0"
-                            title={collapsed ? "Étendre" : "Réduire"}
+                            title={collapsed ? "Étendre le menu de navigation" : "Réduire le menu de navigation"}
+                            aria-label={collapsed ? "Étendre le menu de navigation" : "Réduire le menu de navigation"}
+                            aria-expanded={!collapsed}
+                            aria-controls="safex-sidebar-nav"
                         >
                             {collapsed ? (
-                                <IconChevronRight className="w-4 h-4 text-gray-300" />
+                                <IconChevronRight className="w-4 h-4 text-gray-300" aria-hidden="true" />
                             ) : (
-                                <IconChevronLeft className="w-4 h-4 text-gray-300" />
+                                <IconChevronLeft className="w-4 h-4 text-gray-300" aria-hidden="true" />
                             )}
                         </button>
                     </div>
                 </div>
 
                 {/* Navigation : padding équilibré, interlignes confortables, contrastes améliorés */}
-                <nav className="py-3 px-1">
+                <nav className="py-2 px-1" id="safex-sidebar-nav" aria-label="Navigation principale">
+                    {/* LOT 41 — Titre de section "Vos applications" en jaune lumineux pour bonne visibilité */}
+                    {!collapsed && (
+                        <div className="px-5 pt-3 pb-2.5 flex items-center gap-2">
+                            <span className="h-[2px] w-4 rounded-full" style={{ background: '#FEF08A' }} aria-hidden="true" />
+                            <h2
+                                className="uppercase font-semibold"
+                                style={{
+                                    fontSize: '11.5px',
+                                    letterSpacing: '0.22em',
+                                    color: '#FEF08A',
+                                }}
+                            >
+                                Vos applications
+                            </h2>
+                            <span className="h-[2px] flex-1 rounded-full bg-slate-700/70" aria-hidden="true" />
+                        </div>
+                    )}
                     <div className="space-y-1">
                         {menuItems.map(item => {
                             const isActive = activeItem === item.id;
@@ -552,8 +521,10 @@ const Sidebar = () => {
                                         `}
                                         onClick={(e) => {
                                             // Rapports & Analytics : ouvre le SafeX Analytics Center dans un nouvel onglet
+                                            // LOT 41 fix : URL explicite avec index.html pour éviter la collision
+                                            // avec le SPA fallback de Vite (provoquait boucle infinie).
                                             if (item.id === 'reports') {
-                                                const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/';
+                                                const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/index.html';
                                                 window.open(url, '_blank', 'noopener,noreferrer');
                                                 return;
                                             }

@@ -188,15 +188,17 @@ const EditHealthMeeting = () => {
         <div className="">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Update HSE Activity</div>
+                    {/* LOT 40 P1: titre page passé en text-slate-900 */}
+                    <div className="text-2xl text-slate-900 w-fit">Update HSE Activity</div>
                     <Breadcrumbs mt="xs" mb="lg">
+                        {/* LOT 40 P1: breadcrumbs Mantine 7 — variant="gradient" ne rend pas, remplacé par couleurs sémantiques */}
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text c="dimmed">Home</Text>
                         </Link>
                         <Link className="hover:!underline" to="/hs-Meetings">
-                            <Text variant="gradient">Health and Safety Meeting</Text>
+                            <Text c="dimmed">Health and Safety Meeting</Text>
                         </Link>
-                        <Text variant="gradient">Update HSE Activity</Text>
+                        <Text c="teal" fw={500}>Update HSE Activity</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -213,15 +215,17 @@ const EditHealthMeeting = () => {
             <form onSubmit={form.onSubmit(handleSubmit)}>
                 <div className="flex flex-col gap-8">
 
+                    {/* LOT 40 P1: grille responsive du fieldset (mobile→single col) */}
                     <Fieldset
-                        className="grid grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg text-blue-500">HSE Informations</div>} >
+                        className="grid grid-cols-1 md:grid-cols-2 [&>legend]:w-fit gap-5 flex-wrap "
+                        legend={<div className="text-lg text-teal-700">HSE Informations</div>} >
                         <Select withAsterisk label="Activity" disabled placeholder="Select activity" data={activities} {...form.getInputProps('activityId')} />
                         <Select withAsterisk label="Activity Type" placeholder="Select Type" data={activityTypes} disabled  {...form.getInputProps('type')} />
 
 
                         <Select label="Location" placeholder="Enter Location" leftSection={<IconMapPin />} data={location} withAsterisk {...form.getInputProps('locationId')} />
-                        < div className="grid grid-cols-2 gap-4 self-center">
+                        {/* LOT 40 P1: sous-grille horaires responsive */}
+                        < div className="grid grid-cols-1 md:grid-cols-2 gap-4 self-center">
 
                             <TimeInput label="Start Time" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
                             <TimeInput label="End Time" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
@@ -231,14 +235,14 @@ const EditHealthMeeting = () => {
                     </Fieldset>
                     <Fieldset
                         className="grid grid-cols-1 [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg text-blue-500">Descriptions</div>} >
+                        legend={<div className="text-lg text-teal-700">Descriptions</div>} >
                         <TextEditor form={form} id="objectives" title="Objectives" />
                         <TextEditor form={form} id="agenda" title="Agenda" />
                         <TextEditor form={form} id="expectedResults" title="Expected Results" />
                     </Fieldset>
 
 
-                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg text-blue-500 "> Participants</div>}>
+                    <Fieldset className=" [&>legend]:w-fit flex  p-5" legend={<div className="text-lg text-teal-700 "> Participants</div>}>
 
 
                         <div className=' [&>legend]:w-fit '>
@@ -264,7 +268,7 @@ const EditHealthMeeting = () => {
                     </Fieldset>
                     <Fieldset
                         className=" [&>legend]:w-fit gap-5 flex-wrap "
-                        legend={<div className="text-lg text-blue-500">Personal Protective Equipment (PPE)</div>} >
+                        legend={<div className="text-lg text-teal-700">Personal Protective Equipment (PPE)</div>} >
                         <Checkbox.Group size="md"
                             {...form.getInputProps("ppe")}
                             label=""

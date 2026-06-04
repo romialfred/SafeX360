@@ -7,10 +7,12 @@ const Auditor = () => {
         <div className=' '>
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Auditor Management</div>
+                    {/* LOT 40 P1: title color blue-500 -> slate-900 */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Auditor Management</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Auditor Management</Text>
+                        {/* LOT 40 P1: breadcrumb variant=gradient -> c=dimmed / c=teal fw=500 */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        <Text c="teal" fw={500}>Auditor Management</Text>
                     </Breadcrumbs>
                 </div>
 

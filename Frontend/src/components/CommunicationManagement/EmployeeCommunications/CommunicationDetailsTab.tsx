@@ -6,6 +6,7 @@ import { formatDateShort } from '../../../utility/DateFormats';
 import { handlePreview } from '../../../utility/DocumentUtility';
 import { sendCommunicationNow } from '../../../services/CommunicationService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import SafeHtml from '../../UtilityComp/SafeHtml';
 
 
 // const getStatusColor = (status: string) => {
@@ -120,7 +121,8 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                     </Grid.Col>
                     <Grid.Col span={12}>
                         <Text size="sm" c="dimmed">Content:</Text>
-                        <Text size="sm" mb="md"><div dangerouslySetInnerHTML={{ __html: communication?.content }} /></Text>
+                        {/* LOT 41 P0 XSS fix */}
+                        <Text size="sm" mb="md" component="div"><SafeHtml html={communication?.content} /></Text>
                     </Grid.Col>
                     <Grid.Col span={6}>
                         <Text size="sm" c="dimmed">Sender:</Text>

@@ -8,10 +8,12 @@ import com.minexpert.hns.repository.risks.RiskAnalysisRepository;
 import com.minexpert.hns.repository.risks.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RiskAnalysisServiceImpl implements RiskAnalysisService {
     private final RiskAnalysisRepository analysisRepository;

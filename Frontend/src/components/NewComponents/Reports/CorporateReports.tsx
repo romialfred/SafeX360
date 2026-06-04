@@ -11,7 +11,7 @@ import PageHeader from '../../UtilityComp/PageHeader';
 
 const CorporateReports = () => {
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -97,7 +97,8 @@ const CorporateReports = () => {
             {/* Initiatives stratégiques */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg text-slate-900 mb-6">Initiatives stratégiques sécurité 2026</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {[
                         {
                             title: 'Transformation digitale sécurité',

@@ -7,10 +7,12 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.users.PermissionManagementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class PermissionManagementServiceImpl implements PermissionManagementService {
     private final PermissionManagementRepository repository;

@@ -1,9 +1,10 @@
 import { Badge, Button, Text } from '@mantine/core';
-import { IconAlertTriangle, IconMail } from '@tabler/icons-react';
+import { IconAlertTriangle, IconMail, IconCircleCheck } from '@tabler/icons-react';
 import { ActionItem } from '../../../services/ComplianceDashboardService';
 import { notifyActionItem } from '../../../services/ComplianceDashboardService';
 import { useState } from 'react';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import EmptyState from '../../UtilityComp/EmptyState';
 
 interface ExpiredContentProps {
     items: ActionItem[];
@@ -102,9 +103,16 @@ export default function ExpiredContent({ items }: ExpiredContentProps) {
                         )}
                     </div>
                 ))}
+                {/* LOT 41 E: EmptyState unifié pour la liste des exigences expirées */}
                 {!items.length && (
-                    <div className="rounded-xl border border-dashed border-red-200 bg-white/60 p-6 text-center text-sm text-red-500">
-                        No expired requirements at the moment.
+                    <div className="rounded-xl border border-dashed border-red-200 bg-white/60">
+                        <EmptyState
+                            icon={<IconCircleCheck size={28} />}
+                            title="Aucune exigence expirée"
+                            description="Toutes les exigences réglementaires sont à jour."
+                            iconColor="emerald"
+                            compact
+                        />
                     </div>
                 )}
             </div>

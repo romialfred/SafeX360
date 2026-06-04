@@ -129,15 +129,17 @@ const ActivityReport = () => {
         <div>
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Activity Execution Report</div>
+                    {/* LOT 40 P1: titre page passé en text-slate-900 */}
+                    <div className="text-2xl text-slate-900 w-fit">Activity Execution Report</div>
                     <Breadcrumbs mt="xs" mb="lg">
+                        {/* LOT 40 P1: breadcrumbs Mantine 7 — couleurs sémantiques au lieu de variant="gradient" */}
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text c="dimmed">Home</Text>
                         </Link>
                         <Link className="hover:!underline" to="/hs-Meetings">
-                            <Text variant="gradient">Health and Safety Meeting</Text>
+                            <Text c="dimmed">Health and Safety Meeting</Text>
                         </Link>
-                        <Text variant="gradient">Activity Execution Report</Text>
+                        <Text c="teal" fw={500}>Activity Execution Report</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -321,9 +323,10 @@ const ActivityReport = () => {
 
                 <div className="space-y-4">
                     {form.values.actions.map((_item, index: any) => (
-                        <Fieldset key={index} className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                            <div className="text-lg text-blue-500">Action {index + 1}</div>
-                            <ActionIcon onClick={() => form.removeListItem('actions', index)} variant="filled" color="red" aria-label="Settings">
+                        // LOT 40 P1: grille responsive (mobile→single col) + légende teal-700 + aria-label descriptif
+                        <Fieldset key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6" legend={<div className="flex gap-5">
+                            <div className="text-lg text-teal-700">Action {index + 1}</div>
+                            <ActionIcon onClick={() => form.removeListItem('actions', index)} variant="filled" color="red" aria-label="Supprimer l'action">
                                 <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                             </ActionIcon>
                         </div>}>

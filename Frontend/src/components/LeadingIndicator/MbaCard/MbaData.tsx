@@ -98,12 +98,13 @@ const MbaData = () => {
         const id = rowData.id;
         return (
             <div className='flex gap-3 '>
+                {/* LOT 40 P1: aria-label descriptifs ajoutés */}
                 <Tooltip label="View Deatils">
-                    <ActionIcon onClick={() => navigate(`viewPgi/${id}`)} variant="filled" size="sm" color="yellow" >
+                    <ActionIcon onClick={() => navigate(`viewPgi/${id}`)} variant="filled" size="sm" color="yellow" aria-label="Voir détails">
                         <IconEye style={{ width: '90%', height: '90%' }} stroke={1.5} /></ActionIcon>
                 </Tooltip>
                 {rowData.status != "COMPLETED" && rowData.status != "CANCELLED" && <Tooltip label="Start Inspection">
-                    <ActionIcon onClick={() => navigate(`inspection/${id}`)} variant="filled" size="sm" color="blue" >
+                    <ActionIcon onClick={() => navigate(`inspection/${id}`)} variant="filled" size="sm" color="blue" aria-label="Démarrer l'inspection">
                         <IconChecklist stroke={1.5} style={{ width: '90%', height: '90%' }} /></ActionIcon>
                 </Tooltip>}
                 {/* <Tooltip label="Edit">

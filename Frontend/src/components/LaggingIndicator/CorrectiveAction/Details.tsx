@@ -13,6 +13,7 @@ import { getPgiInfo } from '../../../services/PgiService';
 import { getActivityInfo } from '../../../services/HsActivityService';
 import { handlePreview } from '../../../utility/DocumentUtility';
 import { getInfoByNonConformityId } from '../../../services/NonConformityService';
+import SafeHtml from '../../UtilityComp/SafeHtml';
 
 const Details = () => {
     const { id, type } = useParams();
@@ -50,7 +51,7 @@ const Details = () => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Corrective Action Details</div>
+                    <div className="text-2xl font-semibold text-slate-900">Corrective Action Details</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/corrective" ><Text variant="gradient" className="hover:!underline cursor-pointer">Corrective Action</Text></Link>
@@ -85,7 +86,8 @@ const Details = () => {
 
                 <div className='flex gap-3 flex-col bg-blue-50 p-3 rounded-lg shadow-xs mb-1 border border-blue-100'>
 
-                    <div dangerouslySetInnerHTML={{ __html: action.description }} className="text-gray-600 text-sm leading-relaxed" />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={action.description} className="text-gray-600 text-sm leading-relaxed" />
                     <Group className="!flex !justify-between">
                         <div className='text-blue-700 bg-blue-100 px-2 py-1 rounded-full flex gap-1 items-center border border-blue-200 shadow-xs text-sm'>
                             <IconUser size={16} />

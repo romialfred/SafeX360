@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.compliance.RequirementDTO;
 import com.minexpert.hns.entity.compliance.Requirement;
@@ -15,6 +16,7 @@ import com.minexpert.hns.repository.compliance.RequirementRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RequirementServiceImpl implements RequirementService {
     private final RequirementRepository requirementRepository;

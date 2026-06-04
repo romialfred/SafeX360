@@ -120,7 +120,9 @@ const DataRetention = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-2">
+                                                {/* LOT 40 P1: aria-label for inputs in retention table */}
                                                 <input
+                                                    aria-label={`Retention period for ${policy.dataType}`}
                                                     type="number"
                                                     value={policy.retentionPeriod}
                                                     onChange={(e) => handleRetentionChange(policy.id, 'retentionPeriod', parseInt(e.target.value))}
@@ -129,6 +131,7 @@ const DataRetention = () => {
                                                     className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 />
                                                 <select
+                                                    aria-label={`Retention unit for ${policy.dataType}`}
                                                     value={policy.unit}
                                                     onChange={(e) => handleRetentionChange(policy.id, 'unit', e.target.value)}
                                                     className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -140,7 +143,9 @@ const DataRetention = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            {/* LOT 40 P1: aria-label for toggle button */}
                                             <button
+                                                aria-label={`Toggle auto-archive for ${policy.dataType}`}
                                                 onClick={() => handleRetentionChange(policy.id, 'autoArchive', !policy.autoArchive)}
                                                 className={`w-8 h-4 rounded-full transition-colors ${policy.autoArchive ? 'bg-blue-500' : 'bg-gray-300'
                                                     } relative`}
@@ -150,7 +155,9 @@ const DataRetention = () => {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            {/* LOT 40 P1: aria-label for toggle button */}
                                             <button
+                                                aria-label={`Toggle auto-delete for ${policy.dataType}`}
                                                 onClick={() => handleRetentionChange(policy.id, 'autoDelete', !policy.autoDelete)}
                                                 className={`w-8 h-4 rounded-full transition-colors ${policy.autoDelete ? 'bg-red-500' : 'bg-gray-300'
                                                     } relative`}
@@ -160,14 +167,15 @@ const DataRetention = () => {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            {/* LOT 40 P1: aria-labels for icon-only action buttons */}
                                             <div className="flex items-center justify-center space-x-2">
-                                                <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                                                <button aria-label={`Archive ${policy.dataType}`} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                                                     <IconArchive className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-1 text-green-600 hover:bg-green-50 rounded">
+                                                <button aria-label={`Download ${policy.dataType}`} className="p-1 text-green-600 hover:bg-green-50 rounded">
                                                     <IconDownload className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-1 text-red-600 hover:bg-red-50 rounded">
+                                                <button aria-label={`Delete ${policy.dataType}`} className="p-1 text-red-600 hover:bg-red-50 rounded">
                                                     <IconTrash className="w-4 h-4" />
                                                 </button>
                                             </div>

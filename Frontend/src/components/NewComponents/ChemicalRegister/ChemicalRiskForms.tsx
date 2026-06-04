@@ -13,7 +13,8 @@ const ChemicalRiskForms = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Chemical Risk Identification</div>
+                    {/* LOT 40 P1: text-blue-500 → text-slate-900 pour cohérence avec la charte SafeX 360 */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Chemical Risk Identification</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/chemical-register" ><Text variant="gradient" className="hover:!underline cursor-pointer">Chemical Register</Text></Link>

@@ -1,5 +1,6 @@
 package com.minexpert.hns.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +14,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    // LOT 41 P0 SECURITY: secret partagé Gateway↔Microservice, externalisé via env var.
+    // Toute requête atteignant directement ce microservice sans ce header sera rejetée (denyAll).
+    @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    private String internalGatewaySecret;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,8 +41,9 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
 
-                        // Backdoor X-Secret-Key (R-003 — à supprimer Phase 2.a sprint 1 après mise en place mTLS)
-                        .requestMatchers(request -> "SECRET".equals(request.getHeader("X-Secret-Key"))).permitAll()
+                        // LOT 41 P0 SECURITY: header X-Secret-Key dont la valeur provient de INTERNAL_GATEWAY_SECRET
+                        // (R-003 — à remplacer par mTLS en Phase 2.a sprint 1)
+                        .requestMatchers(request -> internalGatewaySecret.equals(request.getHeader("X-Secret-Key"))).permitAll()
 
                         .anyRequest().denyAll());
         return http.build();

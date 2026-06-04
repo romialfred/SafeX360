@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Button, TextInput, Select, Loader, Center } from '@mantine/core';
+import { Button, TextInput, Select } from '@mantine/core';
 import {
     IconUsers, IconSearch, IconDownload, IconFilter,
     IconShieldCheck, IconAlertTriangle, IconClock, IconFileX,
@@ -8,6 +8,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
+import EmptyState from '../../UtilityComp/EmptyState';
+import { SkeletonTable } from '../../UtilityComp/LoadingSkeleton';
 
 interface EmployeeRow {
     id: number;
@@ -96,7 +98,7 @@ const EmployeeAssignment = () => {
     };
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -181,11 +183,16 @@ const EmployeeAssignment = () => {
                     </h2>
                 </header>
                 {loading ? (
-                    <Center className="py-12"><Loader color="blue" /></Center>
+                    /* LOT 41 E: SkeletonTable pendant le chargement */
+                    <div className="p-4"><SkeletonTable rows={6} cols={4} /></div>
                 ) : filtered.length === 0 ? (
-                    <Center className="py-12">
-                        <p className="text-sm text-slate-500 italic">Aucun employé trouvé avec ces critères.</p>
-                    </Center>
+                    /* LOT 41 E: EmptyState unifié */
+                    <EmptyState
+                        icon={<IconUsers size={28} />}
+                        title="Aucun employé trouvé"
+                        description="Aucun employé ne correspond aux critères de recherche actuels."
+                        iconColor="slate"
+                    />
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {filtered.map((emp) => {

@@ -10,6 +10,7 @@ import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import TextEditor from "../../../UtilityComp/TextEditor";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { IconCheck, IconPhoto } from "@tabler/icons-react";
 import { mapIdToName } from "../../../../utility/OtherUtilities";
 
@@ -119,17 +120,12 @@ const ActivityReport = () => {
                         </Button>
                     </div>
                     <Text size="md" mt={6}>Summary</Text>
-                    < div
-                        className="prose max-w-none text-sm text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: activityReport.summary || "<span>-</span>" }
-                        }
-                    />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={activityReport.summary || "<span>-</span>"} className="prose max-w-none text-sm text-gray-700" />
 
                     < Text size="md" mt={6} > Findings & Observations</Text >
-                    <div
-                        className="prose max-w-none text-sm text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: activityReport.findings || "<span>-</span>" }}
-                    />
+                    {/* LOT 41 P0 XSS fix */}
+                    <SafeHtml html={activityReport.findings || "<span>-</span>"} className="prose max-w-none text-sm text-gray-700" />
 
                     <Text size="md" mt={6}>Evidence & Documentation</Text>
                     {

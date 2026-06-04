@@ -241,7 +241,8 @@ const NewAuditPlan: React.FC = () => {
 
     const renderAuditInfo = () => (
         <div className="p-2 flex flex-col gap-8">
-            <div className="grid grid-cols-3 gap-4">
+            {/* LOT 40 P1: responsive grid breakpoints */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <DateInput label="Start Date" {...form.getInputProps("audit.startDate")} leftSection={<IconCalendar />} maxDate={form.values.audit.endDate ? new Date(form.values.audit.endDate) : undefined} placeholder="Enter Start Date" withAsterisk />
                 <DateInput label="End Date" {...form.getInputProps("audit.endDate")} leftSection={<IconCalendar />} minDate={form.values.audit.startDate ? new Date(form.values.audit.startDate) : undefined} placeholder="Enter End Date" withAsterisk />
                 <NumberInput value={getDateDifferenceInDays(form.values.audit.startDate, form.values.audit.endDate)} disabled label="Estimated time (days)" placeholder="Enter Time" withAsterisk />
@@ -310,9 +311,11 @@ const NewAuditPlan: React.FC = () => {
 
     const renderAuditorItem = (_item: ListItem, index: number) => (
         <div key={index} className="flex flex-col gap-6" >
-            <Fieldset key={index} className="grid grid-cols-3 gap-6" legend={<div className="flex gap-5">
-                <div className="text-lg text-blue-500">Auditor {index + 1}</div>
-                <ActionIcon onClick={() => form.removeListItem("auditors", index)} variant="filled" color="red" aria-label="Settings">
+            {/* LOT 40 P1: responsive grid + teal accent on fieldset legend */}
+            <Fieldset key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" legend={<div className="flex gap-5">
+                <div className="text-lg text-teal-700">Auditor {index + 1}</div>
+                {/* LOT 40 P1: descriptive aria-label */}
+                <ActionIcon onClick={() => form.removeListItem("auditors", index)} variant="filled" color="red" aria-label={`Remove auditor ${index + 1}`}>
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
             </div>}>
@@ -471,7 +474,8 @@ const NewAuditPlan: React.FC = () => {
     return (
         <div>
             <div>
-                <div className="text-2xl text-blue-500 w-fit">New Audit</div>
+                {/* LOT 40 P1: page title color */}
+                <div className="text-2xl text-slate-900 w-fit">New Audit</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>

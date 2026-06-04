@@ -893,10 +893,12 @@ const WorkProcess = () => {
             {/* Fixed Header */}
             <div className="flex justify-between items-center  mb-2">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Work Procedures</div>
+                    {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
+                    <div className="text-2xl font-semibold text-slate-900">Work Procedures</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Work Procedures</Text>
+                        {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        <Text c="teal" fw={500}>Work Procedures</Text>
                     </Breadcrumbs>
                 </div>
                 <button className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">

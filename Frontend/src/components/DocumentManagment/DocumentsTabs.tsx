@@ -147,15 +147,16 @@ const DocumentsTabs = () => {
             <div className="flex justify-between items-center">
 
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Document Details</div>
+                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+                    <div className="text-2xl text-slate-900 w-fit">Document Details</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text c="dimmed">Home</Text>
                         </Link>
                         <Link className="hover:!underline" to="/document-management">
-                            <Text variant="gradient">Document Management</Text>
+                            <Text c="dimmed">Document Management</Text>
                         </Link>
-                        <Text variant="gradient">Document Details</Text>
+                        <Text c="teal" fw={500}>Document Details</Text>
                     </Breadcrumbs>
                 </div>
 
@@ -251,7 +252,8 @@ const DocumentsTabs = () => {
                         />
 
                         <Group justify="flex-end">
-                            <Button loading={loading} variant="outline" onClick={() => setShowNewVersionModal(false)}>
+                            {/* LOT 40 P1: explicit type for non-submit cancel button */}
+                            <Button type="button" loading={loading} variant="outline" onClick={() => setShowNewVersionModal(false)}>
                                 Cancel
                             </Button>
                             <Button loading={loading} type="submit" color="green">
@@ -299,7 +301,8 @@ const DocumentsTabs = () => {
                         />
 
                         <Group justify="flex-end">
-                            <Button variant="outline" loading={loading} onClick={() => setShowStatusChangeModal(false)}>
+                            {/* LOT 40 P1: explicit type for non-submit cancel button */}
+                            <Button type="button" variant="outline" loading={loading} onClick={() => setShowStatusChangeModal(false)}>
                                 Cancel
                             </Button>
                             <Button loading={loading} type="submit" color="green">

@@ -19,6 +19,7 @@ import com.hrms.dto.RosterDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.dto.RosterDTO;
 import com.hrms.exception.HRMSException;
+import jakarta.validation.Valid;
 import com.hrms.service.RosterService;
 
 @RestController
@@ -30,12 +31,12 @@ public class RosterAPI {
     private RosterService rosterService;
 
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO> addRoster(@RequestBody RosterDTO rosterDTO) throws HRMSException {
+    public ResponseEntity<ResponseDTO> addRoster(@RequestBody @Valid RosterDTO rosterDTO) throws HRMSException {
         rosterService.addRoster(rosterDTO);
         return new ResponseEntity<>(new ResponseDTO("Roster added Successfully."), HttpStatus.CREATED);
     }
     @PostMapping("/update")
-    public ResponseEntity<ResponseDTO> updateRoster(@RequestBody RosterDTO rosterDTO) throws HRMSException {
+    public ResponseEntity<ResponseDTO> updateRoster(@RequestBody @Valid RosterDTO rosterDTO) throws HRMSException {
         rosterService.updateRoster(rosterDTO);
         return new ResponseEntity<>(new ResponseDTO("Roster updated Successfully."), HttpStatus.OK);
     }

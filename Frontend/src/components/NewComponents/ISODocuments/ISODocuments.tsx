@@ -541,10 +541,12 @@ const ISODocuments = () => {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">ISO Documents Review</div>
+                    {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
+                    <div className="text-2xl font-semibold text-slate-900">ISO Documents Review</div>
                     <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">ISO Documents Review</Text>
+                        {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
+                        <Link className="hover:!underline" to="/" ><Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text></Link>
+                        <Text c="teal" fw={500}>ISO Documents Review</Text>
                     </Breadcrumbs>
                 </div>
                 <Button
@@ -695,7 +697,8 @@ const ISODocuments = () => {
 
                             {viewMode === 'toc' && selectedSection && (
                                 <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                                    <h3 className="text-lg text-blue-500 mb-4">Section Content</h3>
+                                    {/* LOT 40 P1: heading — text-slate-900 (was text-blue-500) */}
+                                    <h3 className="text-lg text-slate-900 mb-4">Section Content</h3>
                                     {(() => {
                                         const section = currentDocument.sections.find(s => s.id === selectedSection) ||
                                             currentDocument.sections.flatMap(s => s.subsections || []).find(s => s.id === selectedSection);

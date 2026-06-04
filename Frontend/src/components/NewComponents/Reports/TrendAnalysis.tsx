@@ -27,7 +27,7 @@ const monthlyTrends: MonthlyMetric[] = [
 
 const TrendAnalysis = () => {
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -88,7 +88,8 @@ const TrendAnalysis = () => {
             {/* Analyses prédictives */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg text-slate-900 mb-6">Analyses prédictives et prévisions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* LOT 40 P1: ajout breakpoint sm:grid-cols-2 pour tablettes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6">
                         <h4 className="text-blue-900 mb-3">Prévisions T1 2026</h4>
                         <div className="space-y-2 text-sm">

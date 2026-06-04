@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Loader, Text } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { IconChevronLeft, IconChevronRight, IconMenu3, IconShield } from "@tabler/icons-react";
 import { Carousel } from "@mantine/carousel";
 import ActiveCard from "./ActiveCard";
@@ -9,6 +9,9 @@ import { searchRisks, type RiskDto, type RiskStatus } from "../../services/RiskR
 import type { RiskSummary } from "./types";
 import { getEmployeeDropdown } from "../../services/EmployeeService";
 import { mapIdToName } from "../../utility/OtherUtilities";
+import EmptyState from "../UtilityComp/EmptyState";
+import ErrorBanner from "../UtilityComp/ErrorBanner";
+import { SkeletonCardList } from "../UtilityComp/LoadingSkeleton";
 
 const DEFAULT_STATUS_LABEL: Record<RiskStatus, string> = {
     OPEN: "Open",
@@ -99,31 +102,36 @@ const ActiveTask = () => {
 
     const renderCarouselContent = (CardComponent: React.ComponentType<{ owner: string | undefined; risk: RiskSummary }>) => {
         if (loading) {
-            return (
-                <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-600">
-                    <Loader color="blue" />
-                    <Text size="sm">Loading open risks…</Text>
-                </div>
-            );
+            /* LOT 41 E: SkeletonCardList pendant le chargement */
+            return <SkeletonCardList items={3} columns={3} />;
         }
 
         if (error) {
+            /* LOT 41 E: ErrorBanner unifié */
             return (
-                <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
-                    <Text size="sm" c="red.6">{error}</Text>
-                    <Button size="xs" variant="outline" onClick={fetchOpenRisks}>
-                        Retry
-                    </Button>
-                </div>
+                <ErrorBanner
+                    tone="error"
+                    title="Échec du chargement"
+                    action={
+                        <Button size="xs" variant="outline" color="red" onClick={fetchOpenRisks}>
+                            Retry
+                        </Button>
+                    }
+                >
+                    {error}
+                </ErrorBanner>
             );
         }
 
         if (risks.length === 0) {
+            /* LOT 41 E: EmptyState unifié */
             return (
-                <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-600">
-                    <Text size="sm">No open risks found.</Text>
-                    <Text size="xs">Create a risk assessment to see it here.</Text>
-                </div>
+                <EmptyState
+                    icon={<IconShield size={28} />}
+                    title="No open risks found"
+                    description="Create a risk assessment to see it here."
+                    iconColor="slate"
+                />
             );
         }
 

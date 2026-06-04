@@ -5,6 +5,7 @@ import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { isValidRichText } from "../../../../utility/OtherUtilities";
 import TextEditor from "../../../UtilityComp/TextEditor";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { GetAllAuditArea } from "../../../../services/AuditAreaService";
@@ -207,7 +208,8 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-700">
                                     <div>
                                         <strong className="block text-gray-500 mb-1">Evidence Description:</strong>
-                                        <div dangerouslySetInnerHTML={{ __html: obs.description }} />
+                                        {/* LOT 41 P0 XSS fix */}
+                                        <SafeHtml html={obs.description} />
                                     </div>
                                     <div>
                                         <strong className="block text-gray-500 mb-1">Zone:</strong>

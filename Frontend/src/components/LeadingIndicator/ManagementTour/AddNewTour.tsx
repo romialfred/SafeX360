@@ -185,7 +185,7 @@ const AddNewTour = () => {
 
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -298,7 +298,8 @@ const AddNewTour = () => {
                             <Select withAsterisk label="Type de tournée" placeholder="Sélectionner le type" data={activityTypes} disabled {...form.getInputProps('type')} />
                             <Select label="Zone visitée" placeholder="Sélectionner la zone" leftSection={<IconMapPin size={16} />} data={location} withAsterisk {...form.getInputProps('locationId')} />
                             <DatePickerInput label="Date" placeholder="Sélectionner la date" withAsterisk {...form.getInputProps('plannedDate')} />
-                            <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                            {/* LOT 40 P1: grille responsive pour les créneaux horaires */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
                                 <TimeInput label="Heure de début" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
                                 <TimeInput label="Heure de fin" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
                             </div>

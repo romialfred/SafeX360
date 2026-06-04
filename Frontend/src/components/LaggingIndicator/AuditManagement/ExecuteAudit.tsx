@@ -345,10 +345,11 @@ const ExecuteAudit = () => {
                     </Button>
                 </div>
 
+                {/* LOT 40 P1: teal accent on legend + descriptive aria-label */}
                 {form.values.executions.filter(x => x.areaId == selectedArea.id).map((x, index: any) => (
-                    <Fieldset key={index} className="grid grid-cols-2 gap-5" legend={<div className="flex gap-5">
-                        <div className="text-lg text-blue-500">Interview {index + 1}</div>
-                        <ActionIcon onClick={() => removeInterview(x.index)} variant="filled" color="red" aria-label="Settings">
+                    <Fieldset key={index} className="grid grid-cols-1 md:grid-cols-2 gap-5" legend={<div className="flex gap-5">
+                        <div className="text-lg text-teal-700">Interview {index + 1}</div>
+                        <ActionIcon onClick={() => removeInterview(x.index)} variant="filled" color="red" aria-label={`Remove interview ${index + 1}`}>
                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                         </ActionIcon>
                     </div>}>
@@ -404,7 +405,8 @@ const ExecuteAudit = () => {
     return (
         submitted ? <div></div> : <div>
             <div>
-                <div className="text-2xl text-blue-500 w-fit">Execute Audit</div>
+                {/* LOT 40 P1: page title color */}
+                <div className="text-2xl text-slate-900 w-fit">Execute Audit</div>
                 <Breadcrumbs mt="xs" mb="lg">
                     <Link className="hover:!underline" to="/">
                         <Text variant="gradient">Home</Text>
@@ -474,9 +476,10 @@ const ExecuteAudit = () => {
                                     <Button size="xs" leftSection={<IconPlus />} onClick={addContributor}>Add Contributor</Button>
                                 </Group>
                                 {form.values.contributors.map((_item, index) => (
-                                    <Fieldset key={index} className="grid grid-cols-3 gap-5 mb-5" legend={<div className="flex gap-5">
-                                        <div className="text-lg text-blue-500">Contributor {index + 1}</div>
-                                        <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red" aria-label="Settings">
+                                    // LOT 40 P1: responsive grid + teal legend + descriptive aria-label
+                                    <Fieldset key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5" legend={<div className="flex gap-5">
+                                        <div className="text-lg text-teal-700">Contributor {index + 1}</div>
+                                        <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red" aria-label={`Remove contributor ${index + 1}`}>
                                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                         </ActionIcon>
                                     </div>}>
@@ -527,9 +530,10 @@ const ExecuteAudit = () => {
 
 
                             {form.values.recommendations.map((_rec, index) => (
+                                // LOT 40 P1: teal legend + descriptive aria-label
                                 <Fieldset key={index} className="grid grid-cols-2 gap-5" legend={<div className="flex gap-5">
-                                    <div className="text-lg text-blue-500">Recommendation {index + 1}</div>
-                                    <ActionIcon onClick={() => removeRecommendation(index)} variant="filled" color="red" aria-label="Settings">
+                                    <div className="text-lg text-teal-700">Recommendation {index + 1}</div>
+                                    <ActionIcon onClick={() => removeRecommendation(index)} variant="filled" color="red" aria-label={`Remove recommendation ${index + 1}`}>
                                         <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                     </ActionIcon>
                                 </div>}>
@@ -559,7 +563,8 @@ const ExecuteAudit = () => {
                                         <TextEditor form={form} id={`recommendations.${index}.goal`} title="Goal" />
                                     </div>
 
-                                    <div className="grid col-span-2 grid-cols-3 gap-4 items-center">
+                                    {/* LOT 40 P1: responsive grid breakpoints */}
+                                    <div className="grid col-span-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
                                         <DateInput label="Start Date" placeholder="dd-mm-yyyy" leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.startDate`)} />
 
                                         <DateInput label="End Date" placeholder="dd-mm-yyyy" leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.endDate`)} />

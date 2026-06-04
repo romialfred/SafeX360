@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.MeasurementDTO;
 import com.minexpert.hns.entity.parameters.Measurement;
@@ -14,6 +15,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.MeasurementRepository;
 
 @Service
+@Transactional
 public class MeasurementServiceImpl implements MeasurementService {
 
     @Autowired

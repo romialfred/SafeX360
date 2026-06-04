@@ -179,7 +179,8 @@ const GeneralAlertButton = () => {
                         <div>
                             <p className="text-xs text-slate-700 uppercase tracking-wider mb-2">Canaux de notification</p>
                             <Checkbox.Group value={channels} onChange={setChannels}>
-                                <div className="grid grid-cols-3 gap-2">
+                                {/* LOT 40 P1: grille canaux responsive (1 col mobile → 3 col desktop) */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                     <Checkbox.Card value="web" radius="md" className="p-2.5 data-[checked]:!border-teal-500 data-[checked]:!bg-teal-50">
                                         <Group wrap="nowrap" gap="xs" align="center">
                                             <Checkbox.Indicator />

@@ -236,6 +236,7 @@ const DocumentManagement = () => {
                         onClick={() => navigate(`document-details/${rowData.id}`)}
                         color="yellow"
                         size="sm"
+                        aria-label="View document details" // LOT 40 P1: a11y label
                     >
                         <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
                     </ActionIcon>
@@ -258,13 +259,14 @@ const DocumentManagement = () => {
             <div className='flex justify-between items-center'>
 
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Document Management</div>
+                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
+                    <div className="text-2xl text-slate-900 w-fit">Document Management</div>
                     <Breadcrumbs mt="xs">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text c="dimmed">Home</Text>
                         </Link>
 
-                        <Text variant="gradient">Document Management</Text>
+                        <Text c="teal" fw={500}>Document Management</Text>
                     </Breadcrumbs>
                 </div>
                 <Button size="sm" leftSection={<IconPlus size={16} />}

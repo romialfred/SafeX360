@@ -21,6 +21,7 @@ import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useParams } from "react-router-dom";
 import TextEditor from "../../../UtilityComp/TextEditor";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { actionStatuses, recMap, recommendationStatus } from "../../../../Data/DropdownData";
 import { useDispatch } from "react-redux";
 import { modals } from "@mantine/modals";
@@ -304,19 +305,15 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                 {/* Description */}
                                 <div>
                                     <Text size="sm" c="gray">Description</Text>
-                                    <div
-                                        className="text-sm"
-                                        dangerouslySetInnerHTML={{ __html: obs.description }}
-                                    />
+                                    {/* LOT 41 P0 XSS fix */}
+                                    <SafeHtml html={obs.description} className="text-sm" />
                                 </div>
 
                                 {/* Corrective Action */}
                                 <div>
                                     <Text size="sm" c="gray">Corrective Action</Text>
-                                    <div
-                                        className="text-sm"
-                                        dangerouslySetInnerHTML={{ __html: obs.correctiveAction }}
-                                    />
+                                    {/* LOT 41 P0 XSS fix */}
+                                    <SafeHtml html={obs.correctiveAction} className="text-sm" />
                                 </div>
                             </Stack>
 
@@ -468,7 +465,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                             <div>
                                 <p className="text-lg text-gray-700">Description</p>
                                 <div className="border-blue-300 border rounded-lg shadow-sm p-4 ">
-                                    <div dangerouslySetInnerHTML={{ __html: recommendation?.description }}></div>
+                                    {/* LOT 41 P0 XSS fix */}
+                                    <SafeHtml html={recommendation?.description} />
                                 </div>
                             </div>
 
@@ -530,11 +528,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
 
                                                         <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                                                             <p className="text-blue-400">Update Details</p>
-                                                            <Text
-                                                                dangerouslySetInnerHTML={{ __html: x.comment || "-" }}
-                                                                size="sm"
-                                                                className="text-gray-700 mt-1"
-                                                            />
+                                                            {/* LOT 41 P0 XSS fix */}
+                                                            <SafeHtml html={x.comment || "-"} className="text-gray-700 mt-1 text-sm" />
                                                         </div>
                                                     </div>
                                                 </Card>
@@ -602,10 +597,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                                             </Progress.Section>
                                         )}
                                     </Progress.Root>
-                                    <div
-                                        className="text-sm text-gray-700"
-                                        dangerouslySetInnerHTML={{ __html: entry.comment }}
-                                    />
+                                    {/* LOT 41 P0 XSS fix */}
+                                    <SafeHtml html={entry.comment} className="text-sm text-gray-700" />
                                 </div>
                             );
                         })}

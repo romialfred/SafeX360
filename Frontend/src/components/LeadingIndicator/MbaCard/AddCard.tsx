@@ -120,31 +120,37 @@ const AddCard = () => {
         <div className="flex flex-col gap-10">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">New MBA Card</div>
+                    {/* LOT 40 P1: titre page passé en text-slate-900 */}
+                    <div className="text-2xl text-slate-900 w-fit">New MBA Card</div>
                     <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-                        <Link className="hover:!underline" to="/mba-management"><Text variant="gradient">MBA Cards</Text></Link>
-                        <Text variant="gradient">New MBA Card</Text>
+                        {/* LOT 40 P1: breadcrumbs Mantine 7 — couleurs sémantiques au lieu de variant="gradient" */}
+                        <Link className="hover:!underline" to="/"><Text c="dimmed">Home</Text></Link>
+                        <Link className="hover:!underline" to="/mba-management"><Text c="dimmed">MBA Cards</Text></Link>
+                        <Text c="teal" fw={500}>New MBA Card</Text>
                     </Breadcrumbs>
                 </div>
             </div>
 
             <div className="p-4 bg-white shadow-lg border border-gray-300 rounded-lg flex flex-col gap-5">
+                {/* LOT 40 P1: légende fieldset en teal-700 */}
                 <Fieldset
                     className="[&>legend]:w-fit gap-5 flex-wrap flex flex-col"
-                    legend={<div className="text-lg text-blue-500">MBA Informations</div>}
+                    legend={<div className="text-lg text-teal-700">MBA Informations</div>}
                 >
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* LOT 40 P1: grilles responsive */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <TextInput label="Company" placeholder="Enter Company" withAsterisk />
                         <DateInput label="Date" placeholder="Enter Date" withAsterisk />
                         <Select label="Shift" placeholder="Select Shift" data={["Day Shift", "Night Shift"]} withAsterisk />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* LOT 40 P1: grilles responsive */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <TextInput label="Worker Name" placeholder="Enter Worker Name" withAsterisk />
                         <TextInput label="Supervisor Name" placeholder="Enter Supervisor Name" withAsterisk />
                         <TextInput label="Department" placeholder="Enter Department" withAsterisk />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* LOT 40 P1: grille responsive */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TextInput label="Location" placeholder="Enter Location" withAsterisk />
                         <TimeInput
                             label="Time"
@@ -162,12 +168,13 @@ const AddCard = () => {
                 </div>
 
                 {tasks.map((task, index) => (
+                    // LOT 40 P1: légende teal-700 + aria-label descriptif
                     <Fieldset
                         key={index}
                         legend={
                             <div className="flex gap-4 items-center">
-                                <span className="text-lg text-blue-500">Task {index + 1}</span>
-                                <ActionIcon variant="filled" color="red" onClick={() => removeTask(index)}>
+                                <span className="text-lg text-teal-700">Task {index + 1}</span>
+                                <ActionIcon variant="filled" color="red" onClick={() => removeTask(index)} aria-label="Supprimer la tâche">
                                     <IconTrash size={16} />
                                 </ActionIcon>
                             </div>
@@ -193,7 +200,8 @@ const AddCard = () => {
                         >
                             <div className="flex flex-col">
                                 <p className="text-md text-gray-600">{item.question}</p>
-                                <p className="text-blue-500">{item.category}</p>
+                                {/* LOT 40 P1: catégorie en teal-700 */}
+                                <p className="text-teal-700">{item.category}</p>
                             </div>
                             <div className="flex gap-4 w-[400px]">
                                 {["worker", "supervisor"].map((role) => (
@@ -224,18 +232,19 @@ const AddCard = () => {
                 </div>
 
                 {locations.map((location, index) => (
+                    // LOT 40 P1: légende teal-700 + aria-label descriptif + grille responsive
                     <Fieldset
                         key={index}
                         legend={
                             <div className="flex gap-4 items-center">
-                                <span className="text-lg text-blue-500">Location {index + 1}</span>
-                                <ActionIcon variant="filled" color="red" onClick={() => removeLocation(index)}>
+                                <span className="text-lg text-teal-700">Location {index + 1}</span>
+                                <ActionIcon variant="filled" color="red" onClick={() => removeLocation(index)} aria-label="Supprimer le lieu">
                                     <IconTrash size={16} />
                                 </ActionIcon>
                             </div>
                         }
                     >
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <TextInput
                                 value={location.name}
                                 onChange={(e) => updateLocation(index, "name", e.target.value)}

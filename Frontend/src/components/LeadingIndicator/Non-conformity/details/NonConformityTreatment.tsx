@@ -1,6 +1,7 @@
 import { Card, Group, Text, Paper, Badge } from "@mantine/core";
 import { IconTool, IconCheck, IconPhoto } from "@tabler/icons-react";
 import { handlePreview } from "../../../../utility/DocumentUtility";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 
 const NonConformityTreatment = ({ nonConformity }: any) => {
@@ -82,7 +83,8 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {nonConformity.details && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
                         <Text size="md" className="text-slate-800 mb-2">{labels.detailsTitle}</Text>
-                        <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.details }} />
+                        {/* LOT 41 P0 XSS fix */}
+                        <SafeHtml html={nonConformity.details} className="prose prose-sm max-w-none text-slate-600" />
                     </Paper>
                 )}
 
@@ -128,7 +130,8 @@ const NonConformityTreatment = ({ nonConformity }: any) => {
                 {nonConformity.comments && (
                     <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
                         <Text size="md" className="text-slate-800 mb-2">{labels.impactsCommentTitle}</Text>
-                        <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.comments }} />
+                        {/* LOT 41 P0 XSS fix */}
+                        <SafeHtml html={nonConformity.comments} className="prose prose-sm max-w-none text-slate-600" />
                     </Paper>
                 )}
 

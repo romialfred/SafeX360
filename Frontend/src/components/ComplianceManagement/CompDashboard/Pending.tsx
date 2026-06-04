@@ -1,7 +1,8 @@
 import { Button, Card, Text } from "@mantine/core";
-import { IconCircleCheck } from "@tabler/icons-react";
+import { IconCircleCheck, IconInbox } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import { ActionItem } from "../../../services/ComplianceDashboardService";
+import EmptyState from "../../UtilityComp/EmptyState";
 
 interface PendingProps {
     items: ActionItem[];
@@ -12,8 +13,15 @@ interface PendingProps {
 const Pending = ({ items, label = "Pending Review", seeAllHref }: PendingProps) => {
     if (!items.length) {
         return (
-            <div className="bg-blue-50 h-[250px] rounded shadow-xl border border-gray-300 flex justify-center items-center">
-                <p className="text-lg text-gray-600">No items pending review</p>
+            /* LOT 41 E: EmptyState unifié pour la liste de revue en attente */
+            <div className="bg-blue-50/40 h-[250px] rounded border border-blue-100 flex justify-center items-center">
+                <EmptyState
+                    icon={<IconInbox size={28} />}
+                    title="Aucun élément en attente de revue"
+                    description="Les éléments à examiner s'afficheront ici une fois soumis."
+                    iconColor="sky"
+                    compact
+                />
             </div>
         );
     }

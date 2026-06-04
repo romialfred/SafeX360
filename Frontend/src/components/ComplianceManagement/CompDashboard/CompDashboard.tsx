@@ -6,9 +6,11 @@ import {
     IconCircleCheck,
     IconAlertOctagon,
     IconShieldCheck,
+    IconInbox,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "../../UtilityComp/PageHeader";
+import EmptyState from "../../UtilityComp/EmptyState";
 import ExpiredContent from "./ExpiredContent";
 import UpcomingExpiry from "./UpcomingExpiry";
 import MissingFile from "./MissingFile";
@@ -134,7 +136,7 @@ const CompDashboard = () => {
     };
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -233,7 +235,8 @@ const CompDashboard = () => {
 
                             {orderedStatuses.map((status) => (
                                 <Tabs.Panel value={status.code} key={status.code} pt="md">
-                                    <Card shadow="sm" radius="lg" withBorder style={{ maxHeight: rem(320), overflow: 'hidden' }}>
+                                    {/* LOT 40 P1: maxHeight inline -> Tailwind className="max-h-80" */}
+                                    <Card shadow="sm" radius="lg" withBorder className="max-h-80 overflow-hidden">
                                         <ScrollArea h={320} className="px-2">
                                             <div className="p-2">
                                                 {dashboardLoading ? (
@@ -243,9 +246,13 @@ const CompDashboard = () => {
                                                 ) : status.items.length ? (
                                                     renderTabContent(status)
                                                 ) : (
-                                                    <Center className="py-10">
-                                                        <Text className="text-gray-500">Aucun enregistrement pour : {status.label.toLowerCase()}.</Text>
-                                                    </Center>
+                                                    /* LOT 40 P1: generic gray text -> unified EmptyState */
+                                                    <EmptyState
+                                                        icon={<IconInbox size={28} />}
+                                                        title="Aucun élément"
+                                                        description={`Aucun enregistrement pour : ${status.label.toLowerCase()}.`}
+                                                        compact
+                                                    />
                                                 )}
                                             </div>
                                         </ScrollArea>

@@ -11,6 +11,7 @@ import { addInvestigationProcess, getAllInvestigationProcessByInvestigationId } 
 import { convertFileToBase64DTO } from "../../../utility/DocumentUtility";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import TextEditor from "../../UtilityComp/TextEditor";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
 import { getInvestigationById } from "../../../services/InvestigationService";
 import dayjs from "dayjs";
@@ -133,7 +134,8 @@ const UpdateInvestigation = () => {
     <div className="flex flex-col gap-5 p-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Investigation</div>
+          {/* LOT 40 P1: page title color */}
+          <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Investigation</div>
           <Breadcrumbs mt="xs">
             <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
             <Link className="hover:!underline" to="/investigation"><Text variant="gradient">Investigations</Text></Link>
@@ -142,7 +144,8 @@ const UpdateInvestigation = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      {/* LOT 40 P1: responsive grid breakpoints */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Left Side: Details + Update */}
         <div className='flex self-start flex-col col-span-2 gap-3 shadow-sm p-5 rounded-md border border-gray-200'>
           {/* Details box */}
@@ -205,7 +208,8 @@ const UpdateInvestigation = () => {
               {investigation?.description && (
                 <div className="rounded-md border border-gray-200 p-3">
                   <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
-                  <Text size="sm" className="text-gray-700" dangerouslySetInnerHTML={{ __html: investigation?.description }} />
+                  {/* LOT 41 P0 XSS fix */}
+                  <SafeHtml html={investigation?.description} className="text-gray-700 text-sm" />
                 </div>
               )}
             </div>
@@ -296,7 +300,8 @@ const UpdateInvestigation = () => {
                     </Progress.Root>
                     <div className="bg-blue-50 shadow-sm rounded-lg p-2">
                       <p className="text-blue-400">Update Details</p>
-                      <Text dangerouslySetInnerHTML={{ __html: x.description || "-" }} size="sm" className="text-gray-700 mt-1" />
+                      {/* LOT 41 P0 XSS fix */}
+                      <SafeHtml html={x.description || "-"} className="text-gray-700 mt-1 text-sm" />
                     </div>
                   </div>
                 </Card>

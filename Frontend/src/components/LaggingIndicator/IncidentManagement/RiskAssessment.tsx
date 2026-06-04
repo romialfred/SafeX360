@@ -1,5 +1,6 @@
 import { IconAlertTriangle, IconChartBar, IconScale, IconShield, IconLock } from "@tabler/icons-react";
 import { probabilitiesMap, riskLevels, severitiesMap } from "../../../Data/DropdownData";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 
 /**
  * Évaluation du risque ISO 31000 / ISO 45001 — refonte raffinée FR.
@@ -83,7 +84,8 @@ const RiskAssessment = ({ incident }: any) => {
                 </header>
                 <div className="p-4">
                     {incident.existingControlMeasures ? (
-                        <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: incident.existingControlMeasures }} />
+                        /* LOT 41 P0 XSS fix */
+                        <SafeHtml html={incident.existingControlMeasures} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                     ) : (
                         <p className="text-xs text-slate-400 italic">Aucun contrôle existant renseigné.</p>
                     )}
@@ -105,7 +107,8 @@ const RiskAssessment = ({ incident }: any) => {
                 </header>
                 <div className="p-4">
                     {incident.residualRiskAssessment ? (
-                        <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: incident.residualRiskAssessment }} />
+                        /* LOT 41 P0 XSS fix */
+                        <SafeHtml html={incident.residualRiskAssessment} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                     ) : (
                         <p className="text-xs text-slate-400 italic">Évaluation du risque résiduel non renseignée.</p>
                     )}

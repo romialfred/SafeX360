@@ -104,7 +104,8 @@ const AddIncidents = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Report Incidents</div>
+                    {/* LOT 40 P1 fix: brand color teal */}
+                    <div className="text-2xl text-teal-700 w-fit">Report Incidents</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
                             <Text variant="gradient">Home</Text>
@@ -119,8 +120,9 @@ const AddIncidents = () => {
 
             <div className="flex flex-col gap-5">
                 <Fieldset
-                    className="grid grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
-                    legend={<div className="text-lg text-blue-500">Report Incidents Info</div>}
+                    /* LOT 40 P1 fix: responsive grid + teal brand legend */
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
+                    legend={<div className="text-lg text-teal-700">Report Incidents Info</div>}
                 >
                     <TextInput withAsterisk label="Incident Title" placeholder="Enter Incident Title" {...form.getInputProps('title')} />
                     <Select withAsterisk label="Incident Type" placeholder="Select Incident Type" data={['Server Outage', 'Bug', 'Security', 'Other']} {...form.getInputProps('incidentType')} />
@@ -128,10 +130,12 @@ const AddIncidents = () => {
                     <Select withAsterisk label="Severity Level" placeholder="Select Severity Level" searchable={false} data={severity} {...form.getInputProps('severity')} />
                     <DateTimePicker withAsterisk withSeconds label="Occurred At" placeholder="Pick Date and Time" {...form.getInputProps('occurredAt')} />
 
-                    <Textarea withAsterisk label="Description" placeholder="Enter Description" {...form.getInputProps('description')} className='col-span-3 ' rows={3} />
+                    {/* LOT 40 P1 fix: responsive col-span to match grid */}
+                    <Textarea withAsterisk label="Description" placeholder="Enter Description" {...form.getInputProps('description')} className='sm:col-span-2 lg:col-span-3 ' rows={3} />
                 </Fieldset>
 
-                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg text-blue-500 ">Witnesses & Invloved Persons</div>}>
+                {/* LOT 40 P1 fix: teal brand legend */}
+                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg text-teal-700 ">Witnesses & Invloved Persons</div>}>
                     <PickList
                         dataKey="id"
                         filter
@@ -165,14 +169,15 @@ const AddIncidents = () => {
                         onChange={onPersonChange}
                         itemTemplate={itemTemplate}
                         breakpoint="1280px"
-                        sourceHeader={`Employees ${emps1.length})`}
+                        sourceHeader={`Employees (${emps1.length})`}
                         targetHeader={`Involved Persons (${form.getValues().involvedPersons.length})`}
                         sourceStyle={{ height: '24rem' }}
                         targetStyle={{ height: '24rem' }}
                     />
                 </Fieldset>
 
-                <Fieldset legend={<div className="text-lg text-blue-500">Upload Image</div>}>
+                {/* LOT 40 P1 fix: teal brand legend */}
+                <Fieldset legend={<div className="text-lg text-teal-700">Upload Image</div>}>
                     <Dropzone
                         onDrop={(files: any) => setUploadedImages([...uploadedImages, ...files])}
                         accept={['image/*']}
@@ -203,7 +208,8 @@ const AddIncidents = () => {
                     </Dropzone>
 
                     {uploadedImages.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        // LOT 40 P1 fix: smoother responsive grid scaling
+                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {uploadedImages.map((file, index) => (
                                 <div key={index} className="relative group border p-5 rounded  shadow bg-white">
                                     <div className=" w-full h-[200px] flex items-center justify-center">

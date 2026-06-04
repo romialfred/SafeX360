@@ -89,21 +89,23 @@ const TeamDetails = () => {
 
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text">
+                    {/* LOT 40 P1: title color blue-500 -> slate-900 */}
+                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">
                         Team Details
                     </div>
                     <Breadcrumbs mt="xs">
+                        {/* LOT 40 P1: breadcrumb variant=gradient -> c=dimmed / c=teal fw=500 */}
                         <Link to="/">
-                            <Text variant="gradient" className="hover:underline cursor-pointer">
+                            <Text c="dimmed" className="hover:underline cursor-pointer">
                                 Home
                             </Text>
                         </Link>
                         <Link to="/team-setup">
-                            <Text variant="gradient" className="hover:underline cursor-pointer">
+                            <Text c="dimmed" className="hover:underline cursor-pointer">
                                 Team Setup
                             </Text>
                         </Link>
-                        <Text variant="gradient">Team Details</Text>
+                        <Text c="teal" fw={500}>Team Details</Text>
                     </Breadcrumbs>
                 </div>
             </div>

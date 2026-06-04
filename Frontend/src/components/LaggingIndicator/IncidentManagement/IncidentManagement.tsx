@@ -1,30 +1,32 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import IncidentManagementData from "./IncidentManagementData"
+import { IconAlertTriangle } from "@tabler/icons-react";
+import IncidentManagementData from "./IncidentManagementData";
+import PageHeader from "../../UtilityComp/PageHeader";
 
+/**
+ * IncidentManagement — Page d'entête + liste des incidents.
+ *
+ * LOT 40 P0 fix : refonte cohérente avec PageHeader unifié, suppression
+ * du mélange "text-blue-500 + gradient" illisible, traduction FR conforme
+ * au reste de la plateforme, pas de gradient sur breadcrumbs.
+ */
 
 const IncidentManagement = () => {
     return (
-        <div className=' '>
-            <div className="flex justify-between items-center  ">
-                <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Incidents Management</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Incidents Management</Text>
-                    </Breadcrumbs>
-                </div>
+        <div className="safex-page w-full space-y-5">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des incidents' },
+                ]}
+                icon={<IconAlertTriangle size={22} />}
+                iconColor="red"
+                title="Gestion des incidents"
+                subtitle="Centralisation et suivi des incidents et risques déclarés à travers les sites miniers"
+            />
 
-            </div>
-            <p className=' italic my-3'>Centralize and track reported incidents and hazards across departments</p>
-
-            <div className='mt-5   '>
-                <IncidentManagementData />
-            </div>
-
-
+            <IncidentManagementData />
         </div>
-    )
-}
+    );
+};
 
-export default IncidentManagement
+export default IncidentManagement;

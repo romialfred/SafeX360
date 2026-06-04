@@ -10,12 +10,29 @@ import com.minexpert.hns.dto.response.ParticipantResponse;
 
 public class StringListConverter {
 
+    /**
+     * LOT 41 P0 fix : robustesse face aux données legacy mixtes (ID numérique
+     * ou nom textuel). Certaines BDD migrées contiennent des valeurs comme
+     * "Brumeux" / "Production" dans des colonnes prévues pour des IDs Long.
+     *
+     * Avant : NumberFormatException propagé en HTTP 500.
+     * Maintenant : on filtre silencieusement les tokens non numériques et
+     * on log le souci pour qu'un nettoyage de données soit fait à terme.
+     */
     public static List<Long> convertToLongList(String input) {
         if (input == null || input.trim().isEmpty())
             return null;
         return Arrays.stream(input.replaceAll("[\\[\\]\\s]", "").split(","))
                 .filter(s -> !s.isEmpty())
-                .map(Long::valueOf)
+                .map(s -> {
+                    try {
+                        return Long.valueOf(s);
+                    } catch (NumberFormatException e) {
+                        // Token non numérique (legacy data) — on l'ignore.
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.mail.EmailService;
 import com.minexpert.hns.clients.HrmsClient;
@@ -46,6 +47,7 @@ import com.minexpert.hns.repository.compliance.PositionAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ComplianceDashboardServiceImpl implements ComplianceDashboardService {
 

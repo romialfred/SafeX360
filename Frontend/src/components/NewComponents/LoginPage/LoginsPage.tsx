@@ -4,88 +4,83 @@ import {
     IconEyeOff,
     IconLock,
     IconUser,
-    IconShield,
     IconAlertTriangle,
     IconWorld,
-    IconShieldCheck,
-    IconBolt,
-    IconLockSquare,
-    IconChecks,
-    IconSun,
-    IconMoon,
+    IconArrowRight,
 } from '@tabler/icons-react';
-import { Button, Checkbox, PasswordInput, TextInput } from '@mantine/core';
+import { Button, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { getUser, loginUser } from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
 import { useForm } from '@mantine/form';
 
-const LOGO_FONT = "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif";
+/**
+ * SafeX 360 — Page de connexion v4 (LOT 41).
+ *
+ * REFONTE ÉPURÉE après audit utilisateur :
+ *   - Suppression des 5 features bullets (colonne gauche encombrée)
+ *   - Suppression du label "BIENVENUE" + barres horizontales (clutter)
+ *   - Suppression du footer carte ("Connexion chiffrée · v2.4")
+ *   - Typographie EN BLANC sur la photo (fini les titres noirs illisibles)
+ *   - Carte de connexion compacte, centrée
+ *   - Page épurée à 3 éléments : marque · phrase d'accroche · formulaire
+ *
+ * Contraste WCAG 2.2 AA garanti via text-shadow renforcé sur les textes
+ * blancs et un overlay sombre suffisant sur l'image.
+ */
 
-type Theme = 'light' | 'dark';
+const HERO_IMAGE_FALLBACK =
+    'https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?auto=format&fit=crop&w=3840&q=85';
 
 const LoginsPage = () => {
     const navigate = useNavigate();
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
-    const [theme, setTheme] = useState<Theme>('dark');
     const [loading, setLoading] = useState(false);
     const dispatch = useAppDispatch();
     const [error, setError] = useState(false);
-    const isDark = theme === 'dark';
 
-    const translations = {
-        fr: {
-            tagline: 'Santé. Sécurité. Conformité.',
-            heroTitle: "La plateforme HSE de référence pour l'industrie minière",
-            heroSubtitle: "Pilotez incidents, audits, EPI et conformité réglementaire depuis une console unique.",
-            loginTitle: 'Connexion sécurisée',
-            loginSubtitle: 'Accédez à votre console HSE',
+    const t = language === 'fr'
+        ? {
+            tagline: 'Plateforme HSE pour l\'industrie minière',
+            loginTitle: 'Connexion',
+            loginSubtitle: 'Accédez à votre espace de pilotage',
             loginLabel: 'Identifiant',
-            loginPlaceholder: 'prenom.nom@minexpert.com',
+            loginPlaceholder: 'votre identifiant',
             passwordLabel: 'Mot de passe',
             passwordPlaceholder: '••••••••',
-            rememberMe: 'Se souvenir de moi',
-            forgotPassword: 'Mot de passe oublié ?',
+            forgotPassword: 'Mot de passe oublié',
             loginButton: 'Se connecter',
-            loginProgress: 'Connexion en cours…',
+            loginProgress: 'Connexion…',
             errorMessage: 'Identifiant ou mot de passe incorrect',
-            securityBadge: 'Connexion chiffrée TLS 1.3 · OAuth 2.0',
-            footer: 'Conforme RGPD · Audit logging · Multi-tenant',
-        },
-        en: {
-            tagline: 'Health. Safety. Compliance.',
-            heroTitle: 'The reference HSE platform for the mining industry',
-            heroSubtitle: 'Pilot incidents, audits, PPE and regulatory compliance from a single console.',
-            loginTitle: 'Secure login',
-            loginSubtitle: 'Access your HSE console',
+            standards: 'ISO 45001 · 14001 · 9001 · 19011',
+        }
+        : {
+            tagline: 'HSE platform for mining operations',
+            loginTitle: 'Sign in',
+            loginSubtitle: 'Access your operations dashboard',
             loginLabel: 'User ID',
-            loginPlaceholder: 'firstname.lastname@minexpert.com',
+            loginPlaceholder: 'your user ID',
             passwordLabel: 'Password',
             passwordPlaceholder: '••••••••',
-            rememberMe: 'Remember me',
-            forgotPassword: 'Forgot password?',
+            forgotPassword: 'Forgot password',
             loginButton: 'Sign in',
             loginProgress: 'Signing in…',
             errorMessage: 'Incorrect user ID or password',
-            securityBadge: 'TLS 1.3 encrypted · OAuth 2.0',
-            footer: 'GDPR compliant · Audit logging · Multi-tenant',
-        },
-    };
+            standards: 'ISO 45001 · 14001 · 9001 · 19011',
+        };
 
-    const t = translations[language];
     const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
-    const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
 
     const form = useForm({
         initialValues: { login: '', password: '' },
         validate: {
-            login: (value) => {
-                const trimmed = value.trim();
-                if (trimmed.length === 0) return language === 'fr' ? "L'identifiant est requis" : 'Login is required';
-                return trimmed.length > 50 ? (language === 'fr' ? 'Maximum 50 caractères' : 'Maximum 50 characters') : null;
-            },
-            password: (value) => (!value ? (language === 'fr' ? 'Le mot de passe est requis' : 'Password is required') : null),
+            login: (value) => (value.trim().length === 0
+                ? (language === 'fr' ? 'Requis' : 'Required')
+                : null),
+            password: (value) => (!value
+                ? (language === 'fr' ? 'Requis' : 'Required')
+                : null),
         },
     });
 
@@ -106,454 +101,293 @@ const LoginsPage = () => {
         }
     };
 
-    // ═══ Standards de référence — ISO 45001 (SST) + ISO 19011 (Audit) ═══
-    const standards = [
-        {
-            code: 'ISO 45001:2018',
-            title: language === 'fr' ? 'Santé et sécurité au travail' : 'Occupational Health & Safety',
-            short: 'SST',
-            Icon: IconShieldCheck,
-            gradient: 'from-emerald-500 to-teal-600',
-            iconColor: 'text-white',
-            ring: 'ring-emerald-400/40',
-        },
-        {
-            code: 'ISO 19011:2018',
-            title: language === 'fr' ? "Audit des systèmes de management" : 'Auditing management systems',
-            short: 'AUDIT',
-            Icon: IconChecks,
-            gradient: 'from-indigo-500 to-violet-600',
-            iconColor: 'text-white',
-            ring: 'ring-indigo-400/40',
-        },
-    ];
-
-    // ═══ Palette conditionnelle dark/light ═══
-    const palette = isDark
-        ? {
-            bg: 'bg-slate-950',
-            text: 'text-slate-100',
-            heroText: 'text-white',
-            heroSub: 'text-slate-400',
-            standardsTitle: 'text-slate-300',
-            stdItemText: 'text-slate-200',
-            stdItemSub: 'text-slate-500',
-            stdItemHoverBg: 'hover:bg-white/5',
-            stdItemBorder: 'border-white/10',
-            cardBg: 'bg-sky-100/10',
-            cardBorder: 'border-sky-200/20',
-            cardText: 'text-white',
-            cardSubtext: 'text-slate-300',
-            inputBg: 'rgba(15, 23, 42, 0.45)',
-            inputBorder: 'rgba(186, 230, 253, 0.25)',
-            inputText: '#f1f5f9',
-            inputLabel: 'text-sky-200',
-            inputPlaceholder: 'rgba(186, 230, 253, 0.5)',
-            checkboxLabel: 'text-slate-200',
-            forgotLink: 'text-cyan-300 hover:text-cyan-200',
-            footerText: 'text-slate-500',
-            toggleBg: 'bg-white/5 border-white/10 hover:bg-white/10',
-            toggleText: 'text-slate-200',
-            toggleAccent: 'text-cyan-300',
-            taglineText: 'text-emerald-300',
-            taglineLabel: 'text-slate-400',
-            securityIcon: 'text-emerald-400',
-            errorBg: 'bg-red-500/10 border-red-400/40',
-            errorText: 'text-red-200',
-            errorIcon: 'text-red-400',
-            cardDividerBg: 'border-white/5',
-        }
-        : {
-            bg: 'bg-gradient-to-br from-sky-50 via-white to-emerald-50',
-            text: 'text-slate-900',
-            heroText: 'text-slate-900',
-            heroSub: 'text-slate-600',
-            standardsTitle: 'text-slate-700',
-            stdItemText: 'text-slate-900',
-            stdItemSub: 'text-slate-500',
-            stdItemHoverBg: 'hover:bg-white',
-            stdItemBorder: 'border-slate-200',
-            cardBg: 'bg-white/60',
-            cardBorder: 'border-sky-200/60',
-            cardText: 'text-slate-900',
-            cardSubtext: 'text-slate-600',
-            inputBg: 'rgba(255, 255, 255, 0.75)',
-            inputBorder: 'rgba(14, 165, 233, 0.30)',
-            inputText: '#0f172a',
-            inputLabel: 'text-sky-700',
-            inputPlaceholder: 'rgba(100, 116, 139, 0.6)',
-            checkboxLabel: 'text-slate-700',
-            forgotLink: 'text-sky-700 hover:text-sky-800',
-            footerText: 'text-slate-500',
-            toggleBg: 'bg-white/80 border-slate-200 hover:bg-white',
-            toggleText: 'text-slate-700',
-            toggleAccent: 'text-sky-600',
-            taglineText: 'text-emerald-700',
-            taglineLabel: 'text-slate-500',
-            securityIcon: 'text-emerald-600',
-            errorBg: 'bg-red-50 border-red-300',
-            errorText: 'text-red-800',
-            errorIcon: 'text-red-500',
-            cardDividerBg: 'border-slate-200',
-        };
-
     return (
-        <div className={`min-h-screen relative overflow-hidden ${palette.bg} ${palette.text} transition-colors duration-500`}>
+        <div className="min-h-screen relative overflow-hidden bg-slate-950 text-white">
 
-            {/* === Fond futuriste === */}
+            {/* ═══ Image plein écran — moins de flou, plus de luminosité ═══ */}
             <div
-                className={
-                    isDark
-                        ? 'absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(16,185,129,0.18),_transparent_55%),_radial-gradient(ellipse_at_bottom_right,_rgba(6,182,212,0.18),_transparent_55%),_radial-gradient(circle_at_50%_50%,_rgba(99,102,241,0.10),_transparent_70%)]'
-                        : 'absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(186,230,253,0.5),_transparent_55%),_radial-gradient(ellipse_at_bottom_right,_rgba(167,243,208,0.4),_transparent_55%),_radial-gradient(circle_at_50%_50%,_rgba(199,210,254,0.25),_transparent_70%)]'
-                }
-            />
-
-            {/* Grille technique subtile */}
-            <div
-                className={isDark ? 'absolute inset-0 opacity-[0.07]' : 'absolute inset-0 opacity-[0.05]'}
+                className="absolute inset-0 bg-cover bg-center"
                 style={{
-                    backgroundImage: isDark
-                        ? 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)'
-                        : 'linear-gradient(rgba(15,23,42,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.6) 1px, transparent 1px)',
-                    backgroundSize: '64px 64px',
+                    backgroundImage: `url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
+                    filter: 'blur(4px) saturate(1.2) brightness(1.05)',
+                    transform: 'scale(1.04)',
                 }}
             />
 
-            {/* Particules animées */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(14)].map((_, i) => {
-                    const colorsDark = ['rgba(52,211,153,0.6)', 'rgba(34,211,238,0.55)', 'rgba(165,180,252,0.5)'];
-                    const colorsLight = ['rgba(14,165,233,0.5)', 'rgba(16,185,129,0.45)', 'rgba(99,102,241,0.4)'];
-                    const colors = isDark ? colorsDark : colorsLight;
-                    return (
-                        <span
-                            key={i}
-                            className="absolute rounded-full"
-                            style={{
-                                width: `${2 + Math.random() * 3}px`,
-                                height: `${2 + Math.random() * 3}px`,
-                                left: `${Math.random() * 100}%`,
-                                top: `${Math.random() * 100}%`,
-                                background: colors[i % 3],
-                                boxShadow: `0 0 ${6 + Math.random() * 8}px ${colors[i % 3]}`,
-                                animation: `safex-float ${8 + Math.random() * 8}s ease-in-out ${Math.random() * 4}s infinite`,
-                            }}
-                        />
-                    );
-                })}
-            </div>
+            {/* ═══ Overlay dégradé — moins opaque pour laisser respirer l'image ═══ */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    background: `linear-gradient(135deg, rgba(15,23,42,0.55) 0%, rgba(15,23,42,0.42) 50%, rgba(15,23,42,0.65) 100%)`,
+                }}
+            />
 
-            {/* Arcs SVG lumineux */}
-            <svg className={isDark ? 'absolute inset-0 w-full h-full opacity-[0.15] pointer-events-none' : 'absolute inset-0 w-full h-full opacity-[0.20] pointer-events-none'} preserveAspectRatio="xMidYMid slice">
-                <defs>
-                    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor={isDark ? '#34d399' : '#0ea5e9'} stopOpacity="0.8" />
-                        <stop offset="100%" stopColor={isDark ? '#22d3ee' : '#10b981'} stopOpacity="0.2" />
-                    </linearGradient>
-                </defs>
-                <circle cx="15%" cy="85%" r="280" fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" />
-                <circle cx="85%" cy="15%" r="220" fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" />
-                <circle cx="50%" cy="50%" r="450" fill="none" stroke="url(#arcGrad)" strokeWidth="1" strokeDasharray="4 12" />
-            </svg>
+            {/* Halo teal subtil au centre pour amener un accent de couleur */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'radial-gradient(circle at 50% 38%, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0) 45%)',
+                }}
+            />
 
-            {/* Keyframes injectés */}
-            <style>{`
-                @keyframes safex-float {
-                    0%, 100% { transform: translate3d(0,0,0); opacity: 0.5; }
-                    50% { transform: translate3d(20px,-30px,0); opacity: 1; }
-                }
-                @keyframes safex-glow-pulse-dark {
-                    0%, 100% { box-shadow: 0 0 0 0 rgba(125,211,252,0.0), 0 0 30px rgba(56,189,248,0.15); }
-                    50% { box-shadow: 0 0 0 4px rgba(125,211,252,0.10), 0 0 50px rgba(56,189,248,0.28); }
-                }
-                @keyframes safex-glow-pulse-light {
-                    0%, 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0.0), 0 0 25px rgba(14,165,233,0.12); }
-                    50% { box-shadow: 0 0 0 4px rgba(14,165,233,0.10), 0 0 40px rgba(14,165,233,0.22); }
-                }
-                .safex-card-glow-dark  { animation: safex-glow-pulse-dark  4s ease-in-out infinite; }
-                .safex-card-glow-light { animation: safex-glow-pulse-light 4s ease-in-out infinite; }
-            `}</style>
+            {/* ═══ Toggle langue (haut droit) ═══ */}
+            <button
+                onClick={toggleLanguage}
+                className="absolute top-5 right-5 z-30 flex items-center gap-2 px-3 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-[12.5px] text-white"
+                aria-label={language === 'fr' ? 'Passer en anglais' : 'Switch to French'}
+            >
+                <IconWorld size={14} aria-hidden="true" />
+                <span className="tracking-wide">{language === 'fr' ? 'FR' : 'EN'}</span>
+                <span className="text-white/40">·</span>
+                <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
+            </button>
 
-            {/* === Toggles haut droit (thème + langue) === */}
-            <div className="absolute top-5 right-5 z-30 flex items-center gap-2">
-                <button
-                    onClick={toggleTheme}
-                    title={isDark ? (language === 'fr' ? 'Passer en clair' : 'Switch to light') : (language === 'fr' ? 'Passer en sombre' : 'Switch to dark')}
-                    className={`flex items-center justify-center w-9 h-9 rounded-md ${palette.toggleBg} backdrop-blur-md transition-all`}
-                    aria-label="Toggle theme"
-                >
-                    {isDark ? <IconSun size={16} className="text-amber-300" /> : <IconMoon size={16} className="text-indigo-600" />}
-                </button>
-                <button
-                    onClick={toggleLanguage}
-                    className={`flex items-center gap-2 px-3 h-9 rounded-md ${palette.toggleBg} backdrop-blur-md transition-all text-xs ${palette.toggleText}`}
-                >
-                    <IconWorld size={14} className={palette.toggleAccent} />
-                    <span className="font-medium">{language === 'fr' ? 'FR' : 'EN'}</span>
-                    <span className={palette.stdItemSub}>·</span>
-                    <span>{language === 'fr' ? 'EN' : 'FR'}</span>
-                </button>
-            </div>
+            {/* ═══ Container centré ═══ */}
+            <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
 
-            {/* === Layout split === */}
-            <div className="relative z-10 min-h-screen grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-0">
-
-                {/* ═══════════════ COLONNE GAUCHE ═══════════════ */}
-                <div className="hidden lg:flex flex-col justify-between p-10 xl:p-14">
-
-                    {/* Logo SafeX 360 */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex flex-col items-start leading-[0.82] select-none">
-                            <span
-                                className={isDark ? 'text-[44px] text-white' : 'text-[44px] text-slate-900'}
-                                style={{
-                                    fontFamily: LOGO_FONT,
-                                    fontWeight: 900,
-                                    letterSpacing: '-0.045em',
-                                    textShadow: isDark
-                                        ? '0 2px 14px rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.5)'
-                                        : '0 1px 2px rgba(15,23,42,0.15)',
-                                }}
-                            >
-                                SafeX
-                            </span>
-                            <div className="flex items-baseline ml-[1px]" style={{ marginTop: '-2px' }}>
-                                <span
-                                    className="text-[34px] leading-none text-emerald-500"
-                                    style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em', textShadow: isDark ? '0 0 16px rgba(52,211,153,0.45)' : '0 1px 4px rgba(52,211,153,0.30)' }}
-                                >3</span>
-                                <span
-                                    className="text-[34px] leading-none text-blue-500"
-                                    style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em', textShadow: isDark ? '0 0 16px rgba(96,165,250,0.45)' : '0 1px 4px rgba(59,130,246,0.30)' }}
-                                >6</span>
-                                <span
-                                    className="text-[34px] leading-none text-red-500"
-                                    style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em', textShadow: isDark ? '0 0 16px rgba(248,113,113,0.45)' : '0 1px 4px rgba(239,68,68,0.30)' }}
-                                >0</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-1 ml-2">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span className={`text-[10px] uppercase tracking-[0.22em] ${palette.taglineLabel}`}>Plateforme HSE</span>
-                            </div>
-                            <span className={`text-[11px] tracking-wide ${palette.taglineText}`}>{t.tagline}</span>
-                        </div>
+                {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
+                <div className="flex flex-col items-center text-center mb-8 max-w-md">
+                    {/* Bouclier coloré (gradient teal → rouge — identité HSE forte) */}
+                    <div
+                        className="mb-4"
+                        style={{ filter: 'drop-shadow(0 10px 30px rgba(20,184,166,0.6))' }}
+                    >
+                        <svg
+                            width="84"
+                            height="84"
+                            viewBox="0 0 64 64"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-label="SafeX 360"
+                        >
+                            <defs>
+                                <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#5EEAD4" />
+                                    <stop offset="55%" stopColor="#14B8A6" />
+                                    <stop offset="100%" stopColor="#EF4444" />
+                                </linearGradient>
+                                <linearGradient id="shieldHighlight" x1="0%" y1="0%" x2="0%" y2="60%">
+                                    <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+                                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                                </linearGradient>
+                            </defs>
+                            {/* Bouclier — fond gradient teal → rouge */}
+                            <path
+                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                fill="url(#shieldGradient)"
+                                stroke="rgba(255,255,255,0.35)"
+                                strokeWidth="0.8"
+                            />
+                            {/* Highlight subtil */}
+                            <path
+                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 38, 50 42, 32 42 C14 42, 7 38, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                fill="url(#shieldHighlight)"
+                            />
+                            {/* Coche blanche épaisse */}
+                            <path
+                                d="M 20 31 L 29 40 L 45 21"
+                                stroke="white"
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                            />
+                        </svg>
                     </div>
 
-                    {/* Hero + Standards */}
-                    <div className="flex flex-col gap-7 max-w-[560px]">
-                        <div>
-                            <h1
-                                className={`text-3xl xl:text-[34px] leading-[1.15] tracking-tight ${palette.heroText}`}
-                                style={{ fontFamily: LOGO_FONT, fontWeight: 700, letterSpacing: '-0.02em' }}
-                            >
-                                La plateforme HSE de référence{' '}
-                                <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-500 bg-clip-text text-transparent">
-                                    pour l'industrie minière
-                                </span>
-                            </h1>
-                            <p className={`text-[13px] mt-3 leading-relaxed max-w-[480px] font-normal ${palette.heroSub}`}>
-                                {t.heroSubtitle}
-                            </p>
-                        </div>
+                    {/* Wordmark — "Safe" blanc, "X" teal vif, "360" rouge accent identité */}
+                    <h1
+                        className="flex items-baseline gap-0.5"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 600,
+                            fontSize: 'clamp(40px, 5.5vw, 52px)',
+                            letterSpacing: '-0.022em',
+                            lineHeight: 1,
+                            textShadow: '0 4px 28px rgba(0,0,0,0.7)',
+                        }}
+                    >
+                        <span className="text-white">Safe</span>
+                        <span style={{
+                            color: '#2DD4BF',
+                            textShadow: '0 0 24px rgba(45,212,191,0.55), 0 2px 14px rgba(0,0,0,0.6)',
+                        }}>X</span>
+                        <span style={{
+                            color: '#EF4444',
+                            marginLeft: '0.4rem',
+                            textShadow: '0 0 24px rgba(239,68,68,0.55), 0 2px 14px rgba(0,0,0,0.6)',
+                        }}>360</span>
+                    </h1>
 
-                        {/* ═══ Standards ISO — liste sans titre (épuré) ═══ */}
-                        <ul className="space-y-2 max-w-[480px]">
-                            {standards.map((s) => {
-                                const Icon = s.Icon;
-                                return (
-                                    <li
-                                        key={s.code}
-                                        className={`group flex items-center gap-3 px-3 py-2 rounded-lg border ${palette.stdItemBorder} ${palette.stdItemHoverBg} backdrop-blur-sm transition-colors`}
-                                    >
-                                        <div className={`relative flex-shrink-0 w-11 h-11 rounded-full bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-md ring-2 ${s.ring} group-hover:scale-105 transition-transform`}>
-                                            <Icon size={20} className={s.iconColor} stroke={2} />
-                                            <span className={`absolute -bottom-1 -right-1 px-1.5 py-px text-[8px] tracking-wider rounded-sm bg-white ${isDark ? 'text-slate-900' : 'text-slate-800'} shadow-md border border-white/50`}>
-                                                {s.short}
-                                            </span>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className={`text-sm ${palette.stdItemText}`}>{s.code}</p>
-                                            <p className={`text-[11px] ${palette.stdItemSub} leading-tight`}>{s.title}</p>
-                                        </div>
-                                        <IconShield size={14} className={isDark ? 'text-emerald-400/70 flex-shrink-0' : 'text-emerald-600 flex-shrink-0'} />
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
-
-                    {/* Bas : indicateurs sécurité */}
-                    <div className={`flex items-center gap-4 text-[11px] ${palette.footerText}`}>
-                        <div className="flex items-center gap-1.5">
-                            <IconLockSquare size={12} className={palette.securityIcon} />
-                            <span>{t.securityBadge}</span>
-                        </div>
-                        <span className={palette.stdItemSub}>|</span>
-                        <div className="flex items-center gap-1.5">
-                            <IconBolt size={12} className={palette.toggleAccent} />
-                            <span>{t.footer}</span>
-                        </div>
-                    </div>
+                    {/* Tagline */}
+                    <p
+                        className="text-white/85 mt-4 max-w-sm"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 400,
+                            fontSize: '15px',
+                            letterSpacing: '0.005em',
+                            lineHeight: 1.5,
+                            textShadow: '0 2px 14px rgba(0,0,0,0.7)',
+                        }}
+                    >
+                        {t.tagline}
+                    </p>
                 </div>
 
-                {/* ═══════════════ COLONNE DROITE — Carte ═══════════════ */}
-                <div className="flex items-center justify-center p-6 sm:p-10 relative">
+                {/* Carte de connexion compacte */}
+                <div
+                    className="w-full max-w-[400px] rounded-2xl border border-white/12 shadow-2xl overflow-hidden"
+                    style={{
+                        background: 'rgba(15, 23, 42, 0.62)',
+                        backdropFilter: 'blur(24px) saturate(140%)',
+                        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+                    }}
+                >
+                    <div className="p-7 sm:p-8">
 
-                    {/* Logo compact mobile uniquement (le logo desktop est dans la colonne gauche) */}
-                    <div className="lg:hidden absolute top-6 left-6 flex items-center gap-2">
-                        <div className="flex flex-col items-start leading-[0.82] select-none">
-                            <span className={isDark ? 'text-[24px] text-white' : 'text-[24px] text-slate-900'} style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.045em' }}>SafeX</span>
-                            <div className="flex items-baseline" style={{ marginTop: '-1px' }}>
-                                <span className="text-[18px] leading-none text-emerald-500" style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em' }}>3</span>
-                                <span className="text-[18px] leading-none text-blue-500" style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em' }}>6</span>
-                                <span className="text-[18px] leading-none text-red-500" style={{ fontFamily: LOGO_FONT, fontWeight: 900, letterSpacing: '-0.04em' }}>0</span>
-                            </div>
-                        </div>
-                    </div>
+                        {/* Titre Connexion — BLANC PUR, gros, sans décorations qui le rendent illisible */}
+                        <h2
+                            className="text-center text-white"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 600,
+                                fontSize: '28px',
+                                letterSpacing: '-0.014em',
+                                lineHeight: 1.15,
+                                color: '#FFFFFF',
+                            }}
+                        >
+                            {t.loginTitle}
+                        </h2>
+                        {/* Petite barre d'accent rouge SOUS le titre (pas autour) */}
+                        <div
+                            className="mx-auto mt-2 mb-3 h-[2px] rounded-full"
+                            style={{
+                                width: '40px',
+                                background: 'linear-gradient(90deg, #2DD4BF 0%, #EF4444 100%)',
+                            }}
+                            aria-hidden="true"
+                        />
+                        <p className="text-[13.5px] text-white/85 text-center">
+                            {t.loginSubtitle}
+                        </p>
 
-                    <div className="w-full max-w-[420px] relative">
-
-                        {/* Carte glassmorphism — bleu clair subtil */}
-                        <div className={`${isDark ? 'safex-card-glow-dark' : 'safex-card-glow-light'} relative ${palette.cardBg} backdrop-blur-2xl rounded-2xl border ${palette.cardBorder} shadow-2xl overflow-hidden`}>
-
-                            {/* Bordure interne lumineuse */}
+                        {/* Erreur */}
+                        {error && (
                             <div
-                                className="absolute inset-0 rounded-2xl pointer-events-none"
-                                style={{
-                                    background: isDark
-                                        ? 'linear-gradient(135deg, rgba(125,211,252,0.30), transparent 35%, transparent 65%, rgba(56,189,248,0.30))'
-                                        : 'linear-gradient(135deg, rgba(14,165,233,0.35), transparent 35%, transparent 65%, rgba(16,185,129,0.30))',
-                                    padding: '1px',
-                                    WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                                    WebkitMaskComposite: 'xor',
-                                    maskComposite: 'exclude',
+                                className="mt-5 p-3 rounded-lg bg-red-500/15 border border-red-400/40 flex items-center gap-2"
+                                role="alert"
+                                aria-live="assertive"
+                            >
+                                <IconAlertTriangle size={15} className="text-red-300 flex-shrink-0" aria-hidden="true" />
+                                <span className="text-[13px] text-red-100">{t.errorMessage}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-6 space-y-4">
+
+                            <TextInput
+                                label={
+                                    <span className="text-[11.5px] uppercase tracking-[0.14em] text-white/80">
+                                        {t.loginLabel}
+                                    </span>
+                                }
+                                placeholder={t.loginPlaceholder}
+                                withAsterisk
+                                size="md"
+                                radius="md"
+                                autoComplete="username"
+                                leftSection={<IconUser size={15} className="text-white/55" aria-hidden="true" />}
+                                styles={{
+                                    input: {
+                                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                                        borderColor: 'rgba(255, 255, 255, 0.14)',
+                                        color: '#ffffff',
+                                        fontSize: '14px',
+                                    },
                                 }}
+                                {...form.getInputProps('login')}
                             />
 
-                            <div className="relative p-7">
-                                {/* Header */}
-                                <div className="text-center mb-6">
-                                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3 shadow-lg ${isDark ? 'bg-gradient-to-br from-sky-500/20 to-cyan-500/20 border border-sky-400/40' : 'bg-gradient-to-br from-sky-100 to-cyan-100 border border-sky-300'}`}>
-                                        <IconShieldCheck size={22} className={isDark ? 'text-sky-200' : 'text-sky-700'} stroke={2} />
-                                    </div>
-                                    <h2 className={`text-lg tracking-tight ${palette.cardText}`} style={{ fontFamily: LOGO_FONT, fontWeight: 700 }}>
-                                        {t.loginTitle}
-                                    </h2>
-                                    <p className={`text-xs mt-1 ${palette.cardSubtext}`}>{t.loginSubtitle}</p>
-                                </div>
+                            <PasswordInput
+                                label={
+                                    <span className="text-[11.5px] uppercase tracking-[0.14em] text-white/80">
+                                        {t.passwordLabel}
+                                    </span>
+                                }
+                                placeholder={t.passwordPlaceholder}
+                                withAsterisk
+                                size="md"
+                                radius="md"
+                                autoComplete="current-password"
+                                visibilityToggleIcon={({ reveal }) =>
+                                    reveal ? <IconEyeOff size={15} aria-hidden="true" /> : <IconEye size={15} aria-hidden="true" />
+                                }
+                                leftSection={<IconLock size={15} className="text-white/55" aria-hidden="true" />}
+                                styles={{
+                                    input: {
+                                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                                        borderColor: 'rgba(255, 255, 255, 0.14)',
+                                        color: '#ffffff',
+                                        fontSize: '14px',
+                                    },
+                                }}
+                                {...form.getInputProps('password')}
+                            />
 
-                                {/* Erreur */}
-                                {error && (
-                                    <div className={`mb-4 p-2.5 rounded-md ${palette.errorBg} flex items-center gap-2 backdrop-blur-sm border`}>
-                                        <IconAlertTriangle size={14} className={`${palette.errorIcon} flex-shrink-0`} />
-                                        <span className={`text-xs ${palette.errorText}`}>{t.errorMessage}</span>
-                                    </div>
-                                )}
-
-                                {/* Formulaire */}
-                                <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-4">
-                                    <TextInput
-                                        label={<span className={`text-xs uppercase tracking-wider ${palette.inputLabel}`}>{t.loginLabel}</span>}
-                                        placeholder={t.loginPlaceholder}
-                                        withAsterisk
-                                        size="md"
-                                        radius="md"
-                                        leftSection={<IconUser size={15} className={isDark ? 'text-sky-200/70' : 'text-sky-600/80'} />}
-                                        styles={{
-                                            input: {
-                                                backgroundColor: palette.inputBg,
-                                                borderColor: palette.inputBorder,
-                                                color: palette.inputText,
-                                                fontSize: '14px',
-                                            },
-                                        }}
-                                        {...form.getInputProps('login')}
-                                    />
-
-                                    <PasswordInput
-                                        label={<span className={`text-xs uppercase tracking-wider ${palette.inputLabel}`}>{t.passwordLabel}</span>}
-                                        placeholder={t.passwordPlaceholder}
-                                        withAsterisk
-                                        size="md"
-                                        radius="md"
-                                        visibilityToggleIcon={({ reveal }) => (reveal ? <IconEyeOff size={15} /> : <IconEye size={15} />)}
-                                        leftSection={<IconLock size={15} className={isDark ? 'text-sky-200/70' : 'text-sky-600/80'} />}
-                                        styles={{
-                                            input: {
-                                                backgroundColor: palette.inputBg,
-                                                borderColor: palette.inputBorder,
-                                                color: palette.inputText,
-                                                fontSize: '14px',
-                                            },
-                                        }}
-                                        {...form.getInputProps('password')}
-                                    />
-
-                                    {/* Remember + Forgot */}
-                                    <div className="flex items-center justify-between pt-1">
-                                        <Checkbox
-                                            label={<span className={`text-xs ${palette.checkboxLabel}`}>{t.rememberMe}</span>}
-                                            size="xs"
-                                            color="cyan"
-                                            styles={{
-                                                input: {
-                                                    backgroundColor: palette.inputBg,
-                                                    borderColor: palette.inputBorder,
-                                                },
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate('/forget-password')}
-                                            className={`text-xs transition-colors ${palette.forgotLink}`}
-                                        >
-                                            {t.forgotPassword}
-                                        </button>
-                                    </div>
-
-                                    {/* Submit */}
-                                    <Button
-                                        type="submit"
-                                        fullWidth
-                                        loading={loading}
-                                        size="md"
-                                        radius="md"
-                                        leftSection={<IconShield size={16} />}
-                                        styles={{
-                                            root: {
-                                                background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #10b981 100%)',
-                                                fontSize: '14px',
-                                                fontWeight: 600,
-                                                letterSpacing: '0.01em',
-                                                boxShadow: isDark
-                                                    ? '0 8px 24px rgba(14, 165, 233, 0.30), 0 2px 6px rgba(6, 182, 212, 0.20)'
-                                                    : '0 8px 24px rgba(14, 165, 233, 0.25), 0 2px 6px rgba(16, 185, 129, 0.20)',
-                                                border: 'none',
-                                            },
-                                        }}
-                                        className="hover:!opacity-90 transition-opacity"
-                                    >
-                                        {loading ? t.loginProgress : t.loginButton}
-                                    </Button>
-                                </form>
-
-                                {/* Footer carte */}
-                                <div className={`mt-6 pt-4 border-t ${palette.cardDividerBg} flex items-center justify-center gap-1.5 text-[10px] ${palette.footerText}`}>
-                                    <IconLockSquare size={11} className={palette.securityIcon} />
-                                    <span>{t.securityBadge}</span>
-                                </div>
+                            {/* Mot de passe oublié — discret */}
+                            <div className="flex justify-end -mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/forget-password')}
+                                    className="text-[12px] text-white/70 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+                                >
+                                    {t.forgotPassword}
+                                </button>
                             </div>
-                        </div>
 
-                        {/* Footer copyright */}
-                        <p className={`text-center text-[10px] mt-5 tracking-wide ${palette.footerText}`}>
-                            © {new Date().getFullYear()} MineXpert · SafeX 360 · {t.footer}
-                        </p>
+                            {/* CTA principal */}
+                            <Button
+                                type="submit"
+                                fullWidth
+                                loading={loading}
+                                size="md"
+                                radius="md"
+                                rightSection={loading
+                                    ? <Loader size="xs" color="white" />
+                                    : <IconArrowRight size={16} aria-hidden="true" />
+                                }
+                                styles={{
+                                    root: {
+                                        background: '#ffffff',
+                                        color: '#0f172a',
+                                        fontSize: '14px',
+                                        fontWeight: 500,
+                                        letterSpacing: '0.005em',
+                                        height: '46px',
+                                        marginTop: '8px',
+                                        border: 'none',
+                                        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                                    },
+                                    label: {
+                                        color: '#0f172a',
+                                    },
+                                }}
+                                className="hover:!bg-slate-100 transition-colors"
+                            >
+                                {loading ? t.loginProgress : t.loginButton}
+                            </Button>
+                        </form>
                     </div>
                 </div>
+
+                {/* Footer minimal — uniquement les normes ISO */}
+                <p
+                    className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60 text-center"
+                    style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
+                >
+                    {t.standards}
+                </p>
             </div>
         </div>
     );

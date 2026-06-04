@@ -19,6 +19,7 @@ import com.hrms.dto.LeaveSettingDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.exception.HRMSException;
 import com.hrms.service.LeaveSettingService;
+import jakarta.validation.Valid;
 
 @RestController
 @CrossOrigin
@@ -28,15 +29,16 @@ public class LeaveSettingAPI {
     @Autowired
     private LeaveSettingService leaveSettingService;
 
+    // LOT 40 P1 fix : ajout @Valid sur les bodies POST/PUT (Bean Validation)
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO> addLeaveSetting(@RequestBody LeaveSettingDTO leaveSettingDTO)
+    public ResponseEntity<ResponseDTO> addLeaveSetting(@RequestBody @Valid LeaveSettingDTO leaveSettingDTO)
             throws HRMSException {
         leaveSettingService.addLeaveSetting(leaveSettingDTO);
         return new ResponseEntity<>(new ResponseDTO("Leave Setting added Successfully."), HttpStatus.CREATED);
     }
 
     @PostMapping("/update")
-    public ResponseEntity<ResponseDTO> updateLeaveSetting(@RequestBody LeaveSettingDTO leaveSettingDTO)
+    public ResponseEntity<ResponseDTO> updateLeaveSetting(@RequestBody @Valid LeaveSettingDTO leaveSettingDTO)
             throws HRMSException {
         leaveSettingService.updateLeaveSetting(leaveSettingDTO);
         return new ResponseEntity<>(new ResponseDTO("Leave Setting Updated Successfully."), HttpStatus.OK);

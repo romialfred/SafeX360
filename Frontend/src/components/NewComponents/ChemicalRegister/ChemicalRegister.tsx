@@ -265,7 +265,7 @@ const ChemicalRegister = () => {
 
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -411,7 +411,8 @@ const ChemicalRegister = () => {
                         {viewType === 'table' ? (
                             <DataTable value={filteredRisks} paginator stripedRows removableSort rows={10} rowsPerPageOptions={[10, 25, 50]} emptyMessage="Aucun risque chimique trouvé." className="[&_.p-datatable-tbody]:!text-sm" tableStyle={{ minWidth: "60rem" }} size="small" dataKey="id" >
 
-                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Titre du risque" body={(row: any) => (<div className="text-blue-500">{row.title}</div>)} sortable />
+                                {/* LOT 40 P1: text-blue-500 → text-slate-900 (cohérence visuelle SafeX 360) */}
+                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Titre du risque" body={(row: any) => (<div className="text-slate-900">{row.title}</div>)} sortable />
 
                                 <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Département" field="departmentName" />
 

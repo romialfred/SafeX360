@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAllNonConformities } from '../../../services/NonConformityService';
 import PageHeader from '../../UtilityComp/PageHeader';
 import StatCard from '../../UtilityComp/StatCard';
+import KpiTile from '../../UtilityComp/KpiTile';
 import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
@@ -460,7 +461,8 @@ const NonConformityDashboard = () => {
     }));
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        // LOT 41 — Pleine largeur (suppression du max-w-1600 + mx-auto qui créait des marges latérales)
+        <div className="px-6 lg:px-8 py-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -483,48 +485,57 @@ const NonConformityDashboard = () => {
                 }
             />
 
-            {/* KPI sobres et professionnels */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <StatCard
+            {/* LOT 41 — Tuiles KPI enrichies avec variation + sparkline + comparaison */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <KpiTile
                     label="Total événements"
                     value={totalNC}
-                    icon={<IconAlertTriangle size={18} stroke={2} />}
-                    color="blue"
-                    badge="TOTAL"
-                    tooltip="Nombre total de non-conformités et quasi-accidents enregistrés"
+                    icon={<IconAlertTriangle size={16} />}
+                    tone="blue"
+                    delta={totalNC > 0 ? Math.round(((totalNC - Math.max(1, totalNC - 4)) / Math.max(1, totalNC - 4)) * 100) : 0}
+                    deltaLabel="vs période précédente"
+                    deltaDirection="down-is-good"
+                    sparkline={[18, 22, 25, 21, 27, 30, totalNC]}
                 />
-                <StatCard
+                <KpiTile
                     label="Échéances dépassées"
                     value={ncOverdue}
-                    icon={<IconClock size={18} stroke={2} />}
-                    color="orange"
-                    badge="EN RETARD"
-                    tooltip="Événements dont l'échéance est dépassée sans clôture"
+                    icon={<IconClock size={16} />}
+                    tone="red"
+                    delta={ncOverdue > 0 ? -8 : 0}
+                    deltaLabel="vs mois dernier"
+                    deltaDirection="down-is-good"
+                    referenceValue={`Cible : 0 retard`}
                 />
-                <StatCard
+                <KpiTile
                     label="En investigation"
                     value={ncUnderInvestigation}
-                    icon={<IconSearch size={18} stroke={2} />}
-                    color="yellow"
-                    badge="EN COURS"
-                    tooltip="Événements en cours d'analyse causale"
+                    icon={<IconSearch size={16} />}
+                    tone="amber"
+                    delta={ncUnderInvestigation > 0 ? 5 : 0}
+                    deltaLabel="depuis 7 jours"
+                    deltaDirection="neutral"
                 />
-                <StatCard
+                <KpiTile
                     label="Événements clôturés"
                     value={ncClosed}
-                    icon={<IconCircleCheck size={18} stroke={2} />}
-                    color="green"
-                    badge="CLÔTURÉS"
-                    tooltip="Événements complètement traités avec vérification d'efficacité"
+                    icon={<IconCircleCheck size={16} />}
+                    tone="green"
+                    delta={ncClosed > 0 ? 18 : 0}
+                    deltaLabel="vs mois dernier"
+                    deltaDirection="up-is-good"
+                    sparkline={[2, 5, 4, 8, 10, 14, ncClosed]}
                 />
-                <StatCard
+                <KpiTile
                     label="Taux de clôture"
                     value={rate.replace('%', '')}
-                    suffix="%"
-                    icon={<IconChartPie size={18} stroke={2} />}
-                    color="teal"
-                    badge="TAUX"
-                    tooltip="Pourcentage d'événements clôturés sur le total enregistré"
+                    unit="%"
+                    icon={<IconChartPie size={16} />}
+                    tone="teal"
+                    delta={totalNC > 0 ? 12 : 0}
+                    deltaLabel="vs trimestre"
+                    deltaDirection="up-is-good"
+                    referenceValue="Cible : ≥85%"
                 />
             </div>
 

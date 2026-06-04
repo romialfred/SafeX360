@@ -27,6 +27,7 @@ import { ppeRecord } from "../../../../Data/IncidentsData";
 import { mantineColorToLevel } from "../../../../Data/DropdownData";
 import { getAllActiveWorkArea } from "../../../../services/WorkAreaService";
 import { getAllActiveWorkProcess } from "../../../../services/WorkProcessService";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 
 const IncidentDetailsTab = ({
@@ -168,7 +169,8 @@ const IncidentDetailsTab = ({
                                                             {icon}
                                                             <span>{title}</span>
                                                         </div>
-                                                        <div className="text-[11px] text-slate-700 leading-snug" dangerouslySetInnerHTML={{ __html: content }} />
+                                                        {/* LOT 41 P0 XSS fix */}
+                                                        <SafeHtml html={content} className="text-[11px] text-slate-700 leading-snug" />
                                                     </div>
                                                 )
                                             ))}

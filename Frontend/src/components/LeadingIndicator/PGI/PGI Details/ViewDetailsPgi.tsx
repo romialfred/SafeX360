@@ -5,6 +5,7 @@ import {
 import { formatDateWithDay, formatTo12Hour } from "../../../../utility/DateFormats";
 import { inspectionTypesMap } from "../../../../Data/DropdownData";
 import { ppeRecord } from "../../../../Data/IncidentsData";
+import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 const Section = ({ title, icon: Icon, accent = 'green', hint, children, count }: {
     title: string; icon: any; accent?: 'green' | 'blue' | 'amber' | 'teal' | 'violet' | 'slate' | 'yellow' | 'red';
@@ -79,8 +80,8 @@ const ViewDetailsPgi = ({ inspection }: any) => {
 
             <Section title="Description et contexte" icon={IconFileText} accent="slate">
                 {inspection.description ? (
-                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: inspection.description }} />
+                    /* LOT 41 P0 XSS fix */
+                    <SafeHtml html={inspection.description} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                 ) : (
                     <p className="text-xs text-slate-400 italic">Aucune description renseignée.</p>
                 )}

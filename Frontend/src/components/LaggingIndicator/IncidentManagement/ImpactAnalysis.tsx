@@ -2,6 +2,7 @@ import {
     IconFileText, IconAlertTriangle, IconChartDots3, IconActivity,
     IconChartBar, IconScale, IconShield,
 } from '@tabler/icons-react';
+import SafeHtml from '../../UtilityComp/SafeHtml';
 
 /**
  * Analyse causale ISO 45001 §10.2.1.c — sections raffinées (épuré, FR).
@@ -47,7 +48,8 @@ const ImpactAnalysis = ({ incident }: any) => {
                         </header>
                         <div className="p-4">
                             {hasContent ? (
-                                <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: s.content }} />
+                                /* LOT 41 P0 XSS fix */
+                                <SafeHtml html={s.content} className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none" />
                             ) : (
                                 <p className="text-xs text-slate-400 italic">Information non renseignée à ce stade de l'analyse.</p>
                             )}

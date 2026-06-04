@@ -30,7 +30,7 @@ const TargetAndForeCastTabs = () => {
         <div className=" space-y-6">
             <div className="flex justify-between items-center  ">
                 <div>
-                    <div className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Target and Forecast Set</div>
+                    <div className="text-2xl font-semibold text-slate-900 ">Target and Forecast Set</div>
                     <Breadcrumbs className="" mt="xs">
                         <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
                         <Link className="hover:!underline" to="/settings" ><Text variant="gradient" className="hover:!underline cursor-pointer">Setting</Text></Link>

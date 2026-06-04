@@ -3,7 +3,7 @@ const Header = () => {
     return (
         <div className="flex  justify-between items-center   rounded-lg ">
             <div>
-                <h2 className="text-2xl font-semibold text-blue-500 bg-gradient-to-r from-primary to-secondary bg-clip-text ">OH&S Dashboard</h2>
+                <h2 className="text-2xl font-semibold text-slate-900 ">OH&S Dashboard</h2>
                 <p className="text-sm text-gray-500">
                     ISO 45001 Occupational Health & Safety Management System
                 </p>

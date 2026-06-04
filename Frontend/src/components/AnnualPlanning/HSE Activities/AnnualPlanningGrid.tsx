@@ -403,7 +403,8 @@ export default function AnnualPlanningGrid({
                     blur: 3,
                 }}
             >
-                <form onSubmit={form.onSubmit(handleSaveActivity)} className="grid grid-cols-2 gap-4">
+                {/* LOT 40 P1: responsive 2-col grid */}
+                <form onSubmit={form.onSubmit(handleSaveActivity)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <TextInput
                             size="sm"
@@ -466,7 +467,9 @@ export default function AnnualPlanningGrid({
                     )}
 
                     <div className="flex col-span-2 items-center justify-end gap-2 pt-2">
+                        {/* LOT 40 P1: explicit type for non-submit cancel button */}
                         <Button
+                            type="button"
                             variant="default"
                             onClick={() => {
                                 setOpened(false);
