@@ -9,6 +9,7 @@ import com.minexpert.hns.entity.activities.HsActivity;
 import com.minexpert.hns.entity.nonConformity.NonConformity;
 import com.minexpert.hns.enums.ActionStatus;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -51,6 +52,8 @@ public class CorrectiveAction {
     @JoinColumn(name = "non_conformity_id")
     private NonConformity nonConformity;
     private Integer progress;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -69,6 +72,7 @@ public class CorrectiveAction {
                 this.deadline,
                 this.status,
                 this.description,
+                this.companyId,
                 this.progress,
                 null,
                 null,

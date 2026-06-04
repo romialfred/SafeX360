@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import com.minexpert.hns.dto.response.CorrectiveActionResponse;
 import com.minexpert.hns.entity.incident.CorrectiveAction;
@@ -12,8 +13,8 @@ import com.minexpert.hns.enums.ActionStatus;
 
 public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAction, Long> {
 
-    @Query("SELECT c FROM CorrectiveAction c WHERE c.incident.id = ?1")
-    List<CorrectiveAction> findByIncidentId(Long incidentId);
+    @Query("SELECT c FROM CorrectiveAction c WHERE c.incident.id = :incidentId AND (:companyId IS NULL OR c.companyId = :companyId)")
+    List<CorrectiveAction> findByIncidentId(@Param("companyId") Long companyId, @Param("incidentId") Long incidentId);
 
     @Query("""
                 SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
@@ -31,6 +32,7 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                     null,
                     c.departmentId,
                     c.ownerId,
+                    c.companyId,
                     c.deadline,
                     c.status,
                     null,
@@ -55,27 +57,82 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                 LEFT JOIN c.hsActivity h
                 LEFT JOIN h.activity ha
                 LEFT JOIN c.nonConformity n
-                WHERE i.id IS NOT NULL OR g.id IS NOT NULL OR h.id IS NOT NULL OR n.id IS NOT NULL
+                WHERE (i.id IS NOT NULL OR g.id IS NOT NULL OR h.id IS NOT NULL OR n.id IS NOT NULL)
+                  AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    List<CorrectiveActionResponse> findAllActions();
+    List<CorrectiveActionResponse> findAllActions(@Param("companyId") Long companyId);
 
-    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
-            "c.id, c.actionName, c.incident.id, c.incident.title, c.assignedEmployeeId, " +
-            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'INCIDENT') " +
-            "FROM CorrectiveAction c WHERE c.incident.id = ?1")
-    List<CorrectiveActionResponse> findActionsByIncidentId(Long incidentId);
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+            c.id,
+            c.actionName,
+            c.incident.id,
+            c.incident.title,
+            c.assignedEmployeeId,
+            null,
+            c.departmentId,
+            c.ownerId,
+            c.companyId,
+            c.deadline,
+            c.status,
+            c.description,
+            c.progress,
+            'INCIDENT'
+            )
+            FROM CorrectiveAction c
+            WHERE c.incident.id = :incidentId
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveActionResponse> findActionsByIncidentId(@Param("companyId") Long companyId,
+            @Param("incidentId") Long incidentId);
 
-    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
-            "c.id, c.actionName, c.generalInspection.id, c.generalInspection.activity.title, c.assignedEmployeeId, " +
-            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'GENERAL_INSPECTION') " +
-            "FROM CorrectiveAction c WHERE c.generalInspection.id = ?1")
-    List<CorrectiveActionResponse> findActionsByInspectionId(Long inspectionId);
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+            c.id,
+            c.actionName,
+            c.generalInspection.id,
+            c.generalInspection.activity.title,
+            c.assignedEmployeeId,
+            null,
+            c.departmentId,
+            c.ownerId,
+            c.companyId,
+            c.deadline,
+            c.status,
+            c.description,
+            c.progress,
+            'GENERAL_INSPECTION'
+            )
+            FROM CorrectiveAction c
+            WHERE c.generalInspection.id = :inspectionId
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveActionResponse> findActionsByInspectionId(@Param("companyId") Long companyId,
+            @Param("inspectionId") Long inspectionId);
 
-    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
-            "c.id, c.actionName, c.hsActivity.id, c.hsActivity.activity.title, c.assignedEmployeeId, " +
-            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  'HS_ACTIVITY') " +
-            "FROM CorrectiveAction c WHERE c.hsActivity.id = ?1")
-    List<CorrectiveActionResponse> findActionsByActivityId(Long activityId);
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+            c.id,
+            c.actionName,
+            c.hsActivity.id,
+            c.hsActivity.activity.title,
+            c.assignedEmployeeId,
+            null,
+            c.departmentId,
+            c.ownerId,
+            c.companyId,
+            c.deadline,
+            c.status,
+            c.description,
+            c.progress,
+            'HS_ACTIVITY'
+            )
+            FROM CorrectiveAction c
+            WHERE c.hsActivity.id = :activityId
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveActionResponse> findActionsByActivityId(@Param("companyId") Long companyId,
+            @Param("activityId") Long activityId);
 
     @Query("""
             SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
@@ -93,6 +150,7 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                 null,
                 c.departmentId,
                 c.ownerId,
+                c.companyId,
                 c.deadline,
                 c.status,
                 null,
@@ -119,38 +177,60 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
             LEFT JOIN c.nonConformity n
             WHERE (i.id IS NOT NULL OR g.id IS NOT NULL OR h.id IS NOT NULL OR n.id IS NOT NULL)
               AND (c.departmentId = :departmentId OR c.departmentId IS NULL)
+              AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    List<CorrectiveActionResponse> findActionsByDepartmentId(Long departmentId);
-
-    @Query("SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(" +
-            "c.id, c.actionName, c.nonConformity.id, c.nonConformity.title, c.assignedEmployeeId, " +
-            "null, c.departmentId, c.ownerId, c.deadline, c.status, c.description, c.progress,  c.nonConformity.type) " +
-            "FROM CorrectiveAction c WHERE c.nonConformity.id = ?1")
-    List<CorrectiveActionResponse> findActionsByNonConformityId(Long nonConformityId);
+    List<CorrectiveActionResponse> findActionsByDepartmentId(@Param("companyId") Long companyId,
+            @Param("departmentId") Long departmentId);
 
     @Query("""
             SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
-                c.id,
-                c.actionName,
-                null,
-                'ADHOC',
-                c.assignedEmployeeId,
-                null,
-                c.departmentId,
-                c.ownerId,
-                c.deadline,
-                c.status,
-                null,
-                c.progress,
-                'ADHOC'
+            c.id,
+            c.actionName,
+            c.nonConformity.id,
+            c.nonConformity.title,
+            c.assignedEmployeeId,
+            null,
+            c.departmentId,
+            c.ownerId,
+            c.companyId,
+            c.deadline,
+            c.status,
+            c.description,
+            c.progress,
+            c.nonConformity.type
+            )
+            FROM CorrectiveAction c
+            WHERE c.nonConformity.id = :nonConformityId
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveActionResponse> findActionsByNonConformityId(@Param("companyId") Long companyId,
+            @Param("nonConformityId") Long nonConformityId);
+
+    @Query("""
+            SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
+                    c.id,
+                    c.actionName,
+                    null,
+                    'ADHOC',
+                    c.assignedEmployeeId,
+                    null,
+                    c.departmentId,
+                    c.ownerId,
+                    c.companyId,
+                    c.deadline,
+                    c.status,
+                    null,
+                    c.progress,
+                    'ADHOC'
             )
             FROM CorrectiveAction c
             WHERE c.incident IS NULL
-              AND c.generalInspection IS NULL
-              AND c.hsActivity IS NULL
-              AND c.nonConformity IS NULL
+                AND c.generalInspection IS NULL
+                AND c.hsActivity IS NULL
+                AND c.nonConformity IS NULL
+                AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    List<CorrectiveActionResponse> findAdhocActions();
+    List<CorrectiveActionResponse> findAdhocActions(@Param("companyId") Long companyId);
 
     @Query("""
                 SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
@@ -168,6 +248,7 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                     null,
                     c.departmentId,
                     c.ownerId,
+                    c.companyId,
                     c.deadline,
                     c.status,
                     null,
@@ -193,27 +274,34 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                 LEFT JOIN h.activity ha
                 LEFT JOIN c.nonConformity n
                 WHERE c.status = :status
+                  AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    List<CorrectiveActionResponse> findAllActionsByStatus(ActionStatus status);
+    List<CorrectiveActionResponse> findAllActionsByStatus(@Param("companyId") Long companyId,
+            @Param("status") ActionStatus status);
+
+    long countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(Long companyId, Long departmentId,
+            List<ActionStatus> statuses,
+            LocalDate fromDate, LocalDate toDate);
 
     long countByDepartmentIdAndStatusInAndDeadlineBetween(Long departmentId, List<ActionStatus> statuses,
             LocalDate fromDate, LocalDate toDate);
 
     @Query("""
             SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
-                c.id,
-                c.actionName,
-                null,
-                'ADHOC',
-                c.assignedEmployeeId,
-                null,
-                c.departmentId,
-                c.ownerId,
-                c.deadline,
-                c.status,
-                null,
-                c.progress,
-                'ADHOC'
+            c.id,
+            c.actionName,
+            null,
+            'ADHOC',
+            c.assignedEmployeeId,
+            null,
+            c.departmentId,
+            c.ownerId,
+            c.companyId,
+            c.deadline,
+            c.status,
+            null,
+            c.progress,
+            'ADHOC'
             )
             FROM CorrectiveAction c
             WHERE c.incident IS NULL
@@ -221,8 +309,10 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
               AND c.hsActivity IS NULL
               AND c.nonConformity IS NULL
               AND c.status = :status
+              AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    List<CorrectiveActionResponse> findAdhocActionsByStatus(ActionStatus status);
+    List<CorrectiveActionResponse> findAdhocActionsByStatus(@Param("companyId") Long companyId,
+            @Param("status") ActionStatus status);
 
     @Query("""
                 SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
@@ -240,6 +330,7 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                     null,
                     c.departmentId,
                     c.ownerId,
+                    c.companyId,
                     c.deadline,
                     c.status,
                     c.description,
@@ -264,7 +355,8 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
                 LEFT JOIN c.hsActivity h
                 LEFT JOIN h.activity ha
                 LEFT JOIN c.nonConformity n
-                WHERE c.id = ?1
+                WHERE c.id = :id
+                  AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
-    CorrectiveActionResponse getCorrectiveActionById(Long id);
+    CorrectiveActionResponse getCorrectiveActionById(@Param("companyId") Long companyId, @Param("id") Long id);
 }

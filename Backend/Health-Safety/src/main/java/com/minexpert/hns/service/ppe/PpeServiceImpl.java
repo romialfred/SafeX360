@@ -5,12 +5,15 @@ import com.minexpert.hns.entity.ppe.Ppe;
 import com.minexpert.hns.entity.ppe.PpeStatus;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.ppe.PpeRepository;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,6 +23,11 @@ public class PpeServiceImpl implements PpeService {
     private final PpeRepository ppeRepository;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "ppeById", allEntries = true),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true)
+    })
     public PpeDTO create(PpeDTO dto) throws HSException {
         if (dto.getId() != null && ppeRepository.existsById(dto.getId())) {
             throw new HSException("PPE_ALREADY_EXISTS");
@@ -35,6 +43,11 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "ppeById", key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true)
+    })
     public PpeDTO update(PpeDTO dto) throws HSException {
         Ppe existing = ppeRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
@@ -50,6 +63,7 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Cacheable(cacheNames = "ppeById", key = "#id")
     public PpeDTO getById(Long id) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
@@ -57,6 +71,7 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Cacheable(cacheNames = "ppesAll")
     public List<PpeDTO> getAllStocks() throws HSException {
         return ppeRepository.findAll()
                 .stream()
@@ -65,6 +80,7 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Cacheable(cacheNames = "ppeActive")
     public List<PpeDTO> getActiveStocks() throws HSException {
         return ppeRepository.findByStatus(PpeStatus.ACTIVE)
                 .stream()
@@ -73,6 +89,11 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true)
+    })
     public void activateStock(Long id) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
@@ -81,6 +102,11 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true)
+    })
     public void deactivateStock(Long id) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
@@ -89,6 +115,11 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true)
+    })
     public Integer updateStockQuantity(Long id, Integer quantity, String operation) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
@@ -113,6 +144,11 @@ public class PpeServiceImpl implements PpeService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "ppeById", allEntries = true),
+            @CacheEvict(cacheNames = "ppeActive", allEntries = true),
+            @CacheEvict(cacheNames = "ppesAll", allEntries = true)
+    })
     public List<Integer> updateStockQuantities(List<Long> ids, Integer quantity, String operation) throws HSException {
         if (quantity <= 0) {
             throw new HSException("INVALID_STOCK_QUANTITY");

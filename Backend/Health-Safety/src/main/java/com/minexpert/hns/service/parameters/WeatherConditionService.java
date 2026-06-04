@@ -7,21 +7,21 @@ import com.minexpert.hns.dto.response.WeatherConditionResponse;
 import com.minexpert.hns.exception.HSException;
 
 public interface WeatherConditionService {
-    public Long addWeatherCondition(WeatherConditionDTO weatherConditionDTO) throws HSException;
+    Long addWeatherCondition(Long companyId, WeatherConditionDTO weatherConditionDTO) throws HSException;
 
-    public void updateWeatherCondition(WeatherConditionDTO weatherConditionDTO) throws HSException;
+    void updateWeatherCondition(Long companyId, WeatherConditionDTO weatherConditionDTO) throws HSException;
 
-    public void deleteWeatherCondition(Long id);
+    void deleteWeatherCondition(Long companyId, Long id) throws HSException;
 
-    public WeatherConditionDTO getWeatherConditionById(Long id) throws HSException;
+    WeatherConditionDTO getWeatherConditionById(Long companyId, Long id) throws HSException;
 
-    public void activateWeatherCondition(Long id) throws HSException;
+    void activateWeatherCondition(Long companyId, Long id) throws HSException;
 
-    public List<WeatherConditionResponse> getAllWeatherConditions() throws HSException;
+    List<WeatherConditionResponse> getAllWeatherConditions(Long companyId) throws HSException;
 
-    public List<WeatherConditionResponse> getAllActiveWeatherConditions() throws HSException;
+    List<WeatherConditionResponse> getAllActiveWeatherConditions(Long companyId) throws HSException;
 
-    public void deactivateWeatherCondition(Long id) throws HSException;
+    void deactivateWeatherCondition(Long companyId, Long id) throws HSException;
 
-    public List<WeatherConditionResponse> getWeatherConditionsByIds(List<Long> ids);
+    List<WeatherConditionResponse> getWeatherConditionsByIds(Long companyId, List<Long> ids);
 }

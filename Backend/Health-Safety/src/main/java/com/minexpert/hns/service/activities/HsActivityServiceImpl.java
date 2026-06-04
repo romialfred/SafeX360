@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.config.ActivityCacheNames;
 import com.minexpert.hns.dto.activities.ActivityDetails;
 import com.minexpert.hns.dto.activities.HsActivityDTO;
 import com.minexpert.hns.dto.activities.HsActivityDetails;
@@ -37,6 +40,13 @@ public class HsActivityServiceImpl implements HsActivityService {
     private final ActivityService activityService;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
+    })
     public void createActivity(HsActivityDTO hsActivityDTO) throws HSException {
         hsActivityDTO.setCreatedAt(LocalDateTime.now());
         hsActivityDTO.setUpdatedAt(LocalDateTime.now());
@@ -46,6 +56,13 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#hsActivityDTO.id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#hsActivityDTO.id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
+    })
     public void updateActivity(HsActivityDTO hsActivityDTO) throws HSException {
         hsActivityRepository.findById(hsActivityDTO.getId())
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
@@ -54,21 +71,32 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_HISTORY_BY_ACTIVITY, key = "#id")
+    })
     public void deleteActivity(Long id) throws HSException {
         hsActivityRepository.deleteById(id);
     }
 
     @Override
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL)
     public List<HsActivityResponse> getAllActivities() throws HSException {
         return hsActivityRepository.findAllActivities();
     }
 
     @Override
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#id")
     public HsActivityResponse getActivityInfo(Long id) throws HSException {
         return hsActivityRepository.findActivityInfo(id).orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
     }
 
     @Override
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#id")
     public HsActivityDetails getActivityDetails(Long id) throws HSException {
         ActivityDetails activity = hsActivityRepository.findActivityDetailsById(id)
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
@@ -94,16 +122,25 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS)
     public List<HsActivityResponse> getAllMeetings() throws HSException {
         return hsActivityRepository.findAllMeetings(ActivityType.HSM);
     }
 
     @Override
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS)
     public List<HsActivityResponse> getAllTours() throws HSException {
         return hsActivityRepository.findAllTours(ActivityType.ST);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#activityId"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#activityId"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
+    })
     public void updateActivityStatus(Long activityId, ActivityStatus status) throws HSException {
         HsActivity activity = hsActivityRepository.findById(activityId)
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));

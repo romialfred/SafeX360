@@ -2,8 +2,12 @@ package com.hrms.service;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +42,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -51,6 +56,19 @@ public class AccountServiceImpl implements AccountService {
     private String fromEmail;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountByLogin", key = "#accountDTO.login", condition = "#accountDTO.login != null"),
+            @CacheEvict(cacheNames = "accountCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountActiveCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountAdminCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountEmpIds", allEntries = true),
+            @CacheEvict(cacheNames = "leaveApproversByDept", allEntries = true),
+            @CacheEvict(cacheNames = "salaryAdvanceApproversByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountByEmpId", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", allEntries = true)
+    })
     public void addAccount(AccountDTO accountDTO) throws Exception {
         if (accountRepository.findByLogin(accountDTO.getLogin()).isPresent())
             throw new HRMSException("LOGIN_ALREADY_EXISTS");
@@ -77,6 +95,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Cacheable(cacheNames = "accountById", key = "#id")
     public AccountDTO getAccount(Long id) throws HRMSException {
         AccountDTO dto = accountRepository.findById(id)
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"))
@@ -89,8 +108,21 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#accountDTO.id", condition = "#accountDTO.id != null"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountActiveCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountAdminCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountEmpIds", allEntries = true),
+            @CacheEvict(cacheNames = "leaveApproversByDept", allEntries = true),
+            @CacheEvict(cacheNames = "salaryAdvanceApproversByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountByEmpId", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
+    })
     public void updateAccount(AccountDTO accountDTO) throws Exception {
-        Account account = accountRepository.findById(accountDTO.getId())
+        accountRepository.findById(accountDTO.getId())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
         Optional<Account> opt = accountRepository.findByLogin(accountDTO.getLogin());
         if (opt.isPresent() && !opt.get().getId().equals(accountDTO.getId()))
@@ -99,6 +131,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#accountDTO.id", condition = "#accountDTO.id != null"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
+    })
     public void updatePassword(AccountDTO accountDTO) throws Exception {
         // LOT 39 — Audit P0 : sécurisation du changement de mot de passe.
         //
@@ -158,6 +196,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", allEntries = true),
+            @CacheEvict(cacheNames = "accountByLogin", key = "#accountDTO.login", condition = "#accountDTO.login != null"),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", allEntries = true)
+    })
     public void resetPassword(AccountDTO accountDTO) throws Exception {
         Account account = accountRepository.findByEmailAndLogin(accountDTO.getEmail(), accountDTO.getLogin())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
@@ -177,41 +221,61 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Cacheable(cacheNames = "accountsAll")
     public List<AccountDetailsDTO> getAllAccounts() {
         return accountRepository.getAllAccounts();
     }
 
     @Override
+    @Cacheable(cacheNames = "accountByLogin", key = "#login")
     public AccountDTO getAccountByLogin(String login) throws HRMSException {
         return accountRepository.findByLogin(login).orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @Cacheable(cacheNames = "accountCountsByCompany")
     public List<Object[]> getCountsByCompany() {
         return accountRepository.countAccountsByCompany();
     }
 
     @Override
+    @Cacheable(cacheNames = "accountActiveCountsByCompany")
     public List<Object[]> getActiveCountsByCompany() {
         return accountRepository.countActiveAccountsByCompany();
     }
 
     @Override
+    @Cacheable(cacheNames = "accountAdminCountsByCompany")
     public List<Object[]> getAdminCountsByCompany() {
         return accountRepository.countAdminAccountsByCompany();
     }
 
     @Override
+    @Cacheable(cacheNames = "accountEmpIds")
     public List<Long> getAllEmpIds() {
         return accountRepository.findAllEmpIds();
     }
 
     @Override
+    @Cacheable(cacheNames = "leaveApproversByDept", key = "#departmentId")
     public List<AccountNameDTO> getLeaveApprover(Long departmentId) {
         return ((List<AccountNameDTO>) accountRepository.findAccountNamesByDepartment(departmentId));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#accountDTO.id", condition = "#accountDTO.id != null"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountActiveCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountAdminCountsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountEmpIds", allEntries = true),
+            @CacheEvict(cacheNames = "leaveApproversByDept", allEntries = true),
+            @CacheEvict(cacheNames = "salaryAdvanceApproversByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "accountByEmpId", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
+    })
     public void sendUpdatedPassword(AccountDTO accountDTO) throws Exception {
         Account account = accountRepository.findById(accountDTO.getId())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
@@ -221,6 +285,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Cacheable(cacheNames = "accountByEmpId", key = "#empId")
     public AccountDTO getAccountByEmpId(Long empId) throws HRMSException {
         AccountDTO dto = accountRepository.findByEmployee_Id(empId)
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"))
@@ -232,16 +297,23 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Cacheable(cacheNames = "salaryAdvanceApproversByCompany", key = "#companyId")
     public List<AccountNameDTO> getSalaryAdvanceApprover(Long companyId) {
         return accountRepository.findAccountsByCompanyAndLAdvanceManagement(companyId);
     }
 
     @Override
+    @Cacheable(cacheNames = "accountPermissions", key = "#id")
     public AccountDetailsDTO getAccountPermissions(Long id) throws HRMSException {
         return accountRepository.getAccountPermission(id).orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#accountDTO.id", condition = "#accountDTO.id != null"),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
+    })
     public void updateAccountPermissions(AccountDTO accountDTO) throws HRMSException {
         Account account = accountRepository.findById(accountDTO.getId())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));

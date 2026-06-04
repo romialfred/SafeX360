@@ -13,5 +13,6 @@ public class TeamResponse {
     private Long id;
     private String teamName;
     private String departmentName;
+    private Long companyId;
     private List<TeamMemberDTO> members;
 }

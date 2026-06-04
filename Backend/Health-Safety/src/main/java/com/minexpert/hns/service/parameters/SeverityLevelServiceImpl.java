@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,12 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     private SeverityLevelRepository severityLevelRepository;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "severityLevelById", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public Long addSeverityLevel(SeverityLevelDTO severityLevelDTO) throws HSException {
 
         Optional<SeverityLevel> optional = severityLevelRepository
@@ -38,6 +47,12 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "severityLevelById", key = "#severityLevelDTO.id", condition = "#severityLevelDTO.id != null"),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public void updateSeverityLevel(SeverityLevelDTO severityLevelDTO) throws HSException {
         SeverityLevel existingSeverityLevel = severityLevelRepository.findById(severityLevelDTO.getId())
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND"));
@@ -67,12 +82,19 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Cacheable(cacheNames = "severityLevelById", key = "#id")
     public SeverityLevelDTO getSeverityLevelById(Long id) throws HSException {
         return severityLevelRepository.findById(id).map(SeverityLevel::toDTO)
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND"));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "severityLevelById", key = "#id"),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public void activateSeverityLevel(Long id) throws HSException {
         SeverityLevel existingSeverityLevel = severityLevelRepository.findById(id)
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND"));
@@ -82,6 +104,12 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "severityLevelById", key = "#id"),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public void deactivateSeverityLevel(Long id) throws HSException {
         SeverityLevel existingSeverityLevel = severityLevelRepository.findById(id)
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND"));
@@ -91,17 +119,25 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Cacheable(cacheNames = "severityLevelsAll")
     public List<SeverityLevelDTO> getAllSeverityLevels() throws HSException {
         return ((List<SeverityLevel>) severityLevelRepository.findAll()).stream().map(SeverityLevel::toDTO)
                 .toList();
     }
 
     @Override
+    @Cacheable(cacheNames = "severityLevelsActive")
     public List<SeverityLevelResponse> getAllActiveSeverityLevels() throws HSException {
         return severityLevelRepository.findAllActiveLevels();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "severityLevelById", key = "#request.id"),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public List<String> addExample(SeverityLevelDTO request) throws HSException {
         SeverityLevelDTO severityLevel = severityLevelRepository.findById(request.getId())
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND")).toDTO();
@@ -117,6 +153,12 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "severityLevelById", key = "#id"),
+            @CacheEvict(cacheNames = "severityLevelsAll", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsActive", allEntries = true),
+            @CacheEvict(cacheNames = "severityLevelsDistinct", allEntries = true)
+    })
     public void deleteExample(Long index, Long id) throws HSException {
         SeverityLevelDTO severityLevel = severityLevelRepository.findById(id)
                 .orElseThrow(() -> new HSException("SEVERITY_LEVEL_NOT_FOUND")).toDTO();
@@ -131,6 +173,7 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
+    @Cacheable(cacheNames = "severityLevelsDistinct")
     public List<SeverityLevelResponse> getUniqueLevelName() throws HSException {
         return severityLevelRepository.findDistinctLevelAndName();
     }

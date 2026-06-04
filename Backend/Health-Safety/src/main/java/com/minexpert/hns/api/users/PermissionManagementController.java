@@ -27,7 +27,8 @@ public class PermissionManagementController {
     }
 
     @PutMapping("/status/{id}")
-    public ResponseEntity<PermissionManagementDTO> updateStatus(@PathVariable Long id, @RequestParam Status status) throws HSException {
+    public ResponseEntity<PermissionManagementDTO> updateStatus(@PathVariable Long id, @RequestParam Status status)
+            throws HSException {
         return ResponseEntity.ok(permissionService.updateStatus(id, status));
     }
 

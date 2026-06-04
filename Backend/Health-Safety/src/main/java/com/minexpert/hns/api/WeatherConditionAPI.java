@@ -20,7 +20,6 @@ import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.parameters.WeatherConditionDTO;
 import com.minexpert.hns.dto.response.WeatherConditionResponse;
 import com.minexpert.hns.exception.HSException;
-
 import com.minexpert.hns.service.parameters.WeatherConditionService;
 
 @RestController
@@ -33,49 +32,57 @@ public class WeatherConditionAPI {
     private WeatherConditionService weatherConditionService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createWeatherCondition(@RequestBody WeatherConditionDTO weatherConditionDTO)
+    public ResponseEntity<Long> createWeatherCondition(@RequestParam Long companyId,
+            @RequestBody WeatherConditionDTO weatherConditionDTO)
             throws HSException {
-        return new ResponseEntity<>(weatherConditionService.addWeatherCondition(weatherConditionDTO),
+        return new ResponseEntity<>(weatherConditionService.addWeatherCondition(companyId, weatherConditionDTO),
                 HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateWeatherCondition(@RequestBody WeatherConditionDTO weatherConditionDTO)
+    public ResponseEntity<ResponseDTO> updateWeatherCondition(@RequestParam Long companyId,
+            @RequestBody WeatherConditionDTO weatherConditionDTO)
             throws HSException {
-        weatherConditionService.updateWeatherCondition(weatherConditionDTO);
+        weatherConditionService.updateWeatherCondition(companyId, weatherConditionDTO);
         return new ResponseEntity<>(new ResponseDTO("Weather Condition Updated Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<WeatherConditionDTO> getWeatherConditionById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(weatherConditionService.getWeatherConditionById(id), HttpStatus.OK);
+    public ResponseEntity<WeatherConditionDTO> getWeatherConditionById(
+            @RequestParam(required = false) Long companyId, @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(weatherConditionService.getWeatherConditionById(companyId, id), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateWeatherCondition(@PathVariable Long id) throws HSException {
-        weatherConditionService.activateWeatherCondition(id);
+    public ResponseEntity<ResponseDTO> activateWeatherCondition(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        weatherConditionService.activateWeatherCondition(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Weather Condition Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateWeatherCondition(@PathVariable Long id) throws HSException {
-        weatherConditionService.deactivateWeatherCondition(id);
+    public ResponseEntity<ResponseDTO> deactivateWeatherCondition(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        weatherConditionService.deactivateWeatherCondition(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Weather Condition Deactivated Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<WeatherConditionResponse>> getAllWeatherConditions() throws HSException {
-        return new ResponseEntity<>(weatherConditionService.getAllWeatherConditions(), HttpStatus.OK);
+    public ResponseEntity<List<WeatherConditionResponse>> getAllWeatherConditions(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(weatherConditionService.getAllWeatherConditions(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<WeatherConditionResponse>> getAllActiveWeatherConditions() throws HSException {
-        return new ResponseEntity<>(weatherConditionService.getAllActiveWeatherConditions(), HttpStatus.OK);
+    public ResponseEntity<List<WeatherConditionResponse>> getAllActiveWeatherConditions(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(weatherConditionService.getAllActiveWeatherConditions(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getByIds")
-    public ResponseEntity<List<WeatherConditionResponse>> getWeatherConditionsByIds(@RequestParam List<Long> ids)
+    public ResponseEntity<List<WeatherConditionResponse>> getWeatherConditionsByIds(
+            @RequestParam(required = false) Long companyId, @RequestParam List<Long> ids)
             throws HSException {
-        return new ResponseEntity<>(weatherConditionService.getWeatherConditionsByIds(ids), HttpStatus.OK);
+        return new ResponseEntity<>(weatherConditionService.getWeatherConditionsByIds(companyId, ids), HttpStatus.OK);
     }
 }

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.dto.parameters.BodyPartDTO;
 import com.minexpert.hns.enums.Status;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,12 +27,14 @@ public class BodyPart {
     @Lob
     private byte[] file;
     private Status status;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public BodyPartDTO toDTO() {
         return new BodyPartDTO(this.id, this.name,
                 file != null ? java.util.Base64.getEncoder().encodeToString(file) : null, this.status,
-                this.createdAt, this.updatedAt);
+                this.companyId, this.createdAt, this.updatedAt);
     }
 }

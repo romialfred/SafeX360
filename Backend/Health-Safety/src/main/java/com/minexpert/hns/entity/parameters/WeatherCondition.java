@@ -23,6 +23,7 @@ public class WeatherCondition {
     private Long id;
     private String name;
     private String description;
+    private Long companyId;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -32,7 +33,8 @@ public class WeatherCondition {
     }
 
     public WeatherConditionDTO toDTO() {
-        return new WeatherConditionDTO(this.id, this.name, this.description, this.status, this.createdAt,
+        return new WeatherConditionDTO(this.id, this.name, this.description, this.companyId, this.status,
+                this.createdAt,
                 this.updatedAt);
     }
 }

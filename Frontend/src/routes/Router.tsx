@@ -339,13 +339,13 @@ const router = createBrowserRouter([
             { path: "ai-assistant", element: <AIAssistant /> },
 
 
-            { path: "users-management", element: <UserManagementTabsPage /> },
+            { path: "users-management", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserManagementTabsPage /></DemoPermissionGuard> },
             {
-                path: 'users-management/create-user', element: <AddUserForm onBackToUsers={handleBackToUsers}
-                    onCreateUser={handleCreateUser} />,
+                path: 'users-management/create-user', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><AddUserForm onBackToUsers={handleBackToUsers}
+                    onCreateUser={handleCreateUser} /></DemoPermissionGuard>,
             },
-            { path: 'users-management/edit/:id', element: <EditUserPermission />, },
-            { path: 'users-management/usersManagement-details/:id', element: <UserDetails />, },
+            { path: 'users-management/edit/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><EditUserPermission /></DemoPermissionGuard>, },
+            { path: 'users-management/usersManagement-details/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserDetails /></DemoPermissionGuard>, },
 
             { path: "process-docs", element: <WorkProcess /> },
 

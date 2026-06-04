@@ -3,10 +3,9 @@ package com.minexpert.hns.service.planning;
 import com.minexpert.hns.dto.planning.ActivityDTO;
 import com.minexpert.hns.entity.planning.ActivityStatus;
 import com.minexpert.hns.enums.ActivityCategory;
+import com.minexpert.hns.exception.HSException;
 
 import java.util.List;
-
-import com.minexpert.hns.exception.HSException;
 
 public interface ActivityService {
     ActivityDTO createActivity(ActivityDTO dto) throws HSException;

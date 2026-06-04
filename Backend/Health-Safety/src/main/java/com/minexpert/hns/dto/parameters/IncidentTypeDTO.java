@@ -18,6 +18,7 @@ public class IncidentTypeDTO {
     private Long id;
     private String name;
     private String description;
+    private Long companyId;
     private Status status;
     private Long incidentCategoryId;
     private Long severityLevelId;
@@ -25,7 +26,8 @@ public class IncidentTypeDTO {
     private LocalDateTime updatedAt;
 
     public IncidentType toEntity() {
-        return new IncidentType(id, name, description, status, new IncidentCategory(incidentCategoryId),
+        return new IncidentType(id, name, description, companyId, status,
+                new IncidentCategory(incidentCategoryId),
                 new SeverityLevel(severityLevelId), createdAt,
                 updatedAt);
     }

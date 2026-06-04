@@ -1,26 +1,41 @@
 package com.minexpert.hns.service.documents;
 
-import com.minexpert.hns.dto.documents.DocumentVersionDTO;
-import com.minexpert.hns.dto.documents.DocumentVersionDetails;
-import com.minexpert.hns.dto.MediaDTO;
-import com.minexpert.hns.entity.documents.DocumentVersion;
-import com.minexpert.hns.entity.Media;
-import com.minexpert.hns.entity.documents.Document;
-import com.minexpert.hns.exception.HSException;
-import com.minexpert.hns.repository.documents.DocumentVersionRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.minexpert.hns.dto.MediaDTO;
+import com.minexpert.hns.dto.documents.DocumentVersionDTO;
+import com.minexpert.hns.dto.documents.DocumentVersionDetails;
+import com.minexpert.hns.entity.Media;
+import com.minexpert.hns.entity.documents.Document;
+import com.minexpert.hns.entity.documents.DocumentVersion;
+import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.repository.documents.DocumentVersionRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class DocumentVersionServiceImpl implements DocumentVersionService {
+
+    public static final String CACHE_DOCUMENT_VERSION_BY_ID = "documentVersionById";
+    public static final String CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT = "documentVersionsByDocument";
+    public static final String CACHE_DOCUMENT_VERSION_MEDIA_BY_ID = "documentVersionMediaById";
+    public static final String CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT = "documentLatestMediaByDocument";
+
     private final DocumentVersionRepository versionRepository;
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null"),
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null")
+    })
     public DocumentVersionDTO create(DocumentVersionDTO dto) throws HSException {
 
         DocumentVersion version = dto.toEntity();
@@ -31,6 +46,10 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     @Override
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#documentId"),
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#documentId")
+    })
     public DocumentVersionDTO create(Long documentId, String description, MediaDTO media) throws HSException {
 
         DocumentVersion version = new DocumentVersion();
@@ -43,6 +62,12 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSION_BY_ID, key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSION_MEDIA_BY_ID, key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null"),
+            @CacheEvict(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null")
+    })
     public DocumentVersionDTO update(DocumentVersionDTO dto) throws HSException {
         DocumentVersion existing = versionRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));
@@ -54,6 +79,7 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CACHE_DOCUMENT_VERSION_BY_ID, key = "#id")
     public DocumentVersionDTO getById(Long id) throws HSException {
         DocumentVersion version = versionRepository.findById(id)
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));
@@ -61,11 +87,13 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#documentId")
     public List<DocumentVersionDetails> getByDocumentId(Long documentId) throws HSException {
         return versionRepository.findByDocumentId(documentId);
     }
 
     @Override
+    @Cacheable(cacheNames = CACHE_DOCUMENT_VERSION_MEDIA_BY_ID, key = "#id")
     public MediaDTO getMediaByVersionId(Long id) throws HSException {
         DocumentVersion version = versionRepository.findById(id)
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));
@@ -74,6 +102,7 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#documentId")
     public MediaDTO getLatestMediaByDocumentId(Long documentId) throws HSException {
         DocumentVersion version = versionRepository.findFirstByDocumentIdOrderByCreatedAtDesc(documentId)
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));

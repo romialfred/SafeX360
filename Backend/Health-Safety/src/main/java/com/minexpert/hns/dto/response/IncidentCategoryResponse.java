@@ -4,4 +4,6 @@ public interface IncidentCategoryResponse {
     Long getId();
 
     String getName();
+
+    Long getCompanyId();
 }

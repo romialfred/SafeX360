@@ -9,13 +9,13 @@ import com.minexpert.hns.exception.HSException;
 
 public interface InvestigationService {
 
-    public Long addInvestigation(InvestActionDTO request) throws HSException;
+    public Long addInvestigation(Long companyId, InvestActionDTO request) throws HSException;
 
-    public void updateInvestigation(InvestActionDTO request) throws HSException;
+    public void updateInvestigation(Long companyId, InvestActionDTO request) throws HSException;
 
-    public InvestResponse getInvestigationByIncidentId(Long incidentId) throws HSException;
+    public InvestResponse getInvestigationByIncidentId(Long companyId, Long incidentId) throws HSException;
 
-    public List<InvestigationSummary> getAllInvestigations() throws HSException;
+    public List<InvestigationSummary> getAllInvestigations(Long companyId) throws HSException;
 
-    public InvestResponse getInvestigationById(Long id) throws HSException;
+    public InvestResponse getInvestigationById(Long companyId, Long id) throws HSException;
 }

@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.clients.HrmsClient;
@@ -30,6 +33,10 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class InvestigationServiceImpl implements InvestigationService {
 
+    public static final String CACHE_INVESTIGATION_BY_INCIDENT = "investigationByIncident";
+    public static final String CACHE_INVESTIGATION_BY_ID = "investigationById";
+    public static final String CACHE_INVESTIGATIONS_ALL = "investigationsAll";
+
     private final InvestigationRepository investigationRepository;
 
     private final CorrectiveActionService correctiveActionService;
@@ -37,22 +44,39 @@ public class InvestigationServiceImpl implements InvestigationService {
     private final HrmsClient hrmsClient;
 
     @Override
-    public Long addInvestigation(InvestActionDTO request) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #request.investigation.incidentId) : 'ALL-' + #request.investigation.incidentId"),
+            // @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATIONS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = IncidentServiceImpl.CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
+    })
+    public Long addInvestigation(Long companyId, InvestActionDTO request) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         InvestigationDTO investigationDTO = request.getInvestigation();
-        Optional<Investigation> optional = investigationRepository.findByIncident_Id(investigationDTO.getIncidentId());
+        if (investigationDTO == null) {
+            throw new HSException("INVESTIGATION_DETAILS_REQUIRED");
+        }
+        investigationDTO.setCompanyId(companyId);
+        Optional<Investigation> optional = investigationRepository
+                .findByIncidentIdWithCompanyContext(investigationDTO.getIncidentId(), companyId);
 
         if (optional.isPresent()) {
             throw new HSException("INVESTIGATION_ALREADY_EXISTS");
         }
 
-        request.getCorrectiveActions().forEach(action -> {
-            try {
-                action.setIncidentId(investigationDTO.getIncidentId());
-                correctiveActionService.addCorrectiveAction(action);
-            } catch (HSException e) {
+        if (request.getCorrectiveActions() != null) {
+            request.getCorrectiveActions().forEach(action -> {
+                try {
+                    action.setIncidentId(investigationDTO.getIncidentId());
+                    action.setCompanyId(companyId);
+                    correctiveActionService.addCorrectiveAction(companyId, action);
+                } catch (HSException e) {
 
-            }
-        });
+                }
+            });
+        }
         investigationDTO.setCreatedAt(LocalDateTime.now());
         investigationDTO.setUpdatedAt(LocalDateTime.now());
         investigationDTO.setStatus(InvestigationStatus.PENDING);
@@ -63,8 +87,10 @@ public class InvestigationServiceImpl implements InvestigationService {
     }
 
     @Override
-    public InvestResponse getInvestigationByIncidentId(Long incidentId) throws HSException {
-        Investigation investigation = investigationRepository.findByIncident_Id(incidentId)
+    @Cacheable(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #incidentId) : 'ALL-' + #incidentId")
+    public InvestResponse getInvestigationByIncidentId(Long companyId, Long incidentId) throws HSException {
+        Investigation investigation = investigationRepository
+                .findByIncidentIdWithCompanyContext(incidentId, companyId)
                 .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
         InvestResponse investResponse = investigation.toResponse();
         investResponse.setEvidence(mediaService.getAllMediaByArray(investigation.getEvidence()));
@@ -87,8 +113,9 @@ public class InvestigationServiceImpl implements InvestigationService {
     }
 
     @Override
-    public InvestResponse getInvestigationById(Long id) throws HSException {
-        Investigation investigation = investigationRepository.findById(id)
+    @Cacheable(cacheNames = CACHE_INVESTIGATION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public InvestResponse getInvestigationById(Long companyId, Long id) throws HSException {
+        Investigation investigation = investigationRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
         InvestResponse investResponse = investigation.toResponse();
         investResponse.setEvidence(mediaService.getAllMediaByArray(investigation.getEvidence()));
@@ -111,21 +138,38 @@ public class InvestigationServiceImpl implements InvestigationService {
     }
 
     @Override
-    public void updateInvestigation(InvestActionDTO request) throws HSException {
-        Investigation investigation = investigationRepository.findById(request.getInvestigation().getId())
-                .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #request.investigation.incidentId) : 'ALL-' + #request.investigation.incidentId"),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #request.investigation.id) : 'ALL-' + #request.investigation.id"),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATIONS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = IncidentServiceImpl.CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
+    })
+    public void updateInvestigation(Long companyId, InvestActionDTO request) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         InvestigationDTO dto = request.getInvestigation();
-        request.getCorrectiveActions().forEach(action -> {
-            try {
-                action.setIncidentId(dto.getIncidentId());
-                if (action.getId() != null) {
-                    correctiveActionService.updateCorrectiveAction(action);
-                } else {
-                    correctiveActionService.addCorrectiveAction(action);
+        if (dto == null) {
+            throw new HSException("INVESTIGATION_DETAILS_REQUIRED");
+        }
+        dto.setCompanyId(companyId);
+        Investigation investigation = investigationRepository
+                .findByIdWithCompanyContext(dto.getId(), companyId)
+                .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
+        if (request.getCorrectiveActions() != null) {
+            request.getCorrectiveActions().forEach(action -> {
+                try {
+                    action.setIncidentId(dto.getIncidentId());
+                    action.setCompanyId(companyId);
+                    if (action.getId() != null) {
+                        correctiveActionService.updateCorrectiveAction(companyId, action);
+                    } else {
+                        correctiveActionService.addCorrectiveAction(companyId, action);
+                    }
+                } catch (HSException e) {
                 }
-            } catch (HSException e) {
-            }
-        });
+            });
+        }
 
         dto.setUpdatedAt(LocalDateTime.now());
         Investigation entity = dto.toEntity();
@@ -134,8 +178,9 @@ public class InvestigationServiceImpl implements InvestigationService {
     }
 
     @Override
-    public List<InvestigationSummary> getAllInvestigations() throws HSException {
-        return investigationRepository.findAllInvestigationSummaries();
+    @Cacheable(cacheNames = CACHE_INVESTIGATIONS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
+    public List<InvestigationSummary> getAllInvestigations(Long companyId) throws HSException {
+        return investigationRepository.findAllInvestigationSummaries(companyId);
     }
 
 }

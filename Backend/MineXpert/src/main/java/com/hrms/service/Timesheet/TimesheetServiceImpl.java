@@ -4,18 +4,19 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.hrms.DataInterface.TimesheetDetails;
 import com.hrms.dto.Status;
-import com.hrms.entity.Holiday;
 import com.hrms.entity.Timesheet.Team;
 import com.hrms.entity.Timesheet.Timesheet;
 import com.hrms.enums.Rotations;
 import com.hrms.enums.TimesheetStatus;
 import com.hrms.exception.HRMSException;
 import com.hrms.repository.HolidayRepository;
-import com.hrms.repository.Timesheet.ConstraintsRepository;
 import com.hrms.repository.Timesheet.PayrollScheduleRepository;
 import com.hrms.repository.Timesheet.TeamRepository;
 import com.hrms.repository.Timesheet.TimesheetRepository;
@@ -42,6 +43,17 @@ public class TimesheetServiceImpl implements TimesheetService {
     private PayrollScheduleRepository payrollScheduleRepository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "latestTimesheet", key = "#id"),
+            @CacheEvict(cacheNames = "timesheetsByTeam", key = "#id"),
+            @CacheEvict(cacheNames = "timesheetById", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsByDepartmentMonth", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsByCompanyMonth", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsByDepartment", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsByCompany", allEntries = true),
+            @CacheEvict(cacheNames = "approvedTimesheets", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsForApprover", allEntries = true)
+    })
     public void generateTimesheet(Long id) throws HRMSException {
         Team team = teamRepository.findById(id).orElseThrow(() -> new HRMSException("TEAM_NOT_FOUND"));
         if (team.getNextWeekStartDate() == null || team.getNextWeekStartDate().isAfter(LocalDate.now())) {
@@ -100,6 +112,7 @@ public class TimesheetServiceImpl implements TimesheetService {
     }
 
     @Override
+    @Cacheable(cacheNames = "latestTimesheet", key = "#teamId")
     public TimesheetDetails getLatestTimesheet(Long teamId) throws HRMSException {
         return timesheetRepository.getLatestTimesheet(teamId)
                 .orElseThrow(() -> new HRMSException("TIMESHEET_NOT_FOUND"));
@@ -107,16 +120,23 @@ public class TimesheetServiceImpl implements TimesheetService {
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsByTeam", key = "#teamId")
     public List<TimesheetDetails> getAllTimesheetDetails(Long teamId) throws HRMSException {
         return timesheetRepository.getAllTimesheetDetails(teamId);
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetById", key = "#id")
     public TimesheetDetails getTimesheet(Long id) throws HRMSException {
         return timesheetRepository.getTimesheet(id).orElseThrow(() -> new HRMSException("TIMESHEET_NOT_FOUND"));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "timesheetById", key = "#id"),
+            @CacheEvict(cacheNames = "approvedTimesheets", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsForApprover", allEntries = true)
+    })
     public void updateTimesheetStatus(Long id, TimesheetStatus status) throws HRMSException {
         Timesheet timesheet = timesheetRepository.findById(id)
                 .orElseThrow(() -> new HRMSException("TIMESHEET_NOT_FOUND"));
@@ -125,33 +145,39 @@ public class TimesheetServiceImpl implements TimesheetService {
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsByDepartmentMonth", key = "{#departmentId, #date}")
     public List<TimesheetDetails> getTimesheetDetailsByDepartmentAndMonth(Long departmentId, LocalDate date)
             throws HRMSException {
         return timesheetRepository.findByDepartmentIdAndMonth(departmentId, date);
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsByCompanyMonth", key = "{#companyId, #date}")
     public List<TimesheetDetails> getTimesheetDetailsByCompanyAndMonth(Long companyId, LocalDate date)
             throws HRMSException {
         return timesheetRepository.findByCompanyIdAndMonth(companyId, date);
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsByDepartment", key = "#departmentId")
     public Object getAllTimesheetsByDepartment(Long departmentId) {
         return timesheetRepository.findTimesheetsByDepartment(departmentId);
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsByCompany", key = "#companyId")
     public Object getAllTimesheetsByCompany(Long companyId) {
         return timesheetRepository.findTimesheetsByCompany(companyId);
     }
 
     @Override
+    @Cacheable(cacheNames = "approvedTimesheets")
     public List<TimesheetDetails> getApprovedTimesheets() {
         return timesheetRepository.findApprovedTimesheets();
     }
 
     @Override
+    @Cacheable(cacheNames = "timesheetsForApprover")
     public List<TimesheetDetails> getTimesheetsForApprover() throws HRMSException {
         List<TimesheetDetails> timesheets = timesheetRepository.findValidatedTimesheets();
         if (constraintsService.isFlagActive("VALIDATE_TIMESHEET_END_MONTH")) {
@@ -166,6 +192,11 @@ public class TimesheetServiceImpl implements TimesheetService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "timesheetById", allEntries = true),
+            @CacheEvict(cacheNames = "approvedTimesheets", allEntries = true),
+            @CacheEvict(cacheNames = "timesheetsForApprover", allEntries = true)
+    })
     public void payTimesheets(List<Long> timesheetIds) throws HRMSException {
         List<Timesheet> timesheets = (List<Timesheet>) timesheetRepository.findAllById(timesheetIds);
         if (timesheets.isEmpty()) {

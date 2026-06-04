@@ -1,5 +1,7 @@
 package com.minexpert.hns.dto.response;
 
+import com.minexpert.hns.enums.Status;
+
 public interface WeatherConditionResponse {
     Long getId();
 
@@ -7,5 +9,7 @@ public interface WeatherConditionResponse {
 
     String getDescription();
 
-    String getStatus();
+    Long getCompanyId();
+
+    Status getStatus();
 }

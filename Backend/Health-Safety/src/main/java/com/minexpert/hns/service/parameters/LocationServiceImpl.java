@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,37 +25,62 @@ public class LocationServiceImpl implements LocationService {
     @Autowired
     private LocationRepository locationRepository;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
     @Override
-    public Long addLocation(LocationDTO locationDTO) throws HSException {
-        Optional<Location> optional1 = locationRepository.findByNameIgnoreCase(locationDTO.getName());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "locationsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addLocation(Long companyId, LocationDTO locationDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<Location> optional1 = locationRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                locationDTO.getName());
         if (optional1.isPresent()) {
             throw new HSException("LOCATION_ALREADY_EXISTS");
         }
-        Optional<Location> optional = locationRepository.findByLongitudeAndLatitude(locationDTO.getLongitude(),
+        Optional<Location> optional = locationRepository.findByCompanyIdAndLongitudeAndLatitude(companyId,
+                locationDTO.getLongitude(),
                 locationDTO.getLatitude());
 
         if (optional.isPresent()) {
             throw new HSException("LOCATION_ALREADY_EXISTS");
         }
         locationDTO.setStatus(Status.ACTIVE);
+        locationDTO.setCompanyId(companyId);
         locationDTO.setCreatedAt(LocalDateTime.now());
         locationDTO.setUpdatedAt(LocalDateTime.now());
         return locationRepository.save(locationDTO.toEntity()).getId();
     }
 
     @Override
-    public void updateLocation(LocationDTO locationDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "locationById", key = "#companyId != null ? (#companyId + '-' + #locationDTO.id) : 'ALL-' + #locationDTO.id", condition = "#locationDTO.id != null"),
+            @CacheEvict(cacheNames = "locationsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateLocation(Long companyId, LocationDTO locationDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(locationDTO.getId())
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
+        if (!companyId.equals(existingLocation.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
         if (!existingLocation.getName().equalsIgnoreCase(locationDTO.getName())) {
-            Optional<Location> optional1 = locationRepository.findByNameIgnoreCase(locationDTO.getName());
+            Optional<Location> optional1 = locationRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                    locationDTO.getName());
             if (optional1.isPresent()) {
                 throw new HSException("LOCATION_ALREADY_EXISTS");
             }
         }
         if (!existingLocation.getLongitude().equals(locationDTO.getLongitude())
                 || !existingLocation.getLatitude().equals(locationDTO.getLatitude())) {
-            Optional<Location> optional = locationRepository.findByLongitudeAndLatitude(locationDTO.getLongitude(),
+            Optional<Location> optional = locationRepository.findByCompanyIdAndLongitudeAndLatitude(companyId,
+                    locationDTO.getLongitude(),
                     locationDTO.getLatitude());
 
             if (optional.isPresent()) {
@@ -68,43 +96,73 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public void deleteLocation(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteLocation'");
-    }
-
-    @Override
-    public LocationDTO getLocationById(Long id) throws HSException {
-        return locationRepository.findById(id).map(Location::toDTO)
-                .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
-    }
-
-    @Override
-    public void activateLocation(Long id) throws HSException {
+    public void deleteLocation(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(id)
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
+        if (!companyId.equals(existingLocation.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
+        locationRepository.delete(existingLocation);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "locationById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public LocationDTO getLocationById(Long companyId, Long id) throws HSException {
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(location.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
+        return location.toDTO();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "locationById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "locationsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateLocation(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Location existingLocation = locationRepository.findById(id)
+                .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
+        if (!companyId.equals(existingLocation.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
         existingLocation.setStatus(Status.ACTIVE);
         existingLocation.setUpdatedAt(LocalDateTime.now());
         locationRepository.save(existingLocation);
     }
 
     @Override
-    public void deactivateLocation(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "locationById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "locationsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateLocation(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(id)
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
+        if (!companyId.equals(existingLocation.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
         existingLocation.setStatus(Status.INACTIVE);
         existingLocation.setUpdatedAt(LocalDateTime.now());
         locationRepository.save(existingLocation);
     }
 
     @Override
-    public List<LocationResponse> getAllLocations() throws HSException {
-        return locationRepository.findAllWithName();
+    @Cacheable(cacheNames = "locationsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<LocationResponse> getAllLocations(Long companyId) throws HSException {
+        return locationRepository.findAllWithName(companyId);
     }
 
     @Override
-    public List<LocationResponse> getAllActiveLocations() throws HSException {
-        return locationRepository.findAllActiveLocations();
+    @Cacheable(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<LocationResponse> getAllActiveLocations(Long companyId) throws HSException {
+        return locationRepository.findAllActiveLocations(companyId, Status.ACTIVE);
     }
 
 }

@@ -16,12 +16,13 @@ public class WorkAreaDTO {
     private Long id;
     private String name;
     private Long departmentId;
+    private Long companyId;
     private String departmentName;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public WorkArea toEntity() {
-        return new WorkArea(id, name, departmentId, status, createdAt, updatedAt);
+        return new WorkArea(id, name, departmentId, companyId, status, createdAt, updatedAt);
     }
 }

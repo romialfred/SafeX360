@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.minexpert.hns.dto.parameters.LocationDTO;
 import com.minexpert.hns.dto.response.LocationResponse;
@@ -29,41 +30,49 @@ public class LocationAPI {
     private LocationService locationService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createLocation(@RequestBody LocationDTO locationDTO) throws HSException {
-        return new ResponseEntity<>(locationService.addLocation(locationDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> createLocation(@RequestParam("companyId") Long companyId,
+            @RequestBody LocationDTO locationDTO) throws HSException {
+        return new ResponseEntity<>(locationService.addLocation(companyId, locationDTO), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateLocation(@RequestBody LocationDTO locationDTO) throws HSException {
-        locationService.updateLocation(locationDTO);
+    public ResponseEntity<String> updateLocation(@RequestParam("companyId") Long companyId,
+            @RequestBody LocationDTO locationDTO) throws HSException {
+        locationService.updateLocation(companyId, locationDTO);
         return new ResponseEntity<>("Location Updated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<LocationDTO> getLocationById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(locationService.getLocationById(id), HttpStatus.OK);
+    public ResponseEntity<LocationDTO> getLocationById(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(locationService.getLocationById(companyId, id), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<String> activateLocation(@PathVariable Long id) throws HSException {
-        locationService.activateLocation(id);
+    public ResponseEntity<String> activateLocation(@RequestParam("companyId") Long companyId,
+            @PathVariable Long id) throws HSException {
+        locationService.activateLocation(companyId, id);
         return new ResponseEntity<>("Location Activated Successfully", HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<String> deactivateLocation(@PathVariable Long id) throws HSException {
-        locationService.deactivateLocation(id);
+    public ResponseEntity<String> deactivateLocation(@RequestParam("companyId") Long companyId,
+            @PathVariable Long id) throws HSException {
+        locationService.deactivateLocation(companyId, id);
         return new ResponseEntity<>("Location Deactivated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<LocationResponse>> getAllLocations() throws HSException {
-        return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
+    public ResponseEntity<List<LocationResponse>> getAllLocations(
+            @RequestParam(name = "companyId", required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(locationService.getAllLocations(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<LocationResponse>> getAllActiveLocations() throws HSException {
-        return new ResponseEntity<>(locationService.getAllActiveLocations(), HttpStatus.OK);
+    public ResponseEntity<List<LocationResponse>> getAllActiveLocations(
+            @RequestParam(name = "companyId", required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(locationService.getAllActiveLocations(companyId), HttpStatus.OK);
     }
 
 }

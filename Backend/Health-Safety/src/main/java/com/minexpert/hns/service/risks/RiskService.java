@@ -20,7 +20,9 @@ public interface RiskService {
 
     List<RiskDTO> getAllWithRiskLevel() throws HSException;
 
-    List<RiskDTO> search(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to, String q) throws HSException;
+    List<RiskDTO> search(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to, String q)
+            throws HSException;
 
-    RiskOverviewResponse getOverview(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to, String q) throws HSException;
+    RiskOverviewResponse getOverview(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to,
+            String q) throws HSException;
 }

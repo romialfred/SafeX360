@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.parameters.IncidentTypeDTO;
 import com.minexpert.hns.dto.response.CategorySeverityCount;
 import com.minexpert.hns.dto.response.IncidentTypeDetails;
@@ -31,56 +33,67 @@ public class IncidentTypeAPI {
     private IncidentTypeService incidentTypeService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createIncidentType(@RequestBody IncidentTypeDTO incidentTypeDTO) throws HSException {
-        return new ResponseEntity<>(incidentTypeService.addIncidentType(incidentTypeDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> createIncidentType(@RequestParam Long companyId,
+            @RequestBody IncidentTypeDTO incidentTypeDTO) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.addIncidentType(companyId, incidentTypeDTO),
+                HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateIncidentType(@RequestBody IncidentTypeDTO incidentTypeDTO) throws HSException {
-        incidentTypeService.updateIncidentType(incidentTypeDTO);
-        return new ResponseEntity<>("Incident Type Updated Successfully", HttpStatus.OK);
+    public ResponseEntity<ResponseDTO> updateIncidentType(@RequestParam Long companyId,
+            @RequestBody IncidentTypeDTO incidentTypeDTO) throws HSException {
+        incidentTypeService.updateIncidentType(companyId, incidentTypeDTO);
+        return new ResponseEntity<>(new ResponseDTO("Incident Type Updated Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<IncidentTypeDTO> getIncidentTypeById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(incidentTypeService.getIncidentTypeById(id), HttpStatus.OK);
+    public ResponseEntity<IncidentTypeDTO> getIncidentTypeById(@RequestParam(required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.getIncidentTypeById(companyId, id), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<String> activateIncidentType(@PathVariable Long id) throws HSException {
-        incidentTypeService.activateIncidentType(id);
-        return new ResponseEntity<>("Incident Type Activated Successfully", HttpStatus.OK);
+    public ResponseEntity<ResponseDTO> activateIncidentType(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        incidentTypeService.activateIncidentType(companyId, id);
+        return new ResponseEntity<>(new ResponseDTO("Incident Type Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<String> deactivateIncidentType(@PathVariable Long id) throws HSException {
-        incidentTypeService.deactivateIncidentType(id);
-        return new ResponseEntity<>("Incident Type Deactivated Successfully", HttpStatus.OK);
+    public ResponseEntity<ResponseDTO> deactivateIncidentType(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        incidentTypeService.deactivateIncidentType(companyId, id);
+        return new ResponseEntity<>(new ResponseDTO("Incident Type Deactivated Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<IncidentTypeDetails>> getAllIncidentTypes() throws HSException {
-        return new ResponseEntity<>(incidentTypeService.getAllIncidentTypes(), HttpStatus.OK);
+    public ResponseEntity<List<IncidentTypeDetails>> getAllIncidentTypes(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.getAllIncidentTypes(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<IncidentTypeDetails>> getAllActiveIncidentTypes() throws HSException {
-        return new ResponseEntity<>(incidentTypeService.getAllActiveIncidentTypes(), HttpStatus.OK);
+    public ResponseEntity<List<IncidentTypeDetails>> getAllActiveIncidentTypes(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.getAllActiveIncidentTypes(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/countBySeverityLevel")
-    public ResponseEntity<List<CategorySeverityCount>> countIncidentTypesBySeverityLevel() throws HSException {
-        return new ResponseEntity<>(incidentTypeService.countIncidentTypesBySeverityLevel(), HttpStatus.OK);
+    public ResponseEntity<List<CategorySeverityCount>> countIncidentTypesBySeverityLevel(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.countIncidentTypesBySeverityLevel(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/countByCategory")
-    public ResponseEntity<List<CategorySeverityCount>> countIncidentTypesByCategory() throws HSException {
-        return new ResponseEntity<>(incidentTypeService.countIncidentTypesByCategory(), HttpStatus.OK);
+    public ResponseEntity<List<CategorySeverityCount>> countIncidentTypesByCategory(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.countIncidentTypesByCategory(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/countByCategoryAndSeverityLevel")
-    public ResponseEntity<List<CategorySeverityCount>> countByCategoryAndSeverityLevel() throws HSException {
-        return new ResponseEntity<>(incidentTypeService.countByCategoryAndSeverityLevel(), HttpStatus.OK);
+    public ResponseEntity<List<CategorySeverityCount>> countByCategoryAndSeverityLevel(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(incidentTypeService.countByCategoryAndSeverityLevel(companyId), HttpStatus.OK);
     }
 
 }

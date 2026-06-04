@@ -12,4 +12,6 @@ public interface LocationResponse {
     Double getLatitude();
 
     Status getStatus();
+
+    Long getCompanyId();
 }

@@ -19,11 +19,12 @@ public class AuditAreasDTO {
     private Long owner;
     private String ownerName;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public AuditAreas toEntity() {
-        return new AuditAreas(this.id, this.name, this.type, this.owner, this.status, this.createdAt,
+        return new AuditAreas(this.id, this.name, this.type, this.owner, this.status, this.companyId, this.createdAt,
                 this.updatedAt);
     }
 }

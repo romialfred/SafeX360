@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.InvestActionDTO;
@@ -32,30 +33,38 @@ public class InvestigationAPI {
     private final InvestigationService investigationService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createInvestigation(@RequestBody InvestActionDTO request) throws HSException {
-        return new ResponseEntity<>(investigationService.addInvestigation(request), HttpStatus.CREATED);
+    public ResponseEntity<Long> createInvestigation(@RequestParam("companyId") Long companyId,
+            @RequestBody InvestActionDTO request) throws HSException {
+        return new ResponseEntity<>(investigationService.addInvestigation(companyId, request), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateInvestigation(@RequestBody InvestActionDTO request) throws HSException {
-        investigationService.updateInvestigation(request);
+    public ResponseEntity<ResponseDTO> updateInvestigation(@RequestParam("companyId") Long companyId,
+            @RequestBody InvestActionDTO request) throws HSException {
+        investigationService.updateInvestigation(companyId, request);
         return new ResponseEntity<>(new ResponseDTO("Investigation updated successfully."), HttpStatus.OK);
     }
 
     @GetMapping("/getByIncidentId/{incidentId}")
-    public ResponseEntity<InvestResponse> getInvestigationByIncidentId(@PathVariable Long incidentId)
+    public ResponseEntity<InvestResponse> getInvestigationByIncidentId(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long incidentId)
             throws HSException {
-        return new ResponseEntity<>(investigationService.getInvestigationByIncidentId(incidentId), HttpStatus.OK);
+        return new ResponseEntity<>(investigationService.getInvestigationByIncidentId(companyId, incidentId),
+                HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<InvestigationSummary>> getAllInvestigations() throws HSException {
-        return new ResponseEntity<>(investigationService.getAllInvestigations(), HttpStatus.OK);
+    public ResponseEntity<List<InvestigationSummary>> getAllInvestigations(
+            @RequestParam(name = "companyId", required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(investigationService.getAllInvestigations(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getById/{id}")
-    public ResponseEntity<InvestResponse> getInvestigationById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(investigationService.getInvestigationById(id), HttpStatus.OK);
+    public ResponseEntity<InvestResponse> getInvestigationById(
+            @RequestParam(name = "companyId", required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(investigationService.getInvestigationById(companyId, id), HttpStatus.OK);
     }
 
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -31,47 +32,55 @@ public class WorkProcessAPI {
     private final WorkProcessService workProcessService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> addWorkProcess(@RequestBody WorkProcessDTO workProcessDTO) throws HSException {
-        return new ResponseEntity<>(workProcessService.addWorkProcess(workProcessDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> addWorkProcess(@RequestParam Long companyId, @RequestBody WorkProcessDTO workProcessDTO)
+            throws HSException {
+        return new ResponseEntity<>(workProcessService.addWorkProcess(companyId, workProcessDTO), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateWorkProcess(@RequestBody WorkProcessDTO workProcessDTO)
+    public ResponseEntity<ResponseDTO> updateWorkProcess(@RequestParam Long companyId,
+            @RequestBody WorkProcessDTO workProcessDTO)
             throws HSException {
-        workProcessService.updateWorkProcess(workProcessDTO);
+        workProcessService.updateWorkProcess(companyId, workProcessDTO);
         return new ResponseEntity<>(new ResponseDTO("Work Process updated."), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteWorkProcess(@PathVariable Long id) throws HSException {
-        workProcessService.deleteWorkProcess(id);
+    public ResponseEntity<ResponseDTO> deleteWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        workProcessService.deleteWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process deleted."), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<WorkProcessDTO> getWorkProcessById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(workProcessService.getWorkProcessById(id), HttpStatus.OK);
+    public ResponseEntity<WorkProcessDTO> getWorkProcessById(@RequestParam(required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(workProcessService.getWorkProcessById(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<WorkProcessDTO>> getAllWorkProcess() throws HSException {
-        return new ResponseEntity<>(workProcessService.getAllWorkProcess(), HttpStatus.OK);
+    public ResponseEntity<List<WorkProcessDTO>> getAllWorkProcess(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(workProcessService.getAllWorkProcess(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<WorkProcessDTO>> getAllActiveWorkProcess() throws HSException {
-        return new ResponseEntity<>(workProcessService.getAllActiveWorkProcess(), HttpStatus.OK);
+    public ResponseEntity<List<WorkProcessDTO>> getAllActiveWorkProcess(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(workProcessService.getAllActiveWorkProcess(companyId), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateWorkProcess(@PathVariable Long id) throws HSException {
-        workProcessService.activateWorkProcess(id);
+    public ResponseEntity<ResponseDTO> activateWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        workProcessService.activateWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process activated."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateWorkProcess(@PathVariable Long id) throws HSException {
-        workProcessService.deactivateWorkProcess(id);
+    public ResponseEntity<ResponseDTO> deactivateWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        workProcessService.deactivateWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process deactivated."), HttpStatus.OK);
     }
 

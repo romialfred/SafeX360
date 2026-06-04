@@ -2,6 +2,7 @@ package com.minexpert.hns.service.risks;
 
 import com.minexpert.hns.dto.risks.RiskAnalysisDTO;
 import com.minexpert.hns.exception.HSException;
+
 import java.util.List;
 
 public interface RiskAnalysisService {

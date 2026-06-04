@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,16 +41,28 @@ public class NonConformityServiceImpl implements NonConformityService {
     private final HrmsClient hrmsClient;
 
     @Override
-    public Long addNonConformity(EventRequestDTO request) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
+    })
+    public Long addNonConformity(Long companyId, EventRequestDTO request) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         Long id = this.createNonConformity(request.getNonConformity());
-        request.getCorrectiveActions().forEach(action -> {
-            try {
-                action.setNonConformityId(id);
-                correctiveActionService.addCorrectiveAction(action);
-            } catch (HSException e) {
+        if (request.getCorrectiveActions() != null) {
+            request.getCorrectiveActions().forEach(action -> {
+                try {
+                    action.setNonConformityId(id);
+                    action.setCompanyId(companyId);
+                    correctiveActionService.addCorrectiveAction(companyId, action);
+                } catch (HSException e) {
 
-            }
-        });
+                }
+            });
+        }
         EventAnalysisDTO eventAnalysisDTO = request.getAnalysis();
         eventAnalysisDTO.setNonConformityId(id);
         eventAnalysisService.createEventAnalysis(eventAnalysisDTO);
@@ -56,6 +71,12 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
+    })
     public Long createNonConformity(NonConformityDTO nonConformityDTO) throws HSException {
         NonConformity nonConformity = nonConformityDTO.toEntity();
         com.minexpert.hns.enums.EventType eventType = nonConformityDTO.getType();
@@ -98,6 +119,7 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
+    @Cacheable(cacheNames = "nonConformityById", key = "#id")
     public NonConformityDTO getNonConformityById(Long id) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(id)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
@@ -108,6 +130,12 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "nonConformityById", key = "#nonConformityId"),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#nonConformityId")
+    })
     public void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityId)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
@@ -117,6 +145,7 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
+    @Cacheable(cacheNames = "nonConformityInfoAll")
     public List<NcInfo> getAllNcInfo() throws HSException {
         List<NcInfo> infos = nonConformityRepository.findAllNcInfo();
         List<Long> empIds = infos.stream()
@@ -134,12 +163,19 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
+    @Cacheable(cacheNames = "nonConformityInfoById", key = "#id")
     public NcInfo getNcInfoById(Long id) throws HSException {
         return nonConformityRepository.findNcInfoById(id)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "nonConformityById", key = "#nonConformityDTO.id", condition = "#nonConformityDTO.id != null"),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#nonConformityDTO.id")
+    })
     public void updateNonConformity(NonConformityDTO nonConformityDTO) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityDTO.getId())
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
@@ -151,13 +187,25 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
-    public void updateEvent(EventRequestDTO request) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#request.nonConformity.id", condition = "#request.nonConformity != null")
+    })
+    public void updateEvent(Long companyId, EventRequestDTO request) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         this.updateNonConformity(request.getNonConformity());
-        correctiveActionService.saveOrUpdateCorrectiveActions(request.getCorrectiveActions().stream().map((action) -> {
-
-            action.setNonConformityId(request.getNonConformity().getId());
-            return action;
-        }).toList());
+        if (request.getCorrectiveActions() != null && !request.getCorrectiveActions().isEmpty()) {
+            correctiveActionService.saveOrUpdateCorrectiveActions(companyId,
+                    request.getCorrectiveActions().stream().map(action -> {
+                        action.setNonConformityId(request.getNonConformity().getId());
+                        action.setCompanyId(companyId);
+                        return action;
+                    }).toList());
+        }
         eventAnalysisService.updateEventAnalysis(request.getAnalysis());
     }
 

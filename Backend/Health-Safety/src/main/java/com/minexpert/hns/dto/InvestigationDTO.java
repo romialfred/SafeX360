@@ -37,6 +37,7 @@ public class InvestigationDTO {
     private Integer progress;
     private InvestigationStatus status;
     private Long incidentId;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -45,6 +46,6 @@ public class InvestigationDTO {
                 humanCauses.toString(), humanAnalysis,
                 taskCauses.toString(), taskAnalysis, workingCauses.toString(), workingAnalysis,
                 organizationCauses.toString(), organizationAnalysis,
-                null, report, progress, status, new Incident(incidentId), createdAt, updatedAt);
+                null, report, progress, status, new Incident(incidentId), companyId, createdAt, updatedAt);
     }
 }

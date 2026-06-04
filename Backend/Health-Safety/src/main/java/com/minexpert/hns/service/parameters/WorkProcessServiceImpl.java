@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,13 +30,31 @@ public class WorkProcessServiceImpl implements WorkProcessService {
     private final WorkProcessRepository workProcessRepository;
     private final HrmsClient hrmsClient;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
+    private WorkProcess loadWorkProcess(Long companyId, Long id) throws HSException {
+        return workProcessRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
+    }
+
     @Override
-    public Long addWorkProcess(WorkProcessDTO workProcessDTO) throws HSException {
-        Optional<WorkProcess> existingWorkProcess = workProcessRepository.findByNameIgnoreCaseAndDepartmentId(
-                workProcessDTO.getName(), workProcessDTO.getDepartmentId());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addWorkProcess(Long companyId, WorkProcessDTO workProcessDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<WorkProcess> existingWorkProcess = workProcessRepository
+                .findByCompanyIdAndDepartmentIdAndNameIgnoreCase(companyId, workProcessDTO.getDepartmentId(),
+                        workProcessDTO.getName());
         if (existingWorkProcess.isPresent()) {
             throw new HSException("WORK_PROCESS_ALREADY_EXISTS");
         }
+        workProcessDTO.setCompanyId(companyId);
         workProcessDTO.setStatus(Status.ACTIVE);
         workProcessDTO.setCreatedAt(LocalDateTime.now());
         workProcessDTO.setUpdatedAt(LocalDateTime.now());
@@ -41,39 +62,52 @@ public class WorkProcessServiceImpl implements WorkProcessService {
     }
 
     @Override
-    public void updateWorkProcess(WorkProcessDTO workProcessDTO) throws HSException {
-        WorkProcess existingWorkProcess = workProcessRepository.findById(workProcessDTO.getId())
-                .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workProcessById", key = "#companyId != null && #workProcessDTO.id != null ? (#companyId + '-' + #workProcessDTO.id) : 'ALL-' + #workProcessDTO.id", condition = "#workProcessDTO.id != null"),
+            @CacheEvict(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateWorkProcess(Long companyId, WorkProcessDTO workProcessDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkProcess existingWorkProcess = loadWorkProcess(companyId, workProcessDTO.getId());
         if (!workProcessDTO.getName().equalsIgnoreCase(existingWorkProcess.getName()) ||
-                !workProcessDTO.getDepartmentId().equals(existingWorkProcess.getDepartmentId())) {
-            Optional<WorkProcess> opt = workProcessRepository.findByNameIgnoreCaseAndDepartmentId(
-                    workProcessDTO.getName(), workProcessDTO.getDepartmentId());
-            if (opt.isPresent()) {
+                !Objects.equals(workProcessDTO.getDepartmentId(), existingWorkProcess.getDepartmentId())) {
+            Optional<WorkProcess> opt = workProcessRepository
+                    .findByCompanyIdAndDepartmentIdAndNameIgnoreCase(companyId, workProcessDTO.getDepartmentId(),
+                            workProcessDTO.getName());
+            if (opt.isPresent() && !opt.get().getId().equals(existingWorkProcess.getId())) {
                 throw new HSException("WORK_PROCESS_ALREADY_EXISTS");
-            } else {
-                existingWorkProcess.setName(workProcessDTO.getName());
-                existingWorkProcess.setDepartmentId(workProcessDTO.getDepartmentId());
-                existingWorkProcess.setUpdatedAt(LocalDateTime.now());
-                workProcessRepository.save(existingWorkProcess);
             }
         }
+        existingWorkProcess.setName(workProcessDTO.getName());
+        existingWorkProcess.setDepartmentId(workProcessDTO.getDepartmentId());
+        existingWorkProcess.setCompanyId(companyId);
+        existingWorkProcess.setUpdatedAt(LocalDateTime.now());
+        workProcessRepository.save(existingWorkProcess);
     }
 
     @Override
-    public void deleteWorkProcess(Long id) throws HSException {
-        workProcessRepository.deleteById(id);
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workProcessById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteWorkProcess(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkProcess workProcess = loadWorkProcess(companyId, id);
+        workProcessRepository.delete(workProcess);
     }
 
     @Override
-    public WorkProcessDTO getWorkProcessById(Long id) throws HSException {
-        return workProcessRepository.findById(id)
-                .map(WorkProcess::toDTO)
-                .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
+    @Cacheable(cacheNames = "workProcessById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public WorkProcessDTO getWorkProcessById(Long companyId, Long id) throws HSException {
+        return loadWorkProcess(companyId, id).toDTO();
     }
 
     @Override
-    public List<WorkProcessDTO> getAllWorkProcess() throws HSException {
-        List<WorkProcessDTO> processs = ((List<WorkProcess>) workProcessRepository.findAll())
+    @Cacheable(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WorkProcessDTO> getAllWorkProcess(Long companyId) throws HSException {
+        List<WorkProcessDTO> processs = workProcessRepository.findAllWithCompany(companyId)
                 .stream()
                 .map(WorkProcess::toDTO)
                 .toList();
@@ -83,8 +117,9 @@ public class WorkProcessServiceImpl implements WorkProcessService {
     }
 
     @Override
-    public List<WorkProcessDTO> getAllActiveWorkProcess() throws HSException {
-        List<WorkProcessDTO> processs = ((List<WorkProcess>) workProcessRepository.findByStatus(Status.ACTIVE))
+    @Cacheable(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WorkProcessDTO> getAllActiveWorkProcess(Long companyId) throws HSException {
+        List<WorkProcessDTO> processs = workProcessRepository.findAllByStatus(companyId, Status.ACTIVE)
                 .stream()
                 .map(WorkProcess::toDTO)
                 .toList();
@@ -93,9 +128,14 @@ public class WorkProcessServiceImpl implements WorkProcessService {
     }
 
     @Override
-    public void activateWorkProcess(Long id) throws HSException {
-        WorkProcess workProcess = workProcessRepository.findById(id)
-                .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workProcessById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateWorkProcess(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkProcess workProcess = loadWorkProcess(companyId, id);
         if (workProcess.getStatus() == Status.ACTIVE) {
             throw new HSException("WORK_PROCESS_ALREADY_ACTIVE");
         }
@@ -105,9 +145,14 @@ public class WorkProcessServiceImpl implements WorkProcessService {
     }
 
     @Override
-    public void deactivateWorkProcess(Long id) throws HSException {
-        WorkProcess workProcess = workProcessRepository.findById(id)
-                .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workProcessById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workProcessesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateWorkProcess(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkProcess workProcess = loadWorkProcess(companyId, id);
         if (workProcess.getStatus() == Status.INACTIVE) {
             throw new HSException("WORK_PROCESS_ALREADY_INACTIVE");
         }
@@ -122,6 +167,10 @@ public class WorkProcessServiceImpl implements WorkProcessService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
+
+        if (deptIds.isEmpty()) {
+            return;
+        }
 
         List<DepartmentNames> deptNames = hrmsClient.getDepartmentNames(deptIds);
         Map<Long, String> deptIdToName = deptNames.stream()

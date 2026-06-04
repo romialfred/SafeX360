@@ -13,5 +13,6 @@ public class TeamRequest {
     private Long id;
     private Long departmentId;
     private String name;
+    private Long companyId;
     private List<TeamMemberDTO> members;
 }

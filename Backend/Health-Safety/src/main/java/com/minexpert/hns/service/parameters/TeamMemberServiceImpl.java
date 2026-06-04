@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +25,6 @@ import com.minexpert.hns.repository.parameters.TeamMemberRepository;
 
 @Service
 @Transactional
-
 public class TeamMemberServiceImpl implements TeamMemberService {
 
     @Autowired
@@ -31,22 +33,50 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Autowired
     private HrmsClient hrmsClient;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
     @Override
-    public Long addTeamMember(TeamMemberDTO teamMemberDTO) throws HSException {
-        Optional<TeamMember> opt = teamMemberRepository.findByEmployeeId(teamMemberDTO.getEmployeeId());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", key = "#companyId != null ? (#companyId + '-' + #teamMemberDTO.employeeId) : 'ALL-' + #teamMemberDTO.employeeId"),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", key = "#companyId != null ? (#companyId + '-' + #teamMemberDTO.employeeId) : 'ALL-' + #teamMemberDTO.employeeId")
+    })
+    public Long addTeamMember(Long companyId, TeamMemberDTO teamMemberDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<TeamMember> opt = teamMemberRepository.findByCompanyIdAndEmployeeId(companyId,
+                teamMemberDTO.getEmployeeId());
         if (opt.isPresent()) {
             throw new HSException("TEAM_MEMBER_ALREADY_EXISTS");
         }
         teamMemberDTO.setStatus(Status.ACTIVE);
+        teamMemberDTO.setCompanyId(companyId);
         teamMemberDTO.setCreatedAt(LocalDateTime.now());
         teamMemberDTO.setUpdatedAt(LocalDateTime.now());
         return teamMemberRepository.save(teamMemberDTO.toEntity()).getId();
     }
 
     @Override
-    public void updateTeamMember(TeamMemberDTO teamMemberDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMemberById", key = "#teamMemberDTO.id != null ? (#companyId != null ? (#companyId + '-' + #teamMemberDTO.id) : 'ALL-' + #teamMemberDTO.id) : null", condition = "#teamMemberDTO.id != null"),
+            @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", key = "#teamMemberDTO.employeeId != null ? (#companyId != null ? (#companyId + '-' + #teamMemberDTO.employeeId) : 'ALL-' + #teamMemberDTO.employeeId) : null", condition = "#teamMemberDTO.employeeId != null"),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", key = "#teamMemberDTO.employeeId != null ? (#companyId != null ? (#companyId + '-' + #teamMemberDTO.employeeId) : 'ALL-' + #teamMemberDTO.employeeId) : null", condition = "#teamMemberDTO.employeeId != null")
+    })
+    public void updateTeamMember(Long companyId, TeamMemberDTO teamMemberDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(teamMemberDTO.getId())
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
+        if (!companyId.equals(teamMember.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
         teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel().toString());
         teamMember.setRole(teamMemberDTO.getRole());
         teamMember.setUpdatedAt(LocalDateTime.now());
@@ -54,34 +84,66 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
-    public void updateOrAddMember(TeamMemberDTO teamMemberDTO) throws HSException {
-        Optional<TeamMember> opt = teamMemberRepository.findByEmployeeId(teamMemberDTO.getEmployeeId());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMemberById", allEntries = true),
+            @CacheEvict(cacheNames = "teamMembersAll", allEntries = true),
+            @CacheEvict(cacheNames = "teamMembersActive", allEntries = true),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
+    })
+    public void updateOrAddMember(Long companyId, TeamMemberDTO teamMemberDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<TeamMember> opt = teamMemberRepository.findByCompanyIdAndEmployeeId(companyId,
+                teamMemberDTO.getEmployeeId());
         if (opt.isPresent()) {
             TeamMember teamMember = opt.get();
+            if (!companyId.equals(teamMember.getCompanyId())) {
+                throw new HSException("TEAM_MEMBER_ALREADY_EXISTS");
+            }
             teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel().toString());
             teamMember.setRole(teamMemberDTO.getRole());
             teamMember.setUpdatedAt(LocalDateTime.now());
             teamMemberRepository.save(teamMember);
         } else {
-            addTeamMember(teamMemberDTO);
+            addTeamMember(companyId, teamMemberDTO);
         }
     }
 
     @Override
-    public void deleteTeamMember(Long id) {
-        teamMemberRepository.deleteById(id);
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMemberById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
+    })
+    public void deleteTeamMember(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        TeamMember teamMember = teamMemberRepository.findById(id)
+                .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
+        if (!companyId.equals(teamMember.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
+        teamMemberRepository.delete(teamMember);
     }
 
     @Override
-    public TeamMemberDTO getTeamMemberById(Long id) throws HSException {
+    @Cacheable(cacheNames = "teamMemberById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public TeamMemberDTO getTeamMemberById(Long companyId, Long id) throws HSException {
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(teamMember.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
         return teamMember.toDTO();
     }
 
     @Override
-    public List<TeamMemberDTO> getAllTeamMembers() throws HSException {
-        List<TeamMemberDTO> teamMembers = ((List<TeamMember>) teamMemberRepository.findAll()).stream()
+    @Cacheable(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<TeamMemberDTO> getAllTeamMembers(Long companyId) throws HSException {
+        List<TeamMemberDTO> teamMembers = teamMemberRepository.findAllByCompanyId(companyId).stream()
                 .map(TeamMember::toDTO).toList();
         List<Long> empIds = teamMembers.stream()
                 .map(TeamMemberDTO::getEmployeeId)
@@ -103,33 +165,59 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
-    public List<TeamMemberDTO> getAllActiveTeamMembers() throws HSException {
-        return teamMemberRepository.findByStatus(Status.ACTIVE).stream()
+    @Cacheable(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<TeamMemberDTO> getAllActiveTeamMembers(Long companyId) throws HSException {
+        return teamMemberRepository.findAllByStatus(companyId, Status.ACTIVE).stream()
                 .map(TeamMember::toDTO)
                 .toList();
     }
 
     @Override
-    public void activateTeamMember(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMemberById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
+    })
+    public void activateTeamMember(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
+        if (!companyId.equals(teamMember.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
         teamMember.setStatus(Status.ACTIVE);
         teamMember.setUpdatedAt(LocalDateTime.now());
         teamMemberRepository.save(teamMember);
     }
 
     @Override
-    public void deactivateTeamMember(Long id) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMemberById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "teamMemberByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
+    })
+    public void deactivateTeamMember(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
+        if (!companyId.equals(teamMember.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
         teamMember.setStatus(Status.INACTIVE);
         teamMember.setUpdatedAt(LocalDateTime.now());
         teamMemberRepository.save(teamMember);
     }
 
     @Override
-    public List<TeamMemberDTO> getTeamMemberByTeam(Long teamId) throws HSException {
-        List<TeamMemberDTO> teamMembers = ((List<TeamMember>) teamMemberRepository.findByTeam_Id(teamId)).stream()
+    @Cacheable(cacheNames = "teamMembersByTeam", key = "#companyId != null ? (#companyId + '-' + #teamId) : 'ALL-' + #teamId")
+    public List<TeamMemberDTO> getTeamMemberByTeam(Long companyId, Long teamId) throws HSException {
+        List<TeamMemberDTO> teamMembers = teamMemberRepository.findAllByTeamId(companyId, teamId).stream()
                 .map(TeamMember::toDTO).toList();
         List<Long> empIds = teamMembers.stream()
                 .map(TeamMemberDTO::getEmployeeId)
@@ -150,8 +238,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
-    public TeamMemberDTO getTeamMemberByEmployeeId(Long employeeId) throws HSException {
-        TeamMember teamMember = teamMemberRepository.findByEmployeeId(employeeId)
+    @Cacheable(cacheNames = "teamMemberByEmployee", key = "#companyId != null ? (#companyId + '-' + #employeeId) : 'ALL-' + #employeeId")
+    public TeamMemberDTO getTeamMemberByEmployeeId(Long companyId, Long employeeId) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        TeamMember teamMember = teamMemberRepository.findByCompanyIdAndEmployeeId(companyId, employeeId)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
         TeamMemberDTO teamMemberDTO = teamMember.toDTO();
 
@@ -164,8 +254,11 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
-    public TeamResponse getActiveTeamDetailsByEmployeeId(Long employeeId) throws HSException {
-        TeamMember activeMember = teamMemberRepository.findByEmployeeIdAndStatus(employeeId, Status.ACTIVE)
+    @Cacheable(cacheNames = "teamResponseByEmployee", key = "#companyId != null ? (#companyId + '-' + #employeeId) : 'ALL-' + #employeeId")
+    public TeamResponse getActiveTeamDetailsByEmployeeId(Long companyId, Long employeeId) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        TeamMember activeMember = teamMemberRepository.findByCompanyIdAndEmployeeIdAndStatus(companyId, employeeId,
+                Status.ACTIVE)
                 .orElseThrow(() -> new HSException("ACTIVE_TEAM_MEMBER_NOT_FOUND"));
 
         Long teamId = activeMember.getTeam() != null ? activeMember.getTeam().getId() : null;
@@ -182,9 +275,9 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             }
         }
 
-        List<TeamMemberDTO> members = getTeamMemberByTeam(teamId);
+        List<TeamMemberDTO> members = getTeamMemberByTeam(companyId, teamId);
 
-        return new TeamResponse(teamId, activeMember.getTeam().getName(), departmentName, members);
+        return new TeamResponse(teamId, activeMember.getTeam().getName(), departmentName, companyId, members);
     }
 
 }

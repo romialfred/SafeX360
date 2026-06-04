@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.hrms.dto.Timesheet.WorkHourCodeDTO;
@@ -19,6 +21,7 @@ public class WorkHourCodeServiceImpl implements WorkHourCodeService {
     private WorkHourCodeRepository workHourCodeRepository;
 
     @Override
+    @CacheEvict(cacheNames = "workHourCodesAll", allEntries = true)
     public void createWorkHourCode(WorkHourCodeDTO workHourCodeDTO) throws HRMSException {
         Optional<WorkHourCode> optional = workHourCodeRepository.findById(workHourCodeDTO.getCode());
         if (optional.isPresent()) {
@@ -39,6 +42,7 @@ public class WorkHourCodeServiceImpl implements WorkHourCodeService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "workHourCodesAll", allEntries = true)
     public void updateWorkHourCode(WorkHourCodeDTO workHourCodeDTO) throws HRMSException {
         WorkHourCode whc = workHourCodeRepository.findById(workHourCodeDTO.getCode())
                 .orElseThrow(() -> new HRMSException("WORK_HOUR_CODE_NOT_FOUND"));
@@ -64,6 +68,7 @@ public class WorkHourCodeServiceImpl implements WorkHourCodeService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "workHourCodesAll", allEntries = true)
     public void deleteWorkHourCode(String code) throws HRMSException {
         WorkHourCode whc = workHourCodeRepository.findById(code)
                 .orElseThrow(() -> new HRMSException("WORK_HOUR_CODE_NOT_FOUND"));
@@ -71,6 +76,7 @@ public class WorkHourCodeServiceImpl implements WorkHourCodeService {
     }
 
     @Override
+    @Cacheable(cacheNames = "workHourCodesAll")
     public List<WorkHourCodeDTO> getAllWorkHourCodes() {
         return ((List<WorkHourCode>) workHourCodeRepository.findAll()).stream().map(WorkHourCode::toDTO).toList();
     }

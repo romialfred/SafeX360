@@ -1,6 +1,8 @@
 package com.minexpert.hns.service.inspections;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class ProcessServiceImpl implements ProcessService {
     private GeneralInspectionService generalInspectionService;
 
     @Override
+    @CacheEvict(cacheNames = "inspectionProcessDraft", key = "#processDTO.inspectionId", condition = "#processDTO.inspectionId != null")
     public ProcessDTO saveDraftProcess(ProcessDTO processDTO) throws HSException {
         processDTO.getChecklists().parallelStream().forEach(checklist -> {
             try {
@@ -47,6 +50,7 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionProcessDraft", key = "#id")
     public ProcessDTO getDraftProcess(Long id) throws HSException {
         ProcessDTO processDTO = new ProcessDTO();
         processDTO.setInterviews(inspectionInterviewService.getInterviewsByInspectionId(id));

@@ -3,9 +3,13 @@ package com.minexpert.hns.service.audit;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.minexpert.hns.config.AuditCacheNames;
 import com.minexpert.hns.dto.audit.AreaExecutionDTO;
 import com.minexpert.hns.entity.audit.AreaExecution;
 import com.minexpert.hns.exception.HSException;
@@ -22,6 +26,10 @@ public class AreaExecutionServiceImpl implements AreaExecutionService {
     private final MediaService mediaService;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AREA_EXECUTIONS_BY_AREA, key = "#areaExecutionDTO.areaId", condition = "#areaExecutionDTO.areaId != null"),
+            @CacheEvict(cacheNames = AuditCacheNames.AREA_EXECUTION_BY_ID, key = "#result", condition = "#result != null")
+    })
     public Long createAreaExecution(AreaExecutionDTO areaExecutionDTO) {
         areaExecutionDTO.setCreatedAt(LocalDateTime.now());
         areaExecutionDTO.setUpdatedAt(LocalDateTime.now());
@@ -31,6 +39,10 @@ public class AreaExecutionServiceImpl implements AreaExecutionService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AREA_EXECUTIONS_BY_AREA, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AREA_EXECUTION_BY_ID, allEntries = true)
+    })
     public List<Long> createAreaExecutionList(List<AreaExecutionDTO> areaExecutionDTOs) {
         areaExecutionDTOs.forEach(areaExecutionDTO -> {
             areaExecutionDTO.setCreatedAt(LocalDateTime.now());
@@ -43,6 +55,7 @@ public class AreaExecutionServiceImpl implements AreaExecutionService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AREA_EXECUTION_BY_ID, key = "#id")
     public AreaExecutionDTO getAreaExecution(Long id) throws HSException {
         return areaExecutionRepository.findById(id).map(AreaExecution::toDTO)
                 .orElseThrow(() -> new HSException("AREA_EXECUTION_NOT_FOUND"));
@@ -54,6 +67,7 @@ public class AreaExecutionServiceImpl implements AreaExecutionService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AREA_EXECUTIONS_BY_AREA, key = "#areaId")
     public List<AreaExecutionDTO> getAreaExecutionsByAreaId(Long areaId) {
         return ((List<AreaExecution>) areaExecutionRepository.findByArea_Id(areaId)).stream().map(AreaExecution::toDTO)
                 .toList();

@@ -16,11 +16,13 @@ public class WeatherConditionDTO {
     private Long id;
     private String name;
     private String description;
+    private Long companyId;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public WeatherCondition toEntity() {
-        return new WeatherCondition(this.id, this.name, this.description, this.status, this.createdAt, this.updatedAt);
+        return new WeatherCondition(this.id, this.name, this.description, this.companyId, this.status, this.createdAt,
+                this.updatedAt);
     }
 }

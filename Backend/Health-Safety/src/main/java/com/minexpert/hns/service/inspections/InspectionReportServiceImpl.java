@@ -3,7 +3,9 @@ package com.minexpert.hns.service.inspections;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.minexpert.hns.api.ActionProcessAPI;
@@ -24,6 +26,10 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     private final MediaService mediaService;
 
     @Override
+    @Caching(evict = {
+            // @CacheEvict(cacheNames = "inspectionReportById", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionReportByInspection", key = "#report.generalInspectionId", condition = "#report.generalInspectionId != null")
+    })
     public Long createReport(InspectionReportDTO report) throws HSException {
 
         if (inspectionReportRepository.existsByGeneralInspectionId(report.getGeneralInspectionId())) {
@@ -42,6 +48,7 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionReportById", key = "#id")
     public InspectionReportDTO findById(Long id) throws HSException {
         InspectionReport inspectionReport = inspectionReportRepository.findById(id)
                 .orElseThrow(() -> new HSException("INSPECTION_REPORT_NOT_FOUND"));
@@ -53,6 +60,10 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "inspectionReportById", key = "#report.id"),
+            @CacheEvict(cacheNames = "inspectionReportByInspection", allEntries = true)
+    })
     public void updateReport(InspectionReportDTO report) throws HSException {
         InspectionReport existingReport = inspectionReportRepository.findById(report.getId())
                 .orElseThrow(() -> new HSException("INSPECTION_REPORT_NOT_FOUND"));
@@ -67,6 +78,7 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     }
 
     @Override
+    @Cacheable(cacheNames = "inspectionReportByInspection", key = "#id")
     public InspectionReportDTO findByGeneralInspectionId(Long id) throws HSException {
         Optional<InspectionReport> inspectionReportOpt = inspectionReportRepository.findByGeneralInspectionId(id);
         if (inspectionReportOpt.isEmpty()) {

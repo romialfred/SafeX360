@@ -34,7 +34,7 @@ public class MyConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        // Public actuator endpoints
+                        // Public actuator endpoints for Render health checks
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
                         // R-060 Phase 2.a — Swagger UI / OpenAPI documentation
@@ -45,6 +45,7 @@ public class MyConfig {
                         // (R-003 — à remplacer par mTLS en Phase 2.a sprint 1)
                         .requestMatchers(request -> internalGatewaySecret.equals(request.getHeader("X-Secret-Key"))).permitAll()
 
+                        // Deny anything else
                         .anyRequest().denyAll());
         return http.build();
     }

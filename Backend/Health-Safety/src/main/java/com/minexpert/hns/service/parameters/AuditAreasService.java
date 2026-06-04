@@ -6,19 +6,19 @@ import com.minexpert.hns.dto.parameters.AuditAreasDTO;
 import com.minexpert.hns.exception.HSException;
 
 public interface AuditAreasService {
-    public Long addAuditArea(AuditAreasDTO auditAreasDTO) throws HSException;
+    Long addAuditArea(Long companyId, AuditAreasDTO auditAreasDTO) throws HSException;
 
-    public void updateAuditArea(AuditAreasDTO auditAreasDTO) throws HSException;
+    void updateAuditArea(Long companyId, AuditAreasDTO auditAreasDTO) throws HSException;
 
-    public void deleteAuditArea(Long id) throws HSException;
+    void deleteAuditArea(Long companyId, Long id) throws HSException;
 
-    public AuditAreasDTO getAuditAreaById(Long id) throws HSException;
+    AuditAreasDTO getAuditAreaById(Long companyId, Long id) throws HSException;
 
-    public List<AuditAreasDTO> getAllAuditAreas() throws HSException;
+    List<AuditAreasDTO> getAllAuditAreas(Long companyId) throws HSException;
 
-    public List<AuditAreasDTO> getAllActiveAuditAreas() throws HSException;
+    List<AuditAreasDTO> getAllActiveAuditAreas(Long companyId) throws HSException;
 
-    public void activateAuditArea(Long id) throws HSException;
+    void activateAuditArea(Long companyId, Long id) throws HSException;
 
-    public void deactivateAuditArea(Long id) throws HSException;
+    void deactivateAuditArea(Long companyId, Long id) throws HSException;
 }

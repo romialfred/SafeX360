@@ -23,6 +23,7 @@ public class WorkProcess {
     private Long id;
     private String name;
     private Long departmentId;
+    private Long companyId;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -32,6 +33,6 @@ public class WorkProcess {
     }
 
     public WorkProcessDTO toDTO() {
-        return new WorkProcessDTO(id, name, departmentId, null, status, createdAt, updatedAt);
+        return new WorkProcessDTO(id, name, departmentId, companyId, null, status, createdAt, updatedAt);
     }
 }

@@ -8,9 +8,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.config.ComplianceCacheNames;
 import com.minexpert.hns.dto.compliance.ComplianceDocsDTO;
 import com.minexpert.hns.dto.compliance.DocResponse;
 import com.minexpert.hns.dto.compliance.EmpAssignResponse;
@@ -39,6 +42,16 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     private final MediaService mediaService;
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS,
+            ComplianceCacheNames.DOCS_ALL,
+            ComplianceCacheNames.DOCS_BY_EMPLOYEE,
+            ComplianceCacheNames.DOC_DETAILS,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.EMPLOYEE_EMAIL_POSITIONS
+    }, allEntries = true)
     public Long saveComplianceDoc(ComplianceDocsDTO complianceDocsDTO) throws HSException {
         Optional<ComplianceDocs> existingDoc = complianceDocsRepository
                 .findByEmployeeIdAndRequirementIdAndStatusNotAndExpiryDateAfter(complianceDocsDTO.getEmployeeId(),
@@ -56,6 +69,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_ALL)
     public List<DocResponse> getAllComplianceDocs() throws HSException {
         List<DocResponse> docs = complianceDocsRepository.findAllDocs();
         List<Long> employeeIds = docs.stream().map(DocResponse::getEmployeeId).filter(Objects::nonNull)
@@ -76,6 +90,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.EMPLOYEE_EMAIL_POSITIONS)
     public List<EmpEmailPosResponse> getAllEmpEmailPos() throws HSException {
         List<EmpEmailPosResponse> empEmailPosResponses = hrmsClient.getAllEmployeesWithEmailAndPosition();
         List<Long> positionIds = empEmailPosResponses.stream()
@@ -132,6 +147,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_BY_EMPLOYEE, key = "#employeeId")
     public List<DocResponse> getComplianceDocsByEmployeeId(Long employeeId) throws HSException {
         List<DocResponse> res = complianceDocsRepository.findAllDocsByEmpId(employeeId);
         List<Long> employeeIds = res.stream().map(DocResponse::getEmployeeId).filter(Objects::nonNull)
@@ -152,6 +168,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE, key = "#employeeId")
     public EmpAssignResponse getRequirementsByEmpId(Long employeeId) throws HSException {
         EmpEmailPosResponse empEmailPosResponse = hrmsClient.getEmployeeWithEmailAndPositionById(employeeId);
         List<ReqResponse> req = positionAssignmentService
@@ -188,6 +205,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.DOC_DETAILS, key = "#id")
     public DocResponse getDocDetails(Long id) throws HSException {
         DocResponse doc = complianceDocsRepository.findDocById(id)
                 .orElseThrow(() -> new HSException("DOCUMENT_NOT_FOUND"));
@@ -197,6 +215,16 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS,
+            ComplianceCacheNames.DOCS_ALL,
+            ComplianceCacheNames.DOCS_BY_EMPLOYEE,
+            ComplianceCacheNames.DOC_DETAILS,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.EMPLOYEE_EMAIL_POSITIONS
+    }, allEntries = true)
     public void approveComplianceDoc(Long id) throws HSException {
         ComplianceDocs complianceDoc = complianceDocsRepository.findById(id)
                 .orElseThrow(() -> new HSException("DOCUMENT_NOT_FOUND"));
@@ -210,6 +238,16 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS,
+            ComplianceCacheNames.DOCS_ALL,
+            ComplianceCacheNames.DOCS_BY_EMPLOYEE,
+            ComplianceCacheNames.DOC_DETAILS,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.EMPLOYEE_EMAIL_POSITIONS
+    }, allEntries = true)
     public void rejectComplianceDoc(Long id, String comment) throws HSException {
         ComplianceDocs complianceDoc = complianceDocsRepository.findById(id)
                 .orElseThrow(() -> new HSException("DOCUMENT_NOT_FOUND"));

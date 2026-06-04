@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,13 +31,31 @@ public class WorkAreaServiceImpl implements WorkAreaService {
     private final WorkAreaRepository workAreaRepository;
     private final HrmsClient hrmsClient;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
+    private WorkArea loadWorkArea(Long companyId, Long id) throws HSException {
+        return workAreaRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
+    }
+
     @Override
-    public Long addWorkArea(WorkAreaDTO workAreaDTO) throws HSException {
-        Optional<WorkArea> existingWorkArea = workAreaRepository.findByNameIgnoreCaseAndDepartmentId(
-                workAreaDTO.getName(), workAreaDTO.getDepartmentId());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addWorkArea(Long companyId, WorkAreaDTO workAreaDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<WorkArea> existingWorkArea = workAreaRepository
+                .findByCompanyIdAndDepartmentIdAndNameIgnoreCase(companyId, workAreaDTO.getDepartmentId(),
+                        workAreaDTO.getName());
         if (existingWorkArea.isPresent()) {
             throw new HSException("WORK_AREA_ALREADY_EXISTS");
         }
+        workAreaDTO.setCompanyId(companyId);
         workAreaDTO.setStatus(Status.ACTIVE);
         workAreaDTO.setCreatedAt(LocalDateTime.now());
         workAreaDTO.setUpdatedAt(LocalDateTime.now());
@@ -42,39 +63,52 @@ public class WorkAreaServiceImpl implements WorkAreaService {
     }
 
     @Override
-    public void updateWorkArea(WorkAreaDTO workAreaDTO) throws HSException {
-        WorkArea existingWorkArea = workAreaRepository.findById(workAreaDTO.getId())
-                .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workAreaById", key = "#companyId != null && #workAreaDTO.id != null ? (#companyId + '-' + #workAreaDTO.id) : 'ALL-' + #workAreaDTO.id", condition = "#workAreaDTO.id != null"),
+            @CacheEvict(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateWorkArea(Long companyId, WorkAreaDTO workAreaDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkArea existingWorkArea = loadWorkArea(companyId, workAreaDTO.getId());
         if (!workAreaDTO.getName().equalsIgnoreCase(existingWorkArea.getName()) ||
-                !workAreaDTO.getDepartmentId().equals(existingWorkArea.getDepartmentId())) {
-            Optional<WorkArea> opt = workAreaRepository.findByNameIgnoreCaseAndDepartmentId(
-                    workAreaDTO.getName(), workAreaDTO.getDepartmentId());
-            if (opt.isPresent()) {
+                !Objects.equals(workAreaDTO.getDepartmentId(), existingWorkArea.getDepartmentId())) {
+            Optional<WorkArea> opt = workAreaRepository
+                    .findByCompanyIdAndDepartmentIdAndNameIgnoreCase(companyId, workAreaDTO.getDepartmentId(),
+                            workAreaDTO.getName());
+            if (opt.isPresent() && !opt.get().getId().equals(existingWorkArea.getId())) {
                 throw new HSException("WORK_AREA_ALREADY_EXISTS");
-            } else {
-                existingWorkArea.setName(workAreaDTO.getName());
-                existingWorkArea.setDepartmentId(workAreaDTO.getDepartmentId());
-                existingWorkArea.setUpdatedAt(LocalDateTime.now());
-                workAreaRepository.save(existingWorkArea);
             }
         }
+        existingWorkArea.setName(workAreaDTO.getName());
+        existingWorkArea.setDepartmentId(workAreaDTO.getDepartmentId());
+        existingWorkArea.setCompanyId(companyId);
+        existingWorkArea.setUpdatedAt(LocalDateTime.now());
+        workAreaRepository.save(existingWorkArea);
     }
 
     @Override
-    public void deleteWorkArea(Long id) throws HSException {
-        workAreaRepository.deleteById(id);
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteWorkArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkArea workArea = loadWorkArea(companyId, id);
+        workAreaRepository.delete(workArea);
     }
 
     @Override
-    public WorkAreaDTO getWorkAreaById(Long id) throws HSException {
-        return workAreaRepository.findById(id)
-                .map(WorkArea::toDTO)
-                .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
+    @Cacheable(cacheNames = "workAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public WorkAreaDTO getWorkAreaById(Long companyId, Long id) throws HSException {
+        return loadWorkArea(companyId, id).toDTO();
     }
 
     @Override
-    public List<WorkAreaDTO> getAllWorkArea() throws HSException {
-        List<WorkAreaDTO> areas = ((List<WorkArea>) workAreaRepository.findAll())
+    @Cacheable(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WorkAreaDTO> getAllWorkArea(Long companyId) throws HSException {
+        List<WorkAreaDTO> areas = workAreaRepository.findAllWithCompany(companyId)
                 .stream()
                 .map(WorkArea::toDTO)
                 .toList();
@@ -84,8 +118,9 @@ public class WorkAreaServiceImpl implements WorkAreaService {
     }
 
     @Override
-    public List<WorkAreaDTO> getAllActiveWorkArea() throws HSException {
-        List<WorkAreaDTO> areas = ((List<WorkArea>) workAreaRepository.findByStatus(Status.ACTIVE))
+    @Cacheable(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WorkAreaDTO> getAllActiveWorkArea(Long companyId) throws HSException {
+        List<WorkAreaDTO> areas = workAreaRepository.findAllByStatus(companyId, Status.ACTIVE)
                 .stream()
                 .map(WorkArea::toDTO)
                 .toList();
@@ -94,9 +129,14 @@ public class WorkAreaServiceImpl implements WorkAreaService {
     }
 
     @Override
-    public void activateWorkArea(Long id) throws HSException {
-        WorkArea workArea = workAreaRepository.findById(id)
-                .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateWorkArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkArea workArea = loadWorkArea(companyId, id);
         if (workArea.getStatus() == Status.ACTIVE) {
             throw new HSException("WORK_AREA_ALREADY_ACTIVE");
         }
@@ -106,9 +146,14 @@ public class WorkAreaServiceImpl implements WorkAreaService {
     }
 
     @Override
-    public void deactivateWorkArea(Long id) throws HSException {
-        WorkArea workArea = workAreaRepository.findById(id)
-                .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "workAreaById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "workAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateWorkArea(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WorkArea workArea = loadWorkArea(companyId, id);
         if (workArea.getStatus() == Status.INACTIVE) {
             throw new HSException("WORK_AREA_ALREADY_INACTIVE");
         }
@@ -123,6 +168,10 @@ public class WorkAreaServiceImpl implements WorkAreaService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
+
+        if (deptIds.isEmpty()) {
+            return;
+        }
 
         List<DepartmentNames> deptNames = hrmsClient.getDepartmentNames(deptIds);
         Map<Long, String> deptIdToName = deptNames.stream()

@@ -5,7 +5,11 @@ import com.minexpert.hns.entity.users.PermissionManagement;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.users.PermissionManagementRepository;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,12 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     private final PermissionManagementRepository repository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "permissionById", allEntries = true),
+            @CacheEvict(cacheNames = "permissionByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "permissionsAll", allEntries = true),
+            @CacheEvict(cacheNames = "registeredPermissionEmployees", allEntries = true)
+    })
     public PermissionManagementDTO create(PermissionManagementDTO dto) throws HSException {
         PermissionManagement entity = dto.toEntity();
         PermissionManagement saved = repository.save(entity);
@@ -25,6 +35,12 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "permissionById", key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = "permissionByEmployee", key = "#dto.employeeId", condition = "#dto.employeeId != null"),
+            @CacheEvict(cacheNames = "permissionsAll", allEntries = true),
+            @CacheEvict(cacheNames = "registeredPermissionEmployees", allEntries = true)
+    })
     public PermissionManagementDTO update(PermissionManagementDTO dto) throws HSException {
         PermissionManagement existing = repository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("PERMISSION_NOT_FOUND"));
@@ -72,6 +88,11 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "permissionById", key = "#id"),
+            @CacheEvict(cacheNames = "permissionByEmployee", allEntries = true),
+            @CacheEvict(cacheNames = "permissionsAll", allEntries = true)
+    })
     public PermissionManagementDTO updateStatus(Long id, Status status) throws HSException {
         PermissionManagement entity = repository.findById(id)
                 .orElseThrow(() -> new HSException("PERMISSION_NOT_FOUND"));
@@ -81,6 +102,7 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     }
 
     @Override
+    @Cacheable(cacheNames = "permissionById", key = "#id")
     public PermissionManagementDTO getById(Long id) throws HSException {
         PermissionManagement entity = repository.findById(id)
                 .orElseThrow(() -> new HSException("PERMISSION_NOT_FOUND"));
@@ -88,11 +110,13 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     }
 
     @Override
+    @Cacheable(cacheNames = "permissionsAll")
     public List<PermissionManagementDTO> getAll() throws HSException {
         return repository.findAll().stream().map(PermissionManagement::toDTO).toList();
     }
 
     @Override
+    @Cacheable(cacheNames = "permissionByEmployee", key = "#employeeId")
     public PermissionManagementDTO getByEmployeeId(Long employeeId) throws HSException {
         PermissionManagement entity = repository.findByEmployeeId(employeeId)
                 .orElseThrow(() -> new HSException("PERMISSION_NOT_FOUND"));
@@ -100,6 +124,7 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
     }
 
     @Override
+    @Cacheable(cacheNames = "registeredPermissionEmployees")
     public List<Long> getRegisteredEmployeeIds() throws HSException {
         return repository.findDistinctEmployeeIds();
     }

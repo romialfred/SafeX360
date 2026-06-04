@@ -14,4 +14,5 @@ import lombok.NoArgsConstructor;
 public class ActivityReportRequest {
     private ActivityReportDTO report;
     private List<CorrectiveActionDTO> actions;
+    private Long companyId;
 }

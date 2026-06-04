@@ -3,11 +3,16 @@ package com.minexpert.hns.service.audit;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.minexpert.hns.config.AuditCacheNames;
 import com.minexpert.hns.dto.audit.AuditDTO;
 import com.minexpert.hns.dto.audit.AuditDetails;
 import com.minexpert.hns.dto.audit.AuditRequest;
@@ -31,6 +36,10 @@ public class AuditServiceImpl implements AuditService {
     private final ContributorService contributorService;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public Long createAudit(AuditDTO auditDTO) throws HSException {
         auditDTO.setRefNumber(generateAuditRefNumber());
         auditDTO.setStatus(AuditStatus.PLANNING);
@@ -41,6 +50,12 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#auditDTO.id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#auditDTO.id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public void updateAudit(AuditDTO auditDTO) throws HSException {
         Audit audit = auditRepository.findById(auditDTO.getId())
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
@@ -48,12 +63,17 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#id")
     public AuditDTO getAudit(Long id) throws HSException {
         return auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public Long createAudit(AuditRequest request) throws HSException {
         Long auditId = this.createAudit(request.getAudit());
         auditorService.addAuditors(request.getAuditors(), auditId);
@@ -61,6 +81,12 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#request.audit.id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#request.audit.id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public void updateAudit(AuditRequest request) throws HSException {
         this.updateAudit(request.getAudit());
         auditorService.addOrUpdateAuditors(request.getAuditors(), request.getAudit().getId());
@@ -68,6 +94,7 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_LIST)
     public List<AuditDTO> getAllAudits() throws HSException {
         return ((List<Audit>) auditRepository.findAll()).stream()
                 .filter((x) -> x.getPlanningStatus() == null || x.getPlanningStatus() == PlanningStatus.APPROVED)
@@ -82,6 +109,7 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#id")
     public AuditDetails getAuditDetails(Long id) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
@@ -110,6 +138,12 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public void updateAuditStatus(Long id, AuditStatus status) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
@@ -119,11 +153,18 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST)
     public List<AuditDTO> getAllPlanningAudits() throws HSException {
         return auditRepository.findAllWithNonNullPlanningStatus().stream().map(Audit::toDTO).toList();
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public void approvePlanning(Long id) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
@@ -133,6 +174,12 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_DETAILS, key = "#id"),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
+    })
     public void rejectPlanning(Long id) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));

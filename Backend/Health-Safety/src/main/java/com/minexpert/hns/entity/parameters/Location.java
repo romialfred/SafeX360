@@ -28,6 +28,8 @@ public class Location {
     @Column(nullable = false)
     private Double longitude;
     private Status status;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -36,7 +38,7 @@ public class Location {
     }
 
     public LocationDTO toDTO() {
-        return new LocationDTO(this.id, this.name, this.latitude, this.longitude, this.status, this.createdAt,
-                this.updatedAt);
+        return new LocationDTO(this.id, this.name, this.latitude, this.longitude, this.status, this.companyId,
+                this.createdAt, this.updatedAt);
     }
 }

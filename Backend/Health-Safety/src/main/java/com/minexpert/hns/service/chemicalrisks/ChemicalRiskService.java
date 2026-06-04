@@ -16,4 +16,3 @@ public interface ChemicalRiskService {
 
     List<ChemicalRiskDTO> getAll() throws HSException;
 }
-

@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.cglib.core.Local;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,67 +28,84 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LessonLearnedServiceImpl implements LessonLearnedService {
 
-    private final LessonLearnedRepository lessonLearnedRepository;
+        public static final String CACHE_LESSON_LEARNED_BY_ID = "lessonLearnedDetailsById";
+        public static final String CACHE_LESSON_LEARNED_BY_INCIDENT = "lessonLearnedDetailsByIncident";
+        public static final String CACHE_LESSON_LEARNED_ALL = "lessonLearnedDetailsAll";
 
-    private final HrmsClient hrmsClient;
+        private final LessonLearnedRepository lessonLearnedRepository;
 
-    @Override
-    public Long createLessonLearned(LessonLearnedDTO request) throws HSException {
-        Optional<LessonLearned> opt = lessonLearnedRepository.findByIncident_Id(request.getIncidentId());
-        if (opt.isPresent()) {
-            throw new HSException("LESSON_LEARNED_ALREADY_EXISTS_FOR_INCIDENT");
+        private final HrmsClient hrmsClient;
+
+        @Override
+        @Caching(evict = {
+                        // @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_ID, allEntries = true),
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#request.incidentId"),
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_ALL, allEntries = true)
+        })
+        public Long createLessonLearned(LessonLearnedDTO request) throws HSException {
+                Optional<LessonLearned> opt = lessonLearnedRepository.findByIncident_Id(request.getIncidentId());
+                if (opt.isPresent()) {
+                        throw new HSException("LESSON_LEARNED_ALREADY_EXISTS_FOR_INCIDENT");
+                }
+                request.setId(null); // Ensure ID is null for creation
+                request.setCreatedAt(LocalDateTime.now());
+                request.setUpdatedAt(LocalDateTime.now());
+                return lessonLearnedRepository.save(request.toEntity()).getId();
         }
-        request.setId(null); // Ensure ID is null for creation
-        request.setCreatedAt(LocalDateTime.now());
-        request.setUpdatedAt(LocalDateTime.now());
-        return lessonLearnedRepository.save(request.toEntity()).getId();
-    }
 
-    @Override
-    public void updateLessonLearned(LessonLearnedDTO request) throws HSException {
-        LessonLearned lesson = lessonLearnedRepository.findById(request.getId())
-                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
-        lesson.setDate(request.getDate());
-        lesson.setEmployeeId(request.getEmployeeId());
-        lesson.setCategory(request.getCategory());
-        lesson.setStatus(request.getStatus());
-        lesson.setDescription(request.getDescription());
-        lesson.setUpdatedAt(LocalDateTime.now());
-        lessonLearnedRepository.save(lesson);
-    }
+        @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_ID, key = "#request.id"),
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#request.incidentId"),
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_ALL, allEntries = true)
+        })
+        public void updateLessonLearned(LessonLearnedDTO request) throws HSException {
+                LessonLearned lesson = lessonLearnedRepository.findById(request.getId())
+                                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
+                lesson.setDate(request.getDate());
+                lesson.setEmployeeId(request.getEmployeeId());
+                lesson.setCategory(request.getCategory());
+                lesson.setStatus(request.getStatus());
+                lesson.setDescription(request.getDescription());
+                lesson.setUpdatedAt(LocalDateTime.now());
+                lessonLearnedRepository.save(lesson);
+        }
 
-    @Override
-    public LessonLearnedDetails getLessonLearnedDetails(Long id) throws HSException {
-        LessonLearnedDetails details = lessonLearnedRepository.findDetailsById(id)
-                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
-        EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
-        details.setEmployeeName(res.getName());
-        return details;
-    }
+        @Override
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_ID, key = "#id")
+        public LessonLearnedDetails getLessonLearnedDetails(Long id) throws HSException {
+                LessonLearnedDetails details = lessonLearnedRepository.findDetailsById(id)
+                                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
+                EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
+                details.setEmployeeName(res.getName());
+                return details;
+        }
 
-    @Override
-    public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId) throws HSException {
-        LessonLearnedDetails details = lessonLearnedRepository.findByIncidentId(incidentId)
-                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND_FOR_INCIDENT"));
-        EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
-        details.setEmployeeName(res.getName());
-        return details;
-    }
+        @Override
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#incidentId")
+        public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId) throws HSException {
+                LessonLearnedDetails details = lessonLearnedRepository.findByIncidentId(incidentId)
+                                .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND_FOR_INCIDENT"));
+                EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
+                details.setEmployeeName(res.getName());
+                return details;
+        }
 
-    @Override
-    public List<LessonLearnedDetails> getAllLessonLearnedDetails() throws HSException {
-        List<LessonLearnedDetails> detailsList = lessonLearnedRepository.findAllLessonLearnedDetails();
-        List<Long> employeeIds = detailsList.stream()
-                .map(LessonLearnedDetails::getEmployeeId)
-                .distinct()
-                .toList();
-        List<EmployeeNameDTO> employeeNames = hrmsClient.getEmployeeNameByIds(employeeIds);
-        Map<Long, String> employeeNameMap = employeeNames.stream()
-                .collect(Collectors.toMap(EmployeeNameDTO::getId, EmployeeNameDTO::getName));
+        @Override
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_ALL)
+        public List<LessonLearnedDetails> getAllLessonLearnedDetails() throws HSException {
+                List<LessonLearnedDetails> detailsList = lessonLearnedRepository.findAllLessonLearnedDetails();
+                List<Long> employeeIds = detailsList.stream()
+                                .map(LessonLearnedDetails::getEmployeeId)
+                                .distinct()
+                                .toList();
+                List<EmployeeNameDTO> employeeNames = hrmsClient.getEmployeeNameByIds(employeeIds);
+                Map<Long, String> employeeNameMap = employeeNames.stream()
+                                .collect(Collectors.toMap(EmployeeNameDTO::getId, EmployeeNameDTO::getName));
 
-        return detailsList.parallelStream()
-                .peek(detail -> detail.setEmployeeName(employeeNameMap.get(detail.getEmployeeId())))
-                .collect(Collectors.toList());
-    }
+                return detailsList.parallelStream()
+                                .peek(detail -> detail.setEmployeeName(employeeNameMap.get(detail.getEmployeeId())))
+                                .collect(Collectors.toList());
+        }
 
 }

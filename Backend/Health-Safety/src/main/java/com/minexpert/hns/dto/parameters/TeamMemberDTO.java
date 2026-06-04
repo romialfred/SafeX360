@@ -23,12 +23,13 @@ public class TeamMemberDTO {
     private List<Long> notificationLevel;
     private Role role;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public TeamMember toEntity() {
         return new TeamMember(this.id, this.employeeId, this.teamId != null ? new IncidentTeam(this.teamId) : null,
                 this.notificationLevel != null ? this.notificationLevel.toString() : null,
-                this.role, this.status, this.createdAt, this.updatedAt);
+                this.role, this.status, this.companyId, this.createdAt, this.updatedAt);
     }
 }

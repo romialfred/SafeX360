@@ -3,6 +3,8 @@ package com.minexpert.hns.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +22,28 @@ public class MediaServiceImpl implements MediaService {
     private MediaRepository mediaRepository;
 
     @Override
+    @Cacheable(cacheNames = "mediaByIdsArray", key = "#mediaIds != null ? #mediaIds : 'EMPTY'")
     public List<MediaDTO> getAllMediaByArray(String mediaIds) {
+        if (mediaIds == null || mediaIds.isBlank()) {
+            return List.of();
+        }
         List<Long> mediaIdArray = StringListConverter.convertToLongList(mediaIds);
+        if (mediaIdArray.isEmpty()) {
+            return List.of();
+        }
         return ((List<Media>) mediaRepository.findAllByIdIn(mediaIdArray)).stream().map(Media::toDTO).toList();
 
     }
 
     @Override
+    @CacheEvict(cacheNames = { "mediaById", "mediaByIdsArray" }, allEntries = true)
     public void deleteMediaById(Long id) {
         mediaRepository.deleteById(id);
     }
 
     @Override
+    // @CacheEvict(cacheNames = { "mediaById", "mediaByIdsArray" }, allEntries =
+    // true)
     public String saveAllMedia(List<MediaDTO> mediaDTOs) {
         List<Media> mediaList = mediaDTOs.stream().map(MediaDTO::toEntity).toList();
         List<Long> savedMediaIds = ((List<Media>) mediaRepository.saveAll(mediaList)).stream().map(Media::getId)
@@ -40,11 +52,14 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    // @CacheEvict(cacheNames = { "mediaById", "mediaByIdsArray" }, allEntries =
+    // true)
     public Long saveMedia(MediaDTO mediaDTO) throws HSException {
         return mediaRepository.save(mediaDTO.toEntity()).getId();
     }
 
     @Override
+    @Cacheable(cacheNames = "mediaById", key = "#id")
     public MediaDTO getMediaById(Long id) throws HSException {
         return mediaRepository.findById(id)
                 .orElseThrow(() -> new HSException("MEDIA_NOT_FOUND")).toDTO();

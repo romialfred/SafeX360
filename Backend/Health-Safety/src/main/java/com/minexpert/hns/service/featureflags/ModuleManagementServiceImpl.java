@@ -5,6 +5,7 @@ import com.minexpert.hns.entity.featureflags.ModuleManagement;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.featureflags.ModuleManagementRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,4 +67,3 @@ public class ModuleManagementServiceImpl implements ModuleManagementService {
         return repository.findAll().stream().map(ModuleManagement::toDTO).toList();
     }
 }
-

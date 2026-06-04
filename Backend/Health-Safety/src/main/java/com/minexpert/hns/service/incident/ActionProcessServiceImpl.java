@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,43 +24,62 @@ import com.minexpert.hns.service.MediaService;
 @Transactional
 public class ActionProcessServiceImpl implements ActionProcessService {
 
-    @Autowired
-    private ActionProcessRepository actionProcessRepository;
+        public static final String CACHE_ACTION_PROCESSES_BY_ACTION = "actionProcessesByAction";
 
-    @Autowired
-    private CorrectiveActionRepository correctiveActionRepository;
+        @Autowired
+        private ActionProcessRepository actionProcessRepository;
 
-    @Autowired
-    private MediaService mediaService;
+        @Autowired
+        private CorrectiveActionRepository correctiveActionRepository;
 
-    @Override
-    public Long addActionProcess(ActionProcessDTO actionProcessDTO) throws HSException {
-        CorrectiveAction correctiveAction = correctiveActionRepository
-                .findById(actionProcessDTO.getCorrectiveActionId())
-                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
-        correctiveAction.setProgress(actionProcessDTO.getProgress());
-        correctiveAction.setStatus(actionProcessDTO.getStatus());
-        correctiveActionRepository.save(correctiveAction);
-        ActionProcess actionProcess = actionProcessDTO.toEntity();
-        actionProcess.setDocs(mediaService.saveAllMedia(actionProcessDTO.getDocs()));
-        actionProcess.setCreatedAt(LocalDateTime.now());
-        return actionProcessRepository.save(actionProcess).getId();
-    }
+        @Autowired
+        private MediaService mediaService;
 
-    @Override
-    public List<ActionProcessResponse> getActionProcessByActionId(Long actionId) throws HSException {
-        List<ActionProcess> actionProcesses = actionProcessRepository.findByActionId(actionId);
+        @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = CACHE_ACTION_PROCESSES_BY_ACTION, key = "#actionProcessDTO.correctiveActionId"),
+                        @CacheEvict(cacheNames = CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTION_BY_ID, key = "#actionProcessDTO.correctiveActionId"),
+                        @CacheEvict(cacheNames = {
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_ALL,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                                        CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_PENDING
+                        }, allEntries = true)
+        })
+        public Long addActionProcess(ActionProcessDTO actionProcessDTO) throws HSException {
+                CorrectiveAction correctiveAction = correctiveActionRepository
+                                .findById(actionProcessDTO.getCorrectiveActionId())
+                                .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+                correctiveAction.setProgress(actionProcessDTO.getProgress());
+                correctiveAction.setStatus(actionProcessDTO.getStatus());
+                correctiveActionRepository.save(correctiveAction);
+                ActionProcess actionProcess = actionProcessDTO.toEntity();
+                actionProcess.setDocs(mediaService.saveAllMedia(actionProcessDTO.getDocs()));
+                actionProcess.setCreatedAt(LocalDateTime.now());
+                return actionProcessRepository.save(actionProcess).getId();
+        }
 
-        List<ActionProcessResponse> actionProcessResponses = actionProcesses.stream()
-                .map(actionProcess -> {
-                    ActionProcessResponse actionProcessResponse = actionProcess.toResponse();
-                    actionProcessResponse.setDocs(
-                            mediaService.getAllMediaByArray(actionProcess.getDocs()));
-                    return actionProcessResponse;
-                })
-                .collect(Collectors.toList());
-        return actionProcessResponses;
+        @Override
+        @Cacheable(cacheNames = CACHE_ACTION_PROCESSES_BY_ACTION, key = "#actionId")
+        public List<ActionProcessResponse> getActionProcessByActionId(Long actionId) throws HSException {
+                List<ActionProcess> actionProcesses = actionProcessRepository.findByActionId(actionId);
 
-    }
+                List<ActionProcessResponse> actionProcessResponses = actionProcesses.stream()
+                                .map(actionProcess -> {
+                                        ActionProcessResponse actionProcessResponse = actionProcess.toResponse();
+                                        actionProcessResponse.setDocs(
+                                                        mediaService.getAllMediaByArray(actionProcess.getDocs()));
+                                        return actionProcessResponse;
+                                })
+                                .collect(Collectors.toList());
+                return actionProcessResponses;
+
+        }
 
 }

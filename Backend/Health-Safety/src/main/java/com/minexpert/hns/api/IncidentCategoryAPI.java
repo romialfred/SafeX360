@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -30,43 +31,52 @@ public class IncidentCategoryAPI {
     private IncidentCategoryService incidentCategoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createIncidentCategory(@RequestBody IncidentCategoryDTO incidentCategoryDTO)
+    public ResponseEntity<Long> createIncidentCategory(@RequestParam Long companyId,
+            @RequestBody IncidentCategoryDTO incidentCategoryDTO)
             throws HSException {
-        return new ResponseEntity<>(incidentCategoryService.addIncidentCategory(incidentCategoryDTO),
+        return new ResponseEntity<>(incidentCategoryService.addIncidentCategory(companyId, incidentCategoryDTO),
                 HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateIncidentCategory(@RequestBody IncidentCategoryDTO incidentCategoryDTO)
+    public ResponseEntity<ResponseDTO> updateIncidentCategory(@RequestParam Long companyId,
+            @RequestBody IncidentCategoryDTO incidentCategoryDTO)
             throws HSException {
-        incidentCategoryService.updateIncidentCategory(incidentCategoryDTO);
+        incidentCategoryService.updateIncidentCategory(companyId, incidentCategoryDTO);
         return new ResponseEntity<>(new ResponseDTO("Incident Updated Successfully"), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<IncidentCategoryDTO> getIncidentCategoryById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(incidentCategoryService.getIncidentCategoryById(id), HttpStatus.OK);
+    public ResponseEntity<IncidentCategoryDTO> getIncidentCategoryById(@RequestParam(required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(incidentCategoryService.getIncidentCategoryById(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<IncidentCategoryDTO>> getAllIncidentCategories() throws HSException {
-        return new ResponseEntity<>(incidentCategoryService.getAllIncidentCategories(), HttpStatus.OK);
+    public ResponseEntity<List<IncidentCategoryDTO>> getAllIncidentCategories(
+            @RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(incidentCategoryService.getAllIncidentCategories(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<IncidentCategoryResponse>> getAllActiveIncidentCategories() throws HSException {
-        return new ResponseEntity<>(incidentCategoryService.getAllActiveIncidentCategories(), HttpStatus.OK);
+    public ResponseEntity<List<IncidentCategoryResponse>> getAllActiveIncidentCategories(
+            @RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(incidentCategoryService.getAllActiveIncidentCategories(companyId), HttpStatus.OK);
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateIncidentCategory(@PathVariable Long id) throws HSException {
-        incidentCategoryService.activateIncidentCategory(id);
+    public ResponseEntity<ResponseDTO> activateIncidentCategory(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        incidentCategoryService.activateIncidentCategory(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Category Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateIncidentCategory(@PathVariable Long id) throws HSException {
-        incidentCategoryService.deactivateIncidentCategory(id);
+    public ResponseEntity<ResponseDTO> deactivateIncidentCategory(@RequestParam Long companyId, @PathVariable Long id)
+            throws HSException {
+        incidentCategoryService.deactivateIncidentCategory(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Category Deactivated Successfully"), HttpStatus.OK);
     }
 }

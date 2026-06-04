@@ -15,4 +15,6 @@ public interface CheckListDetails {
 
     public Status getStatus();
 
+    public Long getCompanyId();
+
 }

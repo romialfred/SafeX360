@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.activities.ActivityReportDTO;
@@ -30,8 +31,10 @@ public class ActivityReportAPI {
     private final ActivityReportService activityReportService;
 
     @PostMapping("/create")
-    public ResponseEntity<ResponseDTO> createActivityReport(@RequestBody ActivityReportRequest request)
+    public ResponseEntity<ResponseDTO> createActivityReport(@RequestParam("companyId") Long companyId,
+            @RequestBody ActivityReportRequest request)
             throws HSException {
+        request.setCompanyId(companyId);
         activityReportService.addActivityReport(request);
         return new ResponseEntity<>(new ResponseDTO("Activity Report created successfully."), HttpStatus.CREATED);
     }

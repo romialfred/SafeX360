@@ -26,6 +26,7 @@ public class CorrectiveActionDTO {
     private LocalDate deadline;
     private ActionStatus status;
     private String description;
+    private Long companyId;
     private Integer progress;
     private Long incidentId;
     private Long generalInspectionId;
@@ -48,8 +49,9 @@ public class CorrectiveActionDTO {
                 this.generalInspectionId != null ? new GeneralInspection(generalInspectionId) : null,
                 this.hsActivityId != null ? new HsActivity(hsActivityId) : null,
                 this.nonConformityId != null ? new NonConformity(nonConformityId) : null,
-                progress,
-                createdAt,
-                updatedAt);
+                this.progress,
+                this.companyId,
+                this.createdAt,
+                this.updatedAt);
     }
 }

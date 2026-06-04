@@ -2,9 +2,11 @@ package com.hrms.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         private NotificationService notificationService;
 
         @Override
+        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
         public void addSalaryAdvance(SalaryAdvanceDTO salaryAdvanceDTO) throws HRMSException {
                 if (salaryAdvanceRepository
                                 .findByEmpIdAndReimbursementIn(salaryAdvanceDTO.getEmpId(),
@@ -65,6 +68,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void updateSalaryAdvance(SalaryAdvanceDTO salaryAdvanceDTO) throws HRMSException {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -79,6 +86,7 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Cacheable(cacheNames = "salaryAdvanceById", key = "#id")
         public SalaryAdvanceDTO getSalaryAdvance(Long id) throws HRMSException {
                 return salaryAdvanceRepository.findById(id)
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"))
@@ -86,17 +94,23 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Cacheable(cacheNames = "salaryAdvancesByApprover", key = "#approverId")
         public List<SalaryAdvanceDTO> getAllSalaryAdvancesByApproverId(Long approverId) {
                 return salaryAdvanceRepository.findByApproverId(approverId).stream().map(SalaryAdvance::toDTO).toList();
         }
 
         @Override
+        @Cacheable(cacheNames = "salaryAdvancesByEmp", key = "#empId")
         public List<SalaryAdvanceDTO> getSalaryAdvanceByEmpId(Long empId) {
                 return salaryAdvanceRepository.findByEmpId(empId).stream().map(SalaryAdvance::toDTO).toList();
 
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void approveSalaryAdvance(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -120,6 +134,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void rejectSalaryAdvance(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -150,6 +168,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void completeReimbursement(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -158,6 +180,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void firstPayment(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -168,6 +194,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void secondPayment(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));
@@ -178,6 +208,10 @@ public class SalaryAdvanceServiceImpl implements SalaryAdvanceService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "salaryAdvanceById", key = "#salaryAdvanceDTO.id", condition = "#salaryAdvanceDTO.id != null"),
+                        @CacheEvict(cacheNames = { "salaryAdvancesByApprover", "salaryAdvancesByEmp" }, allEntries = true)
+        })
         public void thirdPayment(SalaryAdvanceDTO salaryAdvanceDTO) throws Exception {
                 SalaryAdvance salaryAdvance = salaryAdvanceRepository.findById(salaryAdvanceDTO.getId())
                                 .orElseThrow(() -> new HRMSException("SALARY_ADVANCE_NOT_FOUND"));

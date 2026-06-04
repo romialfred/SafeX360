@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +25,31 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
     @Autowired
     private WeatherConditionRepository weatherConditionRepository;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
+    private WeatherCondition loadWeatherCondition(Long companyId, Long id) throws HSException {
+        return weatherConditionRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
+    }
+
     @Override
-    public Long addWeatherCondition(WeatherConditionDTO weatherConditionDTO) throws HSException {
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addWeatherCondition(Long companyId, WeatherConditionDTO weatherConditionDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
         Optional<WeatherCondition> optional = weatherConditionRepository
-                .findByNameIgnoreCase(weatherConditionDTO.getName());
+                .findByCompanyIdAndNameIgnoreCase(companyId, weatherConditionDTO.getName());
         if (optional.isPresent()) {
             throw new HSException("WEATHER_CONDITION_ALREADY_EXISTS");
         }
+        weatherConditionDTO.setCompanyId(companyId);
         weatherConditionDTO.setStatus(Status.ACTIVE);
         weatherConditionDTO.setCreatedAt(LocalDateTime.now());
         weatherConditionDTO.setUpdatedAt(LocalDateTime.now());
@@ -37,66 +58,94 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
     }
 
     @Override
-    public void updateWeatherCondition(WeatherConditionDTO weatherConditionDTO) throws HSException {
-
-        WeatherCondition existingWeatherCondition = weatherConditionRepository.findById(weatherConditionDTO.getId())
-                .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "weatherConditionById", key = "#companyId != null && #weatherConditionDTO.id != null ? (#companyId + '-' + #weatherConditionDTO.id) : 'ALL-' + #weatherConditionDTO.id", condition = "#weatherConditionDTO.id != null"),
+            @CacheEvict(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateWeatherCondition(Long companyId, WeatherConditionDTO weatherConditionDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, weatherConditionDTO.getId());
         if (!existingWeatherCondition.getName().equalsIgnoreCase(weatherConditionDTO.getName())) {
             Optional<WeatherCondition> optional = weatherConditionRepository
-                    .findByNameIgnoreCase(weatherConditionDTO.getName());
+                    .findByCompanyIdAndNameIgnoreCase(companyId, weatherConditionDTO.getName());
             if (optional.isPresent()) {
                 throw new HSException("WEATHER_CONDITION_ALREADY_EXISTS");
             }
         }
         existingWeatherCondition.setName(weatherConditionDTO.getName());
         existingWeatherCondition.setDescription(weatherConditionDTO.getDescription());
+        existingWeatherCondition.setCompanyId(companyId);
         existingWeatherCondition.setUpdatedAt(LocalDateTime.now());
         weatherConditionRepository.save(existingWeatherCondition);
     }
 
     @Override
-    public void deleteWeatherCondition(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteWeatherCondition'");
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "weatherConditionById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteWeatherCondition(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WeatherCondition weatherCondition = loadWeatherCondition(companyId, id);
+        weatherConditionRepository.delete(weatherCondition);
     }
 
     @Override
-    public WeatherConditionDTO getWeatherConditionById(Long id) throws HSException {
-        return weatherConditionRepository.findById(id).map(WeatherCondition::toDTO)
-                .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
+    @Cacheable(cacheNames = "weatherConditionById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public WeatherConditionDTO getWeatherConditionById(Long companyId, Long id) throws HSException {
+        return loadWeatherCondition(companyId, id).toDTO();
     }
 
     @Override
-    public void activateWeatherCondition(Long id) throws HSException {
-        WeatherCondition existingWeatherCondition = weatherConditionRepository.findById(id)
-                .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "weatherConditionById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateWeatherCondition(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, id);
         existingWeatherCondition.setStatus(Status.ACTIVE);
         existingWeatherCondition.setUpdatedAt(LocalDateTime.now());
         weatherConditionRepository.save(existingWeatherCondition);
     }
 
     @Override
-    public void deactivateWeatherCondition(Long id) throws HSException {
-        WeatherCondition existingWeatherCondition = weatherConditionRepository.findById(id)
-                .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "weatherConditionById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateWeatherCondition(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, id);
         existingWeatherCondition.setStatus(Status.INACTIVE);
         existingWeatherCondition.setUpdatedAt(LocalDateTime.now());
         weatherConditionRepository.save(existingWeatherCondition);
     }
 
     @Override
-    public List<WeatherConditionResponse> getAllWeatherConditions() throws HSException {
-        return weatherConditionRepository.findAllWithName();
+    @Cacheable(cacheNames = "weatherConditionsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WeatherConditionResponse> getAllWeatherConditions(Long companyId) throws HSException {
+        return weatherConditionRepository.findAllWithName(companyId);
     }
 
     @Override
-    public List<WeatherConditionResponse> getAllActiveWeatherConditions() throws HSException {
-        return weatherConditionRepository.findAllActiveWeather();
+    @Cacheable(cacheNames = "weatherConditionsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<WeatherConditionResponse> getAllActiveWeatherConditions(Long companyId) throws HSException {
+        return weatherConditionRepository.findAllByStatus(companyId, Status.ACTIVE);
     }
 
     @Override
-    public List<WeatherConditionResponse> getWeatherConditionsByIds(List<Long> ids) {
-        return weatherConditionRepository.findByIds(ids);
+    @Cacheable(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? (#companyId + '-' + #ids) : 'ALL-' + #ids")
+    public List<WeatherConditionResponse> getWeatherConditionsByIds(Long companyId, List<Long> ids) {
+        return weatherConditionRepository.findByIds(companyId, ids);
     }
 
 }

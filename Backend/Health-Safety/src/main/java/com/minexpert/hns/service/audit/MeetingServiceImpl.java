@@ -3,9 +3,13 @@ package com.minexpert.hns.service.audit;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.minexpert.hns.config.AuditCacheNames;
 import com.minexpert.hns.dto.audit.MeetingDTO;
 import com.minexpert.hns.entity.audit.Meeting;
 import com.minexpert.hns.exception.HSException;
@@ -20,6 +24,10 @@ public class MeetingServiceImpl implements MeetingService {
     private final MeetingRepository meetingRepository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.MEETINGS_BY_AUDIT, key = "#meetingDTO.auditId", condition = "#meetingDTO.auditId != null"),
+            @CacheEvict(cacheNames = AuditCacheNames.MEETING_BY_ID, key = "#result", condition = "#result != null")
+    })
     public Long createMeeting(MeetingDTO meetingDTO) throws HSException {
         meetingDTO.setCreatedAt(LocalDateTime.now());
         meetingDTO.setUpdatedAt(LocalDateTime.now());
@@ -27,6 +35,10 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.MEETINGS_BY_AUDIT, key = "#auditId"),
+            @CacheEvict(cacheNames = AuditCacheNames.MEETING_BY_ID, allEntries = true)
+    })
     public List<Long> createMeetings(List<MeetingDTO> meetingDTOs, Long auditId) throws HSException {
         meetingDTOs.forEach(meetingDTO -> {
             meetingDTO.setCreatedAt(LocalDateTime.now());
@@ -40,11 +52,13 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.MEETING_BY_ID, key = "#id")
     public MeetingDTO getMeetingById(Long id) throws HSException {
         return meetingRepository.findById(id).orElseThrow(() -> new HSException("MEETING_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @Cacheable(cacheNames = AuditCacheNames.MEETINGS_BY_AUDIT, key = "#auditId")
     public List<MeetingDTO> getMeetingsByAuditId(Long auditId) throws HSException {
         return ((List<Meeting>) meetingRepository.findByAudit_Id(auditId)).stream()
                 .map(Meeting::toDTO)

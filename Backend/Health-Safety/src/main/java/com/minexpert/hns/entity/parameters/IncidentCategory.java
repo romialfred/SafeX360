@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.dto.parameters.IncidentCategoryDTO;
 import com.minexpert.hns.enums.Status;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +24,8 @@ public class IncidentCategory {
     private Long id;
     private String name;
     private Status status;
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -31,6 +34,7 @@ public class IncidentCategory {
     }
 
     public IncidentCategoryDTO toDTO() {
-        return new IncidentCategoryDTO(this.id, this.name, this.status, this.createdAt, this.updatedAt);
+        return new IncidentCategoryDTO(this.id, this.name, this.status, this.companyId, this.createdAt,
+                this.updatedAt);
     }
 }

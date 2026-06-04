@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.hrms.DataInterface.TeamMemberDetails;
@@ -35,6 +38,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private TeamRepository teamRepository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMembersByTeam", key = "#teamMemberDTO.team.id", condition = "#teamMemberDTO.team != null && #teamMemberDTO.team.id != null"),
+            @CacheEvict(cacheNames = "eligibleEmployeesForTeam", allEntries = true)
+    })
     public TeamMemberDTO addTeamMember(TeamMemberDTO teamMemberDTO) throws HRMSException {
 
         if (!constraintsService.isFlagActive("ADD_MEMBER_MID_WEEK")) {
@@ -63,6 +70,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "eligibleEmployeesForTeam", allEntries = true)
+    })
     public void activateTeamMember(Long id) throws HRMSException {
 
         TeamMember tm = teamMemberRepository.findById(id).orElseThrow(() -> new HRMSException("TEAM_MEMBER_NOT_FOUND"));
@@ -86,6 +97,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "eligibleEmployeesForTeam", allEntries = true)
+    })
     public void deactivateTeamMember(Long id) throws HRMSException {
         TeamMember tm = teamMemberRepository.findById(id).orElseThrow(() -> new HRMSException("TEAM_MEMBER_NOT_FOUND"));
         tm.setStatus(Status.INACTIVE);
@@ -94,11 +109,16 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
+    @Cacheable(cacheNames = "teamMembersByTeam", key = "#teamId")
     public List<TeamMemberDetails> getTeamMembers(Long teamId) throws HRMSException {
         return teamMemberRepository.findByTeamId(teamId);
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "teamMembersByTeam", allEntries = true),
+            @CacheEvict(cacheNames = "eligibleEmployeesForTeam", allEntries = true)
+    })
     public void updateTeamMember(TeamMemberDTO teamMemberDTO) throws HRMSException {
         TeamMember tm = teamMemberRepository.findById(teamMemberDTO.getId())
                 .orElseThrow(() -> new HRMSException("TEAM_MEMBER_NOT_FOUND"));

@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +14,7 @@ import com.minexpert.hns.entity.compliance.Requirement;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.compliance.RequirementRepository;
+import com.minexpert.hns.config.ComplianceCacheNames;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +25,16 @@ public class RequirementServiceImpl implements RequirementService {
     private final RequirementRepository requirementRepository;
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.REQUIREMENT_BY_ID,
+            ComplianceCacheNames.REQUIREMENTS_ALL,
+            ComplianceCacheNames.REQUIREMENTS_ACTIVE,
+            ComplianceCacheNames.REQUIREMENTS_BY_POSITION,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS
+    }, allEntries = true)
     public Long createRequirement(RequirementDTO requirementDTO) throws HSException {
         Optional<Requirement> optional = requirementRepository.findByTitleIgnoreCase(requirementDTO.getTitle());
         if (optional.isPresent()) {
@@ -35,11 +48,22 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.REQUIREMENT_BY_ID, key = "#id")
     public RequirementDTO getRequirementById(Long id) throws HSException {
         return requirementRepository.findById(id).orElseThrow(() -> new HSException("REQUIREMENT_NOT_FOUND")).toDTO();
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.REQUIREMENT_BY_ID,
+            ComplianceCacheNames.REQUIREMENTS_ALL,
+            ComplianceCacheNames.REQUIREMENTS_ACTIVE,
+            ComplianceCacheNames.REQUIREMENTS_BY_POSITION,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS
+    }, allEntries = true)
     public void updateRequirement(RequirementDTO requirementDTO) throws HSException {
         Requirement requirement = requirementRepository.findById(requirementDTO.getId())
                 .orElseThrow(() -> new HSException("REQUIREMENT_NOT_FOUND"));
@@ -58,6 +82,16 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.REQUIREMENT_BY_ID,
+            ComplianceCacheNames.REQUIREMENTS_ALL,
+            ComplianceCacheNames.REQUIREMENTS_ACTIVE,
+            ComplianceCacheNames.REQUIREMENTS_BY_POSITION,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS
+    }, allEntries = true)
     public void activateRequirement(Long id) throws HSException {
         Requirement requirement = requirementRepository.findById(id)
                 .orElseThrow(() -> new HSException("REQUIREMENT_NOT_FOUND"));
@@ -66,6 +100,16 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {
+            ComplianceCacheNames.REQUIREMENT_BY_ID,
+            ComplianceCacheNames.REQUIREMENTS_ALL,
+            ComplianceCacheNames.REQUIREMENTS_ACTIVE,
+            ComplianceCacheNames.REQUIREMENTS_BY_POSITION,
+            ComplianceCacheNames.REQUIREMENTS_BY_EMPLOYEE,
+            ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            ComplianceCacheNames.DASHBOARD_OVERALL_STATUS
+    }, allEntries = true)
     public void deactivateRequirement(Long id) throws HSException {
         Requirement requirement = requirementRepository.findById(id)
                 .orElseThrow(() -> new HSException("REQUIREMENT_NOT_FOUND"));
@@ -74,11 +118,13 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.REQUIREMENTS_ALL)
     public List<RequirementDTO> getAllRequirements() throws HSException {
         return ((List<Requirement>) requirementRepository.findAll()).stream().map(Requirement::toDTO).toList();
     }
 
     @Override
+    @Cacheable(cacheNames = ComplianceCacheNames.REQUIREMENTS_ACTIVE)
     public List<RequirementDTO> getAllActiveRequirements() {
         return ((List<Requirement>) requirementRepository.findByStatus(Status.ACTIVE)).stream().map(Requirement::toDTO)
                 .toList();

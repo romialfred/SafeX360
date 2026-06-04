@@ -73,6 +73,7 @@ h1, h2, h3, h4 {
    --------------------------------------------------------------------------- */
 [style*="fontWeight: 900"], [style*="font-weight: 900"] {
   font-weight: 900 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 /* ---------------------------------------------------------------------------

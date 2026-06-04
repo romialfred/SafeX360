@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class InternalAuditorResponse {
     private Long id;
     private Long employeeId;
+    private Long companyId;
     private String employeeName;
     private String email;
     private String department;

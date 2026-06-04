@@ -5,13 +5,18 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.dto.parameters.IncidentTypeDTO;
 import com.minexpert.hns.dto.response.CategorySeverityCount;
 import com.minexpert.hns.dto.response.IncidentTypeDetails;
+import com.minexpert.hns.entity.parameters.IncidentCategory;
 import com.minexpert.hns.entity.parameters.IncidentType;
+import com.minexpert.hns.entity.parameters.SeverityLevel;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.IncidentTypeRepository;
@@ -23,13 +28,33 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
     @Autowired
     private IncidentTypeRepository incidentTypeRepository;
 
+    private void ensureCompanyIdProvided(Long companyId) throws HSException {
+        if (companyId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+    }
+
+    private IncidentType loadIncidentType(Long companyId, Long id) throws HSException {
+        return incidentTypeRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
+    }
+
     @Override
-    public Long addIncidentType(IncidentTypeDTO incidentTypeDTO) throws HSException {
-        Optional<IncidentType> optional = incidentTypeRepository.findByNameIgnoreCase(incidentTypeDTO.getName());
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTypesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsSeverity", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategory", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public Long addIncidentType(Long companyId, IncidentTypeDTO incidentTypeDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        Optional<IncidentType> optional = incidentTypeRepository.findByCompanyIdAndNameIgnoreCase(companyId,
+                incidentTypeDTO.getName());
         if (optional.isPresent()) {
             throw new HSException("INCIDENT_TYPE_ALREADY_EXISTS");
         }
-        System.out.println("IncidentTypeDTO: " + incidentTypeDTO);
+        incidentTypeDTO.setCompanyId(companyId);
         incidentTypeDTO.setStatus(Status.ACTIVE);
         incidentTypeDTO.setCreatedAt(LocalDateTime.now());
         incidentTypeDTO.setUpdatedAt(LocalDateTime.now());
@@ -39,74 +64,109 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
     }
 
     @Override
-    public void updateIncidentType(IncidentTypeDTO incidentTypeDTO) throws HSException {
-        IncidentType existingIncidentType = incidentTypeRepository.findById(incidentTypeDTO.getId())
-                .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTypeById", key = "#companyId != null && #incidentTypeDTO.id != null ? (#companyId + '-' + #incidentTypeDTO.id) : 'ALL-' + #incidentTypeDTO.id", condition = "#incidentTypeDTO.id != null"),
+            @CacheEvict(cacheNames = "incidentTypesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsSeverity", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategory", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void updateIncidentType(Long companyId, IncidentTypeDTO incidentTypeDTO) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        IncidentType existingIncidentType = loadIncidentType(companyId, incidentTypeDTO.getId());
         if (!existingIncidentType.getName().equalsIgnoreCase(incidentTypeDTO.getName())) {
-            Optional<IncidentType> optional = incidentTypeRepository.findByNameIgnoreCase(incidentTypeDTO.getName());
+            Optional<IncidentType> optional = incidentTypeRepository
+                    .findByCompanyIdAndNameIgnoreCase(companyId, incidentTypeDTO.getName());
             if (optional.isPresent()) {
                 throw new HSException("INCIDENT_TYPE_ALREADY_EXISTS");
             }
         }
         existingIncidentType.setName(incidentTypeDTO.getName());
         existingIncidentType.setDescription(incidentTypeDTO.getDescription());
+        existingIncidentType.setIncidentCategory(new IncidentCategory(incidentTypeDTO.getIncidentCategoryId()));
+        existingIncidentType.setSeverityLevel(new SeverityLevel(incidentTypeDTO.getSeverityLevelId()));
+        existingIncidentType.setCompanyId(companyId);
         existingIncidentType.setUpdatedAt(LocalDateTime.now());
         incidentTypeRepository.save(existingIncidentType);
     }
 
     @Override
-    public void deleteIncidentType(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteIncidentType'");
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTypeById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTypesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsSeverity", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategory", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deleteIncidentType(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        IncidentType incidentType = loadIncidentType(companyId, id);
+        incidentTypeRepository.delete(incidentType);
     }
 
     @Override
-    public IncidentTypeDTO getIncidentTypeById(Long id) throws HSException {
-        return incidentTypeRepository.findById(id).map(IncidentType::toDTO)
-                .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
+    @Cacheable(cacheNames = "incidentTypeById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
+    public IncidentTypeDTO getIncidentTypeById(Long companyId, Long id) throws HSException {
+        return loadIncidentType(companyId, id).toDTO();
     }
 
     @Override
-    public void activateIncidentType(Long id) throws HSException {
-        IncidentType existingIncidentType = incidentTypeRepository.findById(id)
-                .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTypeById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTypesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void activateIncidentType(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        IncidentType existingIncidentType = loadIncidentType(companyId, id);
         existingIncidentType.setStatus(Status.ACTIVE);
         existingIncidentType.setUpdatedAt(LocalDateTime.now());
         incidentTypeRepository.save(existingIncidentType);
     }
 
     @Override
-    public void deactivateIncidentType(Long id) throws HSException {
-        IncidentType existingIncidentType = incidentTypeRepository.findById(id)
-                .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "incidentTypeById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = "incidentTypesAll", key = "#companyId != null ? #companyId : 'ALL'"),
+            @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    })
+    public void deactivateIncidentType(Long companyId, Long id) throws HSException {
+        ensureCompanyIdProvided(companyId);
+        IncidentType existingIncidentType = loadIncidentType(companyId, id);
         existingIncidentType.setStatus(Status.INACTIVE);
         existingIncidentType.setUpdatedAt(LocalDateTime.now());
         incidentTypeRepository.save(existingIncidentType);
     }
 
     @Override
-    public List<IncidentTypeDetails> getAllIncidentTypes() throws HSException {
-        return incidentTypeRepository.findAllWithName();
+    public List<IncidentTypeDetails> getAllIncidentTypes(Long companyId) throws HSException {
+        return incidentTypeRepository.findAllWithName(companyId);
     }
 
     @Override
-    public List<IncidentTypeDetails> getAllActiveIncidentTypes() throws HSException {
-        return incidentTypeRepository.findAllActiveTypes();
+    @Cacheable(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<IncidentTypeDetails> getAllActiveIncidentTypes(Long companyId) throws HSException {
+        return incidentTypeRepository.findAllByStatus(companyId, Status.ACTIVE);
     }
 
     @Override
-    public List<CategorySeverityCount> countIncidentTypesBySeverityLevel() throws HSException {
-        return incidentTypeRepository.countTypesByLevel();
+    @Cacheable(cacheNames = "incidentTypeCountsSeverity", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CategorySeverityCount> countIncidentTypesBySeverityLevel(Long companyId) throws HSException {
+        return incidentTypeRepository.countTypesByLevel(companyId);
     }
 
     @Override
-    public List<CategorySeverityCount> countIncidentTypesByCategory() throws HSException {
-        return incidentTypeRepository.countTypesByCategory();
+    @Cacheable(cacheNames = "incidentTypeCountsCategory", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CategorySeverityCount> countIncidentTypesByCategory(Long companyId) throws HSException {
+        return incidentTypeRepository.countTypesByCategory(companyId);
     }
 
     @Override
-    public List<CategorySeverityCount> countByCategoryAndSeverityLevel() throws HSException {
-        return incidentTypeRepository.countByCategoryAndSeverityLevel();
+    @Cacheable(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<CategorySeverityCount> countByCategoryAndSeverityLevel(Long companyId) throws HSException {
+        return incidentTypeRepository.countByCategoryAndSeverityLevel(companyId);
     }
 
 }

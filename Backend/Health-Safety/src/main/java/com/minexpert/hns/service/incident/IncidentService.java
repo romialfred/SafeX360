@@ -10,20 +10,20 @@ import com.minexpert.hns.enums.IncidentStatus;
 import com.minexpert.hns.exception.HSException;
 
 public interface IncidentService {
-    public void reportIncident(IncidentDTO incidentDTO) throws HSException;
+    void reportIncident(Long companyId, IncidentDTO incidentDTO) throws HSException;
 
-    public void updateIncident(IncidentDTO incidentDTO) throws HSException;
+    void updateIncident(Long companyId, IncidentDTO incidentDTO) throws HSException;
 
-    public List<IncidentResponse> getAllIncidents() throws HSException;
+    List<IncidentResponse> getAllIncidents(Long companyId) throws HSException;
 
-    public IncidentDTO getIncidentById(Long id) throws HSException;
+    IncidentDTO getIncidentById(Long companyId, Long id) throws HSException;
 
-    public IncidentResponse getIncidentResponseById(Long id) throws HSException;
+    IncidentResponse getIncidentResponseById(Long companyId, Long id) throws HSException;
 
-    public void updateIncidentStatus(Long id, IncidentStatus status) throws HSException;
+    void updateIncidentStatus(Long companyId, Long id, IncidentStatus status) throws HSException;
 
-    List<YearlyClosureData> getYearlyClosureData(int year);
+    List<YearlyClosureData> getYearlyClosureData(Long companyId, int year);
 
-    DepartmentIncidentStats getDepartmentIncidentStats(Long departmentId);
+    DepartmentIncidentStats getDepartmentIncidentStats(Long companyId, Long departmentId);
 
 }

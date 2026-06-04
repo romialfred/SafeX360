@@ -26,6 +26,7 @@ public class IncidentDTO {
     private Long locationId;
     private List<Long> weatherConditions;
     private Long departmentId;
+    private Long companyId;
     private IncidentStatus status;
     private LocalDateTime occurredAt;
     private LocalDateTime discoveryTime;
@@ -53,11 +54,24 @@ public class IncidentDTO {
     private String departmentName;
 
     public Incident toIncident() {
-        return new Incident(id, number, title, ppe.toString(), new Location(locationId),
-                weatherConditions.toString(), departmentId,
-                occurredAt, discoveryTime, new WorkArea(workAreaId), new WorkProcess(workProcessId), reporterId, status,
-                involvedPersons.toString(),
-                witnesses.toString(), null, null, null);
+        Incident incident = new Incident();
+        incident.setId(id);
+        incident.setNumber(number);
+        incident.setTitle(title);
+        incident.setPpe(ppe != null ? ppe.toString() : null);
+        incident.setLocation(locationId != null ? new Location(locationId) : null);
+        incident.setWeatherConditions(weatherConditions != null ? weatherConditions.toString() : null);
+        incident.setDepartmentId(departmentId);
+        incident.setCompanyId(companyId);
+        incident.setOccurredAt(occurredAt);
+        incident.setDiscoveryTime(discoveryTime);
+        incident.setWorkArea(workAreaId != null ? new WorkArea(workAreaId) : null);
+        incident.setWorkProcess(workProcessId != null ? new WorkProcess(workProcessId) : null);
+        incident.setReporterId(reporterId);
+        incident.setStatus(status);
+        incident.setInvolvedPersons(involvedPersons != null ? involvedPersons.toString() : null);
+        incident.setWitnesses(witnesses != null ? witnesses.toString() : null);
+        return incident;
     }
 
     public IncidentAnalysis toIncidentAnalysis() {

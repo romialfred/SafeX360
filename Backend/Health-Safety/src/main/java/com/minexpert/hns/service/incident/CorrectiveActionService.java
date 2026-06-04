@@ -8,39 +8,40 @@ import com.minexpert.hns.exception.HSException;
 
 public interface CorrectiveActionService {
 
-    public Long addCorrectiveAction(CorrectiveActionDTO correctiveActionDTO) throws HSException;
+    Long addCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException;
 
-    public List<CorrectiveActionDTO> getCorrectiveActionsByIncidentId(Long incidentId) throws HSException;
+    List<CorrectiveActionDTO> getCorrectiveActionsByIncidentId(Long companyId, Long incidentId) throws HSException;
 
-    public void deleteCorrectiveAction(Long id) throws HSException;
+    void deleteCorrectiveAction(Long companyId, Long id) throws HSException;
 
-    public List<CorrectiveActionResponse> getAllActions() throws HSException;
+    List<CorrectiveActionResponse> getAllActions(Long companyId) throws HSException;
 
-    public List<CorrectiveActionResponse> getAllAdhocActions() throws HSException;
+    List<CorrectiveActionResponse> getAllAdhocActions(Long companyId) throws HSException;
 
-    public List<CorrectiveActionResponse> getAllPendingAdhocActions() throws HSException;
+    List<CorrectiveActionResponse> getAllPendingAdhocActions(Long companyId) throws HSException;
 
     // Retrieve all corrective actions with PENDING status
-    public List<CorrectiveActionResponse> getAllPendingActions() throws HSException;
+    List<CorrectiveActionResponse> getAllPendingActions(Long companyId) throws HSException;
 
-    public List<CorrectiveActionResponse> getActionsByIncidentId(Long incidentId) throws HSException;
+    List<CorrectiveActionResponse> getActionsByIncidentId(Long companyId, Long incidentId) throws HSException;
 
-    public List<CorrectiveActionResponse> getActionsByInspectionId(Long inspectionId) throws HSException;
+    List<CorrectiveActionResponse> getActionsByInspectionId(Long companyId, Long inspectionId) throws HSException;
 
-    public List<CorrectiveActionResponse> getActionsByActivityId(Long activityId) throws HSException;
+    List<CorrectiveActionResponse> getActionsByActivityId(Long companyId, Long activityId) throws HSException;
 
-    public List<CorrectiveActionResponse> getActionsByDepartmentId(Long departmentId) throws HSException;
+    List<CorrectiveActionResponse> getActionsByDepartmentId(Long companyId, Long departmentId) throws HSException;
 
-    public List<CorrectiveActionResponse> getActionsByNonConformityId(Long nonConformityId) throws HSException;
+    List<CorrectiveActionResponse> getActionsByNonConformityId(Long companyId, Long nonConformityId) throws HSException;
 
-    public void updateCorrectiveAction(CorrectiveActionDTO correctiveActionDTO) throws HSException;
+    void updateCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException;
 
-    public List<Long> saveOrUpdateCorrectiveActions(List<CorrectiveActionDTO> correctiveActionDTOs) throws HSException;
+    List<Long> saveOrUpdateCorrectiveActions(Long companyId, List<CorrectiveActionDTO> correctiveActionDTOs)
+            throws HSException;
 
-    public CorrectiveActionResponse getCorrectiveActionById(Long id) throws HSException;
+    CorrectiveActionResponse getCorrectiveActionById(Long companyId, Long id) throws HSException;
 
-    public void approveAction(Long id) throws HSException;
+    void approveAction(Long companyId, Long id) throws HSException;
 
-    public void cancelAction(Long id) throws HSException;
+    void cancelAction(Long companyId, Long id) throws HSException;
 
 }

@@ -1,5 +1,13 @@
 package com.minexpert.hns.service.chemicalrisks;
 
+import java.util.List;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.stereotype.Service;
+
+import com.minexpert.hns.config.ChemicalRiskCacheNames;
 import com.minexpert.hns.dto.chemicalrisks.ChemicalRiskDTO;
 import com.minexpert.hns.entity.chemicalrisks.ChemicalRisk;
 import com.minexpert.hns.entity.parameters.WorkProcess;
@@ -9,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
@@ -18,6 +26,10 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     private final ChemicalRiskRepository chemicalRiskRepository;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true),
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#result.id")
+    })
     public ChemicalRiskDTO create(ChemicalRiskDTO dto) throws HSException {
         ChemicalRisk risk = dto.toEntity();
         ChemicalRisk saved = chemicalRiskRepository.save(risk);
@@ -25,6 +37,10 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#dto.id"),
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true)
+    })
     public ChemicalRiskDTO update(ChemicalRiskDTO dto) throws HSException {
         ChemicalRisk existing = chemicalRiskRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
@@ -46,6 +62,10 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true)
+    })
     public ChemicalRiskDTO updateStatus(Long id, String status) throws HSException {
         ChemicalRisk risk = chemicalRiskRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
@@ -54,6 +74,7 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#id")
     public ChemicalRiskDTO getById(Long id) throws HSException {
         ChemicalRisk risk = chemicalRiskRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
@@ -61,6 +82,7 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL)
     public List<ChemicalRiskDTO> getAll() throws HSException {
         return chemicalRiskRepository.findAll()
                 .stream()
@@ -68,4 +90,3 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
                 .toList();
     }
 }
-

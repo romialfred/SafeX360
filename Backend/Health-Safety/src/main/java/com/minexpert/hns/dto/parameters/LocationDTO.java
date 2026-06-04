@@ -18,11 +18,12 @@ public class LocationDTO {
     private Double latitude;
     private Double longitude;
     private Status status;
+    private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Location toEntity() {
-        return new Location(this.id, this.name, this.latitude, this.longitude, this.status, this.createdAt,
-                this.updatedAt);
+        return new Location(this.id, this.name, this.latitude, this.longitude, this.status, this.companyId,
+                this.createdAt, this.updatedAt);
     }
 }

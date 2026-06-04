@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.hrms.dto.Timesheet.SignatureDTO;
@@ -22,6 +25,10 @@ public class SignatureServiceImpl implements SignatureService {
     private TimesheetService timesheetService;
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "signatureById", allEntries = true),
+            @CacheEvict(cacheNames = "signaturesByTimesheet", key = "#signatureDTO.timesheetId", condition = "#signatureDTO.timesheetId != null")
+    })
     public void addSignature(SignatureDTO signatureDTO) throws HRMSException {
         Optional<Signature> optional = signatureRepository.findByTimesheet_IdAndSignType(signatureDTO.getTimesheetId(),
                 signatureDTO.getSignType());
@@ -48,12 +55,14 @@ public class SignatureServiceImpl implements SignatureService {
     }
 
     @Override
+    @Cacheable(cacheNames = "signatureById", key = "#id")
     public SignatureDTO getSignature(Long id) throws HRMSException {
         return signatureRepository.findById(id).map(Signature::toDTO)
                 .orElseThrow(() -> new HRMSException("SIGNATURE_NOT_FOUND"));
     }
 
     @Override
+    @Cacheable(cacheNames = "signaturesByTimesheet", key = "#timesheetId")
     public List<SignatureDTO> getSignaturesByTimesheet(Long timesheetId) {
         return signatureRepository.findByTimesheet_Id(timesheetId).stream().map(Signature::toDTO).toList();
     }

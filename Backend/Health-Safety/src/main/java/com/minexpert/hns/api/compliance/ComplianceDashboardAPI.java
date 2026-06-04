@@ -39,7 +39,8 @@ public class ComplianceDashboardAPI {
     }
 
     @PostMapping("/action-items/notify")
-    public ResponseEntity<ResponseDTO> sendActionItemAlert(@Validated @RequestBody ComplianceDashboardAlertRequest request)
+    public ResponseEntity<ResponseDTO> sendActionItemAlert(
+            @Validated @RequestBody ComplianceDashboardAlertRequest request)
             throws HSException {
         complianceDashboardService.sendActionItemAlert(request.employeeId(), request.requirementId());
         return ResponseEntity.ok(new ResponseDTO("Alert sent successfully"));

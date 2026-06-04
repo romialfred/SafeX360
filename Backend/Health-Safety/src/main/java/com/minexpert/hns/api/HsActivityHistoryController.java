@@ -1,8 +1,9 @@
 package com.minexpert.hns.api;
 
 import com.minexpert.hns.dto.HsActivityHistoryDTO;
-import com.minexpert.hns.service.activities.HsActivityHistoryService;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.service.activities.HsActivityHistoryService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
