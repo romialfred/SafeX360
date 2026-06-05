@@ -34,8 +34,8 @@ public class MyConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        // Public actuator endpoints for Render health checks
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // LOT 42 hotfix : ouvrir /actuator/health/** pour liveness + readiness probes Render
+                        .requestMatchers("/actuator/health/**", "/actuator/health", "/actuator/info").permitAll()
 
                         // R-060 Phase 2.a — Swagger UI / OpenAPI documentation
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
