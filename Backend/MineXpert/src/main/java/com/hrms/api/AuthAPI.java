@@ -76,12 +76,15 @@ public class AuthAPI {
                     LocalDateTime.now(), "Successfully Logged In"));
             // LOT 41 P1 SECURITY: max-age cookie aligné sur JWT_EXPIRATION_HOURS (défaut 8h)
             // au lieu de 30 jours, pour limiter la fenêtre d'exploitation d'un vol de cookie.
+            // LOT 42 hotfix : SameSite=None obligatoire car frontend (Vercel
+             // safex360.data-univers.com) et backend (Render onrender.com) sont
+             // sur des registrable-domains différents → cookie cross-site →
+             // Lax bloquerait l'envoi du cookie par le navigateur.
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
-                    // .secure(false)
                     .secure(true)
                     .path("/")
-                    .sameSite("Lax")
+                    .sameSite("None")
                     .maxAge(Duration.ofMillis(helper.getExpirationMillis()))
                     .build();
 
@@ -136,16 +139,16 @@ public class AuthAPI {
 
     @GetMapping("/logout")
     public ResponseEntity<String> logout(HttpServletResponse response) {
+        // LOT 42 hotfix : retrait du .domain(".data-univers.com") qui empêche
+        // la suppression du cookie sur safex360-gateway.onrender.com (domain
+        // mismatch). Le cookie de logout doit cibler le même domaine que le
+        // cookie de login (par défaut = host du backend).
         ResponseCookie expiredCookie = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
-                .secure(true) // or true in production
-                // .secure(false) // or true in production
-                // .domain(".localtest.me")
-                .domain(".data-univers.com")
+                .secure(true)
                 .path("/")
-                // .sameSite("Lax")
                 .sameSite("None")
-                .maxAge(0) // expires immediately
+                .maxAge(0)
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
