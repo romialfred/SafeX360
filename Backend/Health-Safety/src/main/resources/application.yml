@@ -186,3 +186,20 @@ scheduler:
   retry-backoff-seconds: 300
 hrms:
   url: ${MINE_XPERT_URL}
+
+# LOT 42 hotfix : probes liveness/readiness pour que Render détecte l'app
+# comme vivante sans attendre tous les health checks (le mail check peut
+# prendre 11s+ à cause de la connexion SMTP, ce qui timeout Render).
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health, info

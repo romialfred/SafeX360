@@ -3,21 +3,9 @@ spring:
     name: hrms
 
   datasource:
-    # Local MySQL (commented)
-    # url: jdbc:mysql://localhost:3306/hrms
-    # username: root
-    # password: Marshal9758@
-
-    # Aiven MySQL config (commented)
-    # username: avnadmin
-    # url: jdbc:mysql://avnadmin:AVNS_J2VSkRIZfCanFADRGaK@datauniversmysql01-minex-360.g.aivencloud.com:23891/defaultdb?ssl-mode=REQUIRED
-    # password: AVNS_J2VSkRIZfCanFADRGaK
-
-    # Active Aiven MySQL config
-
-    # username: avnadmin
-    # url: jdbc:mysql://avnadmin:AVNS_WyMuze10sX31GeYVJY2@hrms-roxgold-hrms-roxgold.g.aivencloud.com:12254/defaultdb?ssl-mode=REQUIRED
-    # password: AVNS_WyMuze10sX31GeYVJY2
+    # LOT 42 P0 security : suppression des credentials Aiven en clair
+    # qui étaient laissés en commentaire (bloqués par GitHub Push Protection).
+    # Toute config sensible passe par les env vars Render.
     username: ${DB_USERNAME}
     url: ${DB_URL}
     password: ${DB_PASSWORD}
@@ -62,6 +50,16 @@ management:
     web:
       exposure:
         include: health, info
+  endpoint:
+    health:
+      # LOT 42 hotfix : probes liveness/readiness pour booter rapide sur Render
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    # Désactive le check mail (SMTP) qui prend 11s+ et timeout Render
+    mail:
+      enabled: false
 
 app:
   mail:
