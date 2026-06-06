@@ -175,7 +175,7 @@ const Investigation = () => {
             const evidence = await convertFilesToBase64New(form.values.evidence);
             const data = {
                 investigation: { ...investigation, ...form.values, evidence: evidence, incidentId: id, correctiveActions: undefined },
-                correctiveActions: form.values.correctiveActions.map(x => ({ ...x, departmentId: x.assignedEmployeeId ? empMap[x.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: x.assignedEmployeeId ?? user.id, assignedEmployeeId: x.assignedEmployeeId ?? user.id }))
+                correctiveActions: form.values.correctiveActions.map(x => ({ ...x, departmentId: x.assignedEmployeeId ? empMap[x.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: (x.assignedEmployeeId || user.id), assignedEmployeeId: (x.assignedEmployeeId || user.id) }))
             };
             dispatch(showOverlay());
             if (investigation) {

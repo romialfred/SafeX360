@@ -16,6 +16,7 @@ import { getActivePPE, getAllPPE } from '../../services/PPEService';
 import { getEmployeesWithDepartment } from '../../services/EmployeeService';
 import { createPpeRequest, getAllPpeRequests, approvePpeRequest, rejectPpeRequest } from '../../services/PpeRequestService';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { toLocalDate } from '../../utility/dateConversion';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { mapIdToName } from '../../utility/OtherUtilities';
@@ -187,7 +188,11 @@ const PPERequestsTable = () => {
         }
 
         setLoading(true);
-        createPpeRequest(values)
+        const payload = {
+            ...values,
+            desiredDate: toLocalDate(values.desiredDate),
+        };
+        createPpeRequest(payload)
             .then(() => {
                 successNotification('Demande EPI créée avec succès');
                 setShowRequestForm(false);

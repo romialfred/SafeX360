@@ -21,6 +21,7 @@ import { getActionsByNonConformityId } from '../../../services/CorrectiveActionS
 import { modals } from '@mantine/modals';
 import NcHelp from './NcHelp';
 import { useSelector } from 'react-redux';
+import { toLocalDate } from '../../../utility/dateConversion';
 
 const NonConformityEdit = () => {
     const { id } = useParams();
@@ -73,15 +74,15 @@ const NonConformityEdit = () => {
                 supportComments: '',
                 lessonLearned: '',
                 sharingPlan: '',
-                closingDate: '',
+                closingDate: null as Date | string | null,
                 finalStatus: '',
                 validator: '',
-                validationDate: '',
+                validationDate: null as Date | string | null,
                 validationComment: '',
                 effectiveness: '',
-                rating: '',
+                rating: null as number | null,
                 risk: '',
-                nextCheck: '',
+                nextCheck: null as Date | string | null,
                 feedback: '',
                 currency: 'USD',
                 archiveNumber: '',
@@ -390,8 +391,32 @@ const NonConformityEdit = () => {
         dispatch(showOverlay());
         const evidence = await convertFilesToBase64New(values.nonConformity.evidence);
         const docs = await convertFilesToBase64New(values.nonConformity.docs);
+        // Transformation du payload nonConformity pour matcher le DTO backend :
+        // - dates serialisees via toLocalDate (LocalDate Spring)
+        // - validator -> validatorId (Long), archiveManager -> archiveManagerId (Long)
+        // - rating null si non rempli (DTO attend Integer)
+        const ncPayload: any = {
+            ...values.nonConformity,
+            evidence,
+            docs,
+            status: null,
+            closingDate: toLocalDate(values.nonConformity.closingDate as any),
+            validationDate: toLocalDate(values.nonConformity.validationDate as any),
+            nextCheck: toLocalDate(values.nonConformity.nextCheck as any),
+            rating: values.nonConformity.rating === null || values.nonConformity.rating === undefined
+                ? null
+                : Number(values.nonConformity.rating),
+        };
+        if (ncPayload.validator !== undefined && ncPayload.validator !== '' && ncPayload.validator !== null) {
+            ncPayload.validatorId = Number(ncPayload.validator);
+        }
+        delete ncPayload.validator;
+        if (ncPayload.archiveManager !== undefined && ncPayload.archiveManager !== '' && ncPayload.archiveManager !== null) {
+            ncPayload.archiveManagerId = Number(ncPayload.archiveManager);
+        }
+        delete ncPayload.archiveManager;
         updateNonConformity({
-            nonConformity: { ...values.nonConformity, evidence, docs, status: null },
+            nonConformity: ncPayload,
             analysis: values.analysis,
             correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id }))
         }).then((_response) => {

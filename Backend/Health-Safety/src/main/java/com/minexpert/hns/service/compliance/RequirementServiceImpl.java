@@ -77,6 +77,9 @@ public class RequirementServiceImpl implements RequirementService {
         requirement.setCategory(requirementDTO.getCategory());
         requirement.setDescription(requirementDTO.getDescription());
         requirement.setDocType(requirementDTO.getDocType());
+        requirement.setRenewalFrequency(requirementDTO.getRenewalFrequency());
+        requirement.setStatus(requirementDTO.getStatus());
+        requirement.setUpdatedAt(LocalDateTime.now());
         requirementRepository.save(requirement);
 
     }

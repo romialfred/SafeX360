@@ -14,6 +14,7 @@ import { errorNotification, successNotification } from '../../utility/Notificati
 import { createPPEStock } from '../../services/PPEStockService';
 import { getActivePPE } from '../../services/PPEService';
 import { mapIdToName } from '../../utility/OtherUtilities';
+import { toLocalDate } from '../../utility/dateConversion';
 
 const PPEStockEntryForm = () => {
     const [ppe, setPpe] = useState<any>([]);
@@ -61,7 +62,11 @@ const PPEStockEntryForm = () => {
 
     const handleSubmit = (values: any) => {
         dispatch(showOverlay());
-        createPPEStock(values).then((_res) => {
+        const payload = {
+            ...values,
+            expiryDate: toLocalDate(values.expiryDate),
+        };
+        createPPEStock(payload).then((_res) => {
             successNotification("Requirement created successfully");
             navigate("/ppe-management");
         }).catch((err) => {

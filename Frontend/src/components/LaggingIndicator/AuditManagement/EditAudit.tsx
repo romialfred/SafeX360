@@ -1,9 +1,15 @@
 import { Breadcrumbs, Button, Fieldset, FileInput, MultiSelect, Select, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { modals } from "@mantine/modals";
 import { PickList } from "primereact/picklist";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { auditType, PPE } from "../../../Data/IncidentsData";
+import { getEmployeeDropdownWithEmail } from "../../../services/EmployeeService";
+import { updateAudit } from "../../../services/AuditService";
+import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
+import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 
 
 
@@ -13,17 +19,39 @@ const EditAudit = () => {
     const [editingRoleId, setEditingRoleId] = useState<number | null>(null); // tracks which role is being edited
     const [auditPlanFile, setAuditPlanFile] = useState<File | null>(null);
 
-
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams<{ id?: string }>();
+    // TODO(refactor): route /audit-management/edit-audit should expose ":id" like EditScheduleAudit.
+    //                 Until then, we accept the audit id from path param, location.state.id or ?id= query string.
+    const auditId =
+        params.id ??
+        (location.state as { id?: string | number } | null)?.id ??
+        new URLSearchParams(location.search).get("id") ??
+        undefined;
 
 
 
     useEffect(() => {
-        const dummyEmployees = [
-            { id: 1, name: 'John Doe', empNumber: 'EMP001', role: '' },
-            { id: 2, name: 'Jane Smith', empNumber: 'EMP002', role: '' },
-            { id: 3, name: 'Robert Johnson', empNumber: 'EMP003', role: '' },
-        ];
-        setMember(dummyEmployees.map(emp => ({ ...emp, pos: "Source" })));
+        // Replaces previous hardcoded dummyEmployees stub with the real Employee service call.
+        getEmployeeDropdownWithEmail()
+            .then((res: any[]) => {
+                setMember(
+                    (res || []).map((emp: any) => ({
+                        id: emp.id,
+                        name: emp.name,
+                        empNumber: emp.empNumber ?? emp.employeeNumber ?? "",
+                        email: emp.email,
+                        role: "",
+                        pos: "Source",
+                    }))
+                );
+            })
+            .catch(() => {
+                // Silently fail - PickList will simply be empty if employees cannot be loaded.
+                setMember([]);
+            });
     }, []);
 
     const form = useForm({
@@ -59,6 +87,66 @@ const EditAudit = () => {
             )
         );
         setEditingRoleId(null); // hide dropdown after selection
+    };
+
+    // TODO(refactor): align this payload shape with the AuditRequest backend DTO and the NewAudit step-based form
+    //                 (auditCategory, types, purpose, startDate, endDate, areas, auditors, meetings).
+    //                 The current EditAudit form only exposes a minimal subset; the rest stays untouched server-side
+    //                 until the full step-based edit screen is implemented.
+    const handleSubmit = () => {
+        form.validate();
+        if (!form.isValid()) return;
+
+        if (!auditId) {
+            errorNotification("Missing audit id - open this page from the audit list to edit an existing audit.");
+            return;
+        }
+
+        const payload = {
+            id: auditId,
+            // Fields from the minimal Edit form
+            name: form.values.name,
+            type: form.values.type,
+            ppe: form.values.ppe,
+            // Participants captured via the PickList (target list with roles assigned)
+            members: target.map((m) => ({
+                id: m.id,
+                name: m.name,
+                empNumber: m.empNumber,
+                email: m.email,
+                role: m.role,
+            })),
+        };
+
+        modals.openConfirmModal({
+            title: <span className="text-2xl">Are you sure?</span>,
+            centered: true,
+            children: (
+                <span className="text-md">
+                    You want to save changes to this audit?
+                </span>
+            ),
+            labels: { confirm: "Yes, Save", cancel: "Cancel" },
+            cancelProps: { color: "red", variant: "filled" },
+            confirmProps: { color: "green", variant: "filled" },
+            closeOnEscape: false,
+            closeOnClickOutside: false,
+            withCloseButton: false,
+            onConfirm: () => {
+                dispatch(showOverlay());
+                updateAudit(payload)
+                    .then(() => {
+                        successNotification("Audit updated successfully");
+                        navigate("/audit-management");
+                    })
+                    .catch((err: any) => {
+                        errorNotification(err?.response?.data?.errorMessage || "Something went wrong");
+                    })
+                    .finally(() => {
+                        dispatch(hideOverlay());
+                    });
+            },
+        });
     };
 
 
@@ -163,6 +251,15 @@ const EditAudit = () => {
                         />
                     </div>
                 </Fieldset>
+
+                <div className="flex gap-4 justify-end mt-2">
+                    <Button variant="default" onClick={() => navigate("/audit-management")}>
+                        Cancel
+                    </Button>
+                    <Button type="button" variant="gradient" onClick={handleSubmit}>
+                        Save
+                    </Button>
+                </div>
             </div>
         </div>
     )

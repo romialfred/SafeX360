@@ -42,7 +42,7 @@ public class HsActivityDTO {
         return new HsActivity(this.id, this.activityId != null ? new Activity(this.activityId) : null, this.type,
                 this.locationId != null ? new Location(this.locationId) : null, this.plannedDate,
                 this.startTime, this.endTime, this.objectives, this.agenda,
-                this.expectedResults, ppe.toString(), StringListConverter.convertParticipantsToString(participants),
+                this.expectedResults, ppe != null ? ppe.toString() : null, StringListConverter.convertParticipantsToString(participants),
                 status, createdAt, updatedAt);
     }
 }

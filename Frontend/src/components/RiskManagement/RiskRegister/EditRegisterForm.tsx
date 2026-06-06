@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { toLocalDate } from "../../../utility/dateConversion";
 import { getAllDepartments } from "../../../services/HrmsService";
 import { GetAllWorkProcess } from "../../../services/WorkProcessService";
 import { getEmployeeDropdown } from "../../../services/EmployeeService";
@@ -98,10 +99,7 @@ const EditRegisterForm = () => {
       departmentId: form.values.departmentId ? Number(form.values.departmentId) : null,
       workProcessId: form.values.workProcessId ? Number(form.values.workProcessId) : null,
       ownerId: form.values.ownerId ? Number(form.values.ownerId) : null,
-      reviewDate:
-        form.values.reviewDate instanceof Date
-          ? form.values.reviewDate.toISOString().split('T')[0]
-          : form.values.reviewDate,
+      reviewDate: toLocalDate(form.values.reviewDate),
     };
     updateRisk(payload)
       .then((_res) => {

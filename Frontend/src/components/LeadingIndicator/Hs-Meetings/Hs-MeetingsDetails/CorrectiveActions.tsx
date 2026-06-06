@@ -11,6 +11,7 @@ import TextEditor from "../../../UtilityComp/TextEditor";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
+import { toLocalDate } from "../../../../utility/dateConversion";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useSelector } from "react-redux";
 
@@ -70,7 +71,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
             closeOnClickOutside: false,
             withCloseButton: false,
             onConfirm: () => {
-                const data = { ...values, departmentId: values.assignedEmployeeId ? empMap[values.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: values.assignedEmployeeId ?? user.id, assignedEmployeeId: values.assignedEmployeeId ?? user.id };
+                const data = { ...values, deadline: toLocalDate(values.deadline), departmentId: values.assignedEmployeeId ? empMap[values.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: values.assignedEmployeeId ?? user.id, assignedEmployeeId: values.assignedEmployeeId ?? user.id };
                 setLoading(true);
                 createCorrectiveAction(data)
                     .then(() => {
@@ -161,7 +162,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
                     <TextInput withAsterisk {...actionForm.getInputProps(`actionName`)} label="Action Plan Name" placeholder='Enter action plan name' />
                     <Select withAsterisk {...actionForm.getInputProps(`assignedEmployeeId`)} data={employee} label="Assign Employee" placeholder="Select assigned employee" />
                     <DateInput withAsterisk {...actionForm.getInputProps(`deadline`)} label="Deadline" placeholder="Select deadline" />
-                    <Select withAsterisk {...actionForm.getInputProps(`status`)} data={[{ label: "Pending", value: "PENDING" }, { label: "In-Progress", value: "IN_PROGRESS" }, { label: "Canceled", value: "CANCELED" }, { label: "Completed", value: "COMPLETED" }]} label="Status" placeholder="Select status" />
+                    <Select withAsterisk {...actionForm.getInputProps(`status`)} data={[{ label: "Pending", value: "PENDING" }, { label: "In-Progress", value: "IN_PROGRESS" }, { label: "Canceled", value: "CANCELLED" }, { label: "Completed", value: "COMPLETED" }]} label="Status" placeholder="Select status" />
                     <div className='col-span-2'>
 
                         <TextEditor withAsterisk form={actionForm} id={`description`} title="Description" />

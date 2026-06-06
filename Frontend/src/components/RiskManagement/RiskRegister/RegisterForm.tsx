@@ -20,6 +20,7 @@ import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { toLocalDate } from "../../../utility/dateConversion";
 import { createRisk } from "../../../services/RiskRegisterService";
 import { getAllDepartments } from "../../../services/HrmsService";
 import { GetAllWorkProcess } from "../../../services/WorkProcessService";
@@ -91,7 +92,11 @@ const RegisterForm = () => {
 
     const handleSubmit = () => {
         dispatch(showOverlay());
-        createRisk(form.values).then((_res) => {
+        const payload = {
+            ...form.values,
+            reviewDate: toLocalDate(form.values.reviewDate),
+        };
+        createRisk(payload).then((_res) => {
             successNotification("Requirement created successfully");
             navigate("/risks-register");
 

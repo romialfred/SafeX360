@@ -61,6 +61,7 @@ const EditPgi = () => {
 
     const form = useForm({
         initialValues: {
+            id: 0,
             activityId: undefined,
             siteId: '',
             plannedDate: undefined,
@@ -100,7 +101,7 @@ const EditPgi = () => {
 
         dispatch(showOverlay());
         getPgiById(id).then((res) => {
-            form.setValues({ ...res, plannedDate: new Date(res.plannedDate), activityId: String(res.activityId), siteId: String(res.locationId), participants: res.participants.map((x: any) => ({ ...x, pos: "Target" })) });
+            form.setValues({ ...res, id: res.id, plannedDate: new Date(res.plannedDate), activityId: String(res.activityId), siteId: String(res.locationId), participants: res.participants.map((x: any) => ({ ...x, pos: "Target" })) });
             const statusUpper = String(res?.status || '').toUpperCase();
             if (['COMPLETED', 'CANCELLED'].includes(statusUpper)) {
                 setLockedInfo({ locked: true, status: statusUpper });
