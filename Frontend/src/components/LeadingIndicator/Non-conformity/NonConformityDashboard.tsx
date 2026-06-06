@@ -525,7 +525,7 @@ const NonConformityDashboard = () => {
                 rowHover
                 dataKey="id"
                 selectionMode="single"
-                onRowClick={(e) => onView(e.data)}
+                onRowClick={(e) => onView(e.data as NonConformity)}
                 tableStyle={{ tableLayout: 'fixed', width: '100%' }}
                 className="
                     [&_.p-datatable-thead>tr>th]:!bg-slate-50
