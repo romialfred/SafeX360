@@ -22,7 +22,10 @@ const AppFooter = () => {
 
     return (
         <footer
-            className="w-full bg-slate-900 text-slate-300 border-t border-slate-800"
+            // LOT 48 P6.c — Footer "freeze" : reste collé au bas du viewport pendant le scroll
+            // sticky bottom-0 fonctionne car le parent direct est `flex flex-col min-h-screen`
+            // et qu'aucun ancêtre n'a overflow:auto (le viewport sert d'ancêtre scrollable).
+            className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 sticky bottom-0 z-40"
             role="contentinfo"
         >
             <div className="w-full px-6 lg:px-8 py-3">

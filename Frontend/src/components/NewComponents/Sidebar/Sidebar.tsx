@@ -481,15 +481,17 @@ const Sidebar = () => {
         }
 
         if (!matchedId) {
-            // default to home
+            // default to home — NE PAS auto-collapse les modules déjà ouverts par l'utilisateur
             setActiveItem('home');
-            setExpandedItems(new Set());
             return;
         }
 
         setActiveItem(matchedId);
 
-        // Auto-expand the parent section if a sub-item matches
+        // Auto-expand the parent section if a sub-item matches.
+        // LOT 48 P6.c — Ne plus auto-replier : on AJOUTE le parent à expandedItems
+        // au lieu de remplacer le Set. Un module reste ouvert jusqu'à clic explicite
+        // sur le "-" du header, ou jusqu'à l'ouverture d'un autre module (via toggleExpanded).
         let parentId: string | undefined;
         for (const item of menuItems) {
             if (item.subItems?.some((s) => s.id === matchedId)) {
@@ -498,10 +500,15 @@ const Sidebar = () => {
             }
         }
         if (parentId) {
-            setExpandedItems(new Set([parentId]));
-        } else {
-            setExpandedItems(new Set());
+            setExpandedItems((prev) => {
+                if (prev.has(parentId!)) return prev;
+                const next = new Set(prev);
+                next.add(parentId!);
+                return next;
+            });
         }
+        // Si le route matche un item sans submenu (Home, Dashboard, Reports, Admin…),
+        // on NE TOUCHE PAS à expandedItems — le module précédemment ouvert reste ouvert.
     }, [location.pathname]);
 
     return (
