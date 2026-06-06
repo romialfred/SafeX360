@@ -447,34 +447,25 @@ const SettingsPage = () => {
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
             <div className="max-w-[1500px] mx-auto">
 
-                {/* ═══ En-tête + stats ═══ */}
-                <div className="mb-6 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-                    <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                            SafeX 360 · Administration
-                        </p>
-                        <h1
-                            className="text-slate-900 mt-1.5"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 500,
-                                fontSize: '30px',
-                                letterSpacing: '-0.018em',
-                            }}
-                        >
-                            Configuration de la plateforme
-                        </h1>
-                        <p className="text-[13.5px] text-slate-600 mt-1.5 max-w-2xl leading-relaxed">
-                            Pilotez les comptes, référentiels, modules et paramètres système.
-                            Les sections affichent leur statut d'implémentation actuel.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        <StatPill icon={IconLayersIntersect} label="Sections" value={stats.total} />
-                        <StatPill icon={IconCheck} label="Configurées" value={stats.configured} />
-                        <StatPill icon={IconClock} label="À venir" value={stats.coming} />
-                    </div>
+                {/* LOT 46 — En-tête épuré (chips redondants retirés sur demande utilisateur) */}
+                <div className="mb-6">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                        SafeX 360 · Administration
+                    </p>
+                    <h1
+                        className="text-slate-900 mt-1.5 leading-tight"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 600,
+                            fontSize: 'clamp(22px, 2.4vw, 28px)',
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
+                        Configuration de la plateforme
+                    </h1>
+                    <p className="text-[13px] text-slate-600 mt-1.5 max-w-2xl leading-relaxed">
+                        Comptes, référentiels, modules HSE et paramètres système — tout au même endroit.
+                    </p>
                 </div>
 
                 {/* ═══ Conteneur principal split ═══ */}
@@ -585,9 +576,7 @@ const SettingsPage = () => {
                                         {activeZone.description}
                                     </p>
                                 </div>
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-[11px] text-slate-600 self-start sm:self-auto">
-                                    {activeZone.categories.length} catégorie{activeZone.categories.length > 1 ? 's' : ''}
-                                </span>
+                                {/* LOT 46 — Chip "N catégories" retiré (redondant avec la nav gauche) */}
                             </div>
                             <TextInput
                                 placeholder="Rechercher une section, un référentiel…"

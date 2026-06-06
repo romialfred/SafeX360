@@ -1,150 +1,264 @@
-import { Card, Group, Text, Paper, Badge } from "@mantine/core";
-import { IconTool, IconCheck, IconPhoto } from "@tabler/icons-react";
-import { handlePreview } from "../../../../utility/DocumentUtility";
-import SafeHtml from "../../../UtilityComp/SafeHtml";
+import {
+    IconCoin,
+    IconCheck,
+    IconPhoto,
+    IconFileDescription,
+    IconAlertTriangle,
+    IconMessage,
+} from '@tabler/icons-react';
+import { handlePreview } from '../../../../utility/DocumentUtility';
+import SafeHtml from '../../../UtilityComp/SafeHtml';
 
+/**
+ * NonConformityTreatment — Onglet « Traitement » professionnel (LOT 43b v4).
+ *
+ * Sections accentuées :
+ *   1. Valorisation (4 lignes coût + total)        — accent orange
+ *   2. Détails complémentaires (citation)          — accent teal
+ *   3. Documents joints (chips)                    — accent sky
+ *   4. Impacts indirects / Bénéfices               — accent violet
+ *   5. Commentaires (citation)                     — accent amber
+ */
 
-const NonConformityTreatment = ({ nonConformity }: any) => {
-    // Calculate total value
-    const totalNCValue = (nonConformity.materialCost || 0) + (nonConformity.laborCost || 0) + (nonConformity.adminFees || 0) + (nonConformity.expenses || 0);
-    const currencySymbols: Record<string, string> = {
-        'EUR': '€',
-        'USD': '$',
-        'XOF': 'CFA'
-    };
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    XOF: 'CFA',
+};
 
-    const getCurrencySymbol = (currency: string) => currencySymbols[currency] || currency;
+const getCurrencySymbol = (currency?: string): string =>
+    (currency && CURRENCY_SYMBOLS[currency]) || currency || '';
 
-    // Get labels based on event type (from TreatmentStep)
-    const isNearMiss = nonConformity.type === 'NEAR_MISS';
-    const labels = {
-        valorisationTitle: isNearMiss ? 'Prevention Cost' : 'Non-Conformity Valuation',
-        valorisationDescription: isNearMiss ? 'Estimated costs of implementing preventive actions' : 'Direct costs related to the non-conformity',
-        materialCost: isNearMiss ? 'Equipment/Material Cost' : 'Material/Equipment Cost',
-        laborCost: isNearMiss ? 'Training/Personnel Cost' : 'Labor Cost',
-        adminFees: isNearMiss ? 'Communication Fees' : 'Administrative Fees',
-        expenses: 'Miscellaneous Expenses',
-        totalLabel: isNearMiss ? 'Total Prevention:' : 'Total NC Value:',
-        impactsTitle: isNearMiss ? 'Preventive Benefits' : 'Indirect Impacts',
-        impactsDescription: isNearMiss
-            ? 'Benefits obtained through prevention'
-            : 'Consequences that cannot be financially quantified',
-        detailsTitle: 'Details',
-        docsTitle: 'Documents',
-        impactsCommentTitle: isNearMiss ? 'Comment on preventive benefits' : 'Comment on indirect impacts',
-    };
+const formatMoney = (val: any, currency?: string): string => {
+    if (val === undefined || val === null || val === '') return '—';
+    const symbol = getCurrencySymbol(currency);
+    const n = typeof val === 'number' ? val : Number(val);
+    if (Number.isNaN(n)) return `${val} ${symbol}`;
+    return `${n.toLocaleString('fr-FR')} ${symbol}`.trim();
+};
 
+// Design system aligné Synthèse / Analyse
+type Accent = 'sky' | 'teal' | 'orange' | 'violet' | 'amber' | 'rose';
+
+const ACCENT: Record<Accent, { icon: string; iconBg: string; borderL: string }> = {
+    sky:    { icon: 'text-sky-600',    iconBg: 'bg-sky-50',    borderL: 'border-l-sky-400' },
+    teal:   { icon: 'text-teal-600',   iconBg: 'bg-teal-50',   borderL: 'border-l-teal-400' },
+    orange: { icon: 'text-orange-600', iconBg: 'bg-orange-50', borderL: 'border-l-orange-400' },
+    violet: { icon: 'text-violet-600', iconBg: 'bg-violet-50', borderL: 'border-l-violet-400' },
+    amber:  { icon: 'text-amber-600',  iconBg: 'bg-amber-50',  borderL: 'border-l-amber-400' },
+    rose:   { icon: 'text-rose-600',   iconBg: 'bg-rose-50',   borderL: 'border-l-rose-400' },
+};
+
+function Section({
+    icon,
+    label,
+    description,
+    accent,
+    children,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    description?: string;
+    accent: Accent;
+    children: React.ReactNode;
+}) {
+    const tone = ACCENT[accent];
     return (
-        <Card className="bg-white border border-slate-200 shadow-lg rounded-2xl p-8">
-            <Group className="mb-5">
-                <div className={`p-3 rounded-xl bg-gradient-to-tr ${isNearMiss ? 'from-green-100 to-lime-50' : 'from-orange-100 to-yellow-50'} shadow`}>
-                    <IconTool size={28} className={isNearMiss ? 'text-green-600' : 'text-orange-600'} />
+        <section className={`bg-white border border-slate-200 border-l-[3px] ${tone.borderL} rounded-xl p-5 shadow-sm`}>
+            <header className="flex items-start gap-2.5 mb-4 pb-2.5 border-b border-slate-100">
+                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-md ${tone.iconBg} ${tone.icon} flex-shrink-0`} aria-hidden="true">
+                    {icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3
+                        className="text-[11.5px] font-semibold uppercase tracking-[0.12em] text-slate-700"
+                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                    >
+                        {label}
+                    </h3>
+                    {description && (
+                        <p className="text-[11.5px] text-slate-500 mt-0.5">{description}</p>
+                    )}
                 </div>
-                <div>
-                    <Text size="xl" className={isNearMiss ? 'text-green-700 tracking-tight' : 'text-orange-700 tracking-tight'}>
-                        {isNearMiss ? 'Prevention Summary' : 'Treatment Summary'}
-                    </Text>
-                    <Text size="sm" className="text-slate-500">
-                        {isNearMiss ? 'Preventive actions overview' : 'Corrective and preventive actions overview'}
-                    </Text>
-                </div>
-            </Group>
-
-            <div className="space-y-5">
-                {/* Valuation Section */}
-                <Paper radius="md" shadow="xs" className={`p-5 ${isNearMiss ? 'bg-green-50/60 border border-green-100' : 'bg-orange-50/60 border border-orange-100'}`}>
-                    <Text size="md" className={isNearMiss ? 'text-green-700 mb-3' : 'text-orange-700 mb-3'}>{labels.valorisationTitle}</Text>
-                    <Text size="sm" className="text-slate-600 mb-3">{labels.valorisationDescription}</Text>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Text size="sm" className="text-slate-700">{labels.materialCost}</Text>
-                            <Text className="text-slate-600">{nonConformity.materialCost} {getCurrencySymbol(nonConformity.currency)}</Text>
-                        </div>
-                        <div>
-                            <Text size="sm" className="text-slate-700">{labels.laborCost}</Text>
-                            <Text className="text-slate-600">{nonConformity.laborCost} {getCurrencySymbol(nonConformity.currency)}</Text>
-                        </div>
-                        <div>
-                            <Text size="sm" className="text-slate-700">{labels.adminFees}</Text>
-                            <Text className="text-slate-600">{nonConformity.adminFees} {getCurrencySymbol(nonConformity.currency)}</Text>
-                        </div>
-                        <div>
-                            <Text size="sm" className="text-slate-700">{labels.expenses}</Text>
-                            <Text className="text-slate-600">{nonConformity.expenses} {getCurrencySymbol(nonConformity.currency)}</Text>
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2">
-                        <Text size="sm" className={isNearMiss ? 'text-green-700' : 'text-orange-700'}>{labels.totalLabel}</Text>
-                        <Text size="lg" className={isNearMiss ? 'text-green-900' : 'text-orange-900'}>{totalNCValue} {getCurrencySymbol(nonConformity.currency)}</Text>
-                    </div>
-                </Paper>
-
-                {/* Details */}
-                {nonConformity.details && (
-                    <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" className="text-slate-800 mb-2">{labels.detailsTitle}</Text>
-                        {/* LOT 41 P0 XSS fix */}
-                        <SafeHtml html={nonConformity.details} className="prose prose-sm max-w-none text-slate-600" />
-                    </Paper>
-                )}
-
-                {/* Docs */}
-                {nonConformity.docs && nonConformity.docs.length > 0 && (
-                    <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" mb={5} className="text-slate-800 mb-2">{labels.docsTitle}</Text>
-                        <Group className="flex flex-wrap gap-2">
-                            {nonConformity.docs.map((doc: any) => (
-                                <Badge
-                                    key={doc.name}
-                                    size="lg"
-                                    className="!cursor-pointer"
-                                    onClick={() => handlePreview(doc)}
-                                    leftSection={<IconPhoto size={14} />}
-                                    color={isNearMiss ? 'green' : 'orange'}
-                                    variant="light"
-                                >
-                                    {doc.name}
-                                </Badge>
-                            ))}
-                        </Group>
-                    </Paper>
-                )}
-
-                {/* Indirect Impacts / Preventive Benefits */}
-                {nonConformity.indirectImpacts && nonConformity.indirectImpacts.length > 0 && (
-                    <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" className="text-slate-800 mb-2">{labels.impactsTitle}</Text>
-                        <Text size="sm" className="text-slate-600 mb-2">{labels.impactsDescription}</Text>
-                        <div className="flex flex-col gap-2">
-                            {nonConformity.indirectImpacts.map((impact: string, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                    <IconCheck size={18} className={isNearMiss ? 'text-green-600' : 'text-orange-600'} />
-                                    <span className="text-slate-600">{impact}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Paper>
-                )}
-
-                {/* Comments on indirect impacts / preventive benefits */}
-                {nonConformity.comments && (
-                    <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" className="text-slate-800 mb-2">{labels.impactsCommentTitle}</Text>
-                        {/* LOT 41 P0 XSS fix */}
-                        <SafeHtml html={nonConformity.comments} className="prose prose-sm max-w-none text-slate-600" />
-                    </Paper>
-                )}
-
-                {/* Feedback on support */}
-                {/* {nonConformity.supportComments && (
-                    <Paper radius="md" shadow="xs" className="p-5 bg-white border border-slate-100">
-                        <Text size="md" className="text-slate-800 mb-2">Feedback on support</Text>
-                        <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: nonConformity.supportComments }} />
-                    </Paper>
-                )} */}
-            </div>
-        </Card>
-    )
+            </header>
+            {children}
+        </section>
+    );
 }
 
-export default NonConformityTreatment
+function HtmlQuote({ html, tone = 'teal' }: { html: string; tone?: 'teal' | 'amber' }) {
+    const colors = {
+        teal:  { bg: 'bg-teal-50/40',  border: 'border-teal-500' },
+        amber: { bg: 'bg-amber-50/40', border: 'border-amber-500' },
+    }[tone];
+    return (
+        <blockquote
+            className={`${colors.bg} border-l-2 ${colors.border} rounded-r-md px-5 py-4 text-slate-700 leading-relaxed`}
+            style={{
+                fontFamily: "'Source Serif 4', Georgia, serif",
+                fontSize: '14.5px',
+                fontStyle: 'italic',
+            }}
+        >
+            <SafeHtml html={html} />
+        </blockquote>
+    );
+}
+
+const NonConformityTreatment = ({ nonConformity }: any) => {
+    const totalNCValue =
+        (nonConformity.materialCost || 0) +
+        (nonConformity.laborCost || 0) +
+        (nonConformity.adminFees || 0) +
+        (nonConformity.expenses || 0);
+
+    const isNearMiss = nonConformity.type === 'NEAR_MISS';
+    const currency = nonConformity.currency;
+
+    const labels = {
+        valorisationTitle: isNearMiss ? 'Coût de prévention' : 'Valorisation du constat',
+        valorisationDescription: isNearMiss
+            ? 'Coûts estimés de mise en œuvre des actions préventives'
+            : 'Coûts directs liés à la non-conformité',
+        materialCost: isNearMiss ? 'Coût équipement / matériel' : 'Coût matériel / équipement',
+        laborCost: isNearMiss ? 'Coût formation / personnel' : "Coût main-d'œuvre",
+        adminFees: isNearMiss ? 'Frais de communication' : 'Frais administratifs',
+        expenses: 'Dépenses diverses',
+        totalLabel: isNearMiss ? 'Total prévention' : 'Valeur totale du constat',
+        impactsTitle: isNearMiss ? 'Bénéfices préventifs' : 'Impacts indirects',
+        impactsDescription: isNearMiss
+            ? 'Bénéfices obtenus grâce à la prévention'
+            : 'Conséquences non chiffrables financièrement',
+        detailsTitle: 'Détails complémentaires',
+        docsTitle: 'Documents joints',
+        impactsCommentTitle: isNearMiss
+            ? 'Commentaire sur les bénéfices préventifs'
+            : 'Commentaire sur les impacts indirects',
+    };
+
+    const totalBg = isNearMiss
+        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+        : 'bg-orange-50 border-orange-200 text-orange-800';
+
+    return (
+        <div className="space-y-6">
+            {/* 1. VALORISATION — accent orange (coût) */}
+            <Section
+                icon={<IconCoin size={15} stroke={1.6} />}
+                label={labels.valorisationTitle}
+                description={labels.valorisationDescription}
+                accent={isNearMiss ? 'teal' : 'orange'}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                    {[
+                        { label: labels.materialCost, value: nonConformity.materialCost },
+                        { label: labels.laborCost, value: nonConformity.laborCost },
+                        { label: labels.adminFees, value: nonConformity.adminFees },
+                        { label: labels.expenses, value: nonConformity.expenses },
+                    ].map((row, i) => (
+                        <div
+                            key={i}
+                            className="flex items-baseline justify-between gap-3 py-2 border-b border-slate-100"
+                        >
+                            <span className="text-[12.5px] text-slate-600">{row.label}</span>
+                            <span className="text-[13px] text-slate-800 font-mono font-medium">
+                                {formatMoney(row.value, currency)}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Total prominent */}
+                <div className={`mt-5 px-5 py-4 rounded-lg border ${totalBg} flex items-baseline justify-between`}>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em]">
+                        {labels.totalLabel}
+                    </span>
+                    <span
+                        className="font-mono"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '22px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        {formatMoney(totalNCValue, currency)}
+                    </span>
+                </div>
+            </Section>
+
+            {/* 2. DÉTAILS — accent teal */}
+            {nonConformity.details && (
+                <Section
+                    icon={<IconFileDescription size={15} stroke={1.6} />}
+                    label={labels.detailsTitle}
+                    description="Informations narratives sur le traitement"
+                    accent="teal"
+                >
+                    <HtmlQuote html={nonConformity.details} tone="teal" />
+                </Section>
+            )}
+
+            {/* 3. DOCUMENTS — accent sky */}
+            {nonConformity.docs && nonConformity.docs.length > 0 && (
+                <Section
+                    icon={<IconPhoto size={15} stroke={1.6} />}
+                    label={labels.docsTitle}
+                    description={`${nonConformity.docs.length} document${nonConformity.docs.length > 1 ? 's' : ''} attaché${nonConformity.docs.length > 1 ? 's' : ''}`}
+                    accent="sky"
+                >
+                    <div className="flex flex-wrap gap-2">
+                        {nonConformity.docs.map((doc: any) => (
+                            <button
+                                key={doc.name}
+                                type="button"
+                                onClick={() => handlePreview(doc)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors border bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100"
+                            >
+                                <IconPhoto size={13} stroke={1.6} />
+                                {doc.name}
+                            </button>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {/* 4. IMPACTS INDIRECTS — accent violet */}
+            {nonConformity.indirectImpacts && nonConformity.indirectImpacts.length > 0 && (
+                <Section
+                    icon={<IconAlertTriangle size={15} stroke={1.6} />}
+                    label={labels.impactsTitle}
+                    description={labels.impactsDescription}
+                    accent="violet"
+                >
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {nonConformity.indirectImpacts.map((impact: string, idx: number) => (
+                            <li
+                                key={idx}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-violet-50/40 border border-violet-100"
+                            >
+                                <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-violet-100 text-violet-700 flex-shrink-0">
+                                    <IconCheck size={12} stroke={2.4} />
+                                </span>
+                                <span className="text-[13px] text-slate-700">{impact}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </Section>
+            )}
+
+            {/* 5. COMMENTAIRES — accent amber */}
+            {nonConformity.comments && (
+                <Section
+                    icon={<IconMessage size={15} stroke={1.6} />}
+                    label={labels.impactsCommentTitle}
+                    accent="amber"
+                >
+                    <HtmlQuote html={nonConformity.comments} tone="amber" />
+                </Section>
+            )}
+        </div>
+    );
+};
+
+export default NonConformityTreatment;

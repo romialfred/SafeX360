@@ -1,12 +1,15 @@
 import { ReactNode } from 'react';
-import { Breadcrumbs, Anchor, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { IconChevronRight, IconHome } from '@tabler/icons-react';
+import SafeXLogoColor from './SafeXLogoColor';
 
 /**
- * En-tête de page unifié pour SafeX360.
- * Pattern partagé entre tous les modules pour cohérence visuelle.
+ * PageHeader — En-tête de page unifié SafeX 360 (LOT 43 v7 raffinement).
  *
- * Inspiré du header du formulaire de déclaration d'incident.
+ *   • Titre serif raffiné (Source Serif 4), taille réduite, color slate-800
+ *   • Icône module dans un cube à gradient subtle + ring + shadow
+ *   • Option useSafeXLogo : remplace l'icône module par le bouclier officiel
+ *   • Breadcrumb compact avec chevron + IconHome
  *
  * Usage :
  *   <PageHeader
@@ -32,53 +35,107 @@ interface PageHeaderProps {
     subtitle?: string;
     badge?: ReactNode;
     actions?: ReactNode;
+    /** Si vrai, affiche le bouclier officiel SafeX 360 à la place de l'icône custom. */
+    useSafeXLogo?: boolean;
 }
 
+// Palette raffinée — gradient subtle + border-l accent + text saturé
 const iconColorMap = {
-    teal: { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700' },
-    green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
-    red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' },
-    orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
-    yellow: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
-    blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
-    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
-    slate: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700' },
-    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
-    pink: { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
-    amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
-    violet: { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' },
+    teal:   { bg: 'bg-gradient-to-br from-teal-50 to-teal-100/40',     border: 'ring-teal-200/70',   text: 'text-teal-700',   accent: 'border-l-teal-500' },
+    green:  { bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/40', border: 'ring-emerald-200/70', text: 'text-emerald-700', accent: 'border-l-emerald-500' },
+    red:    { bg: 'bg-gradient-to-br from-red-50 to-red-100/40',       border: 'ring-red-200/70',    text: 'text-red-700',    accent: 'border-l-red-500' },
+    orange: { bg: 'bg-gradient-to-br from-orange-50 to-orange-100/40', border: 'ring-orange-200/70', text: 'text-orange-700', accent: 'border-l-orange-500' },
+    yellow: { bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100/40', border: 'ring-yellow-200/70', text: 'text-yellow-700', accent: 'border-l-yellow-500' },
+    blue:   { bg: 'bg-gradient-to-br from-sky-50 to-sky-100/40',       border: 'ring-sky-200/70',    text: 'text-sky-700',    accent: 'border-l-sky-500' },
+    indigo: { bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/40', border: 'ring-indigo-200/70', text: 'text-indigo-700', accent: 'border-l-indigo-500' },
+    slate:  { bg: 'bg-gradient-to-br from-slate-50 to-slate-100/40',   border: 'ring-slate-200/70',  text: 'text-slate-700',  accent: 'border-l-slate-500' },
+    cyan:   { bg: 'bg-gradient-to-br from-cyan-50 to-cyan-100/40',     border: 'ring-cyan-200/70',   text: 'text-cyan-700',   accent: 'border-l-cyan-500' },
+    pink:   { bg: 'bg-gradient-to-br from-pink-50 to-pink-100/40',     border: 'ring-pink-200/70',   text: 'text-pink-700',   accent: 'border-l-pink-500' },
+    amber:  { bg: 'bg-gradient-to-br from-amber-50 to-amber-100/40',   border: 'ring-amber-200/70',  text: 'text-amber-700',  accent: 'border-l-amber-500' },
+    violet: { bg: 'bg-gradient-to-br from-violet-50 to-violet-100/40', border: 'ring-violet-200/70', text: 'text-violet-700', accent: 'border-l-violet-500' },
 };
 
-const PageHeader = ({ breadcrumbs, icon, iconColor = 'teal', title, subtitle, badge, actions }: PageHeaderProps) => {
+const PageHeader = ({
+    breadcrumbs,
+    icon,
+    iconColor = 'teal',
+    title,
+    subtitle,
+    badge,
+    actions,
+    useSafeXLogo = false,
+}: PageHeaderProps) => {
     const colors = iconColorMap[iconColor] || iconColorMap.teal;
 
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pb-3 border-b border-slate-200">
             <div className="flex-1 min-w-0">
-                <Breadcrumbs separator="›" className="!text-xs">
+                {/* Breadcrumb compact raffiné */}
+                <nav className="flex items-center gap-1 text-[11.5px] text-slate-500 mb-2" aria-label="Fil d'Ariane">
                     {breadcrumbs.map((b, i) => {
                         const isLast = i === breadcrumbs.length - 1;
-                        if (isLast || !b.to) {
-                            return <Text key={i} size="xs" c={isLast ? "teal" : "dimmed"} fw={isLast ? 600 : 400}>{b.label}</Text>;
-                        }
-                        return <Anchor key={i} component={Link} to={b.to} size="xs" c="dimmed">{b.label}</Anchor>;
+                        const isFirst = i === 0;
+                        return (
+                            <span key={i} className="inline-flex items-center gap-1">
+                                {!isFirst && <IconChevronRight size={11} className="text-slate-300" aria-hidden="true" />}
+                                {!isLast && b.to ? (
+                                    <Link
+                                        to={b.to}
+                                        className="inline-flex items-center gap-1 hover:text-slate-800 transition-colors"
+                                    >
+                                        {isFirst && <IconHome size={11} stroke={1.6} aria-hidden="true" />}
+                                        <span>{b.label}</span>
+                                    </Link>
+                                ) : (
+                                    <span className={isLast ? 'text-teal-700 font-medium' : 'text-slate-500'}>
+                                        {isFirst && <IconHome size={11} stroke={1.6} className="inline mr-0.5" aria-hidden="true" />}
+                                        {b.label}
+                                    </span>
+                                )}
+                            </span>
+                        );
                     })}
-                </Breadcrumbs>
-                <div className="flex items-center gap-3 mt-2">
-                    {icon && (
-                        <div className={`p-2 rounded-lg ${colors.bg} border ${colors.border} flex-shrink-0`}>
+                </nav>
+
+                {/* Bloc titre : logo/icône + titre serif + subtitle */}
+                <div className="flex items-center gap-3">
+                    {/* Logo SafeX officiel ou icône module */}
+                    {useSafeXLogo ? (
+                        <div className="flex-shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-white ring-1 ring-slate-200 shadow-sm">
+                            <SafeXLogoColor variant="icon" size={28} />
+                        </div>
+                    ) : icon ? (
+                        <div
+                            className={`flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl ${colors.bg} ring-1 ${colors.border} shadow-sm border-l-[3px] ${colors.accent}`}
+                        >
                             <span className={colors.text}>{icon}</span>
                         </div>
-                    )}
+                    ) : null}
+
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">{title}</h1>
+                            <h1
+                                className="text-slate-800 leading-tight"
+                                style={{
+                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                    fontSize: 'clamp(17px, 2vw, 20px)',
+                                    fontWeight: 600,
+                                    letterSpacing: '-0.015em',
+                                }}
+                            >
+                                {title}
+                            </h1>
                             {badge}
                         </div>
-                        {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+                        {subtitle && (
+                            <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
+                                {subtitle}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
+
             {actions && (
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {actions}

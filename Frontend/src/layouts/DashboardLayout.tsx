@@ -8,6 +8,8 @@ import AppFooter from "../components/UtilityComp/AppFooter";
 import { useEffect, useMemo, useState } from "react";
 import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConfig";
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
+import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
+import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
 
 /**
  * DashboardLayout — Coque générale post-login.
@@ -35,16 +37,16 @@ const DashboardLayout = () => {
     }, []);
 
     return (
-        <>
+        <EmergencyWebSocketProvider>
             <InactivityHandler inactivityMinutes={inactivityMinutes} />
             <div className="flex w-full">
                 <Sidebar />
                 <div className="flex flex-col min-h-screen w-full">
                     <Header />
 
-                    {/* Contenu principal — pleine largeur, padding rationnel */}
+                    {/* Contenu principal — pt aligné sur la hauteur exacte du header (72px ligne 1 + 56px ligne 2) */}
                     <main
-                        className={`relative flex-1 pt-[120px] ${overlay ? "overflow-y-hidden" : ""}`}
+                        className={`relative flex-1 pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
                     >
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded}
@@ -62,7 +64,9 @@ const DashboardLayout = () => {
                     <FloatingAIAssistant />
                 </Affix>
             </div>
-        </>
+            {/* LOT 48 Phase 3.b — Popup global gyrophare pour coordinateurs */}
+            <CoordinatorAlertListener />
+        </EmergencyWebSocketProvider>
     );
 };
 

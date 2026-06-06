@@ -373,10 +373,10 @@ How can I assist more precisely?`,
             <div className="fixed bottom-6 right-6 z-50">
                 <button
                     onClick={handleToggleOpen}
-                    className="group relative w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 hover:scale-110 animate-pulse"
+                    className="group relative w-16 h-16 bg-gradient-to-r from-teal-500 to-sky-500 rounded-full shadow-2xl hover:shadow-teal-500/30 transition-all duration-300 hover:scale-110 animate-pulse"
                 >
                     {/* Ripple Effect */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 opacity-75 animate-ping"></div>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-teal-400 to-sky-400 opacity-75 animate-ping"></div>
 
                     {/* Main Icon */}
                     <div className="relative flex items-center justify-center w-full h-full">
@@ -407,7 +407,7 @@ How can I assist more precisely?`,
         ${isMinimized ? 'w-80 h-16' : 'w-96 '}
       `}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-blue-500 rounded-t-2xl">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-teal-500 to-sky-500 rounded-t-2xl">
                     <div className="flex items-center">
                         <div className="relative">
                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-3">
@@ -485,7 +485,7 @@ How can I assist more precisely?`,
                         <div className="flex-1 overflow-y-auto p-4 h-96 bg-gradient-to-b from-gray-50 to-white">
                             {messages.length === 0 && (
                                 <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                    <div className="w-16 h-16 bg-gradient-to-r from-teal-100 to-sky-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                                         {/* Empty-messages icon */}
                                         <IconSparkles className="w-8 h-8 text-purple-600" />
                                     </div>
@@ -505,7 +505,7 @@ How can I assist more precisely?`,
                                             <div className={`flex-shrink-0 ${message.type === 'user' ? 'ml-3' : 'mr-3'}`}>
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${message.type === 'user'
                                                     ? 'bg-blue-500'
-                                                    : 'bg-gradient-to-r from-purple-500 to-blue-500'
+                                                    : 'bg-gradient-to-r from-teal-500 to-sky-500'
                                                     }`}>
                                                     {message.type === 'user' ? (
                                                         <IconUser className="w-4 h-4 text-white" />
@@ -593,7 +593,7 @@ How can I assist more precisely?`,
                                     <div className="flex justify-start">
                                         <div className="flex max-w-[85%]">
                                             <div className="flex-shrink-0 mr-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-500 to-sky-500 flex items-center justify-center">
                                                     {/* Loading indicator icon */}
                                                     <IconRobot className="w-4 h-4 text-white" />
                                                 </div>
@@ -601,9 +601,9 @@ How can I assist more precisely?`,
                                             <div className="bg-white border border-gray-200 rounded-2xl p-3 shadow-sm">
                                                 <div className="flex items-center space-x-2">
                                                     <div className="flex space-x-1">
-                                                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                                                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                        <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"></div>
+                                                        <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                        <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                                     </div>
                                                     <span className="text-gray-500 text-sm">SafeX Assist is thinking...</span>
                                                 </div>
@@ -625,7 +625,7 @@ How can I assist more precisely?`,
                                         <button
                                             key={action.id}
                                             onClick={() => handleQuickAction(action)}
-                                            className="flex items-center p-2 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 group"
+                                            className="flex items-center p-2 bg-white border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-all duration-200 group"
                                         >
                                             <action.icon className={`w-4 h-4 ${action.color} mr-2 group-hover:scale-110 transition-transform`} />
                                             <span className="text-xs text-gray-700 group-hover:text-purple-700">
@@ -669,7 +669,7 @@ How can I assist more precisely?`,
                                     <button
                                         onClick={handleSendMessage}
                                         disabled={!inputValue.trim() || isLoading}
-                                        className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
+                                        className="p-2 bg-gradient-to-r from-teal-500 to-sky-500 text-white rounded-lg hover:from-teal-600 hover:to-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
                                         title="Send"
                                     >
                                         <IconSend className="w-4 h-4" />

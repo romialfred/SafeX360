@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Button, Modal, Textarea, Tooltip, Loader, Alert } from '@mantine/core';
+import { Button, Modal, Textarea, Tooltip, Loader, Alert, Select } from '@mantine/core';
 import { IconUrgent, IconMapPin, IconClock, IconCheck, IconPhone } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { createSosAlert } from '../../../services/SosService';
 
 /**
  * Bouton SOS : signal d'urgence direct au coordinateur HSE.
@@ -11,9 +14,13 @@ import { successNotification, errorNotification } from '../../../utility/Notific
  * Envoi simulé côté frontend (à brancher sur un endpoint backend en Phase 2.b).
  */
 const SosButton = () => {
+    const { t } = useTranslation('navigation');
+    const navigate = useNavigate();
     const [opened, { open, close }] = useDisclosure(false);
     const user = useAppSelector((state: any) => state.user);
+    const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
     const [message, setMessage] = useState('');
+    const [reasonCode, setReasonCode] = useState<string | null>('MEDICAL');
     const [position, setPosition] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
     const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle');
     const [sending, setSending] = useState(false);
@@ -54,16 +61,34 @@ const SosButton = () => {
     };
 
     const handleSend = async () => {
+        if (!selectedCompanyId || !user?.id) {
+            errorNotification("Mine ou utilisateur non identifié. Contactez l'administrateur.");
+            return;
+        }
         setSending(true);
-        // Simulation envoi (à remplacer par appel API réel en Phase 2.b)
-        await new Promise((r) => setTimeout(r, 800));
         try {
-            // TODO Phase 2.b : POST /hns/emergency/sos { userId, location, message, timestamp }
+            const saved = await createSosAlert(
+                {
+                    companyId: selectedCompanyId,
+                    employeeId: Number(user.id),
+                    reasonCode: reasonCode ?? 'AUTRE',
+                    description: message || null,
+                    latitude: position?.lat ?? 0,
+                    longitude: position?.lng ?? 0,
+                    gpsAccuracy: position?.accuracy ?? null,
+                    status: 'RECEIVED',
+                    drillMode: false,
+                },
+                Number(user.id)
+            );
             setSent(true);
-            successNotification("Signal SOS transmis au coordinateur HSE. Une équipe d'intervention est notifiée.");
-            setTimeout(handleClose, 2000);
+            successNotification("Signal SOS transmis. Les coordinateurs HSE sont notifiés en temps réel.");
+            setTimeout(() => {
+                handleClose();
+                if (saved.id) navigate(`/emergency/sos/${saved.id}`);
+            }, 2000);
         } catch (e: any) {
-            errorNotification("Échec de l'envoi du signal SOS. Réessayez ou contactez directement le numéro d'urgence.");
+            errorNotification("Échec de l'envoi du signal SOS. Réessayez ou contactez le poste de garde HSE.");
         } finally {
             setSending(false);
         }
@@ -71,18 +96,21 @@ const SosButton = () => {
 
     return (
         <>
-            <Tooltip label="Signaler une situation d'urgence vitale" position="bottom">
+            <Tooltip label={t('header.sosTooltip')} position="bottom">
                 <button
                     onClick={handleOpen}
-                    className="safex-gyrophare-sos relative flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs uppercase tracking-wider shadow-lg transition-all overflow-visible"
+                    className="safex-gyrophare-sos group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white text-[12px] font-bold uppercase tracking-[0.15em] shadow-[0_4px_14px_rgba(239,68,68,0.45)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.6)] ring-1 ring-red-400/60 hover:scale-[1.03] transition-all duration-200 overflow-visible"
                 >
                     {/* Halos gyrophare — 3 anneaux pulsés décalés */}
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--red"></span>
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--red safex-gyrophare-ring--delay-1"></span>
-                    {/* Voyant intérieur rotatif */}
-                    <span aria-hidden className="absolute inset-0 rounded-md bg-red-400 animate-pulse opacity-30 pointer-events-none"></span>
-                    <IconUrgent size={16} className="relative z-10 drop-shadow-sm" />
-                    <span className="relative z-10">SOS</span>
+                    {/* Glow intérieur */}
+                    <span aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/5 to-white/20 pointer-events-none"></span>
+                    {/* Icône dans cercle blanc semi-transparent (effet boîte d'alarme) */}
+                    <span aria-hidden className="relative z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm ring-1 ring-white/30 group-hover:ring-white/50 transition-all">
+                        <IconUrgent size={13} stroke={2.4} className="drop-shadow-sm" />
+                    </span>
+                    <span className="relative z-10 drop-shadow-sm">{t('header.sos')}</span>
                 </button>
             </Tooltip>
 
@@ -152,13 +180,31 @@ const SosButton = () => {
                             </div>
                         </div>
 
+                        {/* Motif (catégorie) */}
+                        <Select
+                            label="Motif de l'urgence"
+                            placeholder="Sélectionnez le type d'urgence"
+                            data={[
+                                { value: 'MEDICAL', label: 'Urgence médicale (malaise, blessure)' },
+                                { value: 'ACCIDENT_TRAVAIL', label: 'Accident du travail' },
+                                { value: 'INCENDIE', label: 'Incendie / Fumée' },
+                                { value: 'AGRESSION', label: 'Agression / Menace' },
+                                { value: 'FUITE_CHIMIQUE', label: 'Fuite chimique' },
+                                { value: 'EFFONDREMENT', label: 'Effondrement / Éboulement' },
+                                { value: 'AUTRE', label: 'Autre urgence' },
+                            ]}
+                            value={reasonCode}
+                            onChange={setReasonCode}
+                            size="sm"
+                        />
+
                         {/* Message d'urgence */}
                         <Textarea
-                            label="Description de l'urgence"
+                            label="Description de l'urgence (optionnel)"
                             placeholder="Décrivez brièvement la situation (ex. blessure grave, incendie, fuite chimique)"
                             autosize
-                            minRows={3}
-                            maxRows={5}
+                            minRows={2}
+                            maxRows={4}
                             value={message}
                             onChange={(e) => setMessage(e.currentTarget.value)}
                             size="sm"

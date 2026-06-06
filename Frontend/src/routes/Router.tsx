@@ -4,6 +4,8 @@ import EmergencySettingsPage from '../components/EmergencyManagement/Settings/Em
 import AssemblyPointsPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointsPage';
 import AssemblyPointFormPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointFormPage';
 import AssemblyPointDetailPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointDetailPage';
+import SosListPage from '../components/EmergencyManagement/Sos/SosListPage';
+import SosDetailPage from '../components/EmergencyManagement/Sos/SosDetailPage';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
@@ -309,6 +311,9 @@ const router = createBrowserRouter([
             { path: 'emergency/assembly-points/new', element: <AssemblyPointFormPage /> },
             { path: 'emergency/assembly-points/:id', element: <AssemblyPointDetailPage /> },
             { path: 'emergency/assembly-points/:id/edit', element: <AssemblyPointFormPage /> },
+            // LOT 48 Phase 3.b — Suivi SOS
+            { path: 'emergency/sos', element: <SosListPage /> },
+            { path: 'emergency/sos/:id', element: <SosDetailPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },

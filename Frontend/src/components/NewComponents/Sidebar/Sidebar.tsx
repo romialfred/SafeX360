@@ -14,6 +14,7 @@ import {
     IconMessageCircle, // Settings
     IconSettings, // ChevronLeft
     IconMapPin, // pour points de rassemblement
+    IconUrgent, // pour suivi SOS
     IconChevronLeft, // ChevronRight
     IconChevronRight, // Plus
     IconPlus, // Minus
@@ -225,13 +226,14 @@ const menuItems: MenuItem[] = [
             { id: 'annual-audit-plan', label: 'Plan Annuel Audits', icon: IconClipboardCheck }
         ]
     },
-    // LOT 48 Phase 1 — Module Gestion des Urgences
+    // LOT 48 Phase 1-3 — Module Gestion des Urgences
     {
         id: 'emergency',
         label: 'Gestion des Urgences',
         icon: IconAlertTriangle,
         color: 'text-red-600',
         subItems: [
+            { id: 'emergency-sos', label: 'Suivi SOS', icon: IconUrgent },
             { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
         ]
@@ -332,8 +334,9 @@ export const menuIdToUrl: Record<string, string> = {
     documents: "/compliance-documents",
     "document-validation": "/document-validation",
 
-    // LOT 48 Phase 1 — Emergency Management
-    emergency: "/emergency/assembly-points",
+    // LOT 48 Phase 1-3 — Emergency Management
+    emergency: "/emergency/sos",
+    "emergency-sos": "/emergency/sos",
     "emergency-settings": "/emergency/settings",
     "emergency-assembly-points": "/emergency/assembly-points",
 

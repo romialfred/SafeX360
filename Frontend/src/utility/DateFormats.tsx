@@ -1,36 +1,35 @@
+// LOT 43b — locale FR par défaut sur toutes les dates affichées
 function formatDate(dateString: any) {
     const date = new Date(dateString);
-    return date.toLocaleString('en-GB', {
+    return date.toLocaleString('fr-FR', {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: true,
+        hour12: false,
     });
 }
 
 function formatDateWithDay(dateInput: any): string {
-    if (!dateInput) return ''; // Handle empty or undefined input
+    if (!dateInput) return ''; // Gère les valeurs vides
     const date = new Date(dateInput);
-
-    return date.toLocaleDateString('en-US', {
-        weekday: 'long',  // e.g., Wednesday
-        day: '2-digit',   // e.g., 12
-        month: 'long',    // e.g., January
-        year: 'numeric'   // e.g., 2025
+    return date.toLocaleDateString('fr-FR', {
+        weekday: 'long',  // ex : vendredi
+        day: '2-digit',   // ex : 24
+        month: 'long',    // ex : juillet
+        year: 'numeric',  // ex : 2025
     });
 }
+
 function formatDateShort(dateInput: any): string {
-    if (!dateInput) return ''; // Handle empty or undefined input
+    if (!dateInput) return '';
     const date = new Date(dateInput);
-
-    return date.toLocaleDateString('en-US', {
-
-        day: 'numeric',   // e.g., 12
-        month: 'short',    // e.g., January
-        year: 'numeric'   // e.g., 2025
+    return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',   // ex : 24
+        month: 'short',   // ex : juil.
+        year: 'numeric',  // ex : 2025
     });
 }
 

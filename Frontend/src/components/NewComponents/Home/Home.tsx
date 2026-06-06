@@ -289,8 +289,8 @@ const NewHomePage = () => {
                     </span>
                 </header>
 
-                {/* LOT 41 — Grille de tuiles modules redesignées en boutons intuitifs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* LOT 43 v11 — Grille compacte (+1 col aux 2 breakpoints supérieurs, gap réduit) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {moduleGroups.map((module) => {
                         const moduleEnabled = isFeatureEnabled(module.requiredModuleId ?? module.id);
                         const subCount = module.items?.length ?? 0;
@@ -318,36 +318,35 @@ const NewHomePage = () => {
                                     />
                                 )}
 
-                                <div className="p-5 flex flex-col h-full min-h-[180px]">
-                                    {/* En-tête : icône grosse à gauche + badge compteur à droite */}
-                                    <div className="flex items-start justify-between mb-3 gap-2">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white border ${moduleEnabled ? 'border-white shadow-md' : 'border-slate-200'} group-hover:scale-110 group-hover:rotate-[-3deg] transition-transform duration-200`}>
+                                <div className="p-3.5 flex flex-col h-full min-h-[138px]">
+                                    {/* En-tête : icône compacte à gauche + badge compteur à droite */}
+                                    <div className="flex items-start justify-between mb-2 gap-2">
+                                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-white border ${moduleEnabled ? 'border-white shadow-sm' : 'border-slate-200'} group-hover:scale-110 group-hover:rotate-[-3deg] transition-transform duration-200`}>
                                             <module.icon
                                                 className={moduleEnabled ? module.color : 'text-slate-400'}
-                                                size={22}
-                                                stroke={1.75}
+                                                size={17}
+                                                stroke={1.8}
                                                 aria-hidden="true"
                                             />
                                         </div>
-                                        {/* Badge compteur sous-modules (toujours visible) */}
+                                        {/* Badge compteur sous-modules — version compacte (chiffre seul) */}
                                         {moduleEnabled && subCount > 0 && (
                                             <span
-                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/85 border border-white text-[10.5px] font-semibold ${module.color} shadow-sm`}
+                                                className={`inline-flex items-center justify-center min-w-[22px] h-[20px] px-1.5 rounded-full bg-white/85 border border-white text-[10px] font-semibold ${module.color} shadow-sm`}
                                                 title={`${subCount} sous-modules disponibles`}
                                             >
-                                                <span>{subCount}</span>
-                                                <span className="text-slate-500 font-normal">sous-modules</span>
+                                                {subCount}
                                             </span>
                                         )}
                                     </div>
 
-                                    {/* Titre — serif accentué */}
+                                    {/* Titre — serif accentué, taille réduite */}
                                     <h3
                                         className={`${moduleEnabled ? 'text-slate-900' : 'text-slate-500 italic'} transition-colors`}
                                         style={{
                                             fontFamily: "'Source Serif 4', Georgia, serif",
                                             fontWeight: 600,
-                                            fontSize: '17px',
+                                            fontSize: '14px',
                                             letterSpacing: '-0.012em',
                                             lineHeight: 1.2,
                                         }}
@@ -355,32 +354,32 @@ const NewHomePage = () => {
                                         {module.title}
                                     </h3>
 
-                                    {/* Description courte */}
+                                    {/* Description — 2 lignes max, taille réduite */}
                                     <p
-                                        className={`mt-2 text-[13px] leading-relaxed flex-1 ${
+                                        className={`mt-1 text-[11.5px] leading-snug flex-1 line-clamp-2 ${
                                             moduleEnabled ? 'text-slate-600' : 'text-slate-400'
                                         }`}
                                     >
                                         {module.description}
                                     </p>
 
-                                    {/* Footer CTA permanent — donne l'affordance de bouton */}
-                                    <div className="mt-4 pt-3 border-t border-white/70 flex items-center justify-between">
+                                    {/* Footer CTA permanent — compact */}
+                                    <div className="mt-2 pt-2 border-t border-white/70 flex items-center justify-between">
                                         {moduleEnabled ? (
                                             <>
-                                                <span className={`text-[11.5px] uppercase tracking-[0.12em] font-medium ${module.color}`}>
-                                                    Ouvrir le module
+                                                <span className={`text-[10px] uppercase tracking-[0.10em] font-medium ${module.color}`}>
+                                                    Ouvrir
                                                 </span>
                                                 <span
-                                                    className={`w-7 h-7 rounded-full bg-white border border-white shadow-sm flex items-center justify-center ${module.color} group-hover:translate-x-1 group-hover:shadow-md transition-all`}
+                                                    className={`w-5 h-5 rounded-full bg-white border border-white shadow-sm flex items-center justify-center ${module.color} group-hover:translate-x-1 group-hover:shadow-md transition-all`}
                                                     aria-hidden="true"
                                                 >
-                                                    <IconArrowRight size={14} stroke={2.2} />
+                                                    <IconArrowRight size={11} stroke={2.4} />
                                                 </span>
                                             </>
                                         ) : (
-                                            <span className="text-[10.5px] uppercase tracking-[0.14em] text-slate-400 font-medium">
-                                                Module non inclus
+                                            <span className="text-[10px] uppercase tracking-[0.10em] text-slate-400 font-medium">
+                                                Non inclus
                                             </span>
                                         )}
                                     </div>

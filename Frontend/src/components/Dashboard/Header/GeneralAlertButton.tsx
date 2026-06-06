@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Modal, Checkbox, Radio, MultiSelect, Tooltip, Alert, Textarea, Group, Loader } from '@mantine/core';
 import { IconBroadcast, IconCheck, IconAlertTriangle, IconUsers, IconDeviceMobile, IconMail, IconBell } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
+import { useTranslation } from 'react-i18next';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 
 /**
@@ -9,6 +10,7 @@ import { successNotification, errorNotification } from '../../../utility/Notific
  * Formulaire compact pour configurer le périmètre (toutes zones / sélection) et les actions attendues.
  */
 const GeneralAlertButton = () => {
+    const { t } = useTranslation('navigation');
     const [opened, { open, close }] = useDisclosure(false);
 
     // Type d'alerte
@@ -80,18 +82,21 @@ const GeneralAlertButton = () => {
 
     return (
         <>
-            <Tooltip label="Déclencher une alerte de masse vers tous les employés" position="bottom">
+            <Tooltip label={t('header.alertTooltip')} position="bottom">
                 <button
                     onClick={open}
-                    className="safex-gyrophare-alert relative flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-orange-600 hover:bg-orange-700 text-white text-xs uppercase tracking-wider shadow-lg transition-all overflow-visible"
+                    className="safex-gyrophare-alert group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:via-orange-700 hover:to-amber-700 text-white text-[12px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_14px_rgba(249,115,22,0.45)] hover:shadow-[0_6px_20px_rgba(249,115,22,0.6)] ring-1 ring-orange-400/60 hover:scale-[1.03] transition-all duration-200 overflow-visible"
                 >
                     {/* Halos gyrophare orange */}
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--orange"></span>
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--orange safex-gyrophare-ring--delay-1"></span>
-                    {/* Voyant intérieur rotatif */}
-                    <span aria-hidden className="absolute inset-0 rounded-md bg-orange-400 animate-pulse opacity-30 pointer-events-none"></span>
-                    <IconBroadcast size={16} className="relative z-10 drop-shadow-sm" />
-                    <span className="relative z-10">Alerte Générale</span>
+                    {/* Glow intérieur */}
+                    <span aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/5 to-white/20 pointer-events-none"></span>
+                    {/* Icône dans cercle blanc semi-transparent */}
+                    <span aria-hidden className="relative z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm ring-1 ring-white/30 group-hover:ring-white/50 transition-all">
+                        <IconBroadcast size={13} stroke={2.4} className="drop-shadow-sm" />
+                    </span>
+                    <span className="relative z-10 drop-shadow-sm">{t('header.generalAlert')}</span>
                 </button>
             </Tooltip>
 
