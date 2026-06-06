@@ -22,6 +22,7 @@ import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/Eme
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { formatReasonCode, hasCheckedIn, markCheckedIn, cleanupOldCheckIns } from './alertHelpers';
+import { enqueueCheckIn } from '../../../utility/OfflineCheckInQueue';
 
 /**
  * Listener global Alerte Générale (LOT 48 Phase 4).
@@ -320,17 +321,39 @@ const GeneralAlertListener = () => {
     const doCheckIn = async (status: CheckInStatus) => {
         if (!activeAlert?.id || !currentUser?.id) return;
         setCheckingIn(true);
+
+        const payload = {
+            alertId: activeAlert.id,
+            employeeId: Number(currentUser.id),
+            assemblyPointId: pickedApId,
+            status,
+            latitude: position?.lat,
+            longitude: position?.lng,
+            gpsAccuracy: position?.accuracy,
+            actorId: Number(currentUser.id),
+        };
+
+        // Helper local : si l'envoi réseau échoue (ex : zone sans réseau dans
+        // une mine), enqueue dans IndexedDB pour replay automatique.
+        const tryPostOrQueue = async () => {
+            try {
+                await checkInToAlert(payload);
+            } catch {
+                await enqueueCheckIn({
+                    alertId: payload.alertId,
+                    employeeId: payload.employeeId,
+                    assemblyPointId: payload.assemblyPointId,
+                    status: payload.status,
+                    latitude: payload.latitude,
+                    longitude: payload.longitude,
+                    gpsAccuracy: payload.gpsAccuracy,
+                    actorId: payload.actorId,
+                });
+            }
+        };
+
         try {
-            await checkInToAlert({
-                alertId: activeAlert.id,
-                employeeId: Number(currentUser.id),
-                assemblyPointId: pickedApId,
-                status,
-                latitude: position?.lat,
-                longitude: position?.lng,
-                gpsAccuracy: position?.accuracy,
-                actorId: Number(currentUser.id),
-            });
+            await tryPostOrQueue();
 
             // ── Arrête la sirène + TTS + persiste le check-in localement ──
             sirenRef.current?.stop();

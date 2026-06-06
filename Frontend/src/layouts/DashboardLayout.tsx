@@ -12,7 +12,9 @@ import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/So
 import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
 import GeneralAlertListener from "../components/EmergencyManagement/GeneralAlert/GeneralAlertListener";
 import { installAutoReplay } from "../utility/OfflineSosQueue";
+import { installAutoReplayCheckIns } from "../utility/OfflineCheckInQueue";
 import { createSosAlert } from "../services/SosService";
+import { checkInToAlert } from "../services/GeneralAlertService";
 import { successNotification } from "../utility/NotificationUtility";
 
 /**
@@ -48,6 +50,31 @@ const DashboardLayout = () => {
                 if (result.succeeded > 0) {
                     successNotification(
                         `${result.succeeded} alerte(s) SOS hors-ligne re-transmise(s) avec succès.`
+                    );
+                }
+            }
+        );
+        return cleanup;
+    }, []);
+
+    // LOT 48 Phase 6 — Auto-replay des check-in d'évacuation hors-ligne
+    useEffect(() => {
+        const cleanup = installAutoReplayCheckIns(
+            (entry) => checkInToAlert({
+                alertId: entry.alertId,
+                employeeId: entry.employeeId,
+                assemblyPointId: entry.assemblyPointId,
+                status: entry.status,
+                latitude: entry.latitude,
+                longitude: entry.longitude,
+                gpsAccuracy: entry.gpsAccuracy,
+                note: entry.note,
+                actorId: entry.actorId,
+            }),
+            (result) => {
+                if (result.succeeded > 0) {
+                    successNotification(
+                        `${result.succeeded} check-in(s) d'évacuation hors-ligne re-transmis avec succès.`
                     );
                 }
             }

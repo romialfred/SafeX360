@@ -1,6 +1,7 @@
 package com.minexpert.hns.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -35,6 +36,12 @@ public class EmergencyWebSocketConfig implements WebSocketMessageBrokerConfigure
         registry.setApplicationDestinationPrefixes("/app");
         // Préfixe pour les messages user-spécifiques
         registry.setUserDestinationPrefix("/user");
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        // LOT 48 Phase 6 — Intercepteur sécurité STOMP CONNECT
+        registration.interceptors(new StompSecurityInterceptor());
     }
 
     @Override

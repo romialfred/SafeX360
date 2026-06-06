@@ -15,6 +15,7 @@ import {
     IconSettings, // ChevronLeft
     IconMapPin, // pour points de rassemblement
     IconUrgent, // pour suivi SOS
+    IconLayoutDashboard, // pour dashboard emergency
     IconChevronLeft, // ChevronRight
     IconChevronRight, // Plus
     IconPlus, // Minus
@@ -233,6 +234,7 @@ const menuItems: MenuItem[] = [
         icon: IconAlertTriangle,
         color: 'text-red-600',
         subItems: [
+            { id: 'emergency-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
             { id: 'emergency-sos', label: 'Suivi SOS', icon: IconUrgent },
             { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
@@ -335,7 +337,8 @@ export const menuIdToUrl: Record<string, string> = {
     "document-validation": "/document-validation",
 
     // LOT 48 Phase 1-3 — Emergency Management
-    emergency: "/emergency/sos",
+    emergency: "/emergency/dashboard",
+    "emergency-dashboard": "/emergency/dashboard",
     "emergency-sos": "/emergency/sos",
     "emergency-settings": "/emergency/settings",
     "emergency-assembly-points": "/emergency/assembly-points",
