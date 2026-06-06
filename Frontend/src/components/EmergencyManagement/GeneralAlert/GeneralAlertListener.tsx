@@ -21,6 +21,7 @@ import {
 import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { formatReasonCode, hasCheckedIn, markCheckedIn, cleanupOldCheckIns } from './alertHelpers';
 
 /**
  * Listener global Alerte Générale (LOT 48 Phase 4).
@@ -158,15 +159,8 @@ class IndustrialSiren {
     }
 }
 
-const REASON_LABELS: Record<string, string> = {
-    EVACUATION_GENERALE: 'Évacuation Générale',
-    INCENDIE: 'Incendie',
-    ACCIDENT_MAJEUR: 'Accident majeur',
-    FUITE_CHIMIQUE: 'Fuite chimique majeure',
-    EXPLOSION: 'Explosion',
-    EXERCICE: 'Exercice d\'évacuation',
-    AUTRE: 'Alerte Générale',
-};
+// Nettoyer les vieilles entrées localStorage au boot
+cleanupOldCheckIns();
 
 const GeneralAlertListener = () => {
     const navigate = useNavigate();
@@ -190,15 +184,21 @@ const GeneralAlertListener = () => {
         if (!selectedCompanyId) return;
         getActiveAlert(selectedCompanyId)
             .then((a) => {
-                if (a && a.status === 'ACTIVE') setActiveAlert(a);
+                if (a && a.status === 'ACTIVE' && a.id && currentUser?.id) {
+                    // Skip si l'utilisateur a deja fait son check-in sur cette alerte
+                    if (hasCheckedIn(Number(currentUser.id), a.id)) return;
+                    setActiveAlert(a);
+                }
             })
             .catch(() => {});
-    }, [selectedCompanyId]);
+    }, [selectedCompanyId, currentUser]);
 
     // ── Subscribe WebSocket pour push live ──
     useEffect(() => {
         const unsubscribe = subscribeGeneralAlert((alert) => {
-            if (alert.status === 'ACTIVE') {
+            if (alert.status === 'ACTIVE' && alert.id && currentUser?.id) {
+                // Skip si déjà check-in sur cette alerte
+                if (hasCheckedIn(Number(currentUser.id), alert.id)) return;
                 setActiveAlert(alert);
             } else if (alert.status === 'ENDED' && activeAlert?.id === alert.id) {
                 setActiveAlert(null);
@@ -207,7 +207,7 @@ const GeneralAlertListener = () => {
             }
         });
         return unsubscribe;
-    }, [subscribeGeneralAlert, activeAlert]);
+    }, [subscribeGeneralAlert, activeAlert, currentUser]);
 
     // ── Load assembly points quand alerte active ──
     useEffect(() => {
@@ -282,12 +282,26 @@ const GeneralAlertListener = () => {
                 gpsAccuracy: position?.accuracy,
                 actorId: Number(currentUser.id),
             });
+
+            // ── Arrête la sirène + persiste le check-in localement ──
+            sirenRef.current?.stop();
+            markCheckedIn(Number(currentUser.id), activeAlert.id);
+
             setCheckedInStatus(status);
             successNotification(
                 status === 'SAFE'
                     ? 'Présence enregistrée — en sécurité'
                     : 'Présence enregistrée — blessé, assistance demandée'
             );
+
+            // Ferme automatiquement le popup après 5s (laisse le temps de lire
+            // la confirmation, puis libère l UI). Si l utilisateur clique
+            // « Voir le suivi évacuation », la navigation aura fermé avant.
+            window.setTimeout(() => {
+                setActiveAlert(null);
+                setCheckedInStatus(null);
+                setPickedApId(null);
+            }, 5000);
         } catch {
             errorNotification('Échec du pointage. Réessayez.');
         } finally {
@@ -297,9 +311,8 @@ const GeneralAlertListener = () => {
 
     if (!activeAlert) return null;
 
-    const reasonLabel = activeAlert.reasonCode
-        ? (REASON_LABELS[activeAlert.reasonCode] ?? activeAlert.reasonCode)
-        : 'Alerte Générale';
+    const reasonLabel = formatReasonCode(activeAlert.reasonCode);
+    const isDrill = Boolean(activeAlert.drillMode);
 
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
@@ -323,6 +336,10 @@ const GeneralAlertListener = () => {
                 @keyframes gaStrobe {
                     0%, 92%, 100% { opacity: 0; }
                     96%           { opacity: 0.6; }
+                }
+                @keyframes gaBlink {
+                    0%, 100% { background-color: rgb(185, 28, 28); }
+                    50%      { background-color: rgb(220, 38, 38); }
                 }
             `}</style>
 
@@ -385,6 +402,28 @@ const GeneralAlertListener = () => {
                         {soundEnabled ? <IconVolume size={20} stroke={1.8} /> : <IconVolumeOff size={20} stroke={1.8} />}
                     </button>
                 </header>
+
+                {/* ════ Bannière exercice / non-exercice ════ */}
+                {isDrill ? (
+                    <div className="bg-sky-100 border-y-2 border-sky-300 px-6 py-2.5 text-center">
+                        <p className="text-[12px] font-bold uppercase tracking-[0.15em] text-sky-900 inline-flex items-center justify-center gap-2">
+                            <IconShieldCheck size={14} stroke={2.2} />
+                            ⓘ Ceci est un EXERCICE — Procédure simulée
+                            <IconShieldCheck size={14} stroke={2.2} />
+                        </p>
+                    </div>
+                ) : (
+                    <div
+                        className="bg-red-700 px-6 py-2.5 text-center"
+                        style={{ animation: 'gaBlink 0.9s ease-in-out infinite' }}
+                    >
+                        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-white drop-shadow-md inline-flex items-center justify-center gap-2">
+                            <IconAlertTriangle size={15} stroke={2.4} />
+                            CECI N'EST PAS UN EXERCICE — URGENCE RÉELLE
+                            <IconAlertTriangle size={15} stroke={2.4} />
+                        </p>
+                    </div>
+                )}
 
                 <div className="p-6 space-y-4">
                     {/* Message d'évacuation */}
