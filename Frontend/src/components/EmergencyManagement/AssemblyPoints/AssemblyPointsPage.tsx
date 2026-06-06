@@ -16,6 +16,7 @@ import {
     IconBuildingBank,
 } from '@tabler/icons-react';
 import PageHeader from '../../UtilityComp/PageHeader';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 import { useAppSelector } from '../../../slices/hooks';
 import {
     listAssemblyPoints,
@@ -67,6 +68,8 @@ const AssemblyPointsPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [retryTick, setRetryTick] = useState(0);
+    const [archivingPoint, setArchivingPoint] = useState<AssemblyPointDTO | null>(null);
+    const [archiving, setArchiving] = useState(false);
 
     const [employees, setEmployees] = useState<EmployeeOption[]>([]);
     const [departments, setDepartments] = useState<DepartmentOption[]>([]);
@@ -147,16 +150,24 @@ const AssemblyPointsPage = () => {
 
     const goToNew = () => navigate('/emergency/assembly-points/new');
 
-    const handleArchive = async (point: AssemblyPointDTO, e?: React.MouseEvent) => {
+    const handleArchive = (point: AssemblyPointDTO, e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!point.id) return;
-        if (!confirm(`Archiver « ${point.name} » ? Il sera masqué mais conservé pour audit.`)) return;
+        setArchivingPoint(point);
+    };
+
+    const confirmArchive = async () => {
+        if (!archivingPoint?.id) return;
+        setArchiving(true);
         try {
-            await archiveAssemblyPoint(point.id, currentUser?.id);
-            setPoints((prev) => prev.filter((p) => p.id !== point.id));
+            await archiveAssemblyPoint(archivingPoint.id, currentUser?.id);
+            setPoints((prev) => prev.filter((p) => p.id !== archivingPoint.id));
             successNotification(t('emergency:assemblyPoints.archived'));
+            setArchivingPoint(null);
         } catch {
             errorNotification(t('common:messages.errorGeneric'));
+        } finally {
+            setArchiving(false);
         }
     };
 
@@ -331,6 +342,28 @@ const AssemblyPointsPage = () => {
                     />
                 )}
             </div>
+
+            {/* Confirm Archive — popup custom */}
+            <ConfirmModal
+                opened={archivingPoint !== null}
+                onClose={() => setArchivingPoint(null)}
+                onConfirm={confirmArchive}
+                tone="danger"
+                title={archivingPoint ? `Archiver « ${archivingPoint.name} » ?` : 'Archiver le point ?'}
+                message={
+                    <>
+                        Ce point de rassemblement sera <strong>masqué de la liste active</strong> mais
+                        conservé en base pour l'historique des évacuations passées.
+                        <br />
+                        <br />
+                        <span className="text-slate-500 text-[11.5px]">
+                            Audit ISO 45001 §9.1.2 — rétention 5 ans.
+                        </span>
+                    </>
+                }
+                confirmLabel="Archiver"
+                loading={archiving}
+            />
         </div>
     );
 };

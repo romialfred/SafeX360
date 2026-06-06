@@ -18,6 +18,7 @@ import {
     IconPlayerPause,
 } from '@tabler/icons-react';
 import PageHeader from '../../UtilityComp/PageHeader';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 import { useAppSelector } from '../../../slices/hooks';
 import {
     getSosAlert,
@@ -101,6 +102,9 @@ const SosDetailPage = () => {
     const [falseAlarmOpen, setFalseAlarmOpen] = useState(false);
     const [falseAlarmReason, setFalseAlarmReason] = useState<string | null>('TEST');
     const [falseAlarmNote, setFalseAlarmNote] = useState('');
+
+    // Modal confirm close (custom)
+    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
     // ── Chargement ──
     useEffect(() => {
@@ -193,13 +197,13 @@ const SosDetailPage = () => {
 
     const handleClose = async () => {
         if (!alert?.id) return;
-        if (!confirm('Confirmer la clôture de cette alerte SOS ?')) return;
         setActing(true);
         try {
             const upd = await closeSosAlert(alert.id, { note: 'Alerte clôturée — incident résolu' }, currentUser?.id);
             setAlert(upd);
             await refreshLifecycle();
             successNotification('Alerte clôturée');
+            setConfirmCloseOpen(false);
         } catch {
             errorNotification('Échec de la clôture');
         } finally {
@@ -449,7 +453,7 @@ const SosDetailPage = () => {
                                 )}
                                 {availableActions.includes('CLOSE') && (
                                     <ActionButton
-                                        onClick={handleClose}
+                                        onClick={() => setConfirmCloseOpen(true)}
                                         disabled={acting}
                                         color="slate"
                                         icon={<IconArchive size={13} stroke={2} />}
@@ -530,6 +534,29 @@ const SosDetailPage = () => {
                     </div>
                 </div>
             </Modal>
+
+            {/* Modal Confirm Close — popup custom */}
+            <ConfirmModal
+                opened={confirmCloseOpen}
+                onClose={() => setConfirmCloseOpen(false)}
+                onConfirm={handleClose}
+                tone="warning"
+                title="Clôturer cette alerte SOS ?"
+                message={
+                    <>
+                        L'alerte sera marquée comme <strong>résolue</strong> et figée dans l'historique.
+                        Cette action est tracée dans le journal d'audit (rétention 5 ans, ISO 45001).
+                        <br />
+                        <br />
+                        <span className="text-slate-500 text-[11.5px]">
+                            Vous ne pourrez plus modifier l'état après clôture.
+                        </span>
+                    </>
+                }
+                confirmLabel="Clôturer définitivement"
+                icon={<IconArchive size={20} stroke={1.8} />}
+                loading={acting}
+            />
 
             {/* Modal False Alarm */}
             <Modal

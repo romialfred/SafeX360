@@ -11,6 +11,7 @@ import {
 } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
  * Section « Règles d'escalade » (LOT 48 Phase 1.d).
@@ -38,6 +39,8 @@ const EscalationRulesSection = ({ companyId }: Props) => {
     const [newDelay, setNewDelay] = useState(60);
     const [newTarget, setNewTarget] = useState<EmergencyPermissionKey>('COORDINATOR');
     const [saving, setSaving] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         if (!companyId) return;
@@ -75,14 +78,18 @@ const EscalationRulesSection = ({ companyId }: Props) => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Supprimer cette règle ?')) return;
+    const confirmDelete = async () => {
+        if (pendingDeleteId === null) return;
+        setDeleting(true);
         try {
-            await deleteEscalationRule(id, currentUser?.id);
-            setRules((prev) => prev.filter((r) => r.id !== id));
+            await deleteEscalationRule(pendingDeleteId, currentUser?.id);
+            setRules((prev) => prev.filter((r) => r.id !== pendingDeleteId));
             successNotification('Règle supprimée');
+            setPendingDeleteId(null);
         } catch {
             errorNotification('Échec de la suppression');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -177,7 +184,7 @@ const EscalationRulesSection = ({ companyId }: Props) => {
                                         <td className="px-3 py-2 text-right">
                                             <button
                                                 type="button"
-                                                onClick={() => rule.id && handleDelete(rule.id)}
+                                                onClick={() => rule.id && setPendingDeleteId(rule.id)}
                                                 title="Supprimer"
                                                 className="inline-flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                             >
@@ -262,6 +269,17 @@ const EscalationRulesSection = ({ companyId }: Props) => {
                     </div>
                 </div>
             </Modal>
+
+            <ConfirmModal
+                opened={pendingDeleteId !== null}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={confirmDelete}
+                tone="danger"
+                title="Supprimer cette règle d'escalade ?"
+                message="La règle sera retirée de la chaîne d'escalade. Cette action est tracée dans le journal d'audit."
+                confirmLabel="Supprimer"
+                loading={deleting}
+            />
         </section>
     );
 };

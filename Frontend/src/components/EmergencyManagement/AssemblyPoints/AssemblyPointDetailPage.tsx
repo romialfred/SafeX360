@@ -26,6 +26,7 @@ import {
 } from '@tabler/icons-react';
 import { groupByCategory, CATEGORIES } from './departmentCategories';
 import PageHeader from '../../UtilityComp/PageHeader';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 import { useAppSelector } from '../../../slices/hooks';
 import {
     getAssemblyPoint,
@@ -110,6 +111,8 @@ const AssemblyPointDetailPage = () => {
     const [departments, setDepartments] = useState<DepartmentOption[]>([]);
 
     const [activeTab, setActiveTab] = useState<TabKey>('overview');
+    const [archiveOpen, setArchiveOpen] = useState(false);
+    const [archiving, setArchiving] = useState(false);
 
     // ── Chargement ──
     useEffect(() => {
@@ -214,13 +217,16 @@ const AssemblyPointDetailPage = () => {
     // ── Archive ──
     const handleArchive = async () => {
         if (!point?.id) return;
-        if (!confirm(`Archiver « ${point.name} » ? Il sera masqué mais conservé pour l'audit.`)) return;
+        setArchiving(true);
         try {
             await archiveAssemblyPoint(point.id, currentUser?.id);
             successNotification(t('emergency:assemblyPoints.archived'));
+            setArchiveOpen(false);
             navigate('/emergency/assembly-points');
         } catch {
             errorNotification(t('common:messages.errorGeneric'));
+        } finally {
+            setArchiving(false);
         }
     };
 
@@ -298,7 +304,7 @@ const AssemblyPointDetailPage = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={handleArchive}
+                            onClick={() => setArchiveOpen(true)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-semibold hover:bg-red-700 transition-colors shadow-sm"
                         >
                             <IconArchive size={12} stroke={1.8} />
@@ -620,6 +626,29 @@ const AssemblyPointDetailPage = () => {
                     </Card>
                 )}
             </div>
+
+            {/* Confirm Archive — popup custom */}
+            <ConfirmModal
+                opened={archiveOpen}
+                onClose={() => setArchiveOpen(false)}
+                onConfirm={handleArchive}
+                tone="danger"
+                title={`Archiver « ${point.name} » ?`}
+                message={
+                    <>
+                        Ce point de rassemblement sera <strong>masqué de la liste active</strong> mais
+                        conservé en base pour l'historique des évacuations passées.
+                        <br />
+                        <br />
+                        <span className="text-slate-500 text-[11.5px]">
+                            Audit ISO 45001 §9.1.2 — rétention 5 ans.
+                        </span>
+                    </>
+                }
+                confirmLabel="Archiver"
+                icon={<IconArchive size={20} stroke={1.8} />}
+                loading={archiving}
+            />
         </div>
     );
 };

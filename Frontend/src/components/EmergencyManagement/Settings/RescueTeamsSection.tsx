@@ -27,6 +27,7 @@ import {
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
  * Section « Équipes de secours » (LOT 48 Phase 1.c.2 — refonte table).
@@ -72,6 +73,12 @@ const RescueTeamsSection = ({ companyId }: Props) => {
     const [memberRole, setMemberRole] = useState('');
     const [memberIsLeader, setMemberIsLeader] = useState(false);
     const [memberSearch, setMemberSearch] = useState('');
+
+    // ── Confirm modals ──
+    const [pendingDeleteTeamId, setPendingDeleteTeamId] = useState<number | null>(null);
+    const [deletingTeam, setDeletingTeam] = useState(false);
+    const [pendingRemoveMember, setPendingRemoveMember] = useState<{ teamId: number; memberId: number } | null>(null);
+    const [removingMember, setRemovingMember] = useState(false);
 
     // ── Lookup ──
     const employeeMap = useMemo(() => {
@@ -176,15 +183,19 @@ const RescueTeamsSection = ({ companyId }: Props) => {
         }
     };
 
-    const handleDeleteTeam = async (teamId: number) => {
-        if (!confirm("Désactiver cette équipe ? L'historique reste conservé.")) return;
+    const confirmDeleteTeam = async () => {
+        if (pendingDeleteTeamId === null) return;
+        setDeletingTeam(true);
         try {
-            await deleteRescueTeam(teamId, currentUser?.id);
-            setTeams((prev) => prev.filter((tm) => tm.id !== teamId));
-            if (expandedTeamId === teamId) setExpandedTeamId(null);
+            await deleteRescueTeam(pendingDeleteTeamId, currentUser?.id);
+            setTeams((prev) => prev.filter((tm) => tm.id !== pendingDeleteTeamId));
+            if (expandedTeamId === pendingDeleteTeamId) setExpandedTeamId(null);
             successNotification('Équipe désactivée');
+            setPendingDeleteTeamId(null);
         } catch {
             errorNotification('Échec de la suppression');
+        } finally {
+            setDeletingTeam(false);
         }
     };
 
@@ -220,17 +231,23 @@ const RescueTeamsSection = ({ companyId }: Props) => {
         }
     };
 
-    const handleRemoveMember = async (teamId: number, memberId: number) => {
-        if (!confirm('Retirer ce membre de l\'équipe ?')) return;
+    const confirmRemoveMember = async () => {
+        if (!pendingRemoveMember) return;
+        setRemovingMember(true);
         try {
-            await removeRescueTeamMember(memberId, currentUser?.id);
+            await removeRescueTeamMember(pendingRemoveMember.memberId, currentUser?.id);
             setMembers((prev) => ({
                 ...prev,
-                [teamId]: (prev[teamId] || []).filter((m) => m.id !== memberId),
+                [pendingRemoveMember.teamId]: (prev[pendingRemoveMember.teamId] || []).filter(
+                    (m) => m.id !== pendingRemoveMember.memberId
+                ),
             }));
             successNotification('Membre retiré');
+            setPendingRemoveMember(null);
         } catch {
             errorNotification('Échec du retrait');
+        } finally {
+            setRemovingMember(false);
         }
     };
 
@@ -314,7 +331,7 @@ const RescueTeamsSection = ({ companyId }: Props) => {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDeleteTeam(teamId);
+                                                setPendingDeleteTeamId(teamId);
                                             }}
                                             title="Désactiver l'équipe"
                                             className="p-1 rounded text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
@@ -404,7 +421,7 @@ const RescueTeamsSection = ({ companyId }: Props) => {
                                                                         <td className="px-3 py-2 text-right">
                                                                             <button
                                                                                 type="button"
-                                                                                onClick={() => m.id && handleRemoveMember(teamId, m.id)}
+                                                                                onClick={() => m.id && setPendingRemoveMember({ teamId, memberId: m.id })}
                                                                                 title="Retirer"
                                                                                 className="inline-flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                                                             >
@@ -595,6 +612,33 @@ const RescueTeamsSection = ({ companyId }: Props) => {
                     </div>
                 </div>
             </Modal>
+
+            <ConfirmModal
+                opened={pendingDeleteTeamId !== null}
+                onClose={() => setPendingDeleteTeamId(null)}
+                onConfirm={confirmDeleteTeam}
+                tone="warning"
+                title="Désactiver cette équipe de secours ?"
+                message={
+                    <>
+                        L'équipe sera marquée <strong>inactive</strong>. Elle disparaît de la liste
+                        opérationnelle mais reste conservée dans l'historique pour traçabilité.
+                    </>
+                }
+                confirmLabel="Désactiver"
+                loading={deletingTeam}
+            />
+
+            <ConfirmModal
+                opened={pendingRemoveMember !== null}
+                onClose={() => setPendingRemoveMember(null)}
+                onConfirm={confirmRemoveMember}
+                tone="danger"
+                title="Retirer ce membre de l'équipe ?"
+                message="Le membre sera retiré de l'équipe. Vous pourrez le réajouter à tout moment."
+                confirmLabel="Retirer"
+                loading={removingMember}
+            />
         </section>
     );
 };

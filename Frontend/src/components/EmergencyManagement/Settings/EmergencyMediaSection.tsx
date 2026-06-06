@@ -11,6 +11,7 @@ import {
 } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
  * Section « Médias d'urgence » (LOT 48 Phase 1.e).
@@ -40,6 +41,8 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
     const [filePath, setFilePath] = useState('');
     const [ttsText, setTtsText] = useState('');
     const [saving, setSaving] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         if (!companyId) return;
@@ -78,14 +81,18 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Supprimer ce média ?')) return;
+    const confirmDelete = async () => {
+        if (pendingDeleteId === null) return;
+        setDeleting(true);
         try {
-            await deleteEmergencyMedia(id, currentUser?.id);
-            setItems((prev) => prev.filter((m) => m.id !== id));
+            await deleteEmergencyMedia(pendingDeleteId, currentUser?.id);
+            setItems((prev) => prev.filter((m) => m.id !== pendingDeleteId));
             successNotification('Média supprimé');
+            setPendingDeleteId(null);
         } catch {
             errorNotification('Échec de la suppression');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -188,7 +195,7 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
                                         <td className="px-3 py-2 text-right">
                                             <button
                                                 type="button"
-                                                onClick={() => m.id && handleDelete(m.id)}
+                                                onClick={() => m.id && setPendingDeleteId(m.id)}
                                                 title="Supprimer"
                                                 className="inline-flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                             >
@@ -295,6 +302,17 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
                     </div>
                 </div>
             </Modal>
+
+            <ConfirmModal
+                opened={pendingDeleteId !== null}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={confirmDelete}
+                tone="danger"
+                title="Supprimer ce média d'urgence ?"
+                message="Le fichier audio / message vocal sera retiré. Vous pourrez le recréer plus tard si nécessaire."
+                confirmLabel="Supprimer"
+                loading={deleting}
+            />
         </section>
     );
 };
