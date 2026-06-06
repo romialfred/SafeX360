@@ -109,6 +109,8 @@ const CATEGORY_TONES: Record<string, { dot: string; bgRow: string; ringActive: s
     'Compliance Management':  { dot: 'bg-green-600',   bgRow: 'bg-green-50/30',   ringActive: 'ring-green-300' },
     'Knowledge Center':       { dot: 'bg-cyan-500',    bgRow: 'bg-cyan-50/30',    ringActive: 'ring-cyan-300' },
     'Safety Communication':   { dot: 'bg-pink-500',    bgRow: 'bg-pink-50/30',    ringActive: 'ring-pink-300' },
+    // LOT 48 — Catégorie urgences : rouge profond pour la distinguer de Risk (rouge clair)
+    'Emergency Management':   { dot: 'bg-red-700',     bgRow: 'bg-red-50/40',     ringActive: 'ring-red-400' },
 };
 
 const CATEGORY_FR: Record<string, string> = {
@@ -121,6 +123,7 @@ const CATEGORY_FR: Record<string, string> = {
     'Compliance Management': 'Conformité Réglementaire',
     'Knowledge Center': 'Centre de Connaissances',
     'Safety Communication': 'Communication Sécurité',
+    'Emergency Management': 'Gestion des Urgences',
 };
 
 const MODULE_FR: Record<string, string> = {
@@ -137,6 +140,11 @@ const MODULE_FR: Record<string, string> = {
     'Improvement Ideas': "Suggestions d'amélioration",
     'Risk Overview': "Vue d'ensemble risques",
     'Risk Register': 'Registre des risques',
+    // LOT 48 — Sous-modules Emergency (mêmes libellés FR que dans la sidebar)
+    'Emergency Dashboard': 'Tableau de bord',
+    'SOS Tracking': 'Suivi SOS',
+    'Assembly Points': 'Points de rassemblement',
+    'Emergency Settings': 'Paramètres Urgences',
 };
 
 // ────────────────────────────────────────────────────────────────────────────

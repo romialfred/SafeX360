@@ -15,6 +15,7 @@ import {
     IconCircleCheck,
     IconCalendar,
     IconLifebuoy,
+    IconUrgent,
     IconArrowRight,
 } from '@tabler/icons-react';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
@@ -72,6 +73,9 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     'help':                      '#8b5cf6', // violet-500
     'iso-documents':             '#64748b', // slate-500
     'settings':                  '#64748b', // slate-500
+    // LOT 48 — Module Emergency : rouge profond (red-700) pour le différencier
+    // du module Gestion des Risques qui utilise red-500.
+    'emergency-management':      '#b91c1c', // red-700
 };
 
 const moduleGroups: ModuleCard[] = [
@@ -130,6 +134,20 @@ const moduleGroups: ModuleCard[] = [
         bgColor: 'bg-red-50/70 border-red-200/60',
         items: ['Vue globale', 'Registre', 'Évaluation', 'Produits chimiques'],
         url: '/risks-overview',
+    },
+    {
+        // LOT 48 — Module Gestion des Urgences : exposition portail Home.
+        // requiredModuleId pointe sur emergency-dashboard (sous-module pivot
+        // exposé en sidebar), aligné avec la convention des autres modules.
+        id: 'emergency-management',
+        requiredModuleId: 'emergency-dashboard',
+        title: 'Gestion des Urgences',
+        description: 'SOS, alertes générales, évacuations et points de rassemblement temps réel (ISO 45001 §8.2).',
+        icon: IconUrgent,
+        color: 'text-red-800',
+        bgColor: 'bg-red-50/70 border-red-300/60',
+        items: ['Tableau de bord', 'Suivi SOS', 'Points de rassemblement', 'Paramètres'],
+        url: '/emergency/dashboard',
     },
     {
         id: 'ppe-management',

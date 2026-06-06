@@ -205,6 +205,38 @@ export const moduleConfigurations: any[] = [
         description: 'Validate compliance documents'
     },
 
+    // Emergency Management (LOT 48 — Module Gestion des Urgences)
+    // Aligné 1:1 avec les sous-items de la sidebar (Sidebar.tsx) pour cohérence
+    // entre la navigation et la gestion des modules.
+    {
+        id: 'emergency-dashboard',
+        name: 'Emergency Dashboard',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Real-time emergency monitoring dashboard (SOS, evacuations, KPIs)'
+    },
+    {
+        id: 'emergency-sos',
+        name: 'SOS Tracking',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Lifecycle tracking of SOS alerts and rescue coordination'
+    },
+    {
+        id: 'emergency-assembly-points',
+        name: 'Assembly Points',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Manage emergency assembly points and evacuation routes'
+    },
+    {
+        id: 'emergency-settings',
+        name: 'Emergency Settings',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Emergency module configuration: teams, escalation, channels'
+    },
+
     // Knowledge Center
     {
         id: 'lessons-learned',
