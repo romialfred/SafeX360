@@ -68,7 +68,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Gestion des utilisateurs': 'sidebar.usersManagement',
     'Gestion des Modules': 'sidebar.modulesManagement',
     'Cibles et prévisions': 'sidebar.targetsAndForecasts',
-    'Références (données opérationnelles)': 'sidebar.operationalReferences',
+    'Données de Références': 'sidebar.operationalReferences',
     'Paramètres système': 'sidebar.systemSettings',
     'Liste des utilisateurs': 'sidebar.usersList',
     'Rôles et permissions': 'sidebar.rolesAndPermissions',
@@ -307,7 +307,7 @@ const menuItems: MenuItem[] = [
         icon: IconSettings,
         color: 'text-slate-600',
         subItems: [
-            { id: 'operational-references', label: 'Références (données opérationnelles)', icon: IconFolderOpen },
+            { id: 'operational-references', label: 'Données de Références', icon: IconFolderOpen },
             { id: 'system-settings', label: 'Paramètres système', icon: IconSettings },
         ],
     },
@@ -421,8 +421,8 @@ export const menuIdToUrl: Record<string, string> = {
     // LOT 48 P6.f — Eclatement Administration en 4 modules
     admin: "/performance",                       // parent → page Cibles (sous-module pivot)
     "target-forecast": "/performance",
-    parameters: "/settings",                     // parent → page Settings (hub Références + Système)
-    "operational-references": "/settings",
+    parameters: "/operational-references",       // parent → renvoie sur la page Donnees de References par defaut
+    "operational-references": "/operational-references",
     "system-settings": "/advanced-configuration",
     "users-management-hub": "/users-management",
     "users-list": "/users-management",
