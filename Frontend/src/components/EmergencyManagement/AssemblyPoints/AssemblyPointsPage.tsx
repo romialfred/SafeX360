@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
     IconMapPin,
     IconPlus,
@@ -7,7 +8,7 @@ import {
     IconMap2,
     IconEdit,
     IconArchive,
-    IconClock,
+    IconEye,
     IconAlertTriangle,
     IconShield,
     IconUser,
@@ -18,8 +19,6 @@ import PageHeader from '../../UtilityComp/PageHeader';
 import { useAppSelector } from '../../../slices/hooks';
 import {
     listAssemblyPoints,
-    createAssemblyPoint,
-    updateAssemblyPoint,
     archiveAssemblyPoint,
     type AssemblyPointDTO,
 } from '../../../services/EmergencyService';
@@ -27,15 +26,12 @@ import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import AssemblyPointsMap from './AssemblyPointsMap';
-import AssemblyPointForm from './AssemblyPointForm';
-import AssemblyPointHistoryDrawer from './AssemblyPointHistoryDrawer';
 
 /**
- * Page « Points de rassemblement » (LOT 48 Phase 2).
+ * Page « Points de rassemblement » (LOT 48 Phase 2.b — refonte navigation).
  *
- * <p>Vue duale : carte Leaflet + table. Toggle via SegmentedFilter style.
- * CRUD complet avec optimistic UI, historique des modifications dans drawer
- * latéral, capture GPS dans le formulaire.</p>
+ * <p>Plus de modal édition. Click sur une ligne ou un pin → page détail.
+ * Click « Nouveau point » → page formulaire dédiée.</p>
  */
 
 type ViewMode = 'map' | 'list';
@@ -53,15 +49,16 @@ interface DepartmentOption {
 }
 
 const PRIORITY_BADGE: Record<number, { bg: string; text: string; ring: string }> = {
-    1: { bg: 'bg-red-100',     text: 'text-red-800',     ring: 'border-red-200' },
-    2: { bg: 'bg-orange-100',  text: 'text-orange-800',  ring: 'border-orange-200' },
-    3: { bg: 'bg-yellow-100',  text: 'text-yellow-800',  ring: 'border-yellow-200' },
-    4: { bg: 'bg-sky-100',     text: 'text-sky-800',     ring: 'border-sky-200' },
-    5: { bg: 'bg-slate-100',   text: 'text-slate-700',   ring: 'border-slate-200' },
+    1: { bg: 'bg-red-100',    text: 'text-red-800',    ring: 'border-red-200' },
+    2: { bg: 'bg-orange-100', text: 'text-orange-800', ring: 'border-orange-200' },
+    3: { bg: 'bg-yellow-100', text: 'text-yellow-800', ring: 'border-yellow-200' },
+    4: { bg: 'bg-sky-100',    text: 'text-sky-800',    ring: 'border-sky-200' },
+    5: { bg: 'bg-slate-100',  text: 'text-slate-700',  ring: 'border-slate-200' },
 };
 
 const AssemblyPointsPage = () => {
     const { t } = useTranslation(['emergency', 'common', 'navigation']);
+    const navigate = useNavigate();
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
     const currentUser = useAppSelector((state: any) => state.user);
 
@@ -73,14 +70,6 @@ const AssemblyPointsPage = () => {
 
     const [employees, setEmployees] = useState<EmployeeOption[]>([]);
     const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-
-    // Form modal state
-    const [formOpened, setFormOpened] = useState(false);
-    const [editing, setEditing] = useState<AssemblyPointDTO | null>(null);
-    const [saving, setSaving] = useState(false);
-
-    // History drawer state
-    const [historyFor, setHistoryFor] = useState<AssemblyPointDTO | null>(null);
 
     // ── Lookups ──
     const employeeMap = useMemo(() => {
@@ -100,7 +89,7 @@ const AssemblyPointsPage = () => {
         return employeeMap.get(id)?.name ?? `#${id}`;
     };
 
-    // ── Chargement employés + départements (1x) ──
+    // ── Chargement référentiels ──
     useEffect(() => {
         getEmployeesWithDepartment()
             .then((res: any[]) => {
@@ -138,53 +127,34 @@ const AssemblyPointsPage = () => {
             .catch((err: any) => {
                 const msg = err?.response?.status
                     ? `Erreur ${err.response.status} — le backend Health-Safety répond mais retourne une erreur.`
-                    : 'Impossible de joindre le serveur backend (Health-Safety hors service).';
+                    : 'Impossible de joindre le serveur backend.';
                 setLoadError(msg);
                 setPoints([]);
             })
             .finally(() => setLoading(false));
     }, [selectedCompanyId, retryTick]);
 
-    // ── CRUD handlers ──
-    const openCreate = () => {
-        setEditing(null);
-        setFormOpened(true);
+    // ── Actions ──
+    const goToDetail = (id?: number) => {
+        if (!id) return;
+        navigate(`/emergency/assembly-points/${id}`);
     };
 
-    const openEdit = (point: AssemblyPointDTO) => {
-        setEditing(point);
-        setFormOpened(true);
+    const goToEdit = (id?: number) => {
+        if (!id) return;
+        navigate(`/emergency/assembly-points/${id}/edit`);
     };
 
-    const handleSave = async (dto: AssemblyPointDTO) => {
-        setSaving(true);
-        try {
-            if (dto.id) {
-                const updated = await updateAssemblyPoint(dto.id, dto, currentUser?.id);
-                setPoints((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-            } else {
-                const created = await createAssemblyPoint(dto, currentUser?.id);
-                setPoints((prev) => [...prev, created]);
-            }
-            successNotification(t('assemblyPoints.saved'));
-            setFormOpened(false);
-            setEditing(null);
-        } catch {
-            errorNotification(t('common:messages.errorGeneric'));
-        } finally {
-            setSaving(false);
-        }
-    };
+    const goToNew = () => navigate('/emergency/assembly-points/new');
 
-    const handleArchive = async (point: AssemblyPointDTO) => {
+    const handleArchive = async (point: AssemblyPointDTO, e?: React.MouseEvent) => {
+        e?.stopPropagation();
         if (!point.id) return;
-        if (!confirm(`Archiver le point « ${point.name} » ? Il sera masqué mais conservé pour audit.`)) {
-            return;
-        }
+        if (!confirm(`Archiver « ${point.name} » ? Il sera masqué mais conservé pour audit.`)) return;
         try {
             await archiveAssemblyPoint(point.id, currentUser?.id);
             setPoints((prev) => prev.filter((p) => p.id !== point.id));
-            successNotification(t('assemblyPoints.archived'));
+            successNotification(t('emergency:assemblyPoints.archived'));
         } catch {
             errorNotification(t('common:messages.errorGeneric'));
         }
@@ -242,7 +212,7 @@ const AssemblyPointsPage = () => {
         );
     }
 
-    // Tableau de statistiques
+    // ── Stats ──
     const stats = {
         total: points.length,
         p1: points.filter((p) => (p.evacuationPriority ?? 2) === 1).length,
@@ -264,7 +234,7 @@ const AssemblyPointsPage = () => {
                 actions={
                     <button
                         type="button"
-                        onClick={openCreate}
+                        onClick={goToNew}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-semibold hover:bg-red-700 transition-colors shadow-sm"
                     >
                         <IconPlus size={13} stroke={2.4} />
@@ -273,47 +243,22 @@ const AssemblyPointsPage = () => {
                 }
             />
 
-            {/* ════ KPI tuiles compactes ════ */}
+            {/* KPI tuiles */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-                <StatCard
-                    icon={<IconMapPin size={14} stroke={1.7} />}
-                    label="Total points"
-                    value={stats.total}
-                    accent="red"
-                />
-                <StatCard
-                    icon={<IconShield size={14} stroke={1.7} />}
-                    label="Priorité haute"
-                    value={stats.p1}
-                    accent="orange"
-                    suffix="P1"
-                />
-                <StatCard
-                    icon={<IconUsers size={14} stroke={1.7} />}
-                    label="Capacité totale"
-                    value={stats.totalCapacity}
-                    accent="sky"
-                    suffix="pers."
-                />
-                <StatCard
-                    icon={<IconUser size={14} stroke={1.7} />}
-                    label="Avec responsable"
-                    value={stats.withManager}
-                    accent="emerald"
-                    suffix={`/ ${stats.total}`}
-                />
+                <StatCard icon={<IconMapPin size={14} stroke={1.7} />} label="Total points" value={stats.total} accent="red" />
+                <StatCard icon={<IconShield size={14} stroke={1.7} />} label="Priorité haute" value={stats.p1} accent="orange" suffix="P1" />
+                <StatCard icon={<IconUsers size={14} stroke={1.7} />} label="Capacité totale" value={stats.totalCapacity} accent="sky" suffix="pers." />
+                <StatCard icon={<IconUser size={14} stroke={1.7} />} label="Avec responsable" value={stats.withManager} accent="emerald" suffix={`/ ${stats.total}`} />
             </div>
 
-            {/* ════ Toggle vue + légende ════ */}
+            {/* Toggle + légende */}
             <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
                 <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                     <button
                         type="button"
                         onClick={() => setView('map')}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
-                            view === 'map'
-                                ? 'bg-white text-slate-900 shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                            view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         <IconMap2 size={13} stroke={1.8} />
@@ -323,9 +268,7 @@ const AssemblyPointsPage = () => {
                         type="button"
                         onClick={() => setView('list')}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
-                            view === 'list'
-                                ? 'bg-white text-slate-900 shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                            view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         <IconList size={13} stroke={1.8} />
@@ -333,11 +276,8 @@ const AssemblyPointsPage = () => {
                     </button>
                 </div>
 
-                {/* Légende priorités */}
                 <div className="flex items-center gap-2.5 text-[11px] text-slate-600">
-                    <span className="text-[10.5px] uppercase tracking-wider text-slate-500 font-semibold">
-                        Légende
-                    </span>
+                    <span className="text-[10.5px] uppercase tracking-wider text-slate-500 font-semibold">Légende</span>
                     {[1, 2, 3, 4, 5].map((p) => {
                         const colors = PRIORITY_BADGE[p];
                         return (
@@ -350,7 +290,7 @@ const AssemblyPointsPage = () => {
                 </div>
             </div>
 
-            {/* ════ Contenu principal : map ou table ════ */}
+            {/* Contenu */}
             <div className="mt-4">
                 {loading ? (
                     <div className="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-sm">
@@ -371,7 +311,7 @@ const AssemblyPointsPage = () => {
                         </p>
                         <button
                             type="button"
-                            onClick={openCreate}
+                            onClick={goToNew}
                             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-semibold hover:bg-red-700"
                         >
                             <IconPlus size={13} stroke={2.4} />
@@ -379,43 +319,18 @@ const AssemblyPointsPage = () => {
                         </button>
                     </div>
                 ) : view === 'map' ? (
-                    <AssemblyPointsMap points={points} onEdit={openEdit} height={520} />
+                    <AssemblyPointsMap points={points} onEdit={(p) => goToDetail(p.id)} height={520} />
                 ) : (
                     <AssemblyPointsTable
                         points={points}
                         employeeNameOf={employeeNameOf}
                         departmentMap={departmentMap}
-                        onEdit={openEdit}
+                        onView={(p) => goToDetail(p.id)}
+                        onEdit={(p) => goToEdit(p.id)}
                         onArchive={handleArchive}
-                        onHistory={setHistoryFor}
                     />
                 )}
             </div>
-
-            {/* ════ Modal formulaire ════ */}
-            <AssemblyPointForm
-                opened={formOpened}
-                onClose={() => {
-                    if (!saving) {
-                        setFormOpened(false);
-                        setEditing(null);
-                    }
-                }}
-                onSave={handleSave}
-                initial={editing}
-                companyId={selectedCompanyId}
-                employees={employees}
-                departments={departments}
-                saving={saving}
-            />
-
-            {/* ════ Drawer historique ════ */}
-            <AssemblyPointHistoryDrawer
-                opened={historyFor !== null}
-                onClose={() => setHistoryFor(null)}
-                point={historyFor}
-                employeeNameOf={employeeNameOf}
-            />
         </div>
     );
 };
@@ -448,9 +363,7 @@ function StatCard({
     return (
         <div className={`bg-white border border-slate-200 border-l-[3px] ${tone.ring} rounded-xl p-3 shadow-sm`}>
             <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-500 font-semibold">
-                    {label}
-                </p>
+                <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-500 font-semibold">{label}</p>
                 <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${tone.bg} ${tone.text}`}>
                     {icon}
                 </span>
@@ -474,16 +387,16 @@ function AssemblyPointsTable({
     points,
     employeeNameOf,
     departmentMap,
+    onView,
     onEdit,
     onArchive,
-    onHistory,
 }: {
     points: AssemblyPointDTO[];
     employeeNameOf: (id?: number | null) => string;
     departmentMap: Map<number, { id: number; name: string }>;
+    onView: (p: AssemblyPointDTO) => void;
     onEdit: (p: AssemblyPointDTO) => void;
-    onArchive: (p: AssemblyPointDTO) => void;
-    onHistory: (p: AssemblyPointDTO) => void;
+    onArchive: (p: AssemblyPointDTO, e?: React.MouseEvent) => void;
 }) {
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -506,7 +419,7 @@ function AssemblyPointsTable({
                             <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
                                 Départements
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-24">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-28">
                                 Coordonnées
                             </th>
                             <th className="px-3 py-2.5 text-right font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-28">
@@ -524,7 +437,11 @@ function AssemblyPointsTable({
                                 .filter((n) => !Number.isNaN(n));
 
                             return (
-                                <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                                <tr
+                                    key={p.id}
+                                    onClick={() => onView(p)}
+                                    className="hover:bg-red-50/30 transition-colors cursor-pointer"
+                                >
                                     <td className="px-3 py-2">
                                         <span
                                             className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold ${badge.bg} ${badge.text} ${badge.ring} border`}
@@ -563,7 +480,7 @@ function AssemblyPointsTable({
                                     </td>
                                     <td className="px-3 py-2">
                                         {deptIds.length === 0 ? (
-                                            <span className="text-slate-400 italic">Tous</span>
+                                            <span className="text-slate-400 italic text-[11px]">Tous</span>
                                         ) : (
                                             <div className="flex flex-wrap gap-1">
                                                 {deptIds.slice(0, 3).map((id) => (
@@ -576,9 +493,7 @@ function AssemblyPointsTable({
                                                     </span>
                                                 ))}
                                                 {deptIds.length > 3 && (
-                                                    <span className="text-[10px] text-slate-500">
-                                                        +{deptIds.length - 3}
-                                                    </span>
+                                                    <span className="text-[10px] text-slate-500">+{deptIds.length - 3}</span>
                                                 )}
                                             </div>
                                         )}
@@ -589,14 +504,14 @@ function AssemblyPointsTable({
                                         {p.longitude.toFixed(4)}
                                     </td>
                                     <td className="px-3 py-2 text-right">
-                                        <div className="inline-flex items-center gap-0.5">
+                                        <div className="inline-flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                                             <button
                                                 type="button"
-                                                onClick={() => onHistory(p)}
-                                                title="Historique"
+                                                onClick={() => onView(p)}
+                                                title="Voir détail"
                                                 className="inline-flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                                             >
-                                                <IconClock size={11} stroke={1.8} />
+                                                <IconEye size={11} stroke={1.8} />
                                             </button>
                                             <button
                                                 type="button"
@@ -608,7 +523,7 @@ function AssemblyPointsTable({
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => onArchive(p)}
+                                                onClick={(e) => onArchive(p, e)}
                                                 title="Archiver"
                                                 className="inline-flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                                             >

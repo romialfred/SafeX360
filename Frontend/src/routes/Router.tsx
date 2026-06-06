@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmergencySettingsPage from '../components/EmergencyManagement/Settings/EmergencySettingsPage';
 import AssemblyPointsPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointsPage';
+import AssemblyPointFormPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointFormPage';
+import AssemblyPointDetailPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointDetailPage';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
@@ -304,6 +306,9 @@ const router = createBrowserRouter([
             { path: 'emergency/settings', element: <EmergencySettingsPage /> },
             // LOT 48 Phase 2 — Points de rassemblement (carte + table + GPS capture + history)
             { path: 'emergency/assembly-points', element: <AssemblyPointsPage /> },
+            { path: 'emergency/assembly-points/new', element: <AssemblyPointFormPage /> },
+            { path: 'emergency/assembly-points/:id', element: <AssemblyPointDetailPage /> },
+            { path: 'emergency/assembly-points/:id/edit', element: <AssemblyPointFormPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },
