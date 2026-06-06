@@ -52,6 +52,8 @@ class AmbulanceSiren {
     private rafId: number | null = null;
     private playing = false;
     private startedAt = 0;
+    private currentVolume = 0.32; // Volume max plafonné pour priorité à la voix TTS
+    private ducked = false;
 
     async start() {
         if (this.playing) return;
@@ -71,11 +73,13 @@ class AmbulanceSiren {
             this.filter.Q.value = 0.7;
             this.filter.connect(this.ctx.destination);
 
-            // Gain principal — CRESCENDO 0.08 → 0.55 sur 10s (effet "qui s'approche")
+            // Gain principal — CRESCENDO 0.05 → 0.32 sur 10s.
+            // Volume max plafonné à 0.32 pour laisser de la place sonore à la
+            // voix TTS qui doit rester clairement audible.
             this.gain = this.ctx.createGain();
             const now = this.ctx.currentTime;
-            this.gain.gain.setValueAtTime(0.08, now);
-            this.gain.gain.linearRampToValueAtTime(0.55, now + 10);
+            this.gain.gain.setValueAtTime(0.05, now);
+            this.gain.gain.linearRampToValueAtTime(this.currentVolume, now + 10);
             this.gain.connect(this.filter);
 
             // Oscillateur principal
@@ -127,6 +131,30 @@ class AmbulanceSiren {
             this.rafId = window.requestAnimationFrame(tick);
         };
         tick();
+    }
+
+    /** Baisse le volume sirène à 0.06 pendant que la voix TTS parle. */
+    duck() {
+        if (!this.ctx || !this.gain || this.ducked) return;
+        try {
+            const now = this.ctx.currentTime;
+            this.gain.gain.cancelScheduledValues(now);
+            this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+            this.gain.gain.linearRampToValueAtTime(0.06, now + 0.15);
+            this.ducked = true;
+        } catch { /* ignore */ }
+    }
+
+    /** Restaure le volume sirène quand la voix TTS termine. */
+    unduck() {
+        if (!this.ctx || !this.gain || !this.ducked) return;
+        try {
+            const now = this.ctx.currentTime;
+            this.gain.gain.cancelScheduledValues(now);
+            this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+            this.gain.gain.linearRampToValueAtTime(this.currentVolume, now + 0.3);
+            this.ducked = false;
+        } catch { /* ignore */ }
     }
 
     stop() {
@@ -207,7 +235,7 @@ const CoordinatorAlertListener = () => {
         else sirenRef.current?.stop();
     }, [soundEnabled, activeAlert]);
 
-    // ── TTS Web Speech : message standard d'évacuation ──
+    // ── TTS Web Speech avec audio ducking ──
     useEffect(() => {
         if (!activeAlert || !soundEnabled) return;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -224,33 +252,46 @@ const CoordinatorAlertListener = () => {
                     u.rate = 0.92;
                     u.pitch = 1.0;
                     u.volume = 1.0;
+                    // AUDIO DUCKING : baisse la sirène pendant que la voix parle
+                    u.onstart = () => sirenRef.current?.duck();
+                    u.onend = () => sirenRef.current?.unduck();
+                    u.onerror = () => sirenRef.current?.unduck();
                     synth.speak(u);
                 }
-            } catch {
-                /* ignore */
-            }
+            } catch { /* ignore */ }
         };
-        // Premier annonce après 1.5s (laisse le temps à la sirène de démarrer)
         const initialTimeout = window.setTimeout(speak, 1500);
-        // Répétition toutes les 8s
         const interval = window.setInterval(speak, 8000);
         return () => {
             window.clearTimeout(initialTimeout);
             window.clearInterval(interval);
-            try { synth.cancel(); } catch { /* ignore */ }
+            try {
+                synth.cancel();
+                sirenRef.current?.unduck();
+            } catch { /* ignore */ }
         };
     }, [activeAlert, soundEnabled]);
 
     // ── Note : start() est désormais async ; on ignore la promise via void ──
 
     // ── Actions ──
+    /** Coupe complètement sirène + voix TTS en cours. */
+    const stopAllAudio = () => {
+        sirenRef.current?.stop();
+        try {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        } catch { /* ignore */ }
+    };
+
     const handleAcknowledge = async () => {
         if (!activeAlert?.id) return;
         setAcknowledging(true);
         try {
             await acknowledgeSosAlert(activeAlert.id, { note: 'Prise en charge depuis popup gyrophare' }, currentUser?.id);
             successNotification('SOS pris en charge');
-            sirenRef.current?.stop();
+            stopAllAudio();
             const id = activeAlert.id;
             setActiveAlert(null);
             navigate(`/emergency/sos/${id}`);
@@ -263,14 +304,14 @@ const CoordinatorAlertListener = () => {
 
     const handleViewDetail = () => {
         if (!activeAlert?.id) return;
-        sirenRef.current?.stop();
+        stopAllAudio();
         const id = activeAlert.id;
         setActiveAlert(null);
         navigate(`/emergency/sos/${id}`);
     };
 
     const handleDismiss = () => {
-        sirenRef.current?.stop();
+        stopAllAudio();
         setActiveAlert(null);
     };
 

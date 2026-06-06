@@ -67,6 +67,8 @@ class IndustrialSiren {
     private rafId: number | null = null;
     private playing = false;
     private startedAt = 0;
+    private currentVolume = 0.45; // Volume max plafonné pour laisser de la place à la voix
+    private ducked = false;
 
     async start() {
         if (this.playing) return;
@@ -87,11 +89,13 @@ class IndustrialSiren {
             this.filter.Q.value = 1.0;
             this.filter.connect(this.ctx.destination);
 
-            // Master gain — CRESCENDO de 0.05 → 0.85 sur 12s puis maintien
+            // Master gain — CRESCENDO de 0.03 → 0.45 sur 12s puis maintien.
+            // Volume max plafonné à 0.45 (au lieu de 0.85) pour laisser de la
+            // place sonore à la voix TTS qui doit rester clairement audible.
             this.masterGain = this.ctx.createGain();
             const now = this.ctx.currentTime;
-            this.masterGain.gain.setValueAtTime(0.05, now);
-            this.masterGain.gain.linearRampToValueAtTime(0.85, now + 12);
+            this.masterGain.gain.setValueAtTime(0.03, now);
+            this.masterGain.gain.linearRampToValueAtTime(this.currentVolume, now + 12);
             this.masterGain.connect(this.filter);
 
             // Oscillateur principal — sawtooth pour riche en harmoniques
@@ -144,6 +148,35 @@ class IndustrialSiren {
         tick();
     }
 
+    /**
+     * Baisse le volume sirène à 0.08 quand la voix TTS parle (audio ducking).
+     * Rampe douce 0.2s pour éviter les pops audibles.
+     */
+    duck() {
+        if (!this.ctx || !this.masterGain || this.ducked) return;
+        try {
+            const now = this.ctx.currentTime;
+            this.masterGain.gain.cancelScheduledValues(now);
+            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+            this.masterGain.gain.linearRampToValueAtTime(0.08, now + 0.15);
+            this.ducked = true;
+        } catch { /* ignore */ }
+    }
+
+    /**
+     * Restaure le volume sirène quand la voix TTS termine.
+     */
+    unduck() {
+        if (!this.ctx || !this.masterGain || !this.ducked) return;
+        try {
+            const now = this.ctx.currentTime;
+            this.masterGain.gain.cancelScheduledValues(now);
+            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+            this.masterGain.gain.linearRampToValueAtTime(this.currentVolume, now + 0.3);
+            this.ducked = false;
+        } catch { /* ignore */ }
+    }
+
     stop() {
         try {
             if (this.rafId !== null) {
@@ -156,6 +189,7 @@ class IndustrialSiren {
             if (this.ctx) { this.ctx.close().catch(() => {}); this.ctx = null; }
         } catch { /* ignore */ }
         this.playing = false;
+        this.ducked = false;
     }
 }
 
@@ -241,13 +275,12 @@ const GeneralAlertListener = () => {
         };
     }, [activeAlert, soundEnabled]);
 
-    // ── TTS Web Speech (voix) ──
+    // ── TTS Web Speech (voix) avec audio ducking ──
     useEffect(() => {
-        if (!activeAlert || !soundEnabled) return;
+        if (!activeAlert || !soundEnabled || checkedInStatus) return;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
         const synth = window.speechSynthesis;
-        // Message standard d'évacuation + message custom de l'alerte si fourni
         const standardMsg = activeAlert.drillMode
             ? "Ceci est un exercice. Veuillez rejoindre le point de rassemblement le plus proche."
             : "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche.";
@@ -263,19 +296,25 @@ const GeneralAlertListener = () => {
                     u.rate = 0.92;
                     u.pitch = 1.0;
                     u.volume = 1.0;
+                    // AUDIO DUCKING : baisse la sirène pendant que la voix parle
+                    u.onstart = () => sirenRef.current?.duck();
+                    u.onend = () => sirenRef.current?.unduck();
+                    u.onerror = () => sirenRef.current?.unduck();
                     synth.speak(u);
                 }
             } catch { /* ignore */ }
         };
-        // Premier annonce après 1.5s
         const initialTimeout = window.setTimeout(speak, 1500);
         const interval = window.setInterval(speak, 8000);
         return () => {
             window.clearTimeout(initialTimeout);
             window.clearInterval(interval);
-            try { synth.cancel(); } catch { /* ignore */ }
+            try {
+                synth.cancel();
+                sirenRef.current?.unduck();
+            } catch { /* ignore */ }
         };
-    }, [activeAlert, soundEnabled]);
+    }, [activeAlert, soundEnabled, checkedInStatus]);
 
     // ── Check-in ──
     const doCheckIn = async (status: CheckInStatus) => {
@@ -293,8 +332,13 @@ const GeneralAlertListener = () => {
                 actorId: Number(currentUser.id),
             });
 
-            // ── Arrête la sirène + persiste le check-in localement ──
+            // ── Arrête la sirène + TTS + persiste le check-in localement ──
             sirenRef.current?.stop();
+            try {
+                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            } catch { /* ignore */ }
             markCheckedIn(Number(currentUser.id), activeAlert.id);
 
             setCheckedInStatus(status);
