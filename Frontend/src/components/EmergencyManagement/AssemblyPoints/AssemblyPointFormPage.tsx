@@ -16,7 +16,10 @@ import {
     IconShield,
     IconBriefcase,
     IconInfoCircle,
+    IconShovel,
+    IconTool,
 } from '@tabler/icons-react';
+import { groupByCategory, CATEGORIES } from './departmentCategories';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { useAppSelector } from '../../../slices/hooks';
 import {
@@ -55,6 +58,123 @@ interface EmployeeOption {
 interface DepartmentOption {
     id: number;
     name: string;
+}
+
+// ── Sous-composant CategorizedDepartmentPicker ──────────────────────────────
+const CATEGORY_VISUAL: Record<
+    string,
+    { borderL: string; bg: string; iconBg: string; iconColor: string; chipBgActive: string; chipBorderActive: string; chipTextActive: string; ringActive: string }
+> = {
+    sky: {
+        borderL: 'border-l-sky-400',
+        bg: 'bg-sky-50/40',
+        iconBg: 'bg-sky-100',
+        iconColor: 'text-sky-700',
+        chipBgActive: 'bg-sky-100',
+        chipBorderActive: 'border-sky-400',
+        chipTextActive: 'text-sky-900',
+        ringActive: 'ring-sky-200',
+    },
+    amber: {
+        borderL: 'border-l-amber-400',
+        bg: 'bg-amber-50/40',
+        iconBg: 'bg-amber-100',
+        iconColor: 'text-amber-700',
+        chipBgActive: 'bg-amber-100',
+        chipBorderActive: 'border-amber-400',
+        chipTextActive: 'text-amber-900',
+        ringActive: 'ring-amber-200',
+    },
+    emerald: {
+        borderL: 'border-l-emerald-400',
+        bg: 'bg-emerald-50/40',
+        iconBg: 'bg-emerald-100',
+        iconColor: 'text-emerald-700',
+        chipBgActive: 'bg-emerald-100',
+        chipBorderActive: 'border-emerald-400',
+        chipTextActive: 'text-emerald-900',
+        ringActive: 'ring-emerald-200',
+    },
+};
+
+function CategorizedDepartmentPicker({
+    departments,
+    selectedIds,
+    onToggle,
+}: {
+    departments: { id: number; name: string }[];
+    selectedIds: Set<number>;
+    onToggle: (id: number) => void;
+}) {
+    const groups = groupByCategory(departments);
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {CATEGORIES.map((cat) => {
+                const items = groups[cat.key];
+                if (items.length === 0) return null;
+                const visual = CATEGORY_VISUAL[cat.accent];
+                const Icon = cat.icon === 'IconShovel' ? IconShovel : cat.icon === 'IconTool' ? IconTool : IconBuildingBank;
+                const selectedInCat = items.filter((d) => selectedIds.has(d.id)).length;
+
+                return (
+                    <div
+                        key={cat.key}
+                        className={`border border-slate-200 border-l-[3px] ${visual.borderL} ${visual.bg} rounded-lg overflow-hidden flex flex-col`}
+                    >
+                        <header className="px-3 py-2 border-b border-slate-100 bg-white/60">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded ${visual.iconBg} ${visual.iconColor} flex-shrink-0`}>
+                                        <Icon size={11} stroke={1.8} />
+                                    </span>
+                                    <h4
+                                        className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-700 truncate"
+                                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                                    >
+                                        {cat.label}
+                                    </h4>
+                                </div>
+                                {selectedInCat > 0 && (
+                                    <span className={`inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded text-[10px] font-semibold ${visual.iconBg} ${visual.iconColor}`}>
+                                        {selectedInCat}/{items.length}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 leading-snug">{cat.description}</p>
+                        </header>
+                        <ul className="p-2 space-y-1 flex-1">
+                            {items.map((d) => {
+                                const isSelected = selectedIds.has(d.id);
+                                return (
+                                    <li key={d.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => onToggle(d.id)}
+                                            className={`w-full text-left inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11.5px] font-medium transition-colors ${
+                                                isSelected
+                                                    ? `${visual.chipBgActive} ${visual.chipTextActive} ${visual.chipBorderActive} ring-1 ${visual.ringActive}`
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-flex items-center justify-center w-3.5 h-3.5 rounded border flex-shrink-0 ${
+                                                    isSelected ? `${visual.chipBgActive} ${visual.chipBorderActive}` : 'bg-white border-slate-300'
+                                                }`}
+                                            >
+                                                {isSelected && <IconCheck size={9} stroke={3} />}
+                                            </span>
+                                            <span className="truncate">{d.name}</span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 // ── Sous-composant Section ──────────────────────────────────────────────────
@@ -516,7 +636,7 @@ const AssemblyPointFormPage = () => {
                         </div>
                     </Section>
 
-                    {/* SECTION 3 — COUVERTURE DÉPARTEMENTS */}
+                    {/* SECTION 3 — COUVERTURE DÉPARTEMENTS (3 colonnes par catégorie) */}
                     {departments.length > 0 && (
                         <Section
                             icon={<IconBuildingBank size={15} stroke={1.6} />}
@@ -524,27 +644,12 @@ const AssemblyPointFormPage = () => {
                             description="Sélectionnez les départements dont les employés évacueront vers ce point"
                             accent="violet"
                         >
-                            <div className="flex flex-wrap gap-1.5">
-                                {departments.map((d) => {
-                                    const isSelected = departmentIds.has(d.id);
-                                    return (
-                                        <button
-                                            key={d.id}
-                                            type="button"
-                                            onClick={() => toggleDept(d.id)}
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11.5px] font-medium transition-colors ${
-                                                isSelected
-                                                    ? 'bg-violet-50 text-violet-800 border-violet-300 ring-1 ring-violet-200'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                                            }`}
-                                        >
-                                            {isSelected && <IconCheck size={10} stroke={2.6} />}
-                                            {d.name}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <p className="text-[10.5px] text-slate-500 mt-3 inline-flex items-center gap-1">
+                            <CategorizedDepartmentPicker
+                                departments={departments}
+                                selectedIds={departmentIds}
+                                onToggle={toggleDept}
+                            />
+                            <p className="text-[10.5px] text-slate-500 mt-4 pt-3 border-t border-slate-100 inline-flex items-center gap-1">
                                 <IconInfoCircle size={10} stroke={1.8} />
                                 {departmentIds.size === 0
                                     ? 'Aucune restriction : tous les employés peuvent rejoindre ce point.'

@@ -21,7 +21,10 @@ import {
     IconList,
     IconShield,
     IconLayoutGrid,
+    IconShovel,
+    IconTool,
 } from '@tabler/icons-react';
+import { groupByCategory, CATEGORIES } from './departmentCategories';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { useAppSelector } from '../../../slices/hooks';
 import {
@@ -466,7 +469,7 @@ const AssemblyPointDetailPage = () => {
                     </div>
                 )}
 
-                {/* ════ ONGLET 2 : Couverture ════ */}
+                {/* ════ ONGLET 2 : Couverture (3 colonnes par catégorie métier) ════ */}
                 {activeTab === 'coverage' && (
                     <Card title="Départements couverts" icon={<IconBuildingBank size={14} stroke={1.7} />}>
                         {coveredDepartments.length === 0 ? (
@@ -484,33 +487,10 @@ const AssemblyPointDetailPage = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {coveredDepartments.map((dept) => {
-                                    const deptEmployees = employees.filter(
-                                        (e) => e.department?.toLowerCase() === dept.name.toLowerCase()
-                                    );
-                                    return (
-                                        <div
-                                            key={dept.id}
-                                            className="bg-white border border-slate-200 border-l-[3px] border-l-violet-400 rounded-lg p-3 shadow-sm"
-                                        >
-                                            <div className="flex items-start gap-2">
-                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-violet-50 text-violet-600 flex-shrink-0">
-                                                    <IconBuildingBank size={14} stroke={1.7} />
-                                                </span>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-[13px] font-medium text-slate-800 truncate">
-                                                        {dept.name}
-                                                    </p>
-                                                    <p className="text-[11px] text-slate-500 mt-0.5">
-                                                        {deptEmployees.length} employé{deptEmployees.length > 1 ? 's' : ''}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <CategorizedCoverageView
+                                departments={coveredDepartments}
+                                employees={employees}
+                            />
                         )}
                     </Card>
                 )}
@@ -739,6 +719,85 @@ function EmployeeRow({
                     {employee.department}
                 </p>
             </div>
+        </div>
+    );
+}
+
+// ── Sous-composant : Couverture catégorisée (3 colonnes métier) ────────────
+const COVERAGE_VISUAL: Record<
+    string,
+    { borderL: string; bg: string; iconBg: string; iconColor: string }
+> = {
+    sky:     { borderL: 'border-l-sky-400',     bg: 'bg-sky-50/40',     iconBg: 'bg-sky-100',     iconColor: 'text-sky-700' },
+    amber:   { borderL: 'border-l-amber-400',   bg: 'bg-amber-50/40',   iconBg: 'bg-amber-100',   iconColor: 'text-amber-700' },
+    emerald: { borderL: 'border-l-emerald-400', bg: 'bg-emerald-50/40', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-700' },
+};
+
+function CategorizedCoverageView({
+    departments,
+    employees,
+}: {
+    departments: { id: number; name: string }[];
+    employees: EmployeeEnriched[];
+}) {
+    const groups = groupByCategory(departments);
+
+    const countEmployees = (deptName: string) =>
+        employees.filter((e) => e.department?.toLowerCase() === deptName.toLowerCase()).length;
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {CATEGORIES.map((cat) => {
+                const items = groups[cat.key];
+                if (items.length === 0) return null;
+                const visual = COVERAGE_VISUAL[cat.accent];
+                const Icon = cat.icon === 'IconShovel' ? IconShovel : cat.icon === 'IconTool' ? IconTool : IconBuildingBank;
+                const totalEmployees = items.reduce((acc, d) => acc + countEmployees(d.name), 0);
+
+                return (
+                    <div
+                        key={cat.key}
+                        className={`border border-slate-200 border-l-[3px] ${visual.borderL} ${visual.bg} rounded-lg overflow-hidden`}
+                    >
+                        <header className="px-3 py-2.5 border-b border-slate-100 bg-white/60">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded ${visual.iconBg} ${visual.iconColor} flex-shrink-0`}>
+                                        <Icon size={12} stroke={1.7} />
+                                    </span>
+                                    <h4
+                                        className="text-[11.5px] font-semibold uppercase tracking-[0.1em] text-slate-700 truncate"
+                                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                                    >
+                                        {cat.label}
+                                    </h4>
+                                </div>
+                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${visual.iconBg} ${visual.iconColor}`}>
+                                    {items.length} dép. · {totalEmployees} pers.
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 leading-snug">{cat.description}</p>
+                        </header>
+                        <ul className="divide-y divide-slate-100">
+                            {items.map((dept) => {
+                                const empCount = countEmployees(dept.name);
+                                return (
+                                    <li key={dept.id} className="px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/60 transition-colors">
+                                        <span className="text-[12px] text-slate-800 truncate inline-flex items-center gap-1.5">
+                                            <IconBuildingBank size={10} stroke={1.8} className="text-slate-400 flex-shrink-0" />
+                                            {dept.name}
+                                        </span>
+                                        <span className="text-[10.5px] text-slate-500 whitespace-nowrap inline-flex items-center gap-0.5">
+                                            <IconUser size={9} stroke={1.8} />
+                                            {empCount}
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                );
+            })}
         </div>
     );
 }
