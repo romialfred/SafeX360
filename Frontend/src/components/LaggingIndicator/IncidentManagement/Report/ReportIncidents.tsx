@@ -395,7 +395,7 @@ const ReportIncidents = () => {
                 <IconInfoCircle size={18} className="text-orange-700 flex-shrink-0 mt-0.5" />
                 <div className="text-xs text-orange-900 leading-relaxed">
                     <span className="font-medium">Mode "Déclaration rapide" disponible :</span> seuls les champs de l'étape 1 sont obligatoires pour signaler immédiatement.
-                    Les étapes <span className="font-medium">Témoins</span>, <span className="font-medium">Analyse</span> et <span className="font-medium">Évaluation risque</span> peuvent être complétées plus tard par le coordinateur HSE. Conforme à ISO 45001 §10.2.1.a (notification immédiate des incidents).
+                    Les étapes <span className="font-medium">Témoins</span>, <span className="font-medium">Analyse</span> et <span className="font-medium">Évaluation risque</span> peuvent être complétées plus tard.
                 </div>
             </div>
 
