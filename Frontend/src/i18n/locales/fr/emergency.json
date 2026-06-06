@@ -80,5 +80,85 @@
         "QR": "QR code à la borne",
         "NFC": "Badge NFC",
         "MANUAL": "Pointage manuel"
+    },
+    "assemblyPoints": {
+        "title": "Points de rassemblement",
+        "subtitle": "Géolocalisation et coordination des zones de regroupement en cas d'évacuation",
+        "addNew": "Nouveau point",
+        "edit": "Modifier",
+        "archive": "Archiver",
+        "viewHistory": "Historique",
+        "view": {
+            "map": "Carte",
+            "list": "Liste",
+            "history": "Historique"
+        },
+        "table": {
+            "name": "Nom",
+            "priority": "Priorité",
+            "manager": "Responsable",
+            "capacity": "Capacité",
+            "location": "Localisation",
+            "status": "Statut",
+            "actions": "Actions"
+        },
+        "form": {
+            "section": {
+                "general": "Informations générales",
+                "location": "Localisation GPS",
+                "responsible": "Responsabilité",
+                "capacity": "Capacité & priorité",
+                "coverage": "Départements couverts"
+            },
+            "name": "Nom du point *",
+            "namePlaceholder": "Aire de rassemblement principale",
+            "description": "Description",
+            "descriptionPlaceholder": "Détails complémentaires (signalétique, accès, etc.)",
+            "locationText": "Adresse / repère",
+            "locationTextPlaceholder": "Devant la grille d'entrée, parking visiteurs",
+            "latitude": "Latitude *",
+            "longitude": "Longitude *",
+            "captureGps": "Capturer ma position GPS",
+            "capturing": "Capture en cours…",
+            "pickOnMap": "Choisir sur la carte",
+            "manager": "Responsable (titulaire)",
+            "deputy": "Suppléant",
+            "evacuationPriority": "Priorité d'évacuation",
+            "maxCapacity": "Capacité maximale (personnes)",
+            "maxCapacityHint": "Optionnel — utilisé pour les alertes de saturation",
+            "departments": "Départements couverts",
+            "departmentsHint": "Sélectionnez les départements dont les employés évacueront vers ce point"
+        },
+        "priority": {
+            "p1": "1 — Priorité haute",
+            "p2": "2 — Standard",
+            "p3": "3 — Secondaire",
+            "p4": "4 — Replis",
+            "p5": "5 — Faible"
+        },
+        "status": {
+            "ACTIVE": "Actif",
+            "ARCHIVED": "Archivé"
+        },
+        "empty": "Aucun point de rassemblement enregistré pour cette mine.",
+        "emptyHint": "Cliquez sur « Nouveau point » pour créer votre premier point de rassemblement.",
+        "geolocation": {
+            "unsupported": "La géolocalisation n'est pas supportée par ce navigateur.",
+            "denied": "Accès à la géolocalisation refusé.",
+            "unavailable": "Position GPS indisponible.",
+            "timeout": "Temps d'attente dépassé.",
+            "captured": "Position capturée (précision : {{accuracy}} m)"
+        },
+        "history": {
+            "title": "Historique des modifications",
+            "empty": "Aucune modification enregistrée.",
+            "actions": {
+                "created": "Création",
+                "updated": "Modification",
+                "archived": "Archivage"
+            }
+        },
+        "saved": "Point de rassemblement enregistré",
+        "archived": "Point archivé"
     }
 }

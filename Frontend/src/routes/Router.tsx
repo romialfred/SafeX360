@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmergencySettingsPage from '../components/EmergencyManagement/Settings/EmergencySettingsPage';
+import AssemblyPointsPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointsPage';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
@@ -301,6 +302,8 @@ const router = createBrowserRouter([
 
             // LOT 48 Phase 1 — Routes Module Gestion des Urgences (settings opérationnels, autres pages V2-V6)
             { path: 'emergency/settings', element: <EmergencySettingsPage /> },
+            // LOT 48 Phase 2 — Points de rassemblement (carte + table + GPS capture + history)
+            { path: 'emergency/assembly-points', element: <AssemblyPointsPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },

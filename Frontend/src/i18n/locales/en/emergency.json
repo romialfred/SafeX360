@@ -80,5 +80,85 @@
         "QR": "QR code at the post",
         "NFC": "NFC badge",
         "MANUAL": "Manual check-in"
+    },
+    "assemblyPoints": {
+        "title": "Assembly Points",
+        "subtitle": "Geolocation and coordination of evacuation muster zones",
+        "addNew": "New point",
+        "edit": "Edit",
+        "archive": "Archive",
+        "viewHistory": "History",
+        "view": {
+            "map": "Map",
+            "list": "List",
+            "history": "History"
+        },
+        "table": {
+            "name": "Name",
+            "priority": "Priority",
+            "manager": "Manager",
+            "capacity": "Capacity",
+            "location": "Location",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "form": {
+            "section": {
+                "general": "General information",
+                "location": "GPS location",
+                "responsible": "Responsibility",
+                "capacity": "Capacity & priority",
+                "coverage": "Covered departments"
+            },
+            "name": "Point name *",
+            "namePlaceholder": "Main muster area",
+            "description": "Description",
+            "descriptionPlaceholder": "Additional details (signage, access, etc.)",
+            "locationText": "Address / landmark",
+            "locationTextPlaceholder": "In front of the main gate, visitor parking",
+            "latitude": "Latitude *",
+            "longitude": "Longitude *",
+            "captureGps": "Capture my GPS position",
+            "capturing": "Capturing…",
+            "pickOnMap": "Pick on map",
+            "manager": "Manager (primary)",
+            "deputy": "Deputy",
+            "evacuationPriority": "Evacuation priority",
+            "maxCapacity": "Max capacity (persons)",
+            "maxCapacityHint": "Optional — used for saturation alerts",
+            "departments": "Covered departments",
+            "departmentsHint": "Select departments whose employees will evacuate to this point"
+        },
+        "priority": {
+            "p1": "1 — High priority",
+            "p2": "2 — Standard",
+            "p3": "3 — Secondary",
+            "p4": "4 — Fallback",
+            "p5": "5 — Low"
+        },
+        "status": {
+            "ACTIVE": "Active",
+            "ARCHIVED": "Archived"
+        },
+        "empty": "No assembly points registered for this mine.",
+        "emptyHint": "Click \"New point\" to create your first assembly point.",
+        "geolocation": {
+            "unsupported": "Geolocation is not supported by this browser.",
+            "denied": "Geolocation access denied.",
+            "unavailable": "GPS position unavailable.",
+            "timeout": "Timed out.",
+            "captured": "Position captured (accuracy: {{accuracy}} m)"
+        },
+        "history": {
+            "title": "Modification history",
+            "empty": "No modifications recorded.",
+            "actions": {
+                "created": "Created",
+                "updated": "Updated",
+                "archived": "Archived"
+            }
+        },
+        "saved": "Assembly point saved",
+        "archived": "Point archived"
     }
 }

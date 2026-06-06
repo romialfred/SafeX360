@@ -323,3 +323,75 @@ export const deleteRescueWeeklyPlanning = (id: number, actorId?: number): Promis
             params: actorId !== undefined ? { actorId } : {},
         })
         .then(() => undefined);
+
+// ── Assembly Points (Phase 2) ─────────────────────────────────────────────
+
+export interface AssemblyPointDTO {
+    id?: number;
+    name: string;
+    description?: string | null;
+    locationText?: string | null;
+    latitude: number;
+    longitude: number;
+    managerId?: number | null;
+    deputyManagerId?: number | null;
+    cameraId?: number | null;
+    evacuationPriority?: number;
+    maxCapacity?: number | null;
+    status?: string;
+    companyId: number;
+    departmentIdsCsv?: string | null;
+}
+
+export interface AssemblyPointHistoryDTO {
+    id?: number;
+    assemblyPointId: number;
+    companyId: number;
+    action: string;
+    actorId?: number | null;
+    snapshotJson?: string;
+    diffSummary?: string;
+    createdAt?: string;
+}
+
+export const listAssemblyPoints = (
+    companyId: number,
+    includeArchived = false
+): Promise<AssemblyPointDTO[]> =>
+    axiosInstance
+        .get('/hns/emergency/assembly-points', { params: { companyId, includeArchived } })
+        .then((r) => r.data);
+
+export const getAssemblyPoint = (id: number): Promise<AssemblyPointDTO> =>
+    axiosInstance.get(`/hns/emergency/assembly-points/${id}`).then((r) => r.data);
+
+export const getAssemblyPointHistory = (id: number): Promise<AssemblyPointHistoryDTO[]> =>
+    axiosInstance.get(`/hns/emergency/assembly-points/${id}/history`).then((r) => r.data);
+
+export const createAssemblyPoint = (
+    dto: AssemblyPointDTO,
+    actorId?: number
+): Promise<AssemblyPointDTO> =>
+    axiosInstance
+        .post('/hns/emergency/assembly-points', dto, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then((r) => r.data);
+
+export const updateAssemblyPoint = (
+    id: number,
+    dto: AssemblyPointDTO,
+    actorId?: number
+): Promise<AssemblyPointDTO> =>
+    axiosInstance
+        .put(`/hns/emergency/assembly-points/${id}`, dto, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then((r) => r.data);
+
+export const archiveAssemblyPoint = (id: number, actorId?: number): Promise<void> =>
+    axiosInstance
+        .delete(`/hns/emergency/assembly-points/${id}`, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then(() => undefined);

@@ -13,6 +13,7 @@ import {
     IconBook, // MessageSquare
     IconMessageCircle, // Settings
     IconSettings, // ChevronLeft
+    IconMapPin, // pour points de rassemblement
     IconChevronLeft, // ChevronRight
     IconChevronRight, // Plus
     IconPlus, // Minus
@@ -59,6 +60,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Administration': 'sidebar.administration',
     'Gestion des Urgences': 'sidebar.emergencyManagement',
     'Paramètres Urgences': 'sidebar.emergencySettings',
+    'Points de rassemblement': 'sidebar.emergencyAssemblyPoints',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -230,6 +232,7 @@ const menuItems: MenuItem[] = [
         icon: IconAlertTriangle,
         color: 'text-red-600',
         subItems: [
+            { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
         ]
     },
@@ -330,8 +333,9 @@ export const menuIdToUrl: Record<string, string> = {
     "document-validation": "/document-validation",
 
     // LOT 48 Phase 1 — Emergency Management
-    emergency: "/emergency/settings",
+    emergency: "/emergency/assembly-points",
     "emergency-settings": "/emergency/settings",
+    "emergency-assembly-points": "/emergency/assembly-points",
 
     // Planning
     "hs-activities-planning": "/hs-activities-planning",
