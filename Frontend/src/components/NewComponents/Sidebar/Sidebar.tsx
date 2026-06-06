@@ -63,6 +63,15 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Gestion des Urgences': 'sidebar.emergencyManagement',
     'Paramètres Urgences': 'sidebar.emergencySettings',
     'Points de rassemblement': 'sidebar.emergencyAssemblyPoints',
+    // LOT 48 P6.f — Eclatement Administration en 4 modules
+    'Paramètres': 'sidebar.parameters',
+    'Gestion des utilisateurs': 'sidebar.usersManagement',
+    'Gestion des Modules': 'sidebar.modulesManagement',
+    'Cibles et prévisions': 'sidebar.targetsAndForecasts',
+    'Références (données opérationnelles)': 'sidebar.operationalReferences',
+    'Paramètres système': 'sidebar.systemSettings',
+    'Liste des utilisateurs': 'sidebar.usersList',
+    'Rôles et permissions': 'sidebar.rolesAndPermissions',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -282,11 +291,41 @@ const menuItems: MenuItem[] = [
             { id: 'technical-documentation', label: 'Documentation Technique', icon: IconFileText }
         ]
     },
+    // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
     {
-        id: 'settings',
+        id: 'admin',
         label: 'Administration',
+        icon: IconTarget,
+        color: 'text-teal-700',
+        subItems: [
+            { id: 'target-forecast', label: 'Cibles et prévisions', icon: IconChartBar },
+        ],
+    },
+    {
+        id: 'parameters',
+        label: 'Paramètres',
         icon: IconSettings,
         color: 'text-slate-600',
+        subItems: [
+            { id: 'operational-references', label: 'Références (données opérationnelles)', icon: IconFolderOpen },
+            { id: 'system-settings', label: 'Paramètres système', icon: IconSettings },
+        ],
+    },
+    {
+        id: 'users-management-hub',
+        label: 'Gestion des utilisateurs',
+        icon: IconUsers,
+        color: 'text-orange-700',
+        subItems: [
+            { id: 'users-list', label: 'Liste des utilisateurs', icon: IconUserCheck },
+            { id: 'roles-permissions', label: 'Rôles et permissions', icon: IconShield },
+        ],
+    },
+    {
+        id: 'modules-management',
+        label: 'Gestion des Modules',
+        icon: IconLayoutDashboard,
+        color: 'text-indigo-700',
     },
 ];
 
@@ -377,7 +416,18 @@ export const menuIdToUrl: Record<string, string> = {
     // Users & Settings (direct)
     users: "/users-management",
     settings: "/settings",
-    "ai-assistant": "/ai-assistant"
+    "ai-assistant": "/ai-assistant",
+
+    // LOT 48 P6.f — Eclatement Administration en 4 modules
+    admin: "/performance",                       // parent → page Cibles (sous-module pivot)
+    "target-forecast": "/performance",
+    parameters: "/settings",                     // parent → page Settings (hub Références + Système)
+    "operational-references": "/settings",
+    "system-settings": "/advanced-configuration",
+    "users-management-hub": "/users-management",
+    "users-list": "/users-management",
+    "roles-permissions": "/users-management",    // pour l'instant même URL — onglet futur
+    "modules-management": "/modules-management",
 };
 
 
@@ -416,9 +466,18 @@ const Sidebar = () => {
         }
         return 'Unknown Module';
     };
+    // LOT 48 P6.f — Modules administration toujours accessibles (ne necessitent pas
+    // de souscription module — ils gerent la configuration meme de la plateforme).
+    const ALWAYS_ACCESSIBLE = new Set([
+        'home', 'users', 'settings',
+        'admin', 'parameters', 'users-management-hub', 'modules-management',
+        'target-forecast', 'operational-references', 'system-settings',
+        'users-list', 'roles-permissions',
+    ]);
+
     const handleItemClick = (itemId: string) => {
         // Check if module is enabled
-        if (!isModuleEnabled(itemId) && itemId !== 'home' && itemId !== 'users' && itemId !== 'settings') {
+        if (!isModuleEnabled(itemId) && !ALWAYS_ACCESSIBLE.has(itemId)) {
             setSelectedModuleName(getModuleName(itemId));
             setShowModal(true);
             return;
@@ -430,7 +489,7 @@ const Sidebar = () => {
 
     const handleSubItemClick = (subItemId: string) => {
         // Check if module is enabled
-        if (!isModuleEnabled(subItemId)) {
+        if (!isModuleEnabled(subItemId) && !ALWAYS_ACCESSIBLE.has(subItemId)) {
             setSelectedModuleName(getModuleName(subItemId));
             setShowModal(true);
             return;

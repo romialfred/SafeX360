@@ -16,6 +16,9 @@ import {
     IconCalendar,
     IconLifebuoy,
     IconUrgent,
+    IconUsers,
+    IconLayoutDashboard,
+    IconCrosshair,
     IconArrowRight,
 } from '@tabler/icons-react';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
@@ -76,6 +79,11 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     // LOT 48 — Module Emergency : rouge profond (red-700) pour le différencier
     // du module Gestion des Risques qui utilise red-500.
     'emergency-management':      '#b91c1c', // red-700
+    // LOT 48 P6.f — Eclatement Administration en 4 modules
+    'admin':                     '#0d9488', // teal-600
+    'parameters':                '#64748b', // slate-500
+    'users-management-hub':      '#ea580c', // orange-600
+    'modules-management':        '#4f46e5', // indigo-600
 };
 
 const moduleGroups: ModuleCard[] = [
@@ -239,15 +247,48 @@ const moduleGroups: ModuleCard[] = [
         items: ['ISO 45001', 'ISO 19011', 'ISO 9001'],
         url: '/iso-documents',
     },
+    // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
+    // (auparavant une seule tuile "Administration" englobait toute la configuration ;
+    // maintenant 1 tuile par axe metier pour une meilleure decouvrabilite.)
     {
-        id: 'settings',
+        id: 'admin',
         title: 'Administration',
-        description: 'Configuration système, référentiels métier et paramètres globaux de la plateforme.',
+        description: 'Definition des cibles HSE annuelles et previsions de performance (LTIFR, TRIFR, formations).',
+        icon: IconCrosshair,
+        color: 'text-teal-700',
+        bgColor: 'bg-teal-50/70 border-teal-200/60',
+        items: ['Cibles et previsions'],
+        url: '/performance',
+    },
+    {
+        id: 'parameters',
+        title: 'Parametres',
+        description: 'Referentiels operationnels (sites, types incidents, gravites) et parametres systeme avances.',
         icon: IconSettings,
         color: 'text-slate-700',
         bgColor: 'bg-slate-50/70 border-slate-200/60',
-        items: ['Incidents', 'Lieux', 'RH', 'Mesures'],
+        items: ['References (donnees operationnelles)', 'Parametres systeme'],
         url: '/settings',
+    },
+    {
+        id: 'users-management-hub',
+        title: 'Gestion des utilisateurs',
+        description: 'Comptes utilisateurs, roles metiers HSE et permissions granulaires par module.',
+        icon: IconUsers,
+        color: 'text-orange-700',
+        bgColor: 'bg-orange-50/70 border-orange-200/60',
+        items: ['Liste des utilisateurs', 'Roles et permissions'],
+        url: '/users-management',
+    },
+    {
+        id: 'modules-management',
+        title: 'Gestion des Modules',
+        description: "Activation/desactivation des modules HSE par mine (matrice mines x modules, conformite ISO 45001).",
+        icon: IconLayoutDashboard,
+        color: 'text-indigo-700',
+        bgColor: 'bg-indigo-50/70 border-indigo-200/60',
+        items: ['Matrice mines x modules'],
+        url: '/modules-management',
     },
 ];
 
@@ -257,7 +298,11 @@ const NewHomePage = () => {
     const navigate = useNavigate();
 
     const alwaysAccessibleModuleIds = React.useMemo(
-        () => new Set(['users-management', 'settings', 'iso-documents', 'help']),
+        () => new Set([
+            'users-management', 'settings', 'iso-documents', 'help',
+            // LOT 48 P6.f — Modules administration (toujours accessibles, pas d'abonnement requis)
+            'admin', 'parameters', 'users-management-hub', 'modules-management',
+        ]),
         [],
     );
 

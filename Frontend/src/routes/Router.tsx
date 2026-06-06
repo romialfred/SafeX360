@@ -123,6 +123,7 @@ import DocumentTabsPage from '../pages/dashboard/DocumentsManagement/DocumentTab
 import CommunicationDashboardPage from '../pages/dashboard/Communication/CommunicationDashboardPage';
 import PPEMonitoring from '../components/PPEManagement/PPEMonitoring';
 import SettingsPage from '../components/NewComponents/Settings/Settings';
+import ModulesManagementPage from '../components/NewComponents/Settings/ModulesManagementPage';
 import ISODocuments from '../components/NewComponents/ISODocuments/ISODocuments';
 import UserManagementTabsPage from '../pages/dashboard/UserManagementTabsPage';
 import UserDetails from '../components/NewComponents/UsersManagement/UserDetails';
@@ -354,6 +355,9 @@ const router = createBrowserRouter([
 
 
             { path: "settings", element: <SettingsPage /> },
+
+            { /* LOT 48 P6.f — Page dédiée Gestion des Modules (séparée d'Administration) */
+              path: "modules-management", element: <ModulesManagementPage /> },
 
             { path: "performance", element: <TargetAndForecastPage /> },
 
