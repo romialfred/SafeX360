@@ -1,10 +1,11 @@
 
 import { Icon } from "@iconify-icon/react";
 import { Avatar, Indicator, Drawer, Button, ScrollArea, SegmentedControl, Tooltip } from "@mantine/core";
-import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconUrgent, IconBroadcast } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconUrgent, IconBroadcast, IconMenu2 } from '@tabler/icons-react';
 import { useTranslation } from "react-i18next";
 
 import { useDispatch, useSelector } from "react-redux";
+import { toggleMobileSidebar } from "../../../slices/MobileSidebarSlice";
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import ProfileMenu from "./ProfileMenu";
@@ -79,9 +80,11 @@ const Header = () => {
     }, []);
 
     return (
-        <div className={`fixed right-0 ${collapsed ? "left-20" : "left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
+        // LOT 48 P6.j — Responsive : sur mobile (< md), le header occupe TOUTE la largeur
+        // (sidebar = drawer overlay). Sur desktop, on conserve l'offset gauche selon collapsed.
+        <div className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
             {/* LOT 43 v10 — Header dynamique + titre agrandi + h-18 pour respirer */}
-            <div className="safex-header-wave relative bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-[72px] flex justify-between items-center px-6 overflow-hidden">
+            <div className="safex-header-wave relative bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-[64px] sm:h-[72px] flex justify-between items-center px-3 sm:px-6 overflow-hidden">
                 {/* Couche 1 : vague lumineuse parcourant le header (animée via CSS) */}
                 <span aria-hidden className="safex-header-wave__shine"></span>
                 {/* Couche 2 : second voile décalé pour effet de profondeur */}
@@ -89,15 +92,25 @@ const Header = () => {
                 {/* Couche 3 : grain subtil (radial gradient noise simulé) */}
                 <span aria-hidden className="safex-header-wave__grain"></span>
 
-                <div className="flex items-center gap-4 relative min-w-0 z-10">
+                <div className="flex items-center gap-2 sm:gap-4 relative min-w-0 z-10 flex-1">
+                    {/* Hamburger : MOBILE uniquement (< md) - ouvre le drawer sidebar */}
+                    <button
+                        type="button"
+                        onClick={() => dispatch(toggleMobileSidebar())}
+                        className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur transition-colors flex-shrink-0"
+                        aria-label="Open navigation menu"
+                    >
+                        <IconMenu2 size={20} stroke={2} className="text-white" />
+                    </button>
+
                     <div className="leading-tight min-w-0">
-                        {/* Titre principal — taille augmentée pour impact (clamp 21-28px) */}
+                        {/* Titre principal : clamp + truncate sur mobile */}
                         <h1
-                            className="text-white tracking-tight"
+                            className="text-white tracking-tight truncate"
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
                                 fontWeight: 600,
-                                fontSize: 'clamp(20px, 2vw, 26px)',
+                                fontSize: 'clamp(15px, 2vw, 26px)',
                                 letterSpacing: '-0.022em',
                                 lineHeight: 1.05,
                                 textShadow: '0 1px 2px rgba(0,0,0,0.22)',
@@ -105,9 +118,9 @@ const Header = () => {
                         >
                             {t('navigation:header.platformTitle')}
                         </h1>
-                        {/* Sous-titre — slogan signature, taille ajustée à l'agrandissement du titre */}
+                        {/* Sous-titre : MASQUÉ sur mobile (< sm) pour libérer de l'espace */}
                         <p
-                            className="mt-1 text-teal-50/95 truncate italic"
+                            className="hidden sm:block mt-1 text-teal-50/95 truncate italic"
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
                                 fontSize: '13.5px',
@@ -120,16 +133,19 @@ const Header = () => {
                     </div>
                 </div>
 
-                <div className="relative z-10 flex gap-2 items-center">
-                    {/* LOT 44 — Sélecteur de langue (FR / EN) */}
-                    <LanguageSwitcher tone="light" />
+                <div className="relative z-10 flex gap-1 sm:gap-2 items-center flex-shrink-0">
+                    {/* LOT 44 — Sélecteur de langue (masqué sur très petits écrans pour gagner de l'espace) */}
+                    <div className="hidden sm:block">
+                        <LanguageSwitcher tone="light" />
+                    </div>
 
                     <Indicator inline color="red" label="4" offset={15} size={15}>
                         <div
-                            className="flex items-center cursor-pointer transition duration-300 justify-center rounded-full group p-2"
+                            className="flex items-center cursor-pointer transition duration-300 justify-center rounded-full group p-1.5 sm:p-2"
                             onClick={() => setNotificationDrawerOpened(true)}
                         >
-                            <IconBellRinging stroke={2} width={42} height={42} strokeLinecap="round" strokeLinejoin="round" className="text-white hover:text-amber-200 rounded-4xl p-2 cursor-pointer" />
+                            {/* Icone plus petite sur mobile pour gagner de la place */}
+                            <IconBellRinging stroke={2} width={36} height={36} strokeLinecap="round" strokeLinejoin="round" className="text-white hover:text-amber-200 rounded-4xl p-2 cursor-pointer sm:w-[42px] sm:h-[42px]" />
                         </div>
                     </Indicator>
 
@@ -241,33 +257,39 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* Deuxième ligne : actions rapides sobres + urgences gyrophare */}
-            <div className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-6 gap-3">
-                <div className="flex items-center gap-2">
+            {/* Deuxième ligne : actions rapides sobres + urgences gyrophare
+                LOT 48 P6.j — Responsive : scroll horizontal sur mobile pour eviter le wrap,
+                labels masques sur mobile (icones seules), gaps reduits. */}
+            <div className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                     {/* LOT 45 — Boutons CTA pleins (vrai look "bouton d'action", plus "onglet") */}
-                    <Tooltip label={t('navigation:header.incidentTooltip')}>
+                    <Tooltip label={t('navigation:header.reportIncident')}>
                         <button
                             onClick={() => navigate("/incidents/report")}
-                            className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-gradient-to-br from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(225,29,72,0.35)] hover:shadow-[0_3px_12px_rgba(225,29,72,0.5)] ring-1 ring-rose-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(225,29,72,0.35)] hover:shadow-[0_3px_12px_rgba(225,29,72,0.5)] ring-1 ring-rose-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex-shrink-0"
                         >
                             <IconAlertTriangle stroke={2.2} size={14} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform" />
-                            {t('navigation:header.reportIncident')}
+                            {/* Label masqué sur mobile (< sm) */}
+                            <span className="hidden sm:inline">{t('navigation:header.reportIncident')}</span>
                         </button>
                     </Tooltip>
-                    <Tooltip label={t('navigation:header.eventTooltip')}>
+                    <Tooltip label={t('navigation:header.newEvent')}>
                         <button
                             onClick={() => navigate("/non-conformity/create")}
-                            className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex-shrink-0"
                         >
                             <IconClipboardData stroke={2.2} size={14} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform" />
-                            {t('navigation:header.newEvent')}
+                            <span className="hidden sm:inline">{t('navigation:header.newEvent')}</span>
                         </button>
                     </Tooltip>
                     <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
-                    <CompanySelector isEnabled={isMultiSiteEnabled} />
+                    {/* CompanySelector : masque sur les tres petits ecrans pour gagner de la place */}
+                    <div className="hidden xs:block sm:block">
+                        <CompanySelector isEnabled={isMultiSiteEnabled} />
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                     <SosButton />
                     <GeneralAlertButton />
                 </div>

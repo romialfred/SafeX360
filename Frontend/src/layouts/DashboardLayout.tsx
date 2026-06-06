@@ -90,9 +90,12 @@ const DashboardLayout = () => {
                 <div className="flex flex-col min-h-screen w-full">
                     <Header />
 
-                    {/* Contenu principal — pt aligné sur la hauteur exacte du header (72px ligne 1 + 56px ligne 2) */}
+                    {/* Contenu principal — pt aligné sur la hauteur du header :
+                        mobile (< sm) : 64px ligne 1 + 56px ligne 2 = 120px
+                        desktop (sm+) : 72px ligne 1 + 56px ligne 2 = 128px
+                        LOT 48 P6.j — Responsive padding-top */}
                     <main
-                        className={`relative flex-1 pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
+                        className={`relative flex-1 pt-[120px] sm:pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
                     >
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded}

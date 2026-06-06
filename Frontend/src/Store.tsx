@@ -6,6 +6,7 @@ import overlayReducer from "./slices/OverlaySlice";
 import collapseReducer from "./slices/CollapseSlice";
 import menuReducer from "./slices/MenuSlice";
 import companySelectionReducer from "./slices/CompanySelectionSlice";
+import mobileSidebarReducer from "./slices/MobileSidebarSlice";
 
 
 const store = configureStore({
@@ -16,7 +17,8 @@ const store = configureStore({
         overlay: overlayReducer,
         collapse: collapseReducer,
         menu: menuReducer,
-        companySelection: companySelectionReducer
+        companySelection: companySelectionReducer,
+        mobileSidebar: mobileSidebarReducer,
     },
 });
 export type RootState = ReturnType<typeof store.getState>;

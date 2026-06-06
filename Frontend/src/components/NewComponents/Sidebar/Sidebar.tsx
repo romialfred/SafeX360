@@ -77,6 +77,7 @@ import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
 import { useDispatch } from 'react-redux';
 import { collapse, expand } from '../../../slices/CollapseSlice';
+import { closeMobileSidebar } from '../../../slices/MobileSidebarSlice';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 
@@ -570,14 +571,40 @@ const Sidebar = () => {
         // on NE TOUCHE PAS à expandedItems — le module précédemment ouvert reste ouvert.
     }, [location.pathname]);
 
+    // LOT 48 P6.j — Responsive : sidebar = off-canvas drawer sur mobile (< md)
+    const mobileSidebar = useAppSelector((state) => state.mobileSidebar);
+    const closeMobile = () => dispatch(closeMobileSidebar());
+    // Auto-fermer le drawer mobile a chaque navigation
+    useEffect(() => {
+        if (mobileSidebar.open) {
+            dispatch(closeMobileSidebar());
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
+
     return (
         <div className="flex z-[100] relative">
-            <div className={`${collapsed ? "w-20" : "w-72"}    p-3  relative h-screen overflow-y-auto  flex-col flex   transition-[width] duration-500 `}>
-
+            {/* Backdrop mobile : visible UNIQUEMENT < md ET drawer ouvert */}
+            {mobileSidebar.open && (
+                <div
+                    onClick={closeMobile}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] md:hidden"
+                    aria-hidden="true"
+                />
+            )}
+            {/* Spacer : prend la place de la sidebar en flex flow DESKTOP uniquement.
+                Sur mobile, le main occupe toute la largeur (sidebar est en position fixed overlay). */}
+            <div className={`hidden md:block ${collapsed ? "w-20" : "w-72"} p-3 relative h-screen overflow-y-auto flex-col flex transition-[width] duration-500`}>
             </div>
+            {/* Sidebar proprement dite :
+                - Desktop (md+) : fixed left-0 toujours visible, largeur 20 (collapsed) ou 72 (etendue)
+                - Mobile (< md) : fixed off-canvas, slide-in via translate-x ; largeur fixe 72 */}
             <div className={`
-      ${collapsed ? 'w-20' : 'w-72'} 
-      bg-blackbg text-white h-screen scrollbar-hide fixed overflow-y-auto shadow-xl transition-all duration-300 ease-in-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+      bg-blackbg text-white h-screen scrollbar-hide fixed top-0 left-0 overflow-y-auto shadow-2xl
+      transition-transform duration-300 ease-in-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+      z-[100] w-72
+      ${collapsed ? 'md:w-20' : 'md:w-72'}
+      ${mobileSidebar.open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
                 {/* LOT 41 — Sidebar header : logo coloré (sans point lumineux), pas de marge inutile */}
                 <div className="px-4 pt-3 pb-2 border-b border-gray-700/60 bg-gradient-to-b from-gray-900/40 to-transparent">

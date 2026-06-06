@@ -28,8 +28,9 @@ const AppFooter = () => {
             className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 sticky bottom-0 z-40"
             role="contentinfo"
         >
-            <div className="w-full px-6 lg:px-8 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <div className="w-full px-3 sm:px-6 lg:px-8 py-3">
+                {/* LOT 48 P6.j — Responsive : stack vertical sur mobile pour eviter wrap chaotique */}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-y-2 sm:gap-x-6">
 
                     {/* Bloc marque : logo officiel + wordmark + copyright sur UNE seule ligne */}
                     <div className="flex items-center gap-2.5 min-w-0">
