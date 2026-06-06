@@ -650,14 +650,21 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-[12.5px]" style={{ minWidth: '720px' }}>
-                        {/* En-tête sticky : mines en colonnes */}
-                        <thead className="bg-slate-50 sticky top-0 z-20">
+                        {/* En-tête sticky : mines en colonnes
+                            LOT 48 P6.i — Refonte single-row : code + nom + stats + actions tout sur
+                            UNE seule ligne (avant : 4 lignes empilées) + background gradient teal/indigo
+                            qui le distingue clairement du corps blanc de la matrice. */}
+                        <thead className="sticky top-0 z-20">
                             <tr>
                                 <th
-                                    className="text-left px-4 py-3 border-b-2 border-slate-200 sticky left-0 bg-slate-50 z-30"
-                                    style={{ minWidth: '300px', width: '300px' }}
+                                    className="text-left px-4 py-2.5 border-b-2 border-indigo-200 sticky left-0 z-30"
+                                    style={{
+                                        minWidth: '300px',
+                                        width: '300px',
+                                        background: 'linear-gradient(90deg, #eef2ff 0%, #e0e7ff 100%)',
+                                    }}
                                 >
-                                    <span className="text-[10.5px] uppercase tracking-[0.12em] text-slate-600 font-semibold">
+                                    <span className="text-[10.5px] uppercase tracking-[0.14em] text-indigo-900 font-bold">
                                         {t('table.columnModule')}
                                     </span>
                                 </th>
@@ -668,49 +675,51 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                     return (
                                         <th
                                             key={mine.id}
-                                            className="text-center border-b-2 border-slate-200 px-2 py-2.5 align-bottom"
-                                            style={{ minWidth: '120px' }}
+                                            className="text-center border-b-2 border-indigo-200 px-3 py-2.5"
+                                            style={{
+                                                minWidth: '180px',
+                                                background: 'linear-gradient(90deg, #e0e7ff 0%, #eef2ff 100%)',
+                                            }}
                                         >
-                                            <div className="flex flex-col items-center gap-1.5">
-                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gradient-to-br from-slate-700 to-slate-900 text-white text-[10px] font-semibold shadow-sm">
+                                            {/* SINGLE-ROW : code + nom + stats + actions tout en ligne */}
+                                            <div className="flex items-center justify-center gap-2 flex-nowrap">
+                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-gradient-to-br from-indigo-600 to-indigo-800 text-white text-[9.5px] font-bold shadow-sm flex-shrink-0">
                                                     {resolveMineCode(mine)}
                                                 </span>
                                                 <span
-                                                    className="text-[11px] font-medium text-slate-700 leading-tight max-w-[100px] truncate"
+                                                    className="text-[12px] font-semibold text-slate-800 leading-none truncate"
                                                     title={resolveMineName(mine)}
                                                 >
                                                     {resolveMineName(mine)}
                                                 </span>
-                                                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
-                                                    <span className="text-emerald-700 font-semibold font-mono">
-                                                        {stats.active}
-                                                    </span>
-                                                    /
-                                                    <span className="font-mono">{stats.total}</span>
+                                                <span className="inline-flex items-center text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-white/70 border border-indigo-200/60 flex-shrink-0">
+                                                    <span className="text-emerald-700 font-bold">{stats.active}</span>
+                                                    <span className="text-slate-400 mx-0.5">/</span>
+                                                    <span className="text-slate-600">{stats.total}</span>
                                                 </span>
-                                                {/* Mini-actions colonne */}
-                                                <div className="flex items-center gap-0.5">
+                                                {/* Mini-actions inline */}
+                                                <div className="flex items-center gap-0.5 flex-shrink-0">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleToggleMineColumn(mine.id, true)}
                                                         disabled={allActive}
                                                         title={t('table.enableAllMine')}
-                                                        className={`p-0.5 rounded text-emerald-600 hover:bg-emerald-50 transition-colors ${
+                                                        className={`w-5 h-5 rounded text-emerald-700 bg-white/60 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center transition-colors ${
                                                             allActive ? 'opacity-30 cursor-not-allowed' : ''
                                                         }`}
                                                     >
-                                                        <IconCheck size={11} stroke={2.2} />
+                                                        <IconCheck size={11} stroke={2.4} />
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleToggleMineColumn(mine.id, false)}
                                                         disabled={noneActive}
                                                         title={t('table.disableAllMine')}
-                                                        className={`p-0.5 rounded text-red-600 hover:bg-red-50 transition-colors ${
+                                                        className={`w-5 h-5 rounded text-red-700 bg-white/60 hover:bg-red-100 border border-red-200 flex items-center justify-center transition-colors ${
                                                             noneActive ? 'opacity-30 cursor-not-allowed' : ''
                                                         }`}
                                                     >
-                                                        <IconX size={11} stroke={2.2} />
+                                                        <IconX size={11} stroke={2.4} />
                                                     </button>
                                                 </div>
                                             </div>
