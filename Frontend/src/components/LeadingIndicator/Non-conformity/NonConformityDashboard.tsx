@@ -452,22 +452,30 @@ const NonConformityDashboard = () => {
                                     )}
                                 </div>
 
-                                {/* Ligne 4 : reporter + date + actions hover (sur la même ligne, actions remplacent date au hover ?) */}
+                                {/* Ligne 4 : reporter + date TOUJOURS visibles + actions en pastille flottante au hover
+                                    LOT 48 P6.e — Correction UX : avant, group-hover:opacity-0 masquait
+                                    complètement les libellés "Déclaré par" et "Date" sur survol. Désormais
+                                    ces infos restent visibles ; les actions apparaissent dans une pastille
+                                    compacte ancrée en bas-droite, qui ne masque QUE la zone date. */}
                                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 relative">
-                                    {/* Bloc texte (toujours visible) */}
-                                    <div className="min-w-0 group-hover:opacity-0 transition-opacity">
+                                    {/* Bloc reporter (gauche) — TOUJOURS visible */}
+                                    <div className="min-w-0">
                                         <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Déclaré par</p>
                                         <p className="text-[12px] text-slate-700 truncate" title={nc.reporterName}>
                                             {nc.reporterName || '—'}
                                         </p>
                                     </div>
-                                    <div className="text-right ml-2 flex-shrink-0 group-hover:opacity-0 transition-opacity">
+                                    {/* Bloc date (droite) — TOUJOURS visible, juste légèrement estompé au hover
+                                        pour donner du contraste à la pastille d'actions qui se superpose. */}
+                                    <div className="text-right ml-2 flex-shrink-0 transition-opacity group-hover:opacity-40">
                                         <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Date</p>
                                         <p className="text-[12px] text-slate-700">{formatDateShort(nc.date)}</p>
                                     </div>
 
-                                    {/* LOT 43 hotfix : actions positionnées EN BAS au hover (ne cachent plus le status) */}
-                                    <div className="absolute inset-0 flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {/* Pastille actions : bottom-right uniquement (pas inset-0 plein cadre),
+                                        fond blanc semi-opaque + ombre + bordure → propre et lisible,
+                                        ne masque QUE la zone date (le reporter reste 100% lisible). */}
+                                    <div className="absolute bottom-0 right-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-slate-200/80 px-1.5 py-1">
                                         <Tooltip label="Voir le détail">
                                             <ActionIcon
                                                 variant="filled"
