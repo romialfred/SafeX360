@@ -41,6 +41,12 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
 
+                        // LOT 48 Phase 4.b — WebSocket SockJS/STOMP pour Emergency
+                        // (les XHR SockJS ne portent pas X-Secret-Key car browser-initiated,
+                        // pas via gateway). La sécurisation se fera Phase 6 au niveau STOMP
+                        // CONNECT (vérification du JWT cookie côté handshake).
+                        .requestMatchers("/ws/**").permitAll()
+
                         // LOT 41 P0 SECURITY: header X-Secret-Key dont la valeur provient de INTERNAL_GATEWAY_SECRET
                         // (R-003 — à remplacer par mTLS en Phase 2.a sprint 1)
                         .requestMatchers(request -> internalGatewaySecret.equals(request.getHeader("X-Secret-Key"))).permitAll()
