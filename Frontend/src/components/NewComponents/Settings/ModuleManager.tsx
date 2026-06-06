@@ -9,7 +9,12 @@ import {
     IconCheck,
     IconX,
     IconAlertCircle,
+    IconStack3,
+    IconBuildingFactory2,
+    IconActivity,
+    IconChartBar,
 } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { moduleConfigurations, updateModuleStatus as updateModuleStatusLocal } from '../data/ModuleConfig';
 import {
     createModuleFeature,
@@ -198,6 +203,14 @@ function ToggleSwitch({
 const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     const moduleDefs: ModuleDef[] = moduleConfigurations as ModuleDef[];
 
+    // LOT 48 P6.h — i18n complet : namespace 'moduleManager' charge en FR/EN.
+    // Helpers tcat/tmodN/tmodD : renvoient la traduction si presente, sinon fallback
+    // au libelle anglais original de moduleConfigurations.
+    const { t } = useTranslation('moduleManager');
+    const tcat = (categoryEn: string) => t(`categories.${categoryEn}`, categoryEn);
+    const tmodN = (moduleId: string, nameEn: string) => t(`modules.${moduleId}.name`, nameEn);
+    const tmodD = (moduleId: string, descEn: string) => t(`modules.${moduleId}.description`, descEn);
+
     // ── Données ──
     const [mines, setMines] = useState<Mine[]>([]);
     const [remoteMap, setRemoteMap] = useState<Record<string, ModuleFeatureDto>>({});
@@ -247,7 +260,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                     return init;
                 });
             } catch {
-                errorNotification('Impossible de charger les données');
+                errorNotification(t('messages.updateFailed'));
             } finally {
                 setLoading(false);
             }
@@ -265,7 +278,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     const filteredModules = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
         return moduleDefs.filter((m) => {
-            const nameFr = (MODULE_FR[m.name] || m.name).toLowerCase();
+            const nameFr = tmodN(m.id, m.name).toLowerCase();
             const matchesSearch = !term
                 || nameFr.includes(term)
                 || m.name.toLowerCase().includes(term)
@@ -378,7 +391,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
             setRemoteMap((prev) => ({ ...prev, [updated.module]: updated }));
             updateModuleStatusLocal(moduleId, enabled);
         } catch (e: any) {
-            errorNotification(e?.response?.data?.message || 'Échec de la mise à jour');
+            errorNotification(e?.response?.data?.message || t('messages.updateFailed'));
         } finally {
             setSaving((prev) => {
                 const copy = { ...prev };
@@ -396,8 +409,11 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
         });
         setMatrix(updated);
         saveMatrixToStorage(updated);
+        const mineName = resolveMineName(mines.find((mn) => mn.id === mineId)!);
         successNotification(
-            `${enable ? 'Activation' : 'Désactivation'} de tous les modules pour ${resolveMineName(mines.find((mn) => mn.id === mineId)!)}`
+            enable
+                ? t('messages.enableAllMine', { mine: mineName })
+                : t('messages.disableAllMine', { mine: mineName })
         );
     };
 
@@ -410,7 +426,11 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
         });
         setMatrix(updated);
         saveMatrixToStorage(updated);
-        successNotification(`${enable ? 'Activation' : 'Désactivation'} massive — ${CATEGORY_FR[category] || category}`);
+        successNotification(
+            enable
+                ? t('messages.enableCategory', { category: tcat(category) })
+                : t('messages.disableCategory', { category: tcat(category) })
+        );
     };
 
     const toggleCategoryCollapse = (category: string) => {
@@ -431,7 +451,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
         });
         setMatrix(init);
         saveMatrixToStorage(init);
-        successNotification('Matrice réinitialisée depuis le serveur');
+        successNotification(t('messages.matrixReset'));
     };
 
     // ── Render ──
@@ -440,7 +460,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
             <div className="p-8 max-w-[1400px] mx-auto">
                 <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
                     <IconLayoutGrid size={32} className="text-slate-300 mx-auto mb-3 animate-pulse" />
-                    <p className="text-[13px] text-slate-500">Chargement de la matrice de configuration…</p>
+                    <p className="text-[13px] text-slate-500">{t('loading')}</p>
                 </div>
             </div>
         );
@@ -455,17 +475,16 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 hover:bg-slate-100 transition-colors mb-4"
                 >
                     <IconArrowLeft size={14} stroke={1.6} />
-                    Retour
+                    {t('header.back')}
                 </button>
                 <div className="bg-white rounded-xl border border-amber-200 p-8 text-center shadow-sm">
                     <IconAlertCircle size={32} className="text-amber-500 mx-auto mb-3" />
                     <h3 className="text-[15px] text-slate-800 font-medium mb-1.5"
                         style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                        Aucune mine configurée
+                        {t('noMines.title')}
                     </h3>
                     <p className="text-[13px] text-slate-500 max-w-md mx-auto">
-                        Vous devez d'abord enregistrer au moins une mine dans le module Données opérationnelles
-                        avant de pouvoir activer des modules par site.
+                        {t('noMines.body')}
                     </p>
                 </div>
             </div>
@@ -475,46 +494,103 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     return (
         <div className="p-6 lg:p-8 max-w-[1600px] mx-auto bg-slate-50/30 min-h-full">
 
-            {/* ─── Breadcrumb + retour ─── */}
-            <button
-                type="button"
-                onClick={onBackToSettings}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition-colors mb-3"
-            >
-                <IconArrowLeft size={13} stroke={1.6} />
-                Retour à l'administration
-            </button>
+            {/* ─── Breadcrumb premium ─── */}
+            <div className="flex items-center gap-1.5 text-[11px] mb-3">
+                <button
+                    type="button"
+                    onClick={onBackToSettings}
+                    className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-[0.16em] font-medium"
+                >
+                    <IconArrowLeft size={11} stroke={2} />
+                    {t('header.back')}
+                </button>
+                <IconChevronRight size={10} className="text-slate-300 mx-0.5" />
+                <span className="uppercase tracking-[0.16em] text-slate-500 font-medium">
+                    {t('breadcrumb.platform')}
+                </span>
+                <IconChevronRight size={10} className="text-slate-300" />
+                <span className="uppercase tracking-[0.16em] text-slate-800 font-medium">
+                    {t('breadcrumb.page')}
+                </span>
+            </div>
 
-            {/* LOT 47 — Hero épuré : titre = "Gestion des modules", sous-titre 1 ligne */}
-            <header className="mb-4">
-                <p className="text-[10.5px] uppercase tracking-[0.18em] text-slate-500 font-medium">
-                    SafeX 360 · Administration · Modules
-                </p>
-                <div className="flex items-end justify-between gap-4 flex-wrap mt-1.5">
-                    <div className="min-w-0">
-                        <h1
-                            className="text-slate-900 leading-tight"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(22px, 2.4vw, 28px)',
-                                letterSpacing: '-0.02em',
-                            }}
-                        >
-                            Gestion des modules
-                        </h1>
-                        <p className="text-[13px] text-slate-600 mt-1 truncate">
-                            Activer ou désactiver les modules HSE par mine — conformité ISO 45001.
-                        </p>
+            {/* LOT 48 P6.h — Hero card premium : logo + titre + KPI tiles + action Reset */}
+            <header className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-5 flex flex-col lg:flex-row lg:items-center gap-5">
+                    {/* Bloc titre */}
+                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md shadow-indigo-200 flex-shrink-0">
+                            <IconStack3 size={22} stroke={1.8} className="text-white" />
+                        </div>
+                        <div className="min-w-0">
+                            <h1
+                                className="text-slate-900 leading-tight"
+                                style={{
+                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                    fontWeight: 600,
+                                    fontSize: 'clamp(22px, 2.4vw, 28px)',
+                                    letterSpacing: '-0.02em',
+                                }}
+                            >
+                                {t('header.title')}
+                            </h1>
+                            <p className="text-[12.5px] text-slate-600 mt-1 max-w-xl leading-snug">
+                                {t('header.subtitle')}
+                            </p>
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleResetMatrix}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12.5px] font-medium hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
-                    >
-                        <IconRefresh size={13} stroke={1.6} />
-                        Réinitialiser
-                    </button>
+
+                    {/* KPI inline */}
+                    <div className="flex items-stretch gap-2.5 flex-wrap lg:flex-nowrap">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50/60 border border-indigo-100 min-w-[88px]">
+                            <IconLayoutGrid size={15} className="text-indigo-700" />
+                            <div>
+                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.totalModules')}</p>
+                                <p className="text-[15px] font-semibold text-slate-900 mt-0.5 leading-none font-mono">{kpis.modules}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 min-w-[88px]">
+                            <IconBuildingFactory2 size={15} className="text-slate-700" />
+                            <div>
+                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.totalMines')}</p>
+                                <p className="text-[15px] font-semibold text-slate-900 mt-0.5 leading-none font-mono">{kpis.mines}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50/60 border border-emerald-100 min-w-[88px]">
+                            <IconActivity size={15} className="text-emerald-700" />
+                            <div>
+                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.activations')}</p>
+                                <p className="text-[15px] font-semibold text-emerald-800 mt-0.5 leading-none font-mono">
+                                    {kpis.active}<span className="text-slate-400 text-[11px]">/{kpis.totalCells}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-teal-50/60 border border-teal-100 min-w-[100px]">
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#14b8a6" strokeWidth="3"
+                                        strokeDasharray={`${(kpis.coverage / 100) * 87.96} 87.96`}
+                                        strokeLinecap="round" />
+                                </svg>
+                                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono font-bold text-teal-700">{kpis.coverage}%</span>
+                            </div>
+                            <div>
+                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.coverage')}</p>
+                                <p className="text-[10.5px] text-slate-600 mt-0.5 leading-none"><IconChartBar size={10} className="inline" /> {t('kpi.coverage')}</p>
+                            </div>
+                        </div>
+                        {/* Bouton Reset compact */}
+                        <button
+                            type="button"
+                            onClick={handleResetMatrix}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12px] font-medium hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all"
+                            title={t('toolbar.reset')}
+                        >
+                            <IconRefresh size={13} stroke={1.6} />
+                            <span className="hidden sm:inline">{t('toolbar.reset')}</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -529,23 +605,23 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Rechercher un module…"
+                            placeholder={t('toolbar.searchPlaceholder')}
                             className="w-full pl-8 pr-3 py-1.5 text-[12px] bg-slate-50/60 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white transition-all"
                         />
                     </div>
 
                     {/* Filtre catégorie — compact, label inline */}
                     <div className="inline-flex items-center gap-1.5 bg-slate-50/60 border border-slate-200 rounded-md pl-2.5 pr-1 hover:bg-white hover:border-slate-300 transition-colors">
-                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">Catégorie</span>
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">{t('toolbar.categoryLabel')}</span>
                         <select
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                             className="bg-transparent border-0 py-1.5 pr-2 text-[12px] text-slate-800 focus:outline-none cursor-pointer max-w-[160px]"
                         >
-                            <option value="all">Toutes ({categories.length})</option>
+                            <option value="all">{t('toolbar.allCategories')} ({categories.length})</option>
                             {categories.map((c) => (
                                 <option key={c} value={c}>
-                                    {CATEGORY_FR[c] || c}
+                                    {tcat(c)}
                                 </option>
                             ))}
                         </select>
@@ -553,13 +629,13 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
 
                     {/* Filtre mine — compact, label inline */}
                     <div className="inline-flex items-center gap-1.5 bg-slate-50/60 border border-slate-200 rounded-md pl-2.5 pr-1 hover:bg-white hover:border-slate-300 transition-colors">
-                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">Mine</span>
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">{t('toolbar.mineLabel')}</span>
                         <select
                             value={selectedMineFilter}
                             onChange={(e) => setSelectedMineFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                             className="bg-transparent border-0 py-1.5 pr-2 text-[12px] text-slate-800 focus:outline-none cursor-pointer max-w-[160px]"
                         >
-                            <option value="all">Toutes ({mines.length})</option>
+                            <option value="all">{t('toolbar.allMines')} ({mines.length})</option>
                             {mines.map((m) => (
                                 <option key={m.id} value={m.id}>
                                     {resolveMineName(m)}
@@ -582,7 +658,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                     style={{ minWidth: '300px', width: '300px' }}
                                 >
                                     <span className="text-[10.5px] uppercase tracking-[0.12em] text-slate-600 font-semibold">
-                                        Module
+                                        {t('table.columnModule')}
                                     </span>
                                 </th>
                                 {visibleMines.map((mine) => {
@@ -618,7 +694,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                         type="button"
                                                         onClick={() => handleToggleMineColumn(mine.id, true)}
                                                         disabled={allActive}
-                                                        title="Tout activer pour cette mine"
+                                                        title={t('table.enableAllMine')}
                                                         className={`p-0.5 rounded text-emerald-600 hover:bg-emerald-50 transition-colors ${
                                                             allActive ? 'opacity-30 cursor-not-allowed' : ''
                                                         }`}
@@ -629,7 +705,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                         type="button"
                                                         onClick={() => handleToggleMineColumn(mine.id, false)}
                                                         disabled={noneActive}
-                                                        title="Tout désactiver pour cette mine"
+                                                        title={t('table.disableAllMine')}
                                                         className={`p-0.5 rounded text-red-600 hover:bg-red-50 transition-colors ${
                                                             noneActive ? 'opacity-30 cursor-not-allowed' : ''
                                                         }`}
@@ -673,10 +749,10 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                         className="text-[12.5px] text-slate-800 font-semibold"
                                                         style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
                                                     >
-                                                        {CATEGORY_FR[category] || category}
+                                                        {tcat(category)}
                                                     </span>
                                                     <span className="text-[11px] text-slate-500 ml-1">
-                                                        ({mods.length} modules · {catStats.active}/{catStats.total} actifs)
+                                                        {t('table.categoryStats', { count: mods.length, active: catStats.active, total: catStats.total })}
                                                     </span>
                                                 </div>
                                             </td>
@@ -699,7 +775,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                                     e.stopPropagation();
                                                                     handleToggleCategoryRow(category, !allActive);
                                                                 }}
-                                                                title={allActive ? 'Tout désactiver' : 'Tout activer'}
+                                                                title={allActive ? t('table.disableAll') : t('table.enableAll')}
                                                                 className={`p-0.5 rounded transition-colors ${
                                                                     allActive
                                                                         ? 'text-red-500 hover:bg-red-50'
@@ -718,7 +794,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
 
                                         {/* Lignes modules (si catégorie non collapsée) */}
                                         {!isCollapsed && mods.map((mod, idx) => {
-                                            const moduleNameFr = MODULE_FR[mod.name] || mod.name;
+                                            const moduleNameFr = tmodN(mod.id, mod.name);
                                             return (
                                                 <tr
                                                     key={mod.id}
@@ -738,7 +814,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                                     {moduleNameFr}
                                                                 </p>
                                                                 <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                                                                    {mod.description}
+                                                                    {tmodD(mod.id, mod.description)}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -778,13 +854,15 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                 {/* Footer info matrice */}
                 <div className="px-4 py-3 bg-slate-50/60 border-t border-slate-200 flex items-center justify-between text-[11.5px] text-slate-500 flex-wrap gap-2">
                     <p>
-                        <span className="text-slate-700 font-medium">{filteredModules.length}</span> modules ·{' '}
-                        <span className="text-slate-700 font-medium">{visibleMines.length}</span> mines visibles ·{' '}
-                        <span className="text-emerald-700 font-medium">{kpis.active}</span> activations sur{' '}
-                        <span className="font-medium">{kpis.totalCells}</span> cellules
+                        {t('footer.summary', {
+                            modules: filteredModules.length,
+                            mines: visibleMines.length,
+                            active: kpis.active,
+                            total: kpis.totalCells,
+                        })}
                     </p>
                     <p className="text-[11px] text-slate-500">
-                        Persistance locale + synchronisation API au convergence
+                        {t('footer.persistence')}
                     </p>
                 </div>
             </div>
@@ -796,13 +874,10 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                 </span>
                 <div className="text-[12.5px] text-slate-700 leading-relaxed">
                     <p className="font-medium text-slate-800 mb-0.5">
-                        Comment fonctionne la matrice ?
+                        {t('note.title')}
                     </p>
                     <p>
-                        Chaque cellule représente l'activation d'un module pour une mine spécifique.
-                        Les changements sont enregistrés instantanément en local et synchronisés avec le serveur
-                        lorsque toutes les mines convergent vers le même état. Les modules désactivés
-                        n'apparaissent pas dans la navigation des utilisateurs affectés à la mine concernée.
+                        {t('note.body')}
                     </p>
                 </div>
             </div>

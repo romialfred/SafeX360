@@ -21,6 +21,7 @@ import frNavigation from './locales/fr/navigation.json';
 import frHse from './locales/fr/hse.json';
 import frNonConformity from './locales/fr/nonConformity.json';
 import frEmergency from './locales/fr/emergency.json';
+import frModuleManager from './locales/fr/moduleManager.json';
 
 // === EN ===
 import enCommon from './locales/en/common.json';
@@ -28,6 +29,7 @@ import enNavigation from './locales/en/navigation.json';
 import enHse from './locales/en/hse.json';
 import enNonConformity from './locales/en/nonConformity.json';
 import enEmergency from './locales/en/emergency.json';
+import enModuleManager from './locales/en/moduleManager.json';
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -48,6 +50,7 @@ i18n
                 hse: frHse,
                 nonConformity: frNonConformity,
                 emergency: frEmergency,
+                moduleManager: frModuleManager,
             },
             en: {
                 common: enCommon,
@@ -55,13 +58,14 @@ i18n
                 hse: enHse,
                 nonConformity: enNonConformity,
                 emergency: enEmergency,
+                moduleManager: enModuleManager,
             },
         },
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
         defaultNS: 'common',
-        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency'],
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager'],
 
         detection: {
             // Ordre de détection : 1) localStorage, 2) navigator

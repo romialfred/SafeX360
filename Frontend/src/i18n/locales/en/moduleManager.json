@@ -1,0 +1,216 @@
+{
+    "breadcrumb": {
+        "platform": "SafeX 360",
+        "page": "Module Management"
+    },
+    "header": {
+        "title": "Module Management",
+        "subtitle": "Enable or disable HSE modules per mine — ISO 45001 §4.2 compliance.",
+        "back": "Back"
+    },
+    "kpi": {
+        "totalModules": "Modules",
+        "totalMines": "Mines",
+        "activations": "Activations",
+        "coverage": "Coverage"
+    },
+    "toolbar": {
+        "searchPlaceholder": "Search a module…",
+        "categoryLabel": "Category",
+        "mineLabel": "Mine",
+        "allCategories": "All",
+        "allMines": "All",
+        "reset": "Reset"
+    },
+    "table": {
+        "columnModule": "Module",
+        "categoryStats": "({{count}} modules · {{active}}/{{total}} active)",
+        "enableAllMine": "Enable all for this mine",
+        "disableAllMine": "Disable all for this mine",
+        "enableAll": "Enable all",
+        "disableAll": "Disable all"
+    },
+    "footer": {
+        "summary": "{{modules}} modules · {{mines}} visible mines · {{active}} activations out of {{total}} cells",
+        "persistence": "Local persistence + API sync on convergence"
+    },
+    "note": {
+        "title": "How does the matrix work?",
+        "body": "Each cell represents the activation of a module for a specific mine. Changes are saved locally instantly and synchronised with the server when all mines converge to the same state. Disabled modules don't appear in the navigation for users assigned to the affected mine."
+    },
+    "loading": "Loading configuration matrix…",
+    "noMines": {
+        "title": "No mines configured",
+        "body": "You must first register at least one mine in the Reference Data module before you can enable modules per site."
+    },
+    "messages": {
+        "matrixReset": "Matrix reset from server",
+        "enableAllMine": "Enabling all modules for {{mine}}",
+        "disableAllMine": "Disabling all modules for {{mine}}",
+        "enableCategory": "Bulk enable — {{category}}",
+        "disableCategory": "Bulk disable — {{category}}",
+        "updateFailed": "Update failed"
+    },
+    "categories": {
+        "Prevention Activities": "Prevention Activities",
+        "Monitoring Activities": "Monitoring Activities",
+        "Actions Managers": "Corrective Actions",
+        "Risk Management": "Risk Management",
+        "PPE Management": "PPE Management",
+        "Audits Management": "Audits Management",
+        "Compliance Management": "Regulatory Compliance",
+        "Knowledge Center": "Knowledge Center",
+        "Safety Communication": "Safety Communication",
+        "Emergency Management": "Emergency Management"
+    },
+    "modules": {
+        "non-conformity": {
+            "name": "Central Findings",
+            "description": "Manage central findings and non-conformities"
+        },
+        "inspections": {
+            "name": "HSE Inspections",
+            "description": "Plan and manage safety inspections"
+        },
+        "meetings": {
+            "name": "Safety Meetings",
+            "description": "Schedule and track safety meeting sessions"
+        },
+        "management-tour": {
+            "name": "Leadership Walks",
+            "description": "Management safety tours and walks"
+        },
+        "incident-management": {
+            "name": "Incident Management",
+            "description": "Report and manage safety incidents"
+        },
+        "investigations": {
+            "name": "Investigations",
+            "description": "Conduct incident investigations"
+        },
+        "action-plans-inc": {
+            "name": "Action Plans",
+            "description": "Manage incident action plans"
+        },
+        "pending-actions": {
+            "name": "Pending Actions",
+            "description": "Track pending actions and tasks"
+        },
+        "action-plan": {
+            "name": "Action Plan",
+            "description": "Create and manage action plans"
+        },
+        "recommendations": {
+            "name": "Recommendations",
+            "description": "Manage safety recommendations"
+        },
+        "adhoc-actions": {
+            "name": "Improvement Ideas",
+            "description": "Capture and manage improvement ideas and initiatives"
+        },
+        "risk-overview": {
+            "name": "Risk Overview",
+            "description": "Overview of organizational risks"
+        },
+        "risk-register": {
+            "name": "Risk Register",
+            "description": "Maintain risk register"
+        },
+        "risk-assessment": {
+            "name": "Risk Assessment",
+            "description": "Conduct risk assessments"
+        },
+        "chemical-register": {
+            "name": "Chemical Register",
+            "description": "Manage chemical inventory and risks"
+        },
+        "ppe-overview": {
+            "name": "PPE Overview",
+            "description": "Overview of PPE status"
+        },
+        "ppe-monitoring": {
+            "name": "PPE Monitoring",
+            "description": "Monitor PPE usage and condition"
+        },
+        "ppe-request": {
+            "name": "PPE Request",
+            "description": "Request new PPE equipment"
+        },
+        "audit-plan": {
+            "name": "Annual Audit Plan",
+            "description": "Plan annual audit schedule"
+        },
+        "audits": {
+            "name": "Audits",
+            "description": "Conduct and manage audits"
+        },
+        "audit-recommendations": {
+            "name": "Audit Recommendations",
+            "description": "Manage audit recommendations"
+        },
+        "compliance-dashboard": {
+            "name": "Compliance Dashboard",
+            "description": "Compliance overview dashboard"
+        },
+        "requirements": {
+            "name": "Requirements",
+            "description": "Manage regulatory requirements"
+        },
+        "position-assignments": {
+            "name": "Position Assignments",
+            "description": "Assign compliance positions"
+        },
+        "employee-assignments": {
+            "name": "Employee Assignments",
+            "description": "Assign employees to compliance roles"
+        },
+        "documents": {
+            "name": "Documents",
+            "description": "Manage compliance documents"
+        },
+        "document-validation": {
+            "name": "Document Validation",
+            "description": "Validate compliance documents"
+        },
+        "lessons-learned": {
+            "name": "Lessons Learned",
+            "description": "Capture and share lessons learned"
+        },
+        "document-manager": {
+            "name": "Document Manager",
+            "description": "Manage knowledge documents"
+        },
+        "iso-documents": {
+            "name": "ISO Standards",
+            "description": "Access ISO standards documentation"
+        },
+        "comm-dashboard": {
+            "name": "Communication Dashboard",
+            "description": "Communication overview dashboard"
+        },
+        "employee-comm": {
+            "name": "HSE Communications",
+            "description": "Manage employee communications"
+        },
+        "notifications": {
+            "name": "Notification Center",
+            "description": "Manage system notifications"
+        },
+        "emergency-dashboard": {
+            "name": "Emergency Dashboard",
+            "description": "Real-time monitoring of SOS, alerts and evacuations"
+        },
+        "emergency-sos": {
+            "name": "SOS Tracking",
+            "description": "Lifecycle of SOS alerts and rescue coordination"
+        },
+        "emergency-assembly-points": {
+            "name": "Assembly Points",
+            "description": "Manage assembly points and evacuation routes"
+        },
+        "emergency-settings": {
+            "name": "Emergency Settings",
+            "description": "Configuration: teams, escalation, alert channels"
+        }
+    }
+}

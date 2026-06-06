@@ -1,0 +1,216 @@
+{
+    "breadcrumb": {
+        "platform": "SafeX 360",
+        "page": "Gestion des Modules"
+    },
+    "header": {
+        "title": "Gestion des modules",
+        "subtitle": "Activer ou désactiver les modules HSE par mine — conformité ISO 45001 §4.2.",
+        "back": "Retour"
+    },
+    "kpi": {
+        "totalModules": "Modules",
+        "totalMines": "Mines",
+        "activations": "Activations",
+        "coverage": "Couverture"
+    },
+    "toolbar": {
+        "searchPlaceholder": "Rechercher un module…",
+        "categoryLabel": "Catégorie",
+        "mineLabel": "Mine",
+        "allCategories": "Toutes",
+        "allMines": "Toutes",
+        "reset": "Réinitialiser"
+    },
+    "table": {
+        "columnModule": "Module",
+        "categoryStats": "({{count}} modules · {{active}}/{{total}} actifs)",
+        "enableAllMine": "Tout activer pour cette mine",
+        "disableAllMine": "Tout désactiver pour cette mine",
+        "enableAll": "Tout activer",
+        "disableAll": "Tout désactiver"
+    },
+    "footer": {
+        "summary": "{{modules}} modules · {{mines}} mines visibles · {{active}} activations sur {{total}} cellules",
+        "persistence": "Persistance locale + synchronisation API à la convergence"
+    },
+    "note": {
+        "title": "Comment fonctionne la matrice ?",
+        "body": "Chaque cellule représente l'activation d'un module pour une mine spécifique. Les changements sont enregistrés instantanément en local et synchronisés avec le serveur lorsque toutes les mines convergent vers le même état. Les modules désactivés n'apparaissent pas dans la navigation des utilisateurs affectés à la mine concernée."
+    },
+    "loading": "Chargement de la matrice de configuration…",
+    "noMines": {
+        "title": "Aucune mine configurée",
+        "body": "Vous devez d'abord enregistrer au moins une mine dans le module Données de Références avant de pouvoir activer des modules par site."
+    },
+    "messages": {
+        "matrixReset": "Matrice réinitialisée depuis le serveur",
+        "enableAllMine": "Activation de tous les modules pour {{mine}}",
+        "disableAllMine": "Désactivation de tous les modules pour {{mine}}",
+        "enableCategory": "Activation massive — {{category}}",
+        "disableCategory": "Désactivation massive — {{category}}",
+        "updateFailed": "Échec de la mise à jour"
+    },
+    "categories": {
+        "Prevention Activities": "Activités Préventives",
+        "Monitoring Activities": "Surveillance des Activités",
+        "Actions Managers": "Actions Correctives",
+        "Risk Management": "Gestion des Risques",
+        "PPE Management": "Gestion des EPI",
+        "Audits Management": "Gestion des Audits",
+        "Compliance Management": "Conformité Réglementaire",
+        "Knowledge Center": "Centre de Connaissances",
+        "Safety Communication": "Communication Sécurité",
+        "Emergency Management": "Gestion des Urgences"
+    },
+    "modules": {
+        "non-conformity": {
+            "name": "Constats centraux",
+            "description": "Gérer les constats centraux et les non-conformités"
+        },
+        "inspections": {
+            "name": "Inspections HSE",
+            "description": "Planifier et gérer les inspections de sécurité"
+        },
+        "meetings": {
+            "name": "Réunions sécurité",
+            "description": "Planifier et suivre les sessions de réunions HSE"
+        },
+        "management-tour": {
+            "name": "Tournées Leadership",
+            "description": "Tournées sécurité et walks de la direction"
+        },
+        "incident-management": {
+            "name": "Gestion des Incidents",
+            "description": "Déclarer et gérer les incidents de sécurité"
+        },
+        "investigations": {
+            "name": "Investigations",
+            "description": "Conduire des investigations d'incidents"
+        },
+        "action-plans-inc": {
+            "name": "Plans d'actions",
+            "description": "Gérer les plans d'actions liés aux incidents"
+        },
+        "pending-actions": {
+            "name": "Actions en attente",
+            "description": "Suivre les actions et tâches en attente"
+        },
+        "action-plan": {
+            "name": "Plan d'actions",
+            "description": "Créer et gérer les plans d'actions"
+        },
+        "recommendations": {
+            "name": "Recommandations",
+            "description": "Gérer les recommandations de sécurité"
+        },
+        "adhoc-actions": {
+            "name": "Suggestions d'amélioration",
+            "description": "Capturer et gérer les idées et initiatives d'amélioration"
+        },
+        "risk-overview": {
+            "name": "Vue d'ensemble risques",
+            "description": "Vue d'ensemble des risques organisationnels"
+        },
+        "risk-register": {
+            "name": "Registre des risques",
+            "description": "Maintenir le registre des risques"
+        },
+        "risk-assessment": {
+            "name": "Évaluation des risques",
+            "description": "Conduire les évaluations de risques"
+        },
+        "chemical-register": {
+            "name": "Registre chimique",
+            "description": "Gérer l'inventaire et les risques chimiques"
+        },
+        "ppe-overview": {
+            "name": "Vue d'ensemble EPI",
+            "description": "Vue d'ensemble de l'état des EPI"
+        },
+        "ppe-monitoring": {
+            "name": "Suivi des EPI",
+            "description": "Surveiller l'utilisation et l'état des EPI"
+        },
+        "ppe-request": {
+            "name": "Demande d'EPI",
+            "description": "Demander de nouveaux équipements EPI"
+        },
+        "audit-plan": {
+            "name": "Plan annuel d'audits",
+            "description": "Planifier le calendrier annuel des audits"
+        },
+        "audits": {
+            "name": "Audits",
+            "description": "Conduire et gérer les audits"
+        },
+        "audit-recommendations": {
+            "name": "Recommandations d'audit",
+            "description": "Gérer les recommandations issues des audits"
+        },
+        "compliance-dashboard": {
+            "name": "Tableau de bord conformité",
+            "description": "Vue d'ensemble de la conformité"
+        },
+        "requirements": {
+            "name": "Exigences",
+            "description": "Gérer les exigences réglementaires"
+        },
+        "position-assignments": {
+            "name": "Affectations par poste",
+            "description": "Affecter les postes aux exigences de conformité"
+        },
+        "employee-assignments": {
+            "name": "Affectations employés",
+            "description": "Affecter les employés aux rôles de conformité"
+        },
+        "documents": {
+            "name": "Documents",
+            "description": "Gérer les documents de conformité"
+        },
+        "document-validation": {
+            "name": "Validation documents",
+            "description": "Valider les documents de conformité"
+        },
+        "lessons-learned": {
+            "name": "Retours d'expérience",
+            "description": "Capturer et partager les leçons apprises"
+        },
+        "document-manager": {
+            "name": "Gestion documentaire",
+            "description": "Gérer les documents de connaissances"
+        },
+        "iso-documents": {
+            "name": "Normes ISO",
+            "description": "Accéder à la documentation des normes ISO"
+        },
+        "comm-dashboard": {
+            "name": "Tableau de bord communication",
+            "description": "Vue d'ensemble de la communication"
+        },
+        "employee-comm": {
+            "name": "Communications HSE",
+            "description": "Gérer les communications aux employés"
+        },
+        "notifications": {
+            "name": "Centre de notifications",
+            "description": "Gérer les notifications système"
+        },
+        "emergency-dashboard": {
+            "name": "Tableau de bord Urgences",
+            "description": "Pilotage temps réel des SOS, alertes et évacuations"
+        },
+        "emergency-sos": {
+            "name": "Suivi SOS",
+            "description": "Cycle de vie des alertes SOS et coordination secours"
+        },
+        "emergency-assembly-points": {
+            "name": "Points de rassemblement",
+            "description": "Gérer les points de rassemblement et itinéraires d'évacuation"
+        },
+        "emergency-settings": {
+            "name": "Paramètres Urgences",
+            "description": "Configuration : équipes, escalade, canaux d'alerte"
+        }
+    }
+}
