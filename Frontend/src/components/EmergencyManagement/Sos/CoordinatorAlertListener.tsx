@@ -207,6 +207,40 @@ const CoordinatorAlertListener = () => {
         else sirenRef.current?.stop();
     }, [soundEnabled, activeAlert]);
 
+    // ── TTS Web Speech : message standard d'évacuation ──
+    useEffect(() => {
+        if (!activeAlert || !soundEnabled) return;
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+        const synth = window.speechSynthesis;
+        const message =
+            "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche.";
+
+        const speak = () => {
+            try {
+                if (!synth.speaking) {
+                    const u = new SpeechSynthesisUtterance(message);
+                    u.lang = 'fr-FR';
+                    u.rate = 0.92;
+                    u.pitch = 1.0;
+                    u.volume = 1.0;
+                    synth.speak(u);
+                }
+            } catch {
+                /* ignore */
+            }
+        };
+        // Premier annonce après 1.5s (laisse le temps à la sirène de démarrer)
+        const initialTimeout = window.setTimeout(speak, 1500);
+        // Répétition toutes les 8s
+        const interval = window.setInterval(speak, 8000);
+        return () => {
+            window.clearTimeout(initialTimeout);
+            window.clearInterval(interval);
+            try { synth.cancel(); } catch { /* ignore */ }
+        };
+    }, [activeAlert, soundEnabled]);
+
     // ── Note : start() est désormais async ; on ignore la promise via void ──
 
     // ── Actions ──
@@ -250,28 +284,15 @@ const CoordinatorAlertListener = () => {
 
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
-            {/* Styles globaux pour les animations sirène */}
+            {/* Styles globaux pour l'effet "pierre jetée dans l'eau" + animations */}
             <style>{`
-                @keyframes sosScanRed {
-                    0%   { transform: translate(-30%, -30%) rotate(20deg); }
-                    100% { transform: translate(30%, 30%) rotate(20deg); }
+                @keyframes sosRipple {
+                    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.85; }
+                    100% { transform: translate(-50%, -50%) scale(20); opacity: 0; }
                 }
-                @keyframes sosScanBlue {
-                    0%   { transform: translate(30%, 30%) rotate(-20deg); }
-                    100% { transform: translate(-30%, -30%) rotate(-20deg); }
-                }
-                @keyframes sosScanWhite {
-                    0%   { transform: translate(-50%, 0%) rotate(0deg); opacity: 0.0; }
-                    50%  { opacity: 0.18; }
-                    100% { transform: translate(50%, 0%) rotate(0deg); opacity: 0.0; }
-                }
-                @keyframes sosStrobeRed {
-                    0%, 90%, 100% { opacity: 0; }
-                    93%, 96%      { opacity: 0.85; }
-                }
-                @keyframes sosStrobeBlue {
-                    0%, 40%, 60%, 100% { opacity: 0; }
-                    45%, 55%           { opacity: 0.7; }
+                @keyframes sosRippleSlow {
+                    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
+                    100% { transform: translate(-50%, -50%) scale(24); opacity: 0; }
                 }
                 @keyframes sosShake {
                     0%, 100% { transform: translateX(0); }
@@ -289,99 +310,65 @@ const CoordinatorAlertListener = () => {
                     75%, 85%      { opacity: 0.4; }
                 }
                 @keyframes sosBgPulse {
-                    0%, 100% { background: rgba(20, 10, 10, 0.65); }
-                    50%      { background: rgba(40, 14, 14, 0.78); }
+                    0%, 100% { background: rgba(10, 0, 0, 0.78); }
+                    50%      { background: rgba(35, 5, 5, 0.85); }
                 }
             `}</style>
 
-            {/* Background sombre avec pulse */}
+            {/* Background très sombre avec pulse subtil */}
             <div
                 className="absolute inset-0"
                 style={{ animation: 'sosBgPulse 1.6s ease-in-out infinite', backdropFilter: 'blur(2px)' }}
             />
 
-            {/* COUCHE 1 : Bande lumineuse rouge diagonale défilante */}
-            <div
-                aria-hidden
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{
-                    background: `repeating-linear-gradient(
-                        25deg,
-                        rgba(239, 68, 68, 0.0) 0px,
-                        rgba(239, 68, 68, 0.0) 60px,
-                        rgba(239, 68, 68, 0.55) 60px,
-                        rgba(239, 68, 68, 0.55) 120px
-                    )`,
-                    animation: 'sosScanRed 2.5s linear infinite',
-                    transformOrigin: 'center',
-                    width: '200%',
-                    height: '200%',
-                    left: '-50%',
-                    top: '-50%',
-                    mixBlendMode: 'screen',
-                }}
-            />
+            {/*
+              EFFET "PIERRE JETÉE DANS L'EAU" — ondes concentriques rouges
+              qui se propagent depuis le centre de l'écran vers l'extérieur.
+              4 ondes décalées dans le temps pour effet continu de propagation.
+            */}
+            {[
+                { delay: 0,    color: 'rgba(220, 38, 38, 0.9)',  duration: 3.2, anim: 'sosRipple' },
+                { delay: 0.8,  color: 'rgba(239, 68, 68, 0.7)',  duration: 3.2, anim: 'sosRipple' },
+                { delay: 1.6,  color: 'rgba(248, 113, 113, 0.6)', duration: 3.2, anim: 'sosRipple' },
+                { delay: 2.4,  color: 'rgba(252, 165, 165, 0.5)', duration: 3.2, anim: 'sosRipple' },
+            ].map((ripple, i) => (
+                <div
+                    key={i}
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
+                    style={{
+                        width: '120px',
+                        height: '120px',
+                        border: `5px solid ${ripple.color}`,
+                        boxShadow: `0 0 30px ${ripple.color}, inset 0 0 25px ${ripple.color}`,
+                        animation: `${ripple.anim} ${ripple.duration}s ease-out ${ripple.delay}s infinite`,
+                        mixBlendMode: 'screen',
+                    }}
+                />
+            ))}
 
-            {/* COUCHE 2 : Bande bleue diagonale opposée */}
-            <div
-                aria-hidden
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{
-                    background: `repeating-linear-gradient(
-                        -25deg,
-                        rgba(37, 99, 235, 0.0) 0px,
-                        rgba(37, 99, 235, 0.0) 80px,
-                        rgba(37, 99, 235, 0.5) 80px,
-                        rgba(37, 99, 235, 0.5) 160px
-                    )`,
-                    animation: 'sosScanBlue 3.2s linear infinite',
-                    transformOrigin: 'center',
-                    width: '200%',
-                    height: '200%',
-                    left: '-50%',
-                    top: '-50%',
-                    mixBlendMode: 'screen',
-                }}
-            />
+            {/* Onde rouge profonde plus lente en arrière-plan */}
+            {[0, 1.5].map((delay, i) => (
+                <div
+                    key={`slow-${i}`}
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
+                    style={{
+                        width: '200px',
+                        height: '200px',
+                        background: 'radial-gradient(circle, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.0) 70%)',
+                        animation: `sosRippleSlow 4s ease-out ${delay}s infinite`,
+                        mixBlendMode: 'screen',
+                    }}
+                />
+            ))}
 
-            {/* COUCHE 3 : Onde blanche balayante */}
-            <div
-                aria-hidden
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{
-                    background: `linear-gradient(
-                        90deg,
-                        rgba(255,255,255,0) 0%,
-                        rgba(255,255,255,0.0) 40%,
-                        rgba(255,255,255,0.4) 50%,
-                        rgba(255,255,255,0.0) 60%,
-                        rgba(255,255,255,0) 100%
-                    )`,
-                    width: '200%',
-                    height: '100%',
-                    animation: 'sosScanWhite 1.8s linear infinite',
-                    mixBlendMode: 'overlay',
-                }}
-            />
-
-            {/* COUCHE 4 : Strobes rouges flash périodiques */}
+            {/* Vignette rouge au centre — effet d'impact */}
             <div
                 aria-hidden
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                    background: 'radial-gradient(ellipse at top, rgba(220,38,38,0.6), transparent 60%)',
-                    animation: 'sosStrobeRed 0.9s ease-in-out infinite',
-                    mixBlendMode: 'screen',
-                }}
-            />
-
-            {/* COUCHE 5 : Strobes bleues flash décalés */}
-            <div
-                aria-hidden
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    background: 'radial-gradient(ellipse at bottom, rgba(37,99,235,0.55), transparent 60%)',
-                    animation: 'sosStrobeBlue 0.9s ease-in-out infinite',
+                    background: 'radial-gradient(circle at center, rgba(220,38,38,0.4) 0%, rgba(0,0,0,0) 55%)',
                     mixBlendMode: 'screen',
                 }}
             />

@@ -243,25 +243,35 @@ const GeneralAlertListener = () => {
 
     // ── TTS Web Speech (voix) ──
     useEffect(() => {
-        if (!activeAlert || !soundEnabled || !activeAlert.message) return;
+        if (!activeAlert || !soundEnabled) return;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
         const synth = window.speechSynthesis;
+        // Message standard d'évacuation + message custom de l'alerte si fourni
+        const standardMsg = activeAlert.drillMode
+            ? "Ceci est un exercice. Veuillez rejoindre le point de rassemblement le plus proche."
+            : "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche.";
+        const fullMessage = activeAlert.message
+            ? `${standardMsg} ${activeAlert.message}`
+            : standardMsg;
+
         const speak = () => {
             try {
                 if (!synth.speaking) {
-                    const u = new SpeechSynthesisUtterance(activeAlert.message ?? '');
+                    const u = new SpeechSynthesisUtterance(fullMessage);
                     u.lang = 'fr-FR';
-                    u.rate = 0.9;
+                    u.rate = 0.92;
                     u.pitch = 1.0;
                     u.volume = 1.0;
                     synth.speak(u);
                 }
             } catch { /* ignore */ }
         };
-        speak();
-        const interval = window.setInterval(speak, 7000);
+        // Premier annonce après 1.5s
+        const initialTimeout = window.setTimeout(speak, 1500);
+        const interval = window.setInterval(speak, 8000);
         return () => {
+            window.clearTimeout(initialTimeout);
             window.clearInterval(interval);
             try { synth.cancel(); } catch { /* ignore */ }
         };
@@ -317,25 +327,21 @@ const GeneralAlertListener = () => {
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
             <style>{`
-                @keyframes gaScanOrange {
-                    0%   { transform: translate(-30%, -30%); }
-                    100% { transform: translate(30%, 30%); }
+                @keyframes gaRipple {
+                    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.85; }
+                    100% { transform: translate(-50%, -50%) scale(20); opacity: 0; }
                 }
-                @keyframes gaScanRed {
-                    0%   { transform: translate(30%, 30%); }
-                    100% { transform: translate(-30%, -30%); }
+                @keyframes gaRippleSlow {
+                    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
+                    100% { transform: translate(-50%, -50%) scale(24); opacity: 0; }
                 }
                 @keyframes gaPulse {
-                    0%, 100% { background: rgba(40, 14, 14, 0.78); }
-                    50%      { background: rgba(60, 22, 12, 0.85); }
+                    0%, 100% { background: rgba(20, 8, 0, 0.82); }
+                    50%      { background: rgba(35, 14, 0, 0.88); }
                 }
                 @keyframes gaShake {
                     0%, 100% { transform: translateX(0); }
                     50%      { transform: translateX(2px); }
-                }
-                @keyframes gaStrobe {
-                    0%, 92%, 100% { opacity: 0; }
-                    96%           { opacity: 0.6; }
                 }
                 @keyframes gaBlink {
                     0%, 100% { background-color: rgb(185, 28, 28); }
@@ -343,35 +349,57 @@ const GeneralAlertListener = () => {
                 }
             `}</style>
 
+            {/* Background très sombre avec pulse subtil */}
             <div className="absolute inset-0" style={{ animation: 'gaPulse 1.4s ease-in-out infinite', backdropFilter: 'blur(2px)' }} />
 
-            {/* Vagues orange diagonales défilantes */}
-            <div
-                aria-hidden
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{
-                    background: `repeating-linear-gradient(35deg, rgba(249,115,22,0) 0px, rgba(249,115,22,0) 70px, rgba(249,115,22,0.55) 70px, rgba(249,115,22,0.55) 140px)`,
-                    animation: 'gaScanOrange 2.8s linear infinite',
-                    width: '200%', height: '200%', left: '-50%', top: '-50%',
-                    mixBlendMode: 'screen',
-                }}
-            />
-            <div
-                aria-hidden
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{
-                    background: `repeating-linear-gradient(-35deg, rgba(220,38,38,0) 0px, rgba(220,38,38,0) 90px, rgba(220,38,38,0.45) 90px, rgba(220,38,38,0.45) 180px)`,
-                    animation: 'gaScanRed 3.5s linear infinite',
-                    width: '200%', height: '200%', left: '-50%', top: '-50%',
-                    mixBlendMode: 'screen',
-                }}
-            />
+            {/*
+              EFFET "PIERRE JETÉE DANS L'EAU" — ondes orange/rouge concentriques
+              qui se propagent depuis le centre vers l'extérieur.
+              Différencie l'Alerte Générale du SOS par la palette orange.
+            */}
+            {[
+                { delay: 0,    color: 'rgba(234, 88, 12, 0.9)',   duration: 3.2 },   // orange-600
+                { delay: 0.8,  color: 'rgba(249, 115, 22, 0.75)', duration: 3.2 },   // orange-500
+                { delay: 1.6,  color: 'rgba(251, 146, 60, 0.6)',  duration: 3.2 },   // orange-400
+                { delay: 2.4,  color: 'rgba(253, 186, 116, 0.5)', duration: 3.2 },   // orange-300
+            ].map((ripple, i) => (
+                <div
+                    key={i}
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
+                    style={{
+                        width: '120px',
+                        height: '120px',
+                        border: `5px solid ${ripple.color}`,
+                        boxShadow: `0 0 30px ${ripple.color}, inset 0 0 25px ${ripple.color}`,
+                        animation: `gaRipple ${ripple.duration}s ease-out ${ripple.delay}s infinite`,
+                        mixBlendMode: 'screen',
+                    }}
+                />
+            ))}
+
+            {/* Ondes rouges plus lentes en couche de fond */}
+            {[0, 1.5].map((delay, i) => (
+                <div
+                    key={`slow-${i}`}
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
+                    style={{
+                        width: '200px',
+                        height: '200px',
+                        background: 'radial-gradient(circle, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.0) 70%)',
+                        animation: `gaRippleSlow 4s ease-out ${delay}s infinite`,
+                        mixBlendMode: 'screen',
+                    }}
+                />
+            ))}
+
+            {/* Vignette orange centrale — effet d'impact */}
             <div
                 aria-hidden
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                    background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.6), transparent 65%)',
-                    animation: 'gaStrobe 1.1s ease-in-out infinite',
+                    background: 'radial-gradient(circle at center, rgba(249,115,22,0.35) 0%, rgba(0,0,0,0) 55%)',
                     mixBlendMode: 'screen',
                 }}
             />

@@ -83,9 +83,13 @@ const GeneralAlertButton = () => {
                 {
                     companyId: selectedCompanyId,
                     reasonCode,
-                    message: message || `Évacuation immédiate vers le point de rassemblement le plus proche. ${
-                        alertType === 'mandatory-assembly' ? 'Rassemblement obligatoire.' : ''
-                    }`,
+                    // Message par défaut — sera diffusé en TTS si l'utilisateur n'a rien saisi.
+                    // Le listener ajoute automatiquement le préfixe "Ceci n'est pas un exercice".
+                    message: message || (
+                        alertType === 'mandatory-assembly'
+                            ? 'Rassemblement obligatoire à votre point d\'évacuation désigné.'
+                            : 'Évacuation immédiate.'
+                    ),
                     drillMode: false,
                 },
                 Number(user.id)
