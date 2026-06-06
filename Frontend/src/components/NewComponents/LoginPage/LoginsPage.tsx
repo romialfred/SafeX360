@@ -105,21 +105,26 @@ const LoginsPage = () => {
     return (
         <div className="min-h-screen relative overflow-hidden bg-slate-950 text-white">
 
-            {/* ═══ Image plein écran — moins de flou, plus de luminosité ═══ */}
+            {/* ═══ Image plein écran — flou minimal pour rendre la scene mine bien visible ═══ */}
             <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
                     backgroundImage: `url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
-                    filter: 'blur(4px) saturate(1.2) brightness(1.05)',
-                    transform: 'scale(1.04)',
+                    // Refonte LOT 48 P6.d : flou réduit (4px → 1.2px), saturation et
+                    // luminosité plus naturelles → l'image de la mine est lisible.
+                    filter: 'blur(1.2px) saturate(1.1) brightness(1.02)',
+                    transform: 'scale(1.02)',
                 }}
             />
 
-            {/* ═══ Overlay dégradé — moins opaque pour laisser respirer l'image ═══ */}
+            {/* ═══ Overlay dégradé — beaucoup plus léger, teinte teal pour cohérence identité ═══ */}
             <div
                 className="absolute inset-0"
                 style={{
-                    background: `linear-gradient(135deg, rgba(15,23,42,0.55) 0%, rgba(15,23,42,0.42) 50%, rgba(15,23,42,0.65) 100%)`,
+                    // Refonte : opacité ramenée de 0.55/0.42/0.65 à 0.32/0.20/0.42
+                    // + teinte teal profond (au lieu du bleu marine slate-950) pour
+                    // matcher la couleur de la nouvelle carte de connexion.
+                    background: `linear-gradient(135deg, rgba(2,44,40,0.32) 0%, rgba(2,44,40,0.20) 50%, rgba(2,44,40,0.42) 100%)`,
                 }}
             />
 
@@ -127,7 +132,7 @@ const LoginsPage = () => {
             <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                    background: 'radial-gradient(circle at 50% 38%, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0) 45%)',
+                    background: 'radial-gradient(circle at 50% 38%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 50%)',
                 }}
             />
 
@@ -235,13 +240,20 @@ const LoginsPage = () => {
                     </p>
                 </div>
 
-                {/* Carte de connexion compacte */}
+                {/* Carte de connexion compacte
+                    LOT 48 P6.d : changement de couleur
+                    - Avant : bleu marine slate (rgba(15, 23, 42, 0.62)) → trop sombre, peu identitaire
+                    - Après : verre teal profond (rgba(6, 78, 70, 0.55)) avec bordure teal lumineuse
+                      → cohérent avec l'identité HSE SafeX (bouclier teal→rouge), plus chaleureux,
+                      et plus transparent pour laisser respirer l'image de fond. */}
                 <div
-                    className="w-full max-w-[400px] rounded-2xl border border-white/12 shadow-2xl overflow-hidden"
+                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden"
                     style={{
-                        background: 'rgba(15, 23, 42, 0.62)',
-                        backdropFilter: 'blur(24px) saturate(140%)',
-                        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+                        background: 'linear-gradient(135deg, rgba(6, 78, 70, 0.58) 0%, rgba(4, 47, 46, 0.62) 100%)',
+                        backdropFilter: 'blur(22px) saturate(160%)',
+                        WebkitBackdropFilter: 'blur(22px) saturate(160%)',
+                        border: '1px solid rgba(94, 234, 212, 0.28)',
+                        boxShadow: '0 20px 60px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(94,234,212,0.08) inset',
                     }}
                 >
                     <div className="p-7 sm:p-8">
@@ -301,8 +313,9 @@ const LoginsPage = () => {
                                 leftSection={<IconUser size={15} className="text-white/55" aria-hidden="true" />}
                                 styles={{
                                     input: {
-                                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
-                                        borderColor: 'rgba(255, 255, 255, 0.14)',
+                                        // Refonte teal : fond légèrement plus profond + bordure teal subtile
+                                        backgroundColor: 'rgba(3, 36, 34, 0.65)',
+                                        borderColor: 'rgba(94, 234, 212, 0.22)',
                                         color: '#ffffff',
                                         fontSize: '14px',
                                     },
@@ -327,8 +340,9 @@ const LoginsPage = () => {
                                 leftSection={<IconLock size={15} className="text-white/55" aria-hidden="true" />}
                                 styles={{
                                     input: {
-                                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
-                                        borderColor: 'rgba(255, 255, 255, 0.14)',
+                                        // Refonte teal : fond légèrement plus profond + bordure teal subtile
+                                        backgroundColor: 'rgba(3, 36, 34, 0.65)',
+                                        borderColor: 'rgba(94, 234, 212, 0.22)',
                                         color: '#ffffff',
                                         fontSize: '14px',
                                     },
