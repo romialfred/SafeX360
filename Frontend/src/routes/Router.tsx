@@ -6,6 +6,7 @@ import AssemblyPointFormPage from '../components/EmergencyManagement/AssemblyPoi
 import AssemblyPointDetailPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointDetailPage';
 import SosListPage from '../components/EmergencyManagement/Sos/SosListPage';
 import SosDetailPage from '../components/EmergencyManagement/Sos/SosDetailPage';
+import GeneralAlertDetailPage from '../components/EmergencyManagement/GeneralAlert/GeneralAlertDetailPage';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
@@ -314,6 +315,8 @@ const router = createBrowserRouter([
             // LOT 48 Phase 3.b — Suivi SOS
             { path: 'emergency/sos', element: <SosListPage /> },
             { path: 'emergency/sos/:id', element: <SosDetailPage /> },
+            // LOT 48 Phase 4 — Alerte Générale + Évacuation
+            { path: 'emergency/alerts/general/:id', element: <GeneralAlertDetailPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },

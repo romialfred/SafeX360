@@ -4,6 +4,9 @@ import { IconBroadcast, IconCheck, IconAlertTriangle, IconUsers, IconDeviceMobil
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { useAppSelector } from '../../../slices/hooks';
+import { triggerAlert } from '../../../services/GeneralAlertService';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Bouton Alerte Générale : déclenche une notification multicanal (web, mobile, SMS) à tous les employés.
@@ -11,6 +14,9 @@ import { successNotification, errorNotification } from '../../../utility/Notific
  */
 const GeneralAlertButton = () => {
     const { t } = useTranslation('navigation');
+    const navigate = useNavigate();
+    const user = useAppSelector((state: any) => state.user);
+    const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
     const [opened, { open, close }] = useDisclosure(false);
 
     // Type d'alerte
@@ -62,17 +68,34 @@ const GeneralAlertButton = () => {
             return;
         }
 
+        if (!selectedCompanyId || !user?.id) {
+            errorNotification("Mine ou utilisateur non identifié. Contactez l'administrateur.");
+            return;
+        }
+
         setSending(true);
-        await new Promise((r) => setTimeout(r, 900));
 
         try {
-            // TODO Phase 2.b : POST /hns/emergency/general-alert
-            // { alertType, zoneScope, selectedZones, channels, message, triggeredBy, timestamp }
+            const reasonCode = (alertType ?? 'EVACUATION_GENERALE')
+                .toUpperCase()
+                .replace(/-/g, '_');
+            const saved = await triggerAlert(
+                {
+                    companyId: selectedCompanyId,
+                    reasonCode,
+                    message: message || `Évacuation immédiate vers le point de rassemblement le plus proche. ${
+                        alertType === 'mandatory-assembly' ? 'Rassemblement obligatoire.' : ''
+                    }`,
+                    drillMode: false,
+                },
+                Number(user.id)
+            );
             setSent(true);
-            const zoneText = zoneScope === 'all' ? 'tous les sites' : `${selectedZones.length} zone(s)`;
-            const channelText = channels.map((c) => c === 'web' ? 'Web' : c === 'mobile' ? 'Mobile' : 'SMS').join(', ');
-            successNotification(`Alerte générale diffusée à ${zoneText} via ${channelText}.`);
-            setTimeout(handleClose, 2200);
+            successNotification('Alerte Générale déclenchée. Tous les employés sont notifiés en temps réel.');
+            setTimeout(() => {
+                handleClose();
+                if (saved.id) navigate(`/emergency/alerts/general/${saved.id}`);
+            }, 2200);
         } catch (e: any) {
             errorNotification("Échec du déclenchement de l'alerte. Contactez l'administrateur système.");
         } finally {

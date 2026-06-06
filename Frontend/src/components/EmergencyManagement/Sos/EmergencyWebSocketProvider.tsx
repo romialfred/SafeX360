@@ -3,6 +3,7 @@ import SockJS from 'sockjs-client/dist/sockjs';
 import { Client, type IMessage } from '@stomp/stompjs';
 import { useAppSelector } from '../../../slices/hooks';
 import type { SosAlertDTO } from '../../../services/SosService';
+import type { GeneralAlertDTO } from '../../../services/GeneralAlertService';
 
 /**
  * Provider WebSocket STOMP global pour la plateforme Emergency (LOT 48 Phase 3.b).
@@ -21,15 +22,18 @@ import type { SosAlertDTO } from '../../../services/SosService';
  */
 
 type AlertListener = (alert: SosAlertDTO) => void;
+type GeneralAlertListener = (alert: GeneralAlertDTO) => void;
 
 interface EmergencyWebSocketContextValue {
     connected: boolean;
     subscribe: (listener: AlertListener) => () => void;
+    subscribeGeneralAlert: (listener: GeneralAlertListener) => () => void;
 }
 
 const EmergencyWebSocketContext = createContext<EmergencyWebSocketContextValue>({
     connected: false,
     subscribe: () => () => {},
+    subscribeGeneralAlert: () => () => {},
 });
 
 export const useEmergencyWebSocket = () => useContext(EmergencyWebSocketContext);
@@ -55,12 +59,20 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     const [connected, setConnected] = useState(false);
     const clientRef = useRef<Client | null>(null);
     const listenersRef = useRef<Set<AlertListener>>(new Set());
+    const generalListenersRef = useRef<Set<GeneralAlertListener>>(new Set());
 
     // Fonction subscribe stable (n'oblige pas les enfants à re-render)
     const subscribe = useCallback((listener: AlertListener) => {
         listenersRef.current.add(listener);
         return () => {
             listenersRef.current.delete(listener);
+        };
+    }, []);
+
+    const subscribeGeneralAlert = useCallback((listener: GeneralAlertListener) => {
+        generalListenersRef.current.add(listener);
+        return () => {
+            generalListenersRef.current.delete(listener);
         };
     }, []);
 
@@ -80,21 +92,28 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
             },
             onConnect: () => {
                 setConnected(true);
+                // SOS individuels
                 client.subscribe(
                     `/topic/emergency/sos/company/${selectedCompanyId}`,
                     (msg: IMessage) => {
                         try {
                             const payload: SosAlertDTO = JSON.parse(msg.body);
                             listenersRef.current.forEach((l) => {
-                                try {
-                                    l(payload);
-                                } catch {
-                                    /* listener buggy, on ignore pour ne pas tout casser */
-                                }
+                                try { l(payload); } catch { /* swallow */ }
                             });
-                        } catch {
-                            // payload non-JSON, ignore
-                        }
+                        } catch { /* non-JSON */ }
+                    }
+                );
+                // Alertes Générales (Phase 4)
+                client.subscribe(
+                    `/topic/emergency/alert/company/${selectedCompanyId}`,
+                    (msg: IMessage) => {
+                        try {
+                            const payload: GeneralAlertDTO = JSON.parse(msg.body);
+                            generalListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
                     }
                 );
             },
@@ -114,8 +133,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     }, [selectedCompanyId]);
 
     const value = useMemo(
-        () => ({ connected, subscribe }),
-        [connected, subscribe]
+        () => ({ connected, subscribe, subscribeGeneralAlert }),
+        [connected, subscribe, subscribeGeneralAlert]
     );
 
     return (

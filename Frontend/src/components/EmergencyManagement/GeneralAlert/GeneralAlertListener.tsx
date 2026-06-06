@@ -1,0 +1,436 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    IconAlertTriangle,
+    IconMapPin,
+    IconCheck,
+    IconVolume,
+    IconVolumeOff,
+    IconShieldCheck,
+    IconShieldX,
+    IconStethoscope,
+    IconUrgent,
+} from '@tabler/icons-react';
+import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
+import {
+    getActiveAlert,
+    checkInToAlert,
+    type GeneralAlertDTO,
+    type CheckInStatus,
+} from '../../../services/GeneralAlertService';
+import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
+import { useAppSelector } from '../../../slices/hooks';
+import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+
+/**
+ * Listener global Alerte Générale (LOT 48 Phase 4).
+ *
+ * <p>Affiche un popup full-screen à TOUS les utilisateurs connectés (pas
+ * seulement les coordinateurs) dès qu'une alerte ACTIVE est détectée :</p>
+ * <ul>
+ *   <li>Visuel : vagues rouge/orange défilantes + strobes (style alerte
+ *       industrielle, distinct du SOS individuel rouge/bleu ambulance)</li>
+ *   <li>Audio : sirène mine 2 tons + voix TTS Web Speech qui diffuse le
+ *       message en boucle</li>
+ *   <li>L'utilisateur peut pointer son statut directement (SAFE / INJURED)
+ *       + sélectionner le point de rassemblement où il se trouve</li>
+ *   <li>GPS auto-capturé en arrière-plan</li>
+ * </ul>
+ *
+ * <p>Au démarrage, fetch l'alerte active courante pour ne pas rater une
+ * alerte déclenchée avant l'ouverture de la page.</p>
+ */
+
+class IndustrialSiren {
+    private ctx: AudioContext | null = null;
+    private osc: OscillatorNode | null = null;
+    private gain: GainNode | null = null;
+    private intervalId: number | null = null;
+    private playing = false;
+
+    start() {
+        if (this.playing) return;
+        try {
+            this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            this.gain = this.ctx.createGain();
+            this.gain.gain.value = 0.4;
+            this.gain.connect(this.ctx.destination);
+
+            this.osc = this.ctx.createOscillator();
+            this.osc.type = 'square';
+            this.osc.frequency.value = 750;
+            this.osc.connect(this.gain);
+            this.osc.start();
+
+            // Pattern industriel : 2 bips courts + pause (longueur 1.2s)
+            let phase = 0;
+            const tick = () => {
+                if (!this.osc || !this.gain || !this.ctx) return;
+                const t = this.ctx.currentTime;
+                if (phase === 0) {
+                    this.osc.frequency.setValueAtTime(750, t);
+                    this.gain.gain.setValueAtTime(0.4, t);
+                } else if (phase === 1) {
+                    this.gain.gain.setValueAtTime(0.0, t);
+                } else if (phase === 2) {
+                    this.osc.frequency.setValueAtTime(550, t);
+                    this.gain.gain.setValueAtTime(0.4, t);
+                } else {
+                    this.gain.gain.setValueAtTime(0.0, t);
+                }
+                phase = (phase + 1) % 4;
+            };
+            tick();
+            this.intervalId = window.setInterval(tick, 300);
+            this.playing = true;
+        } catch {
+            /* audio bloqué */
+        }
+    }
+
+    stop() {
+        try {
+            if (this.intervalId !== null) {
+                window.clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            if (this.osc) { try { this.osc.stop(); } catch {} this.osc.disconnect(); this.osc = null; }
+            if (this.gain) { this.gain.disconnect(); this.gain = null; }
+            if (this.ctx) { this.ctx.close().catch(() => {}); this.ctx = null; }
+        } catch { /* ignore */ }
+        this.playing = false;
+    }
+}
+
+const REASON_LABELS: Record<string, string> = {
+    EVACUATION_GENERALE: 'Évacuation Générale',
+    INCENDIE: 'Incendie',
+    ACCIDENT_MAJEUR: 'Accident majeur',
+    FUITE_CHIMIQUE: 'Fuite chimique majeure',
+    EXPLOSION: 'Explosion',
+    EXERCICE: 'Exercice d\'évacuation',
+    AUTRE: 'Alerte Générale',
+};
+
+const GeneralAlertListener = () => {
+    const navigate = useNavigate();
+    const { subscribeGeneralAlert } = useEmergencyWebSocket();
+    const currentUser = useAppSelector((state: any) => state.user);
+    const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
+
+    const [activeAlert, setActiveAlert] = useState<GeneralAlertDTO | null>(null);
+    const [soundEnabled, setSoundEnabled] = useState(true);
+    const [assemblyPoints, setAssemblyPoints] = useState<AssemblyPointDTO[]>([]);
+    const [pickedApId, setPickedApId] = useState<number | null>(null);
+    const [checkingIn, setCheckingIn] = useState(false);
+    const [checkedInStatus, setCheckedInStatus] = useState<CheckInStatus | null>(null);
+    const [position, setPosition] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
+
+    const sirenRef = useRef<IndustrialSiren | null>(null);
+    if (sirenRef.current === null) sirenRef.current = new IndustrialSiren();
+
+    // ── Fetch alerte active au démarrage + à chaque changement de mine ──
+    useEffect(() => {
+        if (!selectedCompanyId) return;
+        getActiveAlert(selectedCompanyId)
+            .then((a) => {
+                if (a && a.status === 'ACTIVE') setActiveAlert(a);
+            })
+            .catch(() => {});
+    }, [selectedCompanyId]);
+
+    // ── Subscribe WebSocket pour push live ──
+    useEffect(() => {
+        const unsubscribe = subscribeGeneralAlert((alert) => {
+            if (alert.status === 'ACTIVE') {
+                setActiveAlert(alert);
+            } else if (alert.status === 'ENDED' && activeAlert?.id === alert.id) {
+                setActiveAlert(null);
+                setCheckedInStatus(null);
+                setPickedApId(null);
+            }
+        });
+        return unsubscribe;
+    }, [subscribeGeneralAlert, activeAlert]);
+
+    // ── Load assembly points quand alerte active ──
+    useEffect(() => {
+        if (!activeAlert || !selectedCompanyId) return;
+        listAssemblyPoints(selectedCompanyId).then(setAssemblyPoints).catch(() => setAssemblyPoints([]));
+    }, [activeAlert, selectedCompanyId]);
+
+    // ── Capture GPS auto ──
+    useEffect(() => {
+        if (!activeAlert) return;
+        if (!('geolocation' in navigator)) return;
+        navigator.geolocation.getCurrentPosition(
+            (pos) => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+            () => {},
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        );
+    }, [activeAlert]);
+
+    // ── Sirène + lock scroll ──
+    useEffect(() => {
+        if (activeAlert) {
+            if (soundEnabled) sirenRef.current?.start();
+            document.body.style.overflow = 'hidden';
+        } else {
+            sirenRef.current?.stop();
+            document.body.style.overflow = '';
+        }
+        return () => {
+            sirenRef.current?.stop();
+            document.body.style.overflow = '';
+        };
+    }, [activeAlert, soundEnabled]);
+
+    // ── TTS Web Speech (voix) ──
+    useEffect(() => {
+        if (!activeAlert || !soundEnabled || !activeAlert.message) return;
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+        const synth = window.speechSynthesis;
+        const speak = () => {
+            try {
+                if (!synth.speaking) {
+                    const u = new SpeechSynthesisUtterance(activeAlert.message ?? '');
+                    u.lang = 'fr-FR';
+                    u.rate = 0.9;
+                    u.pitch = 1.0;
+                    u.volume = 1.0;
+                    synth.speak(u);
+                }
+            } catch { /* ignore */ }
+        };
+        speak();
+        const interval = window.setInterval(speak, 7000);
+        return () => {
+            window.clearInterval(interval);
+            try { synth.cancel(); } catch { /* ignore */ }
+        };
+    }, [activeAlert, soundEnabled]);
+
+    // ── Check-in ──
+    const doCheckIn = async (status: CheckInStatus) => {
+        if (!activeAlert?.id || !currentUser?.id) return;
+        setCheckingIn(true);
+        try {
+            await checkInToAlert({
+                alertId: activeAlert.id,
+                employeeId: Number(currentUser.id),
+                assemblyPointId: pickedApId,
+                status,
+                latitude: position?.lat,
+                longitude: position?.lng,
+                gpsAccuracy: position?.accuracy,
+                actorId: Number(currentUser.id),
+            });
+            setCheckedInStatus(status);
+            successNotification(
+                status === 'SAFE'
+                    ? 'Présence enregistrée — en sécurité'
+                    : 'Présence enregistrée — blessé, assistance demandée'
+            );
+        } catch {
+            errorNotification('Échec du pointage. Réessayez.');
+        } finally {
+            setCheckingIn(false);
+        }
+    };
+
+    if (!activeAlert) return null;
+
+    const reasonLabel = activeAlert.reasonCode
+        ? (REASON_LABELS[activeAlert.reasonCode] ?? activeAlert.reasonCode)
+        : 'Alerte Générale';
+
+    return (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
+            <style>{`
+                @keyframes gaScanOrange {
+                    0%   { transform: translate(-30%, -30%); }
+                    100% { transform: translate(30%, 30%); }
+                }
+                @keyframes gaScanRed {
+                    0%   { transform: translate(30%, 30%); }
+                    100% { transform: translate(-30%, -30%); }
+                }
+                @keyframes gaPulse {
+                    0%, 100% { background: rgba(40, 14, 14, 0.78); }
+                    50%      { background: rgba(60, 22, 12, 0.85); }
+                }
+                @keyframes gaShake {
+                    0%, 100% { transform: translateX(0); }
+                    50%      { transform: translateX(2px); }
+                }
+                @keyframes gaStrobe {
+                    0%, 92%, 100% { opacity: 0; }
+                    96%           { opacity: 0.6; }
+                }
+            `}</style>
+
+            <div className="absolute inset-0" style={{ animation: 'gaPulse 1.4s ease-in-out infinite', backdropFilter: 'blur(2px)' }} />
+
+            {/* Vagues orange diagonales défilantes */}
+            <div
+                aria-hidden
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{
+                    background: `repeating-linear-gradient(35deg, rgba(249,115,22,0) 0px, rgba(249,115,22,0) 70px, rgba(249,115,22,0.55) 70px, rgba(249,115,22,0.55) 140px)`,
+                    animation: 'gaScanOrange 2.8s linear infinite',
+                    width: '200%', height: '200%', left: '-50%', top: '-50%',
+                    mixBlendMode: 'screen',
+                }}
+            />
+            <div
+                aria-hidden
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{
+                    background: `repeating-linear-gradient(-35deg, rgba(220,38,38,0) 0px, rgba(220,38,38,0) 90px, rgba(220,38,38,0.45) 90px, rgba(220,38,38,0.45) 180px)`,
+                    animation: 'gaScanRed 3.5s linear infinite',
+                    width: '200%', height: '200%', left: '-50%', top: '-50%',
+                    mixBlendMode: 'screen',
+                }}
+            />
+            <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.6), transparent 65%)',
+                    animation: 'gaStrobe 1.1s ease-in-out infinite',
+                    mixBlendMode: 'screen',
+                }}
+            />
+
+            {/* Carte centrale */}
+            <div
+                className="relative z-10 bg-white rounded-2xl max-w-2xl w-[92%] mx-auto overflow-hidden ring-2 ring-orange-400"
+                style={{ animation: 'gaShake 0.5s ease-in-out infinite' }}
+            >
+                <header className="bg-gradient-to-r from-orange-700 via-red-700 to-orange-700 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <IconAlertTriangle size={36} stroke={2.4} className="text-white drop-shadow-lg" />
+                        <div>
+                            <p className="text-orange-100 text-[10px] uppercase tracking-[0.2em] font-bold leading-none mb-1">
+                                ALERTE GÉNÉRALE — ÉVACUATION
+                            </p>
+                            <h2 className="text-white text-[22px] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 700 }}>
+                                {reasonLabel}
+                            </h2>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setSoundEnabled((v) => !v)}
+                        title={soundEnabled ? 'Couper la sirène' : 'Activer la sirène'}
+                        className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white transition-colors ring-1 ring-white/30"
+                    >
+                        {soundEnabled ? <IconVolume size={20} stroke={1.8} /> : <IconVolumeOff size={20} stroke={1.8} />}
+                    </button>
+                </header>
+
+                <div className="p-6 space-y-4">
+                    {/* Message d'évacuation */}
+                    {activeAlert.message && (
+                        <div className="bg-orange-50 border-2 border-orange-300 rounded-lg px-4 py-3.5">
+                            <p className="text-[10.5px] uppercase tracking-[0.15em] text-orange-700 font-bold mb-1.5">
+                                Message de la direction
+                            </p>
+                            <p className="text-[15px] text-orange-900 leading-relaxed">
+                                « {activeAlert.message} »
+                            </p>
+                        </div>
+                    )}
+
+                    {checkedInStatus ? (
+                        // Vue après check-in
+                        <div className={`rounded-lg p-5 border-2 ${
+                            checkedInStatus === 'SAFE'
+                                ? 'bg-emerald-50 border-emerald-300'
+                                : 'bg-amber-50 border-amber-300'
+                        }`}>
+                            <div className="flex items-start gap-3">
+                                {checkedInStatus === 'SAFE' ? (
+                                    <IconShieldCheck size={32} stroke={1.8} className="text-emerald-600 flex-shrink-0" />
+                                ) : (
+                                    <IconStethoscope size={32} stroke={1.8} className="text-amber-600 flex-shrink-0" />
+                                )}
+                                <div>
+                                    <p className={`text-[14px] font-bold ${checkedInStatus === 'SAFE' ? 'text-emerald-900' : 'text-amber-900'}`}>
+                                        Présence enregistrée — {checkedInStatus === 'SAFE' ? 'En sécurité' : 'Blessé / Assistance demandée'}
+                                    </p>
+                                    <p className="text-[12px] text-slate-600 mt-1">
+                                        Votre position a été transmise aux coordinateurs HSE.
+                                        {checkedInStatus === 'INJURED' && ' Une équipe de secours sera dispatchée.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => activeAlert.id && navigate(`/emergency/alerts/general/${activeAlert.id}`)}
+                                className="w-full mt-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-slate-800 text-white text-[12.5px] font-semibold hover:bg-slate-900"
+                            >
+                                Voir le suivi évacuation
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Sélection point de rassemblement */}
+                            <div>
+                                <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-1.5">
+                                    Point de rassemblement où vous êtes
+                                </label>
+                                <select
+                                    value={pickedApId ?? ''}
+                                    onChange={(e) => setPickedApId(e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-3 py-2.5 text-[13px] border-2 border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
+                                >
+                                    <option value="">Sélectionnez votre point</option>
+                                    {assemblyPoints.map((ap) => (
+                                        <option key={ap.id} value={ap.id}>
+                                            P{ap.evacuationPriority} — {ap.name}
+                                            {ap.locationText ? ` (${ap.locationText})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* GPS status */}
+                            {position && (
+                                <p className="text-[11.5px] text-slate-600 inline-flex items-center gap-1">
+                                    <IconMapPin size={11} stroke={1.8} className="text-emerald-500" />
+                                    Position GPS capturée : <span className="font-mono ml-1">{position.lat.toFixed(4)}, {position.lng.toFixed(4)}</span> (±{Math.round(position.accuracy)} m)
+                                </p>
+                            )}
+
+                            {/* Actions check-in */}
+                            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => doCheckIn('SAFE')}
+                                    disabled={checkingIn}
+                                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-emerald-600 text-white text-[14px] font-bold hover:bg-emerald-700 transition-colors shadow-lg disabled:opacity-50"
+                                >
+                                    <IconShieldCheck size={18} stroke={2.4} />
+                                    {checkingIn ? 'Enregistrement…' : 'JE SUIS EN SÉCURITÉ'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => doCheckIn('INJURED')}
+                                    disabled={checkingIn}
+                                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-amber-600 text-white text-[14px] font-bold hover:bg-amber-700 transition-colors shadow-lg disabled:opacity-50"
+                                >
+                                    <IconStethoscope size={18} stroke={2} />
+                                    BLESSÉ — Assistance
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default GeneralAlertListener;

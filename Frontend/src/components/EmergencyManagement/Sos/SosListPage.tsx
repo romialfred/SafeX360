@@ -10,7 +10,10 @@ import {
     IconRefresh,
     IconUrgent,
     IconCheck,
+    IconList,
+    IconMap2,
 } from '@tabler/icons-react';
+import SosLiveMap from './SosLiveMap';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { useAppSelector } from '../../../slices/hooks';
 import { listSosAlerts, type SosAlertDTO, type SosStatus } from '../../../services/SosService';
@@ -68,6 +71,7 @@ const SosListPage = () => {
     const [loading, setLoading] = useState(true);
     const [includeClosed, setIncludeClosed] = useState(false);
     const [retryTick, setRetryTick] = useState(0);
+    const [view, setView] = useState<'list' | 'map'>('list');
 
     // ── Chargement initial ──
     useEffect(() => {
@@ -165,8 +169,30 @@ const SosListPage = () => {
                 <StatCard icon={<IconClock size={14} stroke={1.7} />} label="Durée moyenne" value={Math.round(stats.avgElapsed)} suffix="s" accent="sky" />
             </div>
 
-            {/* Filtre */}
-            <div className="mt-5 flex items-center justify-end">
+            {/* Toggle vue + filtre */}
+            <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                    <button
+                        type="button"
+                        onClick={() => setView('list')}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                            view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <IconList size={13} stroke={1.8} />
+                        Liste
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setView('map')}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                            view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        <IconMap2 size={13} stroke={1.8} />
+                        Carte live ({alerts.length})
+                    </button>
+                </div>
                 <label className="inline-flex items-center gap-2 text-[12.5px] text-slate-700 cursor-pointer">
                     <input
                         type="checkbox"
@@ -198,6 +224,12 @@ const SosListPage = () => {
                             La mine est sécurisée. Le système est en veille.
                         </p>
                     </div>
+                ) : view === 'map' ? (
+                    <SosLiveMap
+                        alerts={sortedAlerts}
+                        onClick={(a) => a.id && navigate(`/emergency/sos/${a.id}`)}
+                        height={560}
+                    />
                 ) : (
                     <ul className="space-y-2">
                         {sortedAlerts.map((alert) => {

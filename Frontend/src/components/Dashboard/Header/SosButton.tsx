@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { createSosAlert } from '../../../services/SosService';
+import { enqueueSos } from '../../../utility/OfflineSosQueue';
 
 /**
  * Bouton SOS : signal d'urgence direct au coordinateur HSE.
@@ -66,29 +67,39 @@ const SosButton = () => {
             return;
         }
         setSending(true);
+        const payload = {
+            companyId: selectedCompanyId,
+            employeeId: Number(user.id),
+            reasonCode: reasonCode ?? 'AUTRE',
+            description: message || null,
+            latitude: position?.lat ?? 0,
+            longitude: position?.lng ?? 0,
+            gpsAccuracy: position?.accuracy ?? null,
+            status: 'RECEIVED' as const,
+            drillMode: false,
+        };
         try {
-            const saved = await createSosAlert(
-                {
-                    companyId: selectedCompanyId,
-                    employeeId: Number(user.id),
-                    reasonCode: reasonCode ?? 'AUTRE',
-                    description: message || null,
-                    latitude: position?.lat ?? 0,
-                    longitude: position?.lng ?? 0,
-                    gpsAccuracy: position?.accuracy ?? null,
-                    status: 'RECEIVED',
-                    drillMode: false,
-                },
-                Number(user.id)
-            );
+            const saved = await createSosAlert(payload, Number(user.id));
             setSent(true);
             successNotification("Signal SOS transmis. Les coordinateurs HSE sont notifiés en temps réel.");
             setTimeout(() => {
                 handleClose();
                 if (saved.id) navigate(`/emergency/sos/${saved.id}`);
             }, 2000);
-        } catch (e: any) {
-            errorNotification("Échec de l'envoi du signal SOS. Réessayez ou contactez le poste de garde HSE.");
+        } catch {
+            // ── Fallback hors-ligne : enqueue dans IndexedDB ──
+            try {
+                await enqueueSos(payload, Number(user.id));
+                setSent(true);
+                successNotification(
+                    "Signal SOS enregistré localement. Sera transmis automatiquement dès reconnexion réseau."
+                );
+                setTimeout(handleClose, 2500);
+            } catch {
+                errorNotification(
+                    "Échec critique : impossible de stocker l'alerte. Contactez le poste de garde HSE par radio."
+                );
+            }
         } finally {
             setSending(false);
         }

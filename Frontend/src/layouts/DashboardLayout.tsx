@@ -10,6 +10,10 @@ import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConf
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
 import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
 import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
+import GeneralAlertListener from "../components/EmergencyManagement/GeneralAlert/GeneralAlertListener";
+import { installAutoReplay } from "../utility/OfflineSosQueue";
+import { createSosAlert } from "../services/SosService";
+import { successNotification } from "../utility/NotificationUtility";
 
 /**
  * DashboardLayout — Coque générale post-login.
@@ -34,6 +38,21 @@ const DashboardLayout = () => {
             if (mounted) setFlagsLoaded(true);
         });
         return () => { mounted = false; };
+    }, []);
+
+    // LOT 48 Phase 3.c — Auto-replay IndexedDB des SOS hors-ligne
+    useEffect(() => {
+        const cleanup = installAutoReplay(
+            (payload, actorId) => createSosAlert(payload, actorId),
+            (result) => {
+                if (result.succeeded > 0) {
+                    successNotification(
+                        `${result.succeeded} alerte(s) SOS hors-ligne re-transmise(s) avec succès.`
+                    );
+                }
+            }
+        );
+        return cleanup;
     }, []);
 
     return (
@@ -66,6 +85,8 @@ const DashboardLayout = () => {
             </div>
             {/* LOT 48 Phase 3.b — Popup global gyrophare pour coordinateurs */}
             <CoordinatorAlertListener />
+            {/* LOT 48 Phase 4 — Popup global Alerte Générale pour tous */}
+            <GeneralAlertListener />
         </EmergencyWebSocketProvider>
     );
 };
