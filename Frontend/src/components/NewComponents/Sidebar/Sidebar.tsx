@@ -32,7 +32,34 @@ import {
     IconBell, IconReport, IconCalculator, IconTrendingUp, // Sparkles
     IconFileTextSpark, IconExternalLink
 } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
+
+// LOT 44 — Mapping label FR → clé i18n pour traduction au rendu
+// (les menuItems restent statiques en FR, traduits dynamiquement via t() au render)
+const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
+    'Accueil': 'sidebar.home',
+    'Tableau de bord': 'sidebar.dashboard',
+    'Activités Préventives': 'sidebar.preventiveActivities',
+    'Non-conformités': 'sidebar.nonConformity',
+    'Inspections HSE': 'sidebar.ohsInspections',
+    'Réunions Sécurité': 'sidebar.safetyMeetings',
+    'Tournées Leadership': 'sidebar.leadershipTours',
+    'Surveillance des Activités': 'sidebar.activityMonitoring',
+    'Actions Correctives': 'sidebar.correctiveActions',
+    'Gestion des Risques': 'sidebar.riskManagement',
+    'Gestion des EPI': 'sidebar.ppeManagement',
+    'Gestion des Audits': 'sidebar.auditManagement',
+    'Conformité Réglementaire': 'sidebar.regulatoryCompliance',
+    'Planification Annuelle': 'sidebar.annualPlanning',
+    'Communication Sécurité': 'sidebar.safetyComms',
+    'Rapports & Analytics': 'sidebar.reportsAnalytics',
+    'Centre de Connaissances': 'sidebar.knowledgeCenter',
+    "Centre d'Aide": 'sidebar.helpCenter',
+    'Administration': 'sidebar.administration',
+    'Gestion des Urgences': 'sidebar.emergencyManagement',
+    'Paramètres Urgences': 'sidebar.emergencySettings',
+};
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
 import { useDispatch } from 'react-redux';
@@ -196,6 +223,16 @@ const menuItems: MenuItem[] = [
             { id: 'annual-audit-plan', label: 'Plan Annuel Audits', icon: IconClipboardCheck }
         ]
     },
+    // LOT 48 Phase 1 — Module Gestion des Urgences
+    {
+        id: 'emergency',
+        label: 'Gestion des Urgences',
+        icon: IconAlertTriangle,
+        color: 'text-red-600',
+        subItems: [
+            { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
+        ]
+    },
     {
         id: 'communication',
         label: 'Communication Sécurité',
@@ -292,6 +329,10 @@ export const menuIdToUrl: Record<string, string> = {
     documents: "/compliance-documents",
     "document-validation": "/document-validation",
 
+    // LOT 48 Phase 1 — Emergency Management
+    emergency: "/emergency/settings",
+    "emergency-settings": "/emergency/settings",
+
     // Planning
     "hs-activities-planning": "/hs-activities-planning",
     "month-theme-subjects": "/month-theme-subjects",
@@ -339,6 +380,12 @@ const Sidebar = () => {
     const collapsed = useAppSelector((state) => state.collapse);
     const navigate = useNavigate();
     const location = useLocation();
+    // LOT 44 — i18n : helper pour traduire les labels via le mapping FR → clé
+    const { t } = useTranslation('navigation');
+    const tLabel = (label: string): string => {
+        const key = SIDEBAR_LABEL_TO_KEY[label];
+        return key ? t(key) : label;
+    };
     // const menu = useAppSelector((state) => state.menu);
     const dispatch = useDispatch();
     const onMenuItemClick = (itemId: string) => {
@@ -468,8 +515,8 @@ const Sidebar = () => {
                             type="button"
                             onClick={() => dispatch(collapsed ? expand() : collapse())}
                             className="p-1.5 cursor-pointer hover:bg-gray-700/70 rounded-lg transition-all duration-300 flex-shrink-0"
-                            title={collapsed ? "Étendre le menu de navigation" : "Réduire le menu de navigation"}
-                            aria-label={collapsed ? "Étendre le menu de navigation" : "Réduire le menu de navigation"}
+                            title={collapsed ? t('sidebar.expandMenu') : t('sidebar.collapseMenu')}
+                            aria-label={collapsed ? t('sidebar.expandMenu') : t('sidebar.collapseMenu')}
                             aria-expanded={!collapsed}
                             aria-controls="safex-sidebar-nav"
                         >
@@ -482,8 +529,8 @@ const Sidebar = () => {
                     </div>
                 </div>
 
-                {/* Navigation : padding équilibré, interlignes confortables, contrastes améliorés */}
-                <nav className="py-2 px-1" id="safex-sidebar-nav" aria-label="Navigation principale">
+                {/* Navigation : padding équilibré, pb-14 pour réserver l'espace du statut système absolu en bas */}
+                <nav className="py-2 pb-14 px-1" id="safex-sidebar-nav" aria-label="Navigation principale">
                     {/* LOT 41 — Titre de section "Vos applications" en jaune lumineux pour bonne visibilité */}
                     {!collapsed && (
                         <div className="px-5 pt-3 pb-2.5 flex items-center gap-2">
@@ -496,7 +543,7 @@ const Sidebar = () => {
                                     color: '#FEF08A',
                                 }}
                             >
-                                Vos applications
+                                {t('sidebar.yourApplications')}
                             </h2>
                             <span className="h-[2px] flex-1 rounded-full bg-slate-700/70" aria-hidden="true" />
                         </div>
@@ -539,7 +586,7 @@ const Sidebar = () => {
                                         {!collapsed && (
                                             <>
                                                 <span className={`flex-1 text-[13px] leading-snug whitespace-nowrap overflow-hidden text-ellipsis ${isActive ? 'font-medium' : 'font-medium'}`}>
-                                                    {item.label}
+                                                    {tLabel(item.label)}
                                                 </span>
                                                 {item.id === 'reports' && (
                                                     <span className="flex-shrink-0 text-teal-400 group-hover:text-teal-200 transition-colors" title="Ouvre dans un nouvel onglet">
@@ -587,6 +634,36 @@ const Sidebar = () => {
                         })}
                     </div>
                 </nav>
+
+                {/* LOT 45 — Pied de sidebar : statut système (déplacé du footer)
+                    Position fixed-bottom dans la sidebar, légère bordure top, fond légèrement plus foncé */}
+                <div
+                    className={`absolute bottom-0 left-0 right-0 border-t border-slate-700/60 bg-slate-950/40 ${collapsed ? 'px-2 py-2 flex justify-center' : 'px-4 py-2.5'}`}
+                >
+                    {collapsed ? (
+                        <span
+                            className="relative inline-flex w-2 h-2"
+                            title={`${t('footer.systemOperational')} · v2.4.1`}
+                            aria-label={`${t('footer.systemOperational')} · v2.4.1`}
+                        >
+                            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" aria-hidden="true" />
+                            <span className="relative w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" />
+                        </span>
+                    ) : (
+                        <div className="flex items-center justify-between gap-2 text-[10.5px]">
+                            <span className="inline-flex items-center gap-1.5 min-w-0">
+                                <span className="relative inline-flex w-1.5 h-1.5 flex-shrink-0">
+                                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" aria-hidden="true" />
+                                    <span className="relative inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                                </span>
+                                <span className="text-emerald-300/90 font-medium uppercase tracking-[0.06em] truncate">
+                                    {t('footer.systemOperational')}
+                                </span>
+                            </span>
+                            <span className="font-mono text-slate-500 flex-shrink-0">v2.4.1</span>
+                        </div>
+                    )}
+                </div>
             </div>
             {/* Modal */}
             <ModuleSubscriptionModal

@@ -1,0 +1,92 @@
+/**
+ * SafeX 360 — Setup react-i18next (LOT 44 — P0).
+ *
+ * Stratégie :
+ *   • Tous les locales bundles import statique (pas de lazy loading)
+ *   • Détection auto navigateur via i18next-browser-languagedetector
+ *   • Fallback : FR (langue principale de la plateforme)
+ *   • Persistance : localStorage clé `safex360-lang`
+ *   • Namespaces séparés par module pour scalabilité
+ *
+ * Référentiel ISO : voir `src/i18n/glossary-iso.md`
+ */
+
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+// === FR ===
+import frCommon from './locales/fr/common.json';
+import frNavigation from './locales/fr/navigation.json';
+import frHse from './locales/fr/hse.json';
+import frNonConformity from './locales/fr/nonConformity.json';
+import frEmergency from './locales/fr/emergency.json';
+
+// === EN ===
+import enCommon from './locales/en/common.json';
+import enNavigation from './locales/en/navigation.json';
+import enHse from './locales/en/hse.json';
+import enNonConformity from './locales/en/nonConformity.json';
+import enEmergency from './locales/en/emergency.json';
+
+export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
+export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+export const LANGUAGE_LABELS: Record<SupportedLanguage, { label: string; flag: string; native: string }> = {
+    fr: { label: 'French',  flag: '🇫🇷', native: 'Français' },
+    en: { label: 'English', flag: '🇬🇧', native: 'English' },
+};
+
+i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+        resources: {
+            fr: {
+                common: frCommon,
+                navigation: frNavigation,
+                hse: frHse,
+                nonConformity: frNonConformity,
+                emergency: frEmergency,
+            },
+            en: {
+                common: enCommon,
+                navigation: enNavigation,
+                hse: enHse,
+                nonConformity: enNonConformity,
+                emergency: enEmergency,
+            },
+        },
+        fallbackLng: 'fr',
+        supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
+
+        defaultNS: 'common',
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency'],
+
+        detection: {
+            // Ordre de détection : 1) localStorage, 2) navigator
+            order: ['localStorage', 'navigator', 'htmlTag'],
+            lookupLocalStorage: 'safex360-lang',
+            caches: ['localStorage'],
+            // Force FR pour les langues non supportées
+            convertDetectedLanguage: (lng) => {
+                const base = lng.split('-')[0].toLowerCase();
+                return SUPPORTED_LANGUAGES.includes(base as SupportedLanguage) ? base : 'fr';
+            },
+        },
+
+        interpolation: {
+            escapeValue: false, // React échappe déjà par défaut
+        },
+
+        // En dev : avertir si une clé manque
+        saveMissing: import.meta.env.DEV,
+        missingKeyHandler: (lngs, ns, key) => {
+            if (import.meta.env.DEV) {
+                // eslint-disable-next-line no-console
+                console.warn(`[i18n] missing key — lng=${lngs.join(',')} ns=${ns} key=${key}`);
+            }
+        },
+    });
+
+export default i18n;

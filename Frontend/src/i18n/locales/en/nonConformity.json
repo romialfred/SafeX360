@@ -1,0 +1,192 @@
+{
+    "dashboard": {
+        "pageTitle": "Nonconformities and Near-Misses",
+        "pageSubtitle": "Tracking and remediation of deviations — ISO 45001 · ISO 9001",
+        "breadcrumb": "Nonconformities",
+        "kpi": {
+            "totalEvents": "Total Events",
+            "totalEventsRef": "vs previous period",
+            "overdueDeadlines": "Overdue Deadlines",
+            "overdueDeadlinesRef": "Target: 0 overdue",
+            "underInvestigation": "Under Investigation",
+            "underInvestigationRef": "in last 7 days",
+            "closedEvents": "Closed Events",
+            "closedEventsRef": "vs last month",
+            "closureRate": "Closure Rate",
+            "closureRateRef": "Target: ≥85%"
+        },
+        "filters": {
+            "category": "Category",
+            "severity": "Severity",
+            "all": "All",
+            "allCount": "All ({{count}})",
+            "filters": "Filters",
+            "allDepartments": "All Departments",
+            "allPeriods": "All Periods",
+            "allStatuses": "All Statuses",
+            "nonConformities": "Nonconformities",
+            "nearMisses": "Near-Misses"
+        },
+        "table": {
+            "reference": "Reference",
+            "title": "Title",
+            "reporter": "Reporter",
+            "severity": "Severity",
+            "status": "Status",
+            "priority": "Priority",
+            "date": "Date",
+            "actions": "Actions",
+            "noResults": "No event matches the filters."
+        },
+        "tooltips": {
+            "edit": "Edit finding",
+            "closedNotEditable": "Closed finding — cannot be edited",
+            "cancelledNotEditable": "Cancelled finding — cannot be edited",
+            "rejectedNotEditable": "Rejected finding — cannot be edited"
+        },
+        "actions": {
+            "export": "Export",
+            "newEvent": "New Event"
+        }
+    },
+    "details": {
+        "breadcrumb": "Central Findings",
+        "detectedOn": "Detected on",
+        "by": "by",
+        "severityLabel": "Severity",
+        "priorityLabel": "Priority",
+        "actions": {
+            "exportPdf": "Export PDF",
+            "edit": "Edit",
+            "manage": "Manage",
+            "editDisabled": "Closed or cancelled finding — editing disabled",
+            "manageDisabled": "Closed or cancelled finding — not editable"
+        },
+        "tabs": {
+            "overview": "Overview",
+            "analysis": "Analysis",
+            "treatment": "Remediation",
+            "actions": "Corrective Actions",
+            "history": "History"
+        },
+        "sections": {
+            "identification": "Identification",
+            "description": "Finding Description",
+            "noDescription": "No description provided.",
+            "impacts": "Observed Impacts",
+            "noImpacts": "No indirect impact recorded.",
+            "team": "Analysis Team",
+            "noTeam": "No member assigned.",
+            "classification": "Classification",
+            "origin": "Origin",
+            "severityLevel": "Severity Level",
+            "treatmentPriority": "Remediation Priority"
+        },
+        "fields": {
+            "reference": "Reference",
+            "detectionDate": "Detection Date",
+            "source": "Source",
+            "location": "Location",
+            "workProcess": "Work Process",
+            "reportedBy": "Reported By"
+        },
+        "empty": {
+            "noData": "Data unavailable",
+            "noAnalysis": "No analysis data",
+            "noAnalysisSub": "Root cause analysis has not been conducted yet.",
+            "noTreatment": "No remediation data",
+            "noActions": "No corrective actions",
+            "noActionsSub": "No corrective action has been planned for this finding yet.",
+            "emptyJournal": "Empty journal",
+            "emptyJournalSub": "No status change has been recorded yet."
+        },
+        "manageModal": {
+            "title": "Manage Finding",
+            "owner": "Change Owner",
+            "ownerPlaceholder": "Select an employee",
+            "date": "Effective Date",
+            "datePlaceholder": "Select the date",
+            "status": "New Status",
+            "statusPlaceholder": "Select a status",
+            "comment": "Comment",
+            "commentPlaceholder": "Justify the status change (recommended)",
+            "cancel": "Cancel",
+            "submit": "Confirm"
+        },
+        "analysis": {
+            "methodology": "Analysis Methodology",
+            "methodologyDesc": "Method used and timeframe",
+            "method": "Method",
+            "origin": "Origin",
+            "startDate": "Start Date",
+            "deadline": "Deadline",
+            "descriptionTitle": "Analytical Description",
+            "noDescription": "No description provided.",
+            "factors": "Contributing Factors",
+            "factorsDesc": "Breakdown across individual / technical / organizational dimensions",
+            "individualFactors": "Individual Factors",
+            "technicalFactors": "Technical Factors",
+            "organizationalFactors": "Organizational Factors",
+            "rootCauses": "Identified Root Causes",
+            "rootCausesDesc": "Underlying causes that triggered the finding",
+            "noRootCauses": "No root cause identified.",
+            "summary": "Executive Summary",
+            "summaryDesc": "Summary and final conclusion of the analysis",
+            "summaryLabel": "Summary",
+            "conclusionLabel": "Conclusion",
+            "noSummary": "No summary provided.",
+            "noConclusion": "No conclusion provided."
+        },
+        "treatment": {
+            "valorization": "Finding Valuation",
+            "valorizationDesc": "Direct costs related to the nonconformity",
+            "preventionCost": "Prevention Cost",
+            "preventionCostDesc": "Estimated costs of implementing preventive actions",
+            "materialCost": "Material / Equipment Cost",
+            "laborCost": "Labor Cost",
+            "adminFees": "Administrative Fees",
+            "expenses": "Miscellaneous Expenses",
+            "totalValue": "Total Finding Value",
+            "totalPrevention": "Total Prevention Cost",
+            "details": "Additional Details",
+            "detailsDesc": "Narrative information about the remediation",
+            "documents": "Attached Documents",
+            "documentsCount_one": "{{count}} document attached",
+            "documentsCount_other": "{{count}} documents attached",
+            "indirectImpacts": "Indirect Impacts",
+            "indirectImpactsDesc": "Consequences that cannot be financially quantified",
+            "preventiveBenefits": "Preventive Benefits",
+            "preventiveBenefitsDesc": "Benefits gained through prevention",
+            "comments": "Comment on Indirect Impacts",
+            "commentsPrevention": "Comment on Preventive Benefits"
+        },
+        "correctiveActions": {
+            "title": "Corrective Actions",
+            "totalCount_one": "{{count}} action in total",
+            "totalCount_other": "{{count}} actions in total",
+            "completed": "Completed",
+            "inProgress": "In Progress",
+            "overdue": "Overdue",
+            "noActionName": "—"
+        },
+        "history": {
+            "title": "Change Log",
+            "entriesCount_one": "{{count}} entry in history",
+            "entriesCount_other": "{{count}} entries in history",
+            "transitionTo": "Transition to \"{{status}}\"",
+            "noComment": "No comment provided.",
+            "duration": {
+                "sameDay": "same day",
+                "days_one": "for 1 day",
+                "days_other": "for {{count}} days",
+                "weeks_one": "for 1 week",
+                "weeks_other": "for ~{{count}} weeks",
+                "months_one": "for ~1 month",
+                "months_other": "for ~{{count}} months",
+                "years_one": "for ~1 year",
+                "years_other": "for ~{{count}} years"
+            },
+            "statusFor": "Status"
+        }
+    }
+}

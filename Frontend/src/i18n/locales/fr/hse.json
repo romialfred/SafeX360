@@ -1,0 +1,73 @@
+{
+    "severity": {
+        "Insignifiante": "Insignifiante",
+        "Mineure": "Mineure",
+        "Modérée": "Modérée",
+        "Majeure": "Majeure",
+        "Catastrophique": "Catastrophique",
+        "Insignificant": "Insignifiante",
+        "Minor": "Mineure",
+        "Moderate": "Modérée",
+        "Major": "Majeure",
+        "Catastrophic": "Catastrophique"
+    },
+    "priority": {
+        "Urgente": "Urgente",
+        "Élevée": "Élevée",
+        "Normale": "Normale",
+        "Faible": "Faible",
+        "Urgent": "Urgente",
+        "High": "Élevée",
+        "Medium": "Normale",
+        "Normal": "Normale",
+        "Low": "Faible"
+    },
+    "eventStatus": {
+        "REPORTED": "Déclaré",
+        "ANALYSIS": "Analyse",
+        "AC_IMPLEMENTATION": "Traitement",
+        "CLOSED": "Clôturé",
+        "CANCELLED": "Annulé",
+        "REJECTED": "Rejeté",
+        "REOPENED": "Réouvert"
+    },
+    "actionStatus": {
+        "NOT_STARTED": "À démarrer",
+        "IN_PROGRESS": "En cours",
+        "COMPLETED": "Terminée",
+        "OVERDUE": "En retard",
+        "CANCELLED": "Annulée",
+        "PENDING": "En attente",
+        "APPROVED": "Validée",
+        "REJECTED": "Rejetée"
+    },
+    "eventType": {
+        "NON_CONFORMITY": "Non-conformité",
+        "NEAR_MISS": "Quasi-accident",
+        "HAZARD": "Danger",
+        "INCIDENT": "Incident"
+    },
+    "analysisMethod": {
+        "5 Pourquoi": "5 Pourquoi",
+        "Ishikawa": "Diagramme d'Ishikawa",
+        "ICAM": "ICAM (Incident Cause Analysis)",
+        "AMDEC": "AMDEC",
+        "Arbre des causes": "Arbre des causes",
+        "Brainstorming": "Brainstorming",
+        "Autre": "Autre méthode"
+    },
+    "lifecycle": {
+        "declaration": "Déclaration",
+        "analysis": "Analyse",
+        "remediation": "Traitement",
+        "closure": "Clôture",
+        "cancelled": "Annulé",
+        "rejected": "Rejeté"
+    },
+    "iso": {
+        "iso45001": "ISO 45001",
+        "iso9001": "ISO 9001",
+        "iso14001": "ISO 14001",
+        "iso19011": "ISO 19011"
+    }
+}

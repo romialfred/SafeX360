@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import EmergencySettingsPage from '../components/EmergencyManagement/Settings/EmergencySettingsPage';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
@@ -297,6 +298,9 @@ const router = createBrowserRouter([
             { path: 'non-conformity/create', element: <ModuleGuard moduleId='non-conformity'><NonConformityForm /></ModuleGuard>, },
             { path: 'non-conformity/:id', element: <ModuleGuard moduleId='non-conformity'><NonConformityDetails /></ModuleGuard> },
             { path: 'non-conformity/edit/:id', element: <ModuleGuard moduleId='non-conformity'><NonConformityEditPage /></ModuleGuard>, },
+
+            // LOT 48 Phase 1 — Routes Module Gestion des Urgences (settings opérationnels, autres pages V2-V6)
+            { path: 'emergency/settings', element: <EmergencySettingsPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },

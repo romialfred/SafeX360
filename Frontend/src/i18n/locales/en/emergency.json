@@ -1,0 +1,84 @@
+{
+    "module": {
+        "name": "Emergency Management",
+        "shortName": "Emergencies",
+        "tagline": "Real-time SOS, evacuation and rescue coordination"
+    },
+    "subModules": {
+        "dashboard": "Dashboard",
+        "assemblyPoints": "Assembly Points",
+        "sosTracking": "SOS Tracking",
+        "alertEvacuation": "Alert & Evacuation",
+        "settings": "Settings"
+    },
+    "settings": {
+        "title": "Emergency Management Settings",
+        "subtitle": "Coordinators, teams, escalation and media — per mine",
+        "sections": {
+            "permissions": {
+                "title": "Permissions",
+                "subtitle": "Designate coordinators, responders, and alert launchers",
+                "coordinators": "Coordinators",
+                "coordinatorsHelp": "Receive SOS popups and drive evacuations",
+                "responders": "Responders",
+                "respondersHelp": "Rescue team members who can close out an SOS",
+                "alertLaunchers": "General Alert Launchers",
+                "alertLaunchersHelp": "Only ones authorized to trigger or end a General Alert"
+            },
+            "rescueTeams": {
+                "title": "Rescue Teams",
+                "subtitle": "Team composition and day/night shifts",
+                "addTeam": "New Team",
+                "shiftDay": "Day",
+                "shiftNight": "Night"
+            },
+            "escalation": {
+                "title": "Escalation Rules",
+                "subtitle": "Escalation chain when the coordinator does not respond",
+                "step": "Step",
+                "target": "Target",
+                "delaySeconds": "Delay (seconds)"
+            },
+            "media": {
+                "title": "Emergency Media",
+                "subtitle": "Siren and voice message — broadcast on General Alert",
+                "siren": "Siren file",
+                "voiceMessage": "Evacuation voice message",
+                "voiceLocale": "Voice language",
+                "voiceProvider": "TTS provider"
+            },
+            "channels": {
+                "title": "Communication Channels",
+                "subtitle": "SMS, voice and WebRTC configuration",
+                "smsProvider": "SMS provider",
+                "smsSenderId": "Sender ID",
+                "webrtcEnabled": "WebRTC enabled"
+            },
+            "global": {
+                "title": "Global Settings",
+                "subtitle": "Module-wide defaults",
+                "autoDispatchSeconds": "Auto-escalation delay (seconds)",
+                "drillMode": "Drill mode",
+                "headCountMethod": "Head-count method",
+                "geolocationRequired": "Geolocation required",
+                "auditRetentionYears": "Audit log retention (years)"
+            }
+        },
+        "actions": {
+            "save": "Save settings",
+            "reset": "Discard changes",
+            "savedSuccess": "Settings saved"
+        }
+    },
+    "permissions": {
+        "COORDINATOR": "Coordinator",
+        "RESPONDER": "Responder",
+        "ALERT_LAUNCHER": "Alert Launcher"
+    },
+    "headCountMethod": {
+        "GPS": "GPS (automatic geofencing)",
+        "QR": "QR code at the post",
+        "NFC": "NFC badge",
+        "MANUAL": "Manual check-in"
+    }
+}

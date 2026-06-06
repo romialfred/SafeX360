@@ -1,0 +1,63 @@
+{
+    "header": {
+        "platformTitle": "La plateforme Santé Sécurité pour l'industrie minière africaine",
+        "platformSlogan": "La Santé & Sécurité au cœur des opérations minières",
+        "reportIncident": "Déclarer Incident",
+        "newEvent": "Nouvel Événement",
+        "sos": "SOS",
+        "generalAlert": "Alerte Générale",
+        "sosTooltip": "Signaler une situation d'urgence vitale",
+        "alertTooltip": "Déclencher une alerte de masse vers tous les employés",
+        "incidentTooltip": "Déclarer un incident ou un danger",
+        "eventTooltip": "Non-conformité ou quasi-accident"
+    },
+    "sidebar": {
+        "yourApplications": "Vos applications",
+        "home": "Accueil",
+        "dashboard": "Tableau de bord",
+        "preventiveActivities": "Activités Préventives",
+        "nonConformity": "Non-conformités",
+        "ohsInspections": "Inspections HSE",
+        "safetyMeetings": "Réunions Sécurité",
+        "leadershipTours": "Tournées Leadership",
+        "activityMonitoring": "Surveillance des Activités",
+        "correctiveActions": "Actions Correctives",
+        "riskManagement": "Gestion des Risques",
+        "ppeManagement": "Gestion des EPI",
+        "auditManagement": "Gestion des Audits",
+        "regulatoryCompliance": "Conformité Réglementaire",
+        "annualPlanning": "Planification Annuelle",
+        "safetyComms": "Communication Sécurité",
+        "reportsAnalytics": "Rapports & Analytics",
+        "knowledgeCenter": "Centre de Connaissances",
+        "helpCenter": "Centre d'Aide",
+        "administration": "Administration",
+        "emergencyManagement": "Gestion des Urgences",
+        "emergencySettings": "Paramètres Urgences",
+        "collapseMenu": "Réduire le menu de navigation",
+        "expandMenu": "Étendre le menu de navigation"
+    },
+    "breadcrumbs": {
+        "home": "Accueil",
+        "preventiveActivities": "Activités préventives"
+    },
+    "profileMenu": {
+        "myProfile": "Mon profil",
+        "settings": "Paramètres",
+        "security": "Sécurité",
+        "notifications": "Notifications",
+        "about": "À propos",
+        "logout": "Se déconnecter"
+    },
+    "footer": {
+        "copyright": "© 2026 Data Universe — Plateforme HSE pour l'industrie minière",
+        "version": "Version",
+        "documentation": "Documentation",
+        "helpCenter": "Centre d'aide",
+        "isoDocuments": "Documents ISO",
+        "technicalDocs": "Documentation technique",
+        "support": "Support",
+        "systemOperational": "Système opérationnel",
+        "allRightsReserved": "Tous droits réservés"
+    }
+}

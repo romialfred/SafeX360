@@ -1,0 +1,84 @@
+{
+    "module": {
+        "name": "Gestion des Urgences",
+        "shortName": "Urgences",
+        "tagline": "Pilotage temps réel des SOS, évacuations et secours"
+    },
+    "subModules": {
+        "dashboard": "Tableau de bord",
+        "assemblyPoints": "Points de rassemblement",
+        "sosTracking": "Suivi des SOS",
+        "alertEvacuation": "Alerte & évacuation",
+        "settings": "Paramètres"
+    },
+    "settings": {
+        "title": "Paramètres de la Gestion des Urgences",
+        "subtitle": "Coordinateurs, équipes, escalade et médias — par mine",
+        "sections": {
+            "permissions": {
+                "title": "Permissions",
+                "subtitle": "Désignation des coordinateurs, secouristes et lanceurs d'alerte",
+                "coordinators": "Coordinateurs",
+                "coordinatorsHelp": "Reçoivent les popups SOS et pilotent les évacuations",
+                "responders": "Secouristes",
+                "respondersHelp": "Membres des équipes de secours pouvant clôturer un SOS",
+                "alertLaunchers": "Lanceurs d'alerte générale",
+                "alertLaunchersHelp": "Seuls autorisés à déclencher et arrêter une Alerte Générale"
+            },
+            "rescueTeams": {
+                "title": "Équipes de secours",
+                "subtitle": "Constitution des équipes et roulements jour/nuit",
+                "addTeam": "Nouvelle équipe",
+                "shiftDay": "Jour",
+                "shiftNight": "Nuit"
+            },
+            "escalation": {
+                "title": "Règles d'escalade",
+                "subtitle": "Chaîne d'escalade en cas de non-réponse du coordinateur",
+                "step": "Étape",
+                "target": "Cible",
+                "delaySeconds": "Délai (secondes)"
+            },
+            "media": {
+                "title": "Médias d'urgence",
+                "subtitle": "Sirène et message vocal — diffusés lors d'une alerte générale",
+                "siren": "Fichier de sirène",
+                "voiceMessage": "Message vocal d'évacuation",
+                "voiceLocale": "Langue de la voix",
+                "voiceProvider": "Provider TTS"
+            },
+            "channels": {
+                "title": "Canaux de communication",
+                "subtitle": "Configuration SMS, voix et WebRTC",
+                "smsProvider": "Fournisseur SMS",
+                "smsSenderId": "Identifiant expéditeur",
+                "webrtcEnabled": "WebRTC activé"
+            },
+            "global": {
+                "title": "Paramètres globaux",
+                "subtitle": "Comportement par défaut du module",
+                "autoDispatchSeconds": "Délai d'escalade automatique (secondes)",
+                "drillMode": "Mode exercice (drill)",
+                "headCountMethod": "Méthode de comptage présents",
+                "geolocationRequired": "Géolocalisation requise",
+                "auditRetentionYears": "Rétention journal d'audit (années)"
+            }
+        },
+        "actions": {
+            "save": "Enregistrer les paramètres",
+            "reset": "Annuler les modifications",
+            "savedSuccess": "Paramètres enregistrés"
+        }
+    },
+    "permissions": {
+        "COORDINATOR": "Coordinateur",
+        "RESPONDER": "Secouriste",
+        "ALERT_LAUNCHER": "Lanceur d'alerte"
+    },
+    "headCountMethod": {
+        "GPS": "GPS (géofence automatique)",
+        "QR": "QR code à la borne",
+        "NFC": "Badge NFC",
+        "MANUAL": "Pointage manuel"
+    }
+}

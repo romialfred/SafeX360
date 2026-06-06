@@ -1,0 +1,192 @@
+{
+    "dashboard": {
+        "pageTitle": "Non-conformités et quasi-accidents",
+        "pageSubtitle": "Suivi et traitement des écarts — ISO 45001 · ISO 9001",
+        "breadcrumb": "Non-conformités",
+        "kpi": {
+            "totalEvents": "Total événements",
+            "totalEventsRef": "vs période précédente",
+            "overdueDeadlines": "Échéances dépassées",
+            "overdueDeadlinesRef": "Cible : 0 retard",
+            "underInvestigation": "En investigation",
+            "underInvestigationRef": "depuis 7 jours",
+            "closedEvents": "Événements clôturés",
+            "closedEventsRef": "vs mois dernier",
+            "closureRate": "Taux de clôture",
+            "closureRateRef": "Cible : ≥85%"
+        },
+        "filters": {
+            "category": "Catégorie",
+            "severity": "Sévérité",
+            "all": "Toutes",
+            "allCount": "Tous ({{count}})",
+            "filters": "Filtres",
+            "allDepartments": "Tous départements",
+            "allPeriods": "Toutes périodes",
+            "allStatuses": "Tous statuts",
+            "nonConformities": "Non-conformités",
+            "nearMisses": "Quasi-accidents"
+        },
+        "table": {
+            "reference": "Référence",
+            "title": "Titre",
+            "reporter": "Déclarant",
+            "severity": "Sévérité",
+            "status": "Statut",
+            "priority": "Priorité",
+            "date": "Date",
+            "actions": "Actions",
+            "noResults": "Aucun événement ne correspond aux filtres."
+        },
+        "tooltips": {
+            "edit": "Éditer le constat",
+            "closedNotEditable": "Constat clôturé — non modifiable",
+            "cancelledNotEditable": "Constat annulé — non modifiable",
+            "rejectedNotEditable": "Constat rejeté — non modifiable"
+        },
+        "actions": {
+            "export": "Exporter",
+            "newEvent": "Nouvel événement"
+        }
+    },
+    "details": {
+        "breadcrumb": "Constats centraux",
+        "detectedOn": "Détecté le",
+        "by": "par",
+        "severityLabel": "Sévérité",
+        "priorityLabel": "Priorité",
+        "actions": {
+            "exportPdf": "Exporter PDF",
+            "edit": "Éditer",
+            "manage": "Gérer",
+            "editDisabled": "Constat clôturé ou annulé — édition désactivée",
+            "manageDisabled": "Constat clôturé ou annulé — non modifiable"
+        },
+        "tabs": {
+            "overview": "Synthèse",
+            "analysis": "Analyse",
+            "treatment": "Traitement",
+            "actions": "Actions correctives",
+            "history": "Journal"
+        },
+        "sections": {
+            "identification": "Identification",
+            "description": "Description du constat",
+            "noDescription": "Aucune description renseignée.",
+            "impacts": "Impacts constatés",
+            "noImpacts": "Aucun impact indirect renseigné.",
+            "team": "Équipe d'analyse",
+            "noTeam": "Aucun membre désigné.",
+            "classification": "Classification",
+            "origin": "Origine",
+            "severityLevel": "Niveau de sévérité",
+            "treatmentPriority": "Priorité de traitement"
+        },
+        "fields": {
+            "reference": "Référence",
+            "detectionDate": "Date de détection",
+            "source": "Source",
+            "location": "Localisation",
+            "workProcess": "Processus métier",
+            "reportedBy": "Déclaré par"
+        },
+        "empty": {
+            "noData": "Données indisponibles",
+            "noAnalysis": "Aucune donnée d'analyse",
+            "noAnalysisSub": "L'analyse de cause racine n'a pas encore été menée.",
+            "noTreatment": "Aucune donnée de traitement",
+            "noActions": "Aucune action corrective",
+            "noActionsSub": "Aucune action corrective n'a encore été planifiée pour ce constat.",
+            "emptyJournal": "Journal vide",
+            "emptyJournalSub": "Aucun changement de statut n'a encore été enregistré."
+        },
+        "manageModal": {
+            "title": "Gérer le constat",
+            "owner": "Responsable du changement",
+            "ownerPlaceholder": "Sélectionner un employé",
+            "date": "Date d'effet",
+            "datePlaceholder": "Sélectionner la date",
+            "status": "Nouveau statut",
+            "statusPlaceholder": "Sélectionner un statut",
+            "comment": "Commentaire",
+            "commentPlaceholder": "Justifier le changement de statut (recommandé)",
+            "cancel": "Annuler",
+            "submit": "Valider"
+        },
+        "analysis": {
+            "methodology": "Méthodologie d'analyse",
+            "methodologyDesc": "Démarche utilisée et fenêtre temporelle",
+            "method": "Méthode",
+            "origin": "Origine",
+            "startDate": "Date de début",
+            "deadline": "Échéance",
+            "descriptionTitle": "Description analytique",
+            "noDescription": "Aucune description fournie.",
+            "factors": "Facteurs contributifs",
+            "factorsDesc": "Décomposition selon la triade individuel / technique / organisationnel",
+            "individualFactors": "Facteurs individuels",
+            "technicalFactors": "Facteurs techniques",
+            "organizationalFactors": "Facteurs organisationnels",
+            "rootCauses": "Causes racines identifiées",
+            "rootCausesDesc": "Causes profondes ayant déclenché le constat",
+            "noRootCauses": "Aucune cause racine identifiée.",
+            "summary": "Synthèse exécutive",
+            "summaryDesc": "Résumé et conclusion finale de l'analyse",
+            "summaryLabel": "Résumé",
+            "conclusionLabel": "Conclusion",
+            "noSummary": "Aucun résumé fourni.",
+            "noConclusion": "Aucune conclusion fournie."
+        },
+        "treatment": {
+            "valorization": "Valorisation du constat",
+            "valorizationDesc": "Coûts directs liés à la non-conformité",
+            "preventionCost": "Coût de prévention",
+            "preventionCostDesc": "Coûts estimés de mise en œuvre des actions préventives",
+            "materialCost": "Coût matériel / équipement",
+            "laborCost": "Coût main-d'œuvre",
+            "adminFees": "Frais administratifs",
+            "expenses": "Dépenses diverses",
+            "totalValue": "Valeur totale du constat",
+            "totalPrevention": "Total prévention",
+            "details": "Détails complémentaires",
+            "detailsDesc": "Informations narratives sur le traitement",
+            "documents": "Documents joints",
+            "documentsCount_one": "{{count}} document attaché",
+            "documentsCount_other": "{{count}} documents attachés",
+            "indirectImpacts": "Impacts indirects",
+            "indirectImpactsDesc": "Conséquences non chiffrables financièrement",
+            "preventiveBenefits": "Bénéfices préventifs",
+            "preventiveBenefitsDesc": "Bénéfices obtenus grâce à la prévention",
+            "comments": "Commentaire sur les impacts indirects",
+            "commentsPrevention": "Commentaire sur les bénéfices préventifs"
+        },
+        "correctiveActions": {
+            "title": "Actions correctives",
+            "totalCount_one": "{{count}} action au total",
+            "totalCount_other": "{{count}} actions au total",
+            "completed": "Terminées",
+            "inProgress": "En cours",
+            "overdue": "En retard",
+            "noActionName": "—"
+        },
+        "history": {
+            "title": "Journal des changements",
+            "entriesCount_one": "{{count}} entrée dans l'historique",
+            "entriesCount_other": "{{count}} entrées dans l'historique",
+            "transitionTo": "Passage en « {{status}} »",
+            "noComment": "Aucun commentaire renseigné.",
+            "duration": {
+                "sameDay": "le jour même",
+                "days_one": "pendant 1 jour",
+                "days_other": "pendant {{count}} jours",
+                "weeks_one": "pendant 1 semaine",
+                "weeks_other": "pendant ~{{count}} semaines",
+                "months_one": "pendant ~1 mois",
+                "months_other": "pendant ~{{count}} mois",
+                "years_one": "pendant ~1 an",
+                "years_other": "pendant ~{{count}} ans"
+            },
+            "statusFor": "Statut"
+        }
+    }
+}

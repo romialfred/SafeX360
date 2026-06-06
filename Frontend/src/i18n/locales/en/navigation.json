@@ -1,0 +1,63 @@
+{
+    "header": {
+        "platformTitle": "The OH&S platform for the African mining industry",
+        "platformSlogan": "Health & Safety at the heart of mining operations",
+        "reportIncident": "Report Incident",
+        "newEvent": "New Event",
+        "sos": "SOS",
+        "generalAlert": "General Alert",
+        "sosTooltip": "Report a life-threatening emergency",
+        "alertTooltip": "Trigger a mass alert to all employees",
+        "incidentTooltip": "Report an incident or hazard",
+        "eventTooltip": "Nonconformity or near-miss"
+    },
+    "sidebar": {
+        "yourApplications": "Your Applications",
+        "home": "Home",
+        "dashboard": "Dashboard",
+        "preventiveActivities": "Preventive Activities",
+        "nonConformity": "Nonconformities",
+        "ohsInspections": "OH&S Inspections",
+        "safetyMeetings": "Safety Meetings",
+        "leadershipTours": "Leadership Tours",
+        "activityMonitoring": "Activity Monitoring",
+        "correctiveActions": "Corrective Actions",
+        "riskManagement": "Risk Management",
+        "ppeManagement": "PPE Management",
+        "auditManagement": "Audit Management",
+        "regulatoryCompliance": "Regulatory Compliance",
+        "annualPlanning": "Annual Planning",
+        "safetyComms": "Safety Communications",
+        "reportsAnalytics": "Reports & Analytics",
+        "knowledgeCenter": "Knowledge Center",
+        "helpCenter": "Help Center",
+        "administration": "Administration",
+        "emergencyManagement": "Emergency Management",
+        "emergencySettings": "Emergency Settings",
+        "collapseMenu": "Collapse navigation menu",
+        "expandMenu": "Expand navigation menu"
+    },
+    "breadcrumbs": {
+        "home": "Home",
+        "preventiveActivities": "Preventive Activities"
+    },
+    "profileMenu": {
+        "myProfile": "My Profile",
+        "settings": "Settings",
+        "security": "Security",
+        "notifications": "Notifications",
+        "about": "About",
+        "logout": "Log Out"
+    },
+    "footer": {
+        "copyright": "© 2026 Data Universe — OH&S platform for the mining industry",
+        "version": "Version",
+        "documentation": "Documentation",
+        "helpCenter": "Help Center",
+        "isoDocuments": "ISO Documents",
+        "technicalDocs": "Technical Documentation",
+        "support": "Support",
+        "systemOperational": "System Operational",
+        "allRightsReserved": "All rights reserved"
+    }
+}
