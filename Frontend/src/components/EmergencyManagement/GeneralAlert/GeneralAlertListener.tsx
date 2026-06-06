@@ -41,61 +41,117 @@ import { successNotification, errorNotification } from '../../../utility/Notific
  * alerte déclenchée avant l'ouverture de la page.</p>
  */
 
+/**
+ * Sirène industrielle (mine / usine) avec crescendo (LOT 48 Phase 4.b).
+ *
+ * <p>Caractéristiques :</p>
+ * <ul>
+ *   <li><strong>ctx.resume()</strong> immédiat après création pour bypass la
+ *       politique autoplay des navigateurs (sinon le ctx démarre suspended)</li>
+ *   <li><strong>Crescendo progressif</strong> : volume rampe de 0.05 → 0.85 sur
+ *       12 secondes via {@code linearRampToValueAtTime} (effet "alerte qui
+ *       monte en puissance")</li>
+ *   <li><strong>Schedule WebAudio natif</strong> au lieu de {@code setInterval}
+ *       pour timing précis (pas de jitter)</li>
+ *   <li>Pattern "hee-haw" européen : 800Hz / 600Hz alterné 0.6s chacun</li>
+ *   <li>Oscillator type {@code sawtooth} pour richesse harmonique +
+ *       BiquadFilter low-pass pour adoucir le metal</li>
+ * </ul>
+ */
 class IndustrialSiren {
     private ctx: AudioContext | null = null;
     private osc: OscillatorNode | null = null;
-    private gain: GainNode | null = null;
-    private intervalId: number | null = null;
+    private masterGain: GainNode | null = null;
+    private filter: BiquadFilterNode | null = null;
+    private rafId: number | null = null;
     private playing = false;
+    private startedAt = 0;
 
-    start() {
+    async start() {
         if (this.playing) return;
         try {
             this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            this.gain = this.ctx.createGain();
-            this.gain.gain.value = 0.4;
-            this.gain.connect(this.ctx.destination);
 
+            // CRITIQUE : reprend explicitement le ctx pour bypass autoplay policy.
+            // Sans ça, le ctx démarre 'suspended' quand le popup apparaît via
+            // WebSocket (le navigateur ne considère plus le clic comme assez récent).
+            if (this.ctx.state === 'suspended') {
+                await this.ctx.resume();
+            }
+
+            // Filter low-pass pour adoucir les harmoniques du sawtooth
+            this.filter = this.ctx.createBiquadFilter();
+            this.filter.type = 'lowpass';
+            this.filter.frequency.value = 2500;
+            this.filter.Q.value = 1.0;
+            this.filter.connect(this.ctx.destination);
+
+            // Master gain — CRESCENDO de 0.05 → 0.85 sur 12s puis maintien
+            this.masterGain = this.ctx.createGain();
+            const now = this.ctx.currentTime;
+            this.masterGain.gain.setValueAtTime(0.05, now);
+            this.masterGain.gain.linearRampToValueAtTime(0.85, now + 12);
+            this.masterGain.connect(this.filter);
+
+            // Oscillateur principal — sawtooth pour riche en harmoniques
             this.osc = this.ctx.createOscillator();
-            this.osc.type = 'square';
-            this.osc.frequency.value = 750;
-            this.osc.connect(this.gain);
+            this.osc.type = 'sawtooth';
+            this.osc.frequency.value = 800;
+            this.osc.connect(this.masterGain);
             this.osc.start();
 
-            // Pattern industriel : 2 bips courts + pause (longueur 1.2s)
-            let phase = 0;
-            const tick = () => {
-                if (!this.osc || !this.gain || !this.ctx) return;
-                const t = this.ctx.currentTime;
-                if (phase === 0) {
-                    this.osc.frequency.setValueAtTime(750, t);
-                    this.gain.gain.setValueAtTime(0.4, t);
-                } else if (phase === 1) {
-                    this.gain.gain.setValueAtTime(0.0, t);
-                } else if (phase === 2) {
-                    this.osc.frequency.setValueAtTime(550, t);
-                    this.gain.gain.setValueAtTime(0.4, t);
-                } else {
-                    this.gain.gain.setValueAtTime(0.0, t);
-                }
-                phase = (phase + 1) % 4;
-            };
-            tick();
-            this.intervalId = window.setInterval(tick, 300);
+            this.startedAt = now;
             this.playing = true;
-        } catch {
-            /* audio bloqué */
+            this.scheduleSweep();
+        } catch (err) {
+            console.error('[IndustrialSiren] Failed to start audio:', err);
         }
+    }
+
+    /**
+     * Programme un sweep continu "hee-haw" entre 800Hz et 600Hz, 0.6s par tone.
+     * Re-programme tous les 25s pour boucle infinie sans cassure audible.
+     */
+    private scheduleSweep() {
+        if (!this.ctx || !this.osc) return;
+        const ctx = this.ctx;
+        const freq = this.osc.frequency;
+        const toneDuration = 0.6;
+        const high = 800;
+        const low = 600;
+        const now = ctx.currentTime;
+
+        // Schedule 50 alternances (30s d'avance)
+        for (let i = 0; i < 50; i++) {
+            const start = now + i * toneDuration;
+            const fromVal = i % 2 === 0 ? high : low;
+            const toVal = i % 2 === 0 ? low : high;
+            freq.setValueAtTime(fromVal, start);
+            freq.linearRampToValueAtTime(toVal, start + toneDuration);
+        }
+
+        // Re-schedule toutes les 25s pour boucle continue
+        const tick = () => {
+            if (!this.playing) return;
+            const elapsed = ctx.currentTime - this.startedAt;
+            if (elapsed > 25) {
+                this.startedAt = ctx.currentTime;
+                this.scheduleSweep();
+            }
+            this.rafId = window.requestAnimationFrame(tick);
+        };
+        tick();
     }
 
     stop() {
         try {
-            if (this.intervalId !== null) {
-                window.clearInterval(this.intervalId);
-                this.intervalId = null;
+            if (this.rafId !== null) {
+                window.cancelAnimationFrame(this.rafId);
+                this.rafId = null;
             }
             if (this.osc) { try { this.osc.stop(); } catch {} this.osc.disconnect(); this.osc = null; }
-            if (this.gain) { this.gain.disconnect(); this.gain = null; }
+            if (this.masterGain) { this.masterGain.disconnect(); this.masterGain = null; }
+            if (this.filter) { this.filter.disconnect(); this.filter = null; }
             if (this.ctx) { this.ctx.close().catch(() => {}); this.ctx = null; }
         } catch { /* ignore */ }
         this.playing = false;
@@ -173,7 +229,7 @@ const GeneralAlertListener = () => {
     // ── Sirène + lock scroll ──
     useEffect(() => {
         if (activeAlert) {
-            if (soundEnabled) sirenRef.current?.start();
+            if (soundEnabled) { void sirenRef.current?.start(); }
             document.body.style.overflow = 'hidden';
         } else {
             sirenRef.current?.stop();

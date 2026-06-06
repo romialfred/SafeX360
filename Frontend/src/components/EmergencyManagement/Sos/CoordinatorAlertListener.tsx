@@ -53,10 +53,16 @@ class AmbulanceSiren {
     private playing = false;
     private startedAt = 0;
 
-    start() {
+    async start() {
         if (this.playing) return;
         try {
             this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+            // CRITIQUE : reprend explicitement le ctx pour bypass autoplay policy
+            // (sinon le ctx démarre 'suspended' quand le popup vient d'un push WS).
+            if (this.ctx.state === 'suspended') {
+                await this.ctx.resume();
+            }
 
             // Filter low-pass pour adoucir la sinusoïde
             this.filter = this.ctx.createBiquadFilter();
@@ -65,9 +71,11 @@ class AmbulanceSiren {
             this.filter.Q.value = 0.7;
             this.filter.connect(this.ctx.destination);
 
-            // Gain principal — modulation légère pour donner du "souffle"
+            // Gain principal — CRESCENDO 0.08 → 0.55 sur 10s (effet "qui s'approche")
             this.gain = this.ctx.createGain();
-            this.gain.gain.value = 0.35;
+            const now = this.ctx.currentTime;
+            this.gain.gain.setValueAtTime(0.08, now);
+            this.gain.gain.linearRampToValueAtTime(0.55, now + 10);
             this.gain.connect(this.filter);
 
             // Oscillateur principal
@@ -77,11 +85,11 @@ class AmbulanceSiren {
             this.osc.connect(this.gain);
             this.osc.start();
 
-            this.startedAt = this.ctx.currentTime;
+            this.startedAt = now;
             this.playing = true;
             this.scheduleSweep();
-        } catch {
-            // Audio context bloqué (autoplay policy) : silencieux
+        } catch (err) {
+            console.error('[AmbulanceSiren] Failed to start audio:', err);
         }
     }
 
@@ -180,7 +188,7 @@ const CoordinatorAlertListener = () => {
     // ── Sirène + lock scroll ──
     useEffect(() => {
         if (activeAlert) {
-            if (soundEnabled) sirenRef.current?.start();
+            if (soundEnabled) { void sirenRef.current?.start(); }
             document.body.style.overflow = 'hidden';
         } else {
             sirenRef.current?.stop();
@@ -198,6 +206,8 @@ const CoordinatorAlertListener = () => {
         if (soundEnabled) sirenRef.current?.start();
         else sirenRef.current?.stop();
     }, [soundEnabled, activeAlert]);
+
+    // ── Note : start() est désormais async ; on ignore la promise via void ──
 
     // ── Actions ──
     const handleAcknowledge = async () => {
