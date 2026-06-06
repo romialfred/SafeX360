@@ -1,0 +1,292 @@
+package com.minexpert.hns.api.emergency.service;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.minexpert.hns.api.emergency.dto.SosAlertDTO;
+import com.minexpert.hns.api.emergency.dto.SosLifecycleEventDTO;
+import com.minexpert.hns.api.emergency.dto.SosTransitionRequest;
+import com.minexpert.hns.api.emergency.entity.SosAlert;
+import com.minexpert.hns.api.emergency.entity.SosLifecycleEvent;
+import com.minexpert.hns.api.emergency.enums.EmergencyAuditEventType;
+import com.minexpert.hns.api.emergency.enums.SosStatus;
+import com.minexpert.hns.api.emergency.repository.RescueTeamRepository;
+import com.minexpert.hns.api.emergency.repository.SosAlertRepository;
+import com.minexpert.hns.api.emergency.repository.SosLifecycleEventRepository;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Service principal du cycle de vie d'un SOS (LOT 48 Phase 3.a).
+ *
+ * <p>Responsabilités :</p>
+ * <ul>
+ *   <li>Création d'alerte (transition implicite {@code → RECEIVED})</li>
+ *   <li>Transitions contrôlées par machine à état + horodatage automatique</li>
+ *   <li>Enregistrement d'un {@link SosLifecycleEvent} à chaque transition</li>
+ *   <li>Log d'audit ISO 45001 via {@link EmergencyAuditService}</li>
+ *   <li>Broadcast STOMP sur {@code /topic/emergency/sos/company/{companyId}}
+ *       et {@code /topic/emergency/sos/{id}}</li>
+ * </ul>
+ *
+ * <p>La machine à état rejette toute transition non autorisée avec
+ * {@link IllegalStateException}, prévenant les races et corruptions.</p>
+ */
+@Service
+@RequiredArgsConstructor
+public class SosAlertService {
+
+    private final SosAlertRepository alertRepo;
+    private final SosLifecycleEventRepository eventRepo;
+    private final RescueTeamRepository teamRepo;
+    private final EmergencyAuditService auditService;
+    private final SimpMessagingTemplate messaging;
+
+    // ─── Transitions autorisées ──────────────────────────────────────────────
+
+    /** Pour chaque état, l'ensemble des états de transition autorisés. */
+    private static final Map<SosStatus, Set<SosStatus>> TRANSITIONS = Map.of(
+        SosStatus.RECEIVED,     Set.of(SosStatus.ACKNOWLEDGED, SosStatus.FALSE_ALARM),
+        SosStatus.ACKNOWLEDGED, Set.of(SosStatus.DISPATCHED, SosStatus.FALSE_ALARM, SosStatus.CLOSED),
+        SosStatus.DISPATCHED,   Set.of(SosStatus.ON_SITE, SosStatus.CLOSED, SosStatus.FALSE_ALARM),
+        SosStatus.ON_SITE,      Set.of(SosStatus.CLOSED, SosStatus.FALSE_ALARM),
+        SosStatus.CLOSED,       Set.of(),
+        SosStatus.FALSE_ALARM,  Set.of()
+    );
+
+    // ─── Création ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public SosAlertDTO create(SosAlertDTO dto, Long actorId) {
+        SosAlert a = new SosAlert();
+        a.setCompanyId(dto.getCompanyId());
+        a.setEmployeeId(dto.getEmployeeId());
+        a.setReasonCode(dto.getReasonCode());
+        a.setDescription(dto.getDescription());
+        a.setLatitude(dto.getLatitude());
+        a.setLongitude(dto.getLongitude());
+        a.setGpsAccuracy(dto.getGpsAccuracy());
+        a.setDrillMode(Boolean.TRUE.equals(dto.getDrillMode()));
+        a.setStatus(SosStatus.RECEIVED);
+        SosAlert saved = alertRepo.save(a);
+
+        recordEvent(saved, null, SosStatus.RECEIVED, actorId, "Alerte SOS reçue");
+        auditService.log(
+            EmergencyAuditEventType.SOS_RECEIVED,
+            actorId, saved.getCompanyId(),
+            "SosAlert", saved.getId(),
+            "{\"reason\":\"" + safeStr(dto.getReasonCode()) + "\",\"drill\":" + saved.getDrillMode() + "}",
+            null, null
+        );
+
+        SosAlertDTO out = toDto(saved);
+        broadcast(saved.getCompanyId(), saved.getId(), out);
+        return out;
+    }
+
+    // ─── Transitions ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public SosAlertDTO acknowledge(Long id, Long actorId, SosTransitionRequest req) {
+        return transition(id, SosStatus.ACKNOWLEDGED, actorId, req, (a, now) -> {
+            a.setAcknowledgedAt(now);
+            if (a.getCoordinatorId() == null && actorId != null) {
+                a.setCoordinatorId(actorId);
+            }
+        }, EmergencyAuditEventType.SOS_ACKNOWLEDGED);
+    }
+
+    @Transactional
+    public SosAlertDTO dispatch(Long id, Long actorId, SosTransitionRequest req) {
+        return transition(id, SosStatus.DISPATCHED, actorId, req, (a, now) -> {
+            a.setDispatchedAt(now);
+            if (req != null && req.getRescueTeamId() != null) {
+                a.setRescueTeamId(req.getRescueTeamId());
+            }
+        }, EmergencyAuditEventType.SOS_DISPATCHED);
+    }
+
+    @Transactional
+    public SosAlertDTO onSite(Long id, Long actorId, SosTransitionRequest req) {
+        return transition(id, SosStatus.ON_SITE, actorId, req, (a, now) -> {
+            a.setOnSiteAt(now);
+        }, EmergencyAuditEventType.SOS_ON_SITE);
+    }
+
+    @Transactional
+    public SosAlertDTO close(Long id, Long actorId, SosTransitionRequest req) {
+        return transition(id, SosStatus.CLOSED, actorId, req, (a, now) -> {
+            a.setClosedAt(now);
+        }, EmergencyAuditEventType.SOS_CLOSED);
+    }
+
+    @Transactional
+    public SosAlertDTO falseAlarm(Long id, Long actorId, SosTransitionRequest req) {
+        return transition(id, SosStatus.FALSE_ALARM, actorId, req, (a, now) -> {
+            a.setClosedAt(now);
+            if (req != null && req.getFalseAlarmReason() != null) {
+                a.setFalseAlarmReason(req.getFalseAlarmReason());
+            }
+        }, EmergencyAuditEventType.SOS_FALSE_ALARM);
+    }
+
+    // ─── Helper transition générique ─────────────────────────────────────────
+
+    private SosAlertDTO transition(
+        Long id,
+        SosStatus target,
+        Long actorId,
+        SosTransitionRequest req,
+        java.util.function.BiConsumer<SosAlert, LocalDateTime> mutator,
+        EmergencyAuditEventType auditEvent
+    ) {
+        SosAlert alert = alertRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("SOS introuvable : id=" + id));
+
+        SosStatus current = alert.getStatus();
+        if (!TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new IllegalStateException(
+                "Transition non autorisée : " + current + " → " + target
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        mutator.accept(alert, now);
+        alert.setStatus(target);
+        SosAlert saved = alertRepo.save(alert);
+
+        String note = req != null ? req.getNote() : null;
+        recordEvent(saved, current, target, actorId, note);
+        auditService.log(
+            auditEvent,
+            actorId, saved.getCompanyId(),
+            "SosAlert", saved.getId(),
+            "{\"from\":\"" + current + "\",\"to\":\"" + target + "\",\"note\":" + jsonStr(note) + "}",
+            null, null
+        );
+
+        SosAlertDTO out = toDto(saved);
+        broadcast(saved.getCompanyId(), saved.getId(), out);
+        return out;
+    }
+
+    private void recordEvent(SosAlert alert, SosStatus from, SosStatus to, Long actorId, String note) {
+        SosLifecycleEvent evt = new SosLifecycleEvent();
+        evt.setSosAlertId(alert.getId());
+        evt.setStatusFrom(from);
+        evt.setStatusTo(to);
+        evt.setActorId(actorId);
+        evt.setNote(note);
+        eventRepo.save(evt);
+    }
+
+    // ─── Lecture ─────────────────────────────────────────────────────────────
+
+    public List<SosAlertDTO> listActive(Long companyId) {
+        return alertRepo.findByCompanyIdAndStatusNotInOrderByTriggeredAtDesc(
+                companyId, List.of(SosStatus.CLOSED, SosStatus.FALSE_ALARM)
+            ).stream()
+            .map(this::toDto)
+            .toList();
+    }
+
+    public List<SosAlertDTO> listAll(Long companyId) {
+        return alertRepo.findByCompanyIdOrderByTriggeredAtDesc(companyId).stream()
+            .map(this::toDto)
+            .toList();
+    }
+
+    public Optional<SosAlertDTO> get(Long id) {
+        return alertRepo.findById(id).map(this::toDto);
+    }
+
+    public List<SosLifecycleEventDTO> getLifecycle(Long alertId) {
+        return eventRepo.findBySosAlertIdOrderByCreatedAtAsc(alertId).stream()
+            .map(this::toEventDto)
+            .toList();
+    }
+
+    // ─── Broadcast STOMP ─────────────────────────────────────────────────────
+
+    private void broadcast(Long companyId, Long alertId, SosAlertDTO payload) {
+        // Topic global mine — pour tableau de bord coordinateur
+        messaging.convertAndSend(
+            "/topic/emergency/sos/company/" + companyId,
+            payload
+        );
+        // Topic spécifique alerte — pour page détail
+        messaging.convertAndSend(
+            "/topic/emergency/sos/" + alertId,
+            payload
+        );
+    }
+
+    // ─── Mappers ─────────────────────────────────────────────────────────────
+
+    private SosAlertDTO toDto(SosAlert a) {
+        // Lookup nom équipe si présente
+        String teamName = null;
+        if (a.getRescueTeamId() != null) {
+            teamName = teamRepo.findById(a.getRescueTeamId())
+                .map(t -> t.getName())
+                .orElse(null);
+        }
+        // Calcul durée écoulée (jusqu'à clôture si fermé, sinon jusqu'à maintenant)
+        LocalDateTime end = a.getClosedAt() != null ? a.getClosedAt() : LocalDateTime.now();
+        long elapsed = Duration.between(a.getTriggeredAt(), end).getSeconds();
+
+        return SosAlertDTO.builder()
+            .id(a.getId())
+            .companyId(a.getCompanyId())
+            .employeeId(a.getEmployeeId())
+            .coordinatorId(a.getCoordinatorId())
+            .rescueTeamId(a.getRescueTeamId())
+            .rescueTeamName(teamName)
+            .reasonCode(a.getReasonCode())
+            .description(a.getDescription())
+            .latitude(a.getLatitude())
+            .longitude(a.getLongitude())
+            .gpsAccuracy(a.getGpsAccuracy())
+            .status(a.getStatus())
+            .drillMode(a.getDrillMode())
+            .falseAlarmReason(a.getFalseAlarmReason())
+            .triggeredAt(a.getTriggeredAt())
+            .acknowledgedAt(a.getAcknowledgedAt())
+            .dispatchedAt(a.getDispatchedAt())
+            .onSiteAt(a.getOnSiteAt())
+            .closedAt(a.getClosedAt())
+            .elapsedSeconds(elapsed)
+            .build();
+    }
+
+    private SosLifecycleEventDTO toEventDto(SosLifecycleEvent e) {
+        return SosLifecycleEventDTO.builder()
+            .id(e.getId())
+            .sosAlertId(e.getSosAlertId())
+            .statusFrom(e.getStatusFrom())
+            .statusTo(e.getStatusTo())
+            .actorId(e.getActorId())
+            .note(e.getNote())
+            .createdAt(e.getCreatedAt())
+            .build();
+    }
+
+    private String safeStr(String s) { return s == null ? "" : s; }
+
+    private String jsonStr(String s) {
+        if (s == null) return "null";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    @SuppressWarnings("unused")
+    private Map<String, Object> emptyMap() { return new HashMap<>(); }
+}
