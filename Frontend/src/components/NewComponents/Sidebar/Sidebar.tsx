@@ -33,7 +33,13 @@ import {
     IconUserCheck, // FolderOpen
     IconFolderOpen, // Bell
     IconBell, IconReport, IconCalculator, IconTrendingUp, // Sparkles
-    IconFileTextSpark, IconExternalLink
+    IconFileTextSpark, IconExternalLink,
+    // LOT — Module Dosimetrie & Expositions
+    IconAtom2,
+    IconDeviceWatch,
+    IconChartLine,
+    IconStethoscope,
+    IconAlertOctagon,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -72,6 +78,16 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Paramètres système': 'sidebar.systemSettings',
     'Liste des utilisateurs': 'sidebar.usersList',
     'Rôles et permissions': 'sidebar.rolesAndPermissions',
+    // LOT — Dosimetrie & Expositions (ns 'dosimetry')
+    'Dosimétrie & Expositions': 'dosimetry:sidebar.dosimetry',
+    'Tableau de bord Dosimétrie': 'dosimetry:sidebar.dosimetryDashboard',
+    'Registre travailleurs exposés': 'dosimetry:sidebar.dosimetryWorkers',
+    'Dosimètres & Instruments': 'dosimetry:sidebar.dosimetryDosimeters',
+    'Saisie & suivi des doses': 'dosimetry:sidebar.dosimetryDoses',
+    'Surveillance médicale': 'dosimetry:sidebar.dosimetryMedical',
+    'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
+    'Rapports & conformité': 'dosimetry:sidebar.dosimetryReports',
+    'Paramètres Dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -292,6 +308,23 @@ const menuItems: MenuItem[] = [
             { id: 'technical-documentation', label: 'Documentation Technique', icon: IconFileText }
         ]
     },
+    // LOT — Module Dosimetrie & Expositions
+    {
+        id: 'dosimetry',
+        label: 'Dosimétrie & Expositions',
+        icon: IconAtom2,
+        color: 'text-violet-700',
+        subItems: [
+            { id: 'dosimetry-dashboard', label: 'Tableau de bord Dosimétrie', icon: IconLayoutDashboard },
+            { id: 'dosimetry-workers', label: 'Registre travailleurs exposés', icon: IconUsers },
+            { id: 'dosimetry-dosimeters', label: 'Dosimètres & Instruments', icon: IconDeviceWatch },
+            { id: 'dosimetry-doses', label: 'Saisie & suivi des doses', icon: IconChartLine },
+            { id: 'dosimetry-medical', label: 'Surveillance médicale', icon: IconStethoscope },
+            { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
+            { id: 'dosimetry-reports', label: 'Rapports & conformité', icon: IconFileText },
+            { id: 'dosimetry-settings', label: 'Paramètres Dosimétrie', icon: IconSettings },
+        ],
+    },
     // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
     {
         id: 'admin',
@@ -429,6 +462,20 @@ export const menuIdToUrl: Record<string, string> = {
     "users-list": "/users-management",
     "roles-permissions": "/users-management",    // pour l'instant même URL — onglet futur
     "modules-management": "/modules-management",
+
+    // LOT — Module Dosimetrie & Expositions
+    // Seul `dosimetry-settings` est implementé pour le moment. Les autres
+    // sous-modules pointent vers /coming-soon (placeholder) pour eviter les 404
+    // tout en laissant la sidebar navigable.
+    "dosimetry": "/dosimetry/settings",
+    "dosimetry-settings": "/dosimetry/settings",
+    "dosimetry-dashboard": "/coming-soon",
+    "dosimetry-workers": "/coming-soon",
+    "dosimetry-dosimeters": "/coming-soon",
+    "dosimetry-doses": "/coming-soon",
+    "dosimetry-medical": "/coming-soon",
+    "dosimetry-alerts": "/coming-soon",
+    "dosimetry-reports": "/coming-soon",
 };
 
 
@@ -474,6 +521,9 @@ const Sidebar = () => {
         'admin', 'parameters', 'users-management-hub', 'modules-management',
         'target-forecast', 'operational-references', 'system-settings',
         'users-list', 'roles-permissions',
+        // LOT — Dosimetrie : parent + page de parametres toujours accessibles
+        // (les autres sous-modules s'activeront via Module Management)
+        'dosimetry', 'dosimetry-settings',
     ]);
 
     const handleItemClick = (itemId: string) => {

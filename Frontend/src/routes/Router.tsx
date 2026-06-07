@@ -160,6 +160,8 @@ import EditAdhocAction from '../components/NewComponents/AdhocActions/EditAdhocA
 import ChemicalDetails from '../components/NewComponents/ChemicalRegister/ChemicalDetails';
 import ModuleNotFoundPage from '../pages/dashboard/ModuleNotFoundPage';
 import IsoMappingPage from '../pages/dashboard/IsoMappingPage';
+// LOT — Module Dosimetrie & Expositions
+import DosimetryParametersPage from '../components/Dosimetry/DosimetryParametersPage';
 
 
 
@@ -407,6 +409,13 @@ const router = createBrowserRouter([
             { path: "corporate-reports", element: <CorporateReports /> },
             { path: "executive-reports", element: <ExecutiveReports /> },
             { path: "trend-analysis", element: <TrendAnalysis /> },
+
+            // LOT — Module Dosimetrie & Expositions
+            // Seule la page Paramètres est implémentée pour le moment.
+            // Les autres sous-modules de la sidebar pointent vers /coming-soon.
+            { path: 'dosimetry/settings', element: <DosimetryParametersPage /> },
+            // Placeholder partagé pour les sous-modules pas encore implémentés
+            { path: 'coming-soon', element: <ComingSoonPage /> },
 
             // LOT 40 P0 fix : route catch-all interne au layout
             // affiche une vraie page 404 (NotFound) avec le shell propre,

@@ -22,6 +22,7 @@ import frHse from './locales/fr/hse.json';
 import frNonConformity from './locales/fr/nonConformity.json';
 import frEmergency from './locales/fr/emergency.json';
 import frModuleManager from './locales/fr/moduleManager.json';
+import frDosimetry from './locales/fr/dosimetry.json';
 
 // === EN ===
 import enCommon from './locales/en/common.json';
@@ -30,6 +31,7 @@ import enHse from './locales/en/hse.json';
 import enNonConformity from './locales/en/nonConformity.json';
 import enEmergency from './locales/en/emergency.json';
 import enModuleManager from './locales/en/moduleManager.json';
+import enDosimetry from './locales/en/dosimetry.json';
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -51,6 +53,7 @@ i18n
                 nonConformity: frNonConformity,
                 emergency: frEmergency,
                 moduleManager: frModuleManager,
+                dosimetry: frDosimetry,
             },
             en: {
                 common: enCommon,
@@ -59,13 +62,14 @@ i18n
                 nonConformity: enNonConformity,
                 emergency: enEmergency,
                 moduleManager: enModuleManager,
+                dosimetry: enDosimetry,
             },
         },
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
         defaultNS: 'common',
-        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager'],
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry'],
 
         detection: {
             // Ordre de détection : 1) localStorage, 2) navigator

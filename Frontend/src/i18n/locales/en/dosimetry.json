@@ -1,0 +1,144 @@
+{
+    "module": {
+        "name": "Dosimetry & Exposures",
+        "shortName": "Dosimetry",
+        "tagline": "Tracking of ionizing radiation and physical agent exposures"
+    },
+    "sidebar": {
+        "dosimetry": "Dosimetry & Exposures",
+        "dosimetryDashboard": "Dashboard",
+        "dosimetryWorkers": "Exposed Workers Registry",
+        "dosimetryDosimeters": "Dosimeters & Instruments",
+        "dosimetryDoses": "Dose Entry & Tracking",
+        "dosimetryMedical": "Medical Surveillance",
+        "dosimetryAlerts": "Thresholds & Overexposures",
+        "dosimetryReports": "Reports & Compliance",
+        "dosimetrySettings": "Settings"
+    },
+    "parameters": {
+        "title": "Dosimetry settings",
+        "subtitle": "Regulatory limits, exposure bands and access policy — ICRP 103 / IAEA GSR Part 3 compliant",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimetry & Exposures",
+        "breadcrumbCurrent": "Settings",
+        "kpiActiveThresholds": "active thresholds",
+        "kpiActiveThresholdsLabel": "Configured limits",
+        "thresholdsTab": "Limits & thresholds",
+        "bandsTab": "Exposure bands",
+        "rbacTab": "RBAC policy",
+        "loadError": "Failed to load thresholds. Please try again later.",
+        "saveSuccess": "Settings saved.",
+        "resetCiprAiea": "Reset ICRP / IAEA",
+        "resetCiprAieaTooltip": "Available in Phase 2",
+        "resetConfirm": "Reset limits to ICRP 103 / IAEA GSR Part 3 reference values?",
+        "resetNotAvailable": "Automatic reset to ICRP / IAEA reference values will be available in Phase 2. Current thresholds remain unchanged.",
+        "addThreshold": "Add threshold",
+        "footerNote": "Compliant with ICRP 103 and IAEA GSR Part 3 reference limits, editable by the administrator."
+    },
+    "thresholds": {
+        "grandeur": "Dosimetric quantity",
+        "category": "Category",
+        "doseConstraint": "Dose constraint",
+        "investigationLevel": "Investigation level",
+        "actionLevel": "Action level",
+        "regulatoryLimit": "Regulatory limit",
+        "framework": "Regulatory framework",
+        "unit": "Unit",
+        "period": "Period",
+        "actions": "Actions",
+        "empty": "No threshold configured. Click 'Add threshold' or reset to ICRP defaults.",
+        "categories": {
+            "A": "Category A (exposed)",
+            "B": "Category B (likely)",
+            "PUBLIC": "Public",
+            "APPRENTICE": "Apprentice / student"
+        },
+        "grandeurs": {
+            "HP10": "Hp(10) — whole body",
+            "HP007": "Hp(0.07) — skin",
+            "HP3": "Hp(3) — eye lens"
+        },
+        "frameworks": {
+            "CIPR_103": "ICRP 103",
+            "AIEA_GSR_PART3": "IAEA GSR Part 3",
+            "CUSTOM": "Custom"
+        }
+    },
+    "bands": {
+        "title": "Exposure bands (% of annual limit)",
+        "subtitle": "Color thresholds used in the dashboard and alerts.",
+        "thresholdPct": "Threshold (%)",
+        "label": "Label",
+        "color": "Color",
+        "green": "Green — normal exposure",
+        "yellow": "Yellow — heightened surveillance",
+        "orange": "Orange — investigation level",
+        "red": "Red — overexposure / immediate action",
+        "previewTitle": "Gauge preview"
+    },
+    "rbac": {
+        "title": "Dosimetry module permissions",
+        "subtitle": "DOSIMETRY_* permissions matrix — read-only. Editable from User Management.",
+        "permission": "Permission",
+        "description": "Description",
+        "roles": "Allowed roles",
+        "permissions": {
+            "DOSIMETRY_VIEW": "View dashboard and registries",
+            "DOSIMETRY_RECORD": "Record doses and measurement results",
+            "DOSIMETRY_VALIDATE": "Validate dose records",
+            "DOSIMETRY_MEDICAL": "Access medical surveillance data",
+            "DOSIMETRY_ALERT": "Manage thresholds and overexposures",
+            "DOSIMETRY_ADMIN": "Administer the module (settings, RBAC)"
+        }
+    },
+    "workers": {
+        "title": "Exposed workers registry",
+        "lastName": "Last name",
+        "firstName": "First name",
+        "matricule": "Employee ID",
+        "category": "Category",
+        "site": "Site",
+        "function": "Function",
+        "startDate": "Exposure start date",
+        "status": "Status"
+    },
+    "dosimeters": {
+        "title": "Dosimeters & Instruments",
+        "serialNumber": "Serial number",
+        "model": "Model",
+        "type": "Type",
+        "assignedTo": "Assigned to",
+        "lastCalibration": "Last calibration",
+        "nextCalibration": "Next calibration",
+        "status": "Status"
+    },
+    "doses": {
+        "title": "Dose entry & tracking",
+        "worker": "Worker",
+        "period": "Period",
+        "value": "Value",
+        "unit": "Unit",
+        "source": "Source",
+        "recordedAt": "Recorded at",
+        "recordedBy": "Recorded by"
+    },
+    "alerts": {
+        "title": "Thresholds & overexposures",
+        "worker": "Worker",
+        "level": "Level",
+        "triggeredAt": "Triggered at",
+        "status": "Status",
+        "investigation": "Investigation",
+        "active": "Active",
+        "acknowledged": "Acknowledged",
+        "closed": "Closed"
+    },
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "yes": "Yes",
+        "no": "No"
+    }
+}

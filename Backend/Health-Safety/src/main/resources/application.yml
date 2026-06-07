@@ -2,6 +2,23 @@ spring:
   application:
     name: Health-Safety
 
+  # ─── Spring Security : volontairement NON active en Phase 1 ───────────────
+  # Les annotations @PreAuthorize presentes sur les controllers Dosimetrie
+  # (DoseRecord, Threshold, ExposedWorker, MedicalSurveillance, ExposureAlert)
+  # referencent les permissions de DosimetryRBACConfig. Elles sont declarees
+  # mais inertes tant que @EnableMethodSecurity n'est pas active au demarrage,
+  # afin de ne PAS casser les autres endpoints du monolithe HSE qui ne sont
+  # pas encore couverts par la matrice RBAC complete.
+  #
+  # Enable in Phase 2 once full RBAC tested (cf. roadmap Dosimetrie P2) :
+  #   security:
+  #     enabled: true
+  # + ajout d'une SecurityConfig avec @EnableMethodSecurity(prePostEnabled=true)
+  # + JwtAuthenticationFilter qui mappe X-Permissions header -> GrantedAuthority
+  # En Phase 1, la trace de conformite reglementaire (AIEA GSR Part 3 §3.106 /
+  # RGPD art. 30) est portee par DosimetryAuditLog cote service.
+  # ──────────────────────────────────────────────────────────────────────────
+
   # LOT 40 P0 fix : suppression des credentials Aiven commentés en clair
   # (clés API exposées même en commentaires = leak si repo public).
   # Toute config sensible passe désormais exclusivement par .env.

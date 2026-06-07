@@ -1,0 +1,144 @@
+{
+    "module": {
+        "name": "Dosimétrie & Expositions",
+        "shortName": "Dosimétrie",
+        "tagline": "Suivi des expositions aux rayonnements ionisants et agents physiques"
+    },
+    "sidebar": {
+        "dosimetry": "Dosimétrie & Expositions",
+        "dosimetryDashboard": "Tableau de bord",
+        "dosimetryWorkers": "Registre travailleurs exposés",
+        "dosimetryDosimeters": "Dosimètres & Instruments",
+        "dosimetryDoses": "Saisie & suivi des doses",
+        "dosimetryMedical": "Surveillance médicale",
+        "dosimetryAlerts": "Seuils & dépassements",
+        "dosimetryReports": "Rapports & conformité",
+        "dosimetrySettings": "Paramètres"
+    },
+    "parameters": {
+        "title": "Paramètres dosimétrie",
+        "subtitle": "Limites réglementaires, bandes d'exposition et politique d'accès — conforme CIPR 103 / AIEA GSR Part 3",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimétrie & Expositions",
+        "breadcrumbCurrent": "Paramètres",
+        "kpiActiveThresholds": "seuils actifs",
+        "kpiActiveThresholdsLabel": "Limites configurées",
+        "thresholdsTab": "Limites & seuils",
+        "bandsTab": "Bandes d'exposition",
+        "rbacTab": "Politique RBAC",
+        "loadError": "Impossible de charger les seuils. Réessayez ultérieurement.",
+        "saveSuccess": "Paramètres enregistrés.",
+        "resetCiprAiea": "Réinitialiser CIPR / AIEA",
+        "resetCiprAieaTooltip": "Disponible en Phase 2",
+        "resetConfirm": "Réinitialiser les limites aux valeurs de référence CIPR 103 / AIEA GSR Part 3 ?",
+        "resetNotAvailable": "La réinitialisation automatique aux valeurs CIPR / AIEA sera disponible en Phase 2. Les seuils actuels restent inchangés.",
+        "addThreshold": "Ajouter un seuil",
+        "footerNote": "Conforme aux limites de référence CIPR 103 et AIEA GSR Part 3, modifiables par l'administrateur."
+    },
+    "thresholds": {
+        "grandeur": "Grandeur dosimétrique",
+        "category": "Catégorie",
+        "doseConstraint": "Contrainte de dose",
+        "investigationLevel": "Niveau d'investigation",
+        "actionLevel": "Niveau d'action",
+        "regulatoryLimit": "Limite réglementaire",
+        "framework": "Cadre réglementaire",
+        "unit": "Unité",
+        "period": "Période",
+        "actions": "Actions",
+        "empty": "Aucun seuil configuré. Cliquez sur « Ajouter un seuil » ou réinitialisez aux valeurs CIPR.",
+        "categories": {
+            "A": "Catégorie A (exposés)",
+            "B": "Catégorie B (susceptibles)",
+            "PUBLIC": "Public",
+            "APPRENTICE": "Apprenti / étudiant"
+        },
+        "grandeurs": {
+            "HP10": "Hp(10) — corps entier",
+            "HP007": "Hp(0,07) — peau",
+            "HP3": "Hp(3) — cristallin"
+        },
+        "frameworks": {
+            "CIPR_103": "CIPR 103",
+            "AIEA_GSR_PART3": "AIEA GSR Part 3",
+            "CUSTOM": "Personnalisé"
+        }
+    },
+    "bands": {
+        "title": "Bandes d'exposition (% de la limite annuelle)",
+        "subtitle": "Configuration des seuils colorimétriques utilisés dans le tableau de bord et les alertes.",
+        "thresholdPct": "Seuil (%)",
+        "label": "Libellé",
+        "color": "Couleur",
+        "green": "Vert — exposition normale",
+        "yellow": "Jaune — surveillance accrue",
+        "orange": "Orange — niveau d'investigation",
+        "red": "Rouge — dépassement / action immédiate",
+        "previewTitle": "Aperçu de la jauge"
+    },
+    "rbac": {
+        "title": "Permissions du module Dosimétrie",
+        "subtitle": "Matrice des permissions DOSIMETRY_* — lecture seule. Modifiable depuis Gestion des utilisateurs.",
+        "permission": "Permission",
+        "description": "Description",
+        "roles": "Rôles autorisés",
+        "permissions": {
+            "DOSIMETRY_VIEW": "Consulter le tableau de bord et les registres",
+            "DOSIMETRY_RECORD": "Saisir les doses et résultats de mesures",
+            "DOSIMETRY_VALIDATE": "Valider les enregistrements de dose",
+            "DOSIMETRY_MEDICAL": "Accès aux données de surveillance médicale",
+            "DOSIMETRY_ALERT": "Gérer les seuils et les dépassements",
+            "DOSIMETRY_ADMIN": "Administrer le module (paramètres, RBAC)"
+        }
+    },
+    "workers": {
+        "title": "Registre des travailleurs exposés",
+        "lastName": "Nom",
+        "firstName": "Prénom",
+        "matricule": "Matricule",
+        "category": "Catégorie",
+        "site": "Site",
+        "function": "Fonction",
+        "startDate": "Date de début d'exposition",
+        "status": "Statut"
+    },
+    "dosimeters": {
+        "title": "Dosimètres & Instruments",
+        "serialNumber": "N° de série",
+        "model": "Modèle",
+        "type": "Type",
+        "assignedTo": "Assigné à",
+        "lastCalibration": "Dernière calibration",
+        "nextCalibration": "Prochaine calibration",
+        "status": "Statut"
+    },
+    "doses": {
+        "title": "Saisie & suivi des doses",
+        "worker": "Travailleur",
+        "period": "Période",
+        "value": "Valeur",
+        "unit": "Unité",
+        "source": "Source",
+        "recordedAt": "Date d'enregistrement",
+        "recordedBy": "Saisi par"
+    },
+    "alerts": {
+        "title": "Seuils & dépassements",
+        "worker": "Travailleur",
+        "level": "Niveau",
+        "triggeredAt": "Déclenchée le",
+        "status": "Statut",
+        "investigation": "Investigation",
+        "active": "Active",
+        "acknowledged": "Acquittée",
+        "closed": "Clôturée"
+    },
+    "common": {
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "yes": "Oui",
+        "no": "Non"
+    }
+}

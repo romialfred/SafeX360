@@ -281,6 +281,66 @@ export const moduleConfigurations: any[] = [
         isEnabled: true,
         category: 'Safety Communication',
         description: 'Manage system notifications'
+    },
+
+    // Dosimetry & Exposures (LOT — Module Dosimetrie)
+    // Aligné 1:1 avec les sous-items de la sidebar pour cohérence
+    // entre la navigation et la gestion des modules.
+    {
+        id: 'dosimetry-dashboard',
+        name: 'Dosimetry Dashboard',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Real-time overview of doses, exposures and KPIs'
+    },
+    {
+        id: 'dosimetry-workers',
+        name: 'Exposed Workers Registry',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Registry of workers exposed to ionizing radiation (Cat. A/B/Public)'
+    },
+    {
+        id: 'dosimetry-dosimeters',
+        name: 'Dosimeters & Instruments',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Manage dosimeters, measurement instruments and calibration plan'
+    },
+    {
+        id: 'dosimetry-doses',
+        name: 'Dose Entry & Tracking',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Record and follow individual dose measurements'
+    },
+    {
+        id: 'dosimetry-medical',
+        name: 'Medical Surveillance',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Medical follow-up of exposed workers (occupational physician)'
+    },
+    {
+        id: 'dosimetry-alerts',
+        name: 'Thresholds & Overexposures',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Configurable thresholds and management of overexposure alerts'
+    },
+    {
+        id: 'dosimetry-reports',
+        name: 'Reports & Compliance',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Regulatory reports (ICRP 103 / IAEA GSR Part 3) and compliance dashboards'
+    },
+    {
+        id: 'dosimetry-settings',
+        name: 'Dosimetry Settings',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Module configuration: regulatory limits, exposure bands and RBAC'
     }
 ];
 
