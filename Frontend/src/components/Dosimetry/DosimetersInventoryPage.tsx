@@ -6,6 +6,7 @@ import {
     IconChevronRight,
     IconSearch,
     IconPlus,
+    IconPencil,
     IconQrcode,
     IconScan,
     IconCalendarTime,
@@ -427,6 +428,17 @@ const DosimetersInventoryPage = () => {
             >
                 <IconQrcode size={13} stroke={1.8} />
             </button>
+            {canWrite && (
+                <button
+                    type="button"
+                    onClick={() => navigate(`/dosimetry/dosimeters/edit/${row.id}`)}
+                    className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                    title={t('dosimeters.actions.edit')}
+                    aria-label={t('dosimeters.actions.edit')}
+                >
+                    <IconPencil size={13} stroke={1.8} />
+                </button>
+            )}
         </div>
     );
 
@@ -447,7 +459,7 @@ const DosimetersInventoryPage = () => {
             {canWrite && (
                 <button
                     type="button"
-                    onClick={() => navigate('/dosimetry/dosimeters/assign')}
+                    onClick={() => navigate('/dosimetry/dosimeters/new')}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12.5px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm font-medium"
                 >
                     <IconPlus size={14} stroke={2} />
@@ -644,7 +656,7 @@ const DosimetersInventoryPage = () => {
                             {canWrite && (
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/coming-soon')}
+                                    onClick={() => navigate('/dosimetry/dosimeters/new')}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
                                 >
                                     <IconPlus size={13} stroke={2} />
@@ -803,6 +815,10 @@ const DosimetersInventoryPage = () => {
                         setSelectedRow(null);
                         navigate(`/dosimetry/workers/detail/${workerId}`);
                     }}
+                    onEdit={(id) => {
+                        setSelectedRow(null);
+                        navigate(`/dosimetry/dosimeters/edit/${id}`);
+                    }}
                 />
             )}
         </div>
@@ -891,9 +907,10 @@ interface DosimeterDetailModalProps {
     canWrite: boolean;
     onClose: () => void;
     onNavigateWorker: (workerId: number) => void;
+    onEdit: (dosimeterId: number) => void;
 }
 
-function DosimeterDetailModal({ row, canWrite, onClose, onNavigateWorker }: DosimeterDetailModalProps) {
+function DosimeterDetailModal({ row, canWrite, onClose, onNavigateWorker, onEdit }: DosimeterDetailModalProps) {
     const { t } = useTranslation('dosimetry');
 
     const statusCfg = STATUS_CONFIG[row.status];
@@ -1089,6 +1106,14 @@ function DosimeterDetailModal({ row, canWrite, onClose, onNavigateWorker }: Dosi
                     </button>
                     {canWrite && (
                         <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={() => onEdit(row.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                            >
+                                <IconPencil size={12} stroke={1.8} />
+                                {t('dosimeters.detail.actions.edit')}
+                            </button>
                             <button
                                 type="button"
                                 disabled

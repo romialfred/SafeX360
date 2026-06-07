@@ -171,6 +171,7 @@ const ExposedWorkersRegistryPage = lazy(() => import('../components/Dosimetry/Ex
 const ExposedWorkerDetailPage = lazy(() => import('../components/Dosimetry/ExposedWorkerDetailPage'));
 const ExposedWorkerForm = lazy(() => import('../components/Dosimetry/ExposedWorkerForm'));
 const DosimetersInventoryPage = lazy(() => import('../components/Dosimetry/DosimetersInventoryPage'));
+const DosimeterForm = lazy(() => import('../components/Dosimetry/DosimeterForm'));
 const DosimeterAssignmentForm = lazy(() => import('../components/Dosimetry/DosimeterAssignmentForm'));
 const QRScannerPage = lazy(() => import('../components/Dosimetry/QRScannerPage'));
 const DoseEntryForm = lazy(() => import('../components/Dosimetry/DoseEntryForm'));
@@ -477,6 +478,8 @@ const router = createBrowserRouter([
             { path: 'dosimetry/workers/new', element: <DosimetrySuspense><ExposedWorkerForm /></DosimetrySuspense> },
             { path: 'dosimetry/workers/edit/:id', element: <DosimetrySuspense><ExposedWorkerForm /></DosimetrySuspense> },
             { path: 'dosimetry/dosimeters', element: <DosimetrySuspense><DosimetersInventoryPage /></DosimetrySuspense> },
+            { path: 'dosimetry/dosimeters/new', element: <DosimetrySuspense><DosimeterForm /></DosimetrySuspense> },
+            { path: 'dosimetry/dosimeters/edit/:id', element: <DosimetrySuspense><DosimeterForm /></DosimetrySuspense> },
             { path: 'dosimetry/dosimeters/assign', element: <DosimetrySuspense><DosimeterAssignmentForm mode="ASSIGN" /></DosimetrySuspense> },
             { path: 'dosimetry/dosimeters/return', element: <DosimetrySuspense><DosimeterAssignmentForm mode="RETURN" /></DosimetrySuspense> },
             { path: 'dosimetry/dosimeters/scan', element: <DosimetrySuspense><QRScannerPage /></DosimetrySuspense> },

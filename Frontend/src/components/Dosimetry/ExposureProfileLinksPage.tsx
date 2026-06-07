@@ -36,6 +36,7 @@ import {
     IconSearch,
     IconEye,
     IconPencil,
+    IconPlus,
     IconInfoCircle,
     IconFilter,
     IconAlertOctagon,
@@ -45,12 +46,23 @@ import {
 } from '@tabler/icons-react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import {
+    Modal,
+    Select,
+    TextInput,
+    Textarea,
+    Button,
+    Group,
+} from '@mantine/core';
 import { useAppSelector } from '../../slices/hooks';
+import { errorNotification, successNotification } from '../../utility/NotificationUtility';
 import {
     getAllExposureProfiles,
     getExposureProfileLinks,
     getExposureProfileEstimatedDose,
     listMeasurementPoints,
+    createExposureProfile,
+    searchWorkers,
     type ExposureProfileDTO,
     type ExposureProfileLinkDTO,
     type MeasurementPointDTO,
@@ -158,6 +170,10 @@ const ExposureProfileLinksPage = () => {
         exposureType: 'all',
     });
 
+    // Modal de creation d'un profil
+    const [createModalOpened, setCreateModalOpened] = useState(false);
+    const [refreshTick, setRefreshTick] = useState(0);
+
     // ─── Chargement initial ───
     useEffect(() => {
         let cancelled = false;
@@ -241,7 +257,7 @@ const ExposureProfileLinksPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [mineId, t]);
+    }, [mineId, refreshTick, t]);
 
     // ─── KPI ───
     const kpi = useMemo(() => {
@@ -523,6 +539,17 @@ const ExposureProfileLinksPage = () => {
                                 })),
                             ]}
                         />
+
+                        {canWrite && (
+                            <button
+                                type="button"
+                                onClick={() => setCreateModalOpened(true)}
+                                className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                            >
+                                <IconPlus size={13} stroke={2} />
+                                {t('exposureProfile.links.list.toolbar.add')}
+                            </button>
+                        )}
                     </div>
 
                     {(filters.query || filters.exposureType !== 'all') && (
@@ -633,6 +660,24 @@ const ExposureProfileLinksPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ─── Modal de creation d'un profil ─── */}
+            {createModalOpened && (
+                <CreateExposureProfileModal
+                    opened={createModalOpened}
+                    mineId={mineId}
+                    onClose={() => setCreateModalOpened(false)}
+                    onSuccess={(profileId) => {
+                        setCreateModalOpened(false);
+                        setRefreshTick((n) => n + 1);
+                        if (profileId > 0) {
+                            navigate(
+                                `/dosimetry/exposure-profiles/${profileId}/edit`,
+                            );
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };
@@ -735,6 +780,219 @@ function FilterSelect({
                 </option>
             ))}
         </select>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Modal de creation d'un profil d'exposition
+//
+//  Apres creation, l'utilisateur est redirige vers l'editeur de liens
+//  /dosimetry/exposure-profiles/:profileId/edit pour rattacher les points
+//  de mesure et leurs fractions de temps de presence.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface WorkerLite {
+    id: number;
+    matricule: string;
+    fullName: string;
+}
+
+interface CreateExposureProfileModalProps {
+    opened: boolean;
+    mineId: number;
+    onClose: () => void;
+    onSuccess: (profileId: number) => void;
+}
+
+function CreateExposureProfileModal({
+    opened,
+    mineId,
+    onClose,
+    onSuccess,
+}: CreateExposureProfileModalProps) {
+    const { t } = useTranslation('dosimetry');
+
+    const [workers, setWorkers] = useState<WorkerLite[]>([]);
+    const [loadingWorkers, setLoadingWorkers] = useState(false);
+    const [workerId, setWorkerId] = useState<string | null>(null);
+    const [exposureType, setExposureType] = useState<string>('');
+    const [frequency, setFrequency] = useState<string>('');
+    const [conditions, setConditions] = useState<string>('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (!opened) return;
+        let cancelled = false;
+        setLoadingWorkers(true);
+        searchWorkers({ mineId })
+            .then((list: any[]) => {
+                if (cancelled) return;
+                const lite: WorkerLite[] = (Array.isArray(list) ? list : [])
+                    .filter((w) => w?.id != null)
+                    .map((w) => ({
+                        id: Number(w.id),
+                        matricule: String(w.matricule ?? w.employeeId ?? `#${w.id}`),
+                        fullName: String(w.fullName ?? w.employeeName ?? '—'),
+                    }));
+                setWorkers(lite);
+            })
+            .catch(() => {
+                if (!cancelled) setWorkers([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingWorkers(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [opened, mineId]);
+
+    const validate = (): boolean => {
+        const next: Record<string, string> = {};
+        if (!workerId) {
+            next.workerId = t(
+                'exposureProfile.links.list.createModal.errors.workerRequired',
+            );
+        }
+        if (!exposureType.trim()) {
+            next.exposureType = t(
+                'exposureProfile.links.list.createModal.errors.exposureTypeRequired',
+            );
+        }
+        setErrors(next);
+        return Object.keys(next).length === 0;
+    };
+
+    const handleSubmit = async () => {
+        if (!validate()) return;
+        setSubmitting(true);
+        const payload: ExposureProfileDTO = {
+            workerId: Number(workerId),
+            exposureType: exposureType.trim(),
+            frequency: frequency.trim() || null,
+            conditions: conditions.trim() || null,
+        };
+        try {
+            const newId = await createExposureProfile(payload);
+            successNotification(
+                t('exposureProfile.links.list.createModal.success'),
+            );
+            onSuccess(Number(newId));
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.message ??
+                err?.message ??
+                t('exposureProfile.links.list.createModal.error');
+            errorNotification(msg);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            title={
+                <span
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontWeight: 600,
+                        fontSize: '16px',
+                    }}
+                    className="text-slate-900"
+                >
+                    {t('exposureProfile.links.list.createModal.title')}
+                </span>
+            }
+            centered
+            size="lg"
+        >
+            <p className="text-[12.5px] text-slate-600 mb-4">
+                {t('exposureProfile.links.list.createModal.subtitle')}
+            </p>
+            <div className="space-y-3">
+                <Select
+                    label={t('exposureProfile.links.list.createModal.workerLabel')}
+                    placeholder={t(
+                        'exposureProfile.links.list.createModal.workerPlaceholder',
+                    )}
+                    data={workers.map((w) => ({
+                        value: String(w.id),
+                        label: `${w.matricule} — ${w.fullName}`,
+                    }))}
+                    searchable
+                    nothingFoundMessage={t(
+                        'exposureProfile.links.list.createModal.workerNotFound',
+                    )}
+                    value={workerId}
+                    onChange={setWorkerId}
+                    error={errors.workerId}
+                    disabled={loadingWorkers}
+                    size="sm"
+                    withAsterisk
+                />
+                <TextInput
+                    label={t(
+                        'exposureProfile.links.list.createModal.exposureTypeLabel',
+                    )}
+                    placeholder={t(
+                        'exposureProfile.links.list.createModal.exposureTypePlaceholder',
+                    )}
+                    description={t(
+                        'exposureProfile.links.list.createModal.exposureTypeDesc',
+                    )}
+                    value={exposureType}
+                    onChange={(e) => setExposureType(e.currentTarget.value)}
+                    error={errors.exposureType}
+                    withAsterisk
+                    size="sm"
+                />
+                <TextInput
+                    label={t(
+                        'exposureProfile.links.list.createModal.frequencyLabel',
+                    )}
+                    placeholder={t(
+                        'exposureProfile.links.list.createModal.frequencyPlaceholder',
+                    )}
+                    value={frequency}
+                    onChange={(e) => setFrequency(e.currentTarget.value)}
+                    size="sm"
+                />
+                <Textarea
+                    label={t(
+                        'exposureProfile.links.list.createModal.conditionsLabel',
+                    )}
+                    placeholder={t(
+                        'exposureProfile.links.list.createModal.conditionsPlaceholder',
+                    )}
+                    value={conditions}
+                    onChange={(e) => setConditions(e.currentTarget.value)}
+                    minRows={2}
+                    size="sm"
+                />
+            </div>
+            <Group justify="flex-end" gap="sm" mt="md">
+                <Button
+                    variant="default"
+                    size="sm"
+                    onClick={onClose}
+                    disabled={submitting}
+                >
+                    {t('exposureProfile.links.list.createModal.cancel')}
+                </Button>
+                <Button
+                    size="sm"
+                    color="indigo"
+                    loading={submitting}
+                    onClick={handleSubmit}
+                    leftSection={<IconPlus size={13} />}
+                >
+                    {t('exposureProfile.links.list.createModal.submit')}
+                </Button>
+            </Group>
+        </Modal>
     );
 }
 

@@ -24,7 +24,7 @@
  * i18n : namespace `dosimetry` -> bloc `ambient.map`
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -38,6 +38,7 @@ import {
     IconHelpCircle,
     IconInfoCircle,
     IconMap2,
+    IconPlus,
     IconRadar,
     IconRulerMeasure,
     IconFilter,
@@ -54,6 +55,26 @@ import {
     type AmbientMeasurementDTO,
     type ZoneClass,
 } from '../../services/DosimetryService';
+
+// Lazy-load du formulaire de saisie de mesure d'ambiance (modal).
+const AmbientMeasurementForm = lazy(() => import('./AmbientMeasurementForm'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RBAC tolerant — aligne sur les autres pages Dosimetry
+// ─────────────────────────────────────────────────────────────────────────────
+
+function hasDosimetryPermission(user: any, permission: string): boolean {
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    const candidates: string[] = [];
+    if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
+    if (Array.isArray(user.authorities)) {
+        candidates.push(...user.authorities.map((a: any) => a?.authority ?? a));
+    }
+    if (Array.isArray(user.roles)) candidates.push(...user.roles);
+    if (typeof user.role === 'string') candidates.push(user.role);
+    return candidates.includes(permission);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types & helpers
@@ -160,6 +181,7 @@ const AmbientMonitoringMapPage = () => {
     const user = useAppSelector((state: any) => state.user);
     const selectedCompanyId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId);
     const mineId: number = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1);
+    const canWrite = hasDosimetryPermission(user, 'DOSIMETRY_WRITE');
 
     const [cells, setCells] = useState<HeatCell[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,6 +192,11 @@ const AmbientMonitoringMapPage = () => {
         period: '7d',
     });
     const [hoverId, setHoverId] = useState<number | null>(null);
+
+    // Modal de saisie d'une mesure d'ambiance
+    const [measureModalOpened, setMeasureModalOpened] = useState(false);
+    // Compteur pour declencher un refresh apres ajout d'une mesure
+    const [refreshTick, setRefreshTick] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -248,7 +275,7 @@ const AmbientMonitoringMapPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [mineId, filters.period, t]);
+    }, [mineId, filters.period, refreshTick, t]);
 
     // ───── Filtrage ─────
     const filteredCells = useMemo(() => {
@@ -411,6 +438,16 @@ const AmbientMonitoringMapPage = () => {
                                 <IconList size={13} stroke={1.8} />
                                 {t('ambient.map.toolbar.openRegistry')}
                             </button>
+                            {canWrite && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMeasureModalOpened(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                                >
+                                    <IconPlus size={13} stroke={2} />
+                                    {t('ambient.map.toolbar.addMeasurement')}
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -498,6 +535,18 @@ const AmbientMonitoringMapPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ─── Modal de saisie d'une mesure d'ambiance ─── */}
+            {measureModalOpened && (
+                <Suspense fallback={null}>
+                    <AmbientMeasurementForm
+                        opened={measureModalOpened}
+                        onClose={() => setMeasureModalOpened(false)}
+                        mineId={mineId}
+                        onSuccess={() => setRefreshTick((n) => n + 1)}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };

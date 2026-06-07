@@ -616,7 +616,8 @@
             "actions": "Actions"
         },
         "actions": {
-            "view": "Voir le détail"
+            "view": "Voir le détail",
+            "edit": "Modifier ce dosimètre"
         },
         "empty": {
             "title": "Aucun dosimètre enregistré",
@@ -641,6 +642,7 @@
             "historyPhaseNote": "Le suivi détaillé des attributions arrive prochainement.",
             "actionPhaseNote": "Action bientôt disponible (cycle de vie opérationnel).",
             "actions": {
+                "edit": "Modifier",
                 "assign": "Attribuer à un travailleur",
                 "return": "Retour",
                 "markReading": "Mettre en lecture"
@@ -649,6 +651,51 @@
         "footer": {
             "title": "ISO/IEC 17025 · AIEA RS-G-1.3",
             "note": "Chaque dosimètre fait l'objet d'un cycle d'étalonnage traçable conforme à la norme ISO/IEC 17025 (laboratoires d'étalonnage) et au guide AIEA RS-G-1.3 §5.3 sur les évaluations dosimétriques individuelles."
+        },
+        "form": {
+            "breadcrumbNew": "Nouveau dosimètre",
+            "breadcrumbEdit": "Modifier",
+            "titleNew": "Nouveau dosimètre",
+            "titleEdit": "Modifier le dosimètre",
+            "subtitle": "Identifiez un dosimètre du parc (TLD, OSL, FILM ou EPD) et son cycle d'étalonnage. Le QR code est généré automatiquement si laissé vide.",
+            "back": "Retour à l'inventaire",
+            "cancel": "Annuler",
+            "submitCreate": "Créer le dosimètre",
+            "submitUpdate": "Enregistrer les modifications",
+            "successCreate": "Dosimètre créé avec succès.",
+            "successUpdate": "Dosimètre mis à jour avec succès.",
+            "errorGeneric": "Une erreur est survenue lors de l'enregistrement.",
+            "loading": "Chargement du dosimètre…",
+            "loadError": "Impossible de charger le dosimètre. Vérifiez l'identifiant et réessayez.",
+            "isoNotice": "Conforme ISO/IEC 17025. Le cycle d'étalonnage est tracé pour chaque dosimètre.",
+            "sections": {
+                "identity": "Identité & traçabilité",
+                "lifecycle": "Cycle de vie & étalonnage"
+            },
+            "fields": {
+                "serial": "N° de série",
+                "serialDesc": "Identifiant unique gravé ou imprimé sur le dosimètre.",
+                "serialPlaceholder": "Ex. TLD-2026-00345",
+                "type": "Technologie",
+                "typeDesc": "Choisissez la technologie du dosimètre.",
+                "typePlaceholder": "Sélectionner une technologie",
+                "qrCode": "QR code",
+                "qrCodeDesc": "Code lisible pour les opérations terrain. Sera généré automatiquement si vide.",
+                "qrCodePlaceholder": "DOSI-TLD-2026-00345",
+                "qrCodeAuto": "Auto-générer",
+                "status": "Statut initial",
+                "statusDesc": "Statut opérationnel. Par défaut « Disponible » pour un nouveau dosimètre.",
+                "calibrationDueDate": "Prochaine échéance d'étalonnage",
+                "calibrationDueDateDesc": "Date d'expiration de l'étalonnage ISO/IEC 17025.",
+                "calibrationDueDatePlaceholder": "JJ/MM/AAAA"
+            },
+            "errors": {
+                "serialRequired": "Le numéro de série est obligatoire.",
+                "serialTooShort": "Le numéro de série doit faire au moins 3 caractères.",
+                "serialTooLong": "Le numéro de série ne doit pas dépasser 64 caractères.",
+                "typeRequired": "La technologie du dosimètre est obligatoire.",
+                "permissionDenied": "Vous n'avez pas la permission de créer ou modifier un dosimètre."
+            }
         }
     },
     "qrScanner": {
@@ -2001,6 +2048,7 @@
                 "filterZone": "Filtrer par zone",
                 "filterPeriod": "Période d'agrégation",
                 "openRegistry": "Voir le registre",
+                "addMeasurement": "Nouvelle mesure",
                 "activeFilters": "{{count}} / {{total}} points affichés",
                 "clearFilters": "Réinitialiser"
             },
@@ -2334,6 +2382,7 @@
                     "searchAria": "Rechercher dans les profils d'exposition",
                     "filterType": "Filtrer par type d'exposition",
                     "allTypes": "Tous les types",
+                    "add": "Nouveau profil",
                     "activeFilters": "{{count}} sur {{total}} profils affichés",
                     "clearFilters": "Réinitialiser les filtres"
                 },
@@ -2352,6 +2401,28 @@
                 "empty": {
                     "title": "Aucun profil d'exposition enregistré",
                     "subtitle": "Créez des profils d'exposition depuis la fiche travailleur pour les rattacher à des points de mesure d'ambiance."
+                },
+                "createModal": {
+                    "title": "Nouveau profil d'exposition",
+                    "subtitle": "Rattachez un travailleur à un type d'exposition. Les liens vers les points de mesure et les fractions de temps seront édités juste après la création.",
+                    "workerLabel": "Travailleur exposé",
+                    "workerPlaceholder": "Rechercher un matricule ou un nom…",
+                    "workerNotFound": "Aucun travailleur trouvé",
+                    "exposureTypeLabel": "Type d'exposition",
+                    "exposureTypeDesc": "Ex. : externe gamma, inhalation radon, contamination surfacique…",
+                    "exposureTypePlaceholder": "Externe gamma",
+                    "frequencyLabel": "Fréquence",
+                    "frequencyPlaceholder": "Quotidienne · Hebdomadaire · Mensuelle…",
+                    "conditionsLabel": "Conditions",
+                    "conditionsPlaceholder": "EPI portés, accès restreints, particularités opérationnelles…",
+                    "cancel": "Annuler",
+                    "submit": "Créer le profil",
+                    "success": "Profil créé. Vous pouvez maintenant rattacher les points de mesure.",
+                    "error": "La création du profil a échoué.",
+                    "errors": {
+                        "workerRequired": "Le travailleur exposé est obligatoire.",
+                        "exposureTypeRequired": "Le type d'exposition est obligatoire."
+                    }
                 },
                 "footer": {
                     "title": "Estimation indicative — CIPR 103",

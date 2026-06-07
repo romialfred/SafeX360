@@ -616,7 +616,8 @@
             "actions": "Actions"
         },
         "actions": {
-            "view": "View details"
+            "view": "View details",
+            "edit": "Edit this dosimeter"
         },
         "empty": {
             "title": "No dosimeter registered",
@@ -641,6 +642,7 @@
             "historyPhaseNote": "Detailed assignment tracking is coming soon.",
             "actionPhaseNote": "This action is coming soon (operational lifecycle).",
             "actions": {
+                "edit": "Edit",
                 "assign": "Assign to a worker",
                 "return": "Return",
                 "markReading": "Mark in reading"
@@ -649,6 +651,51 @@
         "footer": {
             "title": "ISO/IEC 17025 · IAEA RS-G-1.3",
             "note": "Each dosimeter follows a traceable calibration cycle compliant with ISO/IEC 17025 (calibration laboratories) and IAEA RS-G-1.3 §5.3 on individual dosimetric assessments."
+        },
+        "form": {
+            "breadcrumbNew": "New dosimeter",
+            "breadcrumbEdit": "Edit",
+            "titleNew": "New dosimeter",
+            "titleEdit": "Edit dosimeter",
+            "subtitle": "Register a dosimeter from the fleet (TLD, OSL, FILM or EPD) with its calibration cycle. The QR code is auto-generated if left empty.",
+            "back": "Back to inventory",
+            "cancel": "Cancel",
+            "submitCreate": "Create dosimeter",
+            "submitUpdate": "Save changes",
+            "successCreate": "Dosimeter created successfully.",
+            "successUpdate": "Dosimeter updated successfully.",
+            "errorGeneric": "An error occurred while saving.",
+            "loading": "Loading dosimeter…",
+            "loadError": "Unable to load the dosimeter. Verify the id and try again.",
+            "isoNotice": "ISO/IEC 17025 compliant. Calibration cycle is tracked for every dosimeter.",
+            "sections": {
+                "identity": "Identity & traceability",
+                "lifecycle": "Lifecycle & calibration"
+            },
+            "fields": {
+                "serial": "Serial number",
+                "serialDesc": "Unique identifier engraved or printed on the dosimeter.",
+                "serialPlaceholder": "e.g. TLD-2026-00345",
+                "type": "Technology",
+                "typeDesc": "Pick the dosimeter technology.",
+                "typePlaceholder": "Select a technology",
+                "qrCode": "QR code",
+                "qrCodeDesc": "Field-readable code. Will be auto-generated if left empty.",
+                "qrCodePlaceholder": "DOSI-TLD-2026-00345",
+                "qrCodeAuto": "Auto-generate",
+                "status": "Initial status",
+                "statusDesc": "Operational status. Defaults to ‘Available’ for a new dosimeter.",
+                "calibrationDueDate": "Next calibration due date",
+                "calibrationDueDateDesc": "ISO/IEC 17025 calibration expiry date.",
+                "calibrationDueDatePlaceholder": "DD/MM/YYYY"
+            },
+            "errors": {
+                "serialRequired": "Serial number is required.",
+                "serialTooShort": "Serial number must be at least 3 characters long.",
+                "serialTooLong": "Serial number cannot exceed 64 characters.",
+                "typeRequired": "Dosimeter technology is required.",
+                "permissionDenied": "You don't have permission to create or edit a dosimeter."
+            }
         }
     },
     "qrScanner": {
@@ -2001,6 +2048,7 @@
                 "filterZone": "Filter by zone",
                 "filterPeriod": "Aggregation period",
                 "openRegistry": "Open registry",
+                "addMeasurement": "New measurement",
                 "activeFilters": "{{count}} / {{total}} points shown",
                 "clearFilters": "Clear filters"
             },
@@ -2334,6 +2382,7 @@
                     "searchAria": "Search exposure profiles",
                     "filterType": "Filter by exposure type",
                     "allTypes": "All types",
+                    "add": "New profile",
                     "activeFilters": "{{count}} / {{total}} profiles shown",
                     "clearFilters": "Reset filters"
                 },
@@ -2352,6 +2401,28 @@
                 "empty": {
                     "title": "No exposure profile registered",
                     "subtitle": "Create exposure profiles from the worker view to be able to link them to ambient measurement points."
+                },
+                "createModal": {
+                    "title": "New exposure profile",
+                    "subtitle": "Link an exposed worker to an exposure type. Measurement-point links and time fractions will be edited right after creation.",
+                    "workerLabel": "Exposed worker",
+                    "workerPlaceholder": "Search by employee id or name…",
+                    "workerNotFound": "No worker found",
+                    "exposureTypeLabel": "Exposure type",
+                    "exposureTypeDesc": "e.g. external gamma, radon inhalation, surface contamination…",
+                    "exposureTypePlaceholder": "External gamma",
+                    "frequencyLabel": "Frequency",
+                    "frequencyPlaceholder": "Daily · Weekly · Monthly…",
+                    "conditionsLabel": "Conditions",
+                    "conditionsPlaceholder": "Worn PPE, restricted access, operational specifics…",
+                    "cancel": "Cancel",
+                    "submit": "Create profile",
+                    "success": "Profile created. You can now attach measurement points.",
+                    "error": "Failed to create the profile.",
+                    "errors": {
+                        "workerRequired": "The exposed worker is required.",
+                        "exposureTypeRequired": "The exposure type is required."
+                    }
                 },
                 "footer": {
                     "title": "Indicative estimate — ICRP 103",
