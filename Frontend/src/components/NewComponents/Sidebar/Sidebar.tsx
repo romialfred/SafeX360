@@ -490,15 +490,17 @@ export const menuIdToUrl: Record<string, string> = {
     "modules-management": "/modules-management",
 
     // LOT — Module Dosimetrie & Expositions
-    // Phase 2 Frontend-A : ajout du registre des travailleurs exposes.
-    // Les autres sous-modules pointent vers /coming-soon (placeholder) pour
-    // eviter les 404 tout en laissant la sidebar navigable.
+    // 2026-06-07 : toutes les entrees pointent vers une page reelle.
+    // Le placeholder /coming-soon n'est plus reference par aucune entree de
+    // sidebar : le module est complet (Phase 9-B terminee).
     "dosimetry": "/dosimetry",
     "dosimetry-settings": "/dosimetry/settings",
     "dosimetry-workers": "/dosimetry/workers",
     "dosimetry-dashboard": "/dosimetry",
     "dosimetry-dosimeters": "/dosimetry/dosimeters",
-    "dosimetry-doses": "/coming-soon",
+    // "Saisie & suivi des doses" : entree wizard d'import en masse,
+    // d'ou l'utilisateur peut aussi naviguer vers la saisie individuelle.
+    "dosimetry-doses": "/dosimetry/doses/import",
     "dosimetry-ambient": "/dosimetry/measurement-points",
     "dosimetry-ambient-map": "/dosimetry/ambient-map",
     "dosimetry-campaigns": "/dosimetry/campaigns",

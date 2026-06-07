@@ -12,7 +12,7 @@
  * <p>Tooltip riche avec libelles + counts. Annotation totale en haut a droite.
  */
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
     BarChart,
     Bar,
@@ -114,7 +114,7 @@ function CustomTooltip({ active, payload, workersLabel }: CustomTooltipProps) {
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function DoseDistributionChart({
+function DoseDistributionChartImpl({
     distribution,
     height = 320,
     loading = false,
@@ -207,3 +207,7 @@ export default function DoseDistributionChart({
         </div>
     );
 }
+
+// 2026-06-07 perf : memoization (re-render uniquement si props change)
+const DoseDistributionChart = memo(DoseDistributionChartImpl);
+export default DoseDistributionChart;

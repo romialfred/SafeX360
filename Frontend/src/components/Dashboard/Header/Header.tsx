@@ -259,8 +259,10 @@ const Header = () => {
 
             {/* Deuxième ligne : actions rapides sobres + urgences gyrophare
                 LOT 48 P6.j — Responsive : scroll horizontal sur mobile pour eviter le wrap,
-                labels masques sur mobile (icones seules), gaps reduits. */}
-            <div className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+                labels masques sur mobile (icones seules), gaps reduits.
+                FIX 2026-06-07 : min-h + contain:layout pour stopper l'oscillation propagee
+                par les anneaux pulses des boutons SOS / Alerte. */}
+            <div className="bg-white border-b border-slate-200 h-14 min-h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-x-auto scrollbar-hide" style={{ contain: 'layout style' }}>
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                     {/* LOT 45 — Boutons CTA pleins (vrai look "bouton d'action", plus "onglet") */}
                     <Tooltip label={t('navigation:header.reportIncident')}>

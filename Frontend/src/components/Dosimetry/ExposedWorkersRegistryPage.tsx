@@ -734,7 +734,7 @@ const ExposedWorkersRegistryPage = () => {
                 </div>
 
                 {/* ─── DataTable ─── */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="safex-dosimetry-table bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     {loading ? (
                         <div className="px-4 py-12 text-center text-slate-500 text-[13px]">
                             <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />

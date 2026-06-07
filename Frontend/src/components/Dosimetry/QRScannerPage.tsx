@@ -327,7 +327,7 @@ const QRScannerPage = () => {
                 {state.kind === 'notFound' && (
                     <NotFoundCard
                         value={state.value}
-                        onAdd={() => navigate('/coming-soon')}
+                        onAdd={() => navigate('/dosimetry/dosimeters/assign')}
                         onRescan={resetScan}
                     />
                 )}

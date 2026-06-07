@@ -14,6 +14,7 @@
  * surlignee en violet.
  */
 
+import { memo } from 'react';
 import {
     IconBuildingFactory2,
     IconUsersGroup,
@@ -307,7 +308,7 @@ function MineCard({ mine, selected, label, onClick, labels }: MineCardProps) {
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function MultiMineComparisonCard({
+function MultiMineComparisonCardImpl({
     data,
     loading = false,
     selectedMineId = null,
@@ -379,3 +380,7 @@ export default function MultiMineComparisonCard({
         </div>
     );
 }
+
+// 2026-06-07 perf : memoization
+const MultiMineComparisonCard = memo(MultiMineComparisonCardImpl);
+export default MultiMineComparisonCard;

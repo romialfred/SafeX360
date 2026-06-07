@@ -13,7 +13,7 @@
  * Le composant pivote les donnees pour produire la forme attendue par Recharts.
  */
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
     LineChart,
     Line,
@@ -125,7 +125,7 @@ function CustomTooltip({ active, payload, label, unit }: CustomTooltipProps) {
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function DoseTrendChart({
+function DoseTrendChartImpl({
     avg,
     median,
     max,
@@ -297,3 +297,9 @@ export default function DoseTrendChart({
         </div>
     );
 }
+
+// 2026-06-07 perf : memoization pour eviter les re-renders quand
+// le DashboardPage parent change d'etat (filtres, periode) sans toucher
+// aux props du chart.
+const DoseTrendChart = memo(DoseTrendChartImpl);
+export default DoseTrendChart;

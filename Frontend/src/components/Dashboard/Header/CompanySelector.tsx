@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import { Divider, ScrollArea } from "@mantine/core";
+import { Divider, Popover, ScrollArea } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
 
 import { getAllCompanies } from "../../../services/HrmsService";
@@ -292,120 +292,141 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
 
     const isAllSelected = selectedCompanyId === null;
 
+    /*
+     * Fix 2026-06-07 : le dropdown etait positionne en absolute INSIDE le header
+     * `position:fixed z-[100]` + barre `overflow-x-auto`. Sur certains contextes,
+     * le popup etait clipped ou repositionne en bas de page.
+     * Solution : Popover Mantine avec `withinPortal` (portail vers body) + zIndex 1100
+     * (au-dessus du header z-100, au-dessous des modals Mantine).
+     */
     return (
-        <div className={combineClassNames("relative", className)}>
-            {/* LOT 41 — Trigger CompanySelector : pilule blanche pleine pour vraie lisibilité sur teal */}
-            <div
-                onClick={canSelect ? handleToggleDropdown : undefined}
-                className={combineClassNames(
-                    "flex items-center gap-2.5 bg-white border border-white/40 px-3.5 py-2 rounded-lg transition shadow-sm",
-                    canSelect ? "cursor-pointer hover:bg-slate-50 hover:border-white/60" : "cursor-default"
-                )}
-            >
-                <div className={`w-2 h-2 rounded-full ${selectedStatusColor} shadow-sm flex-shrink-0`}></div>
-                <div className="flex flex-col leading-tight min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider text-teal-700 font-medium">
-                        {selectedCompanyId === null ? "Vue consolidée" : "Mine active"}
-                    </span>
-                    <span className="text-slate-900 text-[13px] font-medium truncate max-w-[200px]">
-                        {displayLabel}
-                    </span>
-                </div>
-                {canSelect && (
-                    <IconChevronDown
-                        size={16}
-                        className={`text-slate-600 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}
-                    />
-                )}
-            </div>
-
-            {canSelect && dropdownOpen && (
-                <div className="absolute top-12 right-0 w-[400px] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-                    <div className="bg-gradient-to-r from-teal-700 to-emerald-600 px-4 py-3">
-                        <p className="text-white text-sm">Sélectionner la mine active</p>
-                        <p className="text-teal-100 text-xs">Filtrez les données par site</p>
+        <Popover
+            opened={canSelect && dropdownOpen}
+            onChange={setDropdownOpen}
+            position="bottom-end"
+            offset={8}
+            withinPortal
+            zIndex={1100}
+            shadow="xl"
+            radius="xl"
+            transitionProps={{ duration: 140 }}
+            closeOnClickOutside
+            closeOnEscape
+        >
+            <Popover.Target>
+                <div className={combineClassNames("relative", className)}>
+                    {/* LOT 41 — Trigger CompanySelector : pilule blanche pleine pour vraie lisibilité sur teal */}
+                    <div
+                        onClick={canSelect ? handleToggleDropdown : undefined}
+                        className={combineClassNames(
+                            "flex items-center gap-2.5 bg-white border border-white/40 px-3.5 py-2 rounded-lg transition shadow-sm",
+                            canSelect ? "cursor-pointer hover:bg-slate-50 hover:border-white/60" : "cursor-default"
+                        )}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${selectedStatusColor} shadow-sm flex-shrink-0`}></div>
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <span className="text-[10px] uppercase tracking-wider text-teal-700 font-medium">
+                                {selectedCompanyId === null ? "Vue consolidée" : "Mine active"}
+                            </span>
+                            <span className="text-slate-900 text-[13px] font-medium truncate max-w-[200px]">
+                                {displayLabel}
+                            </span>
+                        </div>
+                        {canSelect && (
+                            <IconChevronDown
+                                size={16}
+                                className={`text-slate-600 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}
+                            />
+                        )}
                     </div>
-                    <Divider />
+                </div>
+            </Popover.Target>
 
-                    <ScrollArea h={420}>
-                        <div className="p-2">
-                            <div
-                                className={combineClassNames(
-                                    "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
-                                    isAllSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
-                                )}
-                                onClick={handleSelectAll}
-                            >
-                                <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-teal-600 to-emerald-700 text-white rounded-lg shadow">
-                                    <Icon icon="mdi:earth" width={22} />
-                                </div>
+            <Popover.Dropdown p={0} className="!border-slate-200 !rounded-xl !overflow-hidden" style={{ width: 400 }}>
+                <div className="bg-gradient-to-r from-teal-700 to-emerald-600 px-4 py-3">
+                    <p className="text-white text-sm">Sélectionner la mine active</p>
+                    <p className="text-teal-100 text-xs">Filtrez les données par site</p>
+                </div>
+                <Divider />
 
-                                <div className="flex-1">
-                                    <p className="text-sm text-slate-900">Toutes les mines (consolidé)</p>
-                                    <p className="text-xs text-slate-500">Vue agrégée multi-sites</p>
-                                </div>
-
-                                {isAllSelected && <span className="text-teal-600 text-sm">✓</span>}
+                <ScrollArea h={420}>
+                    <div className="p-2">
+                        <div
+                            className={combineClassNames(
+                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
+                                isAllSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
+                            )}
+                            onClick={handleSelectAll}
+                        >
+                            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-teal-600 to-emerald-700 text-white rounded-lg shadow">
+                                <Icon icon="mdi:earth" width={22} />
                             </div>
 
-                            <p className="px-2 pt-4 pb-2 text-[10px] uppercase tracking-widest text-slate-400">
-                                Mines individuelles
-                            </p>
+                            <div className="flex-1">
+                                <p className="text-sm text-slate-900">Toutes les mines (consolidé)</p>
+                                <p className="text-xs text-slate-500">Vue agrégée multi-sites</p>
+                            </div>
 
-                            {loading && (
-                                <div className="px-2 py-4 text-sm text-slate-500">Chargement des mines...</div>
-                            )}
-
-                            {error && !loading && (
-                                <div className="px-2 py-4 text-sm text-red-500">{error}</div>
-                            )}
-
-                            {!loading && !error && companies.length === 0 && (
-                                <div className="px-2 py-4 text-sm text-slate-500">Aucune mine trouvée.</div>
-                            )}
-
-                            {!loading && !error && companies.length > 0 && (
-                                <div className="flex flex-col gap-1.5">
-                                    {companies.map((company, index) => {
-                                        const name = resolveCompanyName(company);
-                                        const description = resolveCompanyDescription(company);
-                                        const code = resolveCompanyCode(name);
-                                        const statusColor = resolveStatusColor(company.status);
-                                        const isSelected = selectedCompanyId === company.id;
-                                        return (
-                                            <div
-                                                key={company.id ? String(company.id) : `company-${index}`}
-                                                onClick={() => handleSelectCompany(company)}
-                                                className={combineClassNames(
-                                                    "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
-                                                    isSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
-                                                )}
-                                            >
-                                                <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-white rounded-lg text-xs shadow">
-                                                    {code}
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm text-slate-900 truncate">{name}</p>
-                                                    {description && (
-                                                        <p className="text-xs text-slate-500 truncate">{description}</p>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} title={company.status ?? "INCONNU"}></span>
-                                                    {isSelected && <span className="text-teal-600 text-xs">✓</span>}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            {isAllSelected && <span className="text-teal-600 text-sm">✓</span>}
                         </div>
-                    </ScrollArea>
-                </div>
-            )}
-        </div>
+
+                        <p className="px-2 pt-4 pb-2 text-[10px] uppercase tracking-widest text-slate-400">
+                            Mines individuelles
+                        </p>
+
+                        {loading && (
+                            <div className="px-2 py-4 text-sm text-slate-500">Chargement des mines...</div>
+                        )}
+
+                        {error && !loading && (
+                            <div className="px-2 py-4 text-sm text-red-500">{error}</div>
+                        )}
+
+                        {!loading && !error && companies.length === 0 && (
+                            <div className="px-2 py-4 text-sm text-slate-500">Aucune mine trouvée.</div>
+                        )}
+
+                        {!loading && !error && companies.length > 0 && (
+                            <div className="flex flex-col gap-1.5">
+                                {companies.map((company, index) => {
+                                    const name = resolveCompanyName(company);
+                                    const description = resolveCompanyDescription(company);
+                                    const code = resolveCompanyCode(name);
+                                    const statusColor = resolveStatusColor(company.status);
+                                    const isSelected = selectedCompanyId === company.id;
+                                    return (
+                                        <div
+                                            key={company.id ? String(company.id) : `company-${index}`}
+                                            onClick={() => handleSelectCompany(company)}
+                                            className={combineClassNames(
+                                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
+                                                isSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
+                                            )}
+                                        >
+                                            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-white rounded-lg text-xs shadow">
+                                                {code}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-slate-900 truncate">{name}</p>
+                                                {description && (
+                                                    <p className="text-xs text-slate-500 truncate">{description}</p>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col items-end gap-1">
+                                                <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} title={company.status ?? "INCONNU"}></span>
+                                                {isSelected && <span className="text-teal-600 text-xs">✓</span>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </Popover.Dropdown>
+        </Popover>
     );
 };
 

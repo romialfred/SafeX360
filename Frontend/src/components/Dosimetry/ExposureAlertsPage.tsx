@@ -656,15 +656,15 @@ const ExposureAlertsPage = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-[12.5px]">
                             <thead>
-                                <tr className="bg-slate-50/80 text-left text-[10.5px] uppercase tracking-[0.10em] text-slate-500">
-                                    <th className="px-4 py-2 font-semibold">{t('alerts.table.level')}</th>
-                                    <th className="px-4 py-2 font-semibold">{t('alerts.table.worker')}</th>
-                                    <th className="px-4 py-2 font-semibold">{t('alerts.table.grandeur')}</th>
-                                    <th className="px-4 py-2 font-semibold text-right">{t('alerts.table.value')}</th>
-                                    <th className="px-4 py-2 font-semibold text-right">{t('alerts.table.threshold')}</th>
-                                    <th className="px-4 py-2 font-semibold">{t('alerts.table.triggeredAt')}</th>
-                                    <th className="px-4 py-2 font-semibold">{t('alerts.table.status')}</th>
-                                    <th className="px-4 py-2 font-semibold text-right">{t('alerts.table.actions')}</th>
+                                <tr className="bg-gradient-to-b from-slate-50 to-slate-100 text-left text-[10.5px] uppercase tracking-[0.10em] text-slate-600 border-b border-slate-300">
+                                    <th className="px-3 py-2.5 font-semibold">{t('alerts.table.level')}</th>
+                                    <th className="px-3 py-2.5 font-semibold">{t('alerts.table.worker')}</th>
+                                    <th className="px-3 py-2.5 font-semibold">{t('alerts.table.grandeur')}</th>
+                                    <th className="px-3 py-2.5 font-semibold text-right">{t('alerts.table.value')}</th>
+                                    <th className="px-3 py-2.5 font-semibold text-right">{t('alerts.table.threshold')}</th>
+                                    <th className="px-3 py-2.5 font-semibold">{t('alerts.table.triggeredAt')}</th>
+                                    <th className="px-3 py-2.5 font-semibold">{t('alerts.table.status')}</th>
+                                    <th className="px-3 py-2.5 font-semibold text-right">{t('alerts.table.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>

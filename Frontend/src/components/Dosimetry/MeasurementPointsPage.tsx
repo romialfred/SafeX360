@@ -40,6 +40,8 @@ import {
     IconMapPin,
     IconCircleX,
     IconMap,
+    IconTable,
+    IconLayoutGrid,
 } from '@tabler/icons-react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -75,6 +77,9 @@ interface FiltersState {
     zoneClass: ZoneClass | 'all';
     status: 'all' | 'active' | 'inactive';
 }
+
+type ViewMode = 'table' | 'tiles';
+const VIEW_MODE_STORAGE = 'safex.dosimetry.measurementPoints.viewMode';
 
 const ZONE_CONFIG: Record<
     ZoneClass,
@@ -211,6 +216,16 @@ const MeasurementPointsPage = () => {
         zoneClass: 'all',
         status: 'all',
     });
+    // Vue table OU tuiles, persiste en localStorage (preference user).
+    const [viewMode, setViewMode] = useState<ViewMode>(() => {
+        try {
+            const v = localStorage.getItem(VIEW_MODE_STORAGE);
+            return v === 'tiles' ? 'tiles' : 'table';
+        } catch { return 'table'; }
+    });
+    useEffect(() => {
+        try { localStorage.setItem(VIEW_MODE_STORAGE, viewMode); } catch { /* noop */ }
+    }, [viewMode]);
 
     useEffect(() => {
         let cancelled = false;
@@ -561,6 +576,29 @@ const MeasurementPointsPage = () => {
                         />
 
                         <div className="ml-auto flex items-center gap-2">
+                            {/* Switch vue Tableau / Tuiles */}
+                            <div className="inline-flex border border-slate-200 rounded-md overflow-hidden bg-white" role="tablist" aria-label="Mode d'affichage">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('table')}
+                                    aria-pressed={viewMode === 'table'}
+                                    title="Vue tableau"
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] transition ${viewMode === 'table' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <IconTable size={13} stroke={1.8} />
+                                    <span className="hidden sm:inline">Tableau</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('tiles')}
+                                    aria-pressed={viewMode === 'tiles'}
+                                    title="Vue tuiles"
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] transition border-l border-slate-200 ${viewMode === 'tiles' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <IconLayoutGrid size={13} stroke={1.8} />
+                                    <span className="hidden sm:inline">Tuiles</span>
+                                </button>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => navigate('/dosimetry/ambient-map')}
@@ -605,8 +643,84 @@ const MeasurementPointsPage = () => {
                     )}
                 </div>
 
-                {/* ─── DataTable ─── */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                {/* ─── Vue Tuiles (alternative au tableau) ─── */}
+                {viewMode === 'tiles' && !loading && (
+                    <div className="mb-4">
+                        {filteredRows.length === 0 ? (
+                            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center">
+                                {emptyTemplate}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                {filteredRows.map((row) => {
+                                    const zone = ZONE_CONFIG[row.zoneClassification];
+                                    return (
+                                        <button
+                                            key={row.id}
+                                            type="button"
+                                            onClick={() => navigate(`/dosimetry/measurement-points/detail/${row.id}`)}
+                                            className={`group text-left bg-white border ${zone.border} rounded-xl shadow-sm hover:shadow-md hover:scale-[1.01] transition-all overflow-hidden`}
+                                        >
+                                            {/* Header colore selon zone */}
+                                            <div className={`px-3 py-2 ${zone.bg} border-b ${zone.border} flex items-center justify-between gap-2`}>
+                                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.10em] ${zone.text}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${zone.dot}`} />
+                                                    {t(zone.labelKey)}
+                                                </span>
+                                                {row.active ? (
+                                                    <IconCircleCheck size={13} className="text-emerald-600" stroke={2} />
+                                                ) : (
+                                                    <IconCircleX size={13} className="text-slate-400" stroke={2} />
+                                                )}
+                                            </div>
+                                            {/* Corps tuile */}
+                                            <div className="p-3 space-y-2">
+                                                <div className="min-w-0">
+                                                    <p className="font-mono text-[10.5px] text-slate-500 truncate">{row.code}</p>
+                                                    <p className="text-[13px] text-slate-900 font-semibold leading-tight truncate" title={row.label}>{row.label}</p>
+                                                    {row.location && (
+                                                        <p className="text-[10.5px] text-slate-500 inline-flex items-center gap-1 truncate">
+                                                            <IconMapPin size={9} stroke={1.6} />
+                                                            {row.location}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-end justify-between gap-2">
+                                                    <div className="leading-tight">
+                                                        <p className="text-[9px] uppercase tracking-wider text-slate-500">{t('ambient.points.columns.lastMeasure')}</p>
+                                                        {row.lastValue == null ? (
+                                                            <p className="text-[12px] text-slate-400 italic">{t('ambient.points.noMeasure')}</p>
+                                                        ) : (
+                                                            <p className={`font-mono text-[15px] tabular-nums font-bold ${row.aboveReference ? 'text-red-700' : 'text-slate-800'}`}>
+                                                                {formatUsvH(row.lastValue)}
+                                                                <span className="text-[9px] text-slate-400 font-normal ml-0.5">µSv/h</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-shrink-0">
+                                                        <Sparkline
+                                                            values={row.spark}
+                                                            color={row.aboveReference ? '#dc2626' : '#6366f1'}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                {row.referenceLevel != null && (
+                                                    <p className="text-[10px] text-slate-500 border-t border-slate-100 pt-1.5">
+                                                        Réf. <span className="font-mono text-slate-700">{formatUsvH(row.referenceLevel)}</span> µSv/h
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ─── DataTable (vue par defaut) ─── */}
+                {viewMode === 'table' && (
+                <div className="safex-dosimetry-table bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     {loading ? (
                         <div className="px-4 py-12 text-center text-slate-500 text-[13px]">
                             <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />
@@ -697,6 +811,15 @@ const MeasurementPointsPage = () => {
                         </DataTable>
                     )}
                 </div>
+                )}
+
+                {/* Loading hors-vue tuile/table */}
+                {viewMode === 'tiles' && loading && (
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-12 text-center text-slate-500 text-[13px] mb-4">
+                        <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />
+                        {t('ambient.points.loading')}
+                    </div>
+                )}
 
                 {/* ─── Footer ISO/AIEA ─── */}
                 <div className="mt-6 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">

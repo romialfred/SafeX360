@@ -447,7 +447,7 @@ const DosimetersInventoryPage = () => {
             {canWrite && (
                 <button
                     type="button"
-                    onClick={() => navigate('/coming-soon')}
+                    onClick={() => navigate('/dosimetry/dosimeters/assign')}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12.5px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm font-medium"
                 >
                     <IconPlus size={14} stroke={2} />
@@ -704,7 +704,7 @@ const DosimetersInventoryPage = () => {
                 </div>
 
                 {/* ─── DataTable ─── */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="safex-dosimetry-table bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     {loading ? (
                         <div className="px-4 py-12 text-center text-slate-500 text-[13px]">
                             <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />

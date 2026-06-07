@@ -25,7 +25,7 @@ import {
     IconArrowRight,
     IconInfoCircle,
 } from '@tabler/icons-react';
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types
@@ -243,7 +243,7 @@ function TrendArrow({ pct, direction }: TrendArrowProps) {
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function DosimetryKpiTile({
+function DosimetryKpiTileImpl({
     icon: Icon,
     label,
     value,
@@ -396,3 +396,7 @@ export default function DosimetryKpiTile({
         </div>
     );
 }
+
+// 2026-06-07 perf : memoization — KPI tiles ne changent que sur props change
+const DosimetryKpiTile = memo(DosimetryKpiTileImpl);
+export default DosimetryKpiTile;

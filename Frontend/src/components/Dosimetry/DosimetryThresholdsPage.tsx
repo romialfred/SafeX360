@@ -604,7 +604,7 @@ const DosimetryThresholdsPage = () => {
                 </div>
 
                 {/* ─── Tableau seuils ─── */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="safex-dosimetry-table bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                     <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between gap-2">
                         <span className="text-[11px] text-slate-500 inline-flex items-center gap-1.5">
                             <IconPencil size={11} stroke={1.8} />
