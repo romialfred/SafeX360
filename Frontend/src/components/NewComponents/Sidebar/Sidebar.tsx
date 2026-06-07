@@ -471,7 +471,7 @@ export const menuIdToUrl: Record<string, string> = {
     "dosimetry-settings": "/dosimetry/settings",
     "dosimetry-workers": "/dosimetry/workers",
     "dosimetry-dashboard": "/coming-soon",
-    "dosimetry-dosimeters": "/coming-soon",
+    "dosimetry-dosimeters": "/dosimetry/dosimeters",
     "dosimetry-doses": "/coming-soon",
     "dosimetry-medical": "/coming-soon",
     "dosimetry-alerts": "/coming-soon",

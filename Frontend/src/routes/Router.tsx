@@ -165,6 +165,9 @@ import DosimetryParametersPage from '../components/Dosimetry/DosimetryParameters
 import ExposedWorkersRegistryPage from '../components/Dosimetry/ExposedWorkersRegistryPage';
 import ExposedWorkerDetailPage from '../components/Dosimetry/ExposedWorkerDetailPage';
 import ExposedWorkerForm from '../components/Dosimetry/ExposedWorkerForm';
+import DosimetersInventoryPage from '../components/Dosimetry/DosimetersInventoryPage';
+import DosimeterAssignmentForm from '../components/Dosimetry/DosimeterAssignmentForm';
+import QRScannerPage from '../components/Dosimetry/QRScannerPage';
 
 
 
@@ -423,6 +426,13 @@ const router = createBrowserRouter([
             // Phase 2 Frontend-C : formulaire d'enregistrement / edition (stepper)
             { path: 'dosimetry/workers/new', element: <ExposedWorkerForm /> },
             { path: 'dosimetry/workers/edit/:id', element: <ExposedWorkerForm /> },
+            // Phase 3 Frontend-A : inventaire des dosimetres et instruments
+            { path: 'dosimetry/dosimeters', element: <DosimetersInventoryPage /> },
+            // Phase 3 Frontend-B : attribution / restitution d'un dosimetre
+            { path: 'dosimetry/dosimeters/assign', element: <DosimeterAssignmentForm mode="ASSIGN" /> },
+            { path: 'dosimetry/dosimeters/return', element: <DosimeterAssignmentForm mode="RETURN" /> },
+            // Phase 3 Frontend-C : scanner QR mobile-friendly (placeholder camera + saisie manuelle)
+            { path: 'dosimetry/dosimeters/scan', element: <QRScannerPage /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

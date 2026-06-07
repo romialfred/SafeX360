@@ -27,6 +27,64 @@
  */
 
 import axiosInstance from '../interceptors/AxiosInterceptor';
+import store from '../Store';
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helpers d'identite multi-tenant (mineId + X-User-Id)
+//  Phase 3 — Le AxiosInterceptor ajoute companyId en query-param, mais pour les
+//  bodies POST de recherche/affectation, le backend exige que mineId soit dans
+//  le payload JSON (cf. SearchDosimeterFiltersDTO.mineId @NotNull).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Resoud le mineId courant depuis le store Redux (companySelection) avec
+ * repli sur localStorage (selectedCompanyId) pour les rechargements de page.
+ * Retourne null si aucun tenant n'est selectionne.
+ */
+const resolveMineId = (): number | null => {
+    try {
+        const state: any = store.getState();
+        const fromStore = state?.companySelection?.selectedCompanyId;
+        if (fromStore !== null && fromStore !== undefined && !Number.isNaN(Number(fromStore))) {
+            return Number(fromStore);
+        }
+    } catch {
+        // store non disponible : on tombe sur localStorage
+    }
+    if (typeof window !== 'undefined') {
+        try {
+            const raw = window.localStorage.getItem('selectedCompanyId');
+            if (raw && raw !== 'null') {
+                const n = Number(raw);
+                if (!Number.isNaN(n)) return n;
+            }
+        } catch {
+            // ignore
+        }
+    }
+    return null;
+};
+
+/**
+ * Resoud l'identifiant utilisateur courant pour l'en-tete X-User-Id transmis
+ * sur les endpoints d'ecriture du module dosimetrie (assign/return).
+ * Retourne null si l'utilisateur n'est pas identifie.
+ */
+const resolveUserId = (): number | null => {
+    try {
+        const state: any = store.getState();
+        const u = state?.user;
+        const candidates = [u?.id, u?.userId, u?.sub];
+        for (const c of candidates) {
+            if (c !== null && c !== undefined && !Number.isNaN(Number(c))) {
+                return Number(c);
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return null;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  TYPES DTO — alignes 1:1 sur les DTO Java du backend
@@ -500,6 +558,240 @@ const deleteDosimeter = async (id: number | string) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  DOSIMETER SEARCH + ASSIGNMENT / RETURN
+//  Phase 3 Frontend-B : recherche multi-criteres + cycle attribution / restitution.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * DosimeterSearchFilters — body du POST /dosimeter/search.
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code SearchDosimeterFiltersDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/SearchDosimeterFiltersDTO.java}).
+ *
+ * <p>Champs :
+ *   - mineId                  : OBLIGATOIRE. Isolation multi-tenant. Si omis,
+ *                               le backend renvoie une liste vide.
+ *   - status                  : liste de DosimeterStatus a filtrer (ex: ['AVAILABLE']).
+ *                               NB : nom au singulier pour s'aligner sur le DTO Java.
+ *                               Le backend accepte aussi 'statuses' via @JsonAlias.
+ *   - type                    : DosimeterType unique (TLD/OSL/EPD/FILM).
+ *   - calibrationDueWithinDays: alerte etalonnage — ne renvoie que les dosimetres
+ *                               dus dans &lt; N jours.
+ *   - search                  : recherche textuelle (LIKE insensible) sur serial ou qrCode.
+ *
+ * <p>Tolerant : si le backend ne propose pas encore /search (Phase 3),
+ * le service basculera cote client sur getAll + filtre.
+ */
+export interface DosimeterSearchFilters {
+    /** Identifiant de la mine — REQUIS cote backend. */
+    mineId?: number | null;
+    status?: DosimeterStatus[] | null;
+    type?: DosimeterType | null;
+    calibrationDueWithinDays?: number | null;
+    search?: string | null;
+}
+
+/**
+ * Recherche multi-criteres des dosimetres.
+ *
+ * <p><b>mineId obligatoire</b> : si le filtre ne contient pas de mineId, on tente
+ * de l'injecter depuis le store Redux (companySelection.selectedCompanyId). Si
+ * aucun tenant n'est selectionne, on rejette la promesse avec une erreur
+ * explicite — appeler {@code resolveMineId()} avant ou passer {@code mineId}
+ * dans les filtres.
+ *
+ * <p>Strategie tolerante Phase 3 :
+ *   1. Tente POST /dosimeter/search avec le body filtres.
+ *   2. Si l'endpoint renvoie 404/501, repli sur GET /getAll + filtrage cote client.
+ *
+ * <p>Le filtrage cote client est volontairement permissif (insensible a la
+ * casse, trim sur serial / qrCode) pour servir le composant autocomplete
+ * sans depender d'une API search dediee.
+ */
+const searchDosimeters = async (filters: DosimeterSearchFilters): Promise<DosimeterDTO[]> => {
+    const mineId = filters.mineId ?? resolveMineId();
+    if (mineId == null) {
+        throw new Error('mineId required for searchDosimeters');
+    }
+    const body: DosimeterSearchFilters = { ...filters, mineId };
+    try {
+        const res = await axiosInstance.post(`${dosimeterUrl}/search`, body);
+        return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    } catch (err: any) {
+        // Repli cote client si endpoint search pas encore deploye.
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 405 || httpStatus === 501) {
+            const fallback = await getAllDosimeters();
+            const list: DosimeterDTO[] = Array.isArray(fallback) ? fallback : (fallback?.content ?? []);
+            const q = (body.search ?? '').toLowerCase().trim();
+            return list.filter((d) => {
+                if (body.status && body.status.length > 0 && !body.status.includes(d.status)) {
+                    return false;
+                }
+                if (body.type && d.type !== body.type) {
+                    return false;
+                }
+                if (q) {
+                    const hay = `${d.serial ?? ''} ${d.qrCode ?? ''}`.toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+        throw err;
+    }
+};
+
+/**
+ * Lookup d'un dosimetre par son QR code dans le perimetre d'une mine.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/dosimeter/find-by-qr?qrCode=X&mineId=Y}.
+ * Retourne 200 + DosimeterDTO si trouve, 404 sinon.
+ *
+ * <p>Cas d'usage : scan QR terrain, autocompletion dans le formulaire
+ * d'affectation. Le backend trace systematiquement un audit log (action=SEARCH_QR)
+ * meme en cas de miss (tracabilite forensique).
+ *
+ * <p>Retourne null si 404, throw pour toute autre erreur.
+ */
+const findDosimeterByQr = async (qrCode: string, mineId?: number | null): Promise<DosimeterDTO | null> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for findDosimeterByQr');
+    }
+    try {
+        const res = await axiosInstance.get(`${dosimeterUrl}/find-by-qr`, {
+            params: { qrCode, mineId: resolvedMineId },
+        });
+        return (res.data ?? null) as DosimeterDTO | null;
+    } catch (err: any) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+    }
+};
+
+/**
+ * Liste des dosimetres dont l'echeance d'etalonnage est dans les 30 jours
+ * (ou depassee). Retourne des DosimeterListItemDTO (le DTO d'item etend
+ * DosimeterDTO avec calibrationDueDays + assignedWorkerName).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/dosimeter/calibration-alerts?mineId=X}.
+ */
+const getDosimeterCalibrationAlerts = async (mineId?: number | null): Promise<DosimeterDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getDosimeterCalibrationAlerts');
+    }
+    const res = await axiosInstance.get(`${dosimeterUrl}/calibration-alerts`, {
+        params: { mineId: resolvedMineId },
+    });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+// ─── Assignment endpoints (cycle attribution / restitution) ─────────────────
+// NB : les endpoints /assign et /return sont volontairement hostes sur le
+// DosimeterController cote backend (cf. javadoc DosimeterController.assign) car
+// ils mutent l'etat du dosimetre (status, currentWorker) en plus de creer ou
+// cloturer une affectation. Le chemin canonique est donc /dosimeter/assign et
+// /dosimeter/return.
+
+const assignmentUrl = '/hns/dosimetry/dosimeter-assignment';
+
+/**
+ * Recupere les details d'une attribution (jointure dosimetre + worker).
+ * Endpoint : GET /hns/dosimetry/dosimeter-assignment/get/{id}.
+ */
+const getAssignmentById = async (id: number | string): Promise<DosimeterAssignmentDTO> => {
+    return axiosInstance
+        .get(`${assignmentUrl}/get/${id}`)
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
+/**
+ * Payload d'attribution — aligne 1:1 sur le DTO Java {@code DosimeterAssignDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/DosimeterAssignDTO.java}).
+ *
+ * <p>Champs :
+ *   - dosimeterId  : id du dosimetre AVAILABLE.
+ *   - workerId     : id du travailleur expose porteur.
+ *   - periodStart  : date debut de port (LocalDate ISO).
+ *   - periodEnd    : optionnel — date prevue de fin (null = indeterminee).
+ *   - handoverNote : note libre de remise (ex. etat constate, accessoires).
+ */
+export interface DosimeterAssignmentRequest {
+    dosimeterId: number;
+    workerId: number;
+    periodStart: string;
+    periodEnd?: string | null;
+    handoverNote?: string | null;
+}
+
+/**
+ * Cree une nouvelle attribution dosimetre -> travailleur.
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/dosimeter/assign}.
+ * Le backend bascule le dosimetre en statut ASSIGNED et trace
+ * un DosimetryAuditLog (action=CREATE).
+ *
+ * <p>L'en-tete {@code X-User-Id} est renseignee depuis le store Redux pour
+ * tracer createdBy/updatedBy cote backend.
+ */
+const assignDosimeter = async (payload: DosimeterAssignmentRequest) => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    return axiosInstance
+        .post(`${dosimeterUrl}/assign`, payload, { headers })
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
+/**
+ * Payload de restitution d'un dosimetre attribue.
+ *
+ * <p>Aligne sur le DTO Java {@code DosimeterController.DosimeterReturnDTO}
+ * (DTO local au controller backend) :
+ *   - assignmentId       : id de l'attribution en cours
+ *   - deviceCondition    : etat constate (INTACT / DAMAGED / LOST / OTHER)
+ *   - deviceConditionNote: description detaillee — sera concatene au format
+ *                          {@code "<condition> - <note>"} par le backend.
+ *
+ * <p>Champs frontend purs (non envoyes a un autre nom cote backend mais
+ * conserves dans le payload pour journalisation locale UI) :
+ *   - returnAck : confirmation explicite de l'utilisateur (UX seulement)
+ *   - photoUrl  : URL placeholder (Phase 3 — pas encore uploade)
+ */
+export interface DosimeterReturnRequest {
+    assignmentId: number;
+    returnAck: boolean;
+    deviceCondition: 'INTACT' | 'DAMAGED' | 'LOST' | 'OTHER';
+    deviceConditionNote?: string | null;
+    photoUrl?: string | null;
+}
+
+/**
+ * Marque une attribution comme restituee.
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/dosimeter/return}.
+ * Le backend bascule le dosimetre en statut adequat
+ * (IN_READING / AVAILABLE / DAMAGED / LOST selon deviceCondition) et trace
+ * un DosimetryAuditLog (action=UPDATE).
+ *
+ * <p>L'en-tete {@code X-User-Id} est renseignee depuis le store Redux pour
+ * tracer updatedBy cote backend.
+ */
+const returnDosimeter = async (payload: DosimeterReturnRequest) => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    return axiosInstance
+        .post(`${dosimeterUrl}/return`, payload, { headers })
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  DOSE RECORDS — Saisie & suivi des doses (append-only)
 //  Base: /hns/dosimetry/dose-record
 // ─────────────────────────────────────────────────────────────────────────────
@@ -624,6 +916,13 @@ export {
     createDosimeter,
     updateDosimeter,
     deleteDosimeter,
+    searchDosimeters,
+    findDosimeterByQr,
+    getDosimeterCalibrationAlerts,
+    // Dosimeter assignments (attribution / restitution)
+    getAssignmentById,
+    assignDosimeter,
+    returnDosimeter,
     // Dose records
     getAllDoseRecords,
     getDoseRecordById,

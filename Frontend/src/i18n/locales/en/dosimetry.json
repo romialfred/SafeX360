@@ -354,13 +354,145 @@
     },
     "dosimeters": {
         "title": "Dosimeters & Instruments",
+        "subtitle": "Inventory and lifecycle of TLD / OSL / FILM / EPD dosimeters — calibration, assignment and usage history. Compliant with ISO 17025 and IAEA RS-G-1.3.",
         "serialNumber": "Serial number",
         "model": "Model",
         "type": "Type",
         "assignedTo": "Assigned to",
         "lastCalibration": "Last calibration",
         "nextCalibration": "Next calibration",
-        "status": "Status"
+        "status": "Status",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimetry & Exposures",
+        "breadcrumbCurrent": "Dosimeters & Instruments",
+        "loading": "Loading inventory…",
+        "loadError": "Unable to load the dosimeter inventory. Please try again later.",
+        "kpi": {
+            "total": "Total dosimeters",
+            "available": "Available",
+            "assigned": "Assigned",
+            "calibrationSoon": "Calibration < 30 d"
+        },
+        "urgentBanner": {
+            "title": "Urgent action required",
+            "calibrationOverdue": "{{count}} dosimeter(s) with overdue calibration",
+            "returnOverdue": "{{count}} dosimeter(s) overdue for return",
+            "filterAction": "Filter overdue calibrations"
+        },
+        "toolbar": {
+            "searchPlaceholder": "Search by serial or QR code…",
+            "searchAria": "Search by serial number or QR code",
+            "filterType": "Filter by type",
+            "filterCalibration": "Filter by calibration",
+            "allTypes": "All types",
+            "allCalibrations": "All calibrations",
+            "calibrationSoon": "Due within 30 days",
+            "calibrationOverdue": "Calibration overdue",
+            "statusLabel": "Status:",
+            "scanQr": "Scan QR",
+            "add": "Add dosimeter",
+            "activeFilters": "{{count}} / {{total}} dosimeter(s) shown",
+            "clearFilters": "Clear filters"
+        },
+        "statusValues": {
+            "AVAILABLE": "Available",
+            "ASSIGNED": "Assigned",
+            "IN_READING": "In reading",
+            "LOST": "Lost",
+            "DAMAGED": "Damaged",
+            "RETIRED": "Retired"
+        },
+        "typeValues": {
+            "TLD": "TLD — Thermoluminescent",
+            "OSL": "OSL — Optically Stimulated",
+            "FILM": "FILM — Photographic film",
+            "EPD": "EPD — Electronic dosimeter"
+        },
+        "calibration": {
+            "ok": "Up to date",
+            "soon": "Due soon",
+            "overdue": "Overdue"
+        },
+        "columns": {
+            "serial": "Serial",
+            "type": "Type",
+            "qrCode": "QR code",
+            "status": "Status",
+            "assignedWorker": "Assigned worker",
+            "calibration": "Calibration",
+            "actions": "Actions"
+        },
+        "actions": {
+            "view": "View details"
+        },
+        "empty": {
+            "title": "No dosimeter registered",
+            "subtitle": "Start by registering your dosimeters and measurement instruments to track their calibration cycle and assignments.",
+            "cta": "Add a dosimeter"
+        },
+        "detail": {
+            "close": "Close",
+            "identitySection": "Identity & traceability",
+            "statusSection": "Current status",
+            "calibrationSection": "Calibration",
+            "historySection": "Assignment history",
+            "serial": "Serial number",
+            "type": "Technology",
+            "qrCode": "QR code",
+            "currentlyAssignedTo": "Currently assigned to:",
+            "noCurrentAssignment": "No active assignment for this dosimeter.",
+            "nextCalibration": "Next calibration due date",
+            "scheduleCalibration": "Schedule calibration",
+            "scheduleCalibrationPhase": "Available in Phase 4+ — calibration campaign orchestration",
+            "historyEmpty": "No assignment history available",
+            "historyPhaseNote": "Detailed assignment tracking will be available in Phase 4+",
+            "actionPhaseNote": "Action available in Phase 4+ — operational lifecycle",
+            "actions": {
+                "assign": "Assign to a worker",
+                "return": "Return",
+                "markReading": "Mark in reading"
+            }
+        },
+        "footer": {
+            "title": "ISO/IEC 17025 · IAEA RS-G-1.3",
+            "note": "Each dosimeter follows a traceable calibration cycle compliant with ISO/IEC 17025 (calibration laboratories) and IAEA RS-G-1.3 §5.3 on individual dosimetric assessments."
+        }
+    },
+    "qrScanner": {
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimetry & Exposures",
+        "breadcrumbInventory": "Dosimeters & Instruments",
+        "breadcrumbCurrent": "QR Scanner",
+        "title": "Scan a dosimeter",
+        "subtitle": "Point at the QR code or enter the serial number to identify a dosimeter in the fleet.",
+        "back": "Back to inventory",
+        "frame": {
+            "instruction": "Point at the dosimeter QR code",
+            "subInstruction": "The scanner will activate in the central area",
+            "cameraUnavailableTitle": "Camera not available",
+            "cameraUnavailableHint": "Camera access requires the html5-qrcode library (TODO npm install html5-qrcode). Use the manual input below in the meantime."
+        },
+        "manual": {
+            "title": "Manual entry",
+            "hint": "Enter the QR code or the serial number printed on the dosimeter.",
+            "inputLabel": "QR code or serial",
+            "inputPlaceholder": "e.g. DOS-2026-000142 or QR-A7B3F",
+            "submit": "Search",
+            "searching": "Searching…"
+        },
+        "result": {
+            "foundTitle": "Dosimeter identified",
+            "notFoundTitle": "Unknown dosimeter",
+            "notFoundHint": "No dosimeter in the fleet matches \"{{value}}\". You can add it to the inventory.",
+            "assignCta": "Assign",
+            "detailCta": "View details",
+            "addCta": "Add this dosimeter",
+            "rescan": "Scan another"
+        },
+        "errors": {
+            "emptyInput": "Enter a value to search.",
+            "searchFailed": "Search failed. Check your connection and try again."
+        }
     },
     "doses": {
         "title": "Dose entry & tracking",
@@ -557,6 +689,114 @@
             "procedureText": "Category A applies to workers likely to receive an annual dose above 6 mSv or eye lens equivalent dose > 15 mSv. Otherwise, Category B. The RPO must validate any classification.",
             "privacyTitle": "Confidentiality & traceability",
             "privacyText": "Sensitive personal data (GDPR art. 9). 50-year retention after end of activity (IAEA GSR Part 3 §3.106). Every access is logged in the SafeX 360 audit trail."
+        }
+    },
+    "assignmentForm": {
+        "assign": {
+            "title": "Assign a dosimeter",
+            "subtitle": "Formalize the handover of a dosimeter to an exposed worker — receipt acknowledgement tracked.",
+            "breadcrumb": "Assignment"
+        },
+        "return": {
+            "title": "Return a dosimeter",
+            "subtitle": "Record the return of a dosimeter and the observed device condition.",
+            "breadcrumb": "Return",
+            "workerId": "Worker",
+            "periodStart": "Period start",
+            "noAssignment": "No assignment loaded. Check the assignmentId parameter.",
+            "conditionLabel": "Device condition",
+            "conditions": {
+                "INTACT": "Intact — in good condition",
+                "DAMAGED": "Damaged",
+                "LOST": "Lost",
+                "OTHER": "Other"
+            },
+            "conditionNoteLabel": "Detailed description",
+            "conditionNotePlaceholder": "Describe the observed state (scratches, impact, malfunction, etc.)",
+            "photoPlaceholderTitle": "Photo upload (coming soon)",
+            "photoPlaceholderHint": "Photo upload will be available in Phase 4 — please provide a written description for now.",
+            "ackLabel": "I confirm the return of the dosimeter and the declared condition"
+        },
+        "sections": {
+            "dosimeter": "Dosimeter",
+            "worker": "Worker",
+            "period": "Assignment period",
+            "handover": "Handover acknowledgement",
+            "summary": "Summary",
+            "condition": "Condition on return"
+        },
+        "dosimeter": {
+            "selectLabel": "Select an available dosimeter",
+            "selectPlaceholder": "Search by serial number or QR…",
+            "selectTooltip": "Only dosimeters with status AVAILABLE are shown. You can also scan a QR code.",
+            "notFound": "No matching available dosimeter",
+            "loading": "Loading dosimeters…",
+            "serial": "Serial number",
+            "type": "Type",
+            "qrCode": "QR code",
+            "status": "Status"
+        },
+        "worker": {
+            "selectLabel": "Select the exposed worker",
+            "selectPlaceholder": "Search by employee ID or name…",
+            "notFound": "No matching active worker",
+            "loading": "Loading workers…",
+            "matricule": "Employee ID",
+            "category": "Category",
+            "reinforcedTitle": "Enhanced medical surveillance",
+            "reinforcedBody": "This worker is classified as Category A without special status: enhanced medical surveillance applies per ICRP 103 and labour code."
+        },
+        "period": {
+            "startLabel": "Start date",
+            "endLabel": "End date",
+            "placeholder": "DD/MM/YYYY",
+            "previewRange": "Period: {{start}} to {{end}}"
+        },
+        "handover": {
+            "noteLabel": "Handover note",
+            "notePlaceholder": "Device state at handover (battery, calibration, accessories…)",
+            "ackLabel": "I confirm the handover to the worker and the traceability of this acknowledgement"
+        },
+        "actions": {
+            "back": "Back to inventory",
+            "cancel": "Cancel",
+            "scanQr": "Scan QR",
+            "confirmAssign": "Confirm assignment",
+            "confirmReturn": "Confirm return"
+        },
+        "scanner": {
+            "title": "Scan a QR code",
+            "hint": "Enter or paste the dosimeter QR value (camera interface coming in Phase 4).",
+            "qrInputLabel": "QR value",
+            "qrInputPlaceholder": "e.g. DOS-2026-000142",
+            "confirm": "Search",
+            "invalidQr": "Enter a valid QR value.",
+            "notFound": "No available dosimeter matches this QR.",
+            "matched": "Dosimeter {{serial}} selected.",
+            "searchFailed": "QR search failed. Try again."
+        },
+        "loadingInitial": "Loading initial data…",
+        "validation": {
+            "dosimeterRequired": "Select a dosimeter",
+            "workerRequired": "Select a worker",
+            "periodStartRequired": "Start date required",
+            "periodEndRequired": "End date required",
+            "periodOrder": "End date must be after start date",
+            "periodMax12Months": "Period cannot exceed 12 months",
+            "handoverAckRequired": "You must confirm the handover",
+            "deviceConditionRequired": "Specify the device condition",
+            "conditionNoteRequired": "Describe the observed state",
+            "returnAckRequired": "You must confirm the return",
+            "completeBeforeSubmit": "Complete all required fields before submitting."
+        },
+        "success": {
+            "assignCreated": "Dosimeter assigned successfully.",
+            "returnRecorded": "Return recorded successfully."
+        },
+        "errors": {
+            "assignmentLoadFailed": "Unable to load the assignment.",
+            "submitFailed": "Operation failed. Try again later.",
+            "noAssignment": "No assignment selected."
         }
     }
 }
