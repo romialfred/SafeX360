@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Dossier de surexposition</title>
+    <style type="text/css">
+        @page { size: A4; margin: 22mm 16mm 22mm 16mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #222; }
+        .brand { font-size: 16pt; font-weight: bold; color: #102a43; }
+        .title { font-size: 13pt; font-weight: bold; margin: 12pt 0 4pt 0; }
+        .muted { color: #6b7c93; font-size: 9pt; }
+        .box { border: 1px solid #d0d7de; padding: 8pt 10pt; margin: 6pt 0; }
+        .severity { padding: 2pt 6pt; border-radius: 3pt; font-weight: bold; }
+        .sev-EXCEEDED { background: #fee2e2; color: #991b1b; }
+        .sev-ACTION { background: #fef3c7; color: #92400e; }
+        .sev-INVESTIGATION { background: #dbeafe; color: #1e40af; }
+        .sev-APPROACH { background: #e0e7ff; color: #1e40af; }
+        .footer { font-size: 8pt; color: #6b7c93; border-top: 1px solid #d0d7de; padding-top: 6pt; margin-top: 18pt; }
+        .watermark { position: fixed; top: 320pt; left: 60pt; font-size: 56pt; color: rgba(220, 38, 38, 0.10); transform: rotate(-30deg); }
+        pre { white-space: pre-wrap; font-family: Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+<body>
+
+<div class="watermark" th:if="${watermark}" th:text="${watermark}">CONFIDENTIEL</div>
+
+<div class="brand" th:text="${brand}">SafeX 360</div>
+<div class="muted">Module Dosimetrie - Dossier de surexposition</div>
+
+<div class="title">Synthese</div>
+<div class="box">
+    Case ID : <strong th:text="${caseData.id}">-</strong> &#160;|&#160;
+    Niveau : <span class="severity"
+                   th:classappend="'sev-' + ${caseData.level}"
+                   th:text="${caseData.level}">-</span> &#160;|&#160;
+    Statut : <strong th:text="${caseData.status}">-</strong><br />
+    Ouvert le : <span th:text="${caseData.openedAt}">-</span> &#160;|&#160;
+    Cloture le : <span th:text="${caseData.closedAt}">-</span><br />
+    Alerte source : <span th:text="${caseData.alertId}">-</span> &#160;|&#160;
+    Declaration autorite : <strong th:text="${caseData.authorityDeclaration}">false</strong>
+    (le <span th:text="${caseData.authorityDeclarationDate}">-</span>)
+</div>
+
+<div class="title">Travailleur concerne</div>
+<div class="box">
+    Worker ID : <span th:text="${worker.id}">-</span> &#160;|&#160;
+    Employee ID : <span th:text="${worker.employeeId}">-</span> &#160;|&#160;
+    Mine : <span th:text="${worker.mineId}">-</span> &#160;|&#160;
+    Categorie : <span th:text="${worker.category}">-</span> &#160;|&#160;
+    KPI : <span th:text="${worker.kpiCategory}">-</span>
+</div>
+
+<div class="title">Cause</div>
+<div class="box"><pre th:text="${caseData.cause}">-</pre></div>
+
+<div class="title">Actions correctives</div>
+<div class="box"><pre th:text="${caseData.correctiveActions}">-</pre></div>
+
+<div class="title">Decision medicale (synthese non-clinique)</div>
+<div class="box"><pre th:text="${caseData.medicalDecision}">-</pre></div>
+
+<div class="footer">
+    <div>Document genere le <span th:text="${generatedAt}">-</span>.</div>
+    <div>Motif (RGPD) : <span th:text="${reason}">-</span></div>
+    <div th:text="${regulationFootnote}">CIPR 103 - AIEA GSR Part 3</div>
+</div>
+
+</body>
+</html>

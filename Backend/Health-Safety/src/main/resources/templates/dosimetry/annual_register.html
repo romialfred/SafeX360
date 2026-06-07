@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Registre annuel de la mine</title>
+    <style type="text/css">
+        @page { size: A4 landscape; margin: 16mm 14mm 16mm 14mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #222; }
+        .brand { font-size: 16pt; font-weight: bold; color: #102a43; }
+        .title { font-size: 13pt; font-weight: bold; margin: 10pt 0 4pt 0; }
+        .muted { color: #6b7c93; font-size: 8pt; }
+        table { width: 100%; border-collapse: collapse; margin-top: 4pt; font-size: 8pt; }
+        th, td { border: 1px solid #d0d7de; padding: 3pt 5pt; text-align: left; }
+        th { background: #f1f5f9; font-weight: bold; }
+        .right { text-align: right; }
+        .stats { border: 1px solid #d0d7de; padding: 6pt 8pt; margin-top: 10pt; background: #f8fafc; }
+        .footer { font-size: 8pt; color: #6b7c93; border-top: 1px solid #d0d7de; padding-top: 4pt; margin-top: 14pt; }
+        .pill { padding: 1pt 4pt; border-radius: 3pt; background: #e0e7ff; color: #1d4ed8; font-weight: bold; }
+        .over { background: #fee2e2 !important; }
+    </style>
+</head>
+<body>
+
+<div class="brand" th:text="${brand}">SafeX 360</div>
+<div class="muted">
+    Module Dosimetrie - Registre annuel - Mine
+    <span th:text="${mineId}">-</span> - Annee <span th:text="${year}">-</span>
+</div>
+
+<div class="title">Travailleurs exposes</div>
+<table>
+    <thead>
+        <tr>
+            <th>Worker</th>
+            <th>Employee</th>
+            <th>Cat</th>
+            <th>KPI</th>
+            <th class="right">Hp(10) annuel (mSv)</th>
+            <th class="right">Limite (mSv)</th>
+            <th class="right">% limite</th>
+            <th>Aptitude</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="row : ${rows}"
+            th:classappend="${row.percentOfLimit != null and row.percentOfLimit.compareTo(T(java.math.BigDecimal).valueOf(100)) ge 0} ? 'over'">
+            <td th:text="${row.workerId}">-</td>
+            <td th:text="${row.employeeId}">-</td>
+            <td th:text="${row.category}">-</td>
+            <td><span class="pill" th:text="${row.kpiCategory}">-</span></td>
+            <td class="right" th:text="${row.annualHp10}">-</td>
+            <td class="right" th:text="${row.regulatoryLimit}">-</td>
+            <td class="right" th:text="${row.percentOfLimit}">-</td>
+            <td th:text="${row.fitness}">-</td>
+        </tr>
+        <tr th:if="${rows.empty}">
+            <td colspan="8" class="muted">Aucun travailleur expose actif.</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="stats">
+    <strong>Statistiques agregees</strong><br />
+    Total : <span th:text="${stats.totalWorkers}">-</span> &#160;|&#160;
+    Categorie A : <span th:text="${stats.countA}">-</span> &#160;|&#160;
+    Categorie B : <span th:text="${stats.countB}">-</span><br />
+    Travailleurs au-dela de 100% de la limite : <strong th:text="${stats.workersOver100Pct}">-</strong> &#160;|&#160;
+    Moyenne annuelle Hp(10) (mSv) : <strong th:text="${stats.avgAnnualHp10}">-</strong><br />
+    Repartition aptitudes : <span th:text="${stats.fitnessCounts}">-</span>
+</div>
+
+<div class="footer">
+    <div>Document genere le <span th:text="${generatedAt}">-</span>.</div>
+    <div th:text="${regulationFootnote}">CIPR 103 - AIEA GSR Part 3</div>
+</div>
+
+</body>
+</html>
