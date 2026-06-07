@@ -95,6 +95,11 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
     private final MeasurementPointRepository measurementPointRepository;
     private final AmbientMeasurementRepository ambientRepository;
     private final ThresholdRepository thresholdRepository;
+    /**
+     * Enrichissement RH (nom / matricule du worker dans le top exposés). Best-effort,
+     * peut être null si la table {@code employee} n'est pas accessible.
+     */
+    private final EmployeeLookupService employeeLookupService;
 
     // ============================================================
     //  computeKpisForMine
@@ -286,6 +291,7 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
             }
             out.add(DosimetryTopExposedDTO.builder()
                     .workerId(w.getId())
+                    .employeeId(w.getEmployeeId())
                     .category(kc)
                     .annualDose(annual)
                     .percentOfLimit(pct)
@@ -296,6 +302,24 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         List<DosimetryTopExposedDTO> limited = out.stream().limit(limit).collect(Collectors.toList());
         for (int i = 0; i < limited.size(); i++) {
             limited.get(i).setRank(i + 1);
+        }
+
+        // Enrichissement RH batch sur le top final uniquement (évite de pinguer la table
+        // employee pour des workers qui n'apparaîtront pas dans le top).
+        if (employeeLookupService != null && !limited.isEmpty()) {
+            List<Long> employeeIds = limited.stream()
+                    .map(DosimetryTopExposedDTO::getEmployeeId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList());
+            Map<Long, EmployeeLookupService.EmployeeInfo> rh =
+                    employeeLookupService.resolveBatch(employeeIds);
+            for (DosimetryTopExposedDTO dto : limited) {
+                EmployeeLookupService.EmployeeInfo info = rh.get(dto.getEmployeeId());
+                if (info != null) {
+                    dto.setWorkerName(info.fullName());
+                    dto.setMatricule(info.matricule());
+                }
+            }
         }
         return limited;
     }

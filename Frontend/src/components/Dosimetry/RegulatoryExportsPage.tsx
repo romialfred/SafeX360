@@ -218,7 +218,7 @@ const RegulatoryExportsPage = () => {
     // ─── Render : Acces restreint ───
     if (!canAccess) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-10">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-10">
                 <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm px-6 py-10 text-center">
                     <IconLockAccess
                         size={36}
@@ -246,8 +246,8 @@ const RegulatoryExportsPage = () => {
     const activeSpec = confirmModal ? specs[confirmModal] : null;
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-[1400px] mx-auto">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            <div className="w-full">
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <button

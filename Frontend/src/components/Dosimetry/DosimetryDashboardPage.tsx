@@ -33,6 +33,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Select } from '@mantine/core';
+import { setCompanySelection } from '../../slices/CompanySelectionSlice';
 import {
     IconChevronRight,
     IconRefresh,
@@ -46,7 +47,7 @@ import {
     IconInfoCircle,
     IconShieldCheck,
 } from '@tabler/icons-react';
-import { useAppSelector } from '../../slices/hooks';
+import { useAppDispatch, useAppSelector } from '../../slices/hooks';
 import DosimetryKpiTile from './DosimetryKpiTile';
 import DoseTrendChart from './DoseTrendChart';
 import DoseDistributionChart from './DoseDistributionChart';
@@ -126,10 +127,10 @@ const DosimetryDashboardPage = () => {
         (state: any) => state?.companySelection?.selectedCompanyId ?? null,
     );
 
-    // mineId courant : redux > user > fallback 1
-    const initialMineId: number = reduxMineId ?? user?.mineId ?? user?.companyId ?? 1;
+    // mineId courant : pilote PAR le selecteur global du header (CompanySelector).
+    // Fallbacks : user.mineId / user.companyId / 1 pour le bootstrap initial.
+    const mineId: number = reduxMineId ?? user?.mineId ?? user?.companyId ?? 1;
 
-    const [mineId, setMineId] = useState<number>(initialMineId);
     const [category, setCategory] = useState<KpiCategory | 'ALL'>('ALL');
     const [year, setYear] = useState<number>(CURRENT_YEAR);
 
@@ -144,14 +145,9 @@ const DosimetryDashboardPage = () => {
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
-    // ───── Sync avec selectedCompanyId du store (changement de tenant global) ─────
-    useEffect(() => {
-        if (reduxMineId != null && reduxMineId !== mineId) {
-            setMineId(reduxMineId);
-        }
-        // mineId volontairement omis : on ne resynchronise que si le store change.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reduxMineId]);
+    // mineId est desormais derive directement du store global (CompanySelector dans le header).
+    // Plus de re-synchronisation locale : tout changement de tenant declenche un nouveau rendu
+    // avec un mineId different, ce qui re-execute loadAll via la dependance memoisee.
 
     // ───── Loader principal ─────
     const loadAll = useCallback(
@@ -322,10 +318,17 @@ const DosimetryDashboardPage = () => {
         return CIPR_LIMIT_BY_CATEGORY.WORKER_B;
     }, [distribution, category]);
 
-    // ───── Selection multi-mine -> filtre dashboard ─────
-    const handleSelectMine = useCallback((newMineId: number) => {
-        setMineId(newMineId);
-    }, []);
+    // ───── Selection multi-mine -> delegue au selecteur global (CompanySelector) ─────
+    // Au clic sur une carte du comparatif multi-mines, on dispatch le changement de tenant
+    // dans le store : le header se met a jour ET tous les modules qui consomment
+    // selectedCompanyId se re-synchronisent automatiquement.
+    const dispatch = useAppDispatch();
+    const handleSelectMine = useCallback(
+        (newMineId: number) => {
+            dispatch(setCompanySelection(newMineId));
+        },
+        [dispatch],
+    );
 
     const mineLabels = useMemo(() => {
         const map: Record<number, string> = {};
@@ -351,8 +354,8 @@ const DosimetryDashboardPage = () => {
     // ─────────────────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-[1500px] mx-auto">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            <div className="w-full">
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <span className="uppercase tracking-[0.16em] font-medium">
@@ -405,29 +408,8 @@ const DosimetryDashboardPage = () => {
                             </div>
                         </div>
 
-                        {/* Filtres */}
+                        {/* Filtres — Mine pilotee par le selecteur global du header (CompanySelector) */}
                         <div className="flex flex-wrap items-end gap-2">
-                            <Select
-                                size="xs"
-                                label={t('dashboard.filters.mineLabel', { defaultValue: 'Site' })}
-                                placeholder={t('dashboard.filters.minePlaceholder', {
-                                    defaultValue: 'Choisir un site',
-                                })}
-                                data={[
-                                    { value: String(mineId), label: mineLabels[mineId] ?? `${t('dashboard.filters.mineFallback', { defaultValue: 'Site' })} ${mineId}` },
-                                    ...multiMine
-                                        .filter((m) => m.mineId !== mineId)
-                                        .map((m) => ({
-                                            value: String(m.mineId),
-                                            label: mineLabels[m.mineId] ?? `${t('dashboard.filters.mineFallback', { defaultValue: 'Site' })} ${m.mineId}`,
-                                        })),
-                                ]}
-                                value={String(mineId)}
-                                onChange={(v) => {
-                                    if (v) setMineId(Number(v));
-                                }}
-                                w={180}
-                            />
                             <Select
                                 size="xs"
                                 label={t('dashboard.filters.categoryLabel', { defaultValue: 'Catégorie' })}

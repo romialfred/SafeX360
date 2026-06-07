@@ -48,6 +48,10 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
 
     private final FitnessAssessmentRepository repository;
     private final DosimetryAuditService auditService;
+    /**
+     * Enrichissement RH (nom + matricule du worker) best-effort. Cf. {@link EmployeeLookupService}.
+     */
+    private final EmployeeLookupService employeeLookupService;
 
     // ----------------------------------------------------------------------------
     // Ecritures.
@@ -141,7 +145,8 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 requesterId != null ? requesterId : 0L,
                 DosimetryRBACConfig.DOSIMETRY_PCR_RPO, ipAddress,
                 String.format("{\"workerId\":%d}", workerId));
-        return repository.findCurrentSigned(workerId).map(this::toPublicDTO);
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
+        return repository.findCurrentSigned(workerId).map(f -> toPublicDTO(f, info));
     }
 
     @Override
@@ -152,9 +157,10 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 requesterId != null ? requesterId : 0L,
                 DosimetryRBACConfig.DOSIMETRY_PCR_RPO, ipAddress,
                 String.format("{\"workerId\":%d}", workerId));
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
         return repository.findByWorkerIdOrderByAssessmentDateDesc(workerId).stream()
                 .filter(FitnessAssessment::isSigned)
-                .map(this::toPublicDTO)
+                .map(f -> toPublicDTO(f, info))
                 .collect(Collectors.toList());
     }
 
@@ -171,7 +177,8 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 DosimetryRBACConfig.DOSIMETRY_MEDICAL, ipAddress,
                 String.format("{\"workerId\":%d,\"scope\":\"current\",\"reason\":\"%s\"}",
                         workerId, escapeJson(reason)));
-        return repository.findCurrentSigned(workerId).map(this::toFullDTO);
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
+        return repository.findCurrentSigned(workerId).map(f -> toFullDTO(f, info));
     }
 
     @Override
@@ -183,9 +190,18 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 DosimetryRBACConfig.DOSIMETRY_MEDICAL, ipAddress,
                 String.format("{\"workerId\":%d,\"scope\":\"history\",\"reason\":\"%s\"}",
                         workerId, escapeJson(reason)));
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
         return repository.findByWorkerIdOrderByAssessmentDateDesc(workerId).stream()
-                .map(this::toFullDTO)
+                .map(f -> toFullDTO(f, info))
                 .collect(Collectors.toList());
+    }
+
+    /** Lookup unitaire d'un worker. Retourne null si lookup indisponible. */
+    private EmployeeLookupService.EmployeeInfo resolveSingleByWorker(Long workerId) {
+        if (employeeLookupService == null) {
+            return null;
+        }
+        return employeeLookupService.resolveOneByWorkerId(workerId).orElse(null);
     }
 
     // ----------------------------------------------------------------------------
@@ -231,7 +247,8 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
     // Mapping.
     // ----------------------------------------------------------------------------
 
-    private FitnessAssessmentPublicDTO toPublicDTO(FitnessAssessment f) {
+    private FitnessAssessmentPublicDTO toPublicDTO(FitnessAssessment f,
+            EmployeeLookupService.EmployeeInfo info) {
         return FitnessAssessmentPublicDTO.builder()
                 .id(f.getId())
                 .workerId(f.getWorkerId())
@@ -242,10 +259,13 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 .publicRestrictionsSummary(f.getPublicRestrictionsSummary())
                 .reviewRequiredDate(f.getReviewRequiredDate())
                 .signed(f.isSigned())
+                .workerName(info != null ? info.fullName() : null)
+                .matricule(info != null ? info.matricule() : null)
                 .build();
     }
 
-    private FitnessAssessmentFullDTO toFullDTO(FitnessAssessment f) {
+    private FitnessAssessmentFullDTO toFullDTO(FitnessAssessment f,
+            EmployeeLookupService.EmployeeInfo info) {
         return FitnessAssessmentFullDTO.builder()
                 .id(f.getId())
                 .workerId(f.getWorkerId())
@@ -265,6 +285,8 @@ public class FitnessAssessmentServiceImpl implements FitnessAssessmentService {
                 .updatedAt(f.getUpdatedAt())
                 .createdBy(f.getCreatedBy())
                 .updatedBy(f.getUpdatedBy())
+                .workerName(info != null ? info.fullName() : null)
+                .matricule(info != null ? info.matricule() : null)
                 .build();
     }
 

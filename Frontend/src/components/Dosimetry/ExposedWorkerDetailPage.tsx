@@ -316,7 +316,7 @@ const ExposedWorkerDetailPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-10 text-center">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-10 text-center">
                 <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />
                 <span className="text-[13px] text-slate-600">{t('workerDetail.loading')}</span>
             </div>
@@ -325,7 +325,7 @@ const ExposedWorkerDetailPage = () => {
 
     if (!detail) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-10 text-center">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-10 text-center">
                 <p className="text-[14px] text-slate-700">{loadError ?? t('workerDetail.notFound')}</p>
                 <button
                     type="button"
@@ -340,8 +340,8 @@ const ExposedWorkerDetailPage = () => {
     }
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-[1500px] mx-auto">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            <div className="w-full">
 
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">

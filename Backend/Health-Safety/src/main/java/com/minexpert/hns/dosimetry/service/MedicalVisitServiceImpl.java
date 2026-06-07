@@ -3,6 +3,7 @@ package com.minexpert.hns.dosimetry.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -46,6 +47,11 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
 
     private final MedicalVisitRepository repository;
     private final DosimetryAuditService auditService;
+    /**
+     * Enrichissement RH (nom complet + matricule du worker) best-effort. Cf.
+     * {@link EmployeeLookupService}. Peut être null en tests sans datasource.
+     */
+    private final EmployeeLookupService employeeLookupService;
 
     // ----------------------------------------------------------------------------
     // Ecritures.
@@ -154,8 +160,11 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
     public List<MedicalVisitSummaryDTO> getUpcomingVisits(Long mineId, int daysAhead) {
         LocalDate from = LocalDate.now();
         LocalDate to = from.plusDays(daysAhead);
-        return repository.findUpcomingByMine(mineId, VisitStatus.SCHEDULED, from, to).stream()
-                .map(this::toSummaryDTO)
+        List<MedicalVisit> visits = repository.findUpcomingByMine(mineId,
+                VisitStatus.SCHEDULED, from, to);
+        Map<Long, EmployeeLookupService.EmployeeInfo> rh = batchResolveByVisits(visits);
+        return visits.stream()
+                .map(v -> toSummaryDTO(v, rh.get(v.getWorkerId())))
                 .collect(Collectors.toList());
     }
 
@@ -167,8 +176,10 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
         auditService.log("READ_MEDICAL_VISIT_SUMMARY", "MedicalVisit", null,
                 requesterId != null ? requesterId : 0L, null, ipAddress,
                 String.format("{\"workerId\":%d}", workerId));
+        // Un seul worker -> un seul lookup.
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
         return repository.findByWorkerIdOrderByScheduledDateDesc(workerId).stream()
-                .map(this::toSummaryDTO)
+                .map(v -> toSummaryDTO(v, info))
                 .collect(Collectors.toList());
     }
 
@@ -182,8 +193,9 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
                 DosimetryRBACConfig.DOSIMETRY_MEDICAL, ipAddress,
                 String.format("{\"workerId\":%d,\"reason\":\"%s\"}",
                         workerId, escapeJson(reason)));
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(workerId);
         return repository.findByWorkerIdOrderByScheduledDateDesc(workerId).stream()
-                .map(this::toFullDTO)
+                .map(v -> toFullDTO(v, info))
                 .collect(Collectors.toList());
     }
 
@@ -198,14 +210,40 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
                 DosimetryRBACConfig.DOSIMETRY_MEDICAL, ipAddress,
                 String.format("{\"visitId\":%d,\"reason\":\"%s\"}",
                         visitId, escapeJson(reason)));
-        return toFullDTO(v);
+        EmployeeLookupService.EmployeeInfo info = resolveSingleByWorker(v.getWorkerId());
+        return toFullDTO(v, info);
+    }
+
+    /**
+     * Lookup batch des données RH pour une liste de visites (1 SELECT pour tous les workers).
+     */
+    private Map<Long, EmployeeLookupService.EmployeeInfo> batchResolveByVisits(
+            List<MedicalVisit> visits) {
+        if (employeeLookupService == null || visits == null || visits.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> workerIds = visits.stream()
+                .map(MedicalVisit::getWorkerId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        return employeeLookupService.resolveByWorkerIds(workerIds);
+    }
+
+    /** Lookup unitaire (un seul worker). Retourne null si lookup indisponible. */
+    private EmployeeLookupService.EmployeeInfo resolveSingleByWorker(Long workerId) {
+        if (employeeLookupService == null) {
+            return null;
+        }
+        return employeeLookupService.resolveOneByWorkerId(workerId).orElse(null);
     }
 
     // ----------------------------------------------------------------------------
     // Mapping.
     // ----------------------------------------------------------------------------
 
-    private MedicalVisitSummaryDTO toSummaryDTO(MedicalVisit v) {
+    private MedicalVisitSummaryDTO toSummaryDTO(MedicalVisit v,
+            EmployeeLookupService.EmployeeInfo info) {
         return MedicalVisitSummaryDTO.builder()
                 .id(v.getId())
                 .workerId(v.getWorkerId())
@@ -219,10 +257,13 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
                 .generalConclusion(v.getGeneralConclusion())
                 .cancellationReason(v.getCancellationReason())
                 .createdAt(v.getCreatedAt())
+                .workerName(info != null ? info.fullName() : null)
+                .matricule(info != null ? info.matricule() : null)
                 .build();
     }
 
-    private MedicalVisitFullDTO toFullDTO(MedicalVisit v) {
+    private MedicalVisitFullDTO toFullDTO(MedicalVisit v,
+            EmployeeLookupService.EmployeeInfo info) {
         return MedicalVisitFullDTO.builder()
                 .id(v.getId())
                 .workerId(v.getWorkerId())
@@ -240,6 +281,8 @@ public class MedicalVisitServiceImpl implements MedicalVisitService {
                 .updatedAt(v.getUpdatedAt())
                 .createdBy(v.getCreatedBy())
                 .updatedBy(v.getUpdatedBy())
+                .workerName(info != null ? info.fullName() : null)
+                .matricule(info != null ? info.matricule() : null)
                 .build();
     }
 

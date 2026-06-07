@@ -65,4 +65,14 @@ public class DoseRecordDTO {
     private LocalDateTime updatedAt;
     private Long createdBy;
     private Long updatedBy;
+
+    /**
+     * Enrichissement RH best-effort (nom complet du worker porteur). Null si l'enrichissement
+     * RH n'a pas eu lieu (mappers internes des services CRUD qui ne touchent pas au lookup,
+     * ou table employee indisponible). Renseigné par les services Query qui implémentent
+     * le batch lookup ({@link com.minexpert.hns.dosimetry.service.DoseRecordQueryServiceImpl}).
+     */
+    private String workerName;
+    /** Matricule RH (column unique_number) — null si lookup indisponible. */
+    private String matricule;
 }

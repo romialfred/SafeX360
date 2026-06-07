@@ -113,7 +113,7 @@ const DosimetryAlertsBanner = () => {
                     aria-hidden="true"
                     className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-red-500 via-red-600 to-red-500 motion-safe:animate-pulse"
                 />
-                <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3 flex-wrap">
+                <div className="w-full px-4 sm:px-5 lg:px-6 py-2.5 flex items-center gap-3 flex-wrap">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white shadow-md shadow-red-200 motion-safe:animate-pulse flex-shrink-0">
                         <IconAlertOctagon size={16} stroke={2} />
                     </span>
@@ -149,7 +149,7 @@ const DosimetryAlertsBanner = () => {
                 aria-hidden="true"
                 className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500"
             />
-            <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3 flex-wrap">
+            <div className="w-full px-4 sm:px-5 lg:px-6 py-2.5 flex items-center gap-3 flex-wrap">
                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white shadow-sm flex-shrink-0">
                     <IconAlertTriangle size={16} stroke={2} />
                 </span>

@@ -13,10 +13,13 @@ import lombok.Setter;
 /**
  * Ligne du top N des workers les plus exposes (Phase 8 — KPI).
  *
- * <p><b>Pseudonymise :</b> aucun nom / matricule clair. On ne renvoie que le {@code rank},
- * le {@code workerId} interne et la dose cumulee. L'enrichissement RH (matricule / nom) reste
- * la responsabilite du front en croisant avec les endpoints du Registre (qui eux portent le
- * RBAC {@code DOSIMETRY_READ_NOMINATIVE}). Cet endpoint reste sous {@code DOSIMETRY_READ_AGGREGATE}.
+ * <p><b>Affichage nominatif controle :</b> le backend expose le {@code workerName} (résolu via
+ * la table {@code employee} partagée avec HRMS) pour les rôles MEDICAL / PCR / RPO qui ont
+ * besoin d'identifier les expositions cumulées. Les rôles non-nominatifs côté frontend (UI
+ * "anonymisée") doivent masquer le champ via le toggle utilisateur — la pseudo-anonymisation
+ * UI ne change pas la charge utile API qui reste filtrée par RBAC au niveau du controller.
+ * Si l'enrichissement RH échoue (table indisponible, employé supprimé), {@code workerName}
+ * reste null.
  */
 @Getter
 @Setter
@@ -27,6 +30,12 @@ public class DosimetryTopExposedDTO {
 
     private int rank;
     private Long workerId;
+    /** Identifiant RH du salarié (FK vers la table employee), null si non renseigné. */
+    private Long employeeId;
+    /** Matricule RH (column unique_number) — null si lookup RH indisponible. */
+    private String matricule;
+    /** Nom complet "Prenom NOM" — null si lookup RH indisponible. */
+    private String workerName;
     private KpiCategory category;
     /** Dose annuelle cumulee en mSv (Hp10). */
     private BigDecimal annualDose;

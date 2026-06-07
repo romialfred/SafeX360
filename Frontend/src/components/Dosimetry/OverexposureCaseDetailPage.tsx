@@ -369,8 +369,8 @@ const OverexposureCaseDetailPage = () => {
 
     if (loading && !caseDto) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-                <div className="max-w-[1300px] mx-auto">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+                <div className="w-full">
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-10 text-center text-slate-500">
                         <span className="inline-block w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin mr-2 align-middle" />
                         {t('overexposureCases.detail.loading')}
@@ -382,8 +382,8 @@ const OverexposureCaseDetailPage = () => {
 
     if (!caseDto) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-                <div className="max-w-[1300px] mx-auto">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+                <div className="w-full">
                     <div className="bg-white border border-amber-200 rounded-xl shadow-sm p-8 text-center text-amber-700">
                         <IconAlertOctagon size={28} className="mx-auto mb-2" />
                         {loadError ?? t('overexposureCases.detail.notFound')}
@@ -404,8 +404,8 @@ const OverexposureCaseDetailPage = () => {
     }
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-[1300px] mx-auto">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            <div className="w-full">
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <button

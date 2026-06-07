@@ -47,6 +47,11 @@ public class DosimeterQueryServiceImpl implements DosimeterQueryService {
     private final DosimeterAssignmentRepository assignmentRepository;
     private final ExposedWorkerRepository workerRepository;
     private final DosimetryAuditService auditService;
+    /**
+     * Enrichissement RH (nom du porteur courant) : best-effort, peut être null en tests
+     * unitaires sans DataSource. Cf. {@link EmployeeLookupService}.
+     */
+    private final EmployeeLookupService employeeLookupService;
 
     @Override
     public List<DosimeterListItemDTO> searchDosimeters(SearchDosimeterFiltersDTO filters) {
@@ -248,9 +253,18 @@ public class DosimeterQueryServiceImpl implements DosimeterQueryService {
         if (active.isPresent() && active.get().getWorker() != null) {
             ExposedWorker worker = active.get().getWorker();
             currentWorkerId = worker.getId();
-            // Enrichissement RH absent (cf. notes ExposedWorkerQueryServiceImpl). On expose
-            // employeeId comme identifiant lisible faute de full name.
-            if (worker.getEmployeeId() != null) {
+            // Enrichissement RH via EmployeeLookupService (table employee partagée dans la
+            // même DB Aiven). Fallback EMP-<id> si le lookup échoue (table indisponible,
+            // employé supprimé, ou test unitaire sans datasource).
+            String resolvedName = null;
+            if (employeeLookupService != null && worker.getEmployeeId() != null) {
+                resolvedName = employeeLookupService.resolveOne(worker.getEmployeeId())
+                        .map(EmployeeLookupService.EmployeeInfo::fullName)
+                        .orElse(null);
+            }
+            if (resolvedName != null) {
+                currentWorkerName = resolvedName;
+            } else if (worker.getEmployeeId() != null) {
                 currentWorkerName = "EMP-" + worker.getEmployeeId();
             }
         }

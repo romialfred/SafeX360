@@ -250,6 +250,10 @@ const ExposedWorkersRegistryPage = () => {
     const { t } = useTranslation('dosimetry');
     const navigate = useNavigate();
     const user = useAppSelector((state: any) => state.user);
+    // Mine active = selecteur global du header (CompanySelector / store).
+    const selectedCompanyId: number | null = useAppSelector(
+        (state: any) => state?.companySelection?.selectedCompanyId ?? null,
+    );
 
     const canExportNominative = hasDosimetryPermission(user, 'DOSIMETRY_READ_NOMINATIVE');
     const canWrite = hasDosimetryPermission(user, 'DOSIMETRY_WRITE');
@@ -265,8 +269,9 @@ const ExposedWorkersRegistryPage = () => {
         specialStatus: 'all',
     });
 
-    // mineId requis par le backend (POST /search body.mineId). On le derive du user.
-    const mineId: number = user?.mineId ?? user?.companyId ?? 1;
+    // mineId requis par le backend (POST /search body.mineId). On consomme en priorite
+    // le selecteur global du header (store companySelection), puis on retombe sur le user.
+    const mineId: number = selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1;
 
     // ───── Chargement initial via POST /search ─────
     useEffect(() => {
@@ -503,8 +508,8 @@ const ExposedWorkersRegistryPage = () => {
     );
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-[1500px] mx-auto">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            <div className="w-full">
 
                 {/* ─── Breadcrumb premium ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">

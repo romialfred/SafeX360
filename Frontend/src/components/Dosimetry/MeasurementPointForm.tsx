@@ -295,7 +295,7 @@ const MeasurementPointForm = () => {
 
     // ───── Render ─────
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
             <div className="max-w-[1100px] mx-auto">
 
                 {/* ─── Breadcrumb ─── */}

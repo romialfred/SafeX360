@@ -235,7 +235,7 @@ const FitnessAssessmentForm = () => {
     // ─── RBAC GATE ───
     if (!canMedical) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-10">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-10">
                 <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm px-6 py-10 text-center">
                     <IconShieldLock size={36} className="mx-auto text-red-500 mb-3" />
                     <h2 className="text-slate-900 font-semibold text-lg mb-1">
@@ -252,7 +252,7 @@ const FitnessAssessmentForm = () => {
     const selectedBadge = FITNESS_BADGE[fitness];
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
+        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
             <div className="max-w-3xl mx-auto">
                 {/* ─── RGPD banner ─── */}
                 <div className="mb-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 text-[12px]">

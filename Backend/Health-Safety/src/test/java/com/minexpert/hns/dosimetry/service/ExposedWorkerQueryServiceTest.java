@@ -27,7 +27,7 @@ class ExposedWorkerQueryServiceTest {
         // Tous les repos sont null : la methode calculateExposureLevel n'en utilise aucun, elle
         // est testee en isolation totale.
         service = new ExposedWorkerQueryServiceImpl(null, null, null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     @Test

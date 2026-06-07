@@ -336,11 +336,14 @@ public class DoseRecordServiceImpl implements DoseRecordService {
     }
 
     private DoseRecordDTO toDTO(DoseRecord e) {
+        // workerName + matricule = null : ce service est CRUD (ne sait pas faire d'enrichissement
+        // RH batch). Les services Query enrichissent eux-mêmes via EmployeeLookupService.
         return new DoseRecordDTO(e.getId(),
                 e.getWorker() != null ? e.getWorker().getId() : null,
                 e.getPeriod(), e.getHp10(), e.getHp007(), e.getHp3(), e.getSource(),
                 e.isBelowDetection(), e.getAttachmentUrls(), e.getNotes(),
                 e.getRecordedBy(), e.getRecordedAt(), e.getVersion(), e.getSupersededRecordId(),
-                e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy());
+                e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy(),
+                null, null);
     }
 }

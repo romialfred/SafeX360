@@ -46,4 +46,9 @@ public class MedicalVisitSummaryDTO {
 
     private String cancellationReason;
     private LocalDateTime createdAt;
+
+    /** Enrichissement RH best-effort : nom complet du travailleur. Null si lookup indisponible. */
+    private String workerName;
+    /** Enrichissement RH best-effort : matricule (column unique_number). */
+    private String matricule;
 }

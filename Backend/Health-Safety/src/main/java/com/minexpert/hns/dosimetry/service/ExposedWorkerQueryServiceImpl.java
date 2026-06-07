@@ -83,6 +83,12 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
     private final ExposureAlertRepository exposureAlertRepository;
     private final ThresholdRepository thresholdRepository;
     private final DosimetryAuditLogRepository auditLogRepository;
+    /**
+     * Lookup RH (table {@code employee} de HRMS MineXpert dans la même DB Aiven). Nullable
+     * pour rester compatible avec les tests unitaires qui instancient le service sans
+     * datasource. Cf. {@link EmployeeLookupService}.
+     */
+    private final EmployeeLookupService employeeLookupService;
 
     /**
      * Cle de permission MEDECIN (chaine identique a celle declaree dans
@@ -154,7 +160,28 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
             items.add(dto);
         }
 
-        // 4. Filtrage applicatif (post-projection) sur category, specialStatus, exposureLevel, search
+        // 4. Enrichissement RH batch : un seul SELECT ... WHERE employee_id IN (...) pour tous
+        //    les workers. La résolution est best-effort (cf. EmployeeLookupService) : si la
+        //    table employee n'est pas accessible, les champs nominatifs restent null sans
+        //    bloquer la liste.
+        if (employeeLookupService != null && !items.isEmpty()) {
+            List<Long> employeeIds = items.stream()
+                    .map(ExposedWorkerListItemDTO::getEmployeeId)
+                    .collect(Collectors.toList());
+            Map<Long, EmployeeLookupService.EmployeeInfo> employeeMap =
+                    employeeLookupService.resolveBatch(employeeIds);
+            for (ExposedWorkerListItemDTO dto : items) {
+                EmployeeLookupService.EmployeeInfo info = employeeMap.get(dto.getEmployeeId());
+                if (info != null) {
+                    dto.setFullName(info.fullName());
+                    dto.setMatricule(info.matricule());
+                    dto.setPosition(info.position());
+                    dto.setDepartment(info.department());
+                }
+            }
+        }
+
+        // 5. Filtrage applicatif (post-projection) sur category, specialStatus, exposureLevel, search
         return items.stream()
                 .filter(it -> matches(it, filters))
                 .collect(Collectors.toList());
@@ -176,11 +203,19 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
                 .timestamp(LocalDateTime.now())
                 .build());
 
-        // Identite + classification
-        IdentityDTO identity = IdentityDTO.builder()
+        // Identite + classification (enrichissement RH best-effort via EmployeeLookupService)
+        IdentityDTO.IdentityDTOBuilder identityBuilder = IdentityDTO.builder()
                 .workerId(worker.getId())
-                .employeeId(worker.getEmployeeId())
-                .build();
+                .employeeId(worker.getEmployeeId());
+        if (employeeLookupService != null && worker.getEmployeeId() != null) {
+            employeeLookupService.resolveOne(worker.getEmployeeId()).ifPresent(info -> {
+                identityBuilder.fullName(info.fullName());
+                identityBuilder.matricule(info.matricule());
+                identityBuilder.position(info.position());
+                identityBuilder.department(info.department());
+            });
+        }
+        IdentityDTO identity = identityBuilder.build();
 
         ClassificationDTO classification = ClassificationDTO.builder()
                 .category(worker.getCategory())
@@ -490,12 +525,15 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
     }
 
     private DoseRecordDTO toDoseRecordDTO(DoseRecord e) {
+        // workerName / matricule renseignés au niveau du DTO Detail (un seul worker -> on connait
+        // déjà son identité via identity bloc). On n'inonde pas chaque doseRecord avec.
         return new DoseRecordDTO(e.getId(),
                 e.getWorker() != null ? e.getWorker().getId() : null,
                 e.getPeriod(), e.getHp10(), e.getHp007(), e.getHp3(), e.getSource(),
                 e.isBelowDetection(), e.getAttachmentUrls(), e.getNotes(),
                 e.getRecordedBy(), e.getRecordedAt(), e.getVersion(), e.getSupersededRecordId(),
-                e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy());
+                e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy(),
+                null, null);
     }
 
     private DoseCumulativeDTO toDoseCumulativeDTO(DoseCumulative e) {
