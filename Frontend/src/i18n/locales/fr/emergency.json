@@ -75,6 +75,60 @@
         "RESPONDER": "Secouriste",
         "ALERT_LAUNCHER": "Lanceur d'alerte"
     },
+    "sos": {
+        "title": "Signal SOS",
+        "tagline": "Urgence vitale — transmission immédiate au coordinateur HSE",
+        "reasonLabel": "Type d'urgence",
+        "reasonHelper": "Sélection actuelle : {{selected}}",
+        "reasons": {
+            "general": "Urgence générale",
+            "medical": "Urgence médicale",
+            "fire": "Incendie / Fumée",
+            "collapse": "Effondrement / Éboulement",
+            "chemical": "Fuite chimique / Gaz"
+        },
+        "messageLabel": "Description (optionnel)",
+        "messagePlaceholder": "Décrivez brièvement la situation",
+        "location": {
+            "label": "Position GPS",
+            "capturing": "Capture en cours",
+            "accuracy": "(précision {{meters}} m)",
+            "denied": "Localisation indisponible. Le signal sera envoyé sans position."
+        },
+        "user": {
+            "fallbackName": "Utilisateur",
+            "fallbackRole": "Rôle non défini"
+        },
+        "hotlineLabel": "En cas d'urgence vitale immédiate, appelez aussi le poste de garde HSE :",
+        "hotlineNumber": "+226 25 30 00 00",
+        "cancelBtn": "Annuler",
+        "submitBtn": "Transmettre le signal SOS",
+        "success": {
+            "title": "Signal transmis",
+            "body": "Le coordinateur HSE et l'équipe d'intervention ont reçu votre signal. Restez sur place si possible."
+        },
+        "notifications": {
+            "success": "Signal SOS transmis. Les coordinateurs HSE sont notifiés en temps réel.",
+            "offlineQueued": "Signal SOS enregistré localement. Sera transmis automatiquement dès reconnexion réseau.",
+            "criticalFailure": "Échec critique : impossible de stocker l'alerte. Contactez le poste de garde HSE par radio.",
+            "noContext": "Mine ou utilisateur non identifié. Contactez l'administrateur."
+        },
+        "autoTransmit": {
+            "title": "Transmission automatique imminente",
+            "body": "Le signal SOS sera transmis automatiquement dans {{seconds}} secondes.",
+            "hint": "Annulez ou confirmez maintenant.",
+            "cancelBtn": "Annuler la transmission",
+            "confirmBtn": "Transmettre maintenant",
+            "descriptionSuffix": " — Envoyé automatiquement après déclenchement (aucune action utilisateur dans les 45 secondes)"
+        }
+    },
+    "audio": {
+        "generalAlert": {
+            "drill": "Ceci est un exercice. Veuillez rejoindre le point de rassemblement le plus proche.",
+            "real": "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche."
+        },
+        "coordinatorSos": "Ceci n'est pas un exercice. Une alerte SOS a été déclenchée. Prenez immédiatement en charge l'intervention."
+    },
     "headCountMethod": {
         "GPS": "GPS (géofence automatique)",
         "QR": "QR code à la borne",

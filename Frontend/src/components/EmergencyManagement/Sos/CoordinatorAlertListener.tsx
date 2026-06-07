@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     IconAlertTriangle,
     IconMapPin,
@@ -189,6 +190,7 @@ class AmbulanceSiren {
 
 const CoordinatorAlertListener = () => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation('emergency');
     const { subscribe } = useEmergencyWebSocket();
     const currentUser = useAppSelector((state: any) => state.user);
 
@@ -235,20 +237,22 @@ const CoordinatorAlertListener = () => {
         else sirenRef.current?.stop();
     }, [soundEnabled, activeAlert]);
 
-    // ── TTS Web Speech avec audio ducking ──
+    // ── TTS Web Speech avec audio ducking — BILINGUE FR/EN ──
     useEffect(() => {
         if (!activeAlert || !soundEnabled) return;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
         const synth = window.speechSynthesis;
-        const message =
-            "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche.";
+        // Récupère la langue active i18n + applique sur l'utterance.
+        const activeLang = (i18n.language || 'fr').split('-')[0];
+        const utteranceLang = activeLang === 'en' ? 'en-US' : 'fr-FR';
+        const message = t('audio.coordinatorSos');
 
         const speak = () => {
             try {
                 if (!synth.speaking) {
                     const u = new SpeechSynthesisUtterance(message);
-                    u.lang = 'fr-FR';
+                    u.lang = utteranceLang;
                     u.rate = 0.92;
                     u.pitch = 1.0;
                     u.volume = 1.0;
@@ -270,7 +274,7 @@ const CoordinatorAlertListener = () => {
                 sirenRef.current?.unduck();
             } catch { /* ignore */ }
         };
-    }, [activeAlert, soundEnabled]);
+    }, [activeAlert, soundEnabled, i18n.language, t]);
 
     // ── Note : start() est désormais async ; on ignore la promise via void ──
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     IconAlertTriangle,
     IconMapPin,
@@ -199,6 +200,7 @@ cleanupOldCheckIns();
 
 const GeneralAlertListener = () => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation('emergency');
     const { subscribeGeneralAlert } = useEmergencyWebSocket();
     const currentUser = useAppSelector((state: any) => state.user);
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
@@ -276,15 +278,18 @@ const GeneralAlertListener = () => {
         };
     }, [activeAlert, soundEnabled]);
 
-    // ── TTS Web Speech (voix) avec audio ducking ──
+    // ── TTS Web Speech (voix) avec audio ducking — BILINGUE FR/EN ──
     useEffect(() => {
         if (!activeAlert || !soundEnabled || checkedInStatus) return;
         if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
         const synth = window.speechSynthesis;
+        // Récupère la langue active i18n + clé adaptée (drill vs réel).
+        const activeLang = (i18n.language || 'fr').split('-')[0];
+        const utteranceLang = activeLang === 'en' ? 'en-US' : 'fr-FR';
         const standardMsg = activeAlert.drillMode
-            ? "Ceci est un exercice. Veuillez rejoindre le point de rassemblement le plus proche."
-            : "Ceci n'est pas un exercice. Veuillez rejoindre le point de rassemblement le plus proche.";
+            ? t('audio.generalAlert.drill')
+            : t('audio.generalAlert.real');
         const fullMessage = activeAlert.message
             ? `${standardMsg} ${activeAlert.message}`
             : standardMsg;
@@ -293,7 +298,7 @@ const GeneralAlertListener = () => {
             try {
                 if (!synth.speaking) {
                     const u = new SpeechSynthesisUtterance(fullMessage);
-                    u.lang = 'fr-FR';
+                    u.lang = utteranceLang;
                     u.rate = 0.92;
                     u.pitch = 1.0;
                     u.volume = 1.0;
@@ -315,7 +320,7 @@ const GeneralAlertListener = () => {
                 sirenRef.current?.unduck();
             } catch { /* ignore */ }
         };
-    }, [activeAlert, soundEnabled, checkedInStatus]);
+    }, [activeAlert, soundEnabled, checkedInStatus, i18n.language, t]);
 
     // ── Check-in ──
     const doCheckIn = async (status: CheckInStatus) => {

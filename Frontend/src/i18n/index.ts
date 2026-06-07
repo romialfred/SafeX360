@@ -97,4 +97,19 @@ i18n
         },
     });
 
+// ─── Sync <html lang="..."> avec la langue résolue ───────────────────
+// Rigueur i18n (LOT 49) : la balise <html lang> sert pour l'accessibilité,
+// la synthèse vocale (Web Speech) et certains styles CSS de localisation.
+// On la synchronise au boot ET à chaque changement de langue pour éviter
+// l'incohérence "sidebar FR + html lang=en" observée en prod.
+const syncHtmlLang = (lng: string | undefined) => {
+    if (typeof document === 'undefined' || !lng) return;
+    const base = lng.split('-')[0].toLowerCase();
+    if (SUPPORTED_LANGUAGES.includes(base as SupportedLanguage)) {
+        document.documentElement.lang = base;
+    }
+};
+syncHtmlLang(i18n.resolvedLanguage || i18n.language);
+i18n.on('languageChanged', syncHtmlLang);
+
 export default i18n;

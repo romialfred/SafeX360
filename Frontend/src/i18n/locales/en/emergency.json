@@ -75,6 +75,60 @@
         "RESPONDER": "Responder",
         "ALERT_LAUNCHER": "Alert Launcher"
     },
+    "sos": {
+        "title": "SOS signal",
+        "tagline": "Life-threatening emergency — instant relay to the HSE coordinator",
+        "reasonLabel": "Type of emergency",
+        "reasonHelper": "Current selection: {{selected}}",
+        "reasons": {
+            "general": "General emergency",
+            "medical": "Medical emergency",
+            "fire": "Fire / Smoke",
+            "collapse": "Collapse / Cave-in",
+            "chemical": "Chemical / Gas leak"
+        },
+        "messageLabel": "Description (optional)",
+        "messagePlaceholder": "Briefly describe the situation",
+        "location": {
+            "label": "GPS position",
+            "capturing": "Capturing position",
+            "accuracy": "(accuracy {{meters}} m)",
+            "denied": "Location unavailable. Signal will be sent without coordinates."
+        },
+        "user": {
+            "fallbackName": "User",
+            "fallbackRole": "Role undefined"
+        },
+        "hotlineLabel": "For life-threatening emergencies, also call the HSE control room:",
+        "hotlineNumber": "+226 25 30 00 00",
+        "cancelBtn": "Cancel",
+        "submitBtn": "Send SOS signal",
+        "success": {
+            "title": "Signal sent",
+            "body": "The HSE coordinator and response team have received your signal. Stay in place if you can."
+        },
+        "notifications": {
+            "success": "SOS signal sent. HSE coordinators have been notified in real time.",
+            "offlineQueued": "SOS signal saved locally. It will be transmitted automatically once the network is back.",
+            "criticalFailure": "Critical failure: unable to store the alert. Contact the HSE control room by radio.",
+            "noContext": "Mine or user not identified. Contact your administrator."
+        },
+        "autoTransmit": {
+            "title": "Automatic transmission imminent",
+            "body": "The SOS signal will be transmitted automatically in {{seconds}} seconds.",
+            "hint": "Cancel or confirm now.",
+            "cancelBtn": "Cancel transmission",
+            "confirmBtn": "Send now",
+            "descriptionSuffix": " — Sent automatically after trigger (no user action within 45 seconds)"
+        }
+    },
+    "audio": {
+        "generalAlert": {
+            "drill": "This is a drill. Please proceed to the nearest assembly point.",
+            "real": "This is not a drill. Please proceed to the nearest assembly point."
+        },
+        "coordinatorSos": "This is not a drill. An SOS alert has been triggered. Take charge of the response immediately."
+    },
     "headCountMethod": {
         "GPS": "GPS (automatic geofencing)",
         "QR": "QR code at the post",
