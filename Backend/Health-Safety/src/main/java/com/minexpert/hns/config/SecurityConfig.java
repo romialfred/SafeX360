@@ -5,14 +5,34 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Configuration de securite du microservice Health-Safety.
+ *
+ * <p><b>Phase 10-A (Security Hardening) :</b> activation de
+ * {@link EnableMethodSecurity} avec {@code prePostEnabled = true} pour rendre effectifs
+ * les annotations {@code @PreAuthorize} declarees dans les controllers du module
+ * Dosimetrie (Phases 3-7). Ces annotations referencent les permissions de
+ * {@code DosimetryRBACConfig} (DOSIMETRY_READ_AGGREGATE, DOSIMETRY_READ_NOMINATIVE,
+ * DOSIMETRY_WRITE, DOSIMETRY_MEDICAL, DOSIMETRY_PCR_RPO, DOSIMETRY_ADMIN,
+ * DOSIMETRY_EXPORT_MEDICAL).
+ *
+ * <p><b>Compatibilite ascendante :</b> la regle "anyRequest denyAll" reste portee par
+ * le filtre HTTP via le header X-Secret-Key partage avec la Gateway. Les endpoints qui
+ * ne portent PAS d'annotation {@code @PreAuthorize} restent accessibles (le header
+ * X-Secret-Key les laisse passer). En revanche, tout endpoint annote @PreAuthorize
+ * exigera desormais l'authority correspondante dans le SecurityContext (fournie par
+ * la Gateway via le header X-Permissions, mappe par {@link GatewayAuthorityFilter}).
+ */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     // LOT 41 P0 SECURITY: secret partagé Gateway↔Microservice, externalisé via env var.
@@ -31,8 +51,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   GatewayAuthorityFilter gatewayAuthorityFilter) throws Exception {
         http.csrf().disable()
+                // Phase 10-A : filtre qui materialise les permissions du header X-Permissions
+                // en GrantedAuthority dans le SecurityContext. Necessaire pour que les
+                // @PreAuthorize("hasAuthority('X')") fonctionnent au runtime.
+                .addFilterBefore(gatewayAuthorityFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // LOT 42 hotfix : ouvrir /actuator/health/** pour liveness + readiness probes Render
                         .requestMatchers("/actuator/health/**", "/actuator/health", "/actuator/info").permitAll()

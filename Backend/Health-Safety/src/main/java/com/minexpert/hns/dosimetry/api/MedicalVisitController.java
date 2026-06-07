@@ -24,6 +24,8 @@ import com.minexpert.hns.dosimetry.dto.MedicalVisitFullDTO;
 import com.minexpert.hns.dosimetry.dto.MedicalVisitSummaryDTO;
 import com.minexpert.hns.dosimetry.enums.MedicalVisitType;
 import com.minexpert.hns.dosimetry.service.MedicalVisitService;
+import com.minexpert.hns.dosimetry.util.DosimetrySelfAccessGuard;
+import com.minexpert.hns.dosimetry.util.XReasonValidator;
 import com.minexpert.hns.dto.ResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,8 @@ import lombok.RequiredArgsConstructor;
 public class MedicalVisitController {
 
     private final MedicalVisitService service;
+    private final DosimetrySelfAccessGuard selfAccessGuard;
+    private final XReasonValidator reasonValidator;
 
     // ----------------------------------------------------------------------------
     // Ecritures - MEDICAL uniquement.
@@ -142,6 +146,9 @@ public class MedicalVisitController {
             @PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
             HttpServletRequest request) {
+        // Phase 10-A : enforcement SELF cote serveur. Si l'appelant n'a pas de permission
+        // elevee, on verifie que workerId.employeeId == userId, sinon AccessDeniedException 403.
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         return new ResponseEntity<>(
                 service.getWorkerVisitsSummary(workerId, userId, clientIp(request)),
                 HttpStatus.OK);
@@ -160,12 +167,12 @@ public class MedicalVisitController {
     public ResponseEntity<List<MedicalVisitFullDTO>> byWorkerFull(
             @PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
-            @RequestHeader(value = "X-Reason", required = false) String reason,
+            @RequestHeader(value = "X-Reason", required = true) String reason,
             HttpServletRequest request) {
+        // Phase 10-A : X-Reason OBLIGATOIRE >= 10 chars + non sentinelle (RGPD art. 30).
+        String validatedReason = reasonValidator.validate(reason, userId, "MEDICAL_VISIT_BY_WORKER_FULL");
         return new ResponseEntity<>(
-                service.getWorkerVisitsFull(workerId, userId,
-                        reason != null ? reason : "unspecified",
-                        clientIp(request)),
+                service.getWorkerVisitsFull(workerId, userId, validatedReason, clientIp(request)),
                 HttpStatus.OK);
     }
 
@@ -173,12 +180,12 @@ public class MedicalVisitController {
     @GetMapping("/get/{id}/full")
     public ResponseEntity<MedicalVisitFullDTO> getFull(@PathVariable Long id,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
-            @RequestHeader(value = "X-Reason", required = false) String reason,
+            @RequestHeader(value = "X-Reason", required = true) String reason,
             HttpServletRequest request) {
+        // Phase 10-A : X-Reason OBLIGATOIRE >= 10 chars + non sentinelle (RGPD art. 30).
+        String validatedReason = reasonValidator.validate(reason, userId, "MEDICAL_VISIT_GET_FULL");
         return new ResponseEntity<>(
-                service.getVisitFull(id, userId,
-                        reason != null ? reason : "unspecified",
-                        clientIp(request)),
+                service.getVisitFull(id, userId, validatedReason, clientIp(request)),
                 HttpStatus.OK);
     }
 

@@ -7,10 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.minexpert.hns.exception.HSException;
 
@@ -22,6 +24,31 @@ public class ExceptionControllerAdvice {
 
     @Autowired
     private Environment environment;
+
+    /**
+     * Phase 10-A : AccessDeniedException levee depuis un controller (ex.
+     * DosimetrySelfAccessGuard.verifySelfAccess) doit aboutir a un 403 explicite et non
+     * cascader en 500 via le generalExceptionHandler.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorInfo> accessDeniedHandler(AccessDeniedException exception) {
+        ErrorInfo error = new ErrorInfo(exception.getMessage(), HttpStatus.FORBIDDEN.value(),
+                LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    /**
+     * Phase 10-A : ResponseStatusException portee par XReasonValidator (400) ou autres
+     * validations applicatives. On preserve le status HTTP defini par l'appelant plutot que
+     * de tout collapser sur un 500 generique.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorInfo> responseStatusHandler(ResponseStatusException exception) {
+        ErrorInfo error = new ErrorInfo(exception.getReason() != null ? exception.getReason()
+                : exception.getMessage(),
+                exception.getStatusCode().value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, exception.getStatusCode());
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {

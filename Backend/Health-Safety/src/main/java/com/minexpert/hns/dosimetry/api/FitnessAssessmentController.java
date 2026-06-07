@@ -24,6 +24,8 @@ import com.minexpert.hns.dosimetry.dto.FitnessAssessmentFullDTO;
 import com.minexpert.hns.dosimetry.dto.FitnessAssessmentPublicDTO;
 import com.minexpert.hns.dosimetry.enums.FitnessLevel;
 import com.minexpert.hns.dosimetry.service.FitnessAssessmentService;
+import com.minexpert.hns.dosimetry.util.DosimetrySelfAccessGuard;
+import com.minexpert.hns.dosimetry.util.XReasonValidator;
 import com.minexpert.hns.dto.ResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,8 @@ import lombok.RequiredArgsConstructor;
 public class FitnessAssessmentController {
 
     private final FitnessAssessmentService service;
+    private final DosimetrySelfAccessGuard selfAccessGuard;
+    private final XReasonValidator reasonValidator;
 
     // ----------------------------------------------------------------------------
     // Ecritures - MEDICAL uniquement.
@@ -118,6 +122,8 @@ public class FitnessAssessmentController {
     public ResponseEntity<FitnessAssessmentPublicDTO> current(@PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
             HttpServletRequest request) {
+        // Phase 10-A : SELF enforcement (cross-worker -> 403).
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         Optional<FitnessAssessmentPublicDTO> dto = service.getCurrentFitnessPublic(workerId,
                 userId, clientIp(request));
         return dto.map(d -> new ResponseEntity<>(d, HttpStatus.OK))
@@ -134,6 +140,8 @@ public class FitnessAssessmentController {
     public ResponseEntity<List<FitnessAssessmentPublicDTO>> history(@PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
             HttpServletRequest request) {
+        // Phase 10-A : SELF enforcement.
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         return new ResponseEntity<>(
                 service.getAllAssessmentsPublic(workerId, userId, clientIp(request)),
                 HttpStatus.OK);
@@ -147,10 +155,12 @@ public class FitnessAssessmentController {
     @GetMapping("/current/{workerId}/full")
     public ResponseEntity<FitnessAssessmentFullDTO> currentFull(@PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
-            @RequestHeader(value = "X-Reason", required = false) String reason,
+            @RequestHeader(value = "X-Reason", required = true) String reason,
             HttpServletRequest request) {
+        // Phase 10-A : X-Reason OBLIGATOIRE >= 10 chars + non sentinelle.
+        String validatedReason = reasonValidator.validate(reason, userId, "FITNESS_CURRENT_FULL");
         Optional<FitnessAssessmentFullDTO> dto = service.getCurrentFitnessFull(workerId, userId,
-                reason != null ? reason : "unspecified", clientIp(request));
+                validatedReason, clientIp(request));
         return dto.map(d -> new ResponseEntity<>(d, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -159,11 +169,12 @@ public class FitnessAssessmentController {
     @GetMapping("/history/{workerId}/full")
     public ResponseEntity<List<FitnessAssessmentFullDTO>> historyFull(@PathVariable Long workerId,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
-            @RequestHeader(value = "X-Reason", required = false) String reason,
+            @RequestHeader(value = "X-Reason", required = true) String reason,
             HttpServletRequest request) {
+        // Phase 10-A : X-Reason OBLIGATOIRE >= 10 chars + non sentinelle.
+        String validatedReason = reasonValidator.validate(reason, userId, "FITNESS_HISTORY_FULL");
         return new ResponseEntity<>(
-                service.getAllAssessmentsFull(workerId, userId,
-                        reason != null ? reason : "unspecified", clientIp(request)),
+                service.getAllAssessmentsFull(workerId, userId, validatedReason, clientIp(request)),
                 HttpStatus.OK);
     }
 

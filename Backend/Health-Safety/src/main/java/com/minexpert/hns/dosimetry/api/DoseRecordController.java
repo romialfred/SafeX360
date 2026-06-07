@@ -21,10 +21,14 @@ import com.minexpert.hns.dosimetry.dto.DoseRecordDTO;
 import com.minexpert.hns.dosimetry.dto.DoseRecordSupersedeRequestDTO;
 import com.minexpert.hns.dosimetry.service.DoseRecordQueryService;
 import com.minexpert.hns.dosimetry.service.DoseRecordService;
+import com.minexpert.hns.dosimetry.util.DosimetrySelfAccessGuard;
+import com.minexpert.hns.dosimetry.util.XReasonValidator;
 import com.minexpert.hns.dto.ResponseDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.web.bind.annotation.RequestHeader;
 
 /**
  * Controller des enregistrements de dose.
@@ -51,6 +55,8 @@ public class DoseRecordController {
 
     private final DoseRecordService service;
     private final DoseRecordQueryService queryService;
+    private final DosimetrySelfAccessGuard selfAccessGuard;
+    private final XReasonValidator reasonValidator;
 
     // -----------------------------------------------------------------------------------------
     //   ECRITURE - PHASE 4
@@ -125,26 +131,40 @@ public class DoseRecordController {
 
     @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/getActiveByWorker/{workerId}")
-    public ResponseEntity<List<DoseRecordDTO>> getActiveByWorker(@PathVariable Long workerId) {
+    public ResponseEntity<List<DoseRecordDTO>> getActiveByWorker(@PathVariable Long workerId,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Phase 10-A : SELF enforcement (cross-worker -> 403).
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         return new ResponseEntity<>(service.getActiveByWorkerId(workerId), HttpStatus.OK);
     }
 
     /** Nouveau (Phase 4) - alias canonique de getActiveByWorker, ordonne par period ASC. */
     @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/active-by-worker/{workerId}")
-    public ResponseEntity<List<DoseRecordDTO>> activeByWorker(@PathVariable Long workerId) {
+    public ResponseEntity<List<DoseRecordDTO>> activeByWorker(@PathVariable Long workerId,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Phase 10-A : SELF enforcement.
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         return new ResponseEntity<>(queryService.findActiveByWorker(workerId), HttpStatus.OK);
     }
 
     /**
      * Renvoie TOUTES les versions (actives + superseded) d'un (worker, period). Utilise par
      * la vue audit / historique pour materialiser la chaine append-only.
+     *
+     * <p>Phase 10-A : endpoint considere "Full" (chaine versions detaillee = donnee
+     * nominative enrichie). X-Reason obligatoire (RGPD art. 30).
      */
     @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/history-by-worker-period/{workerId}/{period}")
     public ResponseEntity<List<DoseRecordDTO>> historyByWorkerPeriod(
             @PathVariable Long workerId,
-            @PathVariable String period) {
+            @PathVariable String period,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @RequestHeader(value = "X-Reason", required = true) String reason) {
+        // Phase 10-A : SELF enforcement + X-Reason >= 10 chars (donnees detaillees historique).
+        selfAccessGuard.verifySelfAccess(workerId, userId);
+        reasonValidator.validate(reason, userId, "DOSE_RECORD_HISTORY_BY_WORKER");
         return new ResponseEntity<>(
                 queryService.findHistoryByWorkerWithVersions(workerId, period), HttpStatus.OK);
     }
@@ -153,7 +173,10 @@ public class DoseRecordController {
     @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/by-worker-year/{workerId}/{year}")
     public ResponseEntity<List<DoseRecordDTO>> byWorkerYear(@PathVariable Long workerId,
-            @PathVariable int year) {
+            @PathVariable int year,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Phase 10-A : SELF enforcement.
+        selfAccessGuard.verifySelfAccess(workerId, userId);
         return new ResponseEntity<>(queryService.findByWorkerYear(workerId, year), HttpStatus.OK);
     }
 }

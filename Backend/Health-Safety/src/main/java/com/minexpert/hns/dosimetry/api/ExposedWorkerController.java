@@ -26,6 +26,8 @@ import com.minexpert.hns.dosimetry.dto.ExposedWorkerListItemDTO;
 import com.minexpert.hns.dosimetry.dto.SearchFiltersDTO;
 import com.minexpert.hns.dosimetry.service.ExposedWorkerQueryService;
 import com.minexpert.hns.dosimetry.service.ExposedWorkerService;
+import com.minexpert.hns.dosimetry.util.DosimetrySelfAccessGuard;
+import com.minexpert.hns.dosimetry.util.XReasonValidator;
 import com.minexpert.hns.dto.ResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,8 @@ public class ExposedWorkerController {
 
     private final ExposedWorkerService service;
     private final ExposedWorkerQueryService queryService;
+    private final DosimetrySelfAccessGuard selfAccessGuard;
+    private final XReasonValidator reasonValidator;
 
     @PostMapping("/create")
     public ResponseEntity<Long> create(@RequestParam("companyId") Long companyId,
@@ -76,6 +80,8 @@ public class ExposedWorkerController {
     public ResponseEntity<ExposedWorkerDTO> getById(@PathVariable Long id,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
             @RequestHeader(value = "X-Permissions", required = false) String userPermissions) {
+        // Phase 10-A : SELF enforcement (cross-worker -> 403).
+        selfAccessGuard.verifySelfAccess(id, userId);
         return new ResponseEntity<>(service.getById(id, userId, userPermissions), HttpStatus.OK);
     }
 
@@ -115,7 +121,11 @@ public class ExposedWorkerController {
     @GetMapping("/detail/{id}")
     public ResponseEntity<ExposedWorkerDetailDTO> getDetail(@PathVariable("id") Long id,
             @RequestHeader(value = "X-User-Id", required = false) Long userId,
-            @RequestHeader(value = "X-Permissions", required = false) String userPermissions) {
+            @RequestHeader(value = "X-Permissions", required = false) String userPermissions,
+            @RequestHeader(value = "X-Reason", required = true) String reason) {
+        // Phase 10-A : SELF enforcement + X-Reason obligatoire (mode nominatif RGPD art. 30).
+        selfAccessGuard.verifySelfAccess(id, userId);
+        reasonValidator.validate(reason, userId, "EXPOSED_WORKER_DETAIL");
         return new ResponseEntity<>(queryService.getDetail(id, userId, userPermissions), HttpStatus.OK);
     }
 
