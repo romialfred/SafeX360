@@ -231,9 +231,6 @@ const RegulatoryExportsPage = () => {
                     <p className="text-slate-600 text-[13px] mb-4">
                         {t('regulatoryExports.deniedBody')}
                     </p>
-                    <p className="text-slate-500 text-[11.5px] mb-4 font-mono">
-                        {t('regulatoryExports.deniedPermission')}
-                    </p>
                     <button
                         type="button"
                         onClick={() => navigate('/dosimetry')}

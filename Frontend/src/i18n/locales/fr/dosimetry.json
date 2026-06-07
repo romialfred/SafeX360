@@ -7,20 +7,20 @@
     "sidebar": {
         "dosimetry": "Dosimétrie & Expositions",
         "dosimetryDashboard": "Tableau de bord",
-        "dosimetryWorkers": "Registre travailleurs exposés",
-        "dosimetryDosimeters": "Dosimètres & Instruments",
+        "dosimetryWorkers": "Registre des travailleurs exposés",
+        "dosimetryDosimeters": "Dosimètres & instruments",
         "dosimetryDoses": "Saisie & suivi des doses",
-        "dosimetryAmbient": "Surveillance d'ambiance",
+        "dosimetryAmbient": "Points de mesure",
         "dosimetryAmbientMap": "Cartographie d'ambiance",
         "dosimetryCampaigns": "Campagnes de surveillance",
         "dosimetryExposureProfiles": "Profils d'exposition",
-        "dosimetryMedical": "Surveillance médicale",
-        "dosimetryMyMedical": "Mon dossier",
-        "dosimetryAlerts": "Seuils & dépassements",
+        "dosimetryMedical": "Planning des visites médicales",
+        "dosimetryMyMedical": "Mon dossier médical",
+        "dosimetryAlerts": "Seuils & alertes",
         "dosimetryOverexposure": "Dossiers de dépassement",
-        "dosimetryReports": "Rapports & conformité",
+        "dosimetryReports": "Rapports & attestations",
         "dosimetryRegulatoryExports": "Exports réglementaires",
-        "dosimetrySettings": "Paramètres"
+        "dosimetrySettings": "Paramètres dosimétrie"
     },
     "parameters": {
         "title": "Paramètres dosimétrie",
@@ -40,7 +40,86 @@
         "resetConfirm": "Réinitialiser les limites aux valeurs de référence CIPR 103 / AIEA GSR Part 3 ?",
         "resetNotAvailable": "La réinitialisation automatique aux valeurs CIPR / AIEA sera disponible en Phase 2. Les seuils actuels restent inchangés.",
         "addThreshold": "Ajouter un seuil",
-        "footerNote": "Conforme aux limites de référence CIPR 103 et AIEA GSR Part 3, modifiables par l'administrateur."
+        "footerNote": "Conforme aux limites de référence CIPR 103 et AIEA GSR Part 3, modifiables par l'administrateur.",
+        "refFramework": {
+            "sectionTitle": "Référentiel réglementaire",
+            "sectionSubtitle": "Cadres internationaux et nationaux applicables à la radioprotection des travailleurs.",
+            "cipr": {
+                "code": "CIPR 103",
+                "title": "Commission Internationale de Protection Radiologique",
+                "body": "Recommandations de 2007 — fondement scientifique de la radioprotection moderne. Définit les limites de dose individuelle, les principes de justification, d'optimisation (ALARA) et de limitation."
+            },
+            "iaea": {
+                "code": "AIEA GSR Part 3",
+                "title": "Normes de sûreté de l'Agence Internationale de l'Énergie Atomique",
+                "body": "Exigences fondamentales internationales pour la protection contre les rayonnements ionisants et la sûreté des sources. Transposées dans les législations nationales (Euratom 2013/59, R.4451 en France)."
+            },
+            "national": {
+                "code": "R.4451-1 et suivants",
+                "title": "Code du travail — protection des travailleurs (France)",
+                "body": "Transposition nationale des directives Euratom : classement Cat A / B, suivi dosimétrique individuel, surveillance médicale renforcée et obligations du PCR/RPO."
+            }
+        },
+        "limitsSection": {
+            "sectionTitle": "Limites de doses applicables",
+            "sectionSubtitle": "Valeurs réglementaires par catégorie de personnel — exprimées en mSv et appliquées sur l'année civile glissante.",
+            "tableColCategory": "Catégorie de personnel",
+            "tableColHp10": "Hp(10) — corps entier",
+            "tableColHp007": "Hp(0,07) — peau",
+            "tableColHp3": "Hp(3) — cristallin",
+            "tableColFramework": "Référentiel",
+            "perYear": "/ an",
+            "noValue": "—",
+            "noValueHint": "Pas de limite spécifique — limite générale catégorie A applicable.",
+            "tooltips": {
+                "WORKER_A": "Travailleur classé Catégorie A : susceptible de recevoir une dose efficace supérieure à 6 mSv/an. Suivi dosimétrique individuel obligatoire.",
+                "WORKER_B": "Travailleur classé Catégorie B : dose efficace susceptible de dépasser 1 mSv/an sans atteindre les seuils de la catégorie A.",
+                "APPRENTICE": "Apprentis et étudiants de 16 à 18 ans exposés en formation professionnelle — limites abaissées pour protection de la jeunesse.",
+                "PREGNANCY": "Femme enceinte ayant déclaré sa grossesse — protection renforcée du fœtus. La dose équivalente à l'abdomen est limitée à 1 mSv pour le reste de la grossesse.",
+                "PUBLIC": "Personnes du public — toute personne non classée travailleur exposé. Limite annuelle d'exposition issue d'activités nucléaires."
+            }
+        },
+        "bandsSection": {
+            "sectionTitle": "Bandes d'exposition",
+            "sectionSubtitle": "Seuils colorimétriques d'alerte exprimés en pourcentage de la limite réglementaire annuelle, utilisés dans les tableaux de bord et les notifications.",
+            "controlLevel": "Niveau de contrôle",
+            "controlLevelDesc": "Surveillance routinière — situation conforme.",
+            "investigationLevel": "Niveau d'investigation",
+            "investigationLevelDesc": "Analyse des conditions d'exposition et vérification des dosimètres.",
+            "actionLevel": "Niveau d'action",
+            "actionLevelDesc": "Mesures correctives immédiates — limitation d'accès et renforcement du suivi.",
+            "regulatoryLimit": "Limite réglementaire",
+            "regulatoryLimitDesc": "Dépassement — déclaration obligatoire à l'autorité compétente, ouverture d'un dossier de surexposition.",
+            "axisLabel": "% de la limite annuelle"
+        },
+        "accessSection": {
+            "sectionTitle": "Règles d'accès",
+            "sectionSubtitle": "Cadre de gouvernance des données dosimétriques — conforme RGPD art. 30 et AIEA GSR Part 3.",
+            "intro": "L'accès aux données de dosimétrie est encadré par 6 niveaux d'autorisation, attribués selon le rôle professionnel de chaque utilisateur. Chaque consultation de données nominatives est journalisée dans le registre d'audit RGPD.",
+            "allowedRolesLabel": "Rôles autorisés",
+            "viewTechMatrix": "Voir la matrice RBAC technique (administrateurs)",
+            "techMatrixModalTitle": "Matrice RBAC technique",
+            "techMatrixModalSubtitle": "Vue administrateur — codes techniques des permissions et rôles. Cette matrice n'est pas exposée aux utilisateurs finaux.",
+            "techPermissionCode": "Code permission",
+            "techRolesCode": "Codes rôles",
+            "techCloseBtn": "Fermer"
+        },
+        "rbacRoles": {
+            "HSE_VIEWER": "Lecteur HSE",
+            "HSE_OFFICER": "Agent HSE",
+            "HSE_MANAGER": "Responsable HSE",
+            "MEDICAL_DOCTOR": "Médecin du travail",
+            "RADIO_PROTECTION_OFFICER": "Officier Radioprotection (PCR/RPO)",
+            "ADMIN": "Administrateur"
+        },
+        "rbacPermissionsHuman": {
+            "DOSIMETRY_VIEW": "Consultation des tableaux et registres",
+            "DOSIMETRY_RECORD": "Enregistrement des doses et mesures",
+            "DOSIMETRY_VALIDATE": "Validation des enregistrements de dose",
+            "DOSIMETRY_MEDICAL": "Accès aux données de surveillance médicale",
+            "DOSIMETRY_ALERT": "Gestion des seuils et dépassements",
+            "DOSIMETRY_ADMIN": "Administration du module (paramètres, RBAC)"
+        }
     },
     "thresholds": {
         "grandeur": "Grandeur dosimétrique",
@@ -221,6 +300,7 @@
         "breadcrumbCurrent": "Registre",
         "loading": "Chargement du registre…",
         "loadError": "Impossible de charger le registre. Les données affichées sont un jeu de démonstration.",
+        "exportError": "Échec de l'export CSV. Veuillez réessayer.",
         "categoryAria": "Catégorie {{category}}",
         "kpi": {
             "total": "Travailleurs exposés",
@@ -635,7 +715,12 @@
     "alerts": {
         "title": "Seuils & dépassements",
         "worker": "Travailleur",
-        "level": "Niveau",
+        "level": {
+            "APPROACH": "Approche",
+            "INVESTIGATION": "Investigation",
+            "ACTION": "Action",
+            "EXCEEDED": "Dépassement"
+        },
         "triggeredAt": "Déclenchée le",
         "status": "Statut",
         "investigation": "Investigation",
@@ -675,12 +760,6 @@
             "periodTo": "Au",
             "clear": "Réinitialiser",
             "summary": "{{count}} / {{total}} alerte(s) affichée(s)"
-        },
-        "level": {
-            "APPROACH": "Approche",
-            "INVESTIGATION": "Investigation",
-            "ACTION": "Action",
-            "EXCEEDED": "Dépassement"
         },
         "statusBadge": {
             "ACTIVE": "Active",
@@ -797,11 +876,26 @@
             "completeBeforeSubmit": "Veuillez compléter les champs obligatoires avant de soumettre."
         },
         "steps": {
-            "identity": { "label": "Identité & Emploi", "desc": "Sélection de l'employé" },
-            "classification": { "label": "Classement", "desc": "Catégorie CIPR" },
-            "exposure": { "label": "Profil d'exposition", "desc": "Types, zones, postes" },
-            "special": { "label": "Statut spécial", "desc": "Grossesse / apprenti" },
-            "qualifications": { "label": "Habilitations", "desc": "Confirmation" }
+            "identity": {
+                "label": "Identité & Emploi",
+                "desc": "Sélection de l'employé"
+            },
+            "classification": {
+                "label": "Classement",
+                "desc": "Catégorie CIPR"
+            },
+            "exposure": {
+                "label": "Profil d'exposition",
+                "desc": "Types, zones, postes"
+            },
+            "special": {
+                "label": "Statut spécial",
+                "desc": "Grossesse / apprenti"
+            },
+            "qualifications": {
+                "label": "Habilitations",
+                "desc": "Confirmation"
+            }
         },
         "identity": {
             "sectionTitle": "Identité de l'employé exposé",
@@ -1607,9 +1701,18 @@
             "breadcrumbNew": "Nouveau",
             "back": "Retour",
             "steps": {
-                "alert": { "label": "Sélection alerte", "desc": "Alerte source" },
-                "characterization": { "label": "Caractérisation", "desc": "Niveau & cause" },
-                "confirmation": { "label": "Confirmation", "desc": "Récapitulatif" }
+                "alert": {
+                    "label": "Sélection alerte",
+                    "desc": "Alerte source"
+                },
+                "characterization": {
+                    "label": "Caractérisation",
+                    "desc": "Niveau & cause"
+                },
+                "confirmation": {
+                    "label": "Confirmation",
+                    "desc": "Récapitulatif"
+                }
             },
             "alert": {
                 "title": "Sélection de l'alerte source",
@@ -2187,7 +2290,11 @@
                 "error": "La transition a échoué."
             },
             "confirm": {
-                "cancel": "Retour",
+                "cancel": {
+                    "title": "Annuler la campagne",
+                    "message": "Vous êtes sur le point d'annuler la campagne. Cette action est traçable mais ne peut pas être inversée.",
+                    "confirm": "Annuler la campagne"
+                },
                 "start": {
                     "title": "Démarrer la campagne",
                     "message": "Vous êtes sur le point de démarrer la campagne. Son statut passera à « En cours » et les mesures collectées seront comptabilisées.",
@@ -2197,11 +2304,6 @@
                     "title": "Terminer la campagne",
                     "message": "Vous êtes sur le point de clôturer la campagne. Aucune nouvelle mesure ne pourra y être rattachée par la suite.",
                     "confirm": "Terminer"
-                },
-                "cancel": {
-                    "title": "Annuler la campagne",
-                    "message": "Vous êtes sur le point d'annuler la campagne. Cette action est traçable mais ne peut pas être inversée.",
-                    "confirm": "Annuler la campagne"
                 }
             },
             "footer": {
@@ -2563,69 +2665,69 @@
             "errors": {
                 "reasonFailed": "Accès refusé ou indisponible."
             }
-        },
-        "myMedical": {
-            "breadcrumbRoot": "Surveillance médicale",
-            "breadcrumbCurrent": "Mon dossier",
-            "headerLabel": "Espace personnel — Confidentiel",
-            "confidentialBanner": "Confidentiel — vos données médicales et dosimétriques personnelles. Accès tracé (RGPD art. 30 + AIEA GSR Part 3).",
-            "categoryLabel": "Catégorie {{cat}}",
-            "refresh": "Rafraîchir",
-            "loading": "Chargement de votre dossier…",
-            "loadError": "Impossible de charger votre dossier. Réessayez ultérieurement.",
-            "unauthenticatedTitle": "Session requise",
-            "unauthenticatedBody": "Vous devez être connecté pour consulter votre dossier personnel.",
-            "notExposedTitle": "Aucun dossier d'exposition",
-            "notExposedBody": "Vous n'êtes pas inscrit au registre des travailleurs exposés de cette mine. Si vous estimez qu'il s'agit d'une erreur, contactez votre PCR/RPO.",
-            "backHome": "Retour à l'accueil",
-            "fitnessTitle": "Mon aptitude médicale",
-            "fitnessSubtitle": "Dernière fiche d'aptitude signée par le médecin du travail.",
-            "noFitness": "Aucune fiche d'aptitude signée à ce jour.",
-            "validUntil": "Valide jusqu'au",
-            "signed": "Signée",
-            "publicSummaryLabel": "Résumé opérationnel",
-            "detailedRestrictionsNotice": "Les restrictions cliniques détaillées sont accessibles uniquement auprès du médecin du travail. Contactez le service de santé pour toute question.",
-            "visitsTitle": "Mes visites médicales",
-            "visitsSubtitle": "{{count}} visite(s) recensée(s).",
-            "noVisits": "Aucune visite médicale recensée à ce jour.",
-            "tableVisits": {
-                "type": "Type",
-                "date": "Date",
-                "status": "Statut",
-                "timeline": "Chronologie"
-            },
-            "timelinePast": "Passée",
-            "timelineUpcoming": "À venir",
-            "cumulTitle": "Mes cumuls de dose",
-            "cumulSubtitle": "Année {{year}} — comparaison aux limites réglementaires CIPR 103 / AIEA GSR Part 3.",
-            "gaugeAnnual": "Annuel Hp(10)",
-            "gaugeAnnualSub": "Limite catégorie {{cat}} : {{limit}} mSv/an",
-            "gauge5y": "5 ans glissants",
-            "gauge5ySub": "Limite cumulative : 100 mSv / 5 ans",
-            "gaugeLifetime": "Vie professionnelle",
-            "gaugeLifetimeSub": "Limite recommandée : 400 mSv",
-            "gaugeUnit": "mSv",
-            "gaugeNoData": "Aucune donnée",
-            "iprcNotice": "Limites conformes CIPR 103 et AIEA GSR Part 3 §3.106. Les cumuls sont mis à jour automatiquement à chaque nouvelle mesure.",
-            "alertsTitle": "{{count}} alerte(s) active(s) sur vos doses",
-            "alertsSubtitle": "Une ou plusieurs valeurs ont déclenché un seuil. Le PCR/RPO et le médecin du travail sont notifiés.",
-            "alertLevel": {
-                "APPROACH": "Approche du seuil",
-                "INVESTIGATION": "Niveau d'investigation",
-                "ACTION": "Niveau d'action",
-                "EXCEEDED": "Dépassement réglementaire"
-            },
-            "attestationTitle": "Attestation individuelle de dose",
-            "attestationSubtitle": "Document officiel récapitulant vos cumuls de dose pour l'année en cours et les 5 dernières années.",
-            "attestationCta": "Télécharger mon attestation",
-            "attestationCtaHint": "Génère votre attestation annuelle de dose au format PDF signé.",
-            "attestationPhaseNote": "Phase 9 — Export attestations PDF signées.",
-            "attestationModalTitle": "Mon attestation annuelle de dose",
-            "attestationModalSubtitle": "Document personnel récapitulant vos cumuls de dose pour l'année en cours, conforme au droit d'accès RGPD art. 15.",
-            "attestationSelfReason": "Accès personnel à mes propres données (RGPD art. 15 — droit d'accès direct du salarié).",
-            "rgpdFooterTitle": "Vos droits RGPD",
-            "rgpdFooterBody": "Conformément au RGPD (art. 15 à 22), vous disposez d'un droit d'accès, de rectification, d'effacement et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question, contactez le Délégué à la Protection des Données (DPO) de votre établissement."
         }
+    },
+    "myMedical": {
+        "breadcrumbRoot": "Surveillance médicale",
+        "breadcrumbCurrent": "Mon dossier",
+        "headerLabel": "Espace personnel — Confidentiel",
+        "confidentialBanner": "Confidentiel — vos données médicales et dosimétriques personnelles. Accès tracé (RGPD art. 30 + AIEA GSR Part 3).",
+        "categoryLabel": "Catégorie {{cat}}",
+        "refresh": "Rafraîchir",
+        "loading": "Chargement de votre dossier…",
+        "loadError": "Impossible de charger votre dossier. Réessayez ultérieurement.",
+        "unauthenticatedTitle": "Session requise",
+        "unauthenticatedBody": "Vous devez être connecté pour consulter votre dossier personnel.",
+        "notExposedTitle": "Vous n'êtes pas dans le registre dosimétrie",
+        "notExposedBody": "Votre profil n'est pas enregistré dans le registre des travailleurs exposés aux rayonnements ionisants. Si vous pensez que c'est une erreur, contactez votre Officier Radioprotection (PCR/RPO).",
+        "backHome": "Retour au tableau de bord",
+        "fitnessTitle": "Mon aptitude médicale",
+        "fitnessSubtitle": "Dernière fiche d'aptitude signée par le médecin du travail.",
+        "noFitness": "Aucune fiche d'aptitude signée à ce jour.",
+        "validUntil": "Valide jusqu'au",
+        "signed": "Signée",
+        "publicSummaryLabel": "Résumé opérationnel",
+        "detailedRestrictionsNotice": "Les restrictions cliniques détaillées sont accessibles uniquement auprès du médecin du travail. Contactez le service de santé pour toute question.",
+        "visitsTitle": "Mes visites médicales",
+        "visitsSubtitle": "{{count}} visite(s) recensée(s).",
+        "noVisits": "Aucune visite médicale recensée à ce jour.",
+        "tableVisits": {
+            "type": "Type",
+            "date": "Date",
+            "status": "Statut",
+            "timeline": "Chronologie"
+        },
+        "timelinePast": "Passée",
+        "timelineUpcoming": "À venir",
+        "cumulTitle": "Mes cumuls de dose",
+        "cumulSubtitle": "Année {{year}} — comparaison aux limites réglementaires CIPR 103 / AIEA GSR Part 3.",
+        "gaugeAnnual": "Annuel Hp(10)",
+        "gaugeAnnualSub": "Limite catégorie {{cat}} : {{limit}} mSv/an",
+        "gauge5y": "5 ans glissants",
+        "gauge5ySub": "Limite cumulative : 100 mSv / 5 ans",
+        "gaugeLifetime": "Vie professionnelle",
+        "gaugeLifetimeSub": "Limite recommandée : 400 mSv",
+        "gaugeUnit": "mSv",
+        "gaugeNoData": "Aucune donnée",
+        "iprcNotice": "Limites conformes CIPR 103 et AIEA GSR Part 3 §3.106. Les cumuls sont mis à jour automatiquement à chaque nouvelle mesure.",
+        "alertsTitle": "{{count}} alerte(s) active(s) sur vos doses",
+        "alertsSubtitle": "Une ou plusieurs valeurs ont déclenché un seuil. Le PCR/RPO et le médecin du travail sont notifiés.",
+        "alertLevel": {
+            "APPROACH": "Approche du seuil",
+            "INVESTIGATION": "Niveau d'investigation",
+            "ACTION": "Niveau d'action",
+            "EXCEEDED": "Dépassement réglementaire"
+        },
+        "attestationTitle": "Attestation individuelle de dose",
+        "attestationSubtitle": "Document officiel récapitulant vos cumuls de dose pour l'année en cours et les 5 dernières années.",
+        "attestationCta": "Télécharger mon attestation",
+        "attestationCtaHint": "Génère votre attestation annuelle de dose au format PDF signé.",
+        "attestationPhaseNote": "Phase 9 — Export attestations PDF signées.",
+        "attestationModalTitle": "Mon attestation annuelle de dose",
+        "attestationModalSubtitle": "Document personnel récapitulant vos cumuls de dose pour l'année en cours, conforme au droit d'accès RGPD art. 15.",
+        "attestationSelfReason": "Accès personnel à mes propres données (RGPD art. 15 — droit d'accès direct du salarié).",
+        "rgpdFooterTitle": "Vos droits RGPD",
+        "rgpdFooterBody": "Conformément au RGPD (art. 15 à 22), vous disposez d'un droit d'accès, de rectification, d'effacement et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question, contactez le Délégué à la Protection des Données (DPO) de votre établissement."
     },
     "dashboard": {
         "breadcrumbRoot": "Dosimétrie",
@@ -2797,8 +2899,8 @@
         "subtitle": "Génération des fichiers de déclaration annuels destinés à l'Autorité de Sûreté Nucléaire, au régulateur national et à l'Institut de Radioprotection. Réservé aux PCR / RPO.",
         "auditBanner": "Tous les exports institutionnels sont journalisés en bloc (action=REGULATORY_EXPORT) dans le journal d'audit. Conservation 30 ans.",
         "deniedTitle": "Accès restreint",
-        "deniedBody": "Les exports réglementaires sont réservés aux Personnes Compétentes en Radioprotection (PCR) et aux Radiation Protection Officers (RPO). Contactez votre administrateur si vous avez besoin de cet accès.",
-        "deniedPermission": "Permission requise : DOSIMETRY_PCR_RPO",
+        "deniedBody": "Cet espace est réservé à l'Officier Radioprotection (PCR/RPO). Contactez votre administrateur pour obtenir cet accès.",
+        "deniedPermission": "",
         "backHome": "Retour au tableau de bord",
         "filtersHint": "Sélectionner la mine et l'année pour lesquelles générer les fichiers de déclaration.",
         "generateCta": "Générer le fichier",

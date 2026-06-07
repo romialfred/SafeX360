@@ -7,20 +7,20 @@
     "sidebar": {
         "dosimetry": "Dosimetry & Exposures",
         "dosimetryDashboard": "Dashboard",
-        "dosimetryWorkers": "Exposed Workers Registry",
-        "dosimetryDosimeters": "Dosimeters & Instruments",
-        "dosimetryDoses": "Dose Entry & Tracking",
-        "dosimetryAmbient": "Ambient Monitoring",
-        "dosimetryAmbientMap": "Ambient Map",
-        "dosimetryCampaigns": "Monitoring Campaigns",
-        "dosimetryExposureProfiles": "Exposure Profiles",
-        "dosimetryMedical": "Medical Surveillance",
-        "dosimetryMyMedical": "My Dossier",
-        "dosimetryAlerts": "Thresholds & Overexposures",
-        "dosimetryOverexposure": "Overexposure Cases",
-        "dosimetryReports": "Reports & Compliance",
-        "dosimetryRegulatoryExports": "Regulatory Exports",
-        "dosimetrySettings": "Settings"
+        "dosimetryWorkers": "Exposed workers registry",
+        "dosimetryDosimeters": "Dosimeters & instruments",
+        "dosimetryDoses": "Dose entry & tracking",
+        "dosimetryAmbient": "Measurement points",
+        "dosimetryAmbientMap": "Ambient map",
+        "dosimetryCampaigns": "Monitoring campaigns",
+        "dosimetryExposureProfiles": "Exposure profiles",
+        "dosimetryMedical": "Medical visits planning",
+        "dosimetryMyMedical": "My medical dossier",
+        "dosimetryAlerts": "Thresholds & alerts",
+        "dosimetryOverexposure": "Overexposure cases",
+        "dosimetryReports": "Reports & attestations",
+        "dosimetryRegulatoryExports": "Regulatory exports",
+        "dosimetrySettings": "Dosimetry settings"
     },
     "parameters": {
         "title": "Dosimetry settings",
@@ -40,7 +40,86 @@
         "resetConfirm": "Reset limits to ICRP 103 / IAEA GSR Part 3 reference values?",
         "resetNotAvailable": "Automatic reset to ICRP / IAEA reference values will be available in Phase 2. Current thresholds remain unchanged.",
         "addThreshold": "Add threshold",
-        "footerNote": "Compliant with ICRP 103 and IAEA GSR Part 3 reference limits, editable by the administrator."
+        "footerNote": "Compliant with ICRP 103 and IAEA GSR Part 3 reference limits, editable by the administrator.",
+        "refFramework": {
+            "sectionTitle": "Regulatory framework",
+            "sectionSubtitle": "International and national frameworks applicable to occupational radiation protection.",
+            "cipr": {
+                "code": "ICRP 103",
+                "title": "International Commission on Radiological Protection",
+                "body": "2007 recommendations — the scientific foundation of modern radiation protection. Defines individual dose limits and the principles of justification, optimisation (ALARA) and limitation."
+            },
+            "iaea": {
+                "code": "IAEA GSR Part 3",
+                "title": "International Atomic Energy Agency Safety Standards",
+                "body": "Fundamental international requirements for protection against ionising radiation and safety of radiation sources. Transposed into national legislations (Euratom 2013/59, R.4451 in France)."
+            },
+            "national": {
+                "code": "R.4451 et seq.",
+                "title": "Labour code — worker protection (France)",
+                "body": "National transposition of the Euratom directives: Cat A / B classification, individual dose monitoring, enhanced medical surveillance and RPO/PCR obligations."
+            }
+        },
+        "limitsSection": {
+            "sectionTitle": "Applicable dose limits",
+            "sectionSubtitle": "Regulatory values by personnel category — expressed in mSv and applied over the rolling civil year.",
+            "tableColCategory": "Personnel category",
+            "tableColHp10": "Hp(10) — whole body",
+            "tableColHp007": "Hp(0.07) — skin",
+            "tableColHp3": "Hp(3) — eye lens",
+            "tableColFramework": "Framework",
+            "perYear": "/ year",
+            "noValue": "—",
+            "noValueHint": "No specific limit — general Cat. A limit applies.",
+            "tooltips": {
+                "WORKER_A": "Category A worker: likely to receive an effective dose above 6 mSv/year. Individual dose monitoring is mandatory.",
+                "WORKER_B": "Category B worker: effective dose likely above 1 mSv/year but below Category A thresholds.",
+                "APPRENTICE": "Apprentices and students aged 16-18 exposed during vocational training — lowered limits for youth protection.",
+                "PREGNANCY": "Pregnant worker with declared pregnancy — enhanced fetal protection. The equivalent abdominal dose is limited to 1 mSv for the remainder of the pregnancy.",
+                "PUBLIC": "Members of the public — anyone not classified as exposed worker. Annual exposure limit from nuclear activities."
+            }
+        },
+        "bandsSection": {
+            "sectionTitle": "Exposure bands",
+            "sectionSubtitle": "Colour-coded alert thresholds expressed as a percentage of the annual regulatory limit, used across dashboards and notifications.",
+            "controlLevel": "Control level",
+            "controlLevelDesc": "Routine surveillance — situation is compliant.",
+            "investigationLevel": "Investigation level",
+            "investigationLevelDesc": "Analysis of exposure conditions and verification of dosimeters.",
+            "actionLevel": "Action level",
+            "actionLevelDesc": "Immediate corrective actions — access restriction and enhanced monitoring.",
+            "regulatoryLimit": "Regulatory limit",
+            "regulatoryLimitDesc": "Exceedance — mandatory declaration to the competent authority and overexposure case opening.",
+            "axisLabel": "% of annual limit"
+        },
+        "accessSection": {
+            "sectionTitle": "Access rules",
+            "sectionSubtitle": "Governance framework for dosimetric data — GDPR art. 30 and IAEA GSR Part 3 compliant.",
+            "intro": "Access to dosimetric data is governed by 6 authorization levels, assigned according to each user's professional role. Every consultation of nominative data is logged in the GDPR audit registry.",
+            "allowedRolesLabel": "Allowed roles",
+            "viewTechMatrix": "View technical RBAC matrix (administrators)",
+            "techMatrixModalTitle": "Technical RBAC matrix",
+            "techMatrixModalSubtitle": "Administrator view — technical codes for permissions and roles. This matrix is not exposed to end users.",
+            "techPermissionCode": "Permission code",
+            "techRolesCode": "Role codes",
+            "techCloseBtn": "Close"
+        },
+        "rbacRoles": {
+            "HSE_VIEWER": "HSE viewer",
+            "HSE_OFFICER": "HSE officer",
+            "HSE_MANAGER": "HSE manager",
+            "MEDICAL_DOCTOR": "Occupational physician",
+            "RADIO_PROTECTION_OFFICER": "Radiation Protection Officer (RPO/PCR)",
+            "ADMIN": "Administrator"
+        },
+        "rbacPermissionsHuman": {
+            "DOSIMETRY_VIEW": "View dashboards and registries",
+            "DOSIMETRY_RECORD": "Record doses and measurements",
+            "DOSIMETRY_VALIDATE": "Validate dose records",
+            "DOSIMETRY_MEDICAL": "Access medical surveillance data",
+            "DOSIMETRY_ALERT": "Manage thresholds and exceedances",
+            "DOSIMETRY_ADMIN": "Administer the module (settings, RBAC)"
+        }
     },
     "thresholds": {
         "grandeur": "Dosimetric quantity",
@@ -221,6 +300,7 @@
         "breadcrumbCurrent": "Registry",
         "loading": "Loading registry…",
         "loadError": "Unable to load the registry. Showing a demo dataset.",
+        "exportError": "CSV export failed. Please try again.",
         "categoryAria": "Category {{category}}",
         "kpi": {
             "total": "Exposed workers",
@@ -635,7 +715,12 @@
     "alerts": {
         "title": "Thresholds & overexposures",
         "worker": "Worker",
-        "level": "Level",
+        "level": {
+            "APPROACH": "Approach",
+            "INVESTIGATION": "Investigation",
+            "ACTION": "Action",
+            "EXCEEDED": "Exceeded"
+        },
         "triggeredAt": "Triggered at",
         "status": "Status",
         "investigation": "Investigation",
@@ -675,12 +760,6 @@
             "periodTo": "To",
             "clear": "Reset",
             "summary": "{{count}} / {{total}} alert(s) shown"
-        },
-        "level": {
-            "APPROACH": "Approach",
-            "INVESTIGATION": "Investigation",
-            "ACTION": "Action",
-            "EXCEEDED": "Exceeded"
         },
         "statusBadge": {
             "ACTIVE": "Active",
@@ -797,11 +876,26 @@
             "completeBeforeSubmit": "Please complete required fields before submitting."
         },
         "steps": {
-            "identity": { "label": "Identity & Job", "desc": "Employee selection" },
-            "classification": { "label": "Classification", "desc": "ICRP category" },
-            "exposure": { "label": "Exposure profile", "desc": "Types, areas, positions" },
-            "special": { "label": "Special status", "desc": "Pregnancy / apprentice" },
-            "qualifications": { "label": "Qualifications", "desc": "Confirmation" }
+            "identity": {
+                "label": "Identity & Job",
+                "desc": "Employee selection"
+            },
+            "classification": {
+                "label": "Classification",
+                "desc": "ICRP category"
+            },
+            "exposure": {
+                "label": "Exposure profile",
+                "desc": "Types, areas, positions"
+            },
+            "special": {
+                "label": "Special status",
+                "desc": "Pregnancy / apprentice"
+            },
+            "qualifications": {
+                "label": "Qualifications",
+                "desc": "Confirmation"
+            }
         },
         "identity": {
             "sectionTitle": "Exposed worker identity",
@@ -1607,9 +1701,18 @@
             "breadcrumbNew": "New",
             "back": "Back",
             "steps": {
-                "alert": { "label": "Alert selection", "desc": "Source alert" },
-                "characterization": { "label": "Characterization", "desc": "Level & cause" },
-                "confirmation": { "label": "Confirmation", "desc": "Summary" }
+                "alert": {
+                    "label": "Alert selection",
+                    "desc": "Source alert"
+                },
+                "characterization": {
+                    "label": "Characterization",
+                    "desc": "Level & cause"
+                },
+                "confirmation": {
+                    "label": "Confirmation",
+                    "desc": "Summary"
+                }
             },
             "alert": {
                 "title": "Source alert selection",
@@ -2187,7 +2290,11 @@
                 "error": "Transition failed."
             },
             "confirm": {
-                "cancel": "Back",
+                "cancel": {
+                    "title": "Cancel campaign",
+                    "message": "You are about to cancel the campaign. This action is traced but cannot be reverted.",
+                    "confirm": "Cancel campaign"
+                },
                 "start": {
                     "title": "Start campaign",
                     "message": "You are about to start the campaign. Its status will move to Ongoing and recorded measurements will count.",
@@ -2197,11 +2304,6 @@
                     "title": "Complete campaign",
                     "message": "You are about to close the campaign. No further measurement can be linked to it afterwards.",
                     "confirm": "Complete"
-                },
-                "cancel": {
-                    "title": "Cancel campaign",
-                    "message": "You are about to cancel the campaign. This action is traced but cannot be reverted.",
-                    "confirm": "Cancel campaign"
                 }
             },
             "footer": {
@@ -2563,69 +2665,69 @@
             "errors": {
                 "reasonFailed": "Access denied or unavailable."
             }
-        },
-        "myMedical": {
-            "breadcrumbRoot": "Medical surveillance",
-            "breadcrumbCurrent": "My dossier",
-            "headerLabel": "Personal space — Confidential",
-            "confidentialBanner": "Confidential — your personal medical and dosimetric data. Access is logged (GDPR art. 30 + IAEA GSR Part 3).",
-            "categoryLabel": "Category {{cat}}",
-            "refresh": "Refresh",
-            "loading": "Loading your dossier…",
-            "loadError": "Unable to load your dossier. Please try again later.",
-            "unauthenticatedTitle": "Session required",
-            "unauthenticatedBody": "You must be signed in to view your personal dossier.",
-            "notExposedTitle": "No exposure record",
-            "notExposedBody": "You are not enrolled in the exposed workers registry of this mine. If you believe this is an error, contact your RPO/PCR.",
-            "backHome": "Back to home",
-            "fitnessTitle": "My medical fitness",
-            "fitnessSubtitle": "Last fitness card signed by the occupational physician.",
-            "noFitness": "No signed fitness card to date.",
-            "validUntil": "Valid until",
-            "signed": "Signed",
-            "publicSummaryLabel": "Operational summary",
-            "detailedRestrictionsNotice": "Detailed clinical restrictions are accessible only through the occupational physician. Contact the health service for any question.",
-            "visitsTitle": "My medical visits",
-            "visitsSubtitle": "{{count}} visit(s) recorded.",
-            "noVisits": "No medical visit recorded to date.",
-            "tableVisits": {
-                "type": "Type",
-                "date": "Date",
-                "status": "Status",
-                "timeline": "Timeline"
-            },
-            "timelinePast": "Past",
-            "timelineUpcoming": "Upcoming",
-            "cumulTitle": "My dose cumulatives",
-            "cumulSubtitle": "Year {{year}} — comparison with regulatory limits ICRP 103 / IAEA GSR Part 3.",
-            "gaugeAnnual": "Annual Hp(10)",
-            "gaugeAnnualSub": "Category {{cat}} limit: {{limit}} mSv/year",
-            "gauge5y": "5-year rolling",
-            "gauge5ySub": "Cumulative limit: 100 mSv / 5 years",
-            "gaugeLifetime": "Career lifetime",
-            "gaugeLifetimeSub": "Recommended limit: 400 mSv",
-            "gaugeUnit": "mSv",
-            "gaugeNoData": "No data",
-            "iprcNotice": "Limits compliant with ICRP 103 and IAEA GSR Part 3 §3.106. Cumulatives are updated automatically with each new measurement.",
-            "alertsTitle": "{{count}} active alert(s) on your doses",
-            "alertsSubtitle": "One or more values have triggered a threshold. The RPO/PCR and the occupational physician have been notified.",
-            "alertLevel": {
-                "APPROACH": "Approaching threshold",
-                "INVESTIGATION": "Investigation level",
-                "ACTION": "Action level",
-                "EXCEEDED": "Regulatory exceedance"
-            },
-            "attestationTitle": "Individual dose attestation",
-            "attestationSubtitle": "Official document summarizing your dose cumulatives for the current year and the last 5 years.",
-            "attestationCta": "Download my attestation",
-            "attestationCtaHint": "Generates your annual signed PDF dose attestation.",
-            "attestationPhaseNote": "Phase 9 — signed PDF attestation export.",
-            "attestationModalTitle": "My annual dose attestation",
-            "attestationModalSubtitle": "Personal document summarizing your dose cumulatives for the current year, compliant with GDPR art. 15 access right.",
-            "attestationSelfReason": "Personal access to my own data (GDPR art. 15 — employee direct access right).",
-            "rgpdFooterTitle": "Your GDPR rights",
-            "rgpdFooterBody": "In accordance with the GDPR (art. 15 to 22), you have rights of access, rectification, erasure and portability of your personal data. To exercise these rights or for any question, contact your organization's Data Protection Officer (DPO)."
         }
+    },
+    "myMedical": {
+        "breadcrumbRoot": "Medical surveillance",
+        "breadcrumbCurrent": "My dossier",
+        "headerLabel": "Personal space — Confidential",
+        "confidentialBanner": "Confidential — your personal medical and dosimetric data. Access is logged (GDPR art. 30 + IAEA GSR Part 3).",
+        "categoryLabel": "Category {{cat}}",
+        "refresh": "Refresh",
+        "loading": "Loading your dossier…",
+        "loadError": "Unable to load your dossier. Please try again later.",
+        "unauthenticatedTitle": "Session required",
+        "unauthenticatedBody": "You must be signed in to view your personal dossier.",
+        "notExposedTitle": "You are not in the dosimetry registry",
+        "notExposedBody": "Your profile is not enrolled in the registry of workers exposed to ionising radiation. If you believe this is an error, please contact your Radiation Protection Officer (RPO/PCR).",
+        "backHome": "Back to dashboard",
+        "fitnessTitle": "My medical fitness",
+        "fitnessSubtitle": "Last fitness card signed by the occupational physician.",
+        "noFitness": "No signed fitness card to date.",
+        "validUntil": "Valid until",
+        "signed": "Signed",
+        "publicSummaryLabel": "Operational summary",
+        "detailedRestrictionsNotice": "Detailed clinical restrictions are accessible only through the occupational physician. Contact the health service for any question.",
+        "visitsTitle": "My medical visits",
+        "visitsSubtitle": "{{count}} visit(s) recorded.",
+        "noVisits": "No medical visit recorded to date.",
+        "tableVisits": {
+            "type": "Type",
+            "date": "Date",
+            "status": "Status",
+            "timeline": "Timeline"
+        },
+        "timelinePast": "Past",
+        "timelineUpcoming": "Upcoming",
+        "cumulTitle": "My dose cumulatives",
+        "cumulSubtitle": "Year {{year}} — comparison with regulatory limits ICRP 103 / IAEA GSR Part 3.",
+        "gaugeAnnual": "Annual Hp(10)",
+        "gaugeAnnualSub": "Category {{cat}} limit: {{limit}} mSv/year",
+        "gauge5y": "5-year rolling",
+        "gauge5ySub": "Cumulative limit: 100 mSv / 5 years",
+        "gaugeLifetime": "Career lifetime",
+        "gaugeLifetimeSub": "Recommended limit: 400 mSv",
+        "gaugeUnit": "mSv",
+        "gaugeNoData": "No data",
+        "iprcNotice": "Limits compliant with ICRP 103 and IAEA GSR Part 3 §3.106. Cumulatives are updated automatically with each new measurement.",
+        "alertsTitle": "{{count}} active alert(s) on your doses",
+        "alertsSubtitle": "One or more values have triggered a threshold. The RPO/PCR and the occupational physician have been notified.",
+        "alertLevel": {
+            "APPROACH": "Approaching threshold",
+            "INVESTIGATION": "Investigation level",
+            "ACTION": "Action level",
+            "EXCEEDED": "Regulatory exceedance"
+        },
+        "attestationTitle": "Individual dose attestation",
+        "attestationSubtitle": "Official document summarizing your dose cumulatives for the current year and the last 5 years.",
+        "attestationCta": "Download my attestation",
+        "attestationCtaHint": "Generates your annual signed PDF dose attestation.",
+        "attestationPhaseNote": "Phase 9 — signed PDF attestation export.",
+        "attestationModalTitle": "My annual dose attestation",
+        "attestationModalSubtitle": "Personal document summarizing your dose cumulatives for the current year, compliant with GDPR art. 15 access right.",
+        "attestationSelfReason": "Personal access to my own data (GDPR art. 15 — employee direct access right).",
+        "rgpdFooterTitle": "Your GDPR rights",
+        "rgpdFooterBody": "In accordance with the GDPR (art. 15 to 22), you have rights of access, rectification, erasure and portability of your personal data. To exercise these rights or for any question, contact your organization's Data Protection Officer (DPO)."
     },
     "dashboard": {
         "breadcrumbRoot": "Dosimetry",
@@ -2797,8 +2899,8 @@
         "subtitle": "Generation of annual declaration files for the Nuclear Safety Authority, the national regulator and the Radiation Protection Institute. Restricted to PCR / RPO.",
         "auditBanner": "All institutional exports are logged in bulk (action=REGULATORY_EXPORT) in the audit register. 30-year retention.",
         "deniedTitle": "Restricted access",
-        "deniedBody": "Regulatory exports are restricted to Radiation Protection Officers (PCR / RPO). Contact your administrator if you need this access.",
-        "deniedPermission": "Required permission: DOSIMETRY_PCR_RPO",
+        "deniedBody": "This area is reserved for Radiation Protection Officers (RPO/PCR). Please contact your administrator to obtain this access.",
+        "deniedPermission": "",
         "backHome": "Back to dashboard",
         "filtersHint": "Select the mine and year for which to generate the declaration files.",
         "generateCta": "Generate file",

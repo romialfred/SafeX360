@@ -85,21 +85,21 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Rôles et permissions': 'sidebar.rolesAndPermissions',
     // LOT — Dosimetrie & Expositions (ns 'dosimetry')
     'Dosimétrie & Expositions': 'dosimetry:sidebar.dosimetry',
-    'Tableau de bord Dosimétrie': 'dosimetry:sidebar.dosimetryDashboard',
-    'Registre travailleurs exposés': 'dosimetry:sidebar.dosimetryWorkers',
-    'Dosimètres & Instruments': 'dosimetry:sidebar.dosimetryDosimeters',
+    'Tableau de bord': 'dosimetry:sidebar.dosimetryDashboard',
+    'Registre des travailleurs exposés': 'dosimetry:sidebar.dosimetryWorkers',
+    'Dosimètres & instruments': 'dosimetry:sidebar.dosimetryDosimeters',
     'Saisie & suivi des doses': 'dosimetry:sidebar.dosimetryDoses',
-    'Surveillance d\'ambiance': 'dosimetry:sidebar.dosimetryAmbient',
+    'Points de mesure': 'dosimetry:sidebar.dosimetryAmbient',
     'Cartographie d\'ambiance': 'dosimetry:sidebar.dosimetryAmbientMap',
     'Campagnes de surveillance': 'dosimetry:sidebar.dosimetryCampaigns',
     'Profils d\'exposition': 'dosimetry:sidebar.dosimetryExposureProfiles',
-    'Surveillance médicale': 'dosimetry:sidebar.dosimetryMedical',
-    'Mon dossier': 'dosimetry:sidebar.dosimetryMyMedical',
-    'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
+    'Planning des visites médicales': 'dosimetry:sidebar.dosimetryMedical',
+    'Mon dossier médical': 'dosimetry:sidebar.dosimetryMyMedical',
+    'Seuils & alertes': 'dosimetry:sidebar.dosimetryAlerts',
     'Dossiers de dépassement': 'dosimetry:sidebar.dosimetryOverexposure',
-    'Rapports & conformité': 'dosimetry:sidebar.dosimetryReports',
+    'Rapports & attestations': 'dosimetry:sidebar.dosimetryReports',
     'Exports réglementaires': 'dosimetry:sidebar.dosimetryRegulatoryExports',
-    'Paramètres Dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
+    'Paramètres dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -327,21 +327,28 @@ const menuItems: MenuItem[] = [
         icon: IconAtom2,
         color: 'text-violet-700',
         subItems: [
-            { id: 'dosimetry-dashboard', label: 'Tableau de bord Dosimétrie', icon: IconLayoutDashboard },
-            { id: 'dosimetry-workers', label: 'Registre travailleurs exposés', icon: IconUsers },
-            { id: 'dosimetry-dosimeters', label: 'Dosimètres & Instruments', icon: IconDeviceWatch },
+            // ── 1. Vue d'ensemble ──
+            { id: 'dosimetry-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
+            // ── 2. Référentiels ──
+            { id: 'dosimetry-workers', label: 'Registre des travailleurs exposés', icon: IconUsers },
+            { id: 'dosimetry-dosimeters', label: 'Dosimètres & instruments', icon: IconDeviceWatch },
             { id: 'dosimetry-doses', label: 'Saisie & suivi des doses', icon: IconChartLine },
-            { id: 'dosimetry-ambient', label: 'Surveillance d\'ambiance', icon: IconBroadcast },
+            // ── 3. Surveillance d'ambiance ──
+            { id: 'dosimetry-ambient', label: 'Points de mesure', icon: IconBroadcast },
             { id: 'dosimetry-ambient-map', label: 'Cartographie d\'ambiance', icon: IconRadar },
             { id: 'dosimetry-campaigns', label: 'Campagnes de surveillance', icon: IconClipboardCheck },
             { id: 'dosimetry-exposure-profiles', label: 'Profils d\'exposition', icon: IconAtom2 },
-            { id: 'dosimetry-medical', label: 'Surveillance médicale', icon: IconStethoscope },
-            { id: 'dosimetry-my-medical', label: 'Mon dossier', icon: IconUserHeart },
-            { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
+            // ── 4. Surveillance médicale ──
+            { id: 'dosimetry-medical', label: 'Planning des visites médicales', icon: IconStethoscope },
+            { id: 'dosimetry-my-medical', label: 'Mon dossier médical', icon: IconUserHeart },
+            // ── 5. Seuils & dépassements ──
+            { id: 'dosimetry-alerts', label: 'Seuils & alertes', icon: IconAlertOctagon },
             { id: 'dosimetry-overexposure', label: 'Dossiers de dépassement', icon: IconFolderOpen },
-            { id: 'dosimetry-reports', label: 'Rapports & conformité', icon: IconFileText },
+            // ── 6. Rapports & conformité ──
+            { id: 'dosimetry-reports', label: 'Rapports & attestations', icon: IconFileText },
             { id: 'dosimetry-regulatory-exports', label: 'Exports réglementaires', icon: IconFileText },
-            { id: 'dosimetry-settings', label: 'Paramètres Dosimétrie', icon: IconSettings },
+            // ── 7. Paramètres ──
+            { id: 'dosimetry-settings', label: 'Paramètres dosimétrie', icon: IconSettings },
         ],
     },
     // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
