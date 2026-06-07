@@ -85,7 +85,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Rôles et permissions': 'sidebar.rolesAndPermissions',
     // LOT — Dosimetrie & Expositions (ns 'dosimetry')
     'Dosimétrie & Expositions': 'dosimetry:sidebar.dosimetry',
-    'Tableau de bord': 'dosimetry:sidebar.dosimetryDashboard',
+    'Tableau de bord dosimétrie': 'dosimetry:sidebar.dosimetryDashboard',
     'Registre des travailleurs exposés': 'dosimetry:sidebar.dosimetryWorkers',
     'Dosimètres & instruments': 'dosimetry:sidebar.dosimetryDosimeters',
     'Saisie & suivi des doses': 'dosimetry:sidebar.dosimetryDoses',
@@ -328,7 +328,7 @@ const menuItems: MenuItem[] = [
         color: 'text-violet-700',
         subItems: [
             // ── 1. Vue d'ensemble ──
-            { id: 'dosimetry-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
+            { id: 'dosimetry-dashboard', label: 'Tableau de bord dosimétrie', icon: IconLayoutDashboard },
             // ── 2. Référentiels ──
             { id: 'dosimetry-workers', label: 'Registre des travailleurs exposés', icon: IconUsers },
             { id: 'dosimetry-dosimeters', label: 'Dosimètres & instruments', icon: IconDeviceWatch },
@@ -684,9 +684,9 @@ const Sidebar = () => {
                 - Desktop (md+) : fixed left-0 toujours visible, largeur 20 (collapsed) ou 72 (etendue)
                 - Mobile (< md) : fixed off-canvas, slide-in via translate-x ; largeur fixe 72 */}
             <div className={`
-      bg-blackbg text-white h-screen scrollbar-hide fixed top-0 left-0 overflow-y-auto shadow-2xl
-      transition-transform duration-300 ease-in-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-      z-[100] w-72
+      bg-blackbg text-white h-screen scrollbar-hide fixed top-0 left-0 shadow-2xl
+      transition-transform duration-300 ease-in-out
+      z-[100] w-72 flex flex-col
       ${collapsed ? 'md:w-20' : 'md:w-72'}
       ${mobileSidebar.open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
@@ -716,8 +716,9 @@ const Sidebar = () => {
                     </div>
                 </div>
 
-                {/* Navigation : padding équilibré, pb-14 pour réserver l'espace du statut système absolu en bas */}
-                <nav className="py-2 pb-14 px-1" id="safex-sidebar-nav" aria-label="Navigation principale">
+                {/* Navigation : flex-1 + overflow-y-auto -> scroll interne sans chevaucher le footer
+                    scrollbar-hide pour cacher la scrollbar visuelle, padding-bottom pour aération */}
+                <nav className="flex-1 overflow-y-auto py-2 pb-4 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="safex-sidebar-nav" aria-label="Navigation principale">
                     {/* LOT 41 — Titre de section "Vos applications" en jaune lumineux pour bonne visibilité */}
                     {!collapsed && (
                         <div className="px-5 pt-3 pb-2.5 flex items-center gap-2">
@@ -822,10 +823,11 @@ const Sidebar = () => {
                     </div>
                 </nav>
 
-                {/* LOT 45 — Pied de sidebar : statut système (déplacé du footer)
-                    Position fixed-bottom dans la sidebar, légère bordure top, fond légèrement plus foncé */}
+                {/* LOT 45 — Pied de sidebar : statut système.
+                    En flex flow normal (flex-shrink-0) — la nav prend flex-1 + scroll,
+                    le footer reste figé en bas sans chevauchement. Fond opaque (slate-950) avec backdrop-blur. */}
                 <div
-                    className={`absolute bottom-0 left-0 right-0 border-t border-slate-700/60 bg-slate-950/40 ${collapsed ? 'px-2 py-2 flex justify-center' : 'px-4 py-2.5'}`}
+                    className={`flex-shrink-0 border-t border-slate-700/60 bg-slate-950 backdrop-blur-sm ${collapsed ? 'px-2 py-2 flex justify-center' : 'px-4 py-2.5'}`}
                 >
                     {collapsed ? (
                         <span
