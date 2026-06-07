@@ -1463,6 +1463,395 @@ const getAllAuditLogs = async (): Promise<DosimetryAuditLogDTO[]> => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  MEDICAL SURVEILLANCE — Phase 7
+//  Visites medicales + fiches d'aptitude (donnees cliniques chiffrees AES-256-GCM).
+//
+//  Base visites : /hns/dosimetry/medical-visit
+//  Base fiches  : /hns/dosimetry/fitness-assessment
+//
+//  RBAC SafeX :
+//    - DOSIMETRY_MEDICAL          : full access (CRUD + FullDTO + cleartext clinique).
+//    - DOSIMETRY_PCR_RPO          : Summary / Public uniquement (pas de details cliniques).
+//    - DOSIMETRY_READ_NOMINATIVE  : SELF (le travailleur sur lui-meme).
+//    - DOSIMETRY_EXPORT_MEDICAL   : export + audit reason obligatoire.
+//
+//  Toute lecture FullDTO (detailedReport / restrictions) ou export passe un
+//  header X-Reason (RGPD art. 30 + AIEA GSR Part 3) trace dans DosimetryAuditLog.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Type de visite medicale reglementaire (cf. enum MedicalVisitType backend). */
+export type MedicalVisitType =
+    | 'INITIAL'
+    | 'PERIODIC_ANNUAL'
+    | 'POST_EXPOSURE'
+    | 'FOLLOWUP'
+    | 'FINAL_AT_DEPARTURE';
+
+/** Statut d'une visite (cf. enum VisitStatus backend). */
+export type VisitStatus = 'SCHEDULED' | 'PERFORMED' | 'CANCELLED' | 'MISSED';
+
+/** Niveau d'aptitude medicale (cf. enum FitnessLevel backend). */
+export type FitnessLevel = 'FIT' | 'FIT_WITH_RESTRICTIONS' | 'TEMPORARILY_UNFIT' | 'UNFIT';
+
+/**
+ * MedicalVisitSummaryDTO — DTO RESUME, sans donnees cliniques.
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code MedicalVisitSummaryDTO}.
+ * Destine aux roles PCR/RPO + SELF + Medecin du travail (vue planning).
+ * Ne porte PAS {@code detailedReport} — impossible de fuiter cote API.
+ */
+export interface MedicalVisitSummaryDTO {
+    id?: number | null;
+    workerId: number;
+    mineId: number;
+    visitType: MedicalVisitType;
+    scheduledDate: string;
+    performedDate?: string | null;
+    physicianId?: number | null;
+    physicianName?: string | null;
+    status: VisitStatus;
+    generalConclusion?: string | null;
+    cancellationReason?: string | null;
+    createdAt?: string | null;
+}
+
+/**
+ * MedicalVisitFullDTO — DTO COMPLET avec compte-rendu clinique dechiffre.
+ *
+ * <p>CONFIDENTIEL : reserve a {@code DOSIMETRY_MEDICAL}. Toute lecture passe
+ * par un header {@code X-Reason} trace dans l'audit log.
+ */
+export interface MedicalVisitFullDTO {
+    id?: number | null;
+    workerId: number;
+    mineId: number;
+    visitType: MedicalVisitType;
+    scheduledDate: string;
+    performedDate?: string | null;
+    physicianId: number;
+    physicianName?: string | null;
+    status: VisitStatus;
+    generalConclusion?: string | null;
+    /** CHIFFRE EN BDD - dechiffre uniquement pour role MEDICAL. */
+    detailedReport?: string | null;
+    cancellationReason?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/**
+ * FitnessAssessmentPublicDTO — vue non-clinique d'une fiche d'aptitude.
+ *
+ * <p>Visible PCR/RPO + SELF + Medecin du travail. Le champ {@code restrictions}
+ * detaille est volontairement OMIS — seul un resume operationnel est expose.
+ */
+export interface FitnessAssessmentPublicDTO {
+    id?: number | null;
+    workerId: number;
+    mineId: number;
+    assessmentDate: string;
+    validUntil?: string | null;
+    fitness: FitnessLevel;
+    /** Resume non-medical ("Eviter zone controlee 6 mois"). */
+    publicRestrictionsSummary?: string | null;
+    reviewRequiredDate?: string | null;
+    signed: boolean;
+}
+
+/**
+ * FitnessAssessmentFullDTO — vue clinique complete d'une fiche d'aptitude.
+ *
+ * <p>CONFIDENTIEL : reserve a {@code DOSIMETRY_MEDICAL}. Le champ
+ * {@code restrictions} est dechiffre cote backend (audit reason obligatoire).
+ */
+export interface FitnessAssessmentFullDTO {
+    id?: number | null;
+    workerId: number;
+    mineId: number;
+    medicalVisitId?: number | null;
+    assessmentDate: string;
+    validUntil?: string | null;
+    fitness: FitnessLevel;
+    /** CHIFFRE EN BDD - role MEDICAL uniquement. */
+    restrictions?: string | null;
+    publicRestrictionsSummary?: string | null;
+    reviewRequiredDate?: string | null;
+    physicianId: number;
+    physicianName?: string | null;
+    signed: boolean;
+    signedAt?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/** Body POST /medical-visit/schedule. */
+export interface ScheduleMedicalVisitRequest {
+    workerId: number;
+    mineId: number;
+    type: MedicalVisitType;
+    scheduledDate: string;
+    physicianId: number;
+    physicianName?: string | null;
+}
+
+/** Body POST /medical-visit/perform/{id}. */
+export interface PerformMedicalVisitRequest {
+    generalConclusion?: string | null;
+    /** Compte-rendu clinique — sera chiffre AES-256-GCM en BDD. */
+    detailedReport?: string | null;
+    performedDate?: string | null;
+}
+
+/** Body POST /fitness-assessment/create. */
+export interface CreateFitnessAssessmentRequest {
+    workerId: number;
+    mineId: number;
+    medicalVisitId?: number | null;
+    fitness: FitnessLevel;
+    /** Details cliniques — chiffres en BDD. */
+    restrictions?: string | null;
+    /** Resume operationnel non-medical visible PCR/RPO. */
+    publicSummary?: string | null;
+    assessmentDate: string;
+    validUntil?: string | null;
+    reviewRequiredDate?: string | null;
+    physicianId: number;
+    physicianName?: string | null;
+}
+
+const medicalVisitUrl = '/hns/dosimetry/medical-visit';
+const fitnessAssessmentUrl = '/hns/dosimetry/fitness-assessment';
+
+/**
+ * Construit le bloc d'en-tetes pour les ecritures medicales : X-User-Id
+ * + X-Reason (optionnel pour les lectures Public/Summary, OBLIGATOIRE pour les
+ * lectures Full + export). Le backend trace systematiquement dans DosimetryAuditLog.
+ */
+const buildMedicalHeaders = (reason?: string | null): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const userId = resolveUserId();
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    if (reason && reason.trim().length > 0) headers['X-Reason'] = reason.trim();
+    return headers;
+};
+
+// ─── MedicalVisit — ECRITURES (MEDICAL only) ───
+
+/**
+ * Planifie une visite medicale (mode "schedule").
+ * Endpoint : {@code POST /hns/dosimetry/medical-visit/schedule}.
+ */
+const scheduleMedicalVisit = async (
+    payload: ScheduleMedicalVisitRequest,
+): Promise<number> => {
+    const headers = buildMedicalHeaders();
+    const res = await axiosInstance.post(`${medicalVisitUrl}/schedule`, payload, { headers });
+    return Number(res.data);
+};
+
+/**
+ * Realise une visite planifiee (mode "perform" — APPEND-ONLY apres).
+ * Le {@code detailedReport} sera chiffre AES-256-GCM cote backend.
+ * Endpoint : {@code POST /hns/dosimetry/medical-visit/perform/{id}}.
+ */
+const performMedicalVisit = async (
+    visitId: number | string,
+    payload: PerformMedicalVisitRequest,
+): Promise<void> => {
+    const headers = buildMedicalHeaders();
+    await axiosInstance.post(`${medicalVisitUrl}/perform/${visitId}`, payload, { headers });
+};
+
+/**
+ * Annule une visite planifiee.
+ * Endpoint : {@code POST /hns/dosimetry/medical-visit/cancel/{id}}.
+ */
+const cancelMedicalVisit = async (
+    visitId: number | string,
+    reason: string,
+): Promise<void> => {
+    const headers = buildMedicalHeaders();
+    await axiosInstance.post(
+        `${medicalVisitUrl}/cancel/${visitId}`,
+        { reason },
+        { headers },
+    );
+};
+
+// ─── MedicalVisit — LECTURES Summary (PCR_RPO + MEDICAL + SELF) ───
+
+/**
+ * Visites planifiees a venir pour la mine selectionnee.
+ * Endpoint : {@code GET /hns/dosimetry/medical-visit/upcoming?mineId=X&daysAhead=N}.
+ */
+const getUpcomingMedicalVisits = async (
+    mineId: number,
+    daysAhead: number = 30,
+): Promise<MedicalVisitSummaryDTO[]> => {
+    const res = await axiosInstance.get(`${medicalVisitUrl}/upcoming`, {
+        params: { mineId, daysAhead },
+    });
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Visites Summary d'un travailleur (PCR/RPO + MEDICAL + SELF).
+ * Endpoint : {@code GET /hns/dosimetry/medical-visit/by-worker/{workerId}}.
+ */
+const getWorkerMedicalVisitsSummary = async (
+    workerId: number | string,
+): Promise<MedicalVisitSummaryDTO[]> => {
+    const headers = buildMedicalHeaders();
+    const res = await axiosInstance.get(`${medicalVisitUrl}/by-worker/${workerId}`, { headers });
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+// ─── MedicalVisit — LECTURES Full (MEDICAL only + X-Reason) ───
+
+/**
+ * Visites Full d'un travailleur — donnees cliniques dechiffrees.
+ * REQUIS : MEDICAL + header {@code X-Reason}.
+ * Endpoint : {@code GET /hns/dosimetry/medical-visit/by-worker/{workerId}/full}.
+ */
+const getWorkerMedicalVisitsFull = async (
+    workerId: number | string,
+    reason: string,
+): Promise<MedicalVisitFullDTO[]> => {
+    const headers = buildMedicalHeaders(reason);
+    const res = await axiosInstance.get(
+        `${medicalVisitUrl}/by-worker/${workerId}/full`,
+        { headers },
+    );
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Detail Full d'une visite. REQUIS : MEDICAL + X-Reason.
+ * Endpoint : {@code GET /hns/dosimetry/medical-visit/get/{id}/full}.
+ */
+const getMedicalVisitFull = async (
+    visitId: number | string,
+    reason: string,
+): Promise<MedicalVisitFullDTO> => {
+    const headers = buildMedicalHeaders(reason);
+    const res = await axiosInstance.get(`${medicalVisitUrl}/get/${visitId}/full`, { headers });
+    return res.data as MedicalVisitFullDTO;
+};
+
+// ─── FitnessAssessment — ECRITURES (MEDICAL only) ───
+
+/**
+ * Cree une fiche d'aptitude (non signee — peut etre editee).
+ * Endpoint : {@code POST /hns/dosimetry/fitness-assessment/create}.
+ */
+const createFitnessAssessment = async (
+    payload: CreateFitnessAssessmentRequest,
+): Promise<number> => {
+    const headers = buildMedicalHeaders();
+    const res = await axiosInstance.post(`${fitnessAssessmentUrl}/create`, payload, { headers });
+    return Number(res.data);
+};
+
+/**
+ * Signe une fiche d'aptitude — APPEND-ONLY apres signature
+ * (AIEA GSR Part 3 §3.106 — archivage 30 ans).
+ * Endpoint : {@code POST /hns/dosimetry/fitness-assessment/sign/{id}}.
+ */
+const signFitnessAssessment = async (
+    assessmentId: number | string,
+): Promise<void> => {
+    const headers = buildMedicalHeaders();
+    await axiosInstance.post(`${fitnessAssessmentUrl}/sign/${assessmentId}`, null, { headers });
+};
+
+// ─── FitnessAssessment — LECTURES Public (PCR_RPO + MEDICAL + SELF) ───
+
+/**
+ * Aptitude courante d'un travailleur (Public).
+ * Endpoint : {@code GET /hns/dosimetry/fitness-assessment/current/{workerId}}.
+ */
+const getCurrentFitnessPublic = async (
+    workerId: number | string,
+): Promise<FitnessAssessmentPublicDTO | null> => {
+    const headers = buildMedicalHeaders();
+    try {
+        const res = await axiosInstance.get(
+            `${fitnessAssessmentUrl}/current/${workerId}`,
+            { headers },
+        );
+        return (res.data ?? null) as FitnessAssessmentPublicDTO | null;
+    } catch (err: any) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+    }
+};
+
+/**
+ * Historique des fiches d'aptitude (Public).
+ * Endpoint : {@code GET /hns/dosimetry/fitness-assessment/history/{workerId}}.
+ */
+const getFitnessHistoryPublic = async (
+    workerId: number | string,
+): Promise<FitnessAssessmentPublicDTO[]> => {
+    const headers = buildMedicalHeaders();
+    const res = await axiosInstance.get(
+        `${fitnessAssessmentUrl}/history/${workerId}`,
+        { headers },
+    );
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+// ─── FitnessAssessment — LECTURES Full (MEDICAL only + X-Reason) ───
+
+/**
+ * Aptitude courante Full — restrictions cliniques dechiffrees.
+ * REQUIS : MEDICAL + X-Reason.
+ * Endpoint : {@code GET /hns/dosimetry/fitness-assessment/current/{workerId}/full}.
+ */
+const getCurrentFitnessFull = async (
+    workerId: number | string,
+    reason: string,
+): Promise<FitnessAssessmentFullDTO | null> => {
+    const headers = buildMedicalHeaders(reason);
+    try {
+        const res = await axiosInstance.get(
+            `${fitnessAssessmentUrl}/current/${workerId}/full`,
+            { headers },
+        );
+        return (res.data ?? null) as FitnessAssessmentFullDTO | null;
+    } catch (err: any) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+    }
+};
+
+/**
+ * Historique Full — restrictions cliniques dechiffrees.
+ * REQUIS : MEDICAL + X-Reason.
+ * Endpoint : {@code GET /hns/dosimetry/fitness-assessment/history/{workerId}/full}.
+ */
+const getFitnessHistoryFull = async (
+    workerId: number | string,
+    reason: string,
+): Promise<FitnessAssessmentFullDTO[]> => {
+    const headers = buildMedicalHeaders(reason);
+    const res = await axiosInstance.get(
+        `${fitnessAssessmentUrl}/history/${workerId}/full`,
+        { headers },
+    );
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  EXPORTS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1556,6 +1945,20 @@ export {
     getExposureProfileLinks,
     setExposureProfileLinks,
     getExposureProfileEstimatedDose,
+    // Medical surveillance (Phase 7 Frontend-A)
+    scheduleMedicalVisit,
+    performMedicalVisit,
+    cancelMedicalVisit,
+    getUpcomingMedicalVisits,
+    getWorkerMedicalVisitsSummary,
+    getWorkerMedicalVisitsFull,
+    getMedicalVisitFull,
+    createFitnessAssessment,
+    signFitnessAssessment,
+    getCurrentFitnessPublic,
+    getFitnessHistoryPublic,
+    getCurrentFitnessFull,
+    getFitnessHistoryFull,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

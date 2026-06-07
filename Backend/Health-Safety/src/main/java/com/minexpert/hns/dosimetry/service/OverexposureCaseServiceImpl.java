@@ -6,6 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +29,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OverexposureCaseServiceImpl implements OverexposureCaseService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverexposureCaseServiceImpl.class);
+
     private static final List<CaseStatus> ACTIVE_STATUSES = Arrays.asList(
             CaseStatus.OPEN, CaseStatus.INVESTIGATING);
 
     private final OverexposureCaseRepository repository;
     private final ExposedWorkerRepository workerRepository;
     private final DosimetryAuditLogRepository auditLogRepository;
+
+    /**
+     * Phase 7 - injection optionnelle (setter pour permettre l'instanciation par les tests
+     * unitaires Mockito sans dependance circulaire). Si present, on declenche
+     * l'auto-planification d'une visite POST_EXPOSURE a l'ouverture d'un dossier.
+     */
+    private MedicalVisitService medicalVisitService;
+
+    @Autowired(required = false)
+    public void setMedicalVisitService(MedicalVisitService medicalVisitService) {
+        this.medicalVisitService = medicalVisitService;
+    }
 
     @Override
     public Long create(Long companyId, OverexposureCaseDTO dto) {
@@ -123,6 +140,27 @@ public class OverexposureCaseServiceImpl implements OverexposureCaseService {
                 String.format("{\"workerId\":%d,\"alertId\":%s,\"level\":\"%s\"}",
                         workerId, alertId != null ? alertId.toString() : "null",
                         level != null ? level.name() : "null"));
+        // Phase 7 - auto-planification de la visite POST_EXPOSURE (J+7). Idempotent cote
+        // service (skip si une visite POST_EXPOSURE SCHEDULED existe deja).
+        if (medicalVisitService != null) {
+            try {
+                Long visitId = medicalVisitService.autoSchedulePostExposureVisit(workerId,
+                        worker.getMineId(), openedBy);
+                if (visitId != null) {
+                    LOGGER.info("[OverexposureCase] Auto-scheduled POST_EXPOSURE visitId={} "
+                            + "for workerId={} (caseId={})", visitId, workerId, saved.getId());
+                }
+            } catch (Exception ex) {
+                // Best-effort : echec de planification ne doit pas bloquer l'ouverture du
+                // dossier. On trace en audit pour retry manuel ulterieur.
+                LOGGER.error("[OverexposureCase] Auto-schedule POST_EXPOSURE visit FAILED "
+                        + "for caseId={}, workerId={}: {}", saved.getId(), workerId,
+                        ex.getMessage(), ex);
+                audit("AUTO_SCHEDULE_POST_EXPOSURE_FAILED", saved.getId(), openedBy,
+                        String.format("{\"workerId\":%d,\"error\":\"%s\"}",
+                                workerId, escapeJson(ex.getMessage())));
+            }
+        }
         return saved.getId();
     }
 

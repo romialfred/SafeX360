@@ -67,6 +67,15 @@ public final class DosimetryRBACConfig {
      */
     public static final String DOSIMETRY_ADMIN = "DOSIMETRY_ADMIN";
 
+    /**
+     * Permission specifique pour l'export de donnees medicales (Phase 7). STRICTEMENT plus
+     * restrictive que {@link #DOSIMETRY_MEDICAL} : tout export doit etre justifie (parametre
+     * {@code reason} obligatoire) et systematiquement audite avec entree
+     * {@code EXPORT_MEDICAL_DATA}. Permet de tracer separement "consultation" et "export"
+     * pour les revues RGPD (registre des traitements, art. 30).
+     */
+    public static final String DOSIMETRY_EXPORT_MEDICAL = "DOSIMETRY_EXPORT_MEDICAL";
+
     private DosimetryRBACConfig() {
         // Constants holder - no instances.
     }

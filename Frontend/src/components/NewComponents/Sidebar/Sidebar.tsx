@@ -43,6 +43,8 @@ import {
     // Phase 6 — Ambient monitoring
     IconBroadcast,
     IconRadar,
+    // Phase 7 Frontend-B — Espace personnel travailleur
+    IconUserHeart,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -92,6 +94,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Campagnes de surveillance': 'dosimetry:sidebar.dosimetryCampaigns',
     'Profils d\'exposition': 'dosimetry:sidebar.dosimetryExposureProfiles',
     'Surveillance médicale': 'dosimetry:sidebar.dosimetryMedical',
+    'Mon dossier': 'dosimetry:sidebar.dosimetryMyMedical',
     'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
     'Dossiers de dépassement': 'dosimetry:sidebar.dosimetryOverexposure',
     'Rapports & conformité': 'dosimetry:sidebar.dosimetryReports',
@@ -332,6 +335,7 @@ const menuItems: MenuItem[] = [
             { id: 'dosimetry-campaigns', label: 'Campagnes de surveillance', icon: IconClipboardCheck },
             { id: 'dosimetry-exposure-profiles', label: 'Profils d\'exposition', icon: IconAtom2 },
             { id: 'dosimetry-medical', label: 'Surveillance médicale', icon: IconStethoscope },
+            { id: 'dosimetry-my-medical', label: 'Mon dossier', icon: IconUserHeart },
             { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
             { id: 'dosimetry-overexposure', label: 'Dossiers de dépassement', icon: IconFolderOpen },
             { id: 'dosimetry-reports', label: 'Rapports & conformité', icon: IconFileText },
@@ -490,7 +494,8 @@ export const menuIdToUrl: Record<string, string> = {
     "dosimetry-ambient-map": "/dosimetry/ambient-map",
     "dosimetry-campaigns": "/dosimetry/campaigns",
     "dosimetry-exposure-profiles": "/dosimetry/exposure-profiles",
-    "dosimetry-medical": "/coming-soon",
+    "dosimetry-medical": "/dosimetry/medical/planning",
+    "dosimetry-my-medical": "/dosimetry/my-medical",
     "dosimetry-alerts": "/dosimetry/alerts",
     "dosimetry-overexposure": "/dosimetry/overexposure",
     "dosimetry-reports": "/coming-soon",

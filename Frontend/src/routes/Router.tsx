@@ -188,6 +188,13 @@ import MonitoringCampaignDetailPage from '../components/Dosimetry/MonitoringCamp
 // Phase 6 Frontend-C — profils d'exposition et liens point de mesure x fraction
 import ExposureProfileLinksPage from '../components/Dosimetry/ExposureProfileLinksPage';
 import ExposureProfileLinkEditor from '../components/Dosimetry/ExposureProfileLinkEditor';
+// Phase 7 Frontend-A — Surveillance medicale (visites + aptitudes)
+import MedicalVisitsPlanningPage from '../components/Dosimetry/MedicalVisitsPlanningPage';
+import MedicalVisitForm from '../components/Dosimetry/MedicalVisitForm';
+import WorkerMedicalDossierPage from '../components/Dosimetry/WorkerMedicalDossierPage';
+import FitnessAssessmentForm from '../components/Dosimetry/FitnessAssessmentForm';
+// Phase 7 Frontend-B — Espace personnel travailleur (My Medical)
+import MyMedicalAreaPage from '../components/Dosimetry/MyMedicalAreaPage';
 
 
 
@@ -481,6 +488,14 @@ const router = createBrowserRouter([
             // Phase 6 Frontend-C — Profils d'exposition agent (liaison worker x point de mesure)
             { path: 'dosimetry/exposure-profiles', element: <ExposureProfileLinksPage /> },
             { path: 'dosimetry/exposure-profiles/:profileId/edit', element: <ExposureProfileLinkEditor /> },
+            // Phase 7 Frontend-A — Surveillance medicale (medecin du travail)
+            { path: 'dosimetry/medical/planning', element: <MedicalVisitsPlanningPage /> },
+            { path: 'dosimetry/medical/visit/new', element: <MedicalVisitForm /> },
+            { path: 'dosimetry/medical/visit/:id/perform', element: <MedicalVisitForm /> },
+            { path: 'dosimetry/medical/worker/:workerId', element: <WorkerMedicalDossierPage /> },
+            { path: 'dosimetry/medical/fitness/new', element: <FitnessAssessmentForm /> },
+            // Phase 7 Frontend-B — Espace personnel travailleur
+            { path: 'dosimetry/my-medical', element: <MyMedicalAreaPage /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

@@ -322,6 +322,13 @@ export const moduleConfigurations: any[] = [
         description: 'Medical follow-up of exposed workers (occupational physician)'
     },
     {
+        id: 'dosimetry-my-medical',
+        name: 'My Medical Dossier',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Personal medical and dosimetric space for exposed workers (GDPR art.15 self-access)'
+    },
+    {
         id: 'dosimetry-alerts',
         name: 'Thresholds & Overexposures',
         isEnabled: true,
