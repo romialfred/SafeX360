@@ -16,10 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.minexpert.hns.dosimetry.dto.DoseRecordCreateResultDTO;
 import com.minexpert.hns.dosimetry.dto.DoseRecordDTO;
+import com.minexpert.hns.dosimetry.dto.DoseRecordSupersedeRequestDTO;
+import com.minexpert.hns.dosimetry.service.DoseRecordQueryService;
 import com.minexpert.hns.dosimetry.service.DoseRecordService;
 import com.minexpert.hns.dto.ResponseDTO;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,14 +31,17 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>IMPORTANT - PATTERN APPEND-ONLY :
  * <ul>
- *   <li>create -> nouveau record version=1</li>
- *   <li>update -> NE FAIT PAS d'update direct. Cree un NOUVEAU DoseRecord avec
- *       version+1 et fixe supersededRecordId sur l'ancien. Retourne le NOUVEAU.</li>
+ *   <li>create -&gt; nouveau record version=1 (refuse si un record ACTIF existe deja pour
+ *       (worker, period), il faut passer par supersede dans ce cas).</li>
+ *   <li>supersede -&gt; cree un NOUVEAU DoseRecord avec version+1 et fixe
+ *       supersededRecordId sur l'ancien (seul UPDATE autorise par trigger V004).</li>
  * </ul>
  *
- * <p>RBAC : annotations {@code @PreAuthorize} declarees mais inertes tant que
- * {@code @EnableMethodSecurity} n'est pas active (Phase 2). En Phase 1, la trace
- * de conformite est portee par DosimetryAuditLog cote service.
+ * <p>Les endpoints enrichis (create, supersede, active-by-worker, history) renvoient des
+ * DoseRecordCreateResultDTO ou des List&lt;DoseRecordDTO&gt; selon le besoin frontend, et
+ * declenchent en cascade : recompute cumul + threshold engine + audit.
+ *
+ * <p>RBAC : annotations {@code @PreAuthorize} actives via {@code @EnableMethodSecurity}.
  */
 @RestController
 @RequestMapping("/dosimetry/dose-record")
@@ -43,17 +50,45 @@ import lombok.RequiredArgsConstructor;
 public class DoseRecordController {
 
     private final DoseRecordService service;
+    private final DoseRecordQueryService queryService;
 
+    // -----------------------------------------------------------------------------------------
+    //   ECRITURE - PHASE 4
+    // -----------------------------------------------------------------------------------------
+
+    /**
+     * Cree un nouveau DoseRecord. Renvoie un payload riche (recordId, version,
+     * requiresDoubleValidation, alertsCreated). Refuse si un record actif pour la meme
+     * (worker, period) existe deja - utiliser /supersede dans ce cas.
+     */
     @PreAuthorize("hasAuthority('DOSIMETRY_WRITE')")
     @PostMapping("/create")
-    public ResponseEntity<Long> create(@RequestParam("companyId") Long companyId,
-            @RequestBody DoseRecordDTO dto) {
-        return new ResponseEntity<>(service.create(companyId, dto), HttpStatus.CREATED);
+    public ResponseEntity<DoseRecordCreateResultDTO> create(
+            @RequestParam("companyId") Long companyId,
+            @Valid @RequestBody DoseRecordDTO dto) {
+        return new ResponseEntity<>(service.createWithResult(companyId, dto), HttpStatus.CREATED);
     }
 
     /**
-     * Append-only : cree un NOUVEAU record version+1 et marque l'ancien comme superseded.
-     * Retourne l'id du nouvel enregistrement (et non un message generique).
+     * Cree une NOUVELLE version (supersede) d'un DoseRecord existant. Le body comporte
+     * l'originalId, le motif et les nouvelles valeurs. Echoue si le record original est
+     * deja superseded (chainage scelle).
+     */
+    @PreAuthorize("hasAuthority('DOSIMETRY_WRITE')")
+    @PostMapping("/supersede")
+    public ResponseEntity<DoseRecordCreateResultDTO> supersede(
+            @RequestParam("companyId") Long companyId,
+            @Valid @RequestBody DoseRecordSupersedeRequestDTO request) {
+        return new ResponseEntity<>(service.supersedeWithResult(companyId, request), HttpStatus.OK);
+    }
+
+    // -----------------------------------------------------------------------------------------
+    //   LEGACY (retro-compat avec frontend existant : retour Long)
+    // -----------------------------------------------------------------------------------------
+
+    /**
+     * Append-only : delegue a service.supersede(...) qui cree un nouveau record version+1 et
+     * marque l'ancien comme superseded. Retourne l'id du NOUVEL enregistrement.
      */
     @PreAuthorize("hasAuthority('DOSIMETRY_WRITE')")
     @PutMapping("/update")
@@ -62,6 +97,10 @@ public class DoseRecordController {
         Long newId = service.supersede(companyId, dto);
         return new ResponseEntity<>(newId, HttpStatus.OK);
     }
+
+    // -----------------------------------------------------------------------------------------
+    //   LECTURE
+    // -----------------------------------------------------------------------------------------
 
     @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/getAll")
@@ -84,8 +123,37 @@ public class DoseRecordController {
         return new ResponseEntity<>(new ResponseDTO("DoseRecord deleted successfully"), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
     @GetMapping("/getActiveByWorker/{workerId}")
     public ResponseEntity<List<DoseRecordDTO>> getActiveByWorker(@PathVariable Long workerId) {
         return new ResponseEntity<>(service.getActiveByWorkerId(workerId), HttpStatus.OK);
+    }
+
+    /** Nouveau (Phase 4) - alias canonique de getActiveByWorker, ordonne par period ASC. */
+    @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
+    @GetMapping("/active-by-worker/{workerId}")
+    public ResponseEntity<List<DoseRecordDTO>> activeByWorker(@PathVariable Long workerId) {
+        return new ResponseEntity<>(queryService.findActiveByWorker(workerId), HttpStatus.OK);
+    }
+
+    /**
+     * Renvoie TOUTES les versions (actives + superseded) d'un (worker, period). Utilise par
+     * la vue audit / historique pour materialiser la chaine append-only.
+     */
+    @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
+    @GetMapping("/history-by-worker-period/{workerId}/{period}")
+    public ResponseEntity<List<DoseRecordDTO>> historyByWorkerPeriod(
+            @PathVariable Long workerId,
+            @PathVariable String period) {
+        return new ResponseEntity<>(
+                queryService.findHistoryByWorkerWithVersions(workerId, period), HttpStatus.OK);
+    }
+
+    /** Renvoie les DoseRecord actifs d'un worker pour une annee donnee (trend annuel). */
+    @PreAuthorize("hasAuthority('DOSIMETRY_READ_NOMINATIVE')")
+    @GetMapping("/by-worker-year/{workerId}/{year}")
+    public ResponseEntity<List<DoseRecordDTO>> byWorkerYear(@PathVariable Long workerId,
+            @PathVariable int year) {
+        return new ResponseEntity<>(queryService.findByWorkerYear(workerId, year), HttpStatus.OK);
     }
 }

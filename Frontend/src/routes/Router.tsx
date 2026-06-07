@@ -168,6 +168,9 @@ import ExposedWorkerForm from '../components/Dosimetry/ExposedWorkerForm';
 import DosimetersInventoryPage from '../components/Dosimetry/DosimetersInventoryPage';
 import DosimeterAssignmentForm from '../components/Dosimetry/DosimeterAssignmentForm';
 import QRScannerPage from '../components/Dosimetry/QRScannerPage';
+import DoseEntryForm from '../components/Dosimetry/DoseEntryForm';
+import DoseTrackingPage from '../components/Dosimetry/DoseTrackingPage';
+import CsvImportWizard from '../components/Dosimetry/CsvImportWizard';
 
 
 
@@ -433,6 +436,13 @@ const router = createBrowserRouter([
             { path: 'dosimetry/dosimeters/return', element: <DosimeterAssignmentForm mode="RETURN" /> },
             // Phase 3 Frontend-C : scanner QR mobile-friendly (placeholder camera + saisie manuelle)
             { path: 'dosimetry/dosimeters/scan', element: <QRScannerPage /> },
+            // Phase 4 Frontend-A : saisie / edition append-only d'un enregistrement de dose
+            { path: 'dosimetry/doses/new', element: <DoseEntryForm /> },
+            { path: 'dosimetry/doses/edit/:id', element: <DoseEntryForm /> },
+            // Phase 4 Frontend-B : suivi des doses cote travailleur (table + trend + gauges)
+            { path: 'dosimetry/doses/by-worker/:workerId', element: <DoseTrackingPage /> },
+            // Phase 4 Frontend-C : wizard d'import CSV en masse (4 etapes)
+            { path: 'dosimetry/doses/import', element: <CsvImportWizard /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

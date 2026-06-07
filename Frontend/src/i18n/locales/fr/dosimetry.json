@@ -798,5 +798,422 @@
             "submitFailed": "L'opération a échoué. Réessayez ultérieurement.",
             "noAssignment": "Aucune attribution sélectionnée."
         }
+    },
+    "doseEntryForm": {
+        "titleNew": "Saisie d'une dose",
+        "titleEdit": "Édition d'une dose (nouvelle version)",
+        "subtitleNew": "Enregistrement append-only d'une mesure dosimétrique mensuelle — conforme CIPR 103 / AIEA GSR Part 3. Les valeurs Hp(10), Hp(0.07) et Hp(3) sont contrôlées contre les seuils réglementaires.",
+        "subtitleEdit": "Correction d'un enregistrement existant. Conformément aux exigences AIEA, l'original est conservé et une nouvelle version est créée.",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimétrie & Expositions",
+        "breadcrumbNew": "Nouvelle dose",
+        "breadcrumbEdit": "Édition dose",
+        "loadingInitial": "Chargement de la dose…",
+        "editWarningTitle": "Mode édition — append-only",
+        "editWarningBody": "Cette édition créera une NOUVELLE version. L'enregistrement original sera marqué comme remplacé mais conservé en base pour traçabilité AIEA. Indiquez le motif de la correction dans le champ dédié.",
+        "actions": {
+            "back": "Retour",
+            "cancel": "Annuler",
+            "save": "Enregistrer la dose",
+            "saveVersion": "Enregistrer la nouvelle version",
+            "showHelp": "Aide",
+            "hideHelp": "Masquer l'aide"
+        },
+        "sections": {
+            "workerPeriod": "Travailleur & période",
+            "measurements": "Mesures dose",
+            "attachments": "Pièces jointes & notes",
+            "cumulative": "Cumuls en direct",
+            "submit": "Validation & soumission"
+        },
+        "worker": {
+            "selectLabel": "Travailleur exposé",
+            "selectPlaceholder": "Rechercher par matricule ou nom…",
+            "loading": "Chargement des travailleurs…",
+            "notFound": "Aucun travailleur trouvé",
+            "category": "Catégorie",
+            "lastDose": "Dernière dose Hp(10)",
+            "annualCumul": "Cumul annuel Hp(10)"
+        },
+        "period": {
+            "startLabel": "Début de période",
+            "endLabel": "Fin de période",
+            "placeholder": "JJ/MM/AAAA",
+            "previewMonth": "Période : {{period}} — {{start}} au {{end}}"
+        },
+        "measurements": {
+            "belowDetectionLabel": "Valeurs sous seuil de détection (forcées à 0)",
+            "belowDetectionTooltip": "Cochez si le dosimètre a renvoyé des valeurs inférieures à la limite de détection. Les valeurs Hp(10), Hp(0.07) et Hp(3) seront forcées à 0 et le drapeau belowDetection sera positionné.",
+            "sourceLabel": "Source de la mesure",
+            "hp10": {
+                "title": "Hp(10) — dose efficace corps entier",
+                "description": "Profondeur 10 mm — dose efficace utilisée pour les limites annuelles CIPR 103.",
+                "tooltip": "Hp(10) est l'équivalent de dose individuelle à une profondeur de 10 mm dans le tissu mou. C'est la grandeur de référence pour estimer la dose efficace selon CIPR 103 / AIEA GSR Part 3 pour les expositions externes au corps entier.",
+                "highWarning": "Valeur élevée (> {{threshold}} mSv) — validation requise par le PCR avant enregistrement définitif."
+            },
+            "hp007": {
+                "title": "Hp(0.07) — dose peau / extrémités",
+                "description": "Profondeur 0.07 mm — équivalent de dose à la peau et aux extrémités.",
+                "tooltip": "Hp(0.07) est l'équivalent de dose individuelle à 0.07 mm, utilisé pour les expositions cutanées et des extrémités (mains, avant-bras). Limite annuelle CIPR 103 : 500 mSv catégorie A.",
+                "highWarning": "Valeur élevée (> {{threshold}} mSv) — déclenchement d'une enquête recommandé."
+            },
+            "hp3": {
+                "title": "Hp(3) — dose cristallin",
+                "description": "Profondeur 3 mm — équivalent de dose au cristallin de l'œil.",
+                "tooltip": "Hp(3) est l'équivalent de dose individuelle à 3 mm, dédié à l'évaluation de l'exposition du cristallin. Limite annuelle CIPR 103 : 20 mSv catégorie A (révisée depuis 2011).",
+                "highWarning": "Valeur élevée (> {{threshold}} mSv) — risque d'opacification du cristallin, validation PCR requise."
+            },
+            "sources": {
+                "AGENCY": "Agence agréée",
+                "EPD": "Dosimètre électronique (EPD)",
+                "ESTIMATED": "Estimation"
+            },
+            "sourceTooltips": {
+                "AGENCY": "Lecture officielle réalisée par une agence agréée (laboratoire dosimétrie passive : TLD, OSL, film). Valeur opposable réglementairement.",
+                "EPD": "Lecture en temps réel issue d'un dosimètre opérationnel électronique. Utile pour suivi quotidien, complémentaire à la lecture agence.",
+                "ESTIMATED": "Estimation reconstituée (perte de dosimètre, exposition non prévue, calcul rétrospectif). Doit être justifiée dans les notes."
+            }
+        },
+        "attachments": {
+            "uploadTitle": "Pièce jointe — placeholder",
+            "uploadHint": "Le téléversement de rapports agence sera activé en Phase 4 Frontend-B.",
+            "notesLabel": "Notes & commentaires",
+            "notesPlaceholder": "Contexte de la mesure, anomalies, justifications éventuelles…",
+            "supersedeReasonLabel": "Motif de la correction (obligatoire en édition)",
+            "supersedeReasonPlaceholder": "Décrivez précisément pourquoi cette correction est nécessaire (erreur de saisie, nouvelle lecture agence, etc.)."
+        },
+        "cumulative": {
+            "selectWorkerHint": "Sélectionnez d'abord un travailleur pour visualiser ses cumuls en direct.",
+            "annualTitle": "Annuel Hp(10)",
+            "annualSublabel": "Existant {{existing}} + saisi {{added}} mSv",
+            "rollingTitle": "Glissant 5 ans Hp(10)",
+            "rollingSublabel": "Existant {{existing}} + saisi {{added}} mSv",
+            "lastTitle": "Dernière dose",
+            "lastSublabel": "Référence — période antérieure",
+            "investigationBannerTitle": "Niveau d'investigation atteint",
+            "investigationBannerBody": "La saisie ferait franchir le niveau d'investigation Hp(10) ({{level}} mSv/an). Une enquête radioprotection devra être déclenchée par le PCR.",
+            "exceededBannerTitle": "Limite annuelle dépassée",
+            "exceededBannerBody": "Le cumul annuel projeté dépasse la limite réglementaire de {{limit}} mSv (catégorie A). Cette dose doit être validée par le PCR et déclarée à l'autorité de sûreté."
+        },
+        "submit": {
+            "highValueTitle": "Valeurs élevées détectées",
+            "highValueBody": "Une ou plusieurs valeurs dépassent les seuils d'alerte internes. Une confirmation supplémentaire vous sera demandée avant enregistrement."
+        },
+        "modal": {
+            "title": "Confirmation requise — valeurs élevées",
+            "body": "Vous vous apprêtez à enregistrer une dose anormalement élevée. Cette valeur sera marquée comme nécessitant une validation par le PCR (Personne Compétente en Radioprotection). Confirmez-vous l'exactitude des données saisies ?",
+            "confirm": "Confirmer & enregistrer"
+        },
+        "validation": {
+            "workerRequired": "Sélectionnez un travailleur",
+            "periodStartRequired": "Date de début requise",
+            "periodEndRequired": "Date de fin requise",
+            "periodOrder": "La date de fin doit être postérieure ou égale au début",
+            "sourceRequired": "Précisez la source de la mesure",
+            "supersedeReasonRequired": "Indiquez le motif de la correction (10 caractères minimum)",
+            "completeBeforeSubmit": "Complétez tous les champs requis avant validation."
+        },
+        "success": {
+            "created": "Dose enregistrée avec succès.",
+            "versionCreated": "Nouvelle version de dose créée. L'original est conservé pour traçabilité."
+        },
+        "errors": {
+            "loadFailed": "Impossible de charger la dose à éditer.",
+            "submitFailed": "L'enregistrement a échoué. Vérifiez les données saisies."
+        },
+        "help": {
+            "title": "Aide à la saisie dosimétrique",
+            "readingTitle": "Comment lire votre dosimètre ?",
+            "readingBody": "Le rapport de lecture agence fournit habituellement les trois grandeurs Hp(10), Hp(0.07) et Hp(3). Reportez ces valeurs telles quelles dans les champs correspondants, en mSv. Si la valeur est inférieure au seuil de détection (souvent 0.01 ou 0.02 mSv), cochez la case « sous seuil de détection » qui forcera les valeurs à 0.",
+            "limitsTitle": "Limites CIPR 103 / AIEA GSR Part 3",
+            "limitsRef": "Référence : CIPR Publication 103 (2007), AIEA GSR Part 3 (2014). Les limites Cat B sont 3/10 des limites Cat A pour Hp(10).",
+            "limitsCols": {
+                "grandeur": "Grandeur",
+                "catA": "Catégorie A",
+                "catB": "Catégorie B",
+                "unit": "Unité"
+            },
+            "procedureTitle": "Procédure en cas de dépassement",
+            "procedureSteps": {
+                "0": "Vérifier la mesure (relecture, second dosimètre, EPD) pour confirmer.",
+                "1": "Notifier immédiatement le PCR et le médecin du travail compétent.",
+                "2": "Mettre le travailleur en retrait des zones surveillées dans l'attente.",
+                "3": "Ouvrir une enquête radioprotection (causes, circonstances, durée).",
+                "4": "Déclarer à l'autorité de sûreté nucléaire dans les délais réglementaires."
+            }
+        }
+    },
+    "doseTracking": {
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbParent": "Doses individuelles",
+        "breadcrumbCurrent": "Suivi par travailleur",
+        "loading": "Chargement du suivi des doses…",
+        "loadError": "Impossible de charger le suivi des doses pour ce travailleur.",
+        "notFound": "Travailleur introuvable.",
+        "noWorkerId": "Aucun travailleur sélectionné.",
+        "header": {
+            "categoryAria": "Catégorie {{category}}",
+            "pregnancy": "Grossesse déclarée",
+            "apprentice": "Apprenti",
+            "active": "Actif",
+            "inactive": "Inactif"
+        },
+        "kpi": {
+            "annualHp10": "Annuel Hp(10)",
+            "annualHp10Sub": "Année {{year}}",
+            "rolling5y": "Glissant 5 ans",
+            "rolling5ySub": "Cumul 5 dernières années",
+            "lifetime": "Vie professionnelle",
+            "lifetimeSub": "Cumul total",
+            "recordsCount": "Saisies cette année",
+            "recordsCountSub": "Enregistrements actifs",
+            "ratioOfLimit": "{{pct}}% de la limite",
+            "msvUnit": "mSv"
+        },
+        "actions": {
+            "back": "Retour",
+            "printCertificate": "Imprimer attestation",
+            "newEntry": "Nouvelle saisie",
+            "viewDetails": "Voir détails",
+            "edit": "Modifier",
+            "viewVersions": "Voir versions superseded",
+            "acknowledge": "Acquitter"
+        },
+        "alerts": {
+            "bannerTitle": "{{count}} alerte(s) active(s) sur ce travailleur",
+            "bannerSubtitle": "Action requise — consulter et acquitter les alertes ci-dessous.",
+            "level": {
+                "APPROACH": "Approche du seuil",
+                "INVESTIGATION": "Niveau d'investigation",
+                "ACTION": "Niveau d'action",
+                "EXCEEDED": "Dépassement réglementaire"
+            },
+            "triggeredAt": "Déclenchée le",
+            "valueLabel": "Valeur",
+            "acknowledgeDenied": "Permission requise pour acquitter une alerte",
+            "ackSuccess": "Alerte acquittée",
+            "ackError": "Échec de l'acquittement",
+            "empty": "Aucune alerte active."
+        },
+        "table": {
+            "title": "Historique des doses",
+            "subtitle": "Enregistrements actifs (non superseded) triés par période décroissante.",
+            "empty": "Aucun enregistrement actif pour ce travailleur.",
+            "cols": {
+                "period": "Période",
+                "hp10": "Hp(10)",
+                "hp007": "Hp(0,07)",
+                "hp3": "Hp(3)",
+                "source": "Source",
+                "recordedAt": "Date saisie",
+                "recordedBy": "Saisi par",
+                "status": "Statut",
+                "actions": "Actions"
+            },
+            "source": {
+                "AGENCY": "Agence",
+                "EPD": "EPD",
+                "ESTIMATED": "Estimé"
+            },
+            "status": {
+                "ACTIVE": "Actif",
+                "SUPERSEDED": "Remplacé",
+                "DRAFT": "Brouillon"
+            }
+        },
+        "filters": {
+            "year": "Année",
+            "allYears": "Toutes les années",
+            "source": "Source",
+            "allSources": "Toutes les sources",
+            "status": "Statut",
+            "allStatuses": "Tous les statuts",
+            "reset": "Réinitialiser"
+        },
+        "trend": {
+            "title": "Tendance Hp(10) vs limite annuelle",
+            "subtitle": "Évolution chronologique et cumul annuel (reset à chaque année civile).",
+            "axisDose": "Dose (mSv)",
+            "limit": "Limite annuelle",
+            "monthly": "Hp(10) mensuel",
+            "cumulative": "Cumul annuel",
+            "tooltipPeriod": "Période",
+            "tooltipMonthly": "Mensuel",
+            "tooltipCumul": "Cumul annuel",
+            "empty": "Pas assez de données pour tracer la tendance."
+        },
+        "cumuls": {
+            "title": "Cumuls réglementaires",
+            "subtitle": "Indicateurs CIPR 103 / AIEA GSR Part 3.",
+            "annual": "Annuel Hp(10)",
+            "annualSub": "Année en cours",
+            "rolling5y": "Glissant 5 ans",
+            "rolling5ySub": "Limite : 100 mSv",
+            "lifetime": "Vie professionnelle",
+            "lifetimeSub": "Cumul total tracé",
+            "tooltipValue": "Valeur : {{value}} mSv",
+            "tooltipLimit": "Limite : {{limit}} mSv"
+        },
+        "footer": {
+            "title": "Données confidentielles — Accès tracé",
+            "note": "Toute consultation est journalisée. Suivi conforme CIPR 103, AIEA GSR Part 3 §3.106 et RGPD art. 30."
+        }
+    },
+    "csvImportWizard": {
+        "title": "Import CSV de doses",
+        "subtitle": "Importez un lot d'enregistrements dosimétriques mensuels depuis votre service de dosimétrie. Validation préalable, dry-run, et import tracé conforme AIEA / RGPD.",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimétrie & Expositions",
+        "breadcrumbCurrent": "Import CSV",
+        "actions": {
+            "back": "Retour",
+            "cancel": "Annuler",
+            "next": "Suivant",
+            "previous": "Précédent",
+            "fixFile": "Corriger le fichier",
+            "downloadTemplate": "Télécharger un template CSV vide",
+            "exportHelp": "Comment exporter depuis votre service de dosimétrie",
+            "launchImport": "Lancer l'import",
+            "backToDashboard": "Retour au tableau de bord",
+            "viewAlerts": "Voir les alertes",
+            "downloadErrorLog": "Télécharger le journal d'erreurs",
+            "showHelp": "Aide",
+            "hideHelp": "Masquer l'aide",
+            "removeFile": "Retirer le fichier"
+        },
+        "steps": {
+            "select": {
+                "label": "Fichier",
+                "description": "Sélectionnez le CSV"
+            },
+            "preview": {
+                "label": "Prévisualisation",
+                "description": "Vérifiez les données"
+            },
+            "options": {
+                "label": "Options",
+                "description": "Dry-run & confirmation"
+            },
+            "result": {
+                "label": "Résultat",
+                "description": "Import terminé"
+            }
+        },
+        "select": {
+            "dropTitle": "Glissez votre fichier CSV ici",
+            "dropSubtitle": "ou cliquez pour parcourir — UTF-8, max 10 Mo",
+            "browse": "Parcourir",
+            "selectedFile": "Fichier sélectionné",
+            "formatTitle": "Format attendu",
+            "formatHeader": "matricule,period,hp10,hp007,hp3,source,below_detection,notes,attachment_url",
+            "formatHint": "Première ligne = entêtes. Encodage UTF-8 (avec ou sans BOM). Séparateur : virgule.",
+            "fieldsTitle": "Description des colonnes",
+            "fields": {
+                "matricule": "Matricule du travailleur exposé (doit exister dans le registre).",
+                "period": "Période YYYY-MM (ex. 2026-05).",
+                "hp10": "Hp(10) en mSv — corps entier. Décimal, séparateur point.",
+                "hp007": "Hp(0.07) en mSv — peau / extrémités.",
+                "hp3": "Hp(3) en mSv — cristallin.",
+                "source": "Origine : AGENCY, EPD ou ESTIMATED.",
+                "below_detection": "true / false — sous le seuil de détection.",
+                "notes": "Libre. Optionnel.",
+                "attachment_url": "URL d'une pièce jointe stockée (rapport agence)."
+            },
+            "rejectedTitle": "Fichier rejeté",
+            "rejectedBody": "Le fichier doit être un .csv valide de moins de 10 Mo.",
+            "noFileYet": "Aucun fichier sélectionné pour l'instant.",
+            "noMineWarning": "Aucune mine sélectionnée. Sélectionnez d'abord une mine pour importer."
+        },
+        "preview": {
+            "loadingTitle": "Validation du fichier…",
+            "loadingBody": "Analyse de la structure et contrôle de cohérence en cours.",
+            "statsTitle": "Synthèse de la prévisualisation",
+            "stats": {
+                "totalRows": "Lignes totales",
+                "validRows": "Lignes valides",
+                "errorRows": "Lignes en erreur",
+                "warningRows": "Lignes avec avertissement",
+                "duplicateRows": "Doublons potentiels",
+                "unknownWorkers": "Matricules inconnus"
+            },
+            "tableTitle": "Aperçu (10 premières lignes)",
+            "cols": {
+                "line": "#",
+                "matricule": "Matricule",
+                "period": "Période",
+                "hp10": "Hp(10)",
+                "hp007": "Hp(0.07)",
+                "hp3": "Hp(3)",
+                "status": "Statut",
+                "issues": "Problème"
+            },
+            "status": {
+                "OK": "OK",
+                "WARNING": "Avertissement",
+                "ERROR": "Erreur"
+            },
+            "noRows": "Aucune ligne n'a pu être lue dans le fichier.",
+            "allErrors": "Toutes les lignes sont en erreur — veuillez corriger le fichier avant de poursuivre.",
+            "someErrors": "Certaines lignes sont en erreur — elles seront ignorées si vous poursuivez."
+        },
+        "options": {
+            "skipDuplicatesLabel": "Ignorer les doublons",
+            "skipDuplicatesHint": "Si un DoseRecord actif existe déjà pour le travailleur et la période, la ligne sera ignorée.",
+            "continueOnWarningsLabel": "Continuer même avec des avertissements",
+            "continueOnWarningsHint": "Inclut les lignes signalées (valeurs élevées, doublons proches) malgré l'avertissement.",
+            "recapTitle": "Récapitulatif",
+            "recapBody": "Vous allez importer {{count}} enregistrement(s) de dose pour la mine sélectionnée.",
+            "recapAlerts": "Des alertes d'exposition pourront être déclenchées automatiquement si des seuils sont dépassés.",
+            "auditNote": "Cet import sera journalisé dans le DosimetryAuditLog (action=IMPORT) pour traçabilité AIEA / RGPD."
+        },
+        "result": {
+            "runningTitle": "Import en cours…",
+            "runningBody": "Persistance des enregistrements et déclenchement des alertes.",
+            "successTitle": "Import terminé avec succès",
+            "successBody": "Les enregistrements ont été créés en mode append-only et les alertes d'exposition générées le cas échéant.",
+            "stats": {
+                "importedCount": "Enregistrements importés",
+                "skippedCount": "Lignes ignorées",
+                "errorCount": "Lignes en erreur",
+                "alertsCreated": "Alertes créées"
+            },
+            "errorTableTitle": "Lignes restées en erreur",
+            "noErrors": "Aucune ligne n'est restée en erreur — bravo !",
+            "failureTitle": "L'import a échoué",
+            "failureBody": "Une erreur est survenue côté serveur. Vérifiez le fichier et réessayez.",
+            "auditFooter": "Import tracé sous le numéro {{auditId}}"
+        },
+        "help": {
+            "title": "Aide & référentiel",
+            "formatTitle": "Format CSV",
+            "formatBody": "Le fichier doit être encodé en UTF-8 et contenir une première ligne d'entêtes. Les valeurs décimales utilisent le point. Les périodes sont au format YYYY-MM.",
+            "errorCodesTitle": "Codes d'erreur",
+            "errorCodes": {
+                "WORKER_NOT_FOUND": "Matricule introuvable dans le registre des travailleurs exposés.",
+                "INVALID_FORMAT": "Format de ligne invalide (colonnes manquantes ou type incorrect).",
+                "INVALID_PERIOD": "Période invalide : utilisez YYYY-MM (ex. 2026-05).",
+                "INVALID_DOSE": "Valeur de dose invalide (doit être un nombre ≥ 0).",
+                "DUPLICATE": "Un DoseRecord actif existe déjà pour ce travailleur et cette période.",
+                "NEAR_DUPLICATE": "Doublon proche détecté (mêmes mesures sur 7 jours).",
+                "HIGH_VALUE": "Valeur élevée — vérifiez avant d'importer.",
+                "BELOW_DETECTION_CONFLICT": "below_detection=true mais valeurs non nulles.",
+                "MISSING_REQUIRED": "Une colonne obligatoire est vide.",
+                "UNKNOWN_SOURCE": "Source inconnue (valeurs autorisées : AGENCY, EPD, ESTIMATED).",
+                "INTERNAL_ERROR": "Erreur interne — contactez le support."
+            },
+            "privacyTitle": "Confidentialité RGPD",
+            "privacyBody": "Les données importées sont nominatives et confidentielles. Chaque import est journalisé (qui, quand, combien de lignes). L'accès est restreint aux porteurs des permissions DOSIMETRY_WRITE / DOSIMETRY_READ_NOMINATIVE. Vous êtes responsable de la finalité et de la base légale de cet import."
+        },
+        "errors": {
+            "previewFailed": "La prévisualisation a échoué. Vérifiez le fichier et réessayez.",
+            "executeFailed": "L'import a échoué côté serveur.",
+            "noFile": "Veuillez d'abord sélectionner un fichier CSV.",
+            "noValidRows": "Aucune ligne valide à importer.",
+            "mineRequired": "Aucune mine sélectionnée pour l'import.",
+            "fileTooLarge": "Fichier trop volumineux (max 10 Mo).",
+            "wrongType": "Type de fichier non supporté — .csv uniquement."
+        },
+        "templateFilename": "safex-dosimetry-template.csv",
+        "errorLogFilename": "safex-dosimetry-import-errors.csv"
     }
 }

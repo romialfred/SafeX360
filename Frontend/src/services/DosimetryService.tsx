@@ -849,6 +849,225 @@ const deleteDoseRecord = async (id: number | string) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  CSV BULK IMPORT — Phase 4 Frontend-C
+//  Base: /hns/dosimetry/dose-record/import
+//
+//  Format CSV attendu (entete obligatoire, ordre indicatif) :
+//    matricule, period, hp10, hp007, hp3, source, below_detection, notes, attachment_url
+//
+//  Endpoints :
+//   - POST /hns/dosimetry/dose-record/import/preview  (multipart, dry-run)
+//   - POST /hns/dosimetry/dose-record/import/execute  (multipart, commit)
+//
+//  Le backend trace systematiquement un DosimetryAuditLog (action=IMPORT) avec
+//  l'audit id retourne dans la reponse — visible dans le footer du wizard.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Statut d'une ligne CSV apres parsing / dry-run cote backend. */
+export type CsvRowStatus = 'OK' | 'WARNING' | 'ERROR';
+
+/** Code d'erreur normalise pour une ligne CSV. */
+export type CsvErrorCode =
+    | 'WORKER_NOT_FOUND'
+    | 'INVALID_FORMAT'
+    | 'INVALID_PERIOD'
+    | 'INVALID_DOSE'
+    | 'DUPLICATE'
+    | 'NEAR_DUPLICATE'
+    | 'HIGH_VALUE'
+    | 'BELOW_DETECTION_CONFLICT'
+    | 'MISSING_REQUIRED'
+    | 'UNKNOWN_SOURCE'
+    | 'INTERNAL_ERROR';
+
+/** Detail d'une erreur ou d'un warning sur une ligne CSV. */
+export interface CsvRowIssue {
+    code: CsvErrorCode | string;
+    message: string;
+    column?: string | null;
+}
+
+/** Une ligne du preview (dry-run) renvoyee par le backend. */
+export interface CsvImportPreviewRow {
+    /** Numero de ligne dans le fichier (1-based, sans l'entete). */
+    lineNumber: number;
+    matricule: string | null;
+    period: string | null;
+    hp10: number | null;
+    hp007: number | null;
+    hp3: number | null;
+    source: string | null;
+    belowDetection: boolean | null;
+    notes: string | null;
+    attachmentUrl: string | null;
+    status: CsvRowStatus;
+    errors: CsvRowIssue[];
+    warnings: CsvRowIssue[];
+}
+
+/** Stats agregees retournees par le preview. */
+export interface CsvImportPreviewStats {
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    warningRows: number;
+    duplicateRows: number;
+    unknownWorkers: number;
+}
+
+/** Reponse du dry-run /preview. */
+export interface CsvImportPreviewResponse {
+    stats: CsvImportPreviewStats;
+    rows: CsvImportPreviewRow[];
+    /** Id de l'audit log (action=PREVIEW). */
+    auditId?: number | string | null;
+}
+
+/** Options soumises a l'endpoint /execute. */
+export interface CsvImportOptions {
+    skipDuplicates: boolean;
+    continueOnWarnings: boolean;
+}
+
+/** Resultat de l'import effectif. */
+export interface CsvImportExecuteResponse {
+    importedCount: number;
+    skippedCount: number;
+    errorCount: number;
+    alertsCreated: number;
+    /** Lignes restees en erreur — sert au download du log d'erreurs. */
+    errorRows: CsvImportPreviewRow[];
+    /** Id de l'audit log (action=IMPORT). */
+    auditId?: number | string | null;
+}
+
+/**
+ * Pre-visualise un fichier CSV (dry-run) : parse + valide chaque ligne SANS
+ * persister. Permet d'afficher stats + erreurs / warnings dans le wizard.
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/dose-record/import/preview}.
+ * Le backend renvoie 200 avec {@link CsvImportPreviewResponse} meme si toutes
+ * les lignes sont en erreur — la decision de continuer revient au wizard.
+ *
+ * <p>Strategie tolerante : si l'endpoint n'est pas encore deploye (404/501),
+ * on renvoie un mock minimal avec stats=0 + alerte console pour debug.
+ */
+const previewCsvImport = async (
+    file: File,
+    mineId?: number | null,
+): Promise<CsvImportPreviewResponse> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for previewCsvImport');
+    }
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('mineId', String(resolvedMineId));
+    try {
+        const res = await axiosInstance.post(
+            `${doseRecordUrl}/import/preview`,
+            form,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
+        const data = res.data ?? {};
+        const stats: CsvImportPreviewStats = {
+            totalRows: Number(data?.stats?.totalRows ?? 0),
+            validRows: Number(data?.stats?.validRows ?? 0),
+            errorRows: Number(data?.stats?.errorRows ?? 0),
+            warningRows: Number(data?.stats?.warningRows ?? 0),
+            duplicateRows: Number(data?.stats?.duplicateRows ?? 0),
+            unknownWorkers: Number(data?.stats?.unknownWorkers ?? 0),
+        };
+        const rows: CsvImportPreviewRow[] = Array.isArray(data?.rows)
+            ? (data.rows as any[]).map((r, idx) => ({
+                  lineNumber: Number(r?.lineNumber ?? idx + 1),
+                  matricule: r?.matricule ?? null,
+                  period: r?.period ?? null,
+                  hp10: typeof r?.hp10 === 'number' ? r.hp10 : (r?.hp10 != null ? Number(r.hp10) : null),
+                  hp007: typeof r?.hp007 === 'number' ? r.hp007 : (r?.hp007 != null ? Number(r.hp007) : null),
+                  hp3: typeof r?.hp3 === 'number' ? r.hp3 : (r?.hp3 != null ? Number(r.hp3) : null),
+                  source: r?.source ?? null,
+                  belowDetection: r?.belowDetection ?? null,
+                  notes: r?.notes ?? null,
+                  attachmentUrl: r?.attachmentUrl ?? r?.attachment_url ?? null,
+                  status: (r?.status as CsvRowStatus) ?? 'OK',
+                  errors: Array.isArray(r?.errors) ? r.errors : [],
+                  warnings: Array.isArray(r?.warnings) ? r.warnings : [],
+              }))
+            : [];
+        return { stats, rows, auditId: data?.auditId ?? null };
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            // Endpoint pas encore deploye — renvoie une enveloppe vide pour
+            // permettre au wizard d'afficher un message clair sans crasher.
+            // eslint-disable-next-line no-console
+            console.warn('[DosimetryService] previewCsvImport endpoint not deployed yet');
+            return {
+                stats: {
+                    totalRows: 0,
+                    validRows: 0,
+                    errorRows: 0,
+                    warningRows: 0,
+                    duplicateRows: 0,
+                    unknownWorkers: 0,
+                },
+                rows: [],
+                auditId: null,
+            };
+        }
+        throw err;
+    }
+};
+
+/**
+ * Execute l'import CSV en persistant les enregistrements valides.
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/dose-record/import/execute}.
+ * Le backend cree les DoseRecord en append-only, declenche les
+ * ExposureAlert sur les depassements de seuils et journalise un audit log.
+ *
+ * <p>L'en-tete {@code X-User-Id} est renseignee depuis le store Redux pour
+ * tracer createdBy cote backend.
+ */
+const executeCsvImport = async (
+    file: File,
+    mineId: number | null | undefined,
+    options: CsvImportOptions,
+): Promise<CsvImportExecuteResponse> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for executeCsvImport');
+    }
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {
+        'Content-Type': 'multipart/form-data',
+    };
+    if (userId != null) headers['X-User-Id'] = String(userId);
+
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('mineId', String(resolvedMineId));
+    form.append('skipDuplicates', String(options.skipDuplicates));
+    form.append('continueOnWarnings', String(options.continueOnWarnings));
+
+    const res = await axiosInstance.post(
+        `${doseRecordUrl}/import/execute`,
+        form,
+        { headers },
+    );
+    const data = res.data ?? {};
+    return {
+        importedCount: Number(data?.importedCount ?? 0),
+        skippedCount: Number(data?.skippedCount ?? 0),
+        errorCount: Number(data?.errorCount ?? 0),
+        alertsCreated: Number(data?.alertsCreated ?? 0),
+        errorRows: Array.isArray(data?.errorRows) ? data.errorRows : [],
+        auditId: data?.auditId ?? null,
+    };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  EXPOSURE ALERTS — Depassements de seuils
 //  Base: /hns/dosimetry/exposure-alert
 // ─────────────────────────────────────────────────────────────────────────────
@@ -930,6 +1149,9 @@ export {
     createDoseRecord,
     updateDoseRecord,
     deleteDoseRecord,
+    // CSV bulk import
+    previewCsvImport,
+    executeCsvImport,
     // Alerts
     getAllAlerts,
     getAlertById,
