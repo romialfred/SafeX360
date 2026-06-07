@@ -46,7 +46,7 @@
  * RBAC : DOSIMETRY_READ_AGGREGATE (lecture du parc, geree backend cote search).
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../slices/hooks';
@@ -64,8 +64,11 @@ import {
     IconArrowRight,
     IconUser,
     IconCamera,
+    IconCameraOff,
     IconRefresh,
+    IconHistory,
 } from '@tabler/icons-react';
+import { Html5Qrcode, type Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import {
     findDosimeterByQr,
     searchDosimeters,
@@ -106,6 +109,31 @@ type ScanState =
     | { kind: 'notFound'; value: string }
     | { kind: 'error'; value: string; message: string };
 
+/**
+ * Item d'historique pour le mode "scan multiple" QC :
+ * - timestamp + valeur scannee + dosimetre trouve (ou null si miss).
+ */
+interface QcHistoryItem {
+    id: string;
+    timestamp: string;
+    value: string;
+    dosimeter: DosimeterDTO | null;
+}
+
+/**
+ * Feedback haptique mobile (Vibration API). Fallback silencieux si non
+ * supportee (desktop, certains iOS).
+ */
+const triggerHaptic = (pattern: number | number[] = 80): void => {
+    try {
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+            navigator.vibrate(pattern);
+        }
+    } catch {
+        // ignore
+    }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
@@ -119,6 +147,10 @@ const QRScannerPage = () => {
 
     const [manualValue, setManualValue] = useState('');
     const [state, setState] = useState<ScanState>({ kind: 'idle' });
+    const [cameraEnabled, setCameraEnabled] = useState<boolean>(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const [multiScanMode, setMultiScanMode] = useState<boolean>(false);
+    const [qcHistory, setQcHistory] = useState<QcHistoryItem[]>([]);
 
     /**
      * Recherche un dosimetre par QR code (priorite) ou numero de serie (repli).
@@ -151,7 +183,16 @@ const QRScannerPage = () => {
             // 1. Lookup exact QR via endpoint dedie.
             const direct = await findDosimeterByQr(value, mineId);
             if (direct && direct.id != null) {
-                setState({ kind: 'found', value, dosimeter: direct });
+                triggerHaptic([60, 30, 60]);
+                if (multiScanMode) {
+                    setQcHistory((prev) => [
+                        { id: `${Date.now()}-${value}`, timestamp: new Date().toISOString(), value, dosimeter: direct },
+                        ...prev.slice(0, 19),
+                    ]);
+                    setState({ kind: 'idle' });
+                } else {
+                    setState({ kind: 'found', value, dosimeter: direct });
+                }
                 return;
             }
             // 2. Repli : recherche LIKE sur serial / qrCode.
@@ -159,9 +200,27 @@ const QRScannerPage = () => {
             const exactSerial = list.find((d) => d.serial === value);
             const match = exactSerial ?? list[0] ?? null;
             if (match && match.id != null) {
-                setState({ kind: 'found', value, dosimeter: match });
+                triggerHaptic([60, 30, 60]);
+                if (multiScanMode) {
+                    setQcHistory((prev) => [
+                        { id: `${Date.now()}-${value}`, timestamp: new Date().toISOString(), value, dosimeter: match },
+                        ...prev.slice(0, 19),
+                    ]);
+                    setState({ kind: 'idle' });
+                } else {
+                    setState({ kind: 'found', value, dosimeter: match });
+                }
             } else {
-                setState({ kind: 'notFound', value });
+                triggerHaptic([120, 50, 120]);
+                if (multiScanMode) {
+                    setQcHistory((prev) => [
+                        { id: `${Date.now()}-${value}`, timestamp: new Date().toISOString(), value, dosimeter: null },
+                        ...prev.slice(0, 19),
+                    ]);
+                    setState({ kind: 'idle' });
+                } else {
+                    setState({ kind: 'notFound', value });
+                }
             }
         } catch {
             setState({
@@ -275,23 +334,119 @@ const QRScannerPage = () => {
 
                 {(state.kind === 'idle' || state.kind === 'searching' || state.kind === 'error') && (
                     <>
-                        <ScannerFrame searching={state.kind === 'searching'} />
+                        <LiveScannerFrame
+                            enabled={cameraEnabled}
+                            searching={state.kind === 'searching'}
+                            multiScan={multiScanMode}
+                            onDetected={(decoded) => {
+                                // Re-entry guard : si une recherche est deja en cours,
+                                // on ignore pour eviter de spammer le backend.
+                                if (state.kind === 'searching') return;
+                                void handleSearch(decoded);
+                            }}
+                            onError={(msg) => setCameraError(msg)}
+                        />
 
-                        {/* Banner camera indisponible — TODO html5-qrcode */}
-                        <div
-                            className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900"
-                            role="status"
-                        >
-                            <IconCamera size={18} stroke={1.8} className="mt-0.5 flex-shrink-0 text-amber-600" />
-                            <div className="flex-1 text-[12.5px]">
-                                <p className="font-semibold text-amber-900 mb-0.5">
-                                    {t('qrScanner.frame.cameraUnavailableTitle')}
-                                </p>
-                                <p className="leading-relaxed text-amber-800">
-                                    {t('qrScanner.frame.cameraUnavailableHint')}
-                                </p>
-                            </div>
+                        {/* Mode multi-scan + bouton activer/desactiver camera */}
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCameraError(null);
+                                    setCameraEnabled((v) => !v);
+                                }}
+                                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[13px] font-medium transition ${
+                                    cameraEnabled
+                                        ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                                        : 'bg-indigo-600 border-indigo-700 text-white hover:bg-indigo-700'
+                                }`}
+                            >
+                                {cameraEnabled ? (
+                                    <>
+                                        <IconCameraOff size={15} stroke={2} />
+                                        {t('qrScanner.frame.stopCamera')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <IconCamera size={15} stroke={2} />
+                                        {t('qrScanner.frame.startCamera')}
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMultiScanMode((v) => !v)}
+                                aria-pressed={multiScanMode}
+                                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[13px] font-medium transition ${
+                                    multiScanMode
+                                        ? 'bg-violet-50 border-violet-200 text-violet-700'
+                                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                            >
+                                <IconHistory size={15} stroke={2} />
+                                {multiScanMode
+                                    ? t('qrScanner.frame.multiScanOn')
+                                    : t('qrScanner.frame.multiScanOff')}
+                            </button>
                         </div>
+
+                        {/* Banner erreur camera (permission refusee, etc.) */}
+                        {cameraError && (
+                            <div
+                                className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900"
+                                role="alert"
+                            >
+                                <IconCamera size={18} stroke={1.8} className="mt-0.5 flex-shrink-0 text-amber-600" />
+                                <div className="flex-1 text-[12.5px]">
+                                    <p className="font-semibold text-amber-900 mb-0.5">
+                                        {t('qrScanner.frame.cameraErrorTitle')}
+                                    </p>
+                                    <p className="leading-relaxed text-amber-800">{cameraError}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Historique multi-scan */}
+                        {multiScanMode && qcHistory.length > 0 && (
+                            <div className="mt-4 bg-white border border-slate-200 rounded-2xl shadow-sm p-3 sm:p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-[13px] font-semibold text-slate-800 flex items-center gap-1.5">
+                                        <IconHistory size={14} stroke={1.8} className="text-violet-600" />
+                                        {t('qrScanner.qcHistory.title', { count: qcHistory.length })}
+                                    </h2>
+                                    <button
+                                        type="button"
+                                        onClick={() => setQcHistory([])}
+                                        className="text-[11.5px] text-slate-500 hover:text-red-600 transition"
+                                    >
+                                        {t('qrScanner.qcHistory.clear')}
+                                    </button>
+                                </div>
+                                <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+                                    {qcHistory.map((item) => (
+                                        <li
+                                            key={item.id}
+                                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-slate-100 bg-slate-50/60 text-[12px]"
+                                        >
+                                            <span className="font-mono truncate text-slate-700">
+                                                {item.value}
+                                            </span>
+                                            {item.dosimeter ? (
+                                                <span className="inline-flex items-center gap-1 text-emerald-700 text-[11px]">
+                                                    <IconCircleCheck size={12} stroke={2} />
+                                                    {item.dosimeter.serial}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-amber-700 text-[11px]">
+                                                    <IconAlertTriangle size={12} stroke={2} />
+                                                    {t('qrScanner.qcHistory.miss')}
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
                         {/* Section saisie manuelle */}
                         <form
@@ -388,10 +543,201 @@ const QRScannerPage = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * LiveScannerFrame — composant camera reel base sur la lib html5-qrcode.
+ *
+ * <p>Cycle de vie :
+ *   1. Lorsque {@code enabled === true}, instancie un {@link Html5Qrcode}
+ *      attache a un div ref-id stable.
+ *   2. Demarre {@code start({ facingMode: 'environment' }, config, onSuccess, onErrorIgnore)}.
+ *   3. Sur scan reussi, appelle {@code onDetected(decoded)}.
+ *   4. En mode {@code multiScan === false}, on stoppe la camera immediatement
+ *      apres le premier scan. En mode multi, on debounce 1.5s entre les
+ *      scans pour ne pas spammer.
+ *   5. Sur erreur de permission ({@code NotAllowedError} / {@code NotFoundError}),
+ *      on remonte un message clair via {@code onError}.
+ */
+function LiveScannerFrame({
+    enabled,
+    searching,
+    multiScan,
+    onDetected,
+    onError,
+}: {
+    enabled: boolean;
+    searching: boolean;
+    multiScan: boolean;
+    onDetected: (decoded: string) => void;
+    onError: (message: string) => void;
+}) {
+    const { t } = useTranslation('dosimetry');
+    const containerId = 'safex-qr-reader';
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const lastDetectedAtRef = useRef<number>(0);
+
+    useEffect(() => {
+        if (!enabled) {
+            // Stop si une instance tournait.
+            const inst = scannerRef.current;
+            if (inst) {
+                inst
+                    .stop()
+                    .catch(() => {
+                        // ignore (deja arretee)
+                    })
+                    .finally(() => {
+                        try {
+                            inst.clear();
+                        } catch {
+                            // ignore
+                        }
+                        scannerRef.current = null;
+                    });
+            }
+            return;
+        }
+
+        // Demarrage.
+        let cancelled = false;
+        let started = false;
+        const instance = new Html5Qrcode(containerId, { verbose: false });
+        scannerRef.current = instance;
+
+        const config: Html5QrcodeCameraScanConfig = {
+            fps: 10,
+            qrbox: { width: 240, height: 240 },
+            aspectRatio: 1.0,
+            disableFlip: false,
+        };
+
+        const onSuccess = (decodedText: string) => {
+            const now = Date.now();
+            // Debounce 1.5s pour eviter les rescans en boucle.
+            if (now - lastDetectedAtRef.current < 1500) return;
+            lastDetectedAtRef.current = now;
+            onDetected(decodedText);
+            if (!multiScan) {
+                // Stop apres le 1er scan en mode single.
+                instance
+                    .stop()
+                    .catch(() => {
+                        // ignore
+                    });
+            }
+        };
+
+        // onErrorIgnore : appele constamment sur les frames sans QR — on swallow.
+        const onErrorIgnore = () => undefined;
+
+        instance
+            .start({ facingMode: 'environment' }, config, onSuccess, onErrorIgnore)
+            .then(() => {
+                if (cancelled) {
+                    instance.stop().catch(() => undefined);
+                    return;
+                }
+                started = true;
+            })
+            .catch((err: unknown) => {
+                if (cancelled) return;
+                const message =
+                    err instanceof Error
+                        ? err.name === 'NotAllowedError'
+                            ? t('qrScanner.frame.cameraPermissionDenied')
+                            : err.name === 'NotFoundError'
+                              ? t('qrScanner.frame.cameraNotFound')
+                              : err.message
+                        : t('qrScanner.frame.cameraGenericError');
+                onError(message);
+            });
+
+        return () => {
+            cancelled = true;
+            if (started) {
+                instance.stop().catch(() => undefined);
+            }
+            try {
+                instance.clear();
+            } catch {
+                // ignore
+            }
+            scannerRef.current = null;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enabled, multiScan]);
+
+    return (
+        <div
+            className="relative bg-slate-900 rounded-2xl overflow-hidden shadow-lg"
+            style={{ aspectRatio: '1 / 1', maxHeight: '60vh' }}
+        >
+            {/* Fond degrade discret */}
+            <div
+                className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950"
+                aria-hidden="true"
+            />
+            {/* Container camera */}
+            <div
+                id={containerId}
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ minHeight: 0 }}
+            />
+
+            {/* Overlay viseur (4 coins) */}
+            <div className="absolute inset-0 flex items-center justify-center p-8 pointer-events-none">
+                <div className="relative w-full max-w-[260px] aspect-square">
+                    <span className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-md" aria-hidden="true" />
+                    <span className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-md" aria-hidden="true" />
+                    <span className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-md" aria-hidden="true" />
+                    <span className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-md" aria-hidden="true" />
+                    {!enabled && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <IconQrcode size={96} stroke={1} className="text-white/30" />
+                        </div>
+                    )}
+                    {(enabled || searching) && (
+                        <span
+                            className="absolute left-0 right-0 h-0.5 bg-indigo-400 shadow-[0_0_12px_2px_rgba(129,140,248,0.8)]"
+                            style={{
+                                top: '50%',
+                                animation: 'qr-scan-line 1.6s ease-in-out infinite',
+                            }}
+                            aria-hidden="true"
+                        />
+                    )}
+                </div>
+            </div>
+
+            {/* Texte d'instruction en bas */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 text-center bg-gradient-to-t from-slate-900/95 via-slate-900/70 to-transparent pointer-events-none">
+                <p className="text-white text-[14px] sm:text-[15px] font-semibold mb-0.5">
+                    {enabled
+                        ? multiScan
+                            ? t('qrScanner.frame.instructionMulti')
+                            : t('qrScanner.frame.instruction')
+                        : t('qrScanner.frame.instructionStart')}
+                </p>
+                <p className="text-white/60 text-[11.5px] sm:text-[12px]">
+                    {t('qrScanner.frame.subInstruction')}
+                </p>
+            </div>
+
+            <style>
+                {`@keyframes qr-scan-line {
+                    0%   { transform: translateY(-90px); opacity: 0.2; }
+                    50%  { transform: translateY(90px);  opacity: 1; }
+                    100% { transform: translateY(-90px); opacity: 0.2; }
+                }`}
+            </style>
+        </div>
+    );
+}
+
+/**
  * Cadre scanner placeholder — affiche un grand carre avec 4 coins decoratifs
  * (style scanner QR camera) et un texte d'instruction. Anime un voile pulse
  * pendant la recherche.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ScannerFrame({ searching }: { searching: boolean }) {
     const { t } = useTranslation('dosimetry');
     return (

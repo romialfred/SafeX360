@@ -59,6 +59,8 @@ import {
     type MeasurementPointDTO,
     type DosimeterDTO,
 } from '../../services/DosimetryService';
+import DosimetryOfflineService from '../../services/DosimetryOfflineService';
+import { useOnlineStatus } from './OfflineSyncBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types
@@ -107,6 +109,7 @@ const AmbientMeasurementForm = ({
     const { t } = useTranslation('dosimetry');
     const user = useAppSelector((state: any) => state.user);
     const userId = Number(user?.id ?? user?.userId ?? 0);
+    const online = useOnlineStatus();
 
     // ─── Form state ───
     const [measurementPointId, setMeasurementPointId] = useState<string>('');
@@ -272,6 +275,23 @@ const AmbientMeasurementForm = ({
     const performSubmit = async () => {
         const payload = buildPayload();
         setSubmitting(true);
+
+        // ─── Mode offline : queue locale IndexedDB (Phase 10-B) ──────────
+        if (!online && !onSubmit) {
+            try {
+                await DosimetryOfflineService.queueMeasurement(payload);
+                successNotification(t('ambient.measurement.queuedOffline'));
+                if (onSuccess) onSuccess();
+                onClose();
+            } catch {
+                errorNotification(t('ambient.measurement.error'));
+            } finally {
+                setSubmitting(false);
+                setConfirmOverModal(false);
+            }
+            return;
+        }
+
         try {
             if (onSubmit) {
                 await onSubmit(payload);
@@ -281,7 +301,22 @@ const AmbientMeasurementForm = ({
             }
             if (onSuccess) onSuccess();
             onClose();
-        } catch {
+        } catch (err: any) {
+            // Tolerance reseau : queue locale si erreur reseau / timeout.
+            if (
+                !onSubmit &&
+                (err?.code === 'ERR_NETWORK' || err?.message?.includes('Network'))
+            ) {
+                try {
+                    await DosimetryOfflineService.queueMeasurement(payload);
+                    successNotification(t('ambient.measurement.queuedOffline'));
+                    if (onSuccess) onSuccess();
+                    onClose();
+                    return;
+                } catch {
+                    // fallthrough
+                }
+            }
             errorNotification(t('ambient.measurement.error'));
         } finally {
             setSubmitting(false);

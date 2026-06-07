@@ -88,6 +88,8 @@ import {
     type DoseRecordDTO,
     type DoseSource,
 } from '../../services/DosimetryService';
+import DosimetryOfflineService from '../../services/DosimetryOfflineService';
+import OfflineSyncBanner, { useOnlineStatus } from './OfflineSyncBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Constantes metier — Limites CIPR 103 / AIEA GSR Part 3 (Cat A)
@@ -227,6 +229,9 @@ const DoseEntryForm = () => {
     // ───── Mode edition vs creation ─────
     const editId = params.id ? Number(params.id) : null;
     const isEditMode = editId != null && !Number.isNaN(editId) && editId > 0;
+
+    // ───── Connectivite reseau (mode terrain offline) ─────
+    const online = useOnlineStatus();
 
     // ───── Etat ─────
     const [loadingInitial, setLoadingInitial] = useState(false);
@@ -513,6 +518,22 @@ const DoseEntryForm = () => {
 
     const persistDose = async (requiresValidation: boolean) => {
         const payload = buildPayload(requiresValidation);
+
+        // ─── Mode offline : queue locale IndexedDB (Phase 10-B) ──────────
+        // Seule la creation est queue-able (un update est append-only et a
+        // besoin du supersededRecordId qui requiert un round-trip backend).
+        if (!online && !isEditMode) {
+            try {
+                await DosimetryOfflineService.queueDose(payload);
+                successNotification(t('doseEntryForm.success.queuedOffline'));
+                const workerId = form.values.workerId;
+                navigate(`/dosimetry/doses/by-worker/${workerId}`);
+            } catch {
+                errorNotification(t('doseEntryForm.errors.queueFailed'));
+            }
+            return;
+        }
+
         dispatch(showOverlay());
         try {
             if (isEditMode) {
@@ -525,6 +546,22 @@ const DoseEntryForm = () => {
             const workerId = form.values.workerId;
             navigate(`/dosimetry/doses/by-worker/${workerId}`);
         } catch (err: any) {
+            // Tolerance reseau : si l'erreur est un timeout / DNS, on bascule
+            // sur le queueing local automatique (mode creation uniquement).
+            if (
+                !isEditMode &&
+                (err?.code === 'ERR_NETWORK' || err?.message?.includes('Network'))
+            ) {
+                try {
+                    await DosimetryOfflineService.queueDose(payload);
+                    successNotification(t('doseEntryForm.success.queuedOffline'));
+                    const workerId = form.values.workerId;
+                    navigate(`/dosimetry/doses/by-worker/${workerId}`);
+                    return;
+                } catch {
+                    // fallthrough vers la notification d'erreur generique
+                }
+            }
             errorNotification(
                 err?.response?.data?.errorMessage ||
                     err?.response?.data?.message ||
@@ -567,6 +604,9 @@ const DoseEntryForm = () => {
     return (
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-6">
             <div className="max-w-[1200px] mx-auto">
+                {/* ─── Phase 10-B : Banner offline / sync ─── */}
+                <OfflineSyncBanner />
+
                 {/* ─── Breadcrumb premium ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <span className="uppercase tracking-[0.16em] font-medium">

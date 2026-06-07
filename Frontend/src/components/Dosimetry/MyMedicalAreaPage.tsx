@@ -71,6 +71,7 @@ import {
     type ThresholdDTO,
 } from '../../services/DosimetryService';
 import PdfDownloadModal from './PdfDownloadModal';
+import DoseForecastCard from './DoseForecastCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Constants
@@ -802,6 +803,17 @@ const MyMedicalAreaPage = () => {
                         <span>{t('myMedical.iprcNotice')}</span>
                     </div>
                 </SectionCard>
+
+                {/* ─── 5.bis Phase 10-B : Prevision dose annuelle Hp(10) ─── */}
+                {resolvedWorkerId != null && (
+                    <div className="mb-5">
+                        <DoseForecastCard
+                            workerId={resolvedWorkerId}
+                            currentYear={new Date().getFullYear()}
+                            annualLimitHp10={annualLimitHp10}
+                        />
+                    </div>
+                )}
 
                 {/* ─── 6. Bouton attestation ─── */}
                 <div className="mb-5 bg-white border border-slate-200 rounded-2xl shadow-sm px-5 py-4 flex flex-wrap items-center justify-between gap-3">

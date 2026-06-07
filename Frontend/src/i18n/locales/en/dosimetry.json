@@ -581,9 +581,24 @@
         "back": "Back to inventory",
         "frame": {
             "instruction": "Point at the dosimeter QR code",
+            "instructionStart": "Start the camera to scan",
+            "instructionMulti": "Scan multiple dosimeters in a row",
             "subInstruction": "The scanner will activate in the central area",
+            "startCamera": "Start camera",
+            "stopCamera": "Stop camera",
+            "multiScanOn": "Multi-scan: active",
+            "multiScanOff": "Multi-scan",
+            "cameraErrorTitle": "Camera unavailable",
+            "cameraPermissionDenied": "Camera access denied. Allow access in your browser settings then retry.",
+            "cameraNotFound": "No camera detected on this device.",
+            "cameraGenericError": "Could not start the camera. Make sure no other app is using it.",
             "cameraUnavailableTitle": "Camera not available",
-            "cameraUnavailableHint": "Camera access requires the html5-qrcode library (TODO npm install html5-qrcode). Use the manual input below in the meantime."
+            "cameraUnavailableHint": "Use the manual input below in the meantime."
+        },
+        "qcHistory": {
+            "title": "Scan history ({{count}})",
+            "clear": "Clear",
+            "miss": "Unknown"
         },
         "manual": {
             "title": "Manual entry",
@@ -1136,11 +1151,13 @@
         },
         "success": {
             "created": "Dose recorded successfully.",
-            "versionCreated": "New dose version created. Original is preserved for traceability."
+            "versionCreated": "New dose version created. Original is preserved for traceability.",
+            "queuedOffline": "Saved locally. Will sync when connection is back."
         },
         "errors": {
             "loadFailed": "Unable to load the dose to edit.",
-            "submitFailed": "Recording failed. Check the entered data."
+            "submitFailed": "Recording failed. Check the entered data.",
+            "queueFailed": "Could not save locally. Please try again."
         },
         "help": {
             "title": "Dose entry help",
@@ -1930,6 +1947,7 @@
             "loading": "Loading…",
             "success": "Measurement recorded successfully.",
             "error": "Failed to record measurement.",
+            "queuedOffline": "Measurement saved locally. Will sync when connection is back.",
             "cancel": "Cancel",
             "submit": "Record measurement",
             "lockedCampaign": "Measurement linked to campaign #{{id}} (context locked).",
@@ -2817,5 +2835,45 @@
             "cancel": "Cancel",
             "submit": "Generate export"
         }
+    },
+    "doseForecast": {
+        "title": "Annual dose forecast (Holt-Winters)",
+        "subtitle": "Hp(10) cumulative projection through Dec 31, {{year}}",
+        "empty": "Not enough data to forecast the annual dose.",
+        "alertTitle": "Predicted annual overexposure risk:",
+        "alertMessage": "{{predicted}} mSv predicted by year-end (limit {{limit}} mSv). Preventive actions recommended.",
+        "helper": "This projection uses the last 12 months of history. The grey band shows the ±σ confidence interval.",
+        "badgeAria": "Predicted year-end cumulative: {{pct}}% of the regulatory limit",
+        "refLines": {
+            "p50": "50% limit",
+            "p75": "75% limit",
+            "p100": "Limit ({{limit}} mSv)"
+        },
+        "legend": {
+            "observed": "Observed",
+            "forecast": "Forecast",
+            "bandUpper": "Upper bound",
+            "bandLower": "Lower bound"
+        },
+        "errors": {
+            "loadFailed": "Could not load dose history to generate the forecast."
+        }
+    },
+    "offline": {
+        "banner": {
+            "offlineTitle": "Offline mode active",
+            "offlineMessage": "Your entries are saved locally. {{count}} pending sync.",
+            "pendingTitle": "Entries pending synchronization",
+            "pendingMessage": "{{count}} local entry/entries to send to the server.",
+            "syncedTitle": "Synchronization complete",
+            "syncedMessage": "All local entries have been sent.",
+            "syncNow": "Sync now",
+            "dosesKpi": "{{n}} dose(s)",
+            "measurementsKpi": "{{n}} ambient measurement(s)",
+            "blockedKpi": "{{n}} blocked"
+        }
+    },
+    "qrScanner_extras": {
+        "_doc": "Keys added by Phase 10-B under qrScanner.frame.* and qrScanner.qcHistory.*"
     }
 }

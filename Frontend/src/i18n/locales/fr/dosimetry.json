@@ -581,9 +581,24 @@
         "back": "Retour à l'inventaire",
         "frame": {
             "instruction": "Pointer le QR code du dosimètre",
+            "instructionStart": "Démarrer la caméra pour scanner",
+            "instructionMulti": "Scanner plusieurs dosimètres en série",
             "subInstruction": "Le scanner s'activera dans la zone centrale",
+            "startCamera": "Activer la caméra",
+            "stopCamera": "Arrêter la caméra",
+            "multiScanOn": "Mode multi-scan : actif",
+            "multiScanOff": "Mode multi-scan",
+            "cameraErrorTitle": "Caméra indisponible",
+            "cameraPermissionDenied": "Accès caméra refusé. Autorisez l'accès dans les paramètres du navigateur puis réessayez.",
+            "cameraNotFound": "Aucune caméra détectée sur cet appareil.",
+            "cameraGenericError": "Impossible de démarrer la caméra. Vérifiez qu'aucune autre application ne l'utilise.",
             "cameraUnavailableTitle": "Caméra non disponible",
-            "cameraUnavailableHint": "L'accès caméra nécessite la bibliothèque html5-qrcode (TODO npm install html5-qrcode). Utilisez la saisie manuelle ci-dessous en attendant."
+            "cameraUnavailableHint": "Utilisez la saisie manuelle ci-dessous en attendant."
+        },
+        "qcHistory": {
+            "title": "Historique scan ({{count}})",
+            "clear": "Vider",
+            "miss": "Inconnu"
         },
         "manual": {
             "title": "Saisie manuelle",
@@ -1136,11 +1151,13 @@
         },
         "success": {
             "created": "Dose enregistrée avec succès.",
-            "versionCreated": "Nouvelle version de dose créée. L'original est conservé pour traçabilité."
+            "versionCreated": "Nouvelle version de dose créée. L'original est conservé pour traçabilité.",
+            "queuedOffline": "Saisie enregistrée localement. Elle sera synchronisée au retour en ligne."
         },
         "errors": {
             "loadFailed": "Impossible de charger la dose à éditer.",
-            "submitFailed": "L'enregistrement a échoué. Vérifiez les données saisies."
+            "submitFailed": "L'enregistrement a échoué. Vérifiez les données saisies.",
+            "queueFailed": "Impossible d'enregistrer localement la saisie. Réessayez."
         },
         "help": {
             "title": "Aide à la saisie dosimétrique",
@@ -1930,6 +1947,7 @@
             "loading": "Chargement…",
             "success": "Mesure enregistrée avec succès.",
             "error": "L'enregistrement de la mesure a échoué.",
+            "queuedOffline": "Mesure enregistrée localement. Elle sera synchronisée au retour en ligne.",
             "cancel": "Annuler",
             "submit": "Enregistrer la mesure",
             "lockedCampaign": "Mesure rattachée à la campagne #{{id}} (contexte verrouillé).",
@@ -2817,5 +2835,45 @@
             "cancel": "Annuler",
             "submit": "Générer l'export"
         }
+    },
+    "doseForecast": {
+        "title": "Prévision dose annuelle (Holt-Winters)",
+        "subtitle": "Projection cumul Hp(10) jusqu'au 31/12/{{year}}",
+        "empty": "Pas assez de données pour projeter une prévision annuelle.",
+        "alertTitle": "Risque de dépassement annuel prévu :",
+        "alertMessage": "{{predicted}} mSv prévu en fin d'année (limite {{limit}} mSv). Mesures préventives recommandées.",
+        "helper": "Cette projection s'appuie sur l'historique des 12 derniers mois. La bande grise représente l'intervalle de confiance ±σ.",
+        "badgeAria": "Cumul prévu fin d'année : {{pct}}% de la limite réglementaire",
+        "refLines": {
+            "p50": "50% limite",
+            "p75": "75% limite",
+            "p100": "Limite ({{limit}} mSv)"
+        },
+        "legend": {
+            "observed": "Observé",
+            "forecast": "Prévision",
+            "bandUpper": "Confiance haute",
+            "bandLower": "Confiance basse"
+        },
+        "errors": {
+            "loadFailed": "Impossible de charger l'historique des doses pour générer la prévision."
+        }
+    },
+    "offline": {
+        "banner": {
+            "offlineTitle": "Mode hors-ligne actif",
+            "offlineMessage": "Vos saisies sont enregistrées localement. {{count}} en attente d'envoi.",
+            "pendingTitle": "Saisies en attente de synchronisation",
+            "pendingMessage": "{{count}} saisie(s) locale(s) à envoyer au serveur.",
+            "syncedTitle": "Synchronisation terminée",
+            "syncedMessage": "Toutes les saisies locales ont été envoyées.",
+            "syncNow": "Synchroniser maintenant",
+            "dosesKpi": "{{n}} dose(s)",
+            "measurementsKpi": "{{n}} mesure(s) d'ambiance",
+            "blockedKpi": "{{n}} bloquée(s)"
+        }
+    },
+    "qrScanner_extras": {
+        "_doc": "Clés ajoutées par Phase 10-B sous qrScanner.frame.* et qrScanner.qcHistory.*"
     }
 }

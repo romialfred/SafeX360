@@ -49,6 +49,7 @@ import {
     type ThresholdDTO,
 } from '../../services/DosimetryService';
 import PdfDownloadModal from './PdfDownloadModal';
+import DoseForecastCard from './DoseForecastCard';
 
 /**
  * ExposedWorkerDetailPage — Fiche 360 d'un travailleur expose (Phase 2 Frontend-B).
@@ -960,6 +961,17 @@ function DosesTab({
                     />
                 </div>
             </Card>
+
+            {/* Phase 10-B : Prevision Holt-Winters de la dose cumulee EOY */}
+            {detail.identity.workerId != null && (
+                <div className="mt-4">
+                    <DoseForecastCard
+                        workerId={Number(detail.identity.workerId)}
+                        currentYear={new Date().getFullYear()}
+                        annualLimitHp10={annualLimitHp10}
+                    />
+                </div>
+            )}
         </>
     );
 }

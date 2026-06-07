@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
@@ -25,6 +25,17 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+  },
+  /**
+   * Vitest config — Phase 10-B (tests utilitaires + composants Dosimetrie).
+   *
+   * environment "jsdom" pour les tests composants (testing-library).
+   * Pas de setupFiles — les mocks sont locaux a chaque test.
+   */
+  test: {
+    environment: 'jsdom',
+    globals: false,
+    include: ['src/**/*.test.{ts,tsx}'],
   },
   build: {
     chunkSizeWarningLimit: 1500,
