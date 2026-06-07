@@ -11,6 +11,7 @@ import {
     IconFlame,
     IconMountain,
     IconBiohazard,
+    IconShieldX,
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
@@ -34,21 +35,22 @@ import { enqueueSos } from '../../../utility/OfflineSosQueue';
  * </ul>
  */
 
-type ReasonCode = 'GENERAL' | 'MEDICAL' | 'FIRE' | 'COLLAPSE' | 'CHEMICAL';
+type ReasonCode = 'GENERAL' | 'MEDICAL' | 'FIRE' | 'COLLAPSE' | 'CHEMICAL' | 'ARMED_ATTACK';
 
 interface Tile {
     code: ReasonCode;
     /** Couleur Tailwind racine — base pour border + bg + text */
-    color: 'slate' | 'red' | 'orange' | 'amber' | 'emerald';
+    color: 'slate' | 'red' | 'orange' | 'amber' | 'emerald' | 'fuchsia';
     Icon: typeof IconAlertOctagon;
 }
 
 const TILES: Tile[] = [
-    { code: 'GENERAL',  color: 'slate',   Icon: IconAlertOctagon },
-    { code: 'MEDICAL',  color: 'red',     Icon: IconHeartbeat },
-    { code: 'FIRE',     color: 'orange',  Icon: IconFlame },
-    { code: 'COLLAPSE', color: 'amber',   Icon: IconMountain },
-    { code: 'CHEMICAL', color: 'emerald', Icon: IconBiohazard },
+    { code: 'GENERAL',      color: 'slate',   Icon: IconAlertOctagon },
+    { code: 'MEDICAL',      color: 'red',     Icon: IconHeartbeat },
+    { code: 'FIRE',         color: 'orange',  Icon: IconFlame },
+    { code: 'COLLAPSE',     color: 'amber',   Icon: IconMountain },
+    { code: 'CHEMICAL',     color: 'emerald', Icon: IconBiohazard },
+    { code: 'ARMED_ATTACK', color: 'fuchsia', Icon: IconShieldX },
 ];
 
 /** Délais (en ms) du système d'auto-transmission. Centralisés pour relecture. */
@@ -58,54 +60,66 @@ const AUTO_COUNTDOWN_SECONDS = 15;   // Durée du compte à rebours visible
 /**
  * Classes Tailwind dérivées par couleur — déclarées en clair pour ne pas
  * casser le purge JIT (chaînes complètes).
+ *
+ * <p>v3 : background coloré semi-transparent (chaque tuile a un léger fond teinté
+ * de sa couleur thématique même non-sélectionnée), icônes colorées à 100% du temps
+ * (jamais grises), tuile sélectionnée renforce intensité bg + ring + scale.</p>
  */
 const COLOR_CLASSES: Record<Tile['color'], {
     borderSelected: string;
     borderIdle: string;
     bgSelected: string;
-    iconSelected: string;
-    iconIdle: string;
+    bgIdle: string;
+    iconColor: string;
     textSelected: string;
 }> = {
     slate: {
         borderSelected: 'border-slate-600 ring-2 ring-slate-300',
         borderIdle: 'border-slate-200',
-        bgSelected: 'bg-slate-50',
-        iconSelected: 'text-slate-700',
-        iconIdle: 'text-slate-400',
+        bgSelected: 'bg-slate-100/80',
+        bgIdle: 'bg-slate-50/40',
+        iconColor: 'text-slate-700',
         textSelected: 'text-slate-900',
     },
     red: {
         borderSelected: 'border-red-600 ring-2 ring-red-200',
-        borderIdle: 'border-slate-200',
-        bgSelected: 'bg-red-50',
-        iconSelected: 'text-red-600',
-        iconIdle: 'text-slate-400',
+        borderIdle: 'border-red-100',
+        bgSelected: 'bg-red-100/70',
+        bgIdle: 'bg-red-50/30',
+        iconColor: 'text-red-600',
         textSelected: 'text-red-900',
     },
     orange: {
         borderSelected: 'border-orange-600 ring-2 ring-orange-200',
-        borderIdle: 'border-slate-200',
-        bgSelected: 'bg-orange-50',
-        iconSelected: 'text-orange-600',
-        iconIdle: 'text-slate-400',
+        borderIdle: 'border-orange-100',
+        bgSelected: 'bg-orange-100/70',
+        bgIdle: 'bg-orange-50/30',
+        iconColor: 'text-orange-600',
         textSelected: 'text-orange-900',
     },
     amber: {
         borderSelected: 'border-amber-700 ring-2 ring-amber-200',
-        borderIdle: 'border-slate-200',
-        bgSelected: 'bg-amber-50',
-        iconSelected: 'text-amber-700',
-        iconIdle: 'text-slate-400',
+        borderIdle: 'border-amber-100',
+        bgSelected: 'bg-amber-100/70',
+        bgIdle: 'bg-amber-50/30',
+        iconColor: 'text-amber-700',
         textSelected: 'text-amber-900',
     },
     emerald: {
         borderSelected: 'border-emerald-700 ring-2 ring-emerald-200',
-        borderIdle: 'border-slate-200',
-        bgSelected: 'bg-emerald-50',
-        iconSelected: 'text-emerald-700',
-        iconIdle: 'text-slate-400',
+        borderIdle: 'border-emerald-100',
+        bgSelected: 'bg-emerald-100/70',
+        bgIdle: 'bg-emerald-50/30',
+        iconColor: 'text-emerald-700',
         textSelected: 'text-emerald-900',
+    },
+    fuchsia: {
+        borderSelected: 'border-fuchsia-700 ring-2 ring-fuchsia-200',
+        borderIdle: 'border-fuchsia-100',
+        bgSelected: 'bg-fuchsia-100/70',
+        bgIdle: 'bg-fuchsia-50/30',
+        iconColor: 'text-fuchsia-700',
+        textSelected: 'text-fuchsia-900',
     },
 };
 
@@ -187,6 +201,18 @@ const SosButton = () => {
      * Construit le payload SOS commun.
      * @param autoTransmitted true si déclenché par le countdown (suffix dédié)
      */
+    /**
+     * Résout l'identifiant de la mine pour le SOS.
+     * Priorité : sélecteur header > mine d'attache du user > fallback 1.
+     * Le SOS NE DOIT JAMAIS bloquer pour absence de contexte mine —
+     * une vie est en jeu : on transmet même en mode "Vue consolidée".
+     */
+    const resolveCompanyId = (): number => {
+        return Number(
+            selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
+        );
+    };
+
     const buildPayload = (autoTransmitted: boolean) => {
         const base = (message || '').trim();
         const suffix = autoTransmitted ? t('emergency:sos.autoTransmit.descriptionSuffix') : '';
@@ -194,7 +220,7 @@ const SosButton = () => {
             ? (base ? `${base}${suffix}` : suffix.trim())
             : (base || null);
         return {
-            companyId: selectedCompanyId!,
+            companyId: resolveCompanyId(),
             employeeId: Number(user.id),
             reasonCode,
             description,
@@ -207,7 +233,9 @@ const SosButton = () => {
     };
 
     const handleSend = async (autoTransmitted = false) => {
-        if (!selectedCompanyId || !user?.id) {
+        // SEULE condition bloquante : pas d'utilisateur authentifié.
+        // L'absence de selectedCompanyId est gérée par resolveCompanyId().
+        if (!user?.id) {
             errorNotification(t('emergency:sos.notifications.noContext'));
             return;
         }
@@ -384,7 +412,7 @@ const SosButton = () => {
                             </div>
                         </div>
 
-                        {/* Tuiles motif (5 tuiles tactiles) */}
+                        {/* Tuiles motif (6 tuiles tactiles colorées + fond semi-transparent) */}
                         <div>
                             <p className="text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-2">
                                 {t('emergency:sos.reasonLabel')}
@@ -392,7 +420,7 @@ const SosButton = () => {
                             <div
                                 role="radiogroup"
                                 aria-label={t('emergency:sos.reasonLabel')}
-                                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
+                                className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2"
                             >
                                 {TILES.map((tile) => {
                                     const isSelected = reasonCode === tile.code;
@@ -407,22 +435,22 @@ const SosButton = () => {
                                             onClick={() => setReasonCode(tile.code)}
                                             className={[
                                                 'group flex flex-col items-center justify-center gap-1.5',
-                                                'min-h-[88px] px-2 py-3 rounded-lg border-2 bg-white',
+                                                'min-h-[88px] px-2 py-3 rounded-lg border-2',
                                                 'transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
                                                 isSelected
                                                     ? `${c.borderSelected} ${c.bgSelected} scale-[1.04] shadow-sm`
-                                                    : `${c.borderIdle} opacity-80 hover:opacity-100 hover:border-slate-300`,
+                                                    : `${c.borderIdle} ${c.bgIdle} hover:scale-[1.02]`,
                                             ].join(' ')}
                                         >
                                             <tile.Icon
                                                 size={34}
                                                 stroke={1.8}
-                                                className={isSelected ? c.iconSelected : c.iconIdle}
+                                                className={c.iconColor}
                                             />
                                             <span
                                                 className={[
                                                     'text-[11.5px] leading-tight text-center font-semibold',
-                                                    isSelected ? c.textSelected : 'text-slate-600',
+                                                    isSelected ? c.textSelected : 'text-slate-700',
                                                 ].join(' ')}
                                             >
                                                 {label}

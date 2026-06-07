@@ -85,7 +85,8 @@
             "medical": "Medical emergency",
             "fire": "Fire / Smoke",
             "collapse": "Collapse / Cave-in",
-            "chemical": "Chemical / Gas leak"
+            "chemical": "Chemical / Gas leak",
+            "armed_attack": "Armed attack"
         },
         "messageLabel": "Description (optional)",
         "messagePlaceholder": "Briefly describe the situation",

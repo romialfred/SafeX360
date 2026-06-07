@@ -85,7 +85,8 @@
             "medical": "Urgence médicale",
             "fire": "Incendie / Fumée",
             "collapse": "Effondrement / Éboulement",
-            "chemical": "Fuite chimique / Gaz"
+            "chemical": "Fuite chimique / Gaz",
+            "armed_attack": "Attaque armée"
         },
         "messageLabel": "Description (optionnel)",
         "messagePlaceholder": "Décrivez brièvement la situation",
