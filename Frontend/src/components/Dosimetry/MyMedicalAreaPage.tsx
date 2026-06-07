@@ -253,15 +253,49 @@ const MyMedicalAreaPage = () => {
         (state: any) => state?.companySelection?.selectedCompanyId ?? null,
     );
 
-    const currentUserId: number | null = useMemo(() => {
-        const raw = user?.id ?? user?.employeeId ?? user?.userId ?? null;
-        if (raw == null) return null;
-        const n = Number(raw);
-        return Number.isFinite(n) ? n : null;
+    /**
+     * LOT Dosimetrie — Resolveur d'identite multi-strategies.
+     *
+     * Le JWT genere par {@code JwtHelper.generateToken} expose :
+     *   - {@code id}       = id du compte/profil de permission (table account)
+     *   - {@code empId}    = id RH du collaborateur (table employee) ← CE QU'IL FAUT
+     *   - {@code sub}      = username (login)
+     *   - {@code empNumber}= matricule RH
+     *
+     * Le filtre client compare contre {@code exposedWorker.employeeId} qui pointe
+     * vers la table employee → on doit prioriser empId puis matricule, et garder
+     * id en derniere ligne (cas legacy ou les deux valeurs coincident).
+     */
+    const candidateUserIds: Array<{ label: string; value: number }> = useMemo(() => {
+        const list: Array<{ label: string; value: number }> = [];
+        const tryAdd = (label: string, raw: unknown) => {
+            if (raw == null) return;
+            const n = Number(raw);
+            if (Number.isFinite(n) && n > 0 && !list.some((x) => x.value === n)) {
+                list.push({ label, value: n });
+            }
+        };
+        tryAdd('empId', user?.empId);
+        tryAdd('employeeId', user?.employeeId);
+        tryAdd('empNumber', user?.empNumber);
+        tryAdd('userId', user?.userId);
+        tryAdd('id', user?.id);
+        return list;
+    }, [user]);
+
+    // Conserve pour la garde "non authentifie" : on garde au moins un identifiant.
+    const currentUserId: number | null = useMemo(
+        () => (candidateUserIds.length > 0 ? candidateUserIds[0].value : null),
+        [candidateUserIds],
+    );
+
+    const currentUsername: string | null = useMemo(() => {
+        const u = user?.sub ?? user?.username ?? user?.login ?? user?.email ?? null;
+        return typeof u === 'string' && u.trim().length > 0 ? u : null;
     }, [user]);
 
     const mineId: number = useMemo(() => {
-        const candidate = selectedMineId ?? user?.mineId ?? user?.companyId ?? null;
+        const candidate = selectedMineId ?? user?.mineId ?? user?.companyId ?? user?.company ?? null;
         const n = Number(candidate);
         return Number.isFinite(n) && n > 0 ? n : 1;
     }, [selectedMineId, user]);
@@ -269,6 +303,9 @@ const MyMedicalAreaPage = () => {
     // ─── State ───
     const [resolvedWorkerId, setResolvedWorkerId] = useState<number | null>(null);
     const [resolutionFailed, setResolutionFailed] = useState(false);
+    // LOT Dosimetrie — diagnostic explicite quand le matching echoue
+    // (affiche sur la carte "vous n'etes pas inscrit" pour aider l'admin).
+    const [resolutionDiagnostics, setResolutionDiagnostics] = useState<string | null>(null);
 
     const [workerDetail, setWorkerDetail] = useState<ExposedWorkerDetailDTO | null>(null);
     const [currentFitness, setCurrentFitness] = useState<FitnessAssessmentPublicDTO | null>(null);
@@ -280,38 +317,120 @@ const MyMedicalAreaPage = () => {
     // Phase 9-B : modal download "mon attestation".
     const [attestationModalOpen, setAttestationModalOpen] = useState(false);
 
-    // ─── 1. Resoudre workerId via search + filtre client par employeeId ───
+    // ─── 1. Resoudre workerId via search + matching multi-strategies ───
+    // Le JWT expose plusieurs identifiants (id, empId, empNumber, sub) et le
+    // backend Worker stocke {@code employeeId} qui pointe vers la table employee.
+    // On essaie chaque candidat dans l'ordre de fiabilite et on logge le chemin
+    // emprunte pour faciliter le diagnostic.
     const resolveWorkerId = useCallback(async () => {
-        if (!currentUserId) {
+        if (candidateUserIds.length === 0) {
             setResolutionFailed(true);
+            setResolutionDiagnostics('Aucun identifiant utilisateur trouve dans le JWT.');
             setLoading(false);
             return null;
         }
         try {
             const list = await searchWorkers({ mineId });
             const arr: any[] = Array.isArray(list) ? list : (list?.content ?? []);
-            // Le backend ExposedWorkerListItemDTO expose employeeId (id RH).
-            const me = arr.find((w) => {
-                const candidates = [w?.employeeId, w?.identity?.employeeId, w?.userId];
-                return candidates.some((c) => c != null && Number(c) === currentUserId);
-            });
-            if (!me) {
+
+            if (arr.length === 0) {
                 setResolutionFailed(true);
+                setResolutionDiagnostics(
+                    `Aucun travailleur expose n'est inscrit sur la mine #${mineId}.`,
+                );
                 return null;
             }
-            const id = me.id ?? me.workerId ?? me.identity?.workerId ?? null;
-            if (id == null) {
-                setResolutionFailed(true);
-                return null;
+
+            // Strategie 1 : matching numerique sur employeeId (priorite empId).
+            for (const candidate of candidateUserIds) {
+                const me = arr.find((w) => {
+                    const fields = [
+                        w?.employeeId,
+                        w?.identity?.employeeId,
+                        w?.empId,
+                        w?.userId,
+                        w?.id, // certains legacy renvoient l'id worker = id employee
+                    ];
+                    return fields.some(
+                        (c) => c != null && Number(c) === candidate.value,
+                    );
+                });
+                if (me) {
+                    const id = me.id ?? me.workerId ?? me.identity?.workerId ?? null;
+                    if (id != null) {
+                        // breadcrumb diagnostic
+                        // eslint-disable-next-line no-console
+                        console.info(
+                            `[MyMedicalArea] worker resolu via ${candidate.label}=${candidate.value} -> workerId=${id}`,
+                        );
+                        const numericId = Number(id);
+                        setResolvedWorkerId(numericId);
+                        return numericId;
+                    }
+                }
             }
-            const numericId = Number(id);
-            setResolvedWorkerId(numericId);
-            return numericId;
-        } catch {
+
+            // Strategie 2 : matching par username/email (sub JWT).
+            if (currentUsername) {
+                const u = currentUsername.toLowerCase();
+                const me = arr.find((w) => {
+                    const fields = [
+                        w?.email,
+                        w?.identity?.email,
+                        w?.username,
+                        w?.login,
+                        w?.matricule,
+                        w?.identity?.matricule,
+                    ];
+                    return fields.some(
+                        (c) =>
+                            typeof c === 'string' &&
+                            c.trim().length > 0 &&
+                            c.toLowerCase() === u,
+                    );
+                });
+                if (me) {
+                    const id = me.id ?? me.workerId ?? me.identity?.workerId ?? null;
+                    if (id != null) {
+                        // eslint-disable-next-line no-console
+                        console.info(
+                            `[MyMedicalArea] worker resolu via username="${currentUsername}" -> workerId=${id}`,
+                        );
+                        const numericId = Number(id);
+                        setResolvedWorkerId(numericId);
+                        return numericId;
+                    }
+                }
+            }
+
+            // Strategie 3 : si une seule ligne et user clairement admin de la mine.
+            // (skippe — pas de fallback automatique pour eviter une fuite RGPD)
+
+            // Echec : on construit un diagnostic explicite pour l'admin.
+            const tried = candidateUserIds
+                .map((c) => `${c.label}=${c.value}`)
+                .join(', ');
+            // eslint-disable-next-line no-console
+            console.warn(
+                `[MyMedicalArea] resolution echouee. Candidats testes: [${tried}], username="${currentUsername ?? ''}", workers retournes: ${arr.length}`,
+            );
             setResolutionFailed(true);
+            setResolutionDiagnostics(
+                `Aucun travailleur expose ne correspond a votre profil ` +
+                `(${arr.length} fiche${arr.length > 1 ? 's' : ''} verifiee${arr.length > 1 ? 's' : ''} sur la mine #${mineId}). ` +
+                `Identifiants testes : ${tried}.`,
+            );
+            return null;
+        } catch (err: any) {
+            // eslint-disable-next-line no-console
+            console.error('[MyMedicalArea] echec resolution worker', err);
+            setResolutionFailed(true);
+            setResolutionDiagnostics(
+                `Erreur reseau lors de la recherche : ${err?.message ?? 'inconnue'}`,
+            );
             return null;
         }
-    }, [currentUserId, mineId]);
+    }, [candidateUserIds, currentUsername, mineId]);
 
     // ─── 2. Charger les donnees pour le workerId resolu ───
     const fetchAll = useCallback(
@@ -426,6 +545,18 @@ const MyMedicalAreaPage = () => {
                     <p className="text-slate-600 text-[13px] mb-4">
                         {t('myMedical.notExposedBody')}
                     </p>
+                    {/* LOT Dosimetrie — diagnostic detaille (utile pour l'admin systeme).
+                        Affiche en bas de la carte, en petit, ton sobre. */}
+                    {resolutionDiagnostics && (
+                        <div className="mt-2 mb-4 mx-auto max-w-md px-3 py-2 rounded-md bg-slate-50 border border-slate-200 text-left">
+                            <p className="text-[10.5px] uppercase tracking-[0.10em] text-slate-500 font-semibold mb-1">
+                                Diagnostic
+                            </p>
+                            <p className="text-[11.5px] text-slate-600 leading-snug font-mono break-words">
+                                {resolutionDiagnostics}
+                            </p>
+                        </div>
+                    )}
                     <button
                         type="button"
                         onClick={() => navigate('/')}

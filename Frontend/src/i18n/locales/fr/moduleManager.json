@@ -61,7 +61,8 @@
         "Compliance Management": "Conformité Réglementaire",
         "Knowledge Center": "Centre de Connaissances",
         "Safety Communication": "Communication Sécurité",
-        "Emergency Management": "Gestion des Urgences"
+        "Emergency Management": "Gestion des Urgences",
+        "Dosimetry & Exposures": "Dosimétrie & Expositions"
     },
     "modules": {
         "non-conformity": {
@@ -211,6 +212,46 @@
         "emergency-settings": {
             "name": "Paramètres Urgences",
             "description": "Configuration : équipes, escalade, canaux d'alerte"
+        },
+        "dosimetry-dashboard": {
+            "name": "Tableau de bord Dosimétrie",
+            "description": "Vue temps réel des doses, expositions et indicateurs clés"
+        },
+        "dosimetry-workers": {
+            "name": "Registre des travailleurs exposés",
+            "description": "Registre des travailleurs exposés aux rayonnements ionisants (Cat. A/B/Public)"
+        },
+        "dosimetry-dosimeters": {
+            "name": "Dosimètres & instruments",
+            "description": "Gestion des dosimètres, instruments de mesure et plan d'étalonnage"
+        },
+        "dosimetry-doses": {
+            "name": "Saisie & suivi des doses",
+            "description": "Enregistrement et suivi des mesures de dose individuelles"
+        },
+        "dosimetry-medical": {
+            "name": "Surveillance médicale",
+            "description": "Suivi médical des travailleurs exposés (médecin du travail)"
+        },
+        "dosimetry-my-medical": {
+            "name": "Mon dossier médical",
+            "description": "Espace personnel — dossier médical et dosimétrique (RGPD art. 15)"
+        },
+        "dosimetry-alerts": {
+            "name": "Seuils & dépassements",
+            "description": "Seuils configurables et gestion des alertes de surexposition"
+        },
+        "dosimetry-overexposure": {
+            "name": "Dossiers de dépassement",
+            "description": "Workflow d'investigation des cas de surexposition (OUVERT / EN COURS / CLOS)"
+        },
+        "dosimetry-reports": {
+            "name": "Rapports & conformité",
+            "description": "Rapports réglementaires (CIPR 103 / AIEA GSR Part 3) et tableaux de conformité"
+        },
+        "dosimetry-settings": {
+            "name": "Paramètres Dosimétrie",
+            "description": "Configuration du module : limites réglementaires, bandes d'exposition et RBAC"
         }
     }
 }

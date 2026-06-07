@@ -49,6 +49,37 @@ const UserDetails = () => {
         { id: 'settings', name: 'Settings' }
     ];
 
+    /**
+     * LOT Dosimétrie & Expositions — Permissions effectives Spring Security.
+     *
+     * Ce bloc affiche les 11 autorisations granulaires du module Dosimétrie qui sont
+     * accordées au runtime via le header X-Permissions propagé par la Gateway
+     * (cf. {@code GatewayAuthorityFilter} + {@code DosimetryRBACConfig}).
+     *
+     * Différence avec les permissions ci-dessus :
+     *   - Les permissions des modules HSE historiques (non-conformity, incidents, etc.)
+     *     sont stockées en BDD dans {@code permission_management.<column>} sous forme
+     *     de bits read/write/delete.
+     *   - Les permissions DOSIMETRY_* relèvent du modèle ABAC/RBAC Spring (autorities
+     *     du SecurityContext), accordées par défaut au rôle SYSTEM_ADMINISTRATOR via
+     *     le secret partagé Gateway (compat ascendante R-003).
+     *
+     * Affichage : badge "Accordée" pour SYSTEM_ADMINISTRATOR, "Selon rôle" sinon.
+     */
+    const dosimetryPermissions = [
+        { id: 'DOSIMETRY_VIEW', name: 'Consultation tableau de bord & KPIs' },
+        { id: 'DOSIMETRY_READ_AGGREGATE', name: 'Lecture agrégée (sans données nominatives)' },
+        { id: 'DOSIMETRY_READ_NOMINATIVE', name: 'Lecture nominative (avec audit RGPD art. 30)' },
+        { id: 'DOSIMETRY_RECORD', name: 'Saisie des mesures de dose' },
+        { id: 'DOSIMETRY_WRITE', name: 'Écriture sur les données du registre' },
+        { id: 'DOSIMETRY_VALIDATE', name: 'Validation des doses et des seuils' },
+        { id: 'DOSIMETRY_MEDICAL', name: 'Accès médical (médecin du travail, RGPD art. 9)' },
+        { id: 'DOSIMETRY_PCR_RPO', name: 'Personne Compétente en Radioprotection (PCR/RPO)' },
+        { id: 'DOSIMETRY_ALERT', name: 'Gestion des alertes de dépassement' },
+        { id: 'DOSIMETRY_EXPORT_MEDICAL', name: 'Export des données médicales (attestation, rapport)' },
+        { id: 'DOSIMETRY_ADMIN', name: 'Administration du module (paramètres, RBAC)' },
+    ];
+
     const moduleIdToApiField: Record<string, string> = {
         'home': 'home',
         'non-conformity': 'nonConformity',
@@ -214,6 +245,59 @@ const UserDetails = () => {
                                         </div>
                                     );
                                 })}
+                            </div>
+
+                            {/* ─── Section Dosimétrie & Expositions (LOT) ───
+                                Permissions Spring Security granulaires accordees via la Gateway.
+                                Pour SYSTEM_ADMINISTRATOR : toutes accordees (compat ascendante R-003).
+                                Pour les autres roles : selon le profil RBAC effectif au runtime. */}
+                            <div className="mt-8 pt-6 border-t border-slate-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h3 className="text-base font-semibold text-slate-800">
+                                            Dosimétrie & Expositions
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Autorisations granulaires de radioprotection (Spring Security · ICRP 103 / AIEA GSR Part 3)
+                                        </p>
+                                    </div>
+                                    <Badge color="violet" variant="light">
+                                        {profile.role === 'SYSTEM_ADMINISTRATOR' ? 'Toutes accordées' : 'Selon rôle'}
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {dosimetryPermissions.map((perm) => {
+                                        const granted = profile.role === 'SYSTEM_ADMINISTRATOR';
+                                        return (
+                                            <div
+                                                key={perm.id}
+                                                className="flex items-center justify-between p-3 bg-violet-50/50 border border-violet-100 rounded-lg"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm text-slate-800 font-medium">{perm.name}</p>
+                                                    <p className="text-[11px] font-mono text-violet-700 mt-0.5">{perm.id}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    {granted ? (
+                                                        <>
+                                                            <IconCheck className="w-4 h-4 text-emerald-600" />
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                                Accordée
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <IconX className="w-4 h-4 text-slate-400" />
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                                                Selon rôle
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -116,6 +116,8 @@ const CATEGORY_TONES: Record<string, { dot: string; bgRow: string; ringActive: s
     'Safety Communication':   { dot: 'bg-pink-500',    bgRow: 'bg-pink-50/30',    ringActive: 'ring-pink-300' },
     // LOT 48 — Catégorie urgences : rouge profond pour la distinguer de Risk (rouge clair)
     'Emergency Management':   { dot: 'bg-red-700',     bgRow: 'bg-red-50/40',     ringActive: 'ring-red-400' },
+    // LOT Dosimétrie & Expositions — violet/indigo signature radioprotection
+    'Dosimetry & Exposures':  { dot: 'bg-violet-600',  bgRow: 'bg-violet-50/30',  ringActive: 'ring-violet-300' },
 };
 
 const CATEGORY_FR: Record<string, string> = {
@@ -129,6 +131,7 @@ const CATEGORY_FR: Record<string, string> = {
     'Knowledge Center': 'Centre de Connaissances',
     'Safety Communication': 'Communication Sécurité',
     'Emergency Management': 'Gestion des Urgences',
+    'Dosimetry & Exposures': 'Dosimétrie & Expositions',
 };
 
 const MODULE_FR: Record<string, string> = {

@@ -20,6 +20,7 @@ import {
     IconLayoutDashboard,
     IconCrosshair,
     IconArrowRight,
+    IconAtom2,
 } from '@tabler/icons-react';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -84,6 +85,8 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     'parameters':                '#64748b', // slate-500
     'users-management-hub':      '#ea580c', // orange-600
     'modules-management':        '#4f46e5', // indigo-600
+    // LOT Dosimétrie & Expositions — module radioprotection (violet/indigo)
+    'dosimetry':                 '#7c3aed', // violet-600
 };
 
 const moduleGroups: ModuleCard[] = [
@@ -156,6 +159,21 @@ const moduleGroups: ModuleCard[] = [
         bgColor: 'bg-red-50/70 border-red-300/60',
         items: ['Tableau de bord', 'Suivi SOS', 'Points de rassemblement', 'Paramètres'],
         url: '/emergency/dashboard',
+    },
+    {
+        // LOT Dosimétrie & Expositions — radioprotection des travailleurs
+        // exposés aux rayonnements ionisants (mines uranifères, radon, NORM).
+        // requiredModuleId = sous-module pivot (dashboard) aligné sur les 10
+        // sous-modules présents dans ModuleConfig.tsx (catégorie "Dosimetry & Exposures").
+        id: 'dosimetry',
+        requiredModuleId: 'dosimetry-dashboard',
+        title: 'Dosimétrie & Expositions',
+        description: 'Suivi des doses individuelles, surveillance médicale et alertes de dépassement (CIPR 103 / AIEA GSR Part 3).',
+        icon: IconAtom2,
+        color: 'text-violet-700',
+        bgColor: 'bg-violet-50/70 border-violet-200/60',
+        items: ['Tableau de bord', 'Registre travailleurs', 'Suivi des doses', 'Mon dossier médical'],
+        url: '/dosimetry',
     },
     {
         id: 'ppe-management',

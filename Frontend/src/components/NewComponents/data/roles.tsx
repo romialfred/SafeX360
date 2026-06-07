@@ -63,6 +63,17 @@ export const predefinedRoles: any[] = [
             'notifications': fullPermission,
             'users-management': fullPermission,
             'settings': fullPermission,
+            // LOT Dosimétrie & Expositions — System Administrator a TOUTES les permissions
+            'dosimetry-dashboard': fullPermission,
+            'dosimetry-workers': fullPermission,
+            'dosimetry-dosimeters': fullPermission,
+            'dosimetry-doses': fullPermission,
+            'dosimetry-medical': fullPermission,
+            'dosimetry-my-medical': fullPermission,
+            'dosimetry-alerts': fullPermission,
+            'dosimetry-overexposure': fullPermission,
+            'dosimetry-reports': fullPermission,
+            'dosimetry-settings': fullPermission,
         }
     },
     {
@@ -105,6 +116,17 @@ export const predefinedRoles: any[] = [
             'notifications': editPermission,
             'users-management': defaultPermission,
             'settings': defaultPermission,
+            // Dosimétrie — Coordinateur HSE : lecture agrégée + visibilité alertes
+            'dosimetry-dashboard': viewOnlyPermission,
+            'dosimetry-workers': viewOnlyPermission,
+            'dosimetry-dosimeters': viewOnlyPermission,
+            'dosimetry-doses': viewOnlyPermission,
+            'dosimetry-medical': defaultPermission,
+            'dosimetry-my-medical': viewOnlyPermission,
+            'dosimetry-alerts': editPermission,
+            'dosimetry-overexposure': viewOnlyPermission,
+            'dosimetry-reports': viewOnlyPermission,
+            'dosimetry-settings': defaultPermission,
         }
     },
     {
@@ -147,6 +169,17 @@ export const predefinedRoles: any[] = [
             'notifications': viewOnlyPermission,
             'users-management': defaultPermission,
             'settings': defaultPermission,
+            // Dosimétrie — Investigator : lecture restreinte aux cas de dépassement
+            'dosimetry-dashboard': viewOnlyPermission,
+            'dosimetry-workers': viewOnlyPermission,
+            'dosimetry-dosimeters': defaultPermission,
+            'dosimetry-doses': viewOnlyPermission,
+            'dosimetry-medical': defaultPermission,
+            'dosimetry-my-medical': viewOnlyPermission,
+            'dosimetry-alerts': viewOnlyPermission,
+            'dosimetry-overexposure': editPermission,
+            'dosimetry-reports': viewOnlyPermission,
+            'dosimetry-settings': defaultPermission,
         }
     },
     {
@@ -189,6 +222,17 @@ export const predefinedRoles: any[] = [
             'notifications': viewOnlyPermission,
             'users-management': defaultPermission,
             'settings': defaultPermission,
+            // Dosimétrie — Auditor : lecture seule pour les audits de conformité
+            'dosimetry-dashboard': viewOnlyPermission,
+            'dosimetry-workers': viewOnlyPermission,
+            'dosimetry-dosimeters': viewOnlyPermission,
+            'dosimetry-doses': viewOnlyPermission,
+            'dosimetry-medical': defaultPermission,
+            'dosimetry-my-medical': viewOnlyPermission,
+            'dosimetry-alerts': viewOnlyPermission,
+            'dosimetry-overexposure': viewOnlyPermission,
+            'dosimetry-reports': viewOnlyPermission,
+            'dosimetry-settings': defaultPermission,
         }
     },
     {
@@ -231,6 +275,17 @@ export const predefinedRoles: any[] = [
             'notifications': viewOnlyPermission,
             'users-management': defaultPermission,
             'settings': defaultPermission,
+            // Dosimétrie — Employee : accès personnel uniquement (RGPD art. 15)
+            'dosimetry-dashboard': defaultPermission,
+            'dosimetry-workers': defaultPermission,
+            'dosimetry-dosimeters': defaultPermission,
+            'dosimetry-doses': defaultPermission,
+            'dosimetry-medical': defaultPermission,
+            'dosimetry-my-medical': viewOnlyPermission,
+            'dosimetry-alerts': defaultPermission,
+            'dosimetry-overexposure': defaultPermission,
+            'dosimetry-reports': defaultPermission,
+            'dosimetry-settings': defaultPermission,
         }
     }
 ];

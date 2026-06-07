@@ -61,7 +61,8 @@
         "Compliance Management": "Regulatory Compliance",
         "Knowledge Center": "Knowledge Center",
         "Safety Communication": "Safety Communication",
-        "Emergency Management": "Emergency Management"
+        "Emergency Management": "Emergency Management",
+        "Dosimetry & Exposures": "Dosimetry & Exposures"
     },
     "modules": {
         "non-conformity": {
@@ -211,6 +212,46 @@
         "emergency-settings": {
             "name": "Emergency Settings",
             "description": "Configuration: teams, escalation, alert channels"
+        },
+        "dosimetry-dashboard": {
+            "name": "Dosimetry Dashboard",
+            "description": "Real-time overview of doses, exposures and KPIs"
+        },
+        "dosimetry-workers": {
+            "name": "Exposed Workers Registry",
+            "description": "Registry of workers exposed to ionizing radiation (Cat. A/B/Public)"
+        },
+        "dosimetry-dosimeters": {
+            "name": "Dosimeters & Instruments",
+            "description": "Manage dosimeters, measurement instruments and calibration plan"
+        },
+        "dosimetry-doses": {
+            "name": "Dose Entry & Tracking",
+            "description": "Record and follow individual dose measurements"
+        },
+        "dosimetry-medical": {
+            "name": "Medical Surveillance",
+            "description": "Medical follow-up of exposed workers (occupational physician)"
+        },
+        "dosimetry-my-medical": {
+            "name": "My Medical Dossier",
+            "description": "Personal medical and dosimetric space (GDPR art. 15 self-access)"
+        },
+        "dosimetry-alerts": {
+            "name": "Thresholds & Overexposures",
+            "description": "Configurable thresholds and overexposure alerts management"
+        },
+        "dosimetry-overexposure": {
+            "name": "Overexposure Cases",
+            "description": "Investigation workflow for overexposure files (OPEN / INVESTIGATING / CLOSED)"
+        },
+        "dosimetry-reports": {
+            "name": "Reports & Compliance",
+            "description": "Regulatory reports (ICRP 103 / IAEA GSR Part 3) and compliance dashboards"
+        },
+        "dosimetry-settings": {
+            "name": "Dosimetry Settings",
+            "description": "Module configuration: regulatory limits, exposure bands and RBAC"
         }
     }
 }
