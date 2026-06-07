@@ -53,6 +53,19 @@ public class ThresholdEngine {
     private final DosimetryAuditService auditService;
 
     /**
+     * Auto-ouverture d'un dossier de surexposition pour les alertes de niveau >= ACTION.
+     * Injecte en setter (et non en constructeur) pour preserver la signature historique
+     * de {@code @RequiredArgsConstructor} attendue par {@link ThresholdEngineTest}.
+     * Peut etre null en mode test ou bootstrap.
+     */
+    private OverexposureCaseService overexposureCaseService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setOverexposureCaseService(OverexposureCaseService overexposureCaseService) {
+        this.overexposureCaseService = overexposureCaseService;
+    }
+
+    /**
      * Methode legacy : delegue a evaluateAndCreateAlerts(record). Conservee pour les tests et
      * appelants existants.
      */
@@ -128,6 +141,35 @@ public class ThresholdEngine {
             auditService.log("ALERT_CREATED", "ExposureAlert", saved.getId(),
                     record.getRecordedBy() != null ? record.getRecordedBy() : 0L,
                     null, details);
+        }
+
+        // Phase 5 — auto-ouverture du dossier de surexposition pour level >= ACTION.
+        // L'idempotence cote OverexposureCaseService garantit qu'on ne re-ouvre pas un case
+        // deja OPEN/INVESTIGATING pour la meme alerte (par alertId). Best-effort : en cas
+        // d'IllegalStateException (case existant), on logge l'audit et on continue.
+        if (overexposureCaseService != null
+                && level.ordinal() >= AlertLevel.ACTION.ordinal()) {
+            try {
+                String cause = String.format("Auto-open : %s=%s, level=%s, thresholdId=%d",
+                        grandeur.name(), value, level.name(), t.getId());
+                Long openedBy = record.getRecordedBy() != null ? record.getRecordedBy() : 0L;
+                Long caseId = overexposureCaseService.openCase(
+                        worker.getId(), saved.getId(), openedBy, cause, level);
+                if (auditService != null) {
+                    auditService.log("AUTO_OPEN_OVEREXPOSURE", "OverexposureCase", caseId,
+                            openedBy, null,
+                            String.format("{\"alertId\":%d,\"workerId\":%d,\"level\":\"%s\"}",
+                                    saved.getId(), worker.getId(), level.name()));
+                }
+            } catch (IllegalStateException duplicateCase) {
+                // Case deja existant pour cette alerte : tracage uniquement.
+                if (auditService != null) {
+                    auditService.log("AUTO_OPEN_OVEREXPOSURE_SKIPPED", "ExposureAlert",
+                            saved.getId(), 0L, null,
+                            String.format("{\"reason\":\"%s\"}",
+                                    duplicateCase.getMessage().replace("\"", "'")));
+                }
+            }
         }
     }
 

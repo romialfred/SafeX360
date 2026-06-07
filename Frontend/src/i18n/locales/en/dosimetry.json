@@ -12,6 +12,7 @@
         "dosimetryDoses": "Dose Entry & Tracking",
         "dosimetryMedical": "Medical Surveillance",
         "dosimetryAlerts": "Thresholds & Overexposures",
+        "dosimetryOverexposure": "Overexposure Cases",
         "dosimetryReports": "Reports & Compliance",
         "dosimetrySettings": "Settings"
     },
@@ -50,8 +51,11 @@
         "categories": {
             "A": "Category A (exposed)",
             "B": "Category B (likely)",
-            "PUBLIC": "Public",
-            "APPRENTICE": "Apprentice / student"
+            "WORKER_A": "Worker — Category A",
+            "WORKER_B": "Worker — Category B",
+            "APPRENTICE": "Apprentice / student (16-18 yrs)",
+            "PREGNANCY": "Declared pregnancy",
+            "PUBLIC": "General public"
         },
         "grandeurs": {
             "HP10": "Hp(10) — whole body",
@@ -63,6 +67,107 @@
             "AIEA_GSR_PART3": "IAEA GSR Part 3",
             "CUSTOM": "Custom"
         }
+    },
+    "thresholdsPage": {
+        "title": "Thresholds & overexposures",
+        "subtitle": "Configurable thresholds per mine, person category and dosimetric quantity. ICRP 103 / IAEA GSR Part 3 reference — editable if national legislation is stricter.",
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbParent": "Thresholds & overexposures",
+        "breadcrumbCurrent": "Threshold configuration",
+        "kpi": {
+            "configured": "{{count}} configured thresholds",
+            "configuredLabel": "Total active",
+            "minesCovered": "{{count}} mines covered",
+            "minesCoveredLabel": "Multi-tenant coverage"
+        },
+        "actions": {
+            "reset": "Reset ICRP/IAEA",
+            "resetTooltip": "Restores reference values from V005 seed (requires DOSIMETRY_ADMIN)",
+            "resetDenied": "Permission required: DOSIMETRY_ADMIN",
+            "addCustom": "Add custom threshold",
+            "addDenied": "Permission required: DOSIMETRY_ADMIN",
+            "edit": "Edit",
+            "save": "Save",
+            "cancel": "Cancel",
+            "disable": "Disable",
+            "enable": "Re-enable",
+            "create": "Create threshold"
+        },
+        "filters": {
+            "mineLabel": "Mine",
+            "mineAll": "All mines",
+            "mineGlobal": "Global thresholds (default)",
+            "categoryLabel": "Person category",
+            "categoryAll": "All categories",
+            "grandeurLabel": "Quantity",
+            "grandeurAll": "All quantities",
+            "activeLabel": "Active only",
+            "clear": "Reset filters",
+            "summary": "{{count}} / {{total}} threshold(s) shown"
+        },
+        "table": {
+            "mine": "Mine",
+            "category": "Person category",
+            "grandeur": "Quantity",
+            "doseConstraint": "Dose constraint",
+            "investigationLevel": "Investigation level",
+            "actionLevel": "Action level",
+            "regulatoryLimit": "Regulatory limit",
+            "framework": "Framework",
+            "status": "Status",
+            "actions": "Actions",
+            "global": "Global",
+            "active": "Active",
+            "inactive": "Disabled",
+            "doubleClickHint": "Double-click a value to edit it inline",
+            "empty": "No threshold matches the filters. Widen the selection or reset filters.",
+            "loading": "Loading thresholds…"
+        },
+        "modal": {
+            "addTitle": "Add a custom threshold",
+            "addSubtitle": "Creates a threshold scoped to a mine, a category and a quantity. If any value diverges by more than 50% from the ICRP reference, confirmation will be required.",
+            "mineLabel": "Mine scope",
+            "minePlaceholder": "Select mine…",
+            "mineGlobalOption": "Global threshold (all mines)",
+            "categoryPlaceholder": "Select category…",
+            "grandeurPlaceholder": "Select quantity…",
+            "doseConstraintLabel": "Dose constraint (mSv)",
+            "investigationLevelLabel": "Investigation level (mSv)",
+            "actionLevelLabel": "Action level (mSv)",
+            "regulatoryLimitLabel": "Regulatory limit (mSv)",
+            "justificationLabel": "Custom threshold justification",
+            "justificationPlaceholder": "Explain why this derogation is needed (stricter national law, operational context, RPO recommendation, etc.).",
+            "frameworkAuto": "Framework: CUSTOM (auto-generated)",
+            "errors": {
+                "categoryRequired": "Select a category",
+                "grandeurRequired": "Select a quantity",
+                "justificationMin": "Justification must be at least 30 characters",
+                "regulatoryRequired": "Regulatory limit is required",
+                "monotonic": "Values must be ascending: constraint ≤ investigation ≤ action ≤ limit"
+            },
+            "deviation": {
+                "title": "Significant deviation from ICRP reference",
+                "body": "The value entered for {{field}} ({{value}} mSv) diverges by more than 50% from the ICRP reference ({{reference}} mSv) for this category. Confirm save?",
+                "confirm": "Confirm modification"
+            },
+            "saveSuccess": "Threshold saved.",
+            "saveError": "Could not save threshold. Please check the inputs."
+        },
+        "footer": {
+            "title": "ICRP 103 / IAEA GSR Part 3 reference",
+            "subtitle": "International reference values (mSv/yr). Editable if national legislation is stricter.",
+            "notice": "Every change is logged in the dosimetry audit trail. ICRP / IAEA values are international references, editable when national legislation is stricter.",
+            "table": {
+                "category": "Category",
+                "hp10": "Hp(10) whole body",
+                "hp007": "Hp(0.07) skin",
+                "hp3": "Hp(3) eye lens"
+            }
+        },
+        "loadError": "Could not load thresholds — ICRP reference values shown.",
+        "resetSuccess": "Thresholds reset to ICRP/IAEA reference values.",
+        "resetPending": "Restoring…",
+        "resetNotAvailable": "Server-side reset is not yet available. Showing ICRP reference values."
     },
     "bands": {
         "title": "Exposure bands (% of annual limit)",
@@ -513,7 +618,115 @@
         "investigation": "Investigation",
         "active": "Active",
         "acknowledged": "Acknowledged",
-        "closed": "Closed"
+        "closed": "Closed",
+        "subtitle": "Monitoring of dosimetric threshold exceedances — approach, investigation, action and regulatory limit. ICRP 103 / IAEA GSR Part 3 compliant.",
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbParent": "Exposure monitoring",
+        "breadcrumbCurrent": "Thresholds & overexposures",
+        "loading": "Loading alerts…",
+        "loadError": "Could not load alerts. Please try again later.",
+        "kpi": {
+            "activeLabel": "ACTIVE alerts",
+            "activeSub": "Untreated",
+            "approachLabel": "APPROACH",
+            "approachSub": "Awareness level",
+            "investigationLabel": "INVESTIGATION",
+            "investigationSub": "Inquiry needed",
+            "criticalLabel": "ACTION + EXCEEDED",
+            "criticalSub": "Immediate action"
+        },
+        "tabs": {
+            "active": "Active alerts",
+            "ack": "Acknowledged",
+            "resolved": "Resolved",
+            "all": "All"
+        },
+        "filters": {
+            "levelLabel": "Level",
+            "levelPlaceholder": "All levels",
+            "workerLabel": "Worker",
+            "workerPlaceholder": "Search matricule or name…",
+            "grandeurLabel": "Quantity",
+            "grandeurAll": "All quantities",
+            "periodFrom": "From",
+            "periodTo": "To",
+            "clear": "Reset",
+            "summary": "{{count}} / {{total}} alert(s) shown"
+        },
+        "level": {
+            "APPROACH": "Approach",
+            "INVESTIGATION": "Investigation",
+            "ACTION": "Action",
+            "EXCEEDED": "Exceeded"
+        },
+        "statusBadge": {
+            "ACTIVE": "Active",
+            "ACK": "Acknowledged",
+            "RESOLVED": "Resolved"
+        },
+        "table": {
+            "level": "Level",
+            "worker": "Worker",
+            "grandeur": "Quantity",
+            "value": "Value",
+            "threshold": "Threshold exceeded",
+            "triggeredAt": "Triggered",
+            "status": "Status",
+            "actions": "Actions",
+            "empty": "No alerts match the current filters.",
+            "viewWorker": "View worker",
+            "ack": "Acknowledge",
+            "resolve": "Resolve",
+            "view": "View details",
+            "openCase": "Open case"
+        },
+        "modal": {
+            "title": "Alert details",
+            "workerSection": "Worker concerned",
+            "alertSection": "Alert",
+            "thresholdSection": "Threshold exceeded",
+            "historySection": "Recent doses (last 3 months)",
+            "auditSection": "Audit trail",
+            "noteAckLabel": "Acknowledgement note (required)",
+            "noteAckPlaceholder": "Describe the acknowledgement reason (analysis, immediate action taken…).",
+            "noteResolveLabel": "Resolution note (required)",
+            "noteResolvePlaceholder": "Describe the resolution (corrective actions, return to normal…).",
+            "noteRequired": "Note is required (min. 10 characters).",
+            "ackSuccess": "Alert acknowledged successfully.",
+            "resolveSuccess": "Alert resolved successfully.",
+            "actionError": "Action failed. Please try again.",
+            "openCaseSoon": "Overexposure case opening will be available in Phase 6.",
+            "matricule": "Employee ID",
+            "fullName": "Full name",
+            "category": "Category",
+            "grandeur": "Dosimetric quantity",
+            "value": "Measured value",
+            "regulatoryLimit": "Regulatory limit",
+            "investigationLevel": "Investigation level",
+            "actionLevel": "Action level",
+            "framework": "Framework",
+            "triggeredAt": "Triggered at",
+            "acknowledgedAt": "Acknowledged at",
+            "acknowledgedBy": "Acknowledged by",
+            "noHistory": "No recent doses recorded.",
+            "noAudit": "No audit trail available.",
+            "rbacDenied": "Permission required for this action.",
+            "close": "Close"
+        },
+        "actions": {
+            "ackDenied": "Permission required: DOSIMETRY_WRITE",
+            "resolveDenied": "Permission required: DOSIMETRY_WRITE",
+            "openCaseDenied": "Permission required: DOSIMETRY_PCR_RPO"
+        }
+    },
+    "alertsBanner": {
+        "exceededTitle": "Active regulatory exceedance",
+        "exceededBody_one": "{{count}} exceeded alert requires immediate action.",
+        "exceededBody_other": "{{count}} exceeded alerts require immediate action.",
+        "criticalTitle": "Investigation / action level reached",
+        "criticalBody_one": "{{count}} alert requires investigation.",
+        "criticalBody_other": "{{count}} alerts require investigation.",
+        "viewAll": "View all alerts"
     },
     "common": {
         "save": "Save",
@@ -1215,5 +1428,210 @@
         },
         "templateFilename": "safex-dosimetry-template.csv",
         "errorLogFilename": "safex-dosimetry-import-errors.csv"
+    },
+    "overexposureCases": {
+        "title": "Overexposure cases",
+        "subtitle": "Manage overexposure investigation files — OPEN / INVESTIGATING / CLOSED workflow aligned with ICRP 103 and IAEA GSR Part 3.",
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbParent": "Thresholds & overexposures",
+        "breadcrumbCurrent": "Overexposure cases",
+        "newCase": "New case",
+        "loading": "Loading cases…",
+        "loadError": "Failed to load overexposure cases.",
+        "refresh": "Refresh",
+        "kpi": {
+            "totalLabel": "TOTAL",
+            "totalSub": "All statuses",
+            "openLabel": "OPEN",
+            "openSub": "Status OPEN",
+            "investigatingLabel": "INVESTIGATING",
+            "investigatingSub": "Under investigation",
+            "closedLabel": "CLOSED (30d)",
+            "closedSub": "Last month"
+        },
+        "filters": {
+            "statusLabel": "Status",
+            "statusAll": "All statuses",
+            "levelLabel": "Level",
+            "levelAll": "All levels",
+            "workerLabel": "Worker",
+            "workerPlaceholder": "Search matricule or name…",
+            "periodFrom": "From",
+            "periodTo": "To",
+            "clear": "Reset",
+            "summary": "{{count}} / {{total}} case(s)"
+        },
+        "status": {
+            "OPEN": "Open",
+            "INVESTIGATING": "Investigating",
+            "CLOSED": "Closed"
+        },
+        "table": {
+            "caseNumber": "Case #",
+            "worker": "Worker",
+            "level": "Level",
+            "cause": "Cause",
+            "status": "Status",
+            "openedAt": "Opened",
+            "pcr": "Responsible PCR",
+            "actions": "Actions",
+            "view": "View detail",
+            "empty": "No case matches filters."
+        },
+        "detail": {
+            "title": "Case #{{id}}",
+            "back": "Back to list",
+            "loading": "Loading case…",
+            "loadError": "Failed to load case.",
+            "notFound": "Case not found.",
+            "tabs": {
+                "general": "General",
+                "investigation": "Investigation",
+                "medical": "Medical decision",
+                "authority": "Authority declaration",
+                "closure": "Closure",
+                "audit": "Audit trail"
+            },
+            "general": {
+                "title": "General information",
+                "worker": "Exposed worker",
+                "viewWorker": "View 360 profile",
+                "level": "Level reached",
+                "alertId": "Source alert",
+                "noAlert": "Manual opening (no alert)",
+                "openedAt": "Opened at",
+                "closedAt": "Closed at",
+                "createdBy": "Opened by",
+                "updatedBy": "Last updated by"
+            },
+            "investigation": {
+                "title": "Investigation & corrective actions",
+                "subtitle": "Root cause, corrective measures and medical decision.",
+                "cause": "Root cause",
+                "causeEmpty": "No cause documented.",
+                "corrective": "Corrective actions",
+                "correctiveEmpty": "No corrective action documented.",
+                "medical": "Medical decision",
+                "medicalEmpty": "No medical decision recorded.",
+                "addBtn": "Add / update investigation",
+                "modalTitle": "Add an investigation",
+                "modalSubtitle": "Document the root cause, corrective actions and associated medical decision.",
+                "causeLabel": "Root cause",
+                "causePlaceholder": "Describe the identified root cause…",
+                "correctiveLabel": "Corrective actions taken",
+                "correctivePlaceholder": "List corrective and preventive measures…",
+                "medicalLabel": "Medical decision",
+                "medicalPlaceholder": "Occupational physician decision (fitness, restriction…)",
+                "submit": "Save investigation",
+                "success": "Investigation saved.",
+                "error": "Failed to save investigation.",
+                "denied": "Permission required: DOSIMETRY_WRITE"
+            },
+            "medicalSection": {
+                "title": "Medical decision (confidential)",
+                "subtitle": "Access restricted to DOSIMETRY_MEDICAL permission holders.",
+                "denied": "You do not have DOSIMETRY_MEDICAL — the medical decision is hidden.",
+                "empty": "No medical decision recorded for this case."
+            },
+            "authority": {
+                "title": "Authority declaration",
+                "subtitle": "If the overexposure exceeds the regulatory limit, declaration to the competent authority is mandatory.",
+                "declared": "Declaration filed",
+                "notDeclared": "Not declared",
+                "declarationDate": "Declaration date",
+                "declarationNumber": "Declaration number",
+                "declarationNumberPlaceholder": "Reference number from the authority…",
+                "checkboxLabel": "Tick if the declaration to the authority is filed"
+            },
+            "closure": {
+                "title": "Case closure",
+                "subtitle": "Closure is final and requires DOSIMETRY_PCR_RPO.",
+                "closedBanner": "This case has been closed since {{date}}.",
+                "closeBtn": "Close case",
+                "modalTitle": "Close case #{{id}}",
+                "modalSubtitle": "This action is irreversible. The authority declaration must be confirmed if applicable.",
+                "noteLabel": "Closure note (required)",
+                "notePlaceholder": "Describe the final resolution, lessons learned…",
+                "noteRequired": "Closure note is required (min. 10 characters).",
+                "authorityConfirm": "I confirm the declaration to the competent authority is filed (or not required).",
+                "submit": "Close permanently",
+                "success": "Case closed successfully.",
+                "error": "Closure failed.",
+                "denied": "Permission required: DOSIMETRY_PCR_RPO"
+            },
+            "audit": {
+                "title": "Audit trail",
+                "subtitle": "All events for this case — append-only, GDPR art.30 compliant.",
+                "empty": "No audit trace for this case.",
+                "loadError": "Failed to load audit log.",
+                "cols": {
+                    "timestamp": "Timestamp",
+                    "action": "Action",
+                    "userId": "Actor",
+                    "details": "Details"
+                }
+            }
+        },
+        "form": {
+            "titleNew": "New overexposure case",
+            "subtitle": "Open an official investigation file following a regulatory overexposure.",
+            "breadcrumbNew": "New",
+            "back": "Back",
+            "steps": {
+                "alert": { "label": "Alert selection", "desc": "Source alert" },
+                "characterization": { "label": "Characterization", "desc": "Level & cause" },
+                "confirmation": { "label": "Confirmation", "desc": "Summary" }
+            },
+            "alert": {
+                "title": "Source alert selection",
+                "subtitle": "Link the case to an EXCEEDED alert not yet processed, or open a manual case.",
+                "readonlyTitle": "Selected alert",
+                "alertLabel": "Source alert",
+                "alertPlaceholder": "Select an EXCEEDED alert…",
+                "noAlerts": "No EXCEEDED alert available.",
+                "manualOpen": "Manual opening (no alert)",
+                "workerLabel": "Exposed worker",
+                "workerPlaceholder": "Select a worker…",
+                "workerHelp": "Pre-filled from the alert if selected.",
+                "levelLabel": "Level",
+                "levelHelp": "Auto-filled from the alert. For manual opening, choose the reached level."
+            },
+            "characterization": {
+                "title": "Overexposure characterization",
+                "subtitle": "Document the initial cause and immediate conservatory measures.",
+                "levelReadonly": "Level reached",
+                "causeLabel": "Identified initial cause",
+                "causePlaceholder": "Describe the initial cause (e.g. EPD malfunction, prolonged exposure…)",
+                "causeRequired": "Initial cause is required (min. 10 characters).",
+                "conservatoryLabel": "Immediate conservatory measures",
+                "conservatoryPlaceholder": "Describe immediate measures taken (removal from station, medical follow-up…)"
+            },
+            "confirmation": {
+                "title": "Summary & confirmation",
+                "subtitle": "Check the information before officially opening the case.",
+                "summary": "Summary",
+                "summaryWorker": "Worker",
+                "summaryLevel": "Level",
+                "summaryAlert": "Source alert",
+                "summaryNoAlert": "None (manual)",
+                "summaryCause": "Initial cause",
+                "summaryConservatory": "Conservatory measures",
+                "notifyTitle": "Automatic notifications",
+                "notifyBody": "On opening, the PCR/RPO and the occupational physician will be notified automatically.",
+                "confirmCheckbox": "I confirm the official opening of the overexposure case.",
+                "confirmRequired": "You must confirm the opening to submit."
+            },
+            "nav": {
+                "prev": "Previous",
+                "next": "Next",
+                "submit": "Open case",
+                "stepCounter": "Step {{current}} / {{total}}",
+                "completeBeforeNext": "Please complete required fields before continuing."
+            },
+            "success": "Overexposure case opened successfully.",
+            "error": "Failed to open case.",
+            "notifyLogPcr": "[Simulated notification] PCR/RPO notified for case #{{id}}.",
+            "notifyLogMedical": "[Simulated notification] Occupational physician notified for case #{{id}}."
+        }
     }
 }

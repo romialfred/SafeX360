@@ -16,6 +16,7 @@ import { installAutoReplayCheckIns } from "../utility/OfflineCheckInQueue";
 import { createSosAlert } from "../services/SosService";
 import { checkInToAlert } from "../services/GeneralAlertService";
 import { successNotification } from "../utility/NotificationUtility";
+import DosimetryAlertsBanner from "../components/Dosimetry/DosimetryAlertsBanner";
 
 /**
  * DashboardLayout — Coque générale post-login.
@@ -103,6 +104,9 @@ const DashboardLayout = () => {
                             overlayProps={{ radius: 'sm', blur: 2 }}
                             loaderProps={{ color: 'red', type: 'bars' }}
                         />
+                        {/* LOT Dosimetrie Phase 5 — Bandeau global d'alertes critiques.
+                            Auto-masque hors routes /dosimetry/* et sur /dosimetry/alerts. */}
+                        <DosimetryAlertsBanner />
                         <Outlet />
                     </main>
 

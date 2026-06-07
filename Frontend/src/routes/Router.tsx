@@ -171,6 +171,11 @@ import QRScannerPage from '../components/Dosimetry/QRScannerPage';
 import DoseEntryForm from '../components/Dosimetry/DoseEntryForm';
 import DoseTrackingPage from '../components/Dosimetry/DoseTrackingPage';
 import CsvImportWizard from '../components/Dosimetry/CsvImportWizard';
+import DosimetryThresholdsPage from '../components/Dosimetry/DosimetryThresholdsPage';
+import ExposureAlertsPage from '../components/Dosimetry/ExposureAlertsPage';
+import OverexposureCasesPage from '../components/Dosimetry/OverexposureCasesPage';
+import OverexposureCaseDetailPage from '../components/Dosimetry/OverexposureCaseDetailPage';
+import OverexposureCaseForm from '../components/Dosimetry/OverexposureCaseForm';
 
 
 
@@ -443,6 +448,14 @@ const router = createBrowserRouter([
             { path: 'dosimetry/doses/by-worker/:workerId', element: <DoseTrackingPage /> },
             // Phase 4 Frontend-C : wizard d'import CSV en masse (4 etapes)
             { path: 'dosimetry/doses/import', element: <CsvImportWizard /> },
+            // Phase 5 Frontend-A : gestion des seuils parametrables (filtres + inline edit + modal custom)
+            { path: 'dosimetry/thresholds', element: <DosimetryThresholdsPage /> },
+            // Phase 5 Frontend-B : dashboard des alertes graduees (APPROACH/INVESTIGATION/ACTION/EXCEEDED)
+            { path: 'dosimetry/alerts', element: <ExposureAlertsPage /> },
+            // Phase 5 Frontend-C : workflow des dossiers de depassement (OPEN/INVESTIGATING/CLOSED)
+            { path: 'dosimetry/overexposure', element: <OverexposureCasesPage /> },
+            { path: 'dosimetry/overexposure/new', element: <OverexposureCaseForm /> },
+            { path: 'dosimetry/overexposure/:caseId', element: <OverexposureCaseDetailPage /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

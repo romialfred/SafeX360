@@ -1081,6 +1081,109 @@ const getAllAlerts = async () => {
         .catch((error) => { throw error; });
 };
 
+/**
+ * Recupere les alertes actives (status=ACTIVE) pour un perimetre mine donne.
+ *
+ * <p>Strategie tolerante : tente d'abord l'endpoint dedie
+ * {@code GET /hns/dosimetry/exposure-alert/active?mineId=X}. Si l'endpoint
+ * n'est pas encore deploye (404/501), bascule sur {@link getAllAlerts}
+ * + filtrage cote client par {@code status === 'ACTIVE'}.
+ *
+ * <p>Le mineId est obligatoire — si null/undefined, on tente de le
+ * resoudre depuis le store Redux. Si aucun tenant n'est selectionne,
+ * la promesse est rejetee.
+ */
+const getActiveAlerts = async (mineId?: number | null): Promise<ExposureAlertDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getActiveAlerts');
+    }
+    try {
+        const res = await axiosInstance.get(`${exposureAlertUrl}/active`, {
+            params: { mineId: resolvedMineId },
+        });
+        const list: any[] = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+        return list as ExposureAlertDTO[];
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 405 || httpStatus === 501) {
+            const all = await getAllAlerts();
+            const list: ExposureAlertDTO[] = Array.isArray(all) ? all : (all?.content ?? []);
+            return list.filter((a) => a?.status === 'ACTIVE');
+        }
+        throw err;
+    }
+};
+
+/**
+ * Acquitte une alerte (status ACTIVE -> ACK).
+ *
+ * <p>Strategie tolerante : tente d'abord l'endpoint dedie POST
+ * {@code /hns/dosimetry/exposure-alert/acknowledge/{id}} avec une note
+ * obligatoire dans le body. Si l'endpoint n'existe pas, retombe sur un
+ * {@link updateAlert} patch en client (status=ACK + acknowledgedAt + note).
+ */
+const acknowledgeAlert = async (alertId: number, note: string): Promise<ExposureAlertDTO> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    try {
+        const res = await axiosInstance.post(
+            `${exposureAlertUrl}/acknowledge/${alertId}`,
+            { note },
+            { headers },
+        );
+        return res.data as ExposureAlertDTO;
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 405 || httpStatus === 501) {
+            const current = await getAlertById(alertId);
+            const patched: ExposureAlertDTO = {
+                ...current,
+                status: 'ACK',
+                acknowledgedAt: new Date().toISOString(),
+                acknowledgedBy: userId ?? current.acknowledgedBy ?? null,
+            };
+            await updateAlert(patched);
+            return patched;
+        }
+        throw err;
+    }
+};
+
+/**
+ * Resout une alerte (status ACK -> RESOLVED).
+ *
+ * <p>Meme strategie tolerante : tente d'abord POST
+ * {@code /hns/dosimetry/exposure-alert/resolve/{id}} avec une note obligatoire,
+ * puis fallback sur updateAlert client.
+ */
+const resolveAlert = async (alertId: number, note: string): Promise<ExposureAlertDTO> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    try {
+        const res = await axiosInstance.post(
+            `${exposureAlertUrl}/resolve/${alertId}`,
+            { note },
+            { headers },
+        );
+        return res.data as ExposureAlertDTO;
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 405 || httpStatus === 501) {
+            const current = await getAlertById(alertId);
+            const patched: ExposureAlertDTO = {
+                ...current,
+                status: 'RESOLVED',
+            };
+            await updateAlert(patched);
+            return patched;
+        }
+        throw err;
+    }
+};
+
 const getAlertById = async (id: number | string) => {
     return axiosInstance
         .get(`${exposureAlertUrl}/get/${id}`)
@@ -1107,6 +1210,228 @@ const deleteAlert = async (id: number | string) => {
         .delete(`${exposureAlertUrl}/delete/${id}`)
         .then((response) => response.data)
         .catch((error) => { throw error; });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  OVEREXPOSURE CASES — Dossiers de depassement (Phase 5 Frontend-C)
+//  Base: /hns/dosimetry/overexposure-case
+//  Workflow : OPEN -> INVESTIGATING -> CLOSED.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Statut d'un dossier de surexposition (cf. enum CaseStatus backend). */
+export type CaseStatus = 'OPEN' | 'INVESTIGATING' | 'CLOSED';
+
+/**
+ * OverexposureCaseDTO — dossier de depassement.
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code OverexposureCaseDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/OverexposureCaseDTO.java}).
+ *
+ * <p>Workflow :
+ *   - OPEN          : dossier ouvert apres detection d'une alerte EXCEEDED.
+ *   - INVESTIGATING : enquete en cours (actions correctives + decision medicale).
+ *   - CLOSED        : cloture par un PCR/RPO (RBAC DOSIMETRY_PCR_RPO).
+ */
+export interface OverexposureCaseDTO {
+    id?: number | null;
+    workerId: number;
+    level: AlertLevel;
+    /** Lien vers l'alerte source (optionnel : null si ouverture manuelle). */
+    alertId?: number | null;
+    cause?: string | null;
+    correctiveActions?: string | null;
+    /** Decision medicale - cloisonnement RBAC DOSIMETRY_MEDICAL cote UI. */
+    medicalDecision?: string | null;
+    authorityDeclaration?: boolean;
+    authorityDeclarationDate?: string | null;
+    status: CaseStatus;
+    openedAt?: string | null;
+    closedAt?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/** Payload pour l'ouverture d'un dossier (POST /open). */
+export interface OpenOverexposureCaseRequest {
+    workerId: number;
+    alertId?: number | null;
+    openedBy?: number | null;
+    cause?: string | null;
+    level: AlertLevel;
+}
+
+/** Payload pour la transition vers INVESTIGATING (POST /investigate/{id}). */
+export interface InvestigateOverexposureCaseRequest {
+    correctiveActions?: string | null;
+    medicalDecision?: string | null;
+    actorId?: number | null;
+}
+
+/** Payload pour la cloture d'un dossier (POST /close/{id}). */
+export interface CloseOverexposureCaseRequest {
+    authorityDeclaration: boolean;
+    actorId?: number | null;
+    closureNote?: string | null;
+}
+
+const overexposureCaseUrl = '/hns/dosimetry/overexposure-case';
+
+/**
+ * Liste l'ensemble des dossiers de depassement pour la mine selectionnee.
+ * Endpoint : {@code GET /hns/dosimetry/overexposure-case/getAll?companyId=X}
+ * (companyId injecte par AxiosInterceptor).
+ */
+const getOverexposureCases = async (): Promise<OverexposureCaseDTO[]> => {
+    const res = await axiosInstance.get(`${overexposureCaseUrl}/getAll`);
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Recupere le detail d'un dossier de depassement.
+ * Endpoint : {@code GET /hns/dosimetry/overexposure-case/get/{id}}.
+ */
+const getOverexposureCaseById = async (id: number | string): Promise<OverexposureCaseDTO> => {
+    const res = await axiosInstance.get(`${overexposureCaseUrl}/get/${id}`);
+    return res.data as OverexposureCaseDTO;
+};
+
+/**
+ * Liste les dossiers actifs (OPEN + INVESTIGATING) pour la mine.
+ * Endpoint : {@code GET /hns/dosimetry/overexposure-case/active?mineId=X}.
+ */
+const getActiveOverexposureCases = async (mineId?: number | null): Promise<OverexposureCaseDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getActiveOverexposureCases');
+    }
+    const res = await axiosInstance.get(`${overexposureCaseUrl}/active`, {
+        params: { mineId: resolvedMineId },
+    });
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Liste les dossiers ouverts pour un travailleur donne.
+ * Endpoint : {@code GET /hns/dosimetry/overexposure-case/by-worker/{workerId}}.
+ */
+const getOverexposureCasesByWorker = async (workerId: number | string): Promise<OverexposureCaseDTO[]> => {
+    const res = await axiosInstance.get(`${overexposureCaseUrl}/by-worker/${workerId}`);
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Ouverture officielle d'un dossier de depassement (transition vers OPEN).
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/overexposure-case/open}.
+ * Le backend trace un DosimetryAuditLog (action=OPEN_OVEREXPOSURE) et applique
+ * un garde-fou anti-doublon sur {@code alertId}.
+ *
+ * <p>L'en-tete {@code X-User-Id} est renseignee depuis le store Redux.
+ */
+const openOverexposureCase = async (payload: OpenOverexposureCaseRequest): Promise<number> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const body: OpenOverexposureCaseRequest = {
+        ...payload,
+        openedBy: payload.openedBy ?? userId ?? null,
+    };
+    const res = await axiosInstance.post(`${overexposureCaseUrl}/open`, body, { headers });
+    return Number(res.data);
+};
+
+/**
+ * Ajout d'une investigation (transition OPEN -> INVESTIGATING ou ajout dans INVESTIGATING).
+ * Endpoint : {@code POST /hns/dosimetry/overexposure-case/investigate/{id}}.
+ *
+ * <p>RBAC backend : DOSIMETRY_WRITE.
+ */
+const investigateOverexposureCase = async (
+    caseId: number | string,
+    payload: InvestigateOverexposureCaseRequest,
+): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const body: InvestigateOverexposureCaseRequest = {
+        ...payload,
+        actorId: payload.actorId ?? userId ?? null,
+    };
+    await axiosInstance.post(`${overexposureCaseUrl}/investigate/${caseId}`, body, { headers });
+};
+
+/**
+ * Cloture d'un dossier (transition vers CLOSED).
+ * Endpoint : {@code POST /hns/dosimetry/overexposure-case/close/{id}}.
+ *
+ * <p>RBAC backend : DOSIMETRY_PCR_RPO (separation des devoirs).
+ */
+const closeOverexposureCase = async (
+    caseId: number | string,
+    payload: CloseOverexposureCaseRequest,
+): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const body: CloseOverexposureCaseRequest = {
+        ...payload,
+        actorId: payload.actorId ?? userId ?? null,
+    };
+    await axiosInstance.post(`${overexposureCaseUrl}/close/${caseId}`, body, { headers });
+};
+
+/**
+ * Met a jour un dossier (CRUD generique).
+ * Endpoint : {@code PUT /hns/dosimetry/overexposure-case/update}.
+ */
+const updateOverexposureCase = async (data: OverexposureCaseDTO): Promise<void> => {
+    await axiosInstance.put(`${overexposureCaseUrl}/update`, data);
+};
+
+/**
+ * Supprime un dossier (admin uniquement — peu utilise).
+ * Endpoint : {@code DELETE /hns/dosimetry/overexposure-case/delete/{id}}.
+ */
+const deleteOverexposureCase = async (id: number | string): Promise<void> => {
+    await axiosInstance.delete(`${overexposureCaseUrl}/delete/${id}`);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  DOSIMETRY AUDIT LOG — Journal d'audit append-only (lecture)
+//  Base: /hns/dosimetry/audit-log
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** DosimetryAuditLogDTO — entree append-only du journal d'audit. */
+export interface DosimetryAuditLogDTO {
+    id?: number | null;
+    action: string;
+    entityType: string;
+    entityId?: number | null;
+    userId: number;
+    userPermissions?: string | null;
+    timestamp?: string | null;
+    ipAddress?: string | null;
+    details?: string | null;
+}
+
+const auditLogUrl = '/hns/dosimetry/audit-log';
+
+/**
+ * Recupere l'integralite du journal d'audit pour la mine selectionnee.
+ * Le frontend filtre ensuite cote client pour ne garder que les entrees
+ * d'un entityType + entityId donnes (ex. OverexposureCase + caseId).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/audit-log/getAll?companyId=X}.
+ */
+const getAllAuditLogs = async (): Promise<DosimetryAuditLogDTO[]> => {
+    const res = await axiosInstance.get(`${auditLogUrl}/getAll`);
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1158,4 +1483,19 @@ export {
     createAlert,
     updateAlert,
     deleteAlert,
+    getActiveAlerts,
+    acknowledgeAlert,
+    resolveAlert,
+    // Overexposure cases (Phase 5 Frontend-C)
+    getOverexposureCases,
+    getOverexposureCaseById,
+    getActiveOverexposureCases,
+    getOverexposureCasesByWorker,
+    openOverexposureCase,
+    investigateOverexposureCase,
+    closeOverexposureCase,
+    updateOverexposureCase,
+    deleteOverexposureCase,
+    // Audit logs (Phase 5 Frontend-C)
+    getAllAuditLogs,
 };

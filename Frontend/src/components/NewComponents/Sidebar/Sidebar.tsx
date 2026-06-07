@@ -86,6 +86,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Saisie & suivi des doses': 'dosimetry:sidebar.dosimetryDoses',
     'Surveillance médicale': 'dosimetry:sidebar.dosimetryMedical',
     'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
+    'Dossiers de dépassement': 'dosimetry:sidebar.dosimetryOverexposure',
     'Rapports & conformité': 'dosimetry:sidebar.dosimetryReports',
     'Paramètres Dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
 };
@@ -321,6 +322,7 @@ const menuItems: MenuItem[] = [
             { id: 'dosimetry-doses', label: 'Saisie & suivi des doses', icon: IconChartLine },
             { id: 'dosimetry-medical', label: 'Surveillance médicale', icon: IconStethoscope },
             { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
+            { id: 'dosimetry-overexposure', label: 'Dossiers de dépassement', icon: IconFolderOpen },
             { id: 'dosimetry-reports', label: 'Rapports & conformité', icon: IconFileText },
             { id: 'dosimetry-settings', label: 'Paramètres Dosimétrie', icon: IconSettings },
         ],
@@ -474,7 +476,8 @@ export const menuIdToUrl: Record<string, string> = {
     "dosimetry-dosimeters": "/dosimetry/dosimeters",
     "dosimetry-doses": "/coming-soon",
     "dosimetry-medical": "/coming-soon",
-    "dosimetry-alerts": "/coming-soon",
+    "dosimetry-alerts": "/dosimetry/alerts",
+    "dosimetry-overexposure": "/dosimetry/overexposure",
     "dosimetry-reports": "/coming-soon",
 };
 

@@ -26,6 +26,9 @@ public class OverexposureCaseDTO {
     @NotNull
     private AlertLevel level;
 
+    /** Lien vers l'alerte d'exposition source (optionnel : null si ouverture manuelle). */
+    private Long alertId;
+
     private String cause;
     private String correctiveActions;
     private String medicalDecision;

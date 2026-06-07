@@ -1,5 +1,6 @@
 package com.minexpert.hns.dosimetry.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +35,20 @@ public interface ExposureAlertRepository extends JpaRepository<ExposureAlert, Lo
             @Param("grandeur") ThresholdGrandeur grandeur,
             @Param("level") AlertLevel level,
             @Param("status") AlertStatus status);
+
+    /**
+     * Liste les alertes ACTIVE pour une mine donnee (jointure sur ExposedWorker par workerId).
+     * Utilisee par le centre d'alerte (Phase 5) pour afficher la liste consolidee par mine.
+     */
+    @Query("SELECT a FROM ExposureAlert a, ExposedWorker w "
+            + "WHERE a.workerId = w.id AND w.mineId = :mineId AND a.status = :status "
+            + "ORDER BY a.triggeredAt DESC")
+    List<ExposureAlert> findByMineIdAndStatus(@Param("mineId") Long mineId,
+            @Param("status") AlertStatus status);
+
+    /**
+     * Liste les alertes au statut donne dont triggeredAt est anterieur au seuil (escalade).
+     * Utilisee par NotificationScheduler pour detecter les ACTIVE > 24h non acknowledged.
+     */
+    List<ExposureAlert> findByStatusAndTriggeredAtBefore(AlertStatus status, LocalDateTime cutoff);
 }

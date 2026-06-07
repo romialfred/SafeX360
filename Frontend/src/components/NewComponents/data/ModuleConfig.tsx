@@ -329,6 +329,13 @@ export const moduleConfigurations: any[] = [
         description: 'Configurable thresholds and management of overexposure alerts'
     },
     {
+        id: 'dosimetry-overexposure',
+        name: 'Overexposure Cases',
+        isEnabled: true,
+        category: 'Dosimetry & Exposures',
+        description: 'Investigation workflow for overexposure files (OPEN / INVESTIGATING / CLOSED)'
+    },
+    {
         id: 'dosimetry-reports',
         name: 'Reports & Compliance',
         isEnabled: true,

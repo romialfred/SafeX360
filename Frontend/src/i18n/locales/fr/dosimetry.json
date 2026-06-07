@@ -12,6 +12,7 @@
         "dosimetryDoses": "Saisie & suivi des doses",
         "dosimetryMedical": "Surveillance médicale",
         "dosimetryAlerts": "Seuils & dépassements",
+        "dosimetryOverexposure": "Dossiers de dépassement",
         "dosimetryReports": "Rapports & conformité",
         "dosimetrySettings": "Paramètres"
     },
@@ -50,8 +51,11 @@
         "categories": {
             "A": "Catégorie A (exposés)",
             "B": "Catégorie B (susceptibles)",
-            "PUBLIC": "Public",
-            "APPRENTICE": "Apprenti / étudiant"
+            "WORKER_A": "Travailleur catégorie A",
+            "WORKER_B": "Travailleur catégorie B",
+            "APPRENTICE": "Apprenti / étudiant (16-18 ans)",
+            "PREGNANCY": "Grossesse déclarée",
+            "PUBLIC": "Public"
         },
         "grandeurs": {
             "HP10": "Hp(10) — corps entier",
@@ -63,6 +67,107 @@
             "AIEA_GSR_PART3": "AIEA GSR Part 3",
             "CUSTOM": "Personnalisé"
         }
+    },
+    "thresholdsPage": {
+        "title": "Seuils & dépassements",
+        "subtitle": "Configuration des seuils paramétrables par mine, par catégorie de personne et par grandeur dosimétrique. Référence CIPR 103 / AIEA GSR Part 3 — modifiable si la législation nationale est plus stricte.",
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbParent": "Seuils & dépassements",
+        "breadcrumbCurrent": "Configuration seuils",
+        "kpi": {
+            "configured": "{{count}} seuils configurés",
+            "configuredLabel": "Total actif",
+            "minesCovered": "{{count}} mines couvertes",
+            "minesCoveredLabel": "Couverture multi-tenant"
+        },
+        "actions": {
+            "reset": "Réinitialiser CIPR/AIEA",
+            "resetTooltip": "Restaure les valeurs de référence du seed V005 (permission DOSIMETRY_ADMIN)",
+            "resetDenied": "Permission requise : DOSIMETRY_ADMIN",
+            "addCustom": "Ajouter seuil personnalisé",
+            "addDenied": "Permission requise : DOSIMETRY_ADMIN",
+            "edit": "Modifier",
+            "save": "Enregistrer",
+            "cancel": "Annuler",
+            "disable": "Désactiver",
+            "enable": "Réactiver",
+            "create": "Créer le seuil"
+        },
+        "filters": {
+            "mineLabel": "Mine",
+            "mineAll": "Toutes les mines",
+            "mineGlobal": "Seuils globaux (par défaut)",
+            "categoryLabel": "Catégorie personne",
+            "categoryAll": "Toutes catégories",
+            "grandeurLabel": "Grandeur",
+            "grandeurAll": "Toutes grandeurs",
+            "activeLabel": "Actifs uniquement",
+            "clear": "Réinitialiser les filtres",
+            "summary": "{{count}} / {{total}} seuil(s) affichés"
+        },
+        "table": {
+            "mine": "Mine",
+            "category": "Catégorie personne",
+            "grandeur": "Grandeur",
+            "doseConstraint": "Contrainte de dose",
+            "investigationLevel": "Niveau d'investigation",
+            "actionLevel": "Niveau d'action",
+            "regulatoryLimit": "Limite réglementaire",
+            "framework": "Référentiel",
+            "status": "Statut",
+            "actions": "Actions",
+            "global": "Globale",
+            "active": "Actif",
+            "inactive": "Désactivé",
+            "doubleClickHint": "Double-clic sur une valeur pour la modifier",
+            "empty": "Aucun seuil ne correspond aux filtres. Élargissez la sélection ou réinitialisez les filtres.",
+            "loading": "Chargement des seuils…"
+        },
+        "modal": {
+            "addTitle": "Ajouter un seuil personnalisé",
+            "addSubtitle": "Crée un seuil spécifique pour une mine, une catégorie et une grandeur. Si une valeur diverge de plus de 50 % de la référence CIPR, une confirmation sera requise.",
+            "mineLabel": "Mine concernée",
+            "minePlaceholder": "Sélectionner la mine…",
+            "mineGlobalOption": "Seuil global (toutes mines)",
+            "categoryPlaceholder": "Sélectionner la catégorie…",
+            "grandeurPlaceholder": "Sélectionner la grandeur…",
+            "doseConstraintLabel": "Contrainte de dose (mSv)",
+            "investigationLevelLabel": "Niveau d'investigation (mSv)",
+            "actionLevelLabel": "Niveau d'action (mSv)",
+            "regulatoryLimitLabel": "Limite réglementaire (mSv)",
+            "justificationLabel": "Justification du seuil personnalisé",
+            "justificationPlaceholder": "Décrivez la raison de cette dérogation (législation locale plus stricte, contexte opérationnel, recommandation PCR, etc.).",
+            "frameworkAuto": "Référentiel : CUSTOM (généré automatiquement)",
+            "errors": {
+                "categoryRequired": "Sélectionnez une catégorie",
+                "grandeurRequired": "Sélectionnez une grandeur",
+                "justificationMin": "La justification doit contenir au moins 30 caractères",
+                "regulatoryRequired": "La limite réglementaire est requise",
+                "monotonic": "Les valeurs doivent être croissantes : contrainte ≤ investigation ≤ action ≤ limite"
+            },
+            "deviation": {
+                "title": "Écart significatif par rapport à la référence CIPR",
+                "body": "La valeur saisie pour {{field}} ({{value}} mSv) diverge de plus de 50 % de la référence CIPR ({{reference}} mSv) pour cette catégorie. Confirmez-vous l'enregistrement ?",
+                "confirm": "Confirmer la modification"
+            },
+            "saveSuccess": "Seuil enregistré.",
+            "saveError": "Impossible d'enregistrer le seuil. Vérifiez les données saisies."
+        },
+        "footer": {
+            "title": "Référentiel CIPR 103 / AIEA GSR Part 3",
+            "subtitle": "Valeurs de référence internationales (mSv/an). Modifiables si la législation nationale est plus stricte.",
+            "notice": "Toute modification est tracée dans le journal d'audit dosimétrie. Les valeurs CIPR/AIEA sont des références internationales, modifiables si la législation nationale est plus stricte.",
+            "table": {
+                "category": "Catégorie",
+                "hp10": "Hp(10) corps entier",
+                "hp007": "Hp(0.07) peau",
+                "hp3": "Hp(3) cristallin"
+            }
+        },
+        "loadError": "Impossible de charger les seuils — référence CIPR affichée.",
+        "resetSuccess": "Seuils réinitialisés aux valeurs CIPR/AIEA de référence.",
+        "resetPending": "Restauration en cours…",
+        "resetNotAvailable": "La réinitialisation côté serveur n'est pas encore disponible. Affichage des valeurs CIPR de référence."
     },
     "bands": {
         "title": "Bandes d'exposition (% de la limite annuelle)",
@@ -513,7 +618,115 @@
         "investigation": "Investigation",
         "active": "Active",
         "acknowledged": "Acquittée",
-        "closed": "Clôturée"
+        "closed": "Clôturée",
+        "subtitle": "Surveillance des dépassements de seuils dosimétriques — approche, investigation, action et dépassement réglementaire. Conforme CIPR 103 et AIEA GSR Part 3.",
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbParent": "Suivi des expositions",
+        "breadcrumbCurrent": "Seuils & dépassements",
+        "loading": "Chargement des alertes…",
+        "loadError": "Impossible de charger les alertes. Réessayez ultérieurement.",
+        "kpi": {
+            "activeLabel": "Alertes ACTIVES",
+            "activeSub": "Non traitées",
+            "approachLabel": "APPROCHE",
+            "approachSub": "Niveau d'éveil",
+            "investigationLabel": "INVESTIGATION",
+            "investigationSub": "Enquête requise",
+            "criticalLabel": "ACTION + DÉPASSEMENT",
+            "criticalSub": "Action immédiate"
+        },
+        "tabs": {
+            "active": "Alertes actives",
+            "ack": "Acquittées",
+            "resolved": "Résolues",
+            "all": "Toutes"
+        },
+        "filters": {
+            "levelLabel": "Niveau",
+            "levelPlaceholder": "Tous niveaux",
+            "workerLabel": "Travailleur",
+            "workerPlaceholder": "Rechercher matricule ou nom…",
+            "grandeurLabel": "Grandeur",
+            "grandeurAll": "Toutes grandeurs",
+            "periodFrom": "Du",
+            "periodTo": "Au",
+            "clear": "Réinitialiser",
+            "summary": "{{count}} / {{total}} alerte(s) affichée(s)"
+        },
+        "level": {
+            "APPROACH": "Approche",
+            "INVESTIGATION": "Investigation",
+            "ACTION": "Action",
+            "EXCEEDED": "Dépassement"
+        },
+        "statusBadge": {
+            "ACTIVE": "Active",
+            "ACK": "Acquittée",
+            "RESOLVED": "Résolue"
+        },
+        "table": {
+            "level": "Niveau",
+            "worker": "Travailleur",
+            "grandeur": "Grandeur",
+            "value": "Valeur",
+            "threshold": "Seuil dépassé",
+            "triggeredAt": "Déclenchée",
+            "status": "Statut",
+            "actions": "Actions",
+            "empty": "Aucune alerte ne correspond aux filtres.",
+            "viewWorker": "Voir le travailleur",
+            "ack": "Acquitter",
+            "resolve": "Résoudre",
+            "view": "Voir détail",
+            "openCase": "Ouvrir dossier"
+        },
+        "modal": {
+            "title": "Détail de l'alerte",
+            "workerSection": "Travailleur concerné",
+            "alertSection": "Alerte",
+            "thresholdSection": "Seuil franchi",
+            "historySection": "Doses récentes (3 derniers mois)",
+            "auditSection": "Journal d'audit",
+            "noteAckLabel": "Note d'acquittement (obligatoire)",
+            "noteAckPlaceholder": "Décrire le motif d'acquittement (analyse, action immédiate prise…).",
+            "noteResolveLabel": "Note de résolution (obligatoire)",
+            "noteResolvePlaceholder": "Décrire la résolution (mesures correctives, retour à la normale…).",
+            "noteRequired": "La note est obligatoire (min. 10 caractères).",
+            "ackSuccess": "Alerte acquittée avec succès.",
+            "resolveSuccess": "Alerte résolue avec succès.",
+            "actionError": "L'action a échoué. Veuillez réessayer.",
+            "openCaseSoon": "L'ouverture du dossier dépassement sera disponible en Phase 6.",
+            "matricule": "Matricule",
+            "fullName": "Nom complet",
+            "category": "Catégorie",
+            "grandeur": "Grandeur dosimétrique",
+            "value": "Valeur mesurée",
+            "regulatoryLimit": "Limite réglementaire",
+            "investigationLevel": "Niveau d'investigation",
+            "actionLevel": "Niveau d'action",
+            "framework": "Référentiel",
+            "triggeredAt": "Déclenchée le",
+            "acknowledgedAt": "Acquittée le",
+            "acknowledgedBy": "Acquittée par",
+            "noHistory": "Aucune dose récente enregistrée.",
+            "noAudit": "Aucune trace d'audit disponible.",
+            "rbacDenied": "Permission requise pour cette action.",
+            "close": "Fermer"
+        },
+        "actions": {
+            "ackDenied": "Permission requise : DOSIMETRY_WRITE",
+            "resolveDenied": "Permission requise : DOSIMETRY_WRITE",
+            "openCaseDenied": "Permission requise : DOSIMETRY_PCR_RPO"
+        }
+    },
+    "alertsBanner": {
+        "exceededTitle": "Dépassement réglementaire actif",
+        "exceededBody_one": "{{count}} alerte de dépassement nécessite une action immédiate.",
+        "exceededBody_other": "{{count}} alertes de dépassement nécessitent une action immédiate.",
+        "criticalTitle": "Niveau d'investigation ou d'action atteint",
+        "criticalBody_one": "{{count}} alerte requiert une investigation.",
+        "criticalBody_other": "{{count}} alertes requièrent une investigation.",
+        "viewAll": "Voir toutes les alertes"
     },
     "common": {
         "save": "Enregistrer",
@@ -1215,5 +1428,210 @@
         },
         "templateFilename": "safex-dosimetry-template.csv",
         "errorLogFilename": "safex-dosimetry-import-errors.csv"
+    },
+    "overexposureCases": {
+        "title": "Dossiers de dépassement",
+        "subtitle": "Gestion des dossiers de surexposition — workflow OPEN / INVESTIGATING / CLOSED conforme CIPR 103 & AIEA GSR Part 3.",
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbParent": "Seuils & dépassements",
+        "breadcrumbCurrent": "Dossiers de dépassement",
+        "newCase": "Nouveau dossier",
+        "loading": "Chargement des dossiers…",
+        "loadError": "Impossible de charger les dossiers de dépassement.",
+        "refresh": "Rafraîchir",
+        "kpi": {
+            "totalLabel": "TOTAL",
+            "totalSub": "Tous statuts",
+            "openLabel": "OUVERTS",
+            "openSub": "Statut OPEN",
+            "investigatingLabel": "INVESTIGATION",
+            "investigatingSub": "En cours d'enquête",
+            "closedLabel": "CLÔTURÉS (30j)",
+            "closedSub": "Mois dernier"
+        },
+        "filters": {
+            "statusLabel": "Statut",
+            "statusAll": "Tous statuts",
+            "levelLabel": "Niveau",
+            "levelAll": "Tous niveaux",
+            "workerLabel": "Travailleur",
+            "workerPlaceholder": "Rechercher matricule ou nom…",
+            "periodFrom": "Du",
+            "periodTo": "Au",
+            "clear": "Réinitialiser",
+            "summary": "{{count}} / {{total}} dossier(s)"
+        },
+        "status": {
+            "OPEN": "Ouvert",
+            "INVESTIGATING": "Investigation",
+            "CLOSED": "Clôturé"
+        },
+        "table": {
+            "caseNumber": "N° dossier",
+            "worker": "Travailleur",
+            "level": "Niveau",
+            "cause": "Cause",
+            "status": "Statut",
+            "openedAt": "Date ouverture",
+            "pcr": "PCR responsable",
+            "actions": "Actions",
+            "view": "Voir détail",
+            "empty": "Aucun dossier ne correspond aux filtres."
+        },
+        "detail": {
+            "title": "Détail du dossier #{{id}}",
+            "back": "Retour à la liste",
+            "loading": "Chargement du dossier…",
+            "loadError": "Impossible de charger le dossier.",
+            "notFound": "Dossier introuvable.",
+            "tabs": {
+                "general": "Informations générales",
+                "investigation": "Investigation",
+                "medical": "Décision médicale",
+                "authority": "Déclaration autorité",
+                "closure": "Clôture",
+                "audit": "Journal d'audit"
+            },
+            "general": {
+                "title": "Informations générales",
+                "worker": "Travailleur exposé",
+                "viewWorker": "Voir la fiche 360",
+                "level": "Niveau franchi",
+                "alertId": "Alerte d'origine",
+                "noAlert": "Ouverture manuelle (sans alerte)",
+                "openedAt": "Date d'ouverture",
+                "closedAt": "Date de clôture",
+                "createdBy": "Ouvert par",
+                "updatedBy": "Dernière mise à jour par"
+            },
+            "investigation": {
+                "title": "Investigation & actions correctives",
+                "subtitle": "Cause racine identifiée, mesures correctives engagées, décision médicale associée.",
+                "cause": "Cause racine",
+                "causeEmpty": "Aucune cause renseignée.",
+                "corrective": "Actions correctives",
+                "correctiveEmpty": "Aucune action corrective documentée.",
+                "medical": "Décision médicale",
+                "medicalEmpty": "Aucune décision médicale enregistrée.",
+                "addBtn": "Ajouter / mettre à jour l'investigation",
+                "modalTitle": "Ajouter une investigation",
+                "modalSubtitle": "Documenter la cause racine, les actions correctives et la décision médicale associée.",
+                "causeLabel": "Cause racine",
+                "causePlaceholder": "Décrire la cause racine identifiée…",
+                "correctiveLabel": "Actions correctives engagées",
+                "correctivePlaceholder": "Liste des mesures correctives et préventives…",
+                "medicalLabel": "Décision médicale",
+                "medicalPlaceholder": "Décision du médecin du travail (aptitude, restriction…)",
+                "submit": "Enregistrer l'investigation",
+                "success": "Investigation enregistrée.",
+                "error": "L'enregistrement de l'investigation a échoué.",
+                "denied": "Permission requise : DOSIMETRY_WRITE"
+            },
+            "medicalSection": {
+                "title": "Décision médicale (confidentiel)",
+                "subtitle": "Accès restreint aux porteurs de la permission DOSIMETRY_MEDICAL.",
+                "denied": "Vous n'avez pas la permission DOSIMETRY_MEDICAL — la décision médicale est masquée.",
+                "empty": "Aucune décision médicale enregistrée pour ce dossier."
+            },
+            "authority": {
+                "title": "Déclaration aux autorités",
+                "subtitle": "Si le dépassement dépasse la limite réglementaire, déclaration obligatoire à l'autorité compétente.",
+                "declared": "Déclaration effectuée",
+                "notDeclared": "Pas de déclaration",
+                "declarationDate": "Date de déclaration",
+                "declarationNumber": "Numéro de déclaration",
+                "declarationNumberPlaceholder": "Numéro fourni par l'autorité…",
+                "checkboxLabel": "Cocher si la déclaration aux autorités est effectuée"
+            },
+            "closure": {
+                "title": "Clôture du dossier",
+                "subtitle": "La clôture est définitive et nécessite la permission DOSIMETRY_PCR_RPO.",
+                "closedBanner": "Ce dossier est clôturé depuis le {{date}}.",
+                "closeBtn": "Clôturer le dossier",
+                "modalTitle": "Clôture du dossier #{{id}}",
+                "modalSubtitle": "Cette action est irréversible. La déclaration aux autorités doit être confirmée si applicable.",
+                "noteLabel": "Note de clôture (obligatoire)",
+                "notePlaceholder": "Décrire la résolution finale, les leçons apprises…",
+                "noteRequired": "La note de clôture est obligatoire (min. 10 caractères).",
+                "authorityConfirm": "Je confirme que la déclaration à l'autorité compétente est effectuée (ou n'est pas requise).",
+                "submit": "Clôturer définitivement",
+                "success": "Dossier clôturé avec succès.",
+                "error": "La clôture a échoué.",
+                "denied": "Permission requise : DOSIMETRY_PCR_RPO"
+            },
+            "audit": {
+                "title": "Journal d'audit",
+                "subtitle": "Tous les évènements liés à ce dossier — append-only, conforme RGPD art.30.",
+                "empty": "Aucune trace d'audit pour ce dossier.",
+                "loadError": "Impossible de charger le journal d'audit.",
+                "cols": {
+                    "timestamp": "Horodatage",
+                    "action": "Action",
+                    "userId": "Acteur",
+                    "details": "Détails"
+                }
+            }
+        },
+        "form": {
+            "titleNew": "Nouveau dossier de dépassement",
+            "subtitle": "Ouverture officielle d'un dossier d'investigation suite à un dépassement réglementaire.",
+            "breadcrumbNew": "Nouveau",
+            "back": "Retour",
+            "steps": {
+                "alert": { "label": "Sélection alerte", "desc": "Alerte source" },
+                "characterization": { "label": "Caractérisation", "desc": "Niveau & cause" },
+                "confirmation": { "label": "Confirmation", "desc": "Récapitulatif" }
+            },
+            "alert": {
+                "title": "Sélection de l'alerte source",
+                "subtitle": "Lier le dossier à une alerte EXCEEDED non encore traitée, ou ouvrir un dossier manuel.",
+                "readonlyTitle": "Alerte sélectionnée",
+                "alertLabel": "Alerte d'origine",
+                "alertPlaceholder": "Sélectionner une alerte EXCEEDED…",
+                "noAlerts": "Aucune alerte EXCEEDED disponible.",
+                "manualOpen": "Ouverture manuelle (sans alerte)",
+                "workerLabel": "Travailleur exposé",
+                "workerPlaceholder": "Sélectionner un travailleur…",
+                "workerHelp": "Pré-rempli depuis l'alerte si sélectionnée.",
+                "levelLabel": "Niveau",
+                "levelHelp": "Auto-rempli depuis l'alerte. Si ouverture manuelle, sélectionner le niveau atteint."
+            },
+            "characterization": {
+                "title": "Caractérisation du dépassement",
+                "subtitle": "Documenter la cause initiale et les mesures conservatoires immédiates.",
+                "levelReadonly": "Niveau franchi",
+                "causeLabel": "Cause initiale identifiée",
+                "causePlaceholder": "Décrire la cause initiale (ex. dysfonctionnement EPD, exposition prolongée…)",
+                "causeRequired": "La cause initiale est obligatoire (min. 10 caractères).",
+                "conservatoryLabel": "Mesures conservatoires immédiates",
+                "conservatoryPlaceholder": "Décrire les mesures prises sans délai (retrait du poste, surveillance médicale…)"
+            },
+            "confirmation": {
+                "title": "Récapitulatif & confirmation",
+                "subtitle": "Vérifier les informations avant d'ouvrir officiellement le dossier.",
+                "summary": "Récapitulatif",
+                "summaryWorker": "Travailleur",
+                "summaryLevel": "Niveau",
+                "summaryAlert": "Alerte source",
+                "summaryNoAlert": "Aucune (ouverture manuelle)",
+                "summaryCause": "Cause initiale",
+                "summaryConservatory": "Mesures conservatoires",
+                "notifyTitle": "Notifications automatiques",
+                "notifyBody": "À l'ouverture, le PCR/RPO et le médecin du travail seront notifiés automatiquement.",
+                "confirmCheckbox": "Je confirme l'ouverture officielle du dossier de dépassement.",
+                "confirmRequired": "Vous devez confirmer l'ouverture pour soumettre."
+            },
+            "nav": {
+                "prev": "Précédent",
+                "next": "Suivant",
+                "submit": "Ouvrir le dossier",
+                "stepCounter": "Étape {{current}} / {{total}}",
+                "completeBeforeNext": "Veuillez compléter les champs obligatoires avant de continuer."
+            },
+            "success": "Dossier de dépassement ouvert avec succès.",
+            "error": "L'ouverture du dossier a échoué.",
+            "notifyLogPcr": "[Notification simulée] PCR/RPO notifié pour le dossier #{{id}}.",
+            "notifyLogMedical": "[Notification simulée] Médecin du travail notifié pour le dossier #{{id}}."
+        }
     }
 }

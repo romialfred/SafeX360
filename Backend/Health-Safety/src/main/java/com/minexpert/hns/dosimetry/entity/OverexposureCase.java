@@ -47,6 +47,14 @@ public class OverexposureCase {
     @Column(name = "level", nullable = false, length = 32)
     private AlertLevel level;
 
+    /**
+     * Lien vers l'alerte d'exposition source (peut etre null si le case a ete ouvert
+     * manuellement sans alerte associee). Sert a la tracabilite et evite la double ouverture
+     * pour une meme alerte (cf. {@code findByAlertIdAndStatusIn}).
+     */
+    @Column(name = "alert_id")
+    private Long alertId;
+
     @Column(name = "cause", columnDefinition = "TEXT")
     private String cause;
 
