@@ -40,6 +40,9 @@ import {
     IconChartLine,
     IconStethoscope,
     IconAlertOctagon,
+    // Phase 6 — Ambient monitoring
+    IconBroadcast,
+    IconRadar,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -84,6 +87,10 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Registre travailleurs exposés': 'dosimetry:sidebar.dosimetryWorkers',
     'Dosimètres & Instruments': 'dosimetry:sidebar.dosimetryDosimeters',
     'Saisie & suivi des doses': 'dosimetry:sidebar.dosimetryDoses',
+    'Surveillance d\'ambiance': 'dosimetry:sidebar.dosimetryAmbient',
+    'Cartographie d\'ambiance': 'dosimetry:sidebar.dosimetryAmbientMap',
+    'Campagnes de surveillance': 'dosimetry:sidebar.dosimetryCampaigns',
+    'Profils d\'exposition': 'dosimetry:sidebar.dosimetryExposureProfiles',
     'Surveillance médicale': 'dosimetry:sidebar.dosimetryMedical',
     'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
     'Dossiers de dépassement': 'dosimetry:sidebar.dosimetryOverexposure',
@@ -320,6 +327,10 @@ const menuItems: MenuItem[] = [
             { id: 'dosimetry-workers', label: 'Registre travailleurs exposés', icon: IconUsers },
             { id: 'dosimetry-dosimeters', label: 'Dosimètres & Instruments', icon: IconDeviceWatch },
             { id: 'dosimetry-doses', label: 'Saisie & suivi des doses', icon: IconChartLine },
+            { id: 'dosimetry-ambient', label: 'Surveillance d\'ambiance', icon: IconBroadcast },
+            { id: 'dosimetry-ambient-map', label: 'Cartographie d\'ambiance', icon: IconRadar },
+            { id: 'dosimetry-campaigns', label: 'Campagnes de surveillance', icon: IconClipboardCheck },
+            { id: 'dosimetry-exposure-profiles', label: 'Profils d\'exposition', icon: IconAtom2 },
             { id: 'dosimetry-medical', label: 'Surveillance médicale', icon: IconStethoscope },
             { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
             { id: 'dosimetry-overexposure', label: 'Dossiers de dépassement', icon: IconFolderOpen },
@@ -475,6 +486,10 @@ export const menuIdToUrl: Record<string, string> = {
     "dosimetry-dashboard": "/coming-soon",
     "dosimetry-dosimeters": "/dosimetry/dosimeters",
     "dosimetry-doses": "/coming-soon",
+    "dosimetry-ambient": "/dosimetry/measurement-points",
+    "dosimetry-ambient-map": "/dosimetry/ambient-map",
+    "dosimetry-campaigns": "/dosimetry/campaigns",
+    "dosimetry-exposure-profiles": "/dosimetry/exposure-profiles",
     "dosimetry-medical": "/coming-soon",
     "dosimetry-alerts": "/dosimetry/alerts",
     "dosimetry-overexposure": "/dosimetry/overexposure",

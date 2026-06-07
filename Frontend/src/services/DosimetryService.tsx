@@ -238,6 +238,34 @@ export interface ExposureProfileDTO {
     updatedBy?: number | null;
 }
 
+/**
+ * ExposureProfileLinkDTO — lien entre un profil d'exposition et un point de
+ * mesure d'ambiance, avec une fraction de temps de presence dans [0,1].
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code ExposureProfileLinkDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/ExposureProfileLinkDTO.java}).
+ *
+ * <p>Champs :
+ *   - exposureProfileId  : OBLIGATOIRE — id du profil d'exposition.
+ *   - measurementPointId : OBLIGATOIRE — id du point de mesure rattache.
+ *   - fraction           : OBLIGATOIRE — fraction du temps de travail [0,1].
+ *   - estimatedDoseRate  : lecture seule — moyenne des mesures d'ambiance
+ *                          du point (uSv/h), calculee cote backend.
+ *   - lastUpdated        : lecture seule — derniere mise a jour du lien.
+ */
+export interface ExposureProfileLinkDTO {
+    id?: number | null;
+    exposureProfileId: number;
+    measurementPointId: number;
+    /** Fraction de temps de presence sur le point [0,1]. */
+    fraction: number;
+    /** uSv/h — moyenne des AmbientMeasurement sur le point (calc. backend). */
+    estimatedDoseRate?: number | null;
+    lastUpdated?: string | null;
+    createdAt?: string | null;
+    createdBy?: number | null;
+}
+
 /** DoseCumulativeDTO (cf. backend DoseCumulativeDTO.java). */
 export interface DoseCumulativeDTO {
     id?: number | null;
@@ -1498,4 +1526,580 @@ export {
     deleteOverexposureCase,
     // Audit logs (Phase 5 Frontend-C)
     getAllAuditLogs,
+    // Ambient monitoring (Phase 6 Frontend-A)
+    listMeasurementPoints,
+    listMeasurementPointsByZone,
+    getMeasurementPoint,
+    createMeasurementPoint,
+    updateMeasurementPoint,
+    activateMeasurementPoint,
+    deactivateMeasurementPoint,
+    recordAmbientMeasurement,
+    listAmbientMeasurementsByPoint,
+    getAmbientMeasurementStats,
+    // Monitoring campaigns (Phase 6 Frontend-B)
+    listMonitoringCampaigns,
+    getMonitoringCampaign,
+    createMonitoringCampaign,
+    startMonitoringCampaign,
+    completeMonitoringCampaign,
+    cancelMonitoringCampaign,
+    addPointToCampaign,
+    listMeasurementsByCampaign,
+    generateMonitoringCampaignReport,
+    // Exposure profiles & exposure profile links (Phase 6 Frontend-C)
+    getAllExposureProfiles,
+    getExposureProfileById,
+    createExposureProfile,
+    updateExposureProfile,
+    deleteExposureProfile,
+    getExposureProfileLinks,
+    setExposureProfileLinks,
+    getExposureProfileEstimatedDose,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  AMBIENT MONITORING — Points de mesure d'ambiance + mesures H*(10)
+//  Phase 6 Frontend-A
+//  Base: /hns/dosimetry/measurement-point
+//         /hns/dosimetry/ambient-measurement
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Classification reglementaire d'une zone de mesure (CIPR 103 / AIEA GSR Part 3). */
+export type ZoneClass = 'SURVEILLED' | 'CONTROLLED' | 'NONE';
+
+/** Contexte operationnel d'une mesure d'ambiance. */
+export type MeasurementContext = 'ROUTINE' | 'CAMPAIGN' | 'INCIDENT_RESPONSE' | 'COMMISSIONING';
+
+/**
+ * MeasurementPointDTO — point fixe de mesure d'ambiance.
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code MeasurementPointDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/MeasurementPointDTO.java}).
+ *
+ * <p>Champs :
+ *   - mineId             : OBLIGATOIRE — isolation multi-tenant.
+ *   - code               : OBLIGATOIRE — unique par mine.
+ *   - label              : OBLIGATOIRE — libelle court.
+ *   - zoneId             : optionnel — lien vers une WorkArea / zone metier.
+ *   - description        : description libre.
+ *   - location           : libelle textuel (galerie, niveau, repere).
+ *   - latitude/longitude : coordonnees decimales (optionnelles).
+ *   - elevation          : altitude / cote (optionnel).
+ *   - zoneClassification : OBLIGATOIRE — SURVEILLED / CONTROLLED / NONE.
+ *   - referenceLevel     : niveau de reference (uSv/h).
+ *   - active             : etat du point (true = surveille).
+ */
+export interface MeasurementPointDTO {
+    id?: number | null;
+    mineId: number;
+    code: string;
+    label: string;
+    zoneId?: number | null;
+    description?: string | null;
+    location?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    elevation?: number | null;
+    zoneClassification: ZoneClass;
+    referenceLevel?: number | null;
+    active?: boolean;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+    version?: number | null;
+}
+
+/**
+ * AmbientMeasurementDTO — mesure d'ambiance H*(10) sur un point.
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code AmbientMeasurementDTO}.
+ *
+ * <p>Champs ecriture (POST /record) :
+ *   - mineId            : OBLIGATOIRE
+ *   - measurementPointId: OBLIGATOIRE
+ *   - measuredAt        : OBLIGATOIRE — ISO LocalDateTime
+ *   - measuredBy        : OBLIGATOIRE — userId
+ *   - value             : OBLIGATOIRE — H*(10) en uSv/h ; doit etre > 0
+ *   - context           : OBLIGATOIRE — ROUTINE | CAMPAIGN | INCIDENT_RESPONSE | COMMISSIONING
+ *
+ * <p>Champs lecture seule renvoyes par le backend :
+ *   - aboveReferenceLevel: indique si value > referenceLevel du point
+ *   - trendVsPrevious    : variation relative vs. derniere mesure du meme point
+ */
+export interface AmbientMeasurementDTO {
+    id?: number | null;
+    mineId: number;
+    measurementPointId: number;
+    measuredAt: string;
+    measuredBy: number;
+    value: number;
+    uncertainty?: number | null;
+    instrumentId?: number | null;
+    instrumentSerial?: string | null;
+    context: MeasurementContext;
+    campaignId?: number | null;
+    notes?: string | null;
+    createdAt?: string | null;
+    createdBy?: number | null;
+    aboveReferenceLevel?: boolean | null;
+    trendVsPrevious?: number | null;
+}
+
+/** Statistiques d'ambiance sur un point pour une periode. */
+export interface AmbientMeasurementStatsDTO {
+    measurementPointId: number;
+    from?: string | null;
+    to?: string | null;
+    count: number;
+    min?: number | null;
+    max?: number | null;
+    avg?: number | null;
+    median?: number | null;
+    referenceLevel?: number | null;
+    overReferenceCount: number;
+}
+
+const measurementPointUrl = '/hns/dosimetry/measurement-point';
+const ambientMeasurementUrl = '/hns/dosimetry/ambient-measurement';
+
+/**
+ * Liste les points de mesure d'ambiance pour une mine.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/measurement-point/search?mineId=X}.
+ * RBAC backend : DOSIMETRY_READ_AGGREGATE.
+ */
+const listMeasurementPoints = async (mineId?: number | null): Promise<MeasurementPointDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for listMeasurementPoints');
+    }
+    const res = await axiosInstance.get(`${measurementPointUrl}/search`, {
+        params: { mineId: resolvedMineId },
+    });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+/**
+ * Liste les points de mesure filtres par classification de zone.
+ * Endpoint : {@code GET /hns/dosimetry/measurement-point/by-zone?mineId=X&zoneClassification=Y}.
+ */
+const listMeasurementPointsByZone = async (
+    mineId: number | null | undefined,
+    zoneClassification: ZoneClass,
+): Promise<MeasurementPointDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for listMeasurementPointsByZone');
+    }
+    const res = await axiosInstance.get(`${measurementPointUrl}/by-zone`, {
+        params: { mineId: resolvedMineId, zoneClassification },
+    });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+/**
+ * Recupere le detail d'un point de mesure.
+ * Endpoint : {@code GET /hns/dosimetry/measurement-point/detail/{id}}.
+ */
+const getMeasurementPoint = async (id: number | string): Promise<MeasurementPointDTO> => {
+    const res = await axiosInstance.get(`${measurementPointUrl}/detail/${id}`);
+    return res.data as MeasurementPointDTO;
+};
+
+/**
+ * Cree un nouveau point de mesure.
+ * Endpoint : {@code POST /hns/dosimetry/measurement-point/create}.
+ * RBAC : DOSIMETRY_WRITE. L'en-tete X-User-Id est injectee depuis le store.
+ */
+const createMeasurementPoint = async (payload: MeasurementPointDTO): Promise<number> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.post(`${measurementPointUrl}/create`, payload, { headers });
+    return Number(res.data);
+};
+
+/**
+ * Met a jour un point de mesure existant.
+ * Endpoint : {@code PUT /hns/dosimetry/measurement-point/update/{id}}.
+ */
+const updateMeasurementPoint = async (
+    id: number | string,
+    payload: MeasurementPointDTO,
+): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.put(`${measurementPointUrl}/update/${id}`, payload, { headers });
+};
+
+/**
+ * Active un point de mesure (le replace en surveillance).
+ * Endpoint : {@code POST /hns/dosimetry/measurement-point/activate/{id}}.
+ */
+const activateMeasurementPoint = async (id: number | string): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${measurementPointUrl}/activate/${id}`, null, { headers });
+};
+
+/**
+ * Desactive un point de mesure (sortie de la surveillance reguliere).
+ * Endpoint : {@code POST /hns/dosimetry/measurement-point/deactivate/{id}}.
+ */
+const deactivateMeasurementPoint = async (id: number | string): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${measurementPointUrl}/deactivate/${id}`, null, { headers });
+};
+
+/**
+ * Enregistre une nouvelle mesure d'ambiance.
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/ambient-measurement/record}.
+ * RBAC : DOSIMETRY_WRITE.
+ */
+const recordAmbientMeasurement = async (
+    payload: AmbientMeasurementDTO,
+): Promise<AmbientMeasurementDTO> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const body: AmbientMeasurementDTO = {
+        ...payload,
+        measuredBy: payload.measuredBy ?? userId ?? 0,
+    };
+    const res = await axiosInstance.post(`${ambientMeasurementUrl}/record`, body, { headers });
+    return res.data as AmbientMeasurementDTO;
+};
+
+/**
+ * Liste les mesures d'ambiance d'un point sur une periode.
+ * Endpoint : {@code GET /hns/dosimetry/ambient-measurement/by-point?measurementPointId=X&from=...&to=...}.
+ */
+const listAmbientMeasurementsByPoint = async (
+    measurementPointId: number | string,
+    from?: string | null,
+    to?: string | null,
+): Promise<AmbientMeasurementDTO[]> => {
+    const params: Record<string, string | number> = { measurementPointId };
+    if (from) params.from = from;
+    if (to) params.to = to;
+    const res = await axiosInstance.get(`${ambientMeasurementUrl}/by-point`, { params });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+/**
+ * Recupere les statistiques agregees (min/max/avg/median + nb depassements) sur un point.
+ * Endpoint : {@code GET /hns/dosimetry/ambient-measurement/stats?measurementPointId=X&from=...&to=...}.
+ */
+const getAmbientMeasurementStats = async (
+    measurementPointId: number | string,
+    from?: string | null,
+    to?: string | null,
+): Promise<AmbientMeasurementStatsDTO> => {
+    const params: Record<string, string | number> = { measurementPointId };
+    if (from) params.from = from;
+    if (to) params.to = to;
+    const res = await axiosInstance.get(`${ambientMeasurementUrl}/stats`, { params });
+    return res.data as AmbientMeasurementStatsDTO;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  MONITORING CAMPAIGNS — Campagnes de surveillance d'ambiance (Phase 6 Frontend-B)
+//  Base: /hns/dosimetry/monitoring-campaign
+//  Workflow : DRAFT -> ONGOING -> COMPLETED, avec branche CANCELLED depuis DRAFT/ONGOING.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Statut du workflow d'une campagne (cf. enum CampaignStatus backend). */
+export type CampaignStatus = 'DRAFT' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+
+/**
+ * MonitoringCampaignDTO — campagne de surveillance H*(10).
+ *
+ * <p>Aligne 1:1 sur le DTO Java {@code MonitoringCampaignDTO}
+ * (cf. {@code Backend/Health-Safety/.../dto/MonitoringCampaignDTO.java}).
+ *
+ * <p>Champs cles :
+ *   - mineId               : OBLIGATOIRE — isolation multi-tenant.
+ *   - code                 : OBLIGATOIRE — unique par mine (ex. CAMP-2026-Q1).
+ *   - label                : OBLIGATOIRE — libelle court (ex. "Campagne Q1 zones surveillees").
+ *   - objective            : objectif descriptif libre.
+ *   - startDate / endDate  : periode planifiee (LocalDate ISO).
+ *   - status               : DRAFT par defaut a la creation.
+ *   - protocol             : protocole de mesure (textarea libre).
+ *   - responsibleId        : id du responsable de campagne (employee).
+ *   - measurementPointIds  : liste des points couverts par la campagne.
+ */
+export interface MonitoringCampaignDTO {
+    id?: number | null;
+    mineId: number;
+    code: string;
+    label: string;
+    objective?: string | null;
+    startDate: string;
+    endDate?: string | null;
+    status?: CampaignStatus;
+    protocol?: string | null;
+    responsibleId?: number | null;
+    measurementPointIds?: number[];
+    createdAt?: string | null;
+    createdBy?: number | null;
+    updatedAt?: string | null;
+    updatedBy?: number | null;
+    completedAt?: string | null;
+    completedBy?: number | null;
+}
+
+const monitoringCampaignUrl = '/hns/dosimetry/monitoring-campaign';
+
+/**
+ * Liste les campagnes de surveillance pour une mine.
+ * Endpoint : {@code GET /hns/dosimetry/monitoring-campaign/search?mineId=X}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const listMonitoringCampaigns = async (
+    mineId?: number | null,
+): Promise<MonitoringCampaignDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for listMonitoringCampaigns');
+    }
+    const res = await axiosInstance.get(`${monitoringCampaignUrl}/search`, {
+        params: { mineId: resolvedMineId },
+    });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+/**
+ * Recupere le detail d'une campagne (avec points couverts + responsable).
+ * Endpoint : {@code GET /hns/dosimetry/monitoring-campaign/detail/{id}}.
+ */
+const getMonitoringCampaign = async (
+    id: number | string,
+): Promise<MonitoringCampaignDTO> => {
+    const res = await axiosInstance.get(`${monitoringCampaignUrl}/detail/${id}`);
+    return res.data as MonitoringCampaignDTO;
+};
+
+/**
+ * Cree une nouvelle campagne (statut initial = DRAFT).
+ * Endpoint : {@code POST /hns/dosimetry/monitoring-campaign/create}.
+ * RBAC : DOSIMETRY_PCR_RPO.
+ */
+const createMonitoringCampaign = async (
+    payload: MonitoringCampaignDTO,
+): Promise<number> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.post(`${monitoringCampaignUrl}/create`, payload, { headers });
+    return Number(res.data);
+};
+
+/**
+ * Transition DRAFT -> ONGOING (demarrage officiel).
+ * Endpoint : {@code POST /hns/dosimetry/monitoring-campaign/start/{id}}.
+ * RBAC : DOSIMETRY_PCR_RPO.
+ */
+const startMonitoringCampaign = async (id: number | string): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${monitoringCampaignUrl}/start/${id}`, null, { headers });
+};
+
+/**
+ * Transition ONGOING -> COMPLETED (cloture de la campagne).
+ * Endpoint : {@code POST /hns/dosimetry/monitoring-campaign/complete/{id}}.
+ * RBAC : DOSIMETRY_PCR_RPO.
+ */
+const completeMonitoringCampaign = async (id: number | string): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${monitoringCampaignUrl}/complete/${id}`, null, { headers });
+};
+
+/**
+ * Transition DRAFT/ONGOING -> CANCELLED (annulation).
+ * Endpoint : {@code POST /hns/dosimetry/monitoring-campaign/cancel/{id}}.
+ * RBAC : DOSIMETRY_PCR_RPO.
+ */
+const cancelMonitoringCampaign = async (id: number | string): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${monitoringCampaignUrl}/cancel/${id}`, null, { headers });
+};
+
+/**
+ * Ajoute un point de mesure a la campagne.
+ * Endpoint : {@code POST /hns/dosimetry/monitoring-campaign/add-point/{id}?measurementPointId=Y}.
+ * RBAC : DOSIMETRY_WRITE.
+ */
+const addPointToCampaign = async (
+    campaignId: number | string,
+    measurementPointId: number,
+): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(
+        `${monitoringCampaignUrl}/add-point/${campaignId}`,
+        null,
+        { headers, params: { measurementPointId } },
+    );
+};
+
+/**
+ * Liste les mesures rattachees a une campagne.
+ * Endpoint : {@code GET /hns/dosimetry/ambient-measurement/by-campaign?campaignId=X}.
+ */
+const listMeasurementsByCampaign = async (
+    campaignId: number | string,
+): Promise<AmbientMeasurementDTO[]> => {
+    const res = await axiosInstance.get(`${ambientMeasurementUrl}/by-campaign`, {
+        params: { campaignId },
+    });
+    return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+};
+
+/**
+ * Genere le rapport texte d'une campagne (placeholder en attendant PDF).
+ * Endpoint : {@code GET /hns/dosimetry/monitoring-campaign/report/{id}}.
+ */
+const generateMonitoringCampaignReport = async (
+    id: number | string,
+): Promise<string> => {
+    const res = await axiosInstance.get(`${monitoringCampaignUrl}/report/${id}`, {
+        responseType: 'text',
+    });
+    return typeof res.data === 'string' ? res.data : String(res.data ?? '');
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EXPOSURE PROFILES + EXPOSURE PROFILE LINKS (Phase 6 Frontend-C)
+//  Base profils : /hns/dosimetry/exposure-profile
+//  Base liens   : /hns/dosimetry/exposure-profile-link
+//
+//  Concept : un ExposureProfile decrit l'exposition d'un worker (type, zone,
+//  poste, frequence). Un ensemble d'ExposureProfileLink rattache ce profil
+//  a 1..N MeasurementPoint avec une fraction de temps de presence dans [0,1],
+//  permettant au backend de calculer une dose estimee annuelle
+//  SUM(fraction * doseRate * hours).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const exposureProfileUrl = '/hns/dosimetry/exposure-profile';
+const exposureProfileLinkUrl = '/hns/dosimetry/exposure-profile-link';
+
+/**
+ * Liste l'ensemble des profils d'exposition pour la mine selectionnee.
+ * Endpoint : {@code GET /hns/dosimetry/exposure-profile/getAll?companyId=X}
+ * (companyId injecte par AxiosInterceptor).
+ */
+const getAllExposureProfiles = async (): Promise<ExposureProfileDTO[]> => {
+    const res = await axiosInstance.get(`${exposureProfileUrl}/getAll`);
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Recupere le detail d'un profil d'exposition.
+ * Endpoint : {@code GET /hns/dosimetry/exposure-profile/get/{id}}.
+ */
+const getExposureProfileById = async (
+    id: number | string,
+): Promise<ExposureProfileDTO> => {
+    const res = await axiosInstance.get(`${exposureProfileUrl}/get/${id}`);
+    return res.data as ExposureProfileDTO;
+};
+
+/**
+ * Cree un nouveau profil d'exposition.
+ * Endpoint : {@code POST /hns/dosimetry/exposure-profile/create?companyId=X}.
+ */
+const createExposureProfile = async (
+    payload: ExposureProfileDTO,
+): Promise<number> => {
+    const res = await axiosInstance.post(`${exposureProfileUrl}/create`, payload);
+    return Number(res.data);
+};
+
+/**
+ * Met a jour un profil d'exposition.
+ * Endpoint : {@code PUT /hns/dosimetry/exposure-profile/update?companyId=X}.
+ */
+const updateExposureProfile = async (
+    payload: ExposureProfileDTO,
+): Promise<void> => {
+    await axiosInstance.put(`${exposureProfileUrl}/update`, payload);
+};
+
+/**
+ * Supprime un profil d'exposition.
+ * Endpoint : {@code DELETE /hns/dosimetry/exposure-profile/delete/{id}}.
+ */
+const deleteExposureProfile = async (id: number | string): Promise<void> => {
+    await axiosInstance.delete(`${exposureProfileUrl}/delete/${id}`);
+};
+
+/**
+ * Liste les liens (point de mesure x fraction de temps) d'un profil.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/exposure-profile-link/by-profile/{profileId}}.
+ * RBAC backend : DOSIMETRY_READ_AGGREGATE.
+ */
+const getExposureProfileLinks = async (
+    profileId: number | string,
+): Promise<ExposureProfileLinkDTO[]> => {
+    const res = await axiosInstance.get(`${exposureProfileLinkUrl}/by-profile/${profileId}`);
+    const data: any = res.data;
+    return Array.isArray(data) ? data : (data?.content ?? []);
+};
+
+/**
+ * Remplace l'ensemble des liens d'un profil "all-or-nothing".
+ *
+ * <p>Le backend supprime tous les liens existants puis reinsere la liste.
+ * Valide cote backend que {@code SUM(fraction) <= 1.0} (sinon 400).
+ *
+ * <p>Endpoint : {@code POST /hns/dosimetry/exposure-profile-link/set/{profileId}}.
+ * RBAC backend : DOSIMETRY_WRITE. L'en-tete X-User-Id est injectee depuis le store.
+ */
+const setExposureProfileLinks = async (
+    profileId: number | string,
+    links: ExposureProfileLinkDTO[],
+): Promise<void> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    await axiosInstance.post(`${exposureProfileLinkUrl}/set/${profileId}`, links, { headers });
+};
+
+/**
+ * Calcule la dose estimee annuelle (mSv) pour un profil donne :
+ * {@code SUM(fraction * estimatedDoseRate * workHoursPerYear)}.
+ *
+ * <p>Le backend renvoie la valeur en unite coherente avec l'estimatedDoseRate
+ * (uSv/h * h = uSv, divise par 1000 cote frontend pour affichage mSv).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/exposure-profile-link/estimated-dose/{profileId}?workHoursPerYear=N}.
+ */
+const getExposureProfileEstimatedDose = async (
+    profileId: number | string,
+    workHoursPerYear: number = 1607,
+): Promise<number> => {
+    const res = await axiosInstance.get(
+        `${exposureProfileLinkUrl}/estimated-dose/${profileId}`,
+        { params: { workHoursPerYear } },
+    );
+    const v = res.data;
+    if (v == null) return 0;
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
 };

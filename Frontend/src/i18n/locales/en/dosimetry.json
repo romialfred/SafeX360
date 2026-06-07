@@ -10,6 +10,10 @@
         "dosimetryWorkers": "Exposed Workers Registry",
         "dosimetryDosimeters": "Dosimeters & Instruments",
         "dosimetryDoses": "Dose Entry & Tracking",
+        "dosimetryAmbient": "Ambient Monitoring",
+        "dosimetryAmbientMap": "Ambient Map",
+        "dosimetryCampaigns": "Monitoring Campaigns",
+        "dosimetryExposureProfiles": "Exposure Profiles",
         "dosimetryMedical": "Medical Surveillance",
         "dosimetryAlerts": "Thresholds & Overexposures",
         "dosimetryOverexposure": "Overexposure Cases",
@@ -1632,6 +1636,655 @@
             "error": "Failed to open case.",
             "notifyLogPcr": "[Simulated notification] PCR/RPO notified for case #{{id}}.",
             "notifyLogMedical": "[Simulated notification] Occupational physician notified for case #{{id}}."
+        }
+    },
+    "ambient": {
+        "zoneClass": {
+            "NONE": "Unclassified",
+            "SURVEILLED": "Surveilled area",
+            "CONTROLLED": "Controlled area"
+        },
+        "context": {
+            "ROUTINE": "Routine reading",
+            "CAMPAIGN": "Campaign",
+            "INCIDENT_RESPONSE": "Incident response",
+            "COMMISSIONING": "Commissioning"
+        },
+        "points": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimetry & Exposures",
+            "breadcrumbCurrent": "Ambient measurement points",
+            "title": "Ambient measurement points",
+            "subtitle": "Registry of fixed H*(10) monitoring points — continuous oversight of surveilled and controlled areas (ICRP 103 / IAEA GSR Part 3).",
+            "loading": "Loading measurement points…",
+            "loadError": "Unable to load measurement points. Please retry later.",
+            "noMeasure": "No measurement",
+            "statusActive": "Active",
+            "statusInactive": "Inactive",
+            "kpi": {
+                "total": "Total points",
+                "surveilled": "Surveilled",
+                "controlled": "Controlled",
+                "inactive": "Inactive"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Search by code, label or location…",
+                "searchAria": "Search measurement points",
+                "filterZone": "Filter by zone classification",
+                "allZones": "All zones",
+                "filterStatus": "Filter by status",
+                "allStatuses": "All statuses",
+                "openMap": "Ambient map",
+                "addPoint": "New point",
+                "openRegistry": "Point registry",
+                "activeFilters": "{{count}} / {{total}} points shown",
+                "clearFilters": "Clear filters"
+            },
+            "columns": {
+                "code": "Code",
+                "label": "Label",
+                "zone": "Classification",
+                "reference": "Reference",
+                "lastMeasure": "Last measurement",
+                "trend": "Trend",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "actions": {
+                "view": "View detail",
+                "edit": "Edit"
+            },
+            "empty": {
+                "title": "No measurement points configured",
+                "subtitle": "Define fixed H*(10) monitoring points to start tracking your mine's regulated areas.",
+                "cta": "Create a measurement point"
+            },
+            "footer": {
+                "title": "Compliant ICRP 103 / IAEA GSR Part 3",
+                "note": "Ambient monitoring relies on regular H*(10) readings in µSv/h. The per-point reference level triggers exceedance alerts."
+            }
+        },
+        "form": {
+            "breadcrumbNew": "New point",
+            "breadcrumbEdit": "Edit",
+            "titleNew": "New measurement point",
+            "titleEdit": "Edit measurement point",
+            "subtitle": "Configure a fixed H*(10) monitoring point — unique per-mine code, zone classification and reference level (uSv/h).",
+            "back": "Back to list",
+            "prev": "Previous",
+            "next": "Next",
+            "submitCreate": "Create point",
+            "submitUpdate": "Save changes",
+            "stepCounter": "Step {{current}} / {{total}}",
+            "successCreate": "Measurement point created successfully.",
+            "successUpdate": "Measurement point updated successfully.",
+            "errorGeneric": "An error occurred while saving.",
+            "allStepsDone": "All steps validated.",
+            "summaryTitle": "Summary before validation",
+            "summary": "Code {{code}} — {{label}} — Zone {{zone}} — Reference {{reference}} µSv/h",
+            "steps": {
+                "identification": "Identification",
+                "identificationDesc": "Code & label",
+                "location": "Location",
+                "locationDesc": "Zone & coordinates",
+                "parameters": "Parameters",
+                "parametersDesc": "Classification & reference"
+            },
+            "fields": {
+                "code": "Point code",
+                "codeDesc": "Unique identifier per mine (e.g. AMB-G1-01).",
+                "codePlaceholder": "AMB-XX-NN",
+                "label": "Label",
+                "labelDesc": "Short description of the point (e.g. North gallery entrance).",
+                "labelPlaceholder": "Main gallery entrance",
+                "mineContext": "Mine / site",
+                "zone": "Zone (work area)",
+                "zoneDesc": "Optional — link the point to an existing work area.",
+                "zonePlaceholder": "Select a zone",
+                "locationText": "Free-text location",
+                "locationTextDesc": "Field landmark (e.g. Level -120, crossing A).",
+                "locationTextPlaceholder": "Level / landmark",
+                "latitude": "Latitude (°)",
+                "longitude": "Longitude (°)",
+                "elevation": "Elevation (m)",
+                "elevationDesc": "Optional — useful for 3D reconstruction.",
+                "description": "Detailed description",
+                "descriptionDesc": "Operational context, access, measurement constraints.",
+                "descriptionPlaceholder": "Notes on environment and access…",
+                "zoneClassification": "Zone classification",
+                "zoneClassificationDesc": "ICRP 103 — Surveilled (>1 mSv/yr) / Controlled (>6 mSv/yr) / Unclassified.",
+                "zoneClassificationPlaceholder": "Select classification",
+                "referenceLevel": "Reference level (µSv/h)",
+                "referenceLevelDesc": "Alert threshold on the measured dose rate.",
+                "referenceLevelHint": "The reference level triggers an alert when the H*(10) reading exceeds it. Must be > 0."
+            },
+            "errors": {
+                "codeRequired": "Code is required.",
+                "codeTooLong": "Code must not exceed 32 characters.",
+                "codeAlreadyUsed": "This code is already used in this mine.",
+                "labelRequired": "Label is required.",
+                "zoneClassificationRequired": "Zone classification is required.",
+                "referenceLevelNumber": "Reference level must be a number.",
+                "referenceLevelPositive": "Reference level must be strictly positive.",
+                "invalid": "Please fix the form errors before submitting."
+            }
+        },
+        "detail": {
+            "loading": "Loading point detail…",
+            "loadError": "Unable to load the measurement point.",
+            "backToList": "Back to list",
+            "edit": "Edit",
+            "save": "Save",
+            "cancel": "Cancel",
+            "saveSuccess": "Changes saved.",
+            "saveError": "Saving failed.",
+            "activate": "Reactivate",
+            "deactivate": "Deactivate",
+            "toggleActivated": "Point reactivated.",
+            "toggleDeactivated": "Point deactivated.",
+            "toggleError": "Status change failed.",
+            "recordMeasurement": "Record measurement",
+            "recordSuccess": "Measurement recorded.",
+            "recordError": "Recording failed.",
+            "generalInfo": "General information",
+            "stats30dTitle": "30-day statistics",
+            "errors": {
+                "labelRequired": "Label is required.",
+                "referencePositive": "Reference level must be > 0.",
+                "valueRequired": "Measured value is required.",
+                "valuePositive": "Measured value must be > 0.",
+                "measuredAtRequired": "Measurement date/time is required."
+            },
+            "fields": {
+                "code": "Code",
+                "label": "Label",
+                "zone": "Classification",
+                "location": "Location",
+                "coordinates": "Coordinates",
+                "referenceLevel": "Reference level",
+                "description": "Description"
+            },
+            "stats": {
+                "count": "Measurements",
+                "min": "Min",
+                "avg": "Average",
+                "median": "Median",
+                "max": "Max",
+                "overReference": "Exceedances",
+                "reference": "Reference"
+            },
+            "chart": {
+                "title": "6-month trend",
+                "subtitle": "Monthly aggregate — average and maximum.",
+                "empty": "Not enough data to plot a trend.",
+                "avg": "Average",
+                "max": "Maximum",
+                "referenceLabel": "Ref."
+            },
+            "table": {
+                "title": "Measurement history",
+                "subtitle": "Last {{count}} measurements",
+                "empty": "No measurements recorded for this point.",
+                "cols": {
+                    "measuredAt": "Date / time",
+                    "value": "Value",
+                    "uncertainty": "Uncertainty",
+                    "context": "Context",
+                    "instrument": "Instrument",
+                    "trend": "Trend",
+                    "notes": "Notes"
+                }
+            },
+            "form": {
+                "value": "H*(10) value",
+                "valueDesc": "Dose rate in µSv/h.",
+                "uncertainty": "Uncertainty",
+                "uncertaintyDesc": "Associated uncertainty (µSv/h).",
+                "measuredAt": "Measurement date/time",
+                "context": "Measurement context",
+                "instrument": "Instrument serial",
+                "instrumentDesc": "Optional — instrument identification.",
+                "notes": "Notes",
+                "notesPlaceholder": "Conditions, observations, anomalies…",
+                "submit": "Record measurement"
+            },
+            "footer": {
+                "title": "Regulatory traceability",
+                "note": "Ambient measurements are append-only and logged for audit (IAEA GSR Part 3 §3.106)."
+            }
+        },
+        "map": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimetry & Exposures",
+            "breadcrumbCurrent": "Ambient map",
+            "title": "Ambient H*(10) map",
+            "subtitle": "Map view of measurement points coloured by the last dose rate (µSv/h).",
+            "loading": "Loading map…",
+            "loadError": "Unable to load the ambient map.",
+            "kpi": {
+                "total": "Points",
+                "orange": "Orange",
+                "red": "Red",
+                "aboveReference": "Above reference"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Search by code or label…",
+                "searchAria": "Search a point on the map",
+                "filterZone": "Filter by zone",
+                "filterPeriod": "Aggregation period",
+                "openRegistry": "Open registry",
+                "activeFilters": "{{count}} / {{total}} points shown",
+                "clearFilters": "Clear filters"
+            },
+            "period": {
+                "h24": "Last 24 h",
+                "d7": "Last 7 days",
+                "d30": "Last 30 days"
+            },
+            "empty": {
+                "title": "No point to display",
+                "subtitle": "Adjust filters or configure measurement points to render the ambient map."
+            },
+            "legend": {
+                "title": "Colour scale",
+                "subtitle": "Last measured H*(10) dose rate",
+                "green": "Low (<0.5 µSv/h)",
+                "yellow": "Moderate (0.5 - 1 µSv/h)",
+                "orange": "Elevated (1 - 2 µSv/h)",
+                "red": "Critical (>2 µSv/h)",
+                "gray": "No data"
+            },
+            "popup": {
+                "last": "Last",
+                "avg": "Average",
+                "max": "Maximum",
+                "samples": "Samples",
+                "aboveReference": "Above reference"
+            },
+            "cell": {
+                "samples_one": "{{count}} sample",
+                "samples_other": "{{count}} samples",
+                "samples": "{{count}} samples",
+                "noData": "No measurement on the period",
+                "aboveReference": "Above ref."
+            },
+            "hint": {
+                "geo": "Layout based on point coordinates",
+                "grid": "Grid view — add geographic coordinates to enable the map layout"
+            },
+            "footer": {
+                "title": "Decision-support visualization",
+                "note": "This visualization aggregates the last measurements per point over the selected period. For a full 3D map and advanced clustering, plan a build with a Mapbox / Leaflet library."
+            }
+        },
+        "measurement": {
+            "title": "Record an ambient measurement",
+            "loading": "Loading…",
+            "success": "Measurement recorded successfully.",
+            "error": "Failed to record measurement.",
+            "cancel": "Cancel",
+            "submit": "Record measurement",
+            "lockedCampaign": "Measurement linked to campaign #{{id}} (context locked).",
+            "referenceHint": "Point reference level: {{reference}} µSv/h.",
+            "fields": {
+                "point": "Measurement point",
+                "pointDesc": "Select the fixed point this measurement relates to.",
+                "pointPlaceholder": "Pick a point…",
+                "pointNotFound": "No point found",
+                "value": "H*(10) value",
+                "valueDesc": "Measured dose rate (µSv/h, > 0).",
+                "uncertainty": "Uncertainty",
+                "uncertaintyDesc": "Associated uncertainty (µSv/h, optional).",
+                "measuredAt": "Measurement date / time",
+                "context": "Measurement context",
+                "instrument": "Instrument (SURVEY_METER)",
+                "instrumentDesc": "Pick from the instrument / dosimeter inventory.",
+                "instrumentPlaceholder": "Pick an instrument…",
+                "instrumentNotFound": "No instrument available",
+                "instrumentSerial": "Instrument serial",
+                "instrumentSerialDesc": "Free text when the instrument is not in the inventory.",
+                "notes": "Notes",
+                "notesPlaceholder": "Conditions, observations, anomalies…"
+            },
+            "errors": {
+                "pointRequired": "Measurement point is required.",
+                "valueRequired": "Measured value is required.",
+                "valuePositive": "Measured value must be strictly positive.",
+                "measuredAtRequired": "Measurement date/time is required."
+            },
+            "overConfirm": {
+                "title": "Reference level exceeded",
+                "message": "The entered value ({{value}} µSv/h) exceeds the point reference level ({{reference}} µSv/h).",
+                "question": "Confirm recording this measurement? An ambient alert will be raised.",
+                "confirm": "Confirm recording"
+            }
+        }
+    },
+    "campaigns": {
+        "status": {
+            "DRAFT": "Draft",
+            "ONGOING": "Ongoing",
+            "COMPLETED": "Completed",
+            "CANCELLED": "Cancelled"
+        },
+        "list": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimetry & Exposures",
+            "breadcrumbCurrent": "Monitoring campaigns",
+            "title": "Ambient monitoring campaigns",
+            "subtitle": "Plan, run and close H*(10) measurement campaigns covering a set of surveilled and controlled areas.",
+            "loading": "Loading campaigns…",
+            "loadError": "Unable to load campaigns. Please retry later.",
+            "toLabel": "→",
+            "kpi": {
+                "total": "Total",
+                "ongoing": "Ongoing",
+                "completed": "Completed",
+                "draft": "Drafts"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Search by code, label or owner…",
+                "searchAria": "Search campaigns",
+                "filterStatus": "Filter by status",
+                "allStatuses": "All statuses",
+                "filterResponsible": "Filter by owner",
+                "allResponsibles": "All owners",
+                "addCampaign": "New campaign",
+                "activeFilters": "{{count}} / {{total}} campaigns shown",
+                "clearFilters": "Clear filters"
+            },
+            "columns": {
+                "code": "Code",
+                "label": "Label",
+                "status": "Status",
+                "period": "Period",
+                "responsible": "Owner",
+                "points": "Points covered",
+                "progress": "Progress",
+                "actions": "Actions"
+            },
+            "actions": {
+                "view": "View detail"
+            },
+            "empty": {
+                "title": "No campaigns yet",
+                "subtitle": "Launch your first campaign to structure H*(10) readings by period and scope.",
+                "cta": "Create a campaign"
+            },
+            "footer": {
+                "title": "ICRP 103 / IAEA GSR Part 3 compliant tracking",
+                "note": "Campaigns formalise the planning of ambient measurements, regulatory traceability and periodic reporting."
+            }
+        },
+        "form": {
+            "breadcrumbNew": "New campaign",
+            "titleNew": "New monitoring campaign",
+            "subtitle": "Define the scope, protocol and owner. The campaign is created as a draft and started explicitly.",
+            "back": "Back to list",
+            "prev": "Previous",
+            "next": "Next",
+            "submitCreate": "Create campaign (draft)",
+            "stepCounter": "Step {{current}} / {{total}}",
+            "successCreate": "Campaign created as draft.",
+            "successStart": "Campaign started — status moved to Ongoing.",
+            "errorGeneric": "An error occurred while saving.",
+            "errorStart": "Unable to start the campaign.",
+            "summaryTitle": "Summary before validation",
+            "createdBadge": "Created #{{id}}",
+            "steps": {
+                "identification": "Identification",
+                "identificationDesc": "Code, label & objective",
+                "planning": "Planning",
+                "planningDesc": "Dates & owner",
+                "protocol": "Protocol",
+                "protocolDesc": "Method & points",
+                "confirmation": "Confirmation",
+                "confirmationDesc": "Summary"
+            },
+            "fields": {
+                "code": "Campaign code",
+                "codeDesc": "Unique identifier per mine (e.g. CAMP-2026-Q1).",
+                "codePlaceholder": "CAMP-YYYY-XX",
+                "label": "Label",
+                "labelDesc": "Short description (e.g. Q1 surveilled areas).",
+                "labelPlaceholder": "Q1 quarterly campaign",
+                "objective": "Campaign objective",
+                "objectiveDesc": "Describe the regulatory or operational purpose.",
+                "objectivePlaceholder": "Verify ventilation reinforcement effectiveness…",
+                "startDate": "Start date",
+                "startDateDesc": "Planned start of measurements.",
+                "endDate": "End date",
+                "endDateDesc": "Optional — planned closure date.",
+                "endDateOpen": "Open",
+                "responsible": "Campaign owner",
+                "responsibleDesc": "Employee in charge of running the campaign.",
+                "responsiblePlaceholder": "Pick an owner…",
+                "responsibleNotFound": "No employee found",
+                "protocol": "Measurement protocol",
+                "protocolDesc": "Methodology, frequency, instruments, operating conditions.",
+                "protocolPlaceholder": "Weekly readings with SURVEY_METER #X, rotating through covered points…",
+                "measurementPoints": "Covered measurement points",
+                "measurementPointsDesc": "Pick the fixed points included in the campaign scope.",
+                "measurementPointsPlaceholder": "Pick one or more points…",
+                "measurementPointsNotFound": "No point available"
+            },
+            "errors": {
+                "codeRequired": "Code is required.",
+                "codeTooLong": "Code must not exceed 32 characters.",
+                "codeAlreadyUsed": "This code is already used in this mine.",
+                "labelRequired": "Label is required.",
+                "startDateRequired": "Start date is required.",
+                "endBeforeStart": "End date cannot precede start date.",
+                "invalid": "Please fix the form errors before continuing."
+            },
+            "warnings": {
+                "noPointsSelected": "No point selected — you can add them later from the campaign detail."
+            },
+            "createdAlert": {
+                "title": "Campaign created as draft",
+                "message": "Start the campaign to move it to Ongoing, or open the detail to fine-tune the scope."
+            },
+            "actions": {
+                "start": "Start campaign",
+                "openDetail": "Open detail"
+            }
+        },
+        "detail": {
+            "loading": "Loading campaign…",
+            "loadError": "Unable to load the campaign.",
+            "notFound": "Campaign not found.",
+            "back": "Back to list",
+            "progress": {
+                "label": "Progress",
+                "measurements": "measurements recorded"
+            },
+            "tabs": {
+                "overview": "Overview",
+                "points": "Covered points",
+                "measurements": "Recorded measurements",
+                "report": "Report",
+                "audit": "Audit log"
+            },
+            "overview": {
+                "title": "General information",
+                "pointsCovered": "point(s) covered",
+                "createdAt": "Created at",
+                "completedAt": "Completed at"
+            },
+            "points": {
+                "title": "Covered points ({{count}})",
+                "empty": "No point covered — edit the campaign to add measurement points.",
+                "cols": {
+                    "code": "Code",
+                    "label": "Label",
+                    "zone": "Zone",
+                    "reference": "Reference (µSv/h)",
+                    "nbMeasurements": "Measurements",
+                    "actions": "Actions",
+                    "open": "Open"
+                }
+            },
+            "measurements": {
+                "title": "Recorded measurements ({{count}})",
+                "empty": "No measurement recorded for this campaign.",
+                "refLabel": "Ref.",
+                "cols": {
+                    "measuredAt": "Date / time",
+                    "point": "Point",
+                    "value": "Value (µSv/h)",
+                    "context": "Context",
+                    "instrument": "Instrument"
+                }
+            },
+            "report": {
+                "title": "Campaign report",
+                "description": "The report aggregates the recorded measurements, per-point statistics and any observed exceedances. This first version ships as plain text (PDF placeholder).",
+                "generate": "Generate report",
+                "download": "Download",
+                "empty": "No report generated — click \"Generate report\" to produce the text summary.",
+                "success": "Report generated.",
+                "error": "Failed to generate the report."
+            },
+            "audit": {
+                "title": "Audit log ({{count}})",
+                "empty": "No event recorded for this campaign.",
+                "user": "User"
+            },
+            "actions": {
+                "recordMeasurement": "Record measurement",
+                "start": "Start",
+                "complete": "Complete",
+                "cancel": "Cancel",
+                "startSuccess": "Campaign started.",
+                "completeSuccess": "Campaign completed.",
+                "cancelSuccess": "Campaign cancelled.",
+                "error": "Transition failed."
+            },
+            "confirm": {
+                "cancel": "Back",
+                "start": {
+                    "title": "Start campaign",
+                    "message": "You are about to start the campaign. Its status will move to Ongoing and recorded measurements will count.",
+                    "confirm": "Start"
+                },
+                "complete": {
+                    "title": "Complete campaign",
+                    "message": "You are about to close the campaign. No further measurement can be linked to it afterwards.",
+                    "confirm": "Complete"
+                },
+                "cancel": {
+                    "title": "Cancel campaign",
+                    "message": "You are about to cancel the campaign. This action is traced but cannot be reverted.",
+                    "confirm": "Cancel campaign"
+                }
+            },
+            "footer": {
+                "title": "Traceability & compliance",
+                "note": "Campaigns and their measurements are append-only and audited (IAEA GSR Part 3 §3.106)."
+            }
+        }
+    },
+    "exposureProfile": {
+        "links": {
+            "list": {
+                "breadcrumbRoot": "SafeX 360",
+                "breadcrumbParent": "Dosimetry & Exposures",
+                "breadcrumbCurrent": "Exposure profiles",
+                "title": "Worker exposure profiles",
+                "subtitle": "Link each profile to ambient measurement points with a time-presence fraction, and estimate the corresponding annual dose.",
+                "loading": "Loading exposure profiles…",
+                "loadError": "Cannot load exposure profiles. Please try again later.",
+                "workerHint": "Worker #{{workerId}}",
+                "noPoints": "No link",
+                "kpi": {
+                    "profiles": "Defined profiles",
+                    "workersCovered": "Workers covered",
+                    "medianDose": "Median annual est. dose"
+                },
+                "toolbar": {
+                    "searchPlaceholder": "Search a profile, worker or point code…",
+                    "searchAria": "Search exposure profiles",
+                    "filterType": "Filter by exposure type",
+                    "allTypes": "All types",
+                    "activeFilters": "{{count}} / {{total}} profiles shown",
+                    "clearFilters": "Reset filters"
+                },
+                "columns": {
+                    "profile": "Profile",
+                    "workers": "Linked worker",
+                    "points": "Linked points",
+                    "estimatedDose": "Annual est. dose (mSv)",
+                    "lastUpdated": "Last updated",
+                    "actions": "Actions"
+                },
+                "actions": {
+                    "editLinks": "Edit links",
+                    "viewLinks": "View links"
+                },
+                "empty": {
+                    "title": "No exposure profile registered",
+                    "subtitle": "Create exposure profiles from the worker view to be able to link them to ambient measurement points."
+                },
+                "footer": {
+                    "title": "Indicative estimate — ICRP 103",
+                    "note": "Annual estimates rely on the mean of the available ambient measurements per point. For regulatory individual tracking, use the individual dose records."
+                }
+            },
+            "editor": {
+                "breadcrumbRoot": "SafeX 360",
+                "breadcrumbParent": "Exposure profiles",
+                "breadcrumbCurrent": "Edit links",
+                "untitled": "Exposure profile",
+                "workerHint": "Linked worker: #{{workerId}}",
+                "back": "Back",
+                "cancel": "Cancel",
+                "save": "Save",
+                "saving": "Saving…",
+                "saveSuccess": "Profile links have been updated.",
+                "loading": "Loading editor…",
+                "addPoint": "Add point",
+                "noLinks": "No link defined yet for this profile. Click on \"Add point\" to start.",
+                "pickPoint": "Select a measurement point…",
+                "noPointFound": "No point found",
+                "removeLine": "Remove this line",
+                "totalLabel": "Current total: Σ = {{value}}",
+                "totalTitle": "Sum of time fractions",
+                "workHours": "Working hours per year",
+                "workHoursHint": "Default {{defaultHours}} h/year (ICRP 103).",
+                "totalAnnualLabel": "Estimated annual dose",
+                "formula": "Σ (fraction × mean rate × hours) / 1000",
+                "sections": {
+                    "points": {
+                        "title": "Measurement points and time fractions",
+                        "subtitle": "Add the points the worker visits and provide the fraction of time spent on each. The sum must remain ≤ 1."
+                    },
+                    "estimate": {
+                        "title": "Estimated annual dose calculation",
+                        "subtitle": "The estimate relies on the mean of the latest ambient measurements available for each point."
+                    }
+                },
+                "table": {
+                    "point": "Measurement point",
+                    "fraction": "Time fraction (0-1)",
+                    "doseRate": "Mean rate"
+                },
+                "cipr": {
+                    "workerA": "vs Cat. A worker (limit {{limit}} mSv/yr)",
+                    "workerB": "vs Cat. B worker (limit {{limit}} mSv/yr)"
+                },
+                "errors": {
+                    "invalidProfile": "Exposure profile not found or invalid id.",
+                    "loadFailed": "Cannot load profile data.",
+                    "saveFailed": "Cannot save links. Please try again later.",
+                    "fractionOverflow": "Sum of fractions exceeds 1.0 — adjust the values before saving.",
+                    "fractionRange": "0 to 1",
+                    "incompleteLine": "Each row must have a measurement point selected."
+                },
+                "notice": {
+                    "title": "Indicative estimate",
+                    "body": "Estimate based on the latest ambient measurements available. For an actual individual measurement, use individual dose records (Phase 4)."
+                }
+            }
         }
     }
 }

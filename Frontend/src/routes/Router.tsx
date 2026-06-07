@@ -176,6 +176,18 @@ import ExposureAlertsPage from '../components/Dosimetry/ExposureAlertsPage';
 import OverexposureCasesPage from '../components/Dosimetry/OverexposureCasesPage';
 import OverexposureCaseDetailPage from '../components/Dosimetry/OverexposureCaseDetailPage';
 import OverexposureCaseForm from '../components/Dosimetry/OverexposureCaseForm';
+// Phase 6 Frontend-A — gestion des points de mesure d'ambiance
+import MeasurementPointsPage from '../components/Dosimetry/MeasurementPointsPage';
+import MeasurementPointForm from '../components/Dosimetry/MeasurementPointForm';
+import MeasurementPointDetailPage from '../components/Dosimetry/MeasurementPointDetailPage';
+import AmbientMonitoringMapPage from '../components/Dosimetry/AmbientMonitoringMapPage';
+// Phase 6 Frontend-B — campagnes de surveillance d'ambiance
+import MonitoringCampaignsPage from '../components/Dosimetry/MonitoringCampaignsPage';
+import MonitoringCampaignForm from '../components/Dosimetry/MonitoringCampaignForm';
+import MonitoringCampaignDetailPage from '../components/Dosimetry/MonitoringCampaignDetailPage';
+// Phase 6 Frontend-C — profils d'exposition et liens point de mesure x fraction
+import ExposureProfileLinksPage from '../components/Dosimetry/ExposureProfileLinksPage';
+import ExposureProfileLinkEditor from '../components/Dosimetry/ExposureProfileLinkEditor';
 
 
 
@@ -456,6 +468,19 @@ const router = createBrowserRouter([
             { path: 'dosimetry/overexposure', element: <OverexposureCasesPage /> },
             { path: 'dosimetry/overexposure/new', element: <OverexposureCaseForm /> },
             { path: 'dosimetry/overexposure/:caseId', element: <OverexposureCaseDetailPage /> },
+            // Phase 6 Frontend-A — Points de mesure d'ambiance (registre + form + detail + carte)
+            { path: 'dosimetry/measurement-points', element: <MeasurementPointsPage /> },
+            { path: 'dosimetry/measurement-points/new', element: <MeasurementPointForm /> },
+            { path: 'dosimetry/measurement-points/edit/:id', element: <MeasurementPointForm /> },
+            { path: 'dosimetry/measurement-points/detail/:id', element: <MeasurementPointDetailPage /> },
+            { path: 'dosimetry/ambient-map', element: <AmbientMonitoringMapPage /> },
+            // Phase 6 Frontend-B — Campagnes de surveillance d'ambiance
+            { path: 'dosimetry/campaigns', element: <MonitoringCampaignsPage /> },
+            { path: 'dosimetry/campaigns/new', element: <MonitoringCampaignForm /> },
+            { path: 'dosimetry/campaigns/:id', element: <MonitoringCampaignDetailPage /> },
+            // Phase 6 Frontend-C — Profils d'exposition agent (liaison worker x point de mesure)
+            { path: 'dosimetry/exposure-profiles', element: <ExposureProfileLinksPage /> },
+            { path: 'dosimetry/exposure-profiles/:profileId/edit', element: <ExposureProfileLinkEditor /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

@@ -10,6 +10,10 @@
         "dosimetryWorkers": "Registre travailleurs exposés",
         "dosimetryDosimeters": "Dosimètres & Instruments",
         "dosimetryDoses": "Saisie & suivi des doses",
+        "dosimetryAmbient": "Surveillance d'ambiance",
+        "dosimetryAmbientMap": "Cartographie d'ambiance",
+        "dosimetryCampaigns": "Campagnes de surveillance",
+        "dosimetryExposureProfiles": "Profils d'exposition",
         "dosimetryMedical": "Surveillance médicale",
         "dosimetryAlerts": "Seuils & dépassements",
         "dosimetryOverexposure": "Dossiers de dépassement",
@@ -1632,6 +1636,655 @@
             "error": "L'ouverture du dossier a échoué.",
             "notifyLogPcr": "[Notification simulée] PCR/RPO notifié pour le dossier #{{id}}.",
             "notifyLogMedical": "[Notification simulée] Médecin du travail notifié pour le dossier #{{id}}."
+        }
+    },
+    "ambient": {
+        "zoneClass": {
+            "NONE": "Non classée",
+            "SURVEILLED": "Zone surveillée",
+            "CONTROLLED": "Zone contrôlée"
+        },
+        "context": {
+            "ROUTINE": "Relevé routine",
+            "CAMPAIGN": "Campagne",
+            "INCIDENT_RESPONSE": "Réponse incident",
+            "COMMISSIONING": "Mise en service"
+        },
+        "points": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimétrie & Expositions",
+            "breadcrumbCurrent": "Points de mesure d'ambiance",
+            "title": "Points de mesure d'ambiance",
+            "subtitle": "Registre des points fixes de surveillance H*(10) — supervision continue des zones surveillées et contrôlées (CIPR 103 / AIEA GSR Part 3).",
+            "loading": "Chargement des points de mesure…",
+            "loadError": "Impossible de charger les points de mesure. Réessayez ultérieurement.",
+            "noMeasure": "Aucune mesure",
+            "statusActive": "Actif",
+            "statusInactive": "Inactif",
+            "kpi": {
+                "total": "Total points",
+                "surveilled": "Surveillés",
+                "controlled": "Contrôlés",
+                "inactive": "Inactifs"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Rechercher un code, libellé ou localisation…",
+                "searchAria": "Rechercher dans les points de mesure",
+                "filterZone": "Filtrer par classification de zone",
+                "allZones": "Toutes les zones",
+                "filterStatus": "Filtrer par statut",
+                "allStatuses": "Tous les statuts",
+                "openMap": "Carte d'ambiance",
+                "addPoint": "Nouveau point",
+                "openRegistry": "Liste des points",
+                "activeFilters": "{{count}} / {{total}} points affichés",
+                "clearFilters": "Réinitialiser les filtres"
+            },
+            "columns": {
+                "code": "Code",
+                "label": "Libellé",
+                "zone": "Classification",
+                "reference": "Référence",
+                "lastMeasure": "Dernière mesure",
+                "trend": "Tendance",
+                "status": "Statut",
+                "actions": "Actions"
+            },
+            "actions": {
+                "view": "Voir le détail",
+                "edit": "Modifier"
+            },
+            "empty": {
+                "title": "Aucun point de mesure configuré",
+                "subtitle": "Définissez les points fixes de surveillance H*(10) pour activer le suivi régulier des zones de votre mine.",
+                "cta": "Créer un point de mesure"
+            },
+            "footer": {
+                "title": "Conforme CIPR 103 / AIEA GSR Part 3",
+                "note": "La cartographie d'ambiance repose sur des relevés réguliers H*(10) en µSv/h. Le niveau de référence par point déclenche les alertes de dépassement."
+            }
+        },
+        "form": {
+            "breadcrumbNew": "Nouveau point",
+            "breadcrumbEdit": "Modifier",
+            "titleNew": "Nouveau point de mesure",
+            "titleEdit": "Modifier le point de mesure",
+            "subtitle": "Configurez un point fixe de surveillance H*(10) — code unique par mine, classification de zone et niveau de référence (uSv/h).",
+            "back": "Retour à la liste",
+            "prev": "Précédent",
+            "next": "Suivant",
+            "submitCreate": "Créer le point",
+            "submitUpdate": "Enregistrer les modifications",
+            "stepCounter": "Étape {{current}} / {{total}}",
+            "successCreate": "Point de mesure créé avec succès.",
+            "successUpdate": "Point de mesure mis à jour avec succès.",
+            "errorGeneric": "Une erreur est survenue lors de l'enregistrement.",
+            "allStepsDone": "Toutes les étapes sont validées.",
+            "summaryTitle": "Récapitulatif avant validation",
+            "summary": "Code {{code}} — {{label}} — Zone {{zone}} — Référence {{reference}} µSv/h",
+            "steps": {
+                "identification": "Identification",
+                "identificationDesc": "Code & libellé",
+                "location": "Localisation",
+                "locationDesc": "Zone & coordonnées",
+                "parameters": "Paramètres",
+                "parametersDesc": "Classification & référence"
+            },
+            "fields": {
+                "code": "Code du point",
+                "codeDesc": "Identifiant unique par mine (ex. AMB-G1-01).",
+                "codePlaceholder": "AMB-XX-NN",
+                "label": "Libellé",
+                "labelDesc": "Description courte du point (ex. Entrée galerie nord).",
+                "labelPlaceholder": "Entrée galerie principale",
+                "mineContext": "Site / mine de rattachement",
+                "zone": "Zone (work area)",
+                "zoneDesc": "Optionnel — lier le point à une zone d'activité existante.",
+                "zonePlaceholder": "Sélectionner une zone",
+                "locationText": "Localisation textuelle",
+                "locationTextDesc": "Repère terrain (ex. Niveau -120, croisement A).",
+                "locationTextPlaceholder": "Niveau / repère",
+                "latitude": "Latitude (°)",
+                "longitude": "Longitude (°)",
+                "elevation": "Altitude / cote (m)",
+                "elevationDesc": "Optionnel — utile pour reconstitution 3D.",
+                "description": "Description détaillée",
+                "descriptionDesc": "Contexte opérationnel, accès, contraintes mesure.",
+                "descriptionPlaceholder": "Précisions sur l'environnement et l'accès…",
+                "zoneClassification": "Classification de zone",
+                "zoneClassificationDesc": "CIPR 103 — Surveillée (>1 mSv/an) / Contrôlée (>6 mSv/an) / Non classée.",
+                "zoneClassificationPlaceholder": "Sélectionner la classification",
+                "referenceLevel": "Niveau de référence (µSv/h)",
+                "referenceLevelDesc": "Seuil d'alerte sur le débit de dose mesuré.",
+                "referenceLevelHint": "Le niveau de référence permet de déclencher une alerte lorsque la mesure H*(10) le dépasse. Doit être > 0."
+            },
+            "errors": {
+                "codeRequired": "Le code est obligatoire.",
+                "codeTooLong": "Le code ne doit pas dépasser 32 caractères.",
+                "codeAlreadyUsed": "Ce code est déjà utilisé pour cette mine.",
+                "labelRequired": "Le libellé est obligatoire.",
+                "zoneClassificationRequired": "La classification de zone est obligatoire.",
+                "referenceLevelNumber": "Le niveau de référence doit être un nombre.",
+                "referenceLevelPositive": "Le niveau de référence doit être strictement supérieur à zéro.",
+                "invalid": "Veuillez corriger les erreurs du formulaire avant de soumettre."
+            }
+        },
+        "detail": {
+            "loading": "Chargement de la fiche du point…",
+            "loadError": "Impossible de charger le point de mesure.",
+            "backToList": "Retour à la liste",
+            "edit": "Modifier",
+            "save": "Enregistrer",
+            "cancel": "Annuler",
+            "saveSuccess": "Modifications enregistrées.",
+            "saveError": "L'enregistrement a échoué.",
+            "activate": "Réactiver",
+            "deactivate": "Désactiver",
+            "toggleActivated": "Point réactivé.",
+            "toggleDeactivated": "Point désactivé.",
+            "toggleError": "Le changement d'état a échoué.",
+            "recordMeasurement": "Enregistrer mesure",
+            "recordSuccess": "Mesure enregistrée.",
+            "recordError": "L'enregistrement de la mesure a échoué.",
+            "generalInfo": "Informations générales",
+            "stats30dTitle": "Statistiques sur 30 jours",
+            "errors": {
+                "labelRequired": "Le libellé est obligatoire.",
+                "referencePositive": "Le niveau de référence doit être > 0.",
+                "valueRequired": "La valeur mesurée est obligatoire.",
+                "valuePositive": "La valeur mesurée doit être > 0.",
+                "measuredAtRequired": "La date et l'heure de mesure sont obligatoires."
+            },
+            "fields": {
+                "code": "Code",
+                "label": "Libellé",
+                "zone": "Classification",
+                "location": "Localisation",
+                "coordinates": "Coordonnées",
+                "referenceLevel": "Niveau de référence",
+                "description": "Description"
+            },
+            "stats": {
+                "count": "Mesures",
+                "min": "Min",
+                "avg": "Moyenne",
+                "median": "Médiane",
+                "max": "Max",
+                "overReference": "Dépassements",
+                "reference": "Référence"
+            },
+            "chart": {
+                "title": "Évolution sur 6 mois",
+                "subtitle": "Agrégat mensuel — moyenne et maximum.",
+                "empty": "Pas assez de données pour tracer une tendance.",
+                "avg": "Moyenne",
+                "max": "Maximum",
+                "referenceLabel": "Réf."
+            },
+            "table": {
+                "title": "Historique des mesures",
+                "subtitle": "{{count}} dernières mesures",
+                "empty": "Aucune mesure enregistrée pour ce point.",
+                "cols": {
+                    "measuredAt": "Date / heure",
+                    "value": "Valeur",
+                    "uncertainty": "Incertitude",
+                    "context": "Contexte",
+                    "instrument": "Instrument",
+                    "trend": "Tendance",
+                    "notes": "Notes"
+                }
+            },
+            "form": {
+                "value": "Valeur H*(10)",
+                "valueDesc": "Débit de dose mesuré en µSv/h.",
+                "uncertainty": "Incertitude",
+                "uncertaintyDesc": "Incertitude associée (µSv/h).",
+                "measuredAt": "Date / heure de mesure",
+                "context": "Contexte de mesure",
+                "instrument": "N° de série instrument",
+                "instrumentDesc": "Optionnel — identification de l'instrument.",
+                "notes": "Notes",
+                "notesPlaceholder": "Conditions, observations, anomalies…",
+                "submit": "Enregistrer la mesure"
+            },
+            "footer": {
+                "title": "Traçabilité réglementaire",
+                "note": "Les mesures d'ambiance sont append-only et journalisées pour audit (AIEA GSR Part 3 §3.106)."
+            }
+        },
+        "map": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimétrie & Expositions",
+            "breadcrumbCurrent": "Cartographie d'ambiance",
+            "title": "Cartographie d'ambiance H*(10)",
+            "subtitle": "Vue carte des points de mesure colorés selon le dernier débit de dose mesuré (µSv/h).",
+            "loading": "Chargement de la cartographie…",
+            "loadError": "Impossible de charger la cartographie d'ambiance.",
+            "kpi": {
+                "total": "Points",
+                "orange": "Orange",
+                "red": "Rouge",
+                "aboveReference": "Au-dessus de la référence"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Rechercher un code ou libellé…",
+                "searchAria": "Rechercher un point sur la carte",
+                "filterZone": "Filtrer par zone",
+                "filterPeriod": "Période d'agrégation",
+                "openRegistry": "Voir le registre",
+                "activeFilters": "{{count}} / {{total}} points affichés",
+                "clearFilters": "Réinitialiser"
+            },
+            "period": {
+                "h24": "Dernières 24 h",
+                "d7": "7 derniers jours",
+                "d30": "30 derniers jours"
+            },
+            "empty": {
+                "title": "Aucun point à afficher",
+                "subtitle": "Ajustez les filtres ou configurez des points de mesure pour visualiser la carte d'ambiance."
+            },
+            "legend": {
+                "title": "Échelle de couleur",
+                "subtitle": "Dernier débit de dose H*(10) mesuré",
+                "green": "Faible (<0,5 µSv/h)",
+                "yellow": "Modéré (0,5 - 1 µSv/h)",
+                "orange": "Élevé (1 - 2 µSv/h)",
+                "red": "Critique (>2 µSv/h)",
+                "gray": "Sans donnée"
+            },
+            "popup": {
+                "last": "Dernière",
+                "avg": "Moyenne",
+                "max": "Maximum",
+                "samples": "Échantillons",
+                "aboveReference": "Au-dessus de la référence"
+            },
+            "cell": {
+                "samples_one": "{{count}} mesure",
+                "samples_other": "{{count}} mesures",
+                "samples": "{{count}} mesures",
+                "noData": "Aucune mesure sur la période",
+                "aboveReference": "Réf. dépassée"
+            },
+            "hint": {
+                "geo": "Disposition selon les coordonnées des points",
+                "grid": "Affichage en grille — ajoutez des coordonnées géographiques pour activer la vue carte"
+            },
+            "footer": {
+                "title": "Cartographie d'aide à la décision",
+                "note": "Cette visualisation agrège les dernières mesures par point sur la période sélectionnée. Pour une cartographie 3D et un clustering avancé, prévoir un build avec librairie Mapbox / Leaflet."
+            }
+        },
+        "measurement": {
+            "title": "Enregistrer une mesure d'ambiance",
+            "loading": "Chargement…",
+            "success": "Mesure enregistrée avec succès.",
+            "error": "L'enregistrement de la mesure a échoué.",
+            "cancel": "Annuler",
+            "submit": "Enregistrer la mesure",
+            "lockedCampaign": "Mesure rattachée à la campagne #{{id}} (contexte verrouillé).",
+            "referenceHint": "Niveau de référence du point : {{reference}} µSv/h.",
+            "fields": {
+                "point": "Point de mesure",
+                "pointDesc": "Sélectionner le point fixe concerné par la mesure.",
+                "pointPlaceholder": "Choisir un point…",
+                "pointNotFound": "Aucun point trouvé",
+                "value": "Valeur H*(10)",
+                "valueDesc": "Débit de dose mesuré (µSv/h, > 0).",
+                "uncertainty": "Incertitude",
+                "uncertaintyDesc": "Incertitude associée (µSv/h, optionnel).",
+                "measuredAt": "Date / heure de mesure",
+                "context": "Contexte de mesure",
+                "instrument": "Instrument (SURVEY_METER)",
+                "instrumentDesc": "Sélection dans l'inventaire des dosimètres / instruments.",
+                "instrumentPlaceholder": "Choisir un instrument…",
+                "instrumentNotFound": "Aucun instrument disponible",
+                "instrumentSerial": "N° de série instrument",
+                "instrumentSerialDesc": "Saisie libre si l'instrument n'est pas enregistré.",
+                "notes": "Notes",
+                "notesPlaceholder": "Conditions de mesure, anomalies, témoins…"
+            },
+            "errors": {
+                "pointRequired": "Le point de mesure est obligatoire.",
+                "valueRequired": "La valeur mesurée est obligatoire.",
+                "valuePositive": "La valeur mesurée doit être strictement positive.",
+                "measuredAtRequired": "La date et l'heure de mesure sont obligatoires."
+            },
+            "overConfirm": {
+                "title": "Dépassement du niveau de référence",
+                "message": "La valeur saisie ({{value}} µSv/h) dépasse le niveau de référence du point ({{reference}} µSv/h).",
+                "question": "Confirmez-vous l'enregistrement de cette mesure ? Une alerte d'ambiance sera générée.",
+                "confirm": "Confirmer l'enregistrement"
+            }
+        }
+    },
+    "campaigns": {
+        "status": {
+            "DRAFT": "Brouillon",
+            "ONGOING": "En cours",
+            "COMPLETED": "Terminée",
+            "CANCELLED": "Annulée"
+        },
+        "list": {
+            "breadcrumbRoot": "SafeX 360",
+            "breadcrumbParent": "Dosimétrie & Expositions",
+            "breadcrumbCurrent": "Campagnes de surveillance",
+            "title": "Campagnes de surveillance d'ambiance",
+            "subtitle": "Planifiez, exécutez et clôturez les campagnes de mesure H*(10) couvrant un périmètre de zones surveillées et contrôlées.",
+            "loading": "Chargement des campagnes…",
+            "loadError": "Impossible de charger les campagnes. Réessayez ultérieurement.",
+            "toLabel": "→",
+            "kpi": {
+                "total": "Total",
+                "ongoing": "En cours",
+                "completed": "Terminées",
+                "draft": "Brouillons"
+            },
+            "toolbar": {
+                "searchPlaceholder": "Rechercher un code, libellé ou responsable…",
+                "searchAria": "Rechercher dans les campagnes",
+                "filterStatus": "Filtrer par statut",
+                "allStatuses": "Tous les statuts",
+                "filterResponsible": "Filtrer par responsable",
+                "allResponsibles": "Tous les responsables",
+                "addCampaign": "Nouvelle campagne",
+                "activeFilters": "{{count}} / {{total}} campagnes affichées",
+                "clearFilters": "Réinitialiser les filtres"
+            },
+            "columns": {
+                "code": "Code",
+                "label": "Libellé",
+                "status": "Statut",
+                "period": "Période",
+                "responsible": "Responsable",
+                "points": "Points couverts",
+                "progress": "Progression",
+                "actions": "Actions"
+            },
+            "actions": {
+                "view": "Voir le détail"
+            },
+            "empty": {
+                "title": "Aucune campagne enregistrée",
+                "subtitle": "Lancez votre première campagne pour structurer vos relevés H*(10) par période et par périmètre.",
+                "cta": "Créer une campagne"
+            },
+            "footer": {
+                "title": "Suivi conforme CIPR 103 / AIEA GSR Part 3",
+                "note": "Les campagnes formalisent la planification des mesures d'ambiance, leur traçabilité réglementaire et la production de rapports périodiques."
+            }
+        },
+        "form": {
+            "breadcrumbNew": "Nouvelle campagne",
+            "titleNew": "Nouvelle campagne de surveillance",
+            "subtitle": "Définissez le périmètre, le protocole et le responsable de la campagne. La campagne est créée en brouillon puis démarrée explicitement.",
+            "back": "Retour à la liste",
+            "prev": "Précédent",
+            "next": "Suivant",
+            "submitCreate": "Créer la campagne (brouillon)",
+            "stepCounter": "Étape {{current}} / {{total}}",
+            "successCreate": "Campagne créée avec succès en brouillon.",
+            "successStart": "Campagne démarrée — passage au statut En cours.",
+            "errorGeneric": "Une erreur est survenue lors de l'enregistrement.",
+            "errorStart": "Impossible de démarrer la campagne.",
+            "summaryTitle": "Récapitulatif avant validation",
+            "createdBadge": "Créée #{{id}}",
+            "steps": {
+                "identification": "Identification",
+                "identificationDesc": "Code, libellé & objectif",
+                "planning": "Planning",
+                "planningDesc": "Dates & responsable",
+                "protocol": "Protocole",
+                "protocolDesc": "Méthode & points",
+                "confirmation": "Confirmation",
+                "confirmationDesc": "Récapitulatif"
+            },
+            "fields": {
+                "code": "Code de la campagne",
+                "codeDesc": "Identifiant unique par mine (ex. CAMP-2026-Q1).",
+                "codePlaceholder": "CAMP-YYYY-XX",
+                "label": "Libellé",
+                "labelDesc": "Description courte (ex. Campagne Q1 zones surveillées).",
+                "labelPlaceholder": "Campagne trimestrielle Q1",
+                "objective": "Objectif de la campagne",
+                "objectiveDesc": "Décrivez le but réglementaire ou opérationnel.",
+                "objectivePlaceholder": "Vérifier l'efficacité du renforcement de ventilation…",
+                "startDate": "Date de début",
+                "startDateDesc": "Date prévue de démarrage des mesures.",
+                "endDate": "Date de fin",
+                "endDateDesc": "Optionnel — date de clôture prévisionnelle.",
+                "endDateOpen": "Ouverte",
+                "responsible": "Responsable de campagne",
+                "responsibleDesc": "Employé en charge de la conduite de la campagne.",
+                "responsiblePlaceholder": "Choisir un responsable…",
+                "responsibleNotFound": "Aucun employé trouvé",
+                "protocol": "Protocole de mesure",
+                "protocolDesc": "Méthodologie, fréquence, instruments, conditions opératoires.",
+                "protocolPlaceholder": "Mesures hebdomadaires à l'aide du SURVEY_METER #X aux points couverts, par roulement…",
+                "measurementPoints": "Points de mesure couverts",
+                "measurementPointsDesc": "Sélectionnez les points fixes inclus dans le périmètre de la campagne.",
+                "measurementPointsPlaceholder": "Choisir un ou plusieurs points…",
+                "measurementPointsNotFound": "Aucun point disponible"
+            },
+            "errors": {
+                "codeRequired": "Le code est obligatoire.",
+                "codeTooLong": "Le code ne doit pas dépasser 32 caractères.",
+                "codeAlreadyUsed": "Ce code est déjà utilisé pour cette mine.",
+                "labelRequired": "Le libellé est obligatoire.",
+                "startDateRequired": "La date de début est obligatoire.",
+                "endBeforeStart": "La date de fin ne peut pas précéder la date de début.",
+                "invalid": "Veuillez corriger les erreurs du formulaire avant de continuer."
+            },
+            "warnings": {
+                "noPointsSelected": "Aucun point sélectionné — vous pourrez les ajouter ultérieurement depuis le détail de la campagne."
+            },
+            "createdAlert": {
+                "title": "Campagne créée en brouillon",
+                "message": "Démarrez la campagne pour la passer au statut En cours, ou ouvrez son détail pour ajuster le périmètre."
+            },
+            "actions": {
+                "start": "Démarrer la campagne",
+                "openDetail": "Ouvrir le détail"
+            }
+        },
+        "detail": {
+            "loading": "Chargement de la campagne…",
+            "loadError": "Impossible de charger la campagne.",
+            "notFound": "Cette campagne est introuvable.",
+            "back": "Retour à la liste",
+            "progress": {
+                "label": "Progression",
+                "measurements": "mesures collectées"
+            },
+            "tabs": {
+                "overview": "Vue d'ensemble",
+                "points": "Points couverts",
+                "measurements": "Mesures collectées",
+                "report": "Rapport",
+                "audit": "Journal d'audit"
+            },
+            "overview": {
+                "title": "Informations générales",
+                "pointsCovered": "point(s) couvert(s)",
+                "createdAt": "Créée le",
+                "completedAt": "Terminée le"
+            },
+            "points": {
+                "title": "Points couverts ({{count}})",
+                "empty": "Aucun point couvert — modifiez la campagne pour ajouter des points de mesure.",
+                "cols": {
+                    "code": "Code",
+                    "label": "Libellé",
+                    "zone": "Zone",
+                    "reference": "Référence (µSv/h)",
+                    "nbMeasurements": "Mesures",
+                    "actions": "Actions",
+                    "open": "Ouvrir"
+                }
+            },
+            "measurements": {
+                "title": "Mesures collectées ({{count}})",
+                "empty": "Aucune mesure enregistrée pour cette campagne.",
+                "refLabel": "Réf.",
+                "cols": {
+                    "measuredAt": "Date / heure",
+                    "point": "Point",
+                    "value": "Valeur (µSv/h)",
+                    "context": "Contexte",
+                    "instrument": "Instrument"
+                }
+            },
+            "report": {
+                "title": "Rapport de campagne",
+                "description": "Le rapport agrège les mesures collectées, les statistiques par point et les éventuels dépassements observés. Cette première version est livrée au format texte (placeholder PDF).",
+                "generate": "Générer le rapport",
+                "download": "Télécharger",
+                "empty": "Aucun rapport généré — cliquez sur « Générer le rapport » pour produire la synthèse texte.",
+                "success": "Rapport généré.",
+                "error": "La génération du rapport a échoué."
+            },
+            "audit": {
+                "title": "Journal d'audit ({{count}})",
+                "empty": "Aucun événement enregistré pour cette campagne.",
+                "user": "Utilisateur"
+            },
+            "actions": {
+                "recordMeasurement": "Enregistrer une mesure",
+                "start": "Démarrer",
+                "complete": "Terminer",
+                "cancel": "Annuler",
+                "startSuccess": "Campagne démarrée.",
+                "completeSuccess": "Campagne terminée.",
+                "cancelSuccess": "Campagne annulée.",
+                "error": "La transition a échoué."
+            },
+            "confirm": {
+                "cancel": "Retour",
+                "start": {
+                    "title": "Démarrer la campagne",
+                    "message": "Vous êtes sur le point de démarrer la campagne. Son statut passera à « En cours » et les mesures collectées seront comptabilisées.",
+                    "confirm": "Démarrer"
+                },
+                "complete": {
+                    "title": "Terminer la campagne",
+                    "message": "Vous êtes sur le point de clôturer la campagne. Aucune nouvelle mesure ne pourra y être rattachée par la suite.",
+                    "confirm": "Terminer"
+                },
+                "cancel": {
+                    "title": "Annuler la campagne",
+                    "message": "Vous êtes sur le point d'annuler la campagne. Cette action est traçable mais ne peut pas être inversée.",
+                    "confirm": "Annuler la campagne"
+                }
+            },
+            "footer": {
+                "title": "Traçabilité et conformité",
+                "note": "Les campagnes et les mesures associées sont append-only et journalisées (AIEA GSR Part 3 §3.106)."
+            }
+        }
+    },
+    "exposureProfile": {
+        "links": {
+            "list": {
+                "breadcrumbRoot": "SafeX 360",
+                "breadcrumbParent": "Dosimétrie & Expositions",
+                "breadcrumbCurrent": "Profils d'exposition",
+                "title": "Profils d'exposition agent",
+                "subtitle": "Liez chaque profil aux points de mesure d'ambiance avec une fraction de temps de présence, et estimez la dose annuelle correspondante.",
+                "loading": "Chargement des profils d'exposition…",
+                "loadError": "Impossible de charger les profils d'exposition. Réessayez ultérieurement.",
+                "workerHint": "Worker #{{workerId}}",
+                "noPoints": "Aucun lien",
+                "kpi": {
+                    "profiles": "Profils définis",
+                    "workersCovered": "Workers couverts",
+                    "medianDose": "Dose est. an. médiane"
+                },
+                "toolbar": {
+                    "searchPlaceholder": "Rechercher un profil, worker ou code de point…",
+                    "searchAria": "Rechercher dans les profils d'exposition",
+                    "filterType": "Filtrer par type d'exposition",
+                    "allTypes": "Tous les types",
+                    "activeFilters": "{{count}} / {{total}} profils affichés",
+                    "clearFilters": "Réinitialiser les filtres"
+                },
+                "columns": {
+                    "profile": "Profil",
+                    "workers": "Worker lié",
+                    "points": "Points liés",
+                    "estimatedDose": "Dose est. annuelle (mSv)",
+                    "lastUpdated": "Dernière mise à jour",
+                    "actions": "Actions"
+                },
+                "actions": {
+                    "editLinks": "Éditer les liens",
+                    "viewLinks": "Voir les liens"
+                },
+                "empty": {
+                    "title": "Aucun profil d'exposition enregistré",
+                    "subtitle": "Créez des profils d'exposition depuis la fiche worker pour pouvoir les rattacher à des points de mesure d'ambiance."
+                },
+                "footer": {
+                    "title": "Estimation indicative — CIPR 103",
+                    "note": "Les estimations annuelles s'appuient sur la moyenne des mesures d'ambiance disponibles pour chaque point. Pour le suivi réglementaire individuel, utilisez les enregistrements de dose individuelle."
+                }
+            },
+            "editor": {
+                "breadcrumbRoot": "SafeX 360",
+                "breadcrumbParent": "Profils d'exposition",
+                "breadcrumbCurrent": "Édition des liens",
+                "untitled": "Profil d'exposition",
+                "workerHint": "Worker rattaché : #{{workerId}}",
+                "back": "Retour",
+                "cancel": "Annuler",
+                "save": "Sauvegarder",
+                "saving": "Sauvegarde en cours…",
+                "saveSuccess": "Les liens du profil ont été mis à jour.",
+                "loading": "Chargement de l'éditeur…",
+                "addPoint": "Ajouter un point",
+                "noLinks": "Aucun lien défini pour ce profil. Cliquez sur « Ajouter un point » pour commencer.",
+                "pickPoint": "Sélectionner un point de mesure…",
+                "noPointFound": "Aucun point trouvé",
+                "removeLine": "Supprimer cette ligne",
+                "totalLabel": "Total actuel : Σ = {{value}}",
+                "totalTitle": "Somme des fractions de temps",
+                "workHours": "Heures de travail par an",
+                "workHoursHint": "Par défaut {{defaultHours}} h/an (CIPR 103).",
+                "totalAnnualLabel": "Dose estimée annuelle",
+                "formula": "Σ (fraction × débit moyen × heures) / 1000",
+                "sections": {
+                    "points": {
+                        "title": "Points de mesure et fractions de temps",
+                        "subtitle": "Ajoutez les points fréquentés par le worker et indiquez la fraction de son temps passé sur chacun. La somme doit rester ≤ 1."
+                    },
+                    "estimate": {
+                        "title": "Calcul de la dose estimée annuelle",
+                        "subtitle": "L'estimation s'appuie sur la moyenne des dernières mesures d'ambiance disponibles pour chaque point."
+                    }
+                },
+                "table": {
+                    "point": "Point de mesure",
+                    "fraction": "Fraction de temps (0-1)",
+                    "doseRate": "Débit moyen"
+                },
+                "cipr": {
+                    "workerA": "vs Travailleur Cat. A (limite {{limit}} mSv/an)",
+                    "workerB": "vs Travailleur Cat. B (limite {{limit}} mSv/an)"
+                },
+                "errors": {
+                    "invalidProfile": "Profil d'exposition introuvable ou identifiant invalide.",
+                    "loadFailed": "Impossible de charger les données du profil.",
+                    "saveFailed": "Impossible de sauvegarder les liens. Réessayez ultérieurement.",
+                    "fractionOverflow": "La somme des fractions dépasse 1.0 — ajustez les valeurs avant de sauvegarder.",
+                    "fractionRange": "0 à 1",
+                    "incompleteLine": "Chaque ligne doit avoir un point de mesure sélectionné."
+                },
+                "notice": {
+                    "title": "Estimation indicative",
+                    "body": "Estimation basée sur les dernières mesures d'ambiance disponibles. Pour une mesure individuelle réelle, utiliser les enregistrements de dose individuelle (Phase 4)."
+                }
+            }
         }
     }
 }
