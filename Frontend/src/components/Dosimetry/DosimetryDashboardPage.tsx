@@ -199,14 +199,15 @@ const DosimetryDashboardPage = () => {
                     setLoadError(
                         t('dashboard.loadError', {
                             defaultValue:
-                                'Impossible de charger les KPI dosimetrie. Verifiez vos permissions ou reessayez.',
+                                "Les indicateurs n'ont pas pu être chargés. Vérifiez vos droits d'accès ou réessayez.",
                         }),
                     );
                 }
             } catch {
                 setLoadError(
                     t('dashboard.loadError', {
-                        defaultValue: 'Impossible de charger les KPI dosimetrie.',
+                        defaultValue:
+                            "Les indicateurs n'ont pas pu être chargés. Vérifiez vos droits d'accès ou réessayez.",
                     }),
                 );
             }
@@ -328,18 +329,22 @@ const DosimetryDashboardPage = () => {
 
     const mineLabels = useMemo(() => {
         const map: Record<number, string> = {};
+        const fallbackPrefix = t('dashboard.filters.mineFallback', { defaultValue: 'Site' });
         multiMine.forEach((m) => {
-            map[m.mineId] = `Mine #${m.mineId}`;
+            // Préférence : nom métier renvoyé par le backend si présent.
+            const named = (m as unknown as { mineName?: string; companyName?: string }).mineName
+                ?? (m as unknown as { mineName?: string; companyName?: string }).companyName;
+            map[m.mineId] = named && named.trim().length > 0 ? named : `${fallbackPrefix} ${m.mineId}`;
         });
         // Mine courante : tente d'afficher un libelle plus lisible si user a un companyName.
         const currentCompanyName: string | null = user?.companyName ?? null;
-        if (currentCompanyName && mineId in map === false) {
+        if (currentCompanyName) {
             map[mineId] = currentCompanyName;
-        } else if (currentCompanyName) {
-            map[mineId] = currentCompanyName;
+        } else if (!(mineId in map)) {
+            map[mineId] = `${fallbackPrefix} ${mineId}`;
         }
         return map;
-    }, [multiMine, user, mineId]);
+    }, [multiMine, user, mineId, t]);
 
     // ─────────────────────────────────────────────────────────────────────
     //  Render
@@ -351,11 +356,11 @@ const DosimetryDashboardPage = () => {
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <span className="uppercase tracking-[0.16em] font-medium">
-                        {t('dashboard.breadcrumbRoot', { defaultValue: 'Dosimetrie' })}
+                        {t('dashboard.breadcrumbRoot', { defaultValue: 'Dosimétrie' })}
                     </span>
                     <IconChevronRight size={10} className="text-slate-400" />
                     <span className="uppercase tracking-[0.16em] text-slate-700 font-medium">
-                        {t('dashboard.breadcrumbCurrent', { defaultValue: 'Vue d ensemble' })}
+                        {t('dashboard.breadcrumbCurrent', { defaultValue: "Vue d'ensemble" })}
                     </span>
                 </div>
 
@@ -381,18 +386,18 @@ const DosimetryDashboardPage = () => {
                                     }}
                                 >
                                     {t('dashboard.title', {
-                                        defaultValue: 'Tableau de bord dosimetrie',
+                                        defaultValue: 'Tableau de bord dosimétrie',
                                     })}
                                 </h1>
                                 <p className="text-[13px] text-slate-600 mt-1 max-w-2xl leading-relaxed">
                                     {t('dashboard.subtitle', {
                                         defaultValue:
-                                            'Vue agregee des indicateurs cles d expositions aux rayonnements ionisants — conforme CIPR 103 / AIEA GSR Part 3. Aucune donnee nominative ou medicale n est exposee sur ce tableau.',
+                                            "Suivi consolidé des expositions aux rayonnements ionisants. Aucune donnée nominative ni médicale n'apparaît sur cette page.",
                                     })}
                                 </p>
                                 <p className="text-[11.5px] text-slate-500 mt-2 flex items-center gap-1.5">
                                     <IconShieldCheck size={12} stroke={1.7} className="text-violet-600" />
-                                    {t('dashboard.snapshotDate', { defaultValue: 'Snapshot au' })}{' '}
+                                    {t('dashboard.snapshotDate', { defaultValue: 'Données arrêtées au' })}{' '}
                                     <span className="font-semibold text-slate-700">
                                         {formatDate(aggregated.snapshotDate ?? todayIso())}
                                     </span>
@@ -404,17 +409,17 @@ const DosimetryDashboardPage = () => {
                         <div className="flex flex-wrap items-end gap-2">
                             <Select
                                 size="xs"
-                                label={t('dashboard.filters.mineLabel', { defaultValue: 'Mine' })}
+                                label={t('dashboard.filters.mineLabel', { defaultValue: 'Site' })}
                                 placeholder={t('dashboard.filters.minePlaceholder', {
-                                    defaultValue: 'Selectionner',
+                                    defaultValue: 'Choisir un site',
                                 })}
                                 data={[
-                                    { value: String(mineId), label: mineLabels[mineId] ?? `Mine #${mineId}` },
+                                    { value: String(mineId), label: mineLabels[mineId] ?? `${t('dashboard.filters.mineFallback', { defaultValue: 'Site' })} ${mineId}` },
                                     ...multiMine
                                         .filter((m) => m.mineId !== mineId)
                                         .map((m) => ({
                                             value: String(m.mineId),
-                                            label: mineLabels[m.mineId] ?? `Mine #${m.mineId}`,
+                                            label: mineLabels[m.mineId] ?? `${t('dashboard.filters.mineFallback', { defaultValue: 'Site' })} ${m.mineId}`,
                                         })),
                                 ]}
                                 value={String(mineId)}
@@ -425,12 +430,12 @@ const DosimetryDashboardPage = () => {
                             />
                             <Select
                                 size="xs"
-                                label={t('dashboard.filters.categoryLabel', { defaultValue: 'Categorie' })}
+                                label={t('dashboard.filters.categoryLabel', { defaultValue: 'Catégorie' })}
                                 data={[
                                     {
                                         value: 'ALL',
                                         label: t('dashboard.filters.categoryAll', {
-                                            defaultValue: 'Toutes',
+                                            defaultValue: 'Toutes catégories',
                                         }),
                                     },
                                     ...ALL_CATEGORIES.map((c) => ({
@@ -444,7 +449,7 @@ const DosimetryDashboardPage = () => {
                             />
                             <Select
                                 size="xs"
-                                label={t('dashboard.filters.yearLabel', { defaultValue: 'Annee' })}
+                                label={t('dashboard.filters.yearLabel', { defaultValue: 'Année' })}
                                 data={YEAR_OPTIONS.map((y) => ({ value: String(y), label: String(y) }))}
                                 value={String(year)}
                                 onChange={(v) => {
@@ -457,7 +462,7 @@ const DosimetryDashboardPage = () => {
                                 onClick={handleRefresh}
                                 disabled={refreshing}
                                 className="inline-flex items-center gap-1.5 px-3 py-[7px] text-[12px] rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition disabled:opacity-50"
-                                aria-label={t('dashboard.refresh', { defaultValue: 'Rafraichir' })}
+                                aria-label={t('dashboard.refresh', { defaultValue: 'Actualiser' })}
                             >
                                 <IconRefresh
                                     size={13}
@@ -465,7 +470,7 @@ const DosimetryDashboardPage = () => {
                                     className={refreshing ? 'animate-spin' : ''}
                                 />
                                 <span className="hidden sm:inline">
-                                    {t('dashboard.refresh', { defaultValue: 'Rafraichir' })}
+                                    {t('dashboard.refresh', { defaultValue: 'Actualiser' })}
                                 </span>
                             </button>
                         </div>
@@ -485,13 +490,13 @@ const DosimetryDashboardPage = () => {
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <DosimetryKpiTile
                             icon={IconUsersGroup}
-                            label={t('dashboard.kpi.workersLabel', { defaultValue: 'Travailleurs' })}
+                            label={t('dashboard.kpi.workersLabel', { defaultValue: 'Travailleurs exposés' })}
                             value={aggregated.workersCount}
                             tone="info"
                             loading={loading}
                             tooltip={t('dashboard.kpi.workersTooltip', {
                                 defaultValue:
-                                    'Nombre total de travailleurs exposes enregistres dans le perimetre filtre.',
+                                    'Nombre total de travailleurs exposés sur le périmètre sélectionné. La répartition par catégorie est affichée juste en dessous.',
                             })}
                         >
                             <div className="text-[10.5px] text-slate-600 leading-tight space-y-0.5">
@@ -508,7 +513,7 @@ const DosimetryDashboardPage = () => {
                                 {Object.values(aggregated.breakdown).every((v) => v === 0) && (
                                     <span className="text-slate-400">
                                         {t('dashboard.kpi.workersEmpty', {
-                                            defaultValue: 'Aucun travailleur enregistre',
+                                            defaultValue: "Aucun travailleur enregistré pour l'instant.",
                                         })}
                                     </span>
                                 )}
@@ -517,42 +522,42 @@ const DosimetryDashboardPage = () => {
 
                         <DosimetryKpiTile
                             icon={IconActivity}
-                            label={t('dashboard.kpi.avgDoseLabel', { defaultValue: 'Dose moyenne' })}
+                            label={t('dashboard.kpi.avgDoseLabel', { defaultValue: 'Dose moyenne annuelle' })}
                             value={aggregated.avgAnnualDose.toFixed(2)}
                             unit="mSv/an"
                             sub={t('dashboard.kpi.avgDoseSub', {
-                                defaultValue: 'Hp(10) - moyenne annuelle ponderee',
+                                defaultValue: 'Moyenne pondérée Hp(10)',
                             })}
                             tone="info"
                             loading={loading}
                             tooltip={t('dashboard.kpi.avgDoseTooltip', {
                                 defaultValue:
-                                    'Moyenne ponderee par le nombre de travailleurs de chaque categorie.',
+                                    'Moyenne pondérée par le nombre de travailleurs de chaque catégorie, exprimée en mSv par an.',
                             })}
                         />
 
                         <DosimetryKpiTile
                             icon={IconChartLine}
-                            label={t('dashboard.kpi.over50Label', { defaultValue: 'Workers > 50% limite' })}
+                            label={t('dashboard.kpi.over50Label', { defaultValue: 'Au-delà de 50 % de la limite' })}
                             value={aggregated.workersOver50}
                             sub={t('dashboard.kpi.over50Sub', {
-                                defaultValue: 'Au-dela de la moitie de la limite reglementaire',
+                                defaultValue: 'Surveillance renforcée recommandée',
                             })}
                             tone="warning"
                             sparkline={sparkOver50}
                             loading={loading}
                             tooltip={t('dashboard.kpi.over50Tooltip', {
                                 defaultValue:
-                                    'Travailleurs dont le cumul annuel depasse 50% de la limite CIPR de leur categorie.',
+                                    'Travailleurs dont la dose annuelle cumulée dépasse la moitié de la limite réglementaire applicable à leur catégorie.',
                             })}
                         />
 
                         <DosimetryKpiTile
                             icon={IconAlertOctagon}
-                            label={t('dashboard.kpi.over90Label', { defaultValue: 'Workers > 90% limite' })}
+                            label={t('dashboard.kpi.over90Label', { defaultValue: 'Au-delà de 90 % de la limite' })}
                             value={aggregated.workersOver90}
                             sub={t('dashboard.kpi.over90Sub', {
-                                defaultValue: 'Niveau d action — surveillance renforcee',
+                                defaultValue: 'Intervention immédiate requise',
                             })}
                             tone={aggregated.workersOver90 > 0 ? 'critical' : 'success'}
                             pulse={aggregated.workersOver90 > 0}
@@ -560,42 +565,42 @@ const DosimetryDashboardPage = () => {
                             loading={loading}
                             tooltip={t('dashboard.kpi.over90Tooltip', {
                                 defaultValue:
-                                    'Travailleurs au niveau d action — un dossier de depassement doit etre envisage.',
+                                    "Travailleurs très proches de la limite annuelle. L'ouverture d'un dossier de dépassement doit être envisagée sans délai.",
                             })}
                         />
 
                         <DosimetryKpiTile
                             icon={IconFolderOpen}
                             label={t('dashboard.kpi.overexposureLabel', {
-                                defaultValue: 'Dossiers surexposition',
+                                defaultValue: 'Dossiers de dépassement',
                             })}
                             value={aggregated.overexposureOpen}
                             sub={t('dashboard.kpi.overexposureSub', {
-                                defaultValue: 'Cas ouverts (OPEN + INVESTIGATING)',
+                                defaultValue: "En cours d'instruction",
                             })}
                             tone={aggregated.overexposureOpen > 0 ? 'alert' : 'success'}
                             loading={loading}
                             onClick={() => navigate('/dosimetry/overexposure')}
                             tooltip={t('dashboard.kpi.overexposureTooltip', {
-                                defaultValue: 'Cliquer pour ouvrir le workflow des dossiers de depassement.',
+                                defaultValue: 'Cliquez pour ouvrir le suivi des dossiers de dépassement.',
                             })}
                         />
 
                         <DosimetryKpiTile
                             icon={IconStethoscope}
                             label={t('dashboard.kpi.fitnessExpiringLabel', {
-                                defaultValue: 'Aptitudes < 30j',
+                                defaultValue: 'Aptitudes à renouveler',
                             })}
                             value={aggregated.fitnessExpiring}
                             sub={t('dashboard.kpi.fitnessExpiringSub', {
-                                defaultValue: 'Fiches arrivant a echeance bientot',
+                                defaultValue: 'Visite médicale à programmer sous 30 jours',
                             })}
                             tone={aggregated.fitnessExpiring > 0 ? 'warning' : 'success'}
                             loading={loading}
                             onClick={() => navigate('/dosimetry/medical/planning')}
                             tooltip={t('dashboard.kpi.fitnessExpiringTooltip', {
                                 defaultValue:
-                                    'Cliquer pour ouvrir le planning de surveillance medicale (medecin du travail).',
+                                    'Cliquez pour ouvrir le planning des visites médicales (médecin du travail).',
                             })}
                         />
                     </div>
@@ -611,20 +616,20 @@ const DosimetryDashboardPage = () => {
                                     style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
                                 >
                                     {t('dashboard.trend.title', {
-                                        defaultValue: 'Tendances mensuelles (12 mois)',
+                                        defaultValue: 'Tendances sur 12 mois',
                                     })}
                                 </h2>
                                 <p className="text-[11.5px] text-slate-500 mt-0.5">
                                     {t('dashboard.trend.subtitle', {
                                         defaultValue:
-                                            'Dose annuelle moyenne / mediane / max. Lignes ref. : 50% / 75% / 100% limite CIPR.',
+                                            'Doses moyenne, médiane et maximale. Repères tracés à 50 %, 75 % et 100 % de la limite réglementaire.',
                                     })}
                                 </p>
                             </div>
                             {regulatoryLimit > 0 && (
                                 <div className="text-right flex-shrink-0">
                                     <p className="text-[10px] uppercase tracking-[0.10em] text-slate-500 font-semibold">
-                                        {t('dashboard.trend.limitLabel', { defaultValue: 'Limite CIPR' })}
+                                        {t('dashboard.trend.limitLabel', { defaultValue: 'Limite réglementaire' })}
                                     </p>
                                     <p className="text-[14px] font-mono font-bold text-red-700 tabular-nums">
                                         {regulatoryLimit.toFixed(0)} mSv/an
@@ -640,14 +645,14 @@ const DosimetryDashboardPage = () => {
                                 regulatoryLimit={regulatoryLimit}
                                 loading={loading}
                                 labels={{
-                                    avg: t('dashboard.trend.avg', { defaultValue: 'Dose moyenne' }),
-                                    median: t('dashboard.trend.median', { defaultValue: 'Dose mediane' }),
-                                    max: t('dashboard.trend.max', { defaultValue: 'Dose max' }),
+                                    avg: t('dashboard.trend.avg', { defaultValue: 'Moyenne' }),
+                                    median: t('dashboard.trend.median', { defaultValue: 'Médiane' }),
+                                    max: t('dashboard.trend.max', { defaultValue: 'Maximum' }),
                                 }}
                                 refLabels={{
-                                    p50: t('dashboard.trend.refP50', { defaultValue: '50% limite' }),
-                                    p75: t('dashboard.trend.refP75', { defaultValue: '75% limite' }),
-                                    p100: t('dashboard.trend.refP100', { defaultValue: 'Limite CIPR' }),
+                                    p50: t('dashboard.trend.refP50', { defaultValue: '50 % de la limite' }),
+                                    p75: t('dashboard.trend.refP75', { defaultValue: '75 % de la limite' }),
+                                    p100: t('dashboard.trend.refP100', { defaultValue: 'Limite réglementaire' }),
                                 }}
                             />
                         </div>
@@ -660,13 +665,13 @@ const DosimetryDashboardPage = () => {
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
                             >
                                 {t('dashboard.distribution.title', {
-                                    defaultValue: 'Distribution des doses annuelles',
+                                    defaultValue: 'Répartition des doses annuelles',
                                 })}
                             </h2>
                             <p className="text-[11.5px] text-slate-500 mt-0.5">
                                 {t('dashboard.distribution.subtitle', {
                                     defaultValue:
-                                        'Repartition des travailleurs par % de la limite reglementaire (CIPR 103).',
+                                        'Travailleurs classés par bande de la limite réglementaire.',
                                 })}
                             </p>
                         </div>
@@ -694,12 +699,12 @@ const DosimetryDashboardPage = () => {
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
                             >
                                 {t('dashboard.top.title', {
-                                    defaultValue: 'Top 10 des travailleurs les plus exposes',
+                                    defaultValue: 'Travailleurs les plus exposés',
                                 })}
                             </h2>
                             <p className="text-[11.5px] text-slate-500 mt-0.5">
                                 {t('dashboard.top.subtitle', {
-                                    defaultValue: `Annee ${year} — cumul annuel pseudonymise. Cliquer une ligne pour ouvrir la fiche 360 (RBAC DOSIMETRY_READ_NOMINATIVE).`,
+                                    defaultValue: `Année ${year}, cumul annuel anonymisé. Cliquez sur une ligne pour ouvrir la fiche détaillée (accès tracé).`,
                                     year,
                                 })}
                             </p>
@@ -710,33 +715,33 @@ const DosimetryDashboardPage = () => {
                         loading={loading}
                         labels={{
                             rank: t('dashboard.top.rank', { defaultValue: 'Rang' }),
-                            workerId: t('dashboard.top.workerId', { defaultValue: 'Worker ID' }),
-                            category: t('dashboard.top.category', { defaultValue: 'Categorie' }),
+                            workerId: t('dashboard.top.workerId', { defaultValue: 'Identifiant' }),
+                            category: t('dashboard.top.category', { defaultValue: 'Catégorie' }),
                             annualDose: t('dashboard.top.annualDose', {
                                 defaultValue: 'Dose annuelle (mSv)',
                             }),
-                            percentLimit: t('dashboard.top.percentLimit', { defaultValue: '% limite' }),
-                            status: t('dashboard.top.status', { defaultValue: 'Statut' }),
+                            percentLimit: t('dashboard.top.percentLimit', { defaultValue: '% de la limite' }),
+                            status: t('dashboard.top.status', { defaultValue: 'Situation' }),
                             actions: t('dashboard.top.actions', { defaultValue: 'Actions' }),
                             empty: t('dashboard.top.empty', {
-                                defaultValue: 'Aucun travailleur expose enregistre pour cette periode.',
+                                defaultValue: 'Aucun travailleur exposé sur cette période.',
                             }),
                             loadingText: t('dashboard.top.loading', {
-                                defaultValue: 'Chargement du top 10…',
+                                defaultValue: 'Chargement du classement…',
                             }),
                             privacyNotice: t('dashboard.top.privacyNotice', {
                                 defaultValue:
-                                    'Donnees agregees - aucune donnee medicale visible ici. Le nom et le matricule du travailleur sont visibles uniquement dans la fiche 360 (permission DOSIMETRY_READ_NOMINATIVE).',
+                                    "Données anonymisées. Le nom et le matricule du travailleur n'apparaissent que dans la fiche détaillée, sous accès tracé.",
                             }),
                             viewWorker: t('dashboard.top.viewWorker', { defaultValue: 'Ouvrir la fiche' }),
                             statusSafe: t('dashboard.top.statusSafe', { defaultValue: 'Conforme' }),
-                            statusWatch: t('dashboard.top.statusWatch', { defaultValue: 'Surveillance' }),
+                            statusWatch: t('dashboard.top.statusWatch', { defaultValue: 'À surveiller' }),
                             statusInvestigation: t('dashboard.top.statusInvestigation', {
                                 defaultValue: 'Investigation',
                             }),
-                            statusAction: t('dashboard.top.statusAction', { defaultValue: 'Action' }),
+                            statusAction: t('dashboard.top.statusAction', { defaultValue: 'Action requise' }),
                             statusExceeded: t('dashboard.top.statusExceeded', {
-                                defaultValue: 'Depassement',
+                                defaultValue: 'Dépassement',
                             }),
                         }}
                     />
@@ -751,13 +756,13 @@ const DosimetryDashboardPage = () => {
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
                             >
                                 {t('dashboard.multimine.title', {
-                                    defaultValue: 'Comparatif multi-sites',
+                                    defaultValue: 'Comparatif des sites',
                                 })}
                             </h2>
                             <p className="text-[11.5px] text-slate-500 mt-0.5">
                                 {t('dashboard.multimine.subtitle', {
                                     defaultValue:
-                                        'KPI agreges par mine pour la derniere date de snapshot. Cliquer une carte pour filtrer le dashboard.',
+                                        'Indicateurs agrégés par site, sur la dernière mise à jour. Cliquez sur une carte pour filtrer le tableau de bord.',
                                 })}
                             </p>
                         </div>
@@ -770,26 +775,26 @@ const DosimetryDashboardPage = () => {
                         mineLabels={mineLabels}
                         labels={{
                             title: t('dashboard.multimine.title', {
-                                defaultValue: 'Comparatif multi-sites',
+                                defaultValue: 'Comparatif des sites',
                             }),
-                            workers: t('dashboard.multimine.workers', { defaultValue: 'Workers' }),
-                            avgDose: t('dashboard.multimine.avgDose', { defaultValue: 'Moy.' }),
-                            maxDose: t('dashboard.multimine.maxDose', { defaultValue: 'Max' }),
-                            over100: t('dashboard.multimine.over100', { defaultValue: '>100%' }),
+                            workers: t('dashboard.multimine.workers', { defaultValue: 'Travailleurs' }),
+                            avgDose: t('dashboard.multimine.avgDose', { defaultValue: 'Moyenne' }),
+                            maxDose: t('dashboard.multimine.maxDose', { defaultValue: 'Maximum' }),
+                            over100: t('dashboard.multimine.over100', { defaultValue: 'Au-delà de 100 %' }),
                             alerts: t('dashboard.multimine.alerts', { defaultValue: 'Alertes' }),
                             cases: t('dashboard.multimine.cases', { defaultValue: 'Dossiers' }),
                             empty: t('dashboard.multimine.empty', {
-                                defaultValue: 'Aucune donnee de comparaison disponible.',
+                                defaultValue: 'Aucune donnée à comparer pour le moment.',
                             }),
                             loadingText: t('dashboard.multimine.loading', {
                                 defaultValue: 'Chargement…',
                             }),
                             unitMsv: 'mSv',
                             currentBadge: t('dashboard.multimine.currentBadge', {
-                                defaultValue: 'Active',
+                                defaultValue: 'Site actif',
                             }),
                             clickHint: t('dashboard.multimine.clickHint', {
-                                defaultValue: 'Cliquer pour filtrer →',
+                                defaultValue: 'Cliquer pour filtrer',
                             }),
                         }}
                     />
@@ -799,7 +804,7 @@ const DosimetryDashboardPage = () => {
                 <footer className="mt-4 text-center text-[10.5px] text-slate-400 leading-relaxed">
                     {t('dashboard.footer', {
                         defaultValue:
-                            'Donnees agregees conformes RGPD art. 30 + CIPR 103 + AIEA GSR Part 3. Le rafraichissement des snapshots est quotidien (job nuit).',
+                            "Données agrégées, conformes au RGPD (art. 30), à la CIPR 103 et à l'AIEA GSR Part 3. Mise à jour quotidienne durant la nuit.",
                     })}
                 </footer>
             </div>

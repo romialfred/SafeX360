@@ -1,24 +1,24 @@
 {
     "module": {
-        "name": "Dosimetry & Exposures",
+        "name": "Dosimetry and exposures",
         "shortName": "Dosimetry",
-        "tagline": "Tracking of ionizing radiation and physical agent exposures"
+        "tagline": "Tracking exposures to ionising radiation and physical agents"
     },
     "sidebar": {
-        "dosimetry": "Dosimetry & Exposures",
+        "dosimetry": "Dosimetry and exposures",
         "dosimetryDashboard": "Dashboard",
-        "dosimetryWorkers": "Exposed workers registry",
-        "dosimetryDosimeters": "Dosimeters & instruments",
-        "dosimetryDoses": "Dose entry & tracking",
+        "dosimetryWorkers": "Exposed workers register",
+        "dosimetryDosimeters": "Dosimeters and instruments",
+        "dosimetryDoses": "Dose entry and tracking",
         "dosimetryAmbient": "Measurement points",
-        "dosimetryAmbientMap": "Ambient map",
+        "dosimetryAmbientMap": "Ambient mapping",
         "dosimetryCampaigns": "Monitoring campaigns",
         "dosimetryExposureProfiles": "Exposure profiles",
         "dosimetryMedical": "Medical visits planning",
-        "dosimetryMyMedical": "My medical dossier",
-        "dosimetryAlerts": "Thresholds & alerts",
+        "dosimetryMyMedical": "My medical record",
+        "dosimetryAlerts": "Thresholds and alerts",
         "dosimetryOverexposure": "Overexposure cases",
-        "dosimetryReports": "Reports & attestations",
+        "dosimetryReports": "Reports and attestations",
         "dosimetryRegulatoryExports": "Regulatory exports",
         "dosimetrySettings": "Dosimetry settings"
     },
@@ -135,10 +135,10 @@
         "empty": "No threshold configured. Click 'Add threshold' or reset to ICRP defaults.",
         "categories": {
             "A": "Category A (exposed)",
-            "B": "Category B (likely)",
-            "WORKER_A": "Worker — Category A",
-            "WORKER_B": "Worker — Category B",
-            "APPRENTICE": "Apprentice / student (16-18 yrs)",
+            "B": "Category B (likely exposure)",
+            "WORKER_A": "Category A",
+            "WORKER_B": "Category B",
+            "APPRENTICE": "Apprentice (16-18 years)",
             "PREGNANCY": "Declared pregnancy",
             "PUBLIC": "General public"
         },
@@ -167,10 +167,10 @@
         },
         "actions": {
             "reset": "Reset ICRP/IAEA",
-            "resetTooltip": "Restores reference values from V005 seed (requires DOSIMETRY_ADMIN)",
-            "resetDenied": "Permission required: DOSIMETRY_ADMIN",
-            "addCustom": "Add custom threshold",
-            "addDenied": "Permission required: DOSIMETRY_ADMIN",
+            "resetTooltip": "Restores the reference values (reserved to the module administrator).",
+            "resetDenied": "Reserved to the module administrator.",
+            "addCustom": "Add a custom threshold",
+            "addDenied": "Reserved to the module administrator.",
             "edit": "Edit",
             "save": "Save",
             "cancel": "Cancel",
@@ -293,20 +293,20 @@
         "status": "Status"
     },
     "registry": {
-        "title": "Exposed Workers Registry",
-        "subtitle": "Nominative tracking of workers exposed to ionizing radiation — ICRP 103 classification, Hp(10) doses, medical surveillance and certifications.",
+        "title": "Exposed workers register",
+        "subtitle": "Nominative tracking of workers exposed to ionising radiation: ICRP 103 classification, Hp(10) doses, medical follow-up and certifications.",
         "breadcrumbRoot": "SafeX 360",
-        "breadcrumbParent": "Dosimetry & Exposures",
-        "breadcrumbCurrent": "Registry",
-        "loading": "Loading registry…",
-        "loadError": "Unable to load the registry. Showing a demo dataset.",
+        "breadcrumbParent": "Dosimetry & exposures",
+        "breadcrumbCurrent": "Register",
+        "loading": "Loading the register…",
+        "loadError": "We couldn't load the register. A demo dataset is shown.",
         "exportError": "CSV export failed. Please try again.",
         "categoryAria": "Category {{category}}",
         "kpi": {
             "total": "Exposed workers",
-            "categories": "Category A / B",
-            "categoriesSub": "ICRP split",
-            "redLevel": "RED level",
+            "categories": "Category A and B",
+            "categoriesSub": "ICRP breakdown",
+            "redLevel": "Critical level",
             "activeAlerts": "Active alerts"
         },
         "toolbar": {
@@ -323,7 +323,7 @@
             "categoryA": "Category A",
             "categoryB": "Category B",
             "exportCsv": "Export CSV",
-            "exportCsvDenied": "Permission required: DOSIMETRY_READ_NOMINATIVE",
+            "exportCsvDenied": "Export reserved to users cleared for nominative data.",
             "addWorker": "Add worker",
             "activeFilters": "{{count}} of {{total}} worker(s) shown",
             "clearFilters": "Clear filters"
@@ -440,7 +440,7 @@
             "specialStatusNone": "No special status",
             "specialStatusStartDate": "Start",
             "specialStatusEndDate": "Expected end",
-            "editDenied": "Required permission: DOSIMETRY_PCR_RPO"
+            "editDenied": "Editing is reserved to the radiation protection officer."
         },
         "doses": {
             "title": "Dose history",
@@ -519,7 +519,7 @@
             "examiningPhysician": "Examining physician",
             "clinicalNotesTitle": "Clinical notes",
             "confidentialBanner": "Confidential clinical data — physician access only",
-            "confidentialBannerDetail": "Per medical confidentiality rules, only users holding the DOSIMETRY_MEDICAL permission can view detailed clinical observations."
+            "confidentialBannerDetail": "Your medical data remains confidential: only the occupational physician can view the detailed clinical observations."
         },
         "qualifications": {
             "title": "Certifications & qualifications",
@@ -546,8 +546,8 @@
         }
     },
     "dosimeters": {
-        "title": "Dosimeters & Instruments",
-        "subtitle": "Inventory and lifecycle of TLD / OSL / FILM / EPD dosimeters — calibration, assignment and usage history. Compliant with ISO 17025 and IAEA RS-G-1.3.",
+        "title": "Dosimeters and instruments",
+        "subtitle": "Inventory and lifecycle of your TLD, OSL, film and electronic dosimeters: calibration, assignment and usage history. Compliant with ISO 17025 and IAEA RS-G-1.3.",
         "serialNumber": "Serial number",
         "model": "Model",
         "type": "Type",
@@ -556,15 +556,15 @@
         "nextCalibration": "Next calibration",
         "status": "Status",
         "breadcrumbRoot": "SafeX 360",
-        "breadcrumbParent": "Dosimetry & Exposures",
-        "breadcrumbCurrent": "Dosimeters & Instruments",
-        "loading": "Loading inventory…",
-        "loadError": "Unable to load the dosimeter inventory. Please try again later.",
+        "breadcrumbParent": "Dosimetry and exposures",
+        "breadcrumbCurrent": "Dosimeters and instruments",
+        "loading": "Loading the inventory…",
+        "loadError": "We couldn't load the dosimeter inventory. Please try again shortly.",
         "kpi": {
             "total": "Total dosimeters",
             "available": "Available",
             "assigned": "Assigned",
-            "calibrationSoon": "Calibration < 30 d"
+            "calibrationSoon": "Calibration due within 30 days"
         },
         "urgentBanner": {
             "title": "Urgent action required",
@@ -636,10 +636,10 @@
             "noCurrentAssignment": "No active assignment for this dosimeter.",
             "nextCalibration": "Next calibration due date",
             "scheduleCalibration": "Schedule calibration",
-            "scheduleCalibrationPhase": "Available in Phase 4+ — calibration campaign orchestration",
-            "historyEmpty": "No assignment history available",
-            "historyPhaseNote": "Detailed assignment tracking will be available in Phase 4+",
-            "actionPhaseNote": "Action available in Phase 4+ — operational lifecycle",
+            "scheduleCalibrationPhase": "Coming soon: calibration campaign orchestration.",
+            "historyEmpty": "No assignment history yet.",
+            "historyPhaseNote": "Detailed assignment tracking is coming soon.",
+            "actionPhaseNote": "This action is coming soon (operational lifecycle).",
             "actions": {
                 "assign": "Assign to a worker",
                 "return": "Return",
@@ -734,14 +734,14 @@
         "loading": "Loading alerts…",
         "loadError": "Could not load alerts. Please try again later.",
         "kpi": {
-            "activeLabel": "ACTIVE alerts",
-            "activeSub": "Untreated",
-            "approachLabel": "APPROACH",
-            "approachSub": "Awareness level",
-            "investigationLabel": "INVESTIGATION",
-            "investigationSub": "Inquiry needed",
-            "criticalLabel": "ACTION + EXCEEDED",
-            "criticalSub": "Immediate action"
+            "activeLabel": "Active alerts",
+            "activeSub": "Awaiting handling",
+            "approachLabel": "Approaching threshold",
+            "approachSub": "Heads-up signal",
+            "investigationLabel": "Investigation level",
+            "investigationSub": "Inquiry recommended",
+            "criticalLabel": "Action or exceeded",
+            "criticalSub": "Immediate response"
         },
         "tabs": {
             "active": "Active alerts",
@@ -816,9 +816,9 @@
             "close": "Close"
         },
         "actions": {
-            "ackDenied": "Permission required: DOSIMETRY_WRITE",
-            "resolveDenied": "Permission required: DOSIMETRY_WRITE",
-            "openCaseDenied": "Permission required: DOSIMETRY_PCR_RPO"
+            "ackDenied": "Reserved to HSE officers cleared to act on alerts.",
+            "resolveDenied": "Reserved to HSE officers cleared to act on alerts.",
+            "openCaseDenied": "Case opening is reserved to the radiation protection officer."
         }
     },
     "alertsBanner": {
@@ -1559,14 +1559,14 @@
         "loadError": "Failed to load overexposure cases.",
         "refresh": "Refresh",
         "kpi": {
-            "totalLabel": "TOTAL",
-            "totalSub": "All statuses",
-            "openLabel": "OPEN",
-            "openSub": "Status OPEN",
-            "investigatingLabel": "INVESTIGATING",
-            "investigatingSub": "Under investigation",
-            "closedLabel": "CLOSED (30d)",
-            "closedSub": "Last month"
+            "totalLabel": "All cases",
+            "totalSub": "Every status combined",
+            "openLabel": "Open",
+            "openSub": "Awaiting action",
+            "investigatingLabel": "Investigating",
+            "investigatingSub": "Inquiry under way",
+            "closedLabel": "Closed",
+            "closedSub": "In the last 30 days"
         },
         "filters": {
             "statusLabel": "Status",
@@ -1648,12 +1648,12 @@
                 "submit": "Save investigation",
                 "success": "Investigation saved.",
                 "error": "Failed to save investigation.",
-                "denied": "Permission required: DOSIMETRY_WRITE"
+                "denied": "Reserved to HSE officers cleared to edit the case."
             },
             "medicalSection": {
                 "title": "Medical decision (confidential)",
-                "subtitle": "Access restricted to DOSIMETRY_MEDICAL permission holders.",
-                "denied": "You do not have DOSIMETRY_MEDICAL — the medical decision is hidden.",
+                "subtitle": "Section reserved to the occupational physician.",
+                "denied": "You don't have access to this section. The medical decision is hidden.",
                 "empty": "No medical decision recorded for this case."
             },
             "authority": {
@@ -1668,7 +1668,7 @@
             },
             "closure": {
                 "title": "Case closure",
-                "subtitle": "Closure is final and requires DOSIMETRY_PCR_RPO.",
+                "subtitle": "Closure is final. It is reserved to the radiation protection officer.",
                 "closedBanner": "This case has been closed since {{date}}.",
                 "closeBtn": "Close case",
                 "modalTitle": "Close case #{{id}}",
@@ -1680,7 +1680,7 @@
                 "submit": "Close permanently",
                 "success": "Case closed successfully.",
                 "error": "Closure failed.",
-                "denied": "Permission required: DOSIMETRY_PCR_RPO"
+                "denied": "Closure is reserved to the radiation protection officer."
             },
             "audit": {
                 "title": "Audit trail",
@@ -2440,22 +2440,22 @@
             "breadcrumbRoot": "Dosimetry & Exposures",
             "breadcrumbCurrent": "Medical surveillance",
             "title": "Medical visits planning",
-            "subtitle": "Regulatory visit pilot board (IAEA GSR Part 3 §3.105), alerts for expiring fitness assessments and temporary unfit cases.",
-            "scheduleVisit": "Schedule visit",
+            "subtitle": "Steering board for statutory visits (IAEA GSR Part 3 §3.105), with alerts for fitness assessments to renew and temporary unfit decisions.",
+            "scheduleVisit": "Schedule a visit",
             "refresh": "Refresh",
             "loading": "Loading visits…",
-            "loadError": "Unable to load scheduled visits. Please try again later.",
+            "loadError": "We couldn't load the scheduled visits. Please try again shortly.",
             "rbacBlockedTitle": "Access restricted",
-            "rbacBlockedBody": "This page is reserved to occupational physicians and RPO/PCR (DOSIMETRY_MEDICAL or DOSIMETRY_PCR_RPO).",
+            "rbacBlockedBody": "This page is reserved to the occupational physician and to the radiation protection officer.",
             "kpi": {
                 "toScheduleLabel": "To schedule",
-                "toScheduleSub": "Scheduled visits",
+                "toScheduleSub": "Awaiting an appointment",
                 "overdueLabel": "Overdue",
-                "overdueSub": "Pending action",
-                "upcomingLabel": "Due < 30d",
+                "overdueSub": "Action needed",
+                "upcomingLabel": "Due within 30 days",
                 "upcomingSub": "Fitness to renew",
                 "cancelledLabel": "Cancelled",
-                "cancelledSub": "Last 30 days"
+                "cancelledSub": "Over the last 30 days"
             },
             "tabs": {
                 "calendar": "Calendar",
@@ -2514,7 +2514,7 @@
             "openFitnessForm": "Enter fitness assessment",
             "backToPlanning": "Back to planning",
             "rbacBlockedTitle": "Access restricted",
-            "rbacBlockedBody": "Only the occupational physician (DOSIMETRY_MEDICAL) can record a visit.",
+            "rbacBlockedBody": "Only the occupational physician can record a visit.",
             "encryptionTitle": "Encrypted data",
             "encryptionBody": "This data will be encrypted at rest with AES-256-GCM and accessible only to the occupational physician with an audited justification.",
             "lockedTitle": "Visit locked",
@@ -2565,7 +2565,7 @@
             "cancel": "Cancel",
             "signAndSave": "Sign & save",
             "rbacBlockedTitle": "Access restricted",
-            "rbacBlockedBody": "Only the occupational physician (DOSIMETRY_MEDICAL) can issue a fitness card.",
+            "rbacBlockedBody": "Only the occupational physician can issue a fitness card.",
             "appendOnlyTitle": "Locked after signature",
             "appendOnlyBody": "After signature, this document becomes append-only (IAEA §3.106) and archived for 30 years. Any correction will require a new complementary card.",
             "confirmTitle": "Confirm signature",
@@ -2732,89 +2732,90 @@
     "dashboard": {
         "breadcrumbRoot": "Dosimetry",
         "breadcrumbCurrent": "Overview",
-        "title": "Dosimetry Dashboard",
-        "subtitle": "Aggregated view of key indicators for ionizing radiation exposure — ICRP 103 / IAEA GSR Part 3 compliant. No nominative or medical data is exposed on this dashboard.",
-        "snapshotDate": "Snapshot as of",
+        "title": "Dosimetry dashboard",
+        "subtitle": "Consolidated view of ionising radiation exposures. No nominative or medical data is displayed on this page.",
+        "snapshotDate": "Data as of",
         "refresh": "Refresh",
-        "loadError": "Unable to load dosimetry KPIs. Check your permissions or try again.",
-        "footer": "Aggregated data compliant with GDPR art. 30 + ICRP 103 + IAEA GSR Part 3. Snapshots are refreshed daily (nightly job).",
+        "loadError": "We couldn't load the indicators. Check your permissions or try again.",
+        "footer": "Aggregated data, compliant with GDPR (art. 30), ICRP 103 and IAEA GSR Part 3. Refreshed nightly.",
         "filters": {
-            "mineLabel": "Mine",
-            "minePlaceholder": "Select",
+            "mineLabel": "Site",
+            "minePlaceholder": "Choose a site",
+            "mineFallback": "Site",
             "categoryLabel": "Category",
             "categoryAll": "All categories",
             "yearLabel": "Year"
         },
         "kpi": {
             "workersLabel": "Exposed workers",
-            "workersTooltip": "Total number of exposed workers in the filtered scope. Breakdown by category listed below.",
-            "workersEmpty": "No worker registered",
-            "avgDoseLabel": "Average dose",
-            "avgDoseSub": "Hp(10) — annual weighted average",
-            "avgDoseTooltip": "Weighted average by worker count per category. Expressed in mSv/year.",
-            "over50Label": "Workers > 50% limit",
-            "over50Sub": "Beyond half the regulatory limit",
-            "over50Tooltip": "Workers whose annual cumulative dose exceeds 50% of the ICRP limit for their category.",
-            "over90Label": "Workers > 90% limit",
-            "over90Sub": "Action level — reinforced surveillance",
-            "over90Tooltip": "Workers at action level — an overexposure case should be considered.",
+            "workersTooltip": "Total number of exposed workers within the filtered scope. The breakdown by category appears just below.",
+            "workersEmpty": "No worker registered yet.",
+            "avgDoseLabel": "Average annual dose",
+            "avgDoseSub": "Hp(10) weighted average",
+            "avgDoseTooltip": "Weighted by the number of workers in each category, expressed in mSv per year.",
+            "over50Label": "Above 50% of the limit",
+            "over50Sub": "Enhanced monitoring recommended",
+            "over50Tooltip": "Workers whose annual cumulative dose exceeds half of the regulatory limit for their category.",
+            "over90Label": "Above 90% of the limit",
+            "over90Sub": "Immediate action required",
+            "over90Tooltip": "Workers very close to the annual limit. An overexposure case should be opened without delay.",
             "overexposureLabel": "Overexposure cases",
-            "overexposureSub": "Open cases (OPEN + INVESTIGATING)",
-            "overexposureTooltip": "Click to open the overexposure cases workflow (Phase 5).",
-            "fitnessExpiringLabel": "Fitness < 30d",
-            "fitnessExpiringSub": "Assessments expiring soon",
-            "fitnessExpiringTooltip": "Click to open the medical surveillance planning (occupational physician)."
+            "overexposureSub": "Currently under investigation",
+            "overexposureTooltip": "Click to open the overexposure case workflow.",
+            "fitnessExpiringLabel": "Fitness renewals due",
+            "fitnessExpiringSub": "Medical visit to schedule within 30 days",
+            "fitnessExpiringTooltip": "Click to open the medical visit planner (occupational physician)."
         },
         "trend": {
-            "title": "Monthly trends (12 months)",
-            "subtitle": "Average / median / max annual dose. Ref. lines: 50% / 75% / 100% ICRP limit.",
-            "limitLabel": "ICRP limit",
-            "avg": "Average dose",
-            "median": "Median dose",
-            "max": "Max dose",
-            "refP50": "50% limit",
-            "refP75": "75% limit",
-            "refP100": "ICRP limit"
+            "title": "12-month trends",
+            "subtitle": "Average, median and maximum doses. Reference lines drawn at 50%, 75% and 100% of the regulatory limit.",
+            "limitLabel": "Regulatory limit",
+            "avg": "Average",
+            "median": "Median",
+            "max": "Maximum",
+            "refP50": "50% of the limit",
+            "refP75": "75% of the limit",
+            "refP100": "Regulatory limit"
         },
         "distribution": {
             "title": "Annual dose distribution",
-            "subtitle": "Worker distribution by % of regulatory limit (ICRP 103).",
+            "subtitle": "Workers grouped by band of the regulatory limit.",
             "workers": "worker(s)",
             "total": "Total"
         },
         "top": {
-            "title": "Top 10 most exposed workers",
-            "subtitle": "Year {{year}} — pseudonymized annual cumulative. Click a row to open the 360 file (RBAC DOSIMETRY_READ_NOMINATIVE).",
+            "title": "Most exposed workers",
+            "subtitle": "Year {{year}}, anonymised annual cumulative. Click a row to open the detailed file (access is logged).",
             "rank": "Rank",
-            "workerId": "Worker ID",
+            "workerId": "Identifier",
             "category": "Category",
             "annualDose": "Annual dose (mSv)",
-            "percentLimit": "% limit",
-            "status": "Status",
+            "percentLimit": "% of the limit",
+            "status": "Situation",
             "actions": "Actions",
-            "empty": "No exposed worker registered for this period.",
-            "loading": "Loading top 10…",
-            "privacyNotice": "Aggregated data — no medical data visible here. Worker name and badge number are only visible in the 360 file (permission DOSIMETRY_READ_NOMINATIVE).",
+            "empty": "No exposed worker on this period.",
+            "loading": "Loading ranking…",
+            "privacyNotice": "Anonymised data. The worker's name and badge number only appear in the detailed file, under logged access.",
             "viewWorker": "Open file",
             "statusSafe": "Compliant",
-            "statusWatch": "Watch",
+            "statusWatch": "To watch",
             "statusInvestigation": "Investigation",
-            "statusAction": "Action",
+            "statusAction": "Action required",
             "statusExceeded": "Exceeded"
         },
         "multimine": {
-            "title": "Multi-site comparison",
-            "subtitle": "KPIs aggregated by mine for the latest snapshot date. Click a card to filter the dashboard.",
+            "title": "Site comparison",
+            "subtitle": "Indicators aggregated by site, on the latest update. Click a card to filter the dashboard.",
             "workers": "Workers",
-            "avgDose": "Avg.",
-            "maxDose": "Max",
-            "over100": ">100%",
+            "avgDose": "Average",
+            "maxDose": "Maximum",
+            "over100": "Above 100%",
             "alerts": "Alerts",
             "cases": "Cases",
-            "empty": "No comparison data available.",
+            "empty": "No comparison data available yet.",
             "loading": "Loading…",
-            "currentBadge": "Active",
-            "clickHint": "Click to filter →"
+            "currentBadge": "Current site",
+            "clickHint": "Click to filter"
         }
     },
     "reports": {
@@ -2845,7 +2846,7 @@
             "attestation": {
                 "title": "Individual dose attestation",
                 "subtitle": "Nominative PDF per worker and year — Hp(10), Hp(0.07), Hp(3) cumulatives with ICRP limit comparison.",
-                "rbacHint": "Required permission · DOSIMETRY_READ_NOMINATIVE / MEDICAL / SELF",
+                "rbacHint": "Reserved to users cleared for nominative data or to the worker themselves.",
                 "cta": "Generate attestation",
                 "modalTitle": "Individual dose attestation",
                 "modalSubtitle": "Official nominative document. The access reason will be transmitted to the backend through the X-Reason header and logged in the GDPR register."
@@ -2853,7 +2854,7 @@
             "career": {
                 "title": "Career summary",
                 "subtitle": "Full history of doses and medical fitness across the worker's entire career.",
-                "rbacHint": "Required permission · DOSIMETRY_MEDICAL or SELF (strict GDPR)",
+                "rbacHint": "Reserved to the occupational physician or to the worker themselves (strict access).",
                 "cta": "Generate summary",
                 "modalTitle": "Worker career summary",
                 "modalSubtitle": "Confidential document including aggregated medical data. Strictly reserved to occupational physicians or the worker themselves."
@@ -2861,14 +2862,14 @@
             "register": {
                 "title": "Annual mine register",
                 "subtitle": "A4 landscape pseudonymized register of exposed workers and their dose cumulatives for the year.",
-                "rbacHint": "Required permission · DOSIMETRY_READ_AGGREGATE (aggregated data)",
+                "rbacHint": "Available to users cleared to view aggregated data.",
                 "cta": "Generate register",
                 "ctaLoading": "Generating…"
             },
             "overexposure": {
                 "title": "Overexposure report",
                 "subtitle": "Detailed report of an exceedance case: cause, corrective actions, medical decision, authority declaration.",
-                "rbacHint": "Required permission · DOSIMETRY_PCR_RPO + READ_NOMINATIVE",
+                "rbacHint": "Reserved to the radiation protection officer, with access to nominative data.",
                 "cta": "Generate report",
                 "modalTitle": "Overexposure report",
                 "modalSubtitle": "Nominative document linking a worker to an exceedance event. The access reason is mandatory and traced."
