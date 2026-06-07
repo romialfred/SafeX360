@@ -464,13 +464,13 @@ export const menuIdToUrl: Record<string, string> = {
     "modules-management": "/modules-management",
 
     // LOT — Module Dosimetrie & Expositions
-    // Seul `dosimetry-settings` est implementé pour le moment. Les autres
-    // sous-modules pointent vers /coming-soon (placeholder) pour eviter les 404
-    // tout en laissant la sidebar navigable.
+    // Phase 2 Frontend-A : ajout du registre des travailleurs exposes.
+    // Les autres sous-modules pointent vers /coming-soon (placeholder) pour
+    // eviter les 404 tout en laissant la sidebar navigable.
     "dosimetry": "/dosimetry/settings",
     "dosimetry-settings": "/dosimetry/settings",
+    "dosimetry-workers": "/dosimetry/workers",
     "dosimetry-dashboard": "/coming-soon",
-    "dosimetry-workers": "/coming-soon",
     "dosimetry-dosimeters": "/coming-soon",
     "dosimetry-doses": "/coming-soon",
     "dosimetry-medical": "/coming-soon",

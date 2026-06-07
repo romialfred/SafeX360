@@ -162,6 +162,9 @@ import ModuleNotFoundPage from '../pages/dashboard/ModuleNotFoundPage';
 import IsoMappingPage from '../pages/dashboard/IsoMappingPage';
 // LOT — Module Dosimetrie & Expositions
 import DosimetryParametersPage from '../components/Dosimetry/DosimetryParametersPage';
+import ExposedWorkersRegistryPage from '../components/Dosimetry/ExposedWorkersRegistryPage';
+import ExposedWorkerDetailPage from '../components/Dosimetry/ExposedWorkerDetailPage';
+import ExposedWorkerForm from '../components/Dosimetry/ExposedWorkerForm';
 
 
 
@@ -411,9 +414,15 @@ const router = createBrowserRouter([
             { path: "trend-analysis", element: <TrendAnalysis /> },
 
             // LOT — Module Dosimetrie & Expositions
-            // Seule la page Paramètres est implémentée pour le moment.
-            // Les autres sous-modules de la sidebar pointent vers /coming-soon.
+            // Phase 2 Frontend-A : registre des travailleurs exposes
+            // (les autres sous-modules de la sidebar pointent vers /coming-soon).
             { path: 'dosimetry/settings', element: <DosimetryParametersPage /> },
+            { path: 'dosimetry/workers', element: <ExposedWorkersRegistryPage /> },
+            // Phase 2 Frontend-B : fiche 360 d'un travailleur expose
+            { path: 'dosimetry/workers/detail/:id', element: <ExposedWorkerDetailPage /> },
+            // Phase 2 Frontend-C : formulaire d'enregistrement / edition (stepper)
+            { path: 'dosimetry/workers/new', element: <ExposedWorkerForm /> },
+            { path: 'dosimetry/workers/edit/:id', element: <ExposedWorkerForm /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

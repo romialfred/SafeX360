@@ -102,6 +102,256 @@
         "startDate": "Date de début d'exposition",
         "status": "Statut"
     },
+    "registry": {
+        "title": "Registre des travailleurs exposés",
+        "subtitle": "Suivi nominatif des personnels exposés aux rayonnements ionisants — catégorisation CIPR 103, doses Hp(10), surveillance médicale et habilitations.",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimétrie & Expositions",
+        "breadcrumbCurrent": "Registre",
+        "loading": "Chargement du registre…",
+        "loadError": "Impossible de charger le registre. Les données affichées sont un jeu de démonstration.",
+        "categoryAria": "Catégorie {{category}}",
+        "kpi": {
+            "total": "Travailleurs exposés",
+            "categories": "Catégorie A / B",
+            "categoriesSub": "Répartition CIPR",
+            "redLevel": "Niveau ROUGE",
+            "activeAlerts": "Alertes actives"
+        },
+        "toolbar": {
+            "searchPlaceholder": "Rechercher par matricule ou nom…",
+            "searchAria": "Rechercher un travailleur exposé",
+            "filterCategory": "Filtrer par catégorie",
+            "filterBand": "Filtrer par niveau d'exposition",
+            "filterDepartment": "Filtrer par département",
+            "filterSpecialStatus": "Filtrer par statut spécial",
+            "allCategories": "Toutes catégories",
+            "allLevels": "Tous niveaux",
+            "allDepartments": "Tous départements",
+            "allStatuses": "Tous statuts",
+            "categoryA": "Catégorie A",
+            "categoryB": "Catégorie B",
+            "exportCsv": "Exporter CSV",
+            "exportCsvDenied": "Permission requise : DOSIMETRY_READ_NOMINATIVE",
+            "addWorker": "Ajouter travailleur",
+            "activeFilters": "{{count}} sur {{total}} travailleur(s) affiché(s)",
+            "clearFilters": "Réinitialiser les filtres"
+        },
+        "columns": {
+            "matricule": "Matricule",
+            "name": "Nom",
+            "position": "Poste",
+            "department": "Département",
+            "category": "Catégorie",
+            "latestDose": "Dose dernière",
+            "annualHp10": "Annuel Hp(10)",
+            "rolling5y": "Glissant 5 ans",
+            "band": "Niveau",
+            "medical": "Surveillance médicale",
+            "habilitation": "Habilitation",
+            "actions": "Actions"
+        },
+        "bands": {
+            "green": "Faible",
+            "yellow": "À surveiller",
+            "orange": "Élevé",
+            "red": "Critique"
+        },
+        "medical": {
+            "ok": "À jour",
+            "due": "À planifier",
+            "overdue": "En retard",
+            "unknown": "Inconnu"
+        },
+        "habilitation": {
+            "valid": "Valide",
+            "expiring": "Bientôt expirée",
+            "expired": "Expirée",
+            "none": "Aucune"
+        },
+        "specialStatus": {
+            "PREGNANCY": "Grossesse",
+            "APPRENTICE": "Apprenti",
+            "STUDENT": "Étudiant",
+            "TEMPORARY": "Intérimaire"
+        },
+        "actions": {
+            "view": "Consulter la fiche",
+            "edit": "Modifier"
+        },
+        "empty": {
+            "title": "Aucun travailleur exposé enregistré",
+            "subtitle": "Aucun travailleur exposé n'a encore été enregistré pour cette mine. Ajoutez un nouveau travailleur pour commencer le suivi dosimétrique.",
+            "cta": "Ajouter un travailleur"
+        },
+        "footer": {
+            "titleIso": "ISO 27001 / AIEA GSR Part 3 — Données confidentielles",
+            "note": "Données confidentielles. Accès tracé. Conforme RGPD art. 30 + AIEA GSR Part 3 §3.106."
+        }
+    },
+    "workerDetail": {
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbParent": "Registre",
+        "breadcrumbCurrent": "Détail travailleur",
+        "loading": "Chargement de la fiche…",
+        "loadError": "Impossible de charger la fiche. Données de démonstration affichées.",
+        "notFound": "Travailleur introuvable.",
+        "actions": {
+            "back": "Retour",
+            "edit": "Modifier",
+            "printCertificate": "Imprimer attestation",
+            "editClassification": "Modifier classement"
+        },
+        "headerCategoryAria": "Catégorie {{category}}",
+        "headerSpecialPregnancy": "Grossesse déclarée",
+        "headerSpecialApprentice": "Apprenti",
+        "headerSpecialStudent": "Étudiant",
+        "tabs": {
+            "identity": "Identité & emploi",
+            "classification": "Classement radioprotection",
+            "doses": "Historique doses",
+            "dosimeters": "Dosimètres",
+            "medical": "Surveillance médicale",
+            "qualifications": "Habilitations & alertes"
+        },
+        "overexposure": {
+            "banner": "Dépassement {{grandeur}} en cours — dossier ouvert le {{date}}",
+            "cta": "Cliquer ici pour consulter le dossier"
+        },
+        "identity": {
+            "title": "Identité & emploi",
+            "matricule": "Matricule",
+            "name": "Nom complet",
+            "birthDate": "Date de naissance",
+            "position": "Poste occupé",
+            "department": "Département",
+            "hireDate": "Date d'embauche",
+            "assignmentDate": "Date d'affectation au poste exposé",
+            "employeeId": "Identifiant employé",
+            "pcrTitle": "Personne compétente en radioprotection (PCR)",
+            "pcrEmpty": "Aucune PCR référente assignée à ce travailleur.",
+            "pcrName": "Référent",
+            "pcrPosition": "Fonction",
+            "pcrEmail": "Email",
+            "pcrPhone": "Téléphone"
+        },
+        "classification": {
+            "title": "Classement radioprotection (CIPR 103)",
+            "category": "Catégorie",
+            "categoryA": "Catégorie A (exposés)",
+            "categoryB": "Catégorie B (susceptibles)",
+            "reason": "Raison du classement",
+            "classificationDate": "Date du classement",
+            "rpoReferent": "PCR référente",
+            "specialStatusTitle": "Statut spécial",
+            "specialStatusNone": "Aucun statut spécial",
+            "specialStatusStartDate": "Début",
+            "specialStatusEndDate": "Fin prévue",
+            "editDenied": "Permission requise : DOSIMETRY_PCR_RPO"
+        },
+        "doses": {
+            "title": "Historique des doses",
+            "subtitle": "Suivi append-only conforme CIPR 103. Toute modification crée un nouvel enregistrement versionné.",
+            "empty": "Aucun enregistrement de dose pour ce travailleur.",
+            "cols": {
+                "period": "Période",
+                "hp10": "Hp(10)",
+                "hp007": "Hp(0,07)",
+                "hp3": "Hp(3)",
+                "source": "Source",
+                "recordedAt": "Date saisie"
+            },
+            "source": {
+                "AGENCY": "Agence",
+                "EPD": "Dosimètre EPD",
+                "ESTIMATED": "Estimé"
+            },
+            "trend": {
+                "title": "Tendance Hp(10) vs limite annuelle",
+                "subtitle": "Évolution cumulée comparée à la limite réglementaire (mSv).",
+                "axisDose": "Dose (mSv)",
+                "limit": "Limite annuelle",
+                "value": "Hp(10) cumulé"
+            },
+            "cumuls": {
+                "title": "Cumuls réglementaires",
+                "annual": "Annuel Hp(10)",
+                "annualSub": "% de la limite annuelle",
+                "rolling5y": "Glissant 5 ans",
+                "rolling5ySub": "Limite : 100 mSv",
+                "lifetime": "Vie professionnelle",
+                "lifetimeSub": "Cumul total tracé"
+            }
+        },
+        "dosimeters": {
+            "title": "Dosimètres attribués",
+            "subtitle": "Historique d'attribution des dosimètres individuels.",
+            "empty": "Aucun dosimètre attribué historiquement.",
+            "cols": {
+                "serial": "Dosimètre",
+                "type": "Type",
+                "periodStart": "Début",
+                "periodEnd": "Fin",
+                "status": "Statut",
+                "handover": "Remise",
+                "return": "Retour"
+            },
+            "handover": {
+                "ack": "Confirmé",
+                "pending": "En attente"
+            },
+            "status": {
+                "AVAILABLE": "Disponible",
+                "ASSIGNED": "Attribué",
+                "IN_READING": "En lecture",
+                "LOST": "Perdu",
+                "DAMAGED": "Endommagé",
+                "RETIRED": "Retiré"
+            }
+        },
+        "medical": {
+            "title": "Surveillance médicale",
+            "subtitle": "Aptitude médicale au poste exposé — donnée confidentielle, accès tracé.",
+            "empty": "Aucune visite médicale enregistrée pour ce travailleur.",
+            "fitnessLabel": "Aptitude médicale",
+            "fitness": {
+                "FIT": "Apte",
+                "FIT_WITH_RESTRICTIONS": "Apte avec réserves",
+                "UNFIT": "Inapte",
+                "UNKNOWN": "Non renseigné"
+            },
+            "examType": "Type d'examen",
+            "lastExam": "Dernier examen",
+            "nextExam": "Prochain examen",
+            "examiningPhysician": "Médecin examinateur",
+            "clinicalNotesTitle": "Observations cliniques",
+            "confidentialBanner": "Données cliniques confidentielles — accès médecin uniquement",
+            "confidentialBannerDetail": "Conformément au secret médical, seuls les utilisateurs disposant de la permission DOSIMETRY_MEDICAL peuvent consulter le détail des observations cliniques."
+        },
+        "qualifications": {
+            "title": "Habilitations & qualifications",
+            "subtitle": "Suivi des qualifications réglementaires (RPO, radiographie industrielle, etc.).",
+            "empty": "Aucune habilitation enregistrée.",
+            "expiry": "Validité jusqu'au",
+            "status": {
+                "VALID": "Valide",
+                "EXPIRING": "Bientôt expirée",
+                "EXPIRED": "Expirée"
+            },
+            "alertsTitle": "Alertes actives",
+            "alertsEmpty": "Aucune alerte active sur ce travailleur.",
+            "alertLevel": {
+                "APPROACH": "Approche du seuil",
+                "INVESTIGATION": "Niveau d'investigation",
+                "ACTION": "Niveau d'action",
+                "EXCEEDED": "Dépassement réglementaire"
+            }
+        },
+        "footer": {
+            "title": "Données confidentielles — Accès tracé",
+            "note": "Fiche conforme RGPD art. 30, CIPR 103 et AIEA GSR Part 3 §3.106. Toute consultation est journalisée dans le registre d'audit."
+        }
+    },
     "dosimeters": {
         "title": "Dosimètres & Instruments",
         "serialNumber": "N° de série",
@@ -140,5 +390,173 @@
         "delete": "Supprimer",
         "yes": "Oui",
         "no": "Non"
+    },
+    "workerForm": {
+        "titleNew": "Nouveau travailleur exposé",
+        "titleEdit": "Modifier le travailleur exposé",
+        "subtitle": "Enregistrement nominatif d'un travailleur exposé aux rayonnements ionisants — classement CIPR 103, profil d'exposition, statut spécial et habilitations.",
+        "breadcrumbAria": "Fil d'Ariane",
+        "breadcrumbNew": "Nouveau",
+        "breadcrumbEdit": "Édition",
+        "loading": "Chargement du dossier travailleur…",
+        "draftSavedLocal": "Brouillon sauvegardé localement.",
+        "successCreate": "Travailleur exposé enregistré avec succès.",
+        "successUpdate": "Travailleur exposé mis à jour avec succès.",
+        "actions": {
+            "back": "Retour",
+            "saveDraft": "Sauvegarder brouillon",
+            "showHelp": "Afficher l'aide",
+            "hideHelp": "Masquer l'aide",
+            "help": "Aide"
+        },
+        "errors": {
+            "loadFailed": "Impossible de charger le travailleur.",
+            "submitFailed": "L'enregistrement a échoué. Veuillez réessayer."
+        },
+        "validation": {
+            "employeeRequired": "L'employé est requis",
+            "assignmentDateRequired": "La date d'affectation est requise",
+            "categoryRequired": "La catégorie est requise (A ou B)",
+            "reasonMin": "Le motif doit contenir au moins 50 caractères",
+            "classificationDateRequired": "La date de classement est requise",
+            "exposureTypesRequired": "Au moins un type d'exposition est requis",
+            "workAreasRequired": "Au moins une zone de travail est requise",
+            "frequencyRequired": "La fréquence et les conditions sont requises",
+            "pregnancyStartRequired": "La date de début de grossesse est requise",
+            "apprenticeBirthRequired": "La date de naissance est requise pour un apprenti",
+            "certifyRequired": "Vous devez certifier l'exactitude des informations",
+            "completeBeforeNext": "Veuillez compléter les champs obligatoires avant de continuer.",
+            "completeBeforeSubmit": "Veuillez compléter les champs obligatoires avant de soumettre."
+        },
+        "steps": {
+            "identity": { "label": "Identité & Emploi", "desc": "Sélection de l'employé" },
+            "classification": { "label": "Classement", "desc": "Catégorie CIPR" },
+            "exposure": { "label": "Profil d'exposition", "desc": "Types, zones, postes" },
+            "special": { "label": "Statut spécial", "desc": "Grossesse / apprenti" },
+            "qualifications": { "label": "Habilitations", "desc": "Confirmation" }
+        },
+        "identity": {
+            "sectionTitle": "Identité de l'employé exposé",
+            "employeeLabel": "Employé",
+            "employeePlaceholder": "Rechercher par matricule ou nom…",
+            "employeeTooltip": "Sélectionnez l'employé concerné. Les informations RH (matricule, poste, département) seront affichées automatiquement.",
+            "employeeNotFound": "Aucun employé trouvé",
+            "assignmentDate": "Date d'affectation au poste exposé",
+            "assignmentDatePlaceholder": "JJ/MM/AAAA",
+            "matricule": "Matricule",
+            "fullName": "Nom complet",
+            "position": "Poste",
+            "department": "Département"
+        },
+        "classification": {
+            "sectionTitle": "Classement radioprotection CIPR 103",
+            "categoryLabel": "Catégorie d'exposition",
+            "categoryTooltip": "Catégorie A : exposition susceptible de dépasser 6 mSv/an (limite 20). Catégorie B : exposition ≤ 6 mSv/an. Référence : AIEA GSR Part 3 §3.106.",
+            "categoryAShort": "Catégorie A",
+            "categoryADesc": "exposition > 6 mSv/an (limite 20 mSv)",
+            "categoryBShort": "Catégorie B",
+            "categoryBDesc": "exposition ≤ 6 mSv/an",
+            "reasonLabel": "Motif du classement",
+            "reasonTooltip": "Justification détaillée : nature de l'exposition, niveau attendu, lieux et fréquences. Minimum 50 caractères.",
+            "reasonPlaceholder": "Décrire les conditions et la justification du classement (lieux, équipements, fréquence, dose attendue)…",
+            "charsMin": "caractères minimum",
+            "classificationDate": "Date du classement",
+            "rpoLabel": "Personne compétente radioprotection (PCR / RPO)",
+            "rpoTooltip": "Référent radioprotection désigné. Obligatoire pour la traçabilité réglementaire.",
+            "rpoPlaceholder": "Sélectionner la PCR / RPO référente…"
+        },
+        "exposure": {
+            "sectionTitle": "Profil d'exposition aux rayonnements",
+            "typesLabel": "Types d'exposition",
+            "typesTooltip": "Liste des types d'exposition pertinents pour ce poste. Phase 1 : rayonnement externe uniquement.",
+            "typesPlaceholder": "Sélectionner les types d'exposition…",
+            "types": {
+                "EXTERNAL_RADIATION": "Rayonnement externe"
+            },
+            "workAreasLabel": "Zones de travail",
+            "workAreasTooltip": "Zones où le travailleur évolue (contrôlées, surveillées, etc.).",
+            "workAreasPlaceholder": "Sélectionner les zones de travail…",
+            "workAreasEmpty": "Aucune zone configurée",
+            "positionsLabel": "Postes / fonctions occupées",
+            "positionsPlaceholder": "Tapez pour ajouter un poste…",
+            "positionsHint": "Saisir librement les postes occupés. Pressez Entrée pour valider.",
+            "frequencyLabel": "Fréquence et conditions d'exposition",
+            "frequencyPlaceholder": "Décrire la fréquence (quotidien, hebdomadaire…), durée moyenne, équipements de protection portés…"
+        },
+        "special": {
+            "sectionTitle": "Statut spécial du travailleur",
+            "optional": "Optionnel",
+            "statusLabel": "Statut spécial",
+            "statusTooltip": "Permet d'appliquer une limite réglementaire renforcée pour la grossesse (1 mSv pour le fœtus) ou les apprentis 16-18 ans (6 mSv/an).",
+            "statuses": {
+                "NONE": "Aucun statut particulier",
+                "PREGNANCY": "Grossesse déclarée",
+                "APPRENTICE": "Apprenti / étudiant (16-18 ans)"
+            },
+            "pregnancyBannerTitle": "Limite renforcée : 1 mSv (protection du fœtus)",
+            "pregnancyBannerText": "Conformément à CIPR 103 §187, la dose équivalente au fœtus ne doit pas dépasser 1 mSv durant la grossesse. Réévaluer le poste et envisager un reclassement temporaire.",
+            "pregnancyStartDate": "Date de début de grossesse déclarée",
+            "pregnancyNote": "Note médicale (optionnel)",
+            "pregnancyNotePlaceholder": "Notes relatives à l'aménagement du poste, à l'évaluation des risques, etc.",
+            "apprenticeBannerTitle": "Limite renforcée : 6 mSv/an (apprentis 16-18 ans)",
+            "apprenticeBannerText": "Conformément à AIEA GSR Part 3 §3.108, la limite annuelle pour les apprentis et étudiants âgés de 16 à 18 ans est de 6 mSv/an (au lieu de 20 mSv/an).",
+            "apprenticeBirthDate": "Date de naissance",
+            "crossWarningTitle": "Surveillance médicale renforcée requise",
+            "crossWarningText": "Catégorie A combinée à une grossesse déclarée : un reclassement immédiat est exigé. La PCR et le médecin du travail doivent être notifiés."
+        },
+        "qualifications": {
+            "sectionTitle": "Habilitations & formations radioprotection",
+            "itemsLabel": "Formations radioprotection valides",
+            "itemsTooltip": "Liste des qualifications obtenues : PCR, radiographie industrielle, sources scellées, etc.",
+            "itemsPlaceholder": "Sélectionner les formations validées…",
+            "items": {
+                "RPO_PCR": "PCR / Personne compétente radioprotection",
+                "INDUSTRIAL_RADIOGRAPHY": "Radiographie industrielle",
+                "OPEN_SOURCES": "Manipulation de sources non scellées",
+                "SEALED_SOURCES": "Manipulation de sources scellées",
+                "RADIATION_AWARENESS": "Sensibilisation aux rayonnements ionisants"
+            },
+            "nextExpiry": "Date de prochaine échéance de validité",
+            "summaryTitle": "Récapitulatif du dossier",
+            "certifyLabel": "Je certifie que les données saisies sont exactes et conformes au règlement interne ainsi qu'aux exigences CIPR 103 / AIEA GSR Part 3."
+        },
+        "summary": {
+            "employee": "Employé",
+            "assignmentDate": "Affectation",
+            "category": "Catégorie",
+            "classificationDate": "Date classement",
+            "exposureTypes": "Types d'exposition",
+            "workAreas": "Zones",
+            "specialStatus": "Statut spécial",
+            "qualifications": "Habilitations"
+        },
+        "nav": {
+            "prev": "Étape précédente",
+            "next": "Étape suivante",
+            "submit": "Enregistrer le travailleur",
+            "stepCounter": "Étape {{current}} sur {{total}}"
+        },
+        "help": {
+            "title": "Aide & repères réglementaires",
+            "currentStep": "Étape en cours",
+            "steps": {
+                "0": "Sélectionnez l'employé existant dans l'annuaire RH. Les informations matricule, poste et département seront héritées automatiquement.",
+                "1": "Le classement A/B est une obligation réglementaire CIPR 103. La justification doit être suffisamment détaillée (≥ 50 caractères) pour être opposable lors d'un audit ASN/AIEA.",
+                "2": "Décrivez le profil d'exposition réel : types de rayonnement, zones fréquentées et conditions d'exposition.",
+                "3": "Le statut spécial déclenche des limites renforcées : 1 mSv pour le fœtus (grossesse), 6 mSv/an pour les apprentis 16-18 ans.",
+                "4": "Vérifiez le récapitulatif et cochez la déclaration de certification avant validation."
+            },
+            "iprcTitle": "Limites CIPR 103 — Hp(10)",
+            "tableCategory": "Catégorie",
+            "tableLimit": "Limite annuelle",
+            "rowA": "Catégorie A",
+            "rowB": "Catégorie B",
+            "rowApprentice": "Apprenti 16-18 ans",
+            "rowPregnancy": "Grossesse (fœtus)",
+            "procedureTitle": "Procédure de classement",
+            "procedureText": "La catégorie A s'applique aux travailleurs susceptibles de recevoir une dose annuelle supérieure à 6 mSv ou une dose équivalente au cristallin > 15 mSv. Sinon, classement en catégorie B. La PCR doit valider tout classement.",
+            "privacyTitle": "Confidentialité & traçabilité",
+            "privacyText": "Données nominatives à caractère sensible (RGPD art. 9). Conservation 50 ans après cessation d'activité (AIEA GSR Part 3 §3.106). Tout accès est tracé dans le registre d'audit SafeX 360."
+        }
     }
 }

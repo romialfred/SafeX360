@@ -102,6 +102,256 @@
         "startDate": "Exposure start date",
         "status": "Status"
     },
+    "registry": {
+        "title": "Exposed Workers Registry",
+        "subtitle": "Nominative tracking of workers exposed to ionizing radiation — ICRP 103 classification, Hp(10) doses, medical surveillance and certifications.",
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dosimetry & Exposures",
+        "breadcrumbCurrent": "Registry",
+        "loading": "Loading registry…",
+        "loadError": "Unable to load the registry. Showing a demo dataset.",
+        "categoryAria": "Category {{category}}",
+        "kpi": {
+            "total": "Exposed workers",
+            "categories": "Category A / B",
+            "categoriesSub": "ICRP split",
+            "redLevel": "RED level",
+            "activeAlerts": "Active alerts"
+        },
+        "toolbar": {
+            "searchPlaceholder": "Search by ID or name…",
+            "searchAria": "Search exposed worker",
+            "filterCategory": "Filter by category",
+            "filterBand": "Filter by exposure level",
+            "filterDepartment": "Filter by department",
+            "filterSpecialStatus": "Filter by special status",
+            "allCategories": "All categories",
+            "allLevels": "All levels",
+            "allDepartments": "All departments",
+            "allStatuses": "All statuses",
+            "categoryA": "Category A",
+            "categoryB": "Category B",
+            "exportCsv": "Export CSV",
+            "exportCsvDenied": "Permission required: DOSIMETRY_READ_NOMINATIVE",
+            "addWorker": "Add worker",
+            "activeFilters": "{{count}} of {{total}} worker(s) shown",
+            "clearFilters": "Clear filters"
+        },
+        "columns": {
+            "matricule": "Employee ID",
+            "name": "Name",
+            "position": "Position",
+            "department": "Department",
+            "category": "Category",
+            "latestDose": "Latest dose",
+            "annualHp10": "Annual Hp(10)",
+            "rolling5y": "5-year rolling",
+            "band": "Level",
+            "medical": "Medical surveillance",
+            "habilitation": "Certification",
+            "actions": "Actions"
+        },
+        "bands": {
+            "green": "Low",
+            "yellow": "Watch",
+            "orange": "High",
+            "red": "Critical"
+        },
+        "medical": {
+            "ok": "Up to date",
+            "due": "Due",
+            "overdue": "Overdue",
+            "unknown": "Unknown"
+        },
+        "habilitation": {
+            "valid": "Valid",
+            "expiring": "Expiring soon",
+            "expired": "Expired",
+            "none": "None"
+        },
+        "specialStatus": {
+            "PREGNANCY": "Pregnancy",
+            "APPRENTICE": "Apprentice",
+            "STUDENT": "Student",
+            "TEMPORARY": "Temporary"
+        },
+        "actions": {
+            "view": "View profile",
+            "edit": "Edit"
+        },
+        "empty": {
+            "title": "No exposed worker registered",
+            "subtitle": "No exposed worker has been registered for this mine yet. Add a new worker to start dose tracking.",
+            "cta": "Add a worker"
+        },
+        "footer": {
+            "titleIso": "ISO 27001 / IAEA GSR Part 3 — Confidential data",
+            "note": "Confidential data. Access logged. GDPR art. 30 and IAEA GSR Part 3 §3.106 compliant."
+        }
+    },
+    "workerDetail": {
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbParent": "Registry",
+        "breadcrumbCurrent": "Worker detail",
+        "loading": "Loading profile…",
+        "loadError": "Unable to load profile. Showing demo data.",
+        "notFound": "Worker not found.",
+        "actions": {
+            "back": "Back",
+            "edit": "Edit",
+            "printCertificate": "Print certificate",
+            "editClassification": "Edit classification"
+        },
+        "headerCategoryAria": "Category {{category}}",
+        "headerSpecialPregnancy": "Declared pregnancy",
+        "headerSpecialApprentice": "Apprentice",
+        "headerSpecialStudent": "Student",
+        "tabs": {
+            "identity": "Identity & employment",
+            "classification": "Radiation classification",
+            "doses": "Dose history",
+            "dosimeters": "Dosimeters",
+            "medical": "Medical surveillance",
+            "qualifications": "Certifications & alerts"
+        },
+        "overexposure": {
+            "banner": "{{grandeur}} overexposure in progress — case opened on {{date}}",
+            "cta": "Click here to open the case file"
+        },
+        "identity": {
+            "title": "Identity & employment",
+            "matricule": "Employee ID",
+            "name": "Full name",
+            "birthDate": "Birth date",
+            "position": "Position",
+            "department": "Department",
+            "hireDate": "Hire date",
+            "assignmentDate": "Exposed position assignment date",
+            "employeeId": "Employee identifier",
+            "pcrTitle": "Radiation Protection Officer (RPO)",
+            "pcrEmpty": "No RPO referent assigned to this worker.",
+            "pcrName": "Referent",
+            "pcrPosition": "Function",
+            "pcrEmail": "Email",
+            "pcrPhone": "Phone"
+        },
+        "classification": {
+            "title": "Radiation classification (ICRP 103)",
+            "category": "Category",
+            "categoryA": "Category A (exposed)",
+            "categoryB": "Category B (likely exposed)",
+            "reason": "Classification reason",
+            "classificationDate": "Classification date",
+            "rpoReferent": "RPO referent",
+            "specialStatusTitle": "Special status",
+            "specialStatusNone": "No special status",
+            "specialStatusStartDate": "Start",
+            "specialStatusEndDate": "Expected end",
+            "editDenied": "Required permission: DOSIMETRY_PCR_RPO"
+        },
+        "doses": {
+            "title": "Dose history",
+            "subtitle": "Append-only tracking compliant with ICRP 103. Any modification creates a new versioned record.",
+            "empty": "No dose record for this worker.",
+            "cols": {
+                "period": "Period",
+                "hp10": "Hp(10)",
+                "hp007": "Hp(0.07)",
+                "hp3": "Hp(3)",
+                "source": "Source",
+                "recordedAt": "Recorded at"
+            },
+            "source": {
+                "AGENCY": "Agency",
+                "EPD": "EPD dosimeter",
+                "ESTIMATED": "Estimated"
+            },
+            "trend": {
+                "title": "Hp(10) trend vs annual limit",
+                "subtitle": "Cumulative trend against the regulatory annual limit (mSv).",
+                "axisDose": "Dose (mSv)",
+                "limit": "Annual limit",
+                "value": "Cumulated Hp(10)"
+            },
+            "cumuls": {
+                "title": "Regulatory cumulations",
+                "annual": "Annual Hp(10)",
+                "annualSub": "% of annual limit",
+                "rolling5y": "5-year rolling",
+                "rolling5ySub": "Limit: 100 mSv",
+                "lifetime": "Career lifetime",
+                "lifetimeSub": "Total tracked cumulation"
+            }
+        },
+        "dosimeters": {
+            "title": "Assigned dosimeters",
+            "subtitle": "Individual dosimeter assignment history.",
+            "empty": "No dosimeter ever assigned.",
+            "cols": {
+                "serial": "Dosimeter",
+                "type": "Type",
+                "periodStart": "Start",
+                "periodEnd": "End",
+                "status": "Status",
+                "handover": "Handover",
+                "return": "Return"
+            },
+            "handover": {
+                "ack": "Acknowledged",
+                "pending": "Pending"
+            },
+            "status": {
+                "AVAILABLE": "Available",
+                "ASSIGNED": "Assigned",
+                "IN_READING": "In reading",
+                "LOST": "Lost",
+                "DAMAGED": "Damaged",
+                "RETIRED": "Retired"
+            }
+        },
+        "medical": {
+            "title": "Medical surveillance",
+            "subtitle": "Medical fitness for the exposed position — confidential data, access is logged.",
+            "empty": "No medical visit recorded for this worker.",
+            "fitnessLabel": "Medical fitness",
+            "fitness": {
+                "FIT": "Fit",
+                "FIT_WITH_RESTRICTIONS": "Fit with restrictions",
+                "UNFIT": "Unfit",
+                "UNKNOWN": "Not recorded"
+            },
+            "examType": "Exam type",
+            "lastExam": "Last exam",
+            "nextExam": "Next exam",
+            "examiningPhysician": "Examining physician",
+            "clinicalNotesTitle": "Clinical notes",
+            "confidentialBanner": "Confidential clinical data — physician access only",
+            "confidentialBannerDetail": "Per medical confidentiality rules, only users holding the DOSIMETRY_MEDICAL permission can view detailed clinical observations."
+        },
+        "qualifications": {
+            "title": "Certifications & qualifications",
+            "subtitle": "Regulatory qualifications tracking (RPO, industrial radiography, etc.).",
+            "empty": "No certification recorded.",
+            "expiry": "Valid until",
+            "status": {
+                "VALID": "Valid",
+                "EXPIRING": "Expiring soon",
+                "EXPIRED": "Expired"
+            },
+            "alertsTitle": "Active alerts",
+            "alertsEmpty": "No active alert for this worker.",
+            "alertLevel": {
+                "APPROACH": "Threshold approach",
+                "INVESTIGATION": "Investigation level",
+                "ACTION": "Action level",
+                "EXCEEDED": "Regulatory exceedance"
+            }
+        },
+        "footer": {
+            "title": "Confidential data — Access logged",
+            "note": "Record compliant with GDPR art. 30, ICRP 103 and IAEA GSR Part 3 §3.106. Every consultation is logged in the audit trail."
+        }
+    },
     "dosimeters": {
         "title": "Dosimeters & Instruments",
         "serialNumber": "Serial number",
@@ -140,5 +390,173 @@
         "delete": "Delete",
         "yes": "Yes",
         "no": "No"
+    },
+    "workerForm": {
+        "titleNew": "New exposed worker",
+        "titleEdit": "Edit exposed worker",
+        "subtitle": "Nominative record of a worker exposed to ionizing radiation — ICRP 103 classification, exposure profile, special status and qualifications.",
+        "breadcrumbAria": "Breadcrumb",
+        "breadcrumbNew": "New",
+        "breadcrumbEdit": "Edit",
+        "loading": "Loading worker record…",
+        "draftSavedLocal": "Draft saved locally.",
+        "successCreate": "Exposed worker successfully created.",
+        "successUpdate": "Exposed worker successfully updated.",
+        "actions": {
+            "back": "Back",
+            "saveDraft": "Save draft",
+            "showHelp": "Show help",
+            "hideHelp": "Hide help",
+            "help": "Help"
+        },
+        "errors": {
+            "loadFailed": "Unable to load the worker.",
+            "submitFailed": "Save failed. Please try again."
+        },
+        "validation": {
+            "employeeRequired": "Employee is required",
+            "assignmentDateRequired": "Assignment date is required",
+            "categoryRequired": "Category is required (A or B)",
+            "reasonMin": "Reason must contain at least 50 characters",
+            "classificationDateRequired": "Classification date is required",
+            "exposureTypesRequired": "At least one exposure type is required",
+            "workAreasRequired": "At least one work area is required",
+            "frequencyRequired": "Frequency and conditions are required",
+            "pregnancyStartRequired": "Pregnancy start date is required",
+            "apprenticeBirthRequired": "Birth date is required for apprentices",
+            "certifyRequired": "You must certify the accuracy of the data",
+            "completeBeforeNext": "Please complete required fields before continuing.",
+            "completeBeforeSubmit": "Please complete required fields before submitting."
+        },
+        "steps": {
+            "identity": { "label": "Identity & Job", "desc": "Employee selection" },
+            "classification": { "label": "Classification", "desc": "ICRP category" },
+            "exposure": { "label": "Exposure profile", "desc": "Types, areas, positions" },
+            "special": { "label": "Special status", "desc": "Pregnancy / apprentice" },
+            "qualifications": { "label": "Qualifications", "desc": "Confirmation" }
+        },
+        "identity": {
+            "sectionTitle": "Exposed worker identity",
+            "employeeLabel": "Employee",
+            "employeePlaceholder": "Search by ID or name…",
+            "employeeTooltip": "Select the relevant employee. HR information (ID, position, department) will be auto-filled.",
+            "employeeNotFound": "No employee found",
+            "assignmentDate": "Assignment date to exposed position",
+            "assignmentDatePlaceholder": "DD/MM/YYYY",
+            "matricule": "Employee ID",
+            "fullName": "Full name",
+            "position": "Position",
+            "department": "Department"
+        },
+        "classification": {
+            "sectionTitle": "Radiation protection classification (ICRP 103)",
+            "categoryLabel": "Exposure category",
+            "categoryTooltip": "Category A: exposure likely to exceed 6 mSv/year (limit 20). Category B: exposure ≤ 6 mSv/year. Reference: IAEA GSR Part 3 §3.106.",
+            "categoryAShort": "Category A",
+            "categoryADesc": "exposure > 6 mSv/yr (limit 20 mSv)",
+            "categoryBShort": "Category B",
+            "categoryBDesc": "exposure ≤ 6 mSv/yr",
+            "reasonLabel": "Classification reason",
+            "reasonTooltip": "Detailed justification: type of exposure, expected level, locations and frequency. Minimum 50 characters.",
+            "reasonPlaceholder": "Describe the conditions and justification of the classification (locations, equipment, frequency, expected dose)…",
+            "charsMin": "characters minimum",
+            "classificationDate": "Classification date",
+            "rpoLabel": "Radiation Protection Officer (RPO / PCR)",
+            "rpoTooltip": "Designated radiation protection officer. Required for regulatory traceability.",
+            "rpoPlaceholder": "Select the referring RPO…"
+        },
+        "exposure": {
+            "sectionTitle": "Radiation exposure profile",
+            "typesLabel": "Exposure types",
+            "typesTooltip": "List of relevant exposure types for this position. Phase 1: external radiation only.",
+            "typesPlaceholder": "Select exposure types…",
+            "types": {
+                "EXTERNAL_RADIATION": "External radiation"
+            },
+            "workAreasLabel": "Work areas",
+            "workAreasTooltip": "Areas where the worker operates (controlled, supervised, etc.).",
+            "workAreasPlaceholder": "Select work areas…",
+            "workAreasEmpty": "No area configured",
+            "positionsLabel": "Positions / job functions",
+            "positionsPlaceholder": "Type to add a position…",
+            "positionsHint": "Enter positions freely. Press Enter to confirm.",
+            "frequencyLabel": "Exposure frequency and conditions",
+            "frequencyPlaceholder": "Describe the frequency (daily, weekly…), average duration, protective equipment worn…"
+        },
+        "special": {
+            "sectionTitle": "Worker special status",
+            "optional": "Optional",
+            "statusLabel": "Special status",
+            "statusTooltip": "Triggers a tightened regulatory limit for pregnancy (1 mSv for the fetus) or apprentices 16-18 (6 mSv/yr).",
+            "statuses": {
+                "NONE": "No special status",
+                "PREGNANCY": "Declared pregnancy",
+                "APPRENTICE": "Apprentice / student (16-18)"
+            },
+            "pregnancyBannerTitle": "Tightened limit: 1 mSv (fetus protection)",
+            "pregnancyBannerText": "Per ICRP 103 §187, the equivalent dose to the fetus must not exceed 1 mSv during pregnancy. Reassess the position and consider a temporary reclassification.",
+            "pregnancyStartDate": "Declared pregnancy start date",
+            "pregnancyNote": "Medical note (optional)",
+            "pregnancyNotePlaceholder": "Notes on position adjustment, risk assessment, etc.",
+            "apprenticeBannerTitle": "Tightened limit: 6 mSv/yr (apprentices 16-18)",
+            "apprenticeBannerText": "Per IAEA GSR Part 3 §3.108, the annual limit for apprentices and students aged 16 to 18 is 6 mSv/yr (instead of 20 mSv/yr).",
+            "apprenticeBirthDate": "Date of birth",
+            "crossWarningTitle": "Enhanced medical surveillance required",
+            "crossWarningText": "Category A combined with declared pregnancy: immediate reclassification is required. The RPO and occupational physician must be notified."
+        },
+        "qualifications": {
+            "sectionTitle": "Qualifications & radiation protection training",
+            "itemsLabel": "Valid radiation protection trainings",
+            "itemsTooltip": "List of obtained qualifications: RPO, industrial radiography, sealed sources, etc.",
+            "itemsPlaceholder": "Select validated trainings…",
+            "items": {
+                "RPO_PCR": "RPO / Radiation Protection Officer",
+                "INDUSTRIAL_RADIOGRAPHY": "Industrial radiography",
+                "OPEN_SOURCES": "Unsealed sources handling",
+                "SEALED_SOURCES": "Sealed sources handling",
+                "RADIATION_AWARENESS": "Ionizing radiation awareness"
+            },
+            "nextExpiry": "Next validity expiry date",
+            "summaryTitle": "Record summary",
+            "certifyLabel": "I certify that the data entered is accurate and compliant with the internal regulations and ICRP 103 / IAEA GSR Part 3 requirements."
+        },
+        "summary": {
+            "employee": "Employee",
+            "assignmentDate": "Assignment",
+            "category": "Category",
+            "classificationDate": "Classification date",
+            "exposureTypes": "Exposure types",
+            "workAreas": "Areas",
+            "specialStatus": "Special status",
+            "qualifications": "Qualifications"
+        },
+        "nav": {
+            "prev": "Previous step",
+            "next": "Next step",
+            "submit": "Save worker",
+            "stepCounter": "Step {{current}} of {{total}}"
+        },
+        "help": {
+            "title": "Help & regulatory references",
+            "currentStep": "Current step",
+            "steps": {
+                "0": "Select the existing employee from the HR directory. ID, position and department will be auto-filled.",
+                "1": "A/B classification is an ICRP 103 regulatory obligation. The justification must be detailed enough (≥ 50 characters) to be defensible during an ASN/IAEA audit.",
+                "2": "Describe the actual exposure profile: radiation types, areas visited and exposure conditions.",
+                "3": "Special status triggers tightened limits: 1 mSv for the fetus (pregnancy), 6 mSv/yr for apprentices 16-18.",
+                "4": "Review the summary and check the certification box before validation."
+            },
+            "iprcTitle": "ICRP 103 limits — Hp(10)",
+            "tableCategory": "Category",
+            "tableLimit": "Annual limit",
+            "rowA": "Category A",
+            "rowB": "Category B",
+            "rowApprentice": "Apprentice 16-18",
+            "rowPregnancy": "Pregnancy (fetus)",
+            "procedureTitle": "Classification procedure",
+            "procedureText": "Category A applies to workers likely to receive an annual dose above 6 mSv or eye lens equivalent dose > 15 mSv. Otherwise, Category B. The RPO must validate any classification.",
+            "privacyTitle": "Confidentiality & traceability",
+            "privacyText": "Sensitive personal data (GDPR art. 9). 50-year retention after end of activity (IAEA GSR Part 3 §3.106). Every access is logged in the SafeX 360 audit trail."
+        }
     }
 }

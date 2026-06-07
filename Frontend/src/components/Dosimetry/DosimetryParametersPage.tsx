@@ -151,10 +151,18 @@ interface BandConfig {
     colorHex: string;
 }
 
+// Bandes alignees sur la specification BACKEND (ExposedWorkerQueryServiceImpl
+// .calculateExposureLevel) et le prompt §6/§10 :
+//   GREEN  : ratio dose/limite < 50%
+//   YELLOW : 50% - 75%
+//   ORANGE : 75% - 100%
+//   RED    : >= 100% (depassement)
+// thresholdPct = borne SUPERIEURE (exclusive) de la bande, i.e. la valeur a
+// partir de laquelle on bascule dans la bande suivante.
 const DEFAULT_BANDS: BandConfig[] = [
-    { id: 'green', labelKey: 'bands.green', thresholdPct: 30, colorHex: '#10b981' },
-    { id: 'yellow', labelKey: 'bands.yellow', thresholdPct: 60, colorHex: '#facc15' },
-    { id: 'orange', labelKey: 'bands.orange', thresholdPct: 80, colorHex: '#f97316' },
+    { id: 'green', labelKey: 'bands.green', thresholdPct: 50, colorHex: '#10b981' },
+    { id: 'yellow', labelKey: 'bands.yellow', thresholdPct: 75, colorHex: '#facc15' },
+    { id: 'orange', labelKey: 'bands.orange', thresholdPct: 100, colorHex: '#f97316' },
     { id: 'red', labelKey: 'bands.red', thresholdPct: 100, colorHex: '#ef4444' },
 ];
 

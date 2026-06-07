@@ -54,7 +54,13 @@ export type DosimeterType = 'TLD' | 'OSL' | 'FILM' | 'EPD';
 export type DosimeterStatus = 'AVAILABLE' | 'ASSIGNED' | 'IN_READING' | 'LOST' | 'DAMAGED' | 'RETIRED';
 
 /** Statut special d'un travailleur expose (cf. enum DoseSpecialStatus). */
-export type DoseSpecialStatus = string;
+export type DoseSpecialStatus = 'NONE' | 'PREGNANCY' | 'APPRENTICE';
+
+/** Statut d'une qualification / habilitation (cf. enum QualifStatus). */
+export type QualifStatus = 'VALID' | 'EXPIRED' | 'REVOKED';
+
+/** Niveau d'exposition agrege (calcule cote backend par ExposedWorkerQueryService). */
+export type ExposureLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
 
 /** ThresholdDTO — limite reglementaire. */
 export interface ThresholdDTO {
@@ -136,6 +142,138 @@ export interface DoseRecordDTO {
     updatedBy?: number | null;
 }
 
+/** Bloc identite RH de la fiche 360 (cf. ExposedWorkerDetailDTO.IdentityDTO Java). */
+export interface WorkerIdentityDTO {
+    workerId: number;
+    employeeId: number;
+    matricule?: string | null;
+    fullName?: string | null;
+    dateNaissance?: string | null;
+    position?: string | null;
+    department?: string | null;
+}
+
+/** Bloc classification radioprotection (cf. ExposedWorkerDetailDTO.ClassificationDTO Java). */
+export interface WorkerClassificationDTO {
+    category: DoseCategory;
+    reason?: string | null;
+    date?: string | null;
+    rpoId?: number | null;
+    rpoName?: string | null;
+    specialStatus?: DoseSpecialStatus | null;
+    specialStatusStartDate?: string | null;
+    specialStatusEndDate?: string | null;
+}
+
+/** ExposureProfileDTO (cf. backend ExposureProfileDTO.java). */
+export interface ExposureProfileDTO {
+    id?: number | null;
+    workerId: number;
+    exposureType: string;
+    zoneId?: number | null;
+    postId?: number | null;
+    frequency?: string | null;
+    conditions?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/** DoseCumulativeDTO (cf. backend DoseCumulativeDTO.java). */
+export interface DoseCumulativeDTO {
+    id?: number | null;
+    workerId: number;
+    year: number;
+    annualHp10?: number | null;
+    annualHp007?: number | null;
+    annualHp3?: number | null;
+    rolling5yHp10?: number | null;
+    lifetimeHp10?: number | null;
+    updatedAt?: string;
+}
+
+/** DosimeterAssignmentDTO (cf. backend DosimeterAssignmentDTO.java). */
+export interface DosimeterAssignmentDTO {
+    id?: number | null;
+    dosimeterId: number;
+    workerId: number;
+    periodStart: string;
+    periodEnd?: string | null;
+    handoverAck?: boolean;
+    handoverAckAt?: string | null;
+    returnAck?: boolean;
+    returnAckAt?: string | null;
+    deviceCondition?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/** MedicalSurveillanceDTO (cf. backend MedicalSurveillanceDTO.java). */
+export interface MedicalSurveillanceDTO {
+    id?: number | null;
+    workerId: number;
+    type: string;
+    fitness: string;
+    examDate: string;
+    nextDueDate?: string | null;
+    /** Donnees cliniques sensibles. Renvoye null par le backend si pas DOSIMETRY_MEDICAL. */
+    restrictedClinicalDetails?: string | null;
+    doctorId: number;
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/** QualificationDTO (cf. backend QualificationDTO.java). */
+export interface QualificationDTO {
+    id?: number | null;
+    workerId: number;
+    trainingType: string;
+    validFrom: string;
+    validTo?: string | null;
+    certificateUrl?: string | null;
+    status: QualifStatus;
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+}
+
+/**
+ * ExposedWorkerDetailDTO — projection enrichie pour la fiche 360 d'un travailleur.
+ *
+ * Alignement 1:1 sur le DTO Java {@code ExposedWorkerDetailDTO}
+ * (cf. {@code Backend/Health-Safety/src/main/java/.../dto/ExposedWorkerDetailDTO.java}).
+ *
+ * <p>Structure :
+ *  - identity         : bloc identite RH (matricule, fullName, position, department, ...)
+ *  - classification   : bloc classification radioprotection (category A/B, RPO, statut special)
+ *  - exposureProfile  : liste des profils d'exposition (zone, poste, type, frequence)
+ *  - doseHistory      : historique des records de dose (DESC sur period)
+ *  - cumulative       : cumul annee N (Hp10 annuel/glissant 5 ans/vie)
+ *  - dosimeters       : historique des affectations de dosimetres
+ *  - medical          : derniere surveillance medicale (cloisonne si pas DOSIMETRY_MEDICAL)
+ *  - qualifications   : habilitations radioprotection
+ *  - alerts           : alertes de depassement
+ *  - thresholds       : seuils reglementaires applicables a ce worker
+ */
+export interface ExposedWorkerDetailDTO {
+    identity: WorkerIdentityDTO;
+    classification: WorkerClassificationDTO;
+    exposureProfile: ExposureProfileDTO[];
+    doseHistory: DoseRecordDTO[];
+    cumulative: DoseCumulativeDTO | null;
+    dosimeters: DosimeterAssignmentDTO[];
+    medical: MedicalSurveillanceDTO | null;
+    qualifications: QualificationDTO[];
+    alerts: ExposureAlertDTO[];
+    thresholds: ThresholdDTO[];
+}
+
 /** ExposureAlertDTO — alerte de depassement. */
 export interface ExposureAlertDTO {
     id?: number | null;
@@ -215,6 +353,45 @@ const getAllExposedWorkers = async () => {
         .catch((error) => { throw error; });
 };
 
+/**
+ * WorkerSearchFilters — body du POST /exposed-worker/search.
+ *
+ * Aligne 1:1 sur le DTO Java {@code SearchFiltersDTO}
+ * (cf. {@code Backend/Health-Safety/src/main/java/.../dto/SearchFiltersDTO.java}).
+ *
+ * <p>Tous les champs sont optionnels sauf {@code mineId} qui est obligatoire.
+ * Un champ {@code null}/{@code undefined} signifie "pas de restriction sur ce critere".
+ */
+export interface WorkerSearchFilters {
+    /** Identifiant de la mine — REQUIS cote backend. */
+    mineId: number;
+    /** Categorie d'exposition CIPR (A ou B). */
+    category?: DoseCategory | null;
+    /** Statut special (grossesse, apprenti, etc.). */
+    specialStatus?: DoseSpecialStatus | null;
+    /** Niveau d'exposition calcule par le backend : GREEN | YELLOW | ORANGE | RED. */
+    exposureLevel?: ExposureLevel | null;
+    /** Filtre departement RH (id du departement de l'employee). */
+    departmentId?: number | null;
+    /** Filtre poste RH (id du poste de l'employee). */
+    postId?: number | null;
+    /** Recherche textuelle sur matricule ou nom complet (LIKE insensitive). */
+    search?: string | null;
+}
+
+/**
+ * Recherche multi-criteres des travailleurs exposes via POST /exposed-worker/search.
+ * Le body est un {@link WorkerSearchFilters} aligne sur le SearchFiltersDTO backend ;
+ * le backend renvoie une liste de projections {@code ExposedWorkerListItemDTO} avec
+ * cumuls + niveau d'exposition pre-calcules.
+ */
+const searchWorkers = async (filters: WorkerSearchFilters) => {
+    return axiosInstance
+        .post(`${exposedWorkerUrl}/search`, filters)
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
 const getExposedWorkerById = async (id: number | string) => {
     return axiosInstance
         .get(`${exposedWorkerUrl}/get/${id}`)
@@ -241,6 +418,43 @@ const deleteExposedWorker = async (id: number | string) => {
         .delete(`${exposedWorkerUrl}/delete/${id}`)
         .then((response) => response.data)
         .catch((error) => { throw error; });
+};
+
+/**
+ * Recupere la projection 360 d'un travailleur expose : identite + classification +
+ * profils d'exposition + historique doses + cumuls + dosimetres + surveillance
+ * medicale + habilitations + alertes + seuils applicables.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/exposed-worker/detail/{id}}
+ * (cf. ExposedWorkerController.getDetail). Le bloc medical n'expose
+ * {@code restrictedClinicalDetails} qu'au porteur de la permission DOSIMETRY_MEDICAL.
+ */
+const getWorkerDetail = async (id: number | string) => {
+    return axiosInstance
+        .get(`${exposedWorkerUrl}/detail/${id}`)
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
+/**
+ * Export CSV du registre des travailleurs exposes.
+ *
+ * <p><b>RGPD / Conformite</b> : l'export est effectue cote backend
+ * (cf. {@code ExposedWorkerController.export}) et journalise dans
+ * {@code DosimetryAuditLog} (action=EXPORT) pour tracabilite des extractions
+ * massives de donnees nominatives (RGPD art.30 + AIEA GSR Part 3). Le
+ * frontend NE DOIT PAS construire le CSV cote client pour eviter de
+ * contourner cet audit.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/exposed-worker/export?mineId={id}&format=csv}
+ * Permission backend : {@code DOSIMETRY_READ_NOMINATIVE}.
+ */
+const exportWorkersCsv = async (mineId: number): Promise<Blob> => {
+    const res = await axiosInstance.get(
+        `${exposedWorkerUrl}/export?mineId=${mineId}&format=csv`,
+        { responseType: 'blob' },
+    );
+    return res.data;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -397,7 +611,10 @@ export {
     deleteThreshold,
     // Exposed workers
     getAllExposedWorkers,
+    searchWorkers,
     getExposedWorkerById,
+    getWorkerDetail,
+    exportWorkersCsv,
     createExposedWorker,
     updateExposedWorker,
     deleteExposedWorker,
