@@ -26,6 +26,15 @@ const axiosInstance = axios.create({
 // );
 axiosInstance.interceptors.request.use(
     (config) => {
+        // Le module Dosimetrie (/hns/dosimetry/*) utilise un parametrage
+        // mineId du body et n'accepte pas l'ajout automatique de companyId
+        // en query string par cet interceptor (interferes avec @RequestBody
+        // et le filtre Spring de RBAC dosimetry). Skip auto-injection ici.
+        const url = config.url ?? '';
+        if (url.includes('/hns/dosimetry/')) {
+            return config;
+        }
+
         const state = store.getState();
         let companyId = state.companySelection?.selectedCompanyId ?? null;
 
