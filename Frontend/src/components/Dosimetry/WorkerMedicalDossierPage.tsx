@@ -48,6 +48,8 @@ import {
     IconExternalLink,
     IconLockAccess,
     IconKey,
+    IconFileCertificate,
+    IconHistory,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import { errorNotification } from '../../utility/NotificationUtility';
@@ -58,6 +60,8 @@ import {
     getWorkerMedicalVisitsSummary,
     getWorkerMedicalVisitsFull,
     getWorkerDetail,
+    downloadIndividualAttestation,
+    downloadCareerSummary,
     type FitnessAssessmentPublicDTO,
     type FitnessAssessmentFullDTO,
     type FitnessLevel,
@@ -67,6 +71,7 @@ import {
     type MedicalVisitType,
     type ExposedWorkerDetailDTO,
 } from '../../services/DosimetryService';
+import PdfDownloadModal from './PdfDownloadModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC helper
@@ -179,6 +184,10 @@ const WorkerMedicalDossierPage = () => {
     const [reasonOpen, setReasonOpen] = useState<null | 'fitness' | 'visits'>(null);
     const [reason, setReason] = useState('');
     const [reasonLoading, setReasonLoading] = useState(false);
+
+    // Phase 9-B : modales de download attestation + fiche carriere.
+    const [attestationModalOpen, setAttestationModalOpen] = useState(false);
+    const [careerModalOpen, setCareerModalOpen] = useState(false);
 
     // ───── Fetch ─────
     const fetchSummary = useCallback(async () => {
@@ -388,6 +397,26 @@ const WorkerMedicalDossierPage = () => {
                                             {t('medical.dossier.newFitness')}
                                         </button>
                                     </>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setAttestationModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] rounded-md border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition self-start"
+                                    title={t('medical.dossier.downloadAttestationHint')}
+                                >
+                                    <IconFileCertificate size={13} stroke={1.8} />
+                                    {t('medical.dossier.downloadAttestation')}
+                                </button>
+                                {(canMedical || canSelf) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCareerModalOpen(true)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] rounded-md border border-violet-300 text-violet-700 bg-violet-50 hover:bg-violet-100 transition self-start"
+                                        title={t('medical.dossier.downloadCareerHint')}
+                                    >
+                                        <IconHistory size={13} stroke={1.8} />
+                                        {t('medical.dossier.downloadCareer')}
+                                    </button>
                                 )}
                                 <button
                                     type="button"
@@ -792,6 +821,34 @@ const WorkerMedicalDossierPage = () => {
                     </Group>
                 </div>
             </Modal>
+
+            {/* ─── Phase 9-B : modal download attestation annuelle ─── */}
+            <PdfDownloadModal
+                opened={attestationModalOpen}
+                onClose={() => setAttestationModalOpen(false)}
+                title={t('reports.cards.attestation.modalTitle')}
+                subtitle={t('reports.cards.attestation.modalSubtitle')}
+                filename={`attestation_${(identity?.matricule ?? workerIdParam ?? 'worker').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().getFullYear()}.pdf`}
+                onConfirm={(reasonStr) =>
+                    downloadIndividualAttestation(
+                        Number(workerIdParam),
+                        new Date().getFullYear(),
+                        reasonStr,
+                    )
+                }
+            />
+
+            {/* ─── Phase 9-B : modal download fiche carriere ─── */}
+            <PdfDownloadModal
+                opened={careerModalOpen}
+                onClose={() => setCareerModalOpen(false)}
+                title={t('reports.cards.career.modalTitle')}
+                subtitle={t('reports.cards.career.modalSubtitle')}
+                filename={`fiche_carriere_${(identity?.matricule ?? workerIdParam ?? 'worker').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`}
+                onConfirm={(reasonStr) =>
+                    downloadCareerSummary(Number(workerIdParam), reasonStr)
+                }
+            />
         </div>
     );
 };

@@ -98,6 +98,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Seuils & dépassements': 'dosimetry:sidebar.dosimetryAlerts',
     'Dossiers de dépassement': 'dosimetry:sidebar.dosimetryOverexposure',
     'Rapports & conformité': 'dosimetry:sidebar.dosimetryReports',
+    'Exports réglementaires': 'dosimetry:sidebar.dosimetryRegulatoryExports',
     'Paramètres Dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
@@ -339,6 +340,7 @@ const menuItems: MenuItem[] = [
             { id: 'dosimetry-alerts', label: 'Seuils & dépassements', icon: IconAlertOctagon },
             { id: 'dosimetry-overexposure', label: 'Dossiers de dépassement', icon: IconFolderOpen },
             { id: 'dosimetry-reports', label: 'Rapports & conformité', icon: IconFileText },
+            { id: 'dosimetry-regulatory-exports', label: 'Exports réglementaires', icon: IconFileText },
             { id: 'dosimetry-settings', label: 'Paramètres Dosimétrie', icon: IconSettings },
         ],
     },
@@ -498,7 +500,9 @@ export const menuIdToUrl: Record<string, string> = {
     "dosimetry-my-medical": "/dosimetry/my-medical",
     "dosimetry-alerts": "/dosimetry/alerts",
     "dosimetry-overexposure": "/dosimetry/overexposure",
-    "dosimetry-reports": "/coming-soon",
+    // Phase 9-B Frontend : rapports PDF + exports reglementaires
+    "dosimetry-reports": "/dosimetry/reports",
+    "dosimetry-regulatory-exports": "/dosimetry/regulatory-exports",
 };
 
 

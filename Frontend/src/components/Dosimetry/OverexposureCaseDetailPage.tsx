@@ -65,6 +65,7 @@ import {
     IconCalendarTime,
     IconExternalLink,
     IconFlag,
+    IconFileCertificate,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
@@ -75,11 +76,13 @@ import {
     updateOverexposureCase,
     getAllAuditLogs,
     searchWorkers,
+    downloadOverexposureReport,
     type OverexposureCaseDTO,
     type CaseStatus,
     type AlertLevel,
     type DosimetryAuditLogDTO,
 } from '../../services/DosimetryService';
+import PdfDownloadModal from './PdfDownloadModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC helper
@@ -199,6 +202,9 @@ const OverexposureCaseDetailPage = () => {
 
     // Authority declaration inline edit
     const [authDeclared, setAuthDeclared] = useState(false);
+
+    // Phase 9-B : modal download rapport surexposition (PDF).
+    const [reportModalOpen, setReportModalOpen] = useState(false);
     const [authDate, setAuthDate] = useState<string>('');
     const [authNumber, setAuthNumber] = useState('');
     const [authSavingState, setAuthSavingState] = useState(false);
@@ -495,6 +501,21 @@ const OverexposureCaseDetailPage = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* ─── Phase 9-B : actions hero (download rapport) ─── */}
+                        {canPcr && (
+                            <div className="flex items-stretch gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setReportModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] rounded-md bg-red-600 text-white hover:bg-red-700 transition self-start shadow-sm"
+                                    title={t('overexposureCases.detail.actions.downloadReportHint')}
+                                >
+                                    <IconFileCertificate size={13} stroke={1.8} />
+                                    {t('overexposureCases.detail.actions.downloadReport')}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {isClosed && caseDto.closedAt && (
@@ -971,6 +992,18 @@ const OverexposureCaseDetailPage = () => {
                     </Group>
                 </div>
             </Modal>
+
+            {/* ─── Phase 9-B : modal download rapport surexposition ─── */}
+            <PdfDownloadModal
+                opened={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                title={t('reports.cards.overexposure.modalTitle')}
+                subtitle={t('reports.cards.overexposure.modalSubtitle')}
+                filename={`surexposition_case${caseDto.id}.pdf`}
+                onConfirm={(reasonStr) =>
+                    downloadOverexposureReport(Number(caseDto.id), reasonStr)
+                }
+            />
         </div>
     );
 };

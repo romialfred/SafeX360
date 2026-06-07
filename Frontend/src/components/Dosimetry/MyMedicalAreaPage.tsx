@@ -59,6 +59,7 @@ import {
     getWorkerMedicalVisitsSummary,
     getWorkerDetail,
     searchWorkers,
+    downloadIndividualAttestation,
     type FitnessAssessmentPublicDTO,
     type FitnessLevel,
     type MedicalVisitSummaryDTO,
@@ -69,6 +70,7 @@ import {
     type ExposureAlertDTO,
     type ThresholdDTO,
 } from '../../services/DosimetryService';
+import PdfDownloadModal from './PdfDownloadModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Constants
@@ -273,6 +275,9 @@ const MyMedicalAreaPage = () => {
 
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
+
+    // Phase 9-B : modal download "mon attestation".
+    const [attestationModalOpen, setAttestationModalOpen] = useState(false);
 
     // ─── 1. Resoudre workerId via search + filtre client par employeeId ───
     const resolveWorkerId = useCallback(async () => {
@@ -810,9 +815,10 @@ const MyMedicalAreaPage = () => {
                     </div>
                     <button
                         type="button"
-                        disabled
-                        title={t('myMedical.attestationPhaseNote')}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] rounded-md bg-indigo-600 text-white opacity-60 cursor-not-allowed transition self-start shadow-sm"
+                        disabled={resolvedWorkerId == null}
+                        onClick={() => setAttestationModalOpen(true)}
+                        title={t('myMedical.attestationCtaHint')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition self-start shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <IconDownload size={13} stroke={2} />
                         {t('myMedical.attestationCta')}
@@ -836,6 +842,23 @@ const MyMedicalAreaPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ─── Phase 9-B : modal download "mon attestation" (SELF) ─── */}
+            <PdfDownloadModal
+                opened={attestationModalOpen}
+                onClose={() => setAttestationModalOpen(false)}
+                title={t('myMedical.attestationModalTitle')}
+                subtitle={t('myMedical.attestationModalSubtitle')}
+                filename={`mon_attestation_${(identity?.matricule ?? 'self').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().getFullYear()}.pdf`}
+                lockReason={t('myMedical.attestationSelfReason')}
+                onConfirm={(reasonStr) =>
+                    downloadIndividualAttestation(
+                        Number(resolvedWorkerId ?? 0),
+                        new Date().getFullYear(),
+                        reasonStr,
+                    )
+                }
+            />
         </div>
     );
 };

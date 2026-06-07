@@ -20,6 +20,7 @@ import {
     IconLockAccess,
     IconCircleCheck,
     IconClipboardList,
+    IconFileCertificate,
 } from '@tabler/icons-react';
 import {
     LineChart,
@@ -37,6 +38,7 @@ import { Column } from 'primereact/column';
 import { useAppSelector } from '../../slices/hooks';
 import {
     getWorkerDetail,
+    downloadIndividualAttestation,
     type ExposedWorkerDetailDTO,
     type DoseRecordDTO,
     type DoseCategory,
@@ -46,6 +48,7 @@ import {
     type AlertLevel,
     type ThresholdDTO,
 } from '../../services/DosimetryService';
+import PdfDownloadModal from './PdfDownloadModal';
 
 /**
  * ExposedWorkerDetailPage — Fiche 360 d'un travailleur expose (Phase 2 Frontend-B).
@@ -247,6 +250,9 @@ const ExposedWorkerDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabKey>('identity');
+
+    // Phase 9-B : modal de download attestation annuelle.
+    const [attestationModalOpen, setAttestationModalOpen] = useState(false);
 
     // ── Chargement ──
     useEffect(() => {
@@ -459,6 +465,15 @@ const ExposedWorkerDetailPage = () => {
                             )}
                             <button
                                 type="button"
+                                onClick={() => setAttestationModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm"
+                                title={t('workerDetail.actions.downloadAttestationHint')}
+                            >
+                                <IconFileCertificate size={13} stroke={1.8} />
+                                {t('workerDetail.actions.downloadAttestation')}
+                            </button>
+                            <button
+                                type="button"
                                 onClick={() => window.print()}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-slate-800 text-white hover:bg-slate-900 transition shadow-sm"
                             >
@@ -561,6 +576,22 @@ const ExposedWorkerDetailPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ─── Phase 9-B : modal de download attestation annuelle ─── */}
+            <PdfDownloadModal
+                opened={attestationModalOpen}
+                onClose={() => setAttestationModalOpen(false)}
+                title={t('reports.cards.attestation.modalTitle')}
+                subtitle={t('reports.cards.attestation.modalSubtitle')}
+                filename={`attestation_${(matricule || 'worker').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().getFullYear()}.pdf`}
+                onConfirm={(reason) =>
+                    downloadIndividualAttestation(
+                        Number(detail.identity.workerId),
+                        new Date().getFullYear(),
+                        reason,
+                    )
+                }
+            />
         </div>
     );
 };

@@ -2792,3 +2792,241 @@ export {
     getMultiMineComparison,
     getGlobalStatus,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PHASE 9-B — RAPPORTS PDF + EXPORTS REGLEMENTAIRES
+//  Base rapports :       /hns/dosimetry/report
+//  Base exports :        /hns/dosimetry/regulatory-export
+//
+//  Tous les endpoints renvoient un flux binaire (PDF / XML / CSV) :
+//   - axios.responseType = 'blob' obligatoire.
+//   - Le header X-Reason est requis pour les rapports nominatifs (attestation,
+//     fiche carriere, surexposition) — il est journalise dans DosimetryAuditLog
+//     (action=EXPORT_PDF) pour tracabilite RGPD art.30 + AIEA GSR Part 3.
+//   - Les exports reglementaires institutionnels (ASN XML/CSV, incidents XML)
+//     ne demandent PAS de motif individuel mais sont journalises en bloc
+//     (action=REGULATORY_EXPORT).
+//
+//  RBAC :
+//   - Attestation individuelle / fiche carriere : DOSIMETRY_READ_NOMINATIVE
+//     ou DOSIMETRY_MEDICAL ou SELF (le travailleur sur lui-meme).
+//   - Rapport surexposition       : DOSIMETRY_PCR_RPO + DOSIMETRY_READ_NOMINATIVE.
+//   - Registre annuel mine        : DOSIMETRY_READ_AGGREGATE (donnees agregees,
+//     pas de motif individuel requis).
+//   - Exports reglementaires      : DOSIMETRY_PCR_RPO uniquement (banner UI).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const reportUrl = '/hns/dosimetry/report';
+const regulatoryExportUrl = '/hns/dosimetry/regulatory-export';
+
+/**
+ * Construit les headers communs aux endpoints de rapports nominatifs :
+ *   - X-User-Id : identifiant utilisateur (audit createdBy).
+ *   - X-Reason  : motif RGPD obligatoire pour les rapports nominatifs.
+ */
+const buildReportHeaders = (reason?: string | null): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const userId = resolveUserId();
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    if (reason && reason.trim().length > 0) headers['X-Reason'] = reason.trim();
+    return headers;
+};
+
+/**
+ * Helper navigateur : declenche un download local d'un Blob via une URL
+ * objet temporaire. Compatible Chromium / Firefox / Edge / Safari.
+ *
+ * <p>Le frontend n'attend pas le filename du backend (header
+ * {@code Content-Disposition} masque par axios apres CORS) — le composant
+ * appelant doit fournir un nom explicite localise.
+ *
+ * <p>Usage typique :
+ * <pre>
+ *   const blob = await downloadIndividualAttestation(123, 2026, 'audit');
+ *   triggerBrowserDownload(blob, `attestation_${matricule}_${year}.pdf`);
+ * </pre>
+ */
+const triggerBrowserDownload = (blob: Blob, filename: string): void => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        // Environnement SSR / test — no-op silencieux.
+        return;
+    }
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    // Le navigateur exige que l'element soit dans le DOM pour Firefox.
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // Liberation de l'URL objet apres un cycle event-loop pour eviter de
+    // couper le download avant son demarrage effectif.
+    setTimeout(() => {
+        try {
+            window.URL.revokeObjectURL(url);
+        } catch {
+            // ignore — best-effort cleanup
+        }
+    }, 1000);
+};
+
+/**
+ * Telecharge l'attestation individuelle de dose d'un travailleur pour une annee.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/report/attestation/individual?workerId=X&year=Y}.
+ * Header obligatoire : {@code X-Reason}. Retour : PDF binaire (Blob).
+ * RBAC : DOSIMETRY_READ_NOMINATIVE / DOSIMETRY_MEDICAL / SELF.
+ */
+const downloadIndividualAttestation = async (
+    workerId: number,
+    year: number,
+    reason: string,
+): Promise<Blob> => {
+    const headers = buildReportHeaders(reason);
+    const res = await axiosInstance.get(`${reportUrl}/attestation/individual`, {
+        params: { workerId, year },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge la fiche carriere complete d'un travailleur (historique doses +
+ * aptitudes + visites). Strict RGPD.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/report/career-summary?workerId=X}.
+ * Header obligatoire : {@code X-Reason}.
+ * RBAC : DOSIMETRY_MEDICAL ou SELF.
+ */
+const downloadCareerSummary = async (
+    workerId: number,
+    reason: string,
+): Promise<Blob> => {
+    const headers = buildReportHeaders(reason);
+    const res = await axiosInstance.get(`${reportUrl}/career-summary`, {
+        params: { workerId },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge le registre annuel des travailleurs exposes d'une mine pour
+ * une annee (PDF A4 paysage). Donnees agregees pseudonymisees.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/report/annual-register?mineId=X&year=Y}.
+ * Pas de header X-Reason — RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const downloadAnnualRegister = async (
+    mineId: number,
+    year: number,
+): Promise<Blob> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.get(`${reportUrl}/annual-register`, {
+        params: { mineId, year },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge le rapport detaille d'un dossier de surexposition (cause, actions
+ * correctives, decision medicale, declaration autorite).
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/report/overexposure/{caseId}}.
+ * Header obligatoire : {@code X-Reason}. RBAC : DOSIMETRY_PCR_RPO.
+ */
+const downloadOverexposureReport = async (
+    caseId: number,
+    reason: string,
+): Promise<Blob> => {
+    const headers = buildReportHeaders(reason);
+    const res = await axiosInstance.get(`${reportUrl}/overexposure/${caseId}`, {
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge l'export reglementaire XML ASN annuel pour une mine.
+ * Format : XML conforme schema ASN (Autorite de Surete Nucleaire).
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/regulatory-export/annual-xml?mineId=X&year=Y}.
+ * RBAC : DOSIMETRY_PCR_RPO. Tracabilite : action=REGULATORY_EXPORT_XML_ANNUAL.
+ */
+const downloadAnnualXmlAsn = async (
+    mineId: number,
+    year: number,
+): Promise<Blob> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.get(`${regulatoryExportUrl}/annual-xml`, {
+        params: { mineId, year },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge l'export CSV regulateur (donnees nominales) pour declaration
+ * annuelle aupres du ministere / autorite sanitaire.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/regulatory-export/annual-csv?mineId=X&year=Y}.
+ * RBAC : DOSIMETRY_PCR_RPO. Tracabilite : action=REGULATORY_EXPORT_CSV_ANNUAL.
+ */
+const downloadAnnualCsvRegulator = async (
+    mineId: number,
+    year: number,
+): Promise<Blob> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.get(`${regulatoryExportUrl}/annual-csv`, {
+        params: { mineId, year },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+/**
+ * Telecharge l'export XML des incidents (depassements) de l'annee pour
+ * une mine. Conforme schema ASN/IRSN.
+ *
+ * <p>Endpoint backend : {@code GET /hns/dosimetry/regulatory-export/incidents-xml?mineId=X&year=Y}.
+ * RBAC : DOSIMETRY_PCR_RPO. Tracabilite : action=REGULATORY_EXPORT_XML_INCIDENTS.
+ */
+const downloadIncidentsXml = async (
+    mineId: number,
+    year: number,
+): Promise<Blob> => {
+    const userId = resolveUserId();
+    const headers: Record<string, string> = {};
+    if (userId != null) headers['X-User-Id'] = String(userId);
+    const res = await axiosInstance.get(`${regulatoryExportUrl}/incidents-xml`, {
+        params: { mineId, year },
+        headers,
+        responseType: 'blob',
+    });
+    return res.data as Blob;
+};
+
+export {
+    // Phase 9-B — Reports & regulatory exports
+    triggerBrowserDownload,
+    downloadIndividualAttestation,
+    downloadCareerSummary,
+    downloadAnnualRegister,
+    downloadOverexposureReport,
+    downloadAnnualXmlAsn,
+    downloadAnnualCsvRegulator,
+    downloadIncidentsXml,
+};

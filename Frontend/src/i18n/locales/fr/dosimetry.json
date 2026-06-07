@@ -19,6 +19,7 @@
         "dosimetryAlerts": "Seuils & dépassements",
         "dosimetryOverexposure": "Dossiers de dépassement",
         "dosimetryReports": "Rapports & conformité",
+        "dosimetryRegulatoryExports": "Exports réglementaires",
         "dosimetrySettings": "Paramètres"
     },
     "parameters": {
@@ -310,7 +311,9 @@
             "back": "Retour",
             "edit": "Modifier",
             "printCertificate": "Imprimer attestation",
-            "editClassification": "Modifier classement"
+            "editClassification": "Modifier classement",
+            "downloadAttestation": "Télécharger attestation",
+            "downloadAttestationHint": "Télécharger l'attestation annuelle de dose au format PDF (motif RGPD requis)."
         },
         "headerCategoryAria": "Catégorie {{category}}",
         "headerSpecialPregnancy": "Grossesse déclarée",
@@ -1489,6 +1492,10 @@
             "loading": "Chargement du dossier…",
             "loadError": "Impossible de charger le dossier.",
             "notFound": "Dossier introuvable.",
+            "actions": {
+                "downloadReport": "Télécharger rapport surexposition",
+                "downloadReportHint": "Génère un rapport PDF détaillé du dossier (cause, actions correctives, décision médicale). Motif RGPD requis."
+            },
             "tabs": {
                 "general": "Informations générales",
                 "investigation": "Investigation",
@@ -2486,6 +2493,10 @@
             "viewFullProfile": "Fiche dosimétrie 360",
             "newVisit": "Nouvelle visite",
             "newFitness": "Nouvelle aptitude",
+            "downloadAttestation": "Télécharger attestation",
+            "downloadAttestationHint": "Télécharger l'attestation annuelle de dose au format PDF (motif RGPD requis).",
+            "downloadCareer": "Télécharger fiche carrière",
+            "downloadCareerHint": "Télécharger l'historique complet doses + aptitudes (réservé MEDICAL ou SELF — motif RGPD requis).",
             "currentFitnessTitle": "Aptitude médicale courante",
             "currentFitnessSubtitle": "Dernière fiche signée, visible PCR/RPO et médecin.",
             "noFitness": "Aucune fiche d'aptitude signée pour ce travailleur.",
@@ -2589,7 +2600,11 @@
             "attestationTitle": "Attestation individuelle de dose",
             "attestationSubtitle": "Document officiel récapitulant vos cumuls de dose pour l'année en cours et les 5 dernières années.",
             "attestationCta": "Télécharger mon attestation",
-            "attestationPhaseNote": "Disponible en Phase 9 — Export attestations PDF signées.",
+            "attestationCtaHint": "Génère votre attestation annuelle de dose au format PDF signé.",
+            "attestationPhaseNote": "Phase 9 — Export attestations PDF signées.",
+            "attestationModalTitle": "Mon attestation annuelle de dose",
+            "attestationModalSubtitle": "Document personnel récapitulant vos cumuls de dose pour l'année en cours, conforme au droit d'accès RGPD art. 15.",
+            "attestationSelfReason": "Accès personnel à mes propres données (RGPD art. 15 — droit d'accès direct du salarié).",
             "rgpdFooterTitle": "Vos droits RGPD",
             "rgpdFooterBody": "Conformément au RGPD (art. 15 à 22), vous disposez d'un droit d'accès, de rectification, d'effacement et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question, contactez le Délégué à la Protection des Données (DPO) de votre établissement."
         }
@@ -2680,6 +2695,127 @@
             "loading": "Chargement…",
             "currentBadge": "Active",
             "clickHint": "Cliquer pour filtrer →"
+        }
+    },
+    "reports": {
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbCurrent": "Rapports & attestations",
+        "heroLabel": "Rapports & conformité",
+        "title": "Rapports et attestations dosimétrie",
+        "subtitle": "Génération de rapports nominatifs et agrégés conformes CIPR 103 / AIEA GSR Part 3. Chaque téléchargement nominatif est journalisé dans le registre d'audit RGPD art. 30.",
+        "refresh": "Rafraîchir",
+        "rgpdBanner": "Les attestations individuelles, fiches carrière et rapports de surexposition sont des documents nominatifs : un motif d'accès écrit est obligatoire (X-Reason). Le téléchargement est tracé.",
+        "loadError": "Impossible de charger les données nécessaires (travailleurs / dossiers). Vérifiez vos permissions ou réessayez.",
+        "footerTitle": "Conformité & traçabilité",
+        "footerBody": "Tous les rapports sont signés numériquement (PAdES). Les attestations restent valables tant qu'aucune correction ultérieure de dose n'invalide la version. Les exports nominatifs sont conservés 30 ans dans le journal d'audit (AIEA GSR Part 3 §3.106).",
+        "fields": {
+            "workerLabel": "Travailleur",
+            "workerPlaceholder": "Sélectionner un travailleur",
+            "workerEmpty": "Aucun travailleur trouvé",
+            "yearLabel": "Année",
+            "mineLabel": "Mine",
+            "caseLabel": "Dossier de dépassement",
+            "casePlaceholder": "Sélectionner un dossier",
+            "caseEmpty": "Aucun dossier disponible"
+        },
+        "cases": {
+            "optionLabel": "Dossier #{{id}} — {{level}} ({{status}})"
+        },
+        "cards": {
+            "attestation": {
+                "title": "Attestation individuelle de dose",
+                "subtitle": "PDF nominatif par travailleur et année — cumuls Hp(10), Hp(0,07), Hp(3) avec comparaison aux limites CIPR.",
+                "rbacHint": "Permission requise · DOSIMETRY_READ_NOMINATIVE / MEDICAL / SELF",
+                "cta": "Générer l'attestation",
+                "modalTitle": "Attestation individuelle de dose",
+                "modalSubtitle": "Document nominatif officiel. Le motif d'accès sera transmis au backend via le header X-Reason et journalisé dans le registre RGPD."
+            },
+            "career": {
+                "title": "Fiche carrière",
+                "subtitle": "Historique complet des doses et aptitudes médicales sur l'ensemble de la carrière du travailleur.",
+                "rbacHint": "Permission requise · DOSIMETRY_MEDICAL ou SELF (RGPD strict)",
+                "cta": "Générer la fiche",
+                "modalTitle": "Fiche carrière travailleur",
+                "modalSubtitle": "Document confidentiel intégrant des données médicales agrégées. Téléchargement strictement réservé au médecin du travail ou au travailleur lui-même."
+            },
+            "register": {
+                "title": "Registre annuel mine",
+                "subtitle": "Registre A4 paysage pseudonymisé des travailleurs exposés et de leurs cumuls de dose pour l'année.",
+                "rbacHint": "Permission requise · DOSIMETRY_READ_AGGREGATE (données agrégées)",
+                "cta": "Générer le registre",
+                "ctaLoading": "Génération en cours…"
+            },
+            "overexposure": {
+                "title": "Rapport de surexposition",
+                "subtitle": "Rapport détaillé d'un cas de dépassement : cause, mesures correctives, décision médicale, déclaration autorité.",
+                "rbacHint": "Permission requise · DOSIMETRY_PCR_RPO + READ_NOMINATIVE",
+                "cta": "Générer le rapport",
+                "modalTitle": "Rapport de surexposition",
+                "modalSubtitle": "Document nominatif liant un travailleur à un événement de dépassement. Le motif d'accès est obligatoire et tracé."
+            }
+        },
+        "modal": {
+            "reasonLabel": "Motif RGPD",
+            "reasonDescription": "Décrire en clair l'usage qui sera fait du document (audit interne, demande judiciaire, suivi médical, etc.). Minimum 10 caractères.",
+            "reasonPlaceholder": "Ex : Audit médical annuel — demande du médecin du travail Dr. Martin pour la revue d'aptitude du salarié.",
+            "reasonTooShort": "Le motif doit faire au moins 10 caractères.",
+            "filenameHint": "Nom de fichier proposé :",
+            "legitimacyLabel": "Je confirme que cette demande est légitime et que le document sera utilisé uniquement dans le cadre de mes fonctions.",
+            "rgpdNotice": "Ce téléchargement sera journalisé dans le registre d'audit (RGPD art. 30 + AIEA GSR Part 3) avec votre identifiant, l'horodatage et le motif saisi.",
+            "cancel": "Annuler",
+            "submit": "Générer le PDF",
+            "successToast": "Téléchargement déclenché : {{filename}}",
+            "errorGeneric": "Échec de la génération du document. Veuillez réessayer.",
+            "errorForbidden": "Accès refusé. Vous n'avez pas la permission requise pour ce document.",
+            "errorNotFound": "Document introuvable. Vérifiez les paramètres et réessayez.",
+            "errorBadRequest": "Requête invalide. Le motif est-il bien renseigné ?"
+        }
+    },
+    "regulatoryExports": {
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbCurrent": "Exports réglementaires",
+        "heroLabel": "Exports institutionnels",
+        "title": "Exports réglementaires ASN / IRSN",
+        "subtitle": "Génération des fichiers de déclaration annuels destinés à l'Autorité de Sûreté Nucléaire, au régulateur national et à l'Institut de Radioprotection. Réservé aux PCR / RPO.",
+        "auditBanner": "Tous les exports institutionnels sont journalisés en bloc (action=REGULATORY_EXPORT) dans le journal d'audit. Conservation 30 ans.",
+        "deniedTitle": "Accès restreint",
+        "deniedBody": "Les exports réglementaires sont réservés aux Personnes Compétentes en Radioprotection (PCR) et aux Radiation Protection Officers (RPO). Contactez votre administrateur si vous avez besoin de cet accès.",
+        "deniedPermission": "Permission requise : DOSIMETRY_PCR_RPO",
+        "backHome": "Retour au tableau de bord",
+        "filtersHint": "Sélectionner la mine et l'année pour lesquelles générer les fichiers de déclaration.",
+        "generateCta": "Générer le fichier",
+        "fileLabel": "Nom de fichier",
+        "successToast": "Export généré : {{filename}}",
+        "errorGeneric": "Échec de la génération de l'export. Veuillez réessayer.",
+        "errorForbidden": "Permission refusée. Cet export est réservé aux PCR / RPO.",
+        "errorNotFound": "Aucune donnée disponible pour ce périmètre.",
+        "footerTitle": "Conformité réglementaire",
+        "footerBody": "Les fichiers générés sont conformes aux schémas officiels ASN (XML), CSV régulateur national et schéma incidents IRSN. Une signature numérique est ajoutée automatiquement (PAdES pour PDF, XAdES pour XML).",
+        "fields": {
+            "mineLabel": "Mine",
+            "yearLabel": "Année de déclaration"
+        },
+        "cards": {
+            "xmlAsn": {
+                "title": "XML ASN annuel",
+                "subtitle": "Déclaration annuelle complète pour l'Autorité de Sûreté Nucléaire (schéma officiel)."
+            },
+            "csvRegulator": {
+                "title": "CSV régulateur",
+                "subtitle": "Données nominales pour la déclaration auprès du ministère et de l'autorité sanitaire nationale."
+            },
+            "xmlIncidents": {
+                "title": "XML incidents annuel",
+                "subtitle": "Tous les dépassements de seuil de l'année (ouverts, en investigation, clos) au format IRSN."
+            }
+        },
+        "confirmModal": {
+            "title": "Confirmer l'export institutionnel",
+            "body": "Cet export va être journalisé dans le registre d'audit avec votre identifiant et le détail du périmètre. Continuer ?",
+            "exportLabel": "Export demandé",
+            "acknowledge": "Je confirme avoir l'autorité pour générer cet export institutionnel.",
+            "cancel": "Annuler",
+            "submit": "Générer l'export"
         }
     }
 }

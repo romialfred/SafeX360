@@ -19,6 +19,7 @@
         "dosimetryAlerts": "Thresholds & Overexposures",
         "dosimetryOverexposure": "Overexposure Cases",
         "dosimetryReports": "Reports & Compliance",
+        "dosimetryRegulatoryExports": "Regulatory Exports",
         "dosimetrySettings": "Settings"
     },
     "parameters": {
@@ -310,7 +311,9 @@
             "back": "Back",
             "edit": "Edit",
             "printCertificate": "Print certificate",
-            "editClassification": "Edit classification"
+            "editClassification": "Edit classification",
+            "downloadAttestation": "Download attestation",
+            "downloadAttestationHint": "Download the annual dose attestation as PDF (GDPR reason required)."
         },
         "headerCategoryAria": "Category {{category}}",
         "headerSpecialPregnancy": "Declared pregnancy",
@@ -1489,6 +1492,10 @@
             "loading": "Loading case…",
             "loadError": "Failed to load case.",
             "notFound": "Case not found.",
+            "actions": {
+                "downloadReport": "Download overexposure report",
+                "downloadReportHint": "Generates a detailed PDF report of the case (cause, corrective actions, medical decision). GDPR reason required."
+            },
             "tabs": {
                 "general": "General",
                 "investigation": "Investigation",
@@ -2486,6 +2493,10 @@
             "viewFullProfile": "Dosimetry 360 profile",
             "newVisit": "New visit",
             "newFitness": "New fitness",
+            "downloadAttestation": "Download attestation",
+            "downloadAttestationHint": "Download the annual dose attestation as PDF (GDPR reason required).",
+            "downloadCareer": "Download career summary",
+            "downloadCareerHint": "Download the full doses + fitness history (MEDICAL or SELF only — GDPR reason required).",
             "currentFitnessTitle": "Current fitness assessment",
             "currentFitnessSubtitle": "Last signed card, visible to RPO/PCR and physician.",
             "noFitness": "No signed fitness card for this worker.",
@@ -2589,7 +2600,11 @@
             "attestationTitle": "Individual dose attestation",
             "attestationSubtitle": "Official document summarizing your dose cumulatives for the current year and the last 5 years.",
             "attestationCta": "Download my attestation",
-            "attestationPhaseNote": "Available in Phase 9 — signed PDF attestation export.",
+            "attestationCtaHint": "Generates your annual signed PDF dose attestation.",
+            "attestationPhaseNote": "Phase 9 — signed PDF attestation export.",
+            "attestationModalTitle": "My annual dose attestation",
+            "attestationModalSubtitle": "Personal document summarizing your dose cumulatives for the current year, compliant with GDPR art. 15 access right.",
+            "attestationSelfReason": "Personal access to my own data (GDPR art. 15 — employee direct access right).",
             "rgpdFooterTitle": "Your GDPR rights",
             "rgpdFooterBody": "In accordance with the GDPR (art. 15 to 22), you have rights of access, rectification, erasure and portability of your personal data. To exercise these rights or for any question, contact your organization's Data Protection Officer (DPO)."
         }
@@ -2680,6 +2695,127 @@
             "loading": "Loading…",
             "currentBadge": "Active",
             "clickHint": "Click to filter →"
+        }
+    },
+    "reports": {
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbCurrent": "Reports & attestations",
+        "heroLabel": "Reports & Compliance",
+        "title": "Dosimetry reports and attestations",
+        "subtitle": "Generate nominative and aggregated reports compliant with ICRP 103 / IAEA GSR Part 3. Every nominative download is logged in the GDPR art. 30 audit register.",
+        "refresh": "Refresh",
+        "rgpdBanner": "Individual attestations, career summaries and overexposure reports are nominative documents: a written access reason is mandatory (X-Reason). The download is logged.",
+        "loadError": "Unable to load required data (workers / cases). Check your permissions or try again.",
+        "footerTitle": "Compliance & traceability",
+        "footerBody": "All reports are digitally signed (PAdES). Attestations remain valid as long as no later dose correction invalidates the version. Nominative exports are kept for 30 years in the audit log (IAEA GSR Part 3 §3.106).",
+        "fields": {
+            "workerLabel": "Worker",
+            "workerPlaceholder": "Select a worker",
+            "workerEmpty": "No worker found",
+            "yearLabel": "Year",
+            "mineLabel": "Mine",
+            "caseLabel": "Overexposure case",
+            "casePlaceholder": "Select a case",
+            "caseEmpty": "No case available"
+        },
+        "cases": {
+            "optionLabel": "Case #{{id}} — {{level}} ({{status}})"
+        },
+        "cards": {
+            "attestation": {
+                "title": "Individual dose attestation",
+                "subtitle": "Nominative PDF per worker and year — Hp(10), Hp(0.07), Hp(3) cumulatives with ICRP limit comparison.",
+                "rbacHint": "Required permission · DOSIMETRY_READ_NOMINATIVE / MEDICAL / SELF",
+                "cta": "Generate attestation",
+                "modalTitle": "Individual dose attestation",
+                "modalSubtitle": "Official nominative document. The access reason will be transmitted to the backend through the X-Reason header and logged in the GDPR register."
+            },
+            "career": {
+                "title": "Career summary",
+                "subtitle": "Full history of doses and medical fitness across the worker's entire career.",
+                "rbacHint": "Required permission · DOSIMETRY_MEDICAL or SELF (strict GDPR)",
+                "cta": "Generate summary",
+                "modalTitle": "Worker career summary",
+                "modalSubtitle": "Confidential document including aggregated medical data. Strictly reserved to occupational physicians or the worker themselves."
+            },
+            "register": {
+                "title": "Annual mine register",
+                "subtitle": "A4 landscape pseudonymized register of exposed workers and their dose cumulatives for the year.",
+                "rbacHint": "Required permission · DOSIMETRY_READ_AGGREGATE (aggregated data)",
+                "cta": "Generate register",
+                "ctaLoading": "Generating…"
+            },
+            "overexposure": {
+                "title": "Overexposure report",
+                "subtitle": "Detailed report of an exceedance case: cause, corrective actions, medical decision, authority declaration.",
+                "rbacHint": "Required permission · DOSIMETRY_PCR_RPO + READ_NOMINATIVE",
+                "cta": "Generate report",
+                "modalTitle": "Overexposure report",
+                "modalSubtitle": "Nominative document linking a worker to an exceedance event. The access reason is mandatory and traced."
+            }
+        },
+        "modal": {
+            "reasonLabel": "GDPR access reason",
+            "reasonDescription": "Describe in plain text the use of this document (internal audit, judicial request, medical follow-up, etc.). Minimum 10 characters.",
+            "reasonPlaceholder": "E.g. Annual medical audit — occupational physician Dr. Martin's request for the employee's fitness review.",
+            "reasonTooShort": "Reason must be at least 10 characters long.",
+            "filenameHint": "Suggested filename:",
+            "legitimacyLabel": "I confirm this request is legitimate and the document will be used only within my professional duties.",
+            "rgpdNotice": "This download will be logged in the audit register (GDPR art. 30 + IAEA GSR Part 3) with your identifier, timestamp and the reason entered.",
+            "cancel": "Cancel",
+            "submit": "Generate PDF",
+            "successToast": "Download triggered: {{filename}}",
+            "errorGeneric": "Document generation failed. Please try again.",
+            "errorForbidden": "Access denied. You do not have the required permission for this document.",
+            "errorNotFound": "Document not found. Check the parameters and try again.",
+            "errorBadRequest": "Invalid request. Is the reason properly filled in?"
+        }
+    },
+    "regulatoryExports": {
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbCurrent": "Regulatory exports",
+        "heroLabel": "Institutional exports",
+        "title": "Regulatory exports ASN / IRSN",
+        "subtitle": "Generation of annual declaration files for the Nuclear Safety Authority, the national regulator and the Radiation Protection Institute. Restricted to PCR / RPO.",
+        "auditBanner": "All institutional exports are logged in bulk (action=REGULATORY_EXPORT) in the audit register. 30-year retention.",
+        "deniedTitle": "Restricted access",
+        "deniedBody": "Regulatory exports are restricted to Radiation Protection Officers (PCR / RPO). Contact your administrator if you need this access.",
+        "deniedPermission": "Required permission: DOSIMETRY_PCR_RPO",
+        "backHome": "Back to dashboard",
+        "filtersHint": "Select the mine and year for which to generate the declaration files.",
+        "generateCta": "Generate file",
+        "fileLabel": "Filename",
+        "successToast": "Export generated: {{filename}}",
+        "errorGeneric": "Export generation failed. Please try again.",
+        "errorForbidden": "Permission denied. This export is restricted to PCR / RPO.",
+        "errorNotFound": "No data available for this scope.",
+        "footerTitle": "Regulatory compliance",
+        "footerBody": "Generated files comply with the official ASN (XML), national regulator CSV and IRSN incidents schemas. A digital signature is automatically added (PAdES for PDF, XAdES for XML).",
+        "fields": {
+            "mineLabel": "Mine",
+            "yearLabel": "Declaration year"
+        },
+        "cards": {
+            "xmlAsn": {
+                "title": "Annual XML ASN",
+                "subtitle": "Full annual declaration for the Nuclear Safety Authority (official schema)."
+            },
+            "csvRegulator": {
+                "title": "Regulator CSV",
+                "subtitle": "Nominative data for declaration to the ministry and national health authority."
+            },
+            "xmlIncidents": {
+                "title": "Annual incidents XML",
+                "subtitle": "All threshold exceedances of the year (open, investigating, closed) in IRSN format."
+            }
+        },
+        "confirmModal": {
+            "title": "Confirm institutional export",
+            "body": "This export will be logged in the audit register with your identifier and scope details. Continue?",
+            "exportLabel": "Requested export",
+            "acknowledge": "I confirm I have the authority to generate this institutional export.",
+            "cancel": "Cancel",
+            "submit": "Generate export"
         }
     }
 }

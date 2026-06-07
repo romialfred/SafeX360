@@ -195,6 +195,9 @@ import WorkerMedicalDossierPage from '../components/Dosimetry/WorkerMedicalDossi
 import FitnessAssessmentForm from '../components/Dosimetry/FitnessAssessmentForm';
 // Phase 7 Frontend-B — Espace personnel travailleur (My Medical)
 import MyMedicalAreaPage from '../components/Dosimetry/MyMedicalAreaPage';
+// Phase 9-B Frontend : rapports PDF + exports reglementaires (ASN/IRSN/Ministere)
+import DosimetryReportsPage from '../components/Dosimetry/DosimetryReportsPage';
+import RegulatoryExportsPage from '../components/Dosimetry/RegulatoryExportsPage';
 // Phase 8 Frontend — Dashboard executif KPI dosimetrie
 import DosimetryDashboardPage from '../components/Dosimetry/DosimetryDashboardPage';
 
@@ -501,6 +504,9 @@ const router = createBrowserRouter([
             { path: 'dosimetry/medical/fitness/new', element: <FitnessAssessmentForm /> },
             // Phase 7 Frontend-B — Espace personnel travailleur
             { path: 'dosimetry/my-medical', element: <MyMedicalAreaPage /> },
+            // Phase 9-B Frontend — Rapports PDF + exports reglementaires
+            { path: 'dosimetry/reports', element: <DosimetryReportsPage /> },
+            { path: 'dosimetry/regulatory-exports', element: <RegulatoryExportsPage /> },
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 
