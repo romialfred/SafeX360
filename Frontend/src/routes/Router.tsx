@@ -195,6 +195,8 @@ import WorkerMedicalDossierPage from '../components/Dosimetry/WorkerMedicalDossi
 import FitnessAssessmentForm from '../components/Dosimetry/FitnessAssessmentForm';
 // Phase 7 Frontend-B — Espace personnel travailleur (My Medical)
 import MyMedicalAreaPage from '../components/Dosimetry/MyMedicalAreaPage';
+// Phase 8 Frontend — Dashboard executif KPI dosimetrie
+import DosimetryDashboardPage from '../components/Dosimetry/DosimetryDashboardPage';
 
 
 
@@ -444,6 +446,9 @@ const router = createBrowserRouter([
             { path: "trend-analysis", element: <TrendAnalysis /> },
 
             // LOT — Module Dosimetrie & Expositions
+            // Phase 8 Frontend : Dashboard executif KPI — landing par defaut du module.
+            { path: 'dosimetry', element: <DosimetryDashboardPage /> },
+            { path: 'dosimetry/dashboard', element: <DosimetryDashboardPage /> },
             // Phase 2 Frontend-A : registre des travailleurs exposes
             // (les autres sous-modules de la sidebar pointent vers /coming-soon).
             { path: 'dosimetry/settings', element: <DosimetryParametersPage /> },

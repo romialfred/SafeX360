@@ -484,10 +484,10 @@ export const menuIdToUrl: Record<string, string> = {
     // Phase 2 Frontend-A : ajout du registre des travailleurs exposes.
     // Les autres sous-modules pointent vers /coming-soon (placeholder) pour
     // eviter les 404 tout en laissant la sidebar navigable.
-    "dosimetry": "/dosimetry/settings",
+    "dosimetry": "/dosimetry",
     "dosimetry-settings": "/dosimetry/settings",
     "dosimetry-workers": "/dosimetry/workers",
-    "dosimetry-dashboard": "/coming-soon",
+    "dosimetry-dashboard": "/dosimetry",
     "dosimetry-dosimeters": "/dosimetry/dosimeters",
     "dosimetry-doses": "/coming-soon",
     "dosimetry-ambient": "/dosimetry/measurement-points",

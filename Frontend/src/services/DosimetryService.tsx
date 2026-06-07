@@ -2506,3 +2506,289 @@ const getExposureProfileEstimatedDose = async (
     const n = typeof v === 'number' ? v : Number(v);
     return Number.isFinite(n) ? n : 0;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PHASE 8 — KPI EXECUTIVE DASHBOARD
+//  Base: /hns/dosimetry/kpi
+//
+//  RBAC : DOSIMETRY_READ_AGGREGATE (donnees STRICTEMENT agregees, pas de nominatif).
+//
+//  Endpoints (cf. KpiController.java) :
+//    - GET /summary?mineId=X&date=Y                     -> List<DosimetryKpiSnapshotDTO>
+//    - GET /trend?mineId=X&months=N&category=&metric=   -> List<DosimetryTrendPointDTO>
+//    - GET /distribution?mineId=X&year=Y&category=      -> DosimetryDistributionDTO
+//    - GET /top-exposed?mineId=X&limit=N&year=Y         -> List<DosimetryTopExposedDTO>
+//    - GET /multi-mine-comparison?date=Y                -> List<DosimetryMineComparisonDTO>
+//    - GET /global-status                               -> DosimetryGlobalStatusDTO
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Categorie KPI (cf. enum KpiCategory backend). */
+export type KpiCategory = 'WORKER_A' | 'WORKER_B' | 'APPRENTICE' | 'PREGNANCY' | 'PUBLIC';
+
+/**
+ * DosimetryKpiSnapshotDTO — snapshot KPI quotidien par mine + categorie.
+ * Aligne 1:1 sur le DTO Java {@code DosimetryKpiSnapshotDTO}.
+ */
+export interface DosimetryKpiSnapshotDTO {
+    id?: number | null;
+    mineId: number;
+    snapshotDate: string;
+    category: KpiCategory;
+    workersCount: number;
+    doseRecordsCount: number;
+    avgAnnualDose?: number | null;
+    medianAnnualDose?: number | null;
+    maxAnnualDose?: number | null;
+    workersOver50Pct: number;
+    workersOver75Pct: number;
+    workersOver90Pct: number;
+    workersOver100Pct: number;
+    activeAlertsCount: number;
+    overexposureCasesOpen: number;
+    fitnessExpiringSoon: number;
+    measurementPointsCount: number;
+    ambientAvgUsvh?: number | null;
+    createdAt?: string | null;
+}
+
+/** Point d'une serie temporelle KPI (mensuel). */
+export interface DosimetryTrendPointDTO {
+    period: string; // "YYYY-MM"
+    snapshotDate: string;
+    metric: string;
+    value: number | null;
+}
+
+/** Bucket d'un histogramme de distribution. */
+export interface DosimetryDistributionBucketDTO {
+    fromPct: number;
+    toPct: number;
+    label: string;
+    count: number;
+}
+
+/** Distribution des doses annuelles (6 buckets vs limite reglementaire). */
+export interface DosimetryDistributionDTO {
+    mineId: number;
+    year: number;
+    category?: KpiCategory | null;
+    regulatoryLimit?: number | null;
+    workersCount: number;
+    buckets: DosimetryDistributionBucketDTO[];
+}
+
+/** Ligne du top N des workers les plus exposes (pseudonymise — workerId + dose). */
+export interface DosimetryTopExposedDTO {
+    rank: number;
+    workerId: number;
+    category: KpiCategory;
+    annualDose?: number | null;
+    percentOfLimit?: number | null;
+}
+
+/** Agregat KPI a la maille mine pour le comparatif cross-tenant. */
+export interface DosimetryMineComparisonDTO {
+    mineId: number;
+    snapshotDate: string;
+    workersCount: number;
+    avgAnnualDose?: number | null;
+    maxAnnualDose?: number | null;
+    workersOver100Pct: number;
+    activeAlertsCount: number;
+    overexposureCasesOpen: number;
+    ambientAvgUsvh?: number | null;
+}
+
+/** Etat global plateforme Dosimetrie (tous sites confondus). */
+export interface DosimetryGlobalStatusDTO {
+    snapshotDate: string;
+    minesCount: number;
+    workersCount: number;
+    doseRecordsCount: number;
+    avgAnnualDose?: number | null;
+    maxAnnualDose?: number | null;
+    workersOver50Pct: number;
+    workersOver75Pct: number;
+    workersOver90Pct: number;
+    workersOver100Pct: number;
+    activeAlertsCount: number;
+    overexposureCasesOpen: number;
+    fitnessExpiringSoon: number;
+    measurementPointsCount: number;
+    ambientAvgUsvh?: number | null;
+}
+
+const kpiUrl = '/hns/dosimetry/kpi';
+
+/**
+ * Recupere les snapshots KPI (1 par categorie) pour la mine + date demandee.
+ * Si {@code date} omis, retourne la derniere date disponible (fallback 365j).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/summary?mineId=X&date=Y}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const getKpiSummary = async (
+    mineId?: number | null,
+    date?: string | null,
+): Promise<DosimetryKpiSnapshotDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getKpiSummary');
+    }
+    const params: Record<string, string | number> = { mineId: resolvedMineId };
+    if (date) params.date = date;
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/summary`, { params });
+        return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            // eslint-disable-next-line no-console
+            console.warn('[DosimetryService] /kpi/summary endpoint not deployed yet');
+            return [];
+        }
+        throw err;
+    }
+};
+
+/**
+ * Recupere une serie temporelle mensuelle de la metrique demandee.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/trend?mineId=X&months=N&category=&metric=}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const getKpiTrend = async (
+    mineId?: number | null,
+    months: number = 12,
+    category?: KpiCategory | null,
+    metric?: string | null,
+): Promise<DosimetryTrendPointDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getKpiTrend');
+    }
+    const params: Record<string, string | number> = { mineId: resolvedMineId, months };
+    if (category) params.category = category;
+    if (metric) params.metric = metric;
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/trend`, { params });
+        return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            return [];
+        }
+        throw err;
+    }
+};
+
+/**
+ * Recupere l'histogramme de distribution des doses annuelles (6 buckets).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/distribution?mineId=X&year=Y&category=}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const getKpiDistribution = async (
+    mineId?: number | null,
+    year?: number | null,
+    category?: KpiCategory | null,
+): Promise<DosimetryDistributionDTO | null> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getKpiDistribution');
+    }
+    const params: Record<string, string | number> = { mineId: resolvedMineId };
+    if (year != null) params.year = year;
+    if (category) params.category = category;
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/distribution`, { params });
+        return (res.data ?? null) as DosimetryDistributionDTO | null;
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            return null;
+        }
+        throw err;
+    }
+};
+
+/**
+ * Top N des workers les plus exposes (pseudonymise — workerId + dose).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/top-exposed?mineId=X&limit=N&year=Y}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE (donnees pseudonymisees, pas de nominatif).
+ */
+const getTopExposed = async (
+    mineId?: number | null,
+    limit: number = 10,
+    year?: number | null,
+): Promise<DosimetryTopExposedDTO[]> => {
+    const resolvedMineId = mineId ?? resolveMineId();
+    if (resolvedMineId == null) {
+        throw new Error('mineId required for getTopExposed');
+    }
+    const params: Record<string, string | number> = { mineId: resolvedMineId, limit };
+    if (year != null) params.year = year;
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/top-exposed`, { params });
+        return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            return [];
+        }
+        throw err;
+    }
+};
+
+/**
+ * Comparatif cross-tenant : KPI agregeS par mine pour une date donnee.
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/multi-mine-comparison?date=Y}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const getMultiMineComparison = async (
+    date?: string | null,
+): Promise<DosimetryMineComparisonDTO[]> => {
+    const params: Record<string, string> = {};
+    if (date) params.date = date;
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/multi-mine-comparison`, { params });
+        return Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            return [];
+        }
+        throw err;
+    }
+};
+
+/**
+ * Etat global plateforme Dosimetrie (tous sites confondus).
+ *
+ * <p>Endpoint : {@code GET /hns/dosimetry/kpi/global-status}.
+ * RBAC : DOSIMETRY_READ_AGGREGATE.
+ */
+const getGlobalStatus = async (): Promise<DosimetryGlobalStatusDTO | null> => {
+    try {
+        const res = await axiosInstance.get(`${kpiUrl}/global-status`);
+        return (res.data ?? null) as DosimetryGlobalStatusDTO | null;
+    } catch (err: any) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404 || httpStatus === 501) {
+            return null;
+        }
+        throw err;
+    }
+};
+
+export {
+    // Phase 8 — KPI executive dashboard
+    getKpiSummary,
+    getKpiTrend,
+    getKpiDistribution,
+    getTopExposed,
+    getMultiMineComparison,
+    getGlobalStatus,
+};

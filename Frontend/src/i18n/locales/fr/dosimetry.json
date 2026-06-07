@@ -2593,5 +2593,93 @@
             "rgpdFooterTitle": "Vos droits RGPD",
             "rgpdFooterBody": "Conformément au RGPD (art. 15 à 22), vous disposez d'un droit d'accès, de rectification, d'effacement et de portabilité de vos données personnelles. Pour exercer ces droits ou pour toute question, contactez le Délégué à la Protection des Données (DPO) de votre établissement."
         }
+    },
+    "dashboard": {
+        "breadcrumbRoot": "Dosimétrie",
+        "breadcrumbCurrent": "Vue d'ensemble",
+        "title": "Tableau de bord dosimétrie",
+        "subtitle": "Vue agrégée des indicateurs clés d'expositions aux rayonnements ionisants — conforme CIPR 103 / AIEA GSR Part 3. Aucune donnée nominative ou médicale n'est exposée sur ce tableau.",
+        "snapshotDate": "Snapshot au",
+        "refresh": "Rafraîchir",
+        "loadError": "Impossible de charger les KPI dosimétrie. Vérifiez vos permissions ou réessayez.",
+        "footer": "Données agrégées conformes RGPD art. 30 + CIPR 103 + AIEA GSR Part 3. Le rafraîchissement des snapshots est quotidien (job nuit).",
+        "filters": {
+            "mineLabel": "Mine",
+            "minePlaceholder": "Sélectionner",
+            "categoryLabel": "Catégorie",
+            "categoryAll": "Toutes catégories",
+            "yearLabel": "Année"
+        },
+        "kpi": {
+            "workersLabel": "Travailleurs exposés",
+            "workersTooltip": "Nombre total de travailleurs exposés enregistrés dans le périmètre filtré. Le détail par catégorie est listé en dessous.",
+            "workersEmpty": "Aucun travailleur enregistré",
+            "avgDoseLabel": "Dose moyenne",
+            "avgDoseSub": "Hp(10) — moyenne annuelle pondérée",
+            "avgDoseTooltip": "Moyenne pondérée par le nombre de travailleurs de chaque catégorie. Exprimée en mSv/an.",
+            "over50Label": "Workers > 50% limite",
+            "over50Sub": "Au-delà de la moitié de la limite réglementaire",
+            "over50Tooltip": "Travailleurs dont le cumul annuel dépasse 50% de la limite CIPR de leur catégorie.",
+            "over90Label": "Workers > 90% limite",
+            "over90Sub": "Niveau d'action — surveillance renforcée",
+            "over90Tooltip": "Travailleurs au niveau d'action — un dossier de dépassement doit être envisagé.",
+            "overexposureLabel": "Dossiers surexposition",
+            "overexposureSub": "Cas ouverts (OPEN + INVESTIGATING)",
+            "overexposureTooltip": "Cliquer pour ouvrir le workflow des dossiers de dépassement (Phase 5).",
+            "fitnessExpiringLabel": "Aptitudes < 30j",
+            "fitnessExpiringSub": "Fiches arrivant à échéance bientôt",
+            "fitnessExpiringTooltip": "Cliquer pour ouvrir le planning de surveillance médicale (médecin du travail)."
+        },
+        "trend": {
+            "title": "Tendances mensuelles (12 mois)",
+            "subtitle": "Dose annuelle moyenne / médiane / max. Lignes réf. : 50% / 75% / 100% limite CIPR.",
+            "limitLabel": "Limite CIPR",
+            "avg": "Dose moyenne",
+            "median": "Dose médiane",
+            "max": "Dose max",
+            "refP50": "50% limite",
+            "refP75": "75% limite",
+            "refP100": "Limite CIPR"
+        },
+        "distribution": {
+            "title": "Distribution des doses annuelles",
+            "subtitle": "Répartition des travailleurs par % de la limite réglementaire (CIPR 103).",
+            "workers": "travailleur(s)",
+            "total": "Total"
+        },
+        "top": {
+            "title": "Top 10 des travailleurs les plus exposés",
+            "subtitle": "Année {{year}} — cumul annuel pseudonymisé. Cliquer une ligne pour ouvrir la fiche 360 (RBAC DOSIMETRY_READ_NOMINATIVE).",
+            "rank": "Rang",
+            "workerId": "Worker ID",
+            "category": "Catégorie",
+            "annualDose": "Dose annuelle (mSv)",
+            "percentLimit": "% limite",
+            "status": "Statut",
+            "actions": "Actions",
+            "empty": "Aucun travailleur exposé enregistré pour cette période.",
+            "loading": "Chargement du top 10…",
+            "privacyNotice": "Données agrégées — aucune donnée médicale visible ici. Le nom et le matricule du travailleur ne sont visibles que dans la fiche 360 (permission DOSIMETRY_READ_NOMINATIVE).",
+            "viewWorker": "Ouvrir la fiche",
+            "statusSafe": "Conforme",
+            "statusWatch": "Surveillance",
+            "statusInvestigation": "Investigation",
+            "statusAction": "Action",
+            "statusExceeded": "Dépassement"
+        },
+        "multimine": {
+            "title": "Comparatif multi-sites",
+            "subtitle": "KPI agrégés par mine pour la dernière date de snapshot. Cliquer une carte pour filtrer le dashboard.",
+            "workers": "Workers",
+            "avgDose": "Moy.",
+            "maxDose": "Max",
+            "over100": ">100%",
+            "alerts": "Alertes",
+            "cases": "Dossiers",
+            "empty": "Aucune donnée de comparaison disponible.",
+            "loading": "Chargement…",
+            "currentBadge": "Active",
+            "clickHint": "Cliquer pour filtrer →"
+        }
     }
 }

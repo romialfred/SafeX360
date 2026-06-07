@@ -2593,5 +2593,93 @@
             "rgpdFooterTitle": "Your GDPR rights",
             "rgpdFooterBody": "In accordance with the GDPR (art. 15 to 22), you have rights of access, rectification, erasure and portability of your personal data. To exercise these rights or for any question, contact your organization's Data Protection Officer (DPO)."
         }
+    },
+    "dashboard": {
+        "breadcrumbRoot": "Dosimetry",
+        "breadcrumbCurrent": "Overview",
+        "title": "Dosimetry Dashboard",
+        "subtitle": "Aggregated view of key indicators for ionizing radiation exposure — ICRP 103 / IAEA GSR Part 3 compliant. No nominative or medical data is exposed on this dashboard.",
+        "snapshotDate": "Snapshot as of",
+        "refresh": "Refresh",
+        "loadError": "Unable to load dosimetry KPIs. Check your permissions or try again.",
+        "footer": "Aggregated data compliant with GDPR art. 30 + ICRP 103 + IAEA GSR Part 3. Snapshots are refreshed daily (nightly job).",
+        "filters": {
+            "mineLabel": "Mine",
+            "minePlaceholder": "Select",
+            "categoryLabel": "Category",
+            "categoryAll": "All categories",
+            "yearLabel": "Year"
+        },
+        "kpi": {
+            "workersLabel": "Exposed workers",
+            "workersTooltip": "Total number of exposed workers in the filtered scope. Breakdown by category listed below.",
+            "workersEmpty": "No worker registered",
+            "avgDoseLabel": "Average dose",
+            "avgDoseSub": "Hp(10) — annual weighted average",
+            "avgDoseTooltip": "Weighted average by worker count per category. Expressed in mSv/year.",
+            "over50Label": "Workers > 50% limit",
+            "over50Sub": "Beyond half the regulatory limit",
+            "over50Tooltip": "Workers whose annual cumulative dose exceeds 50% of the ICRP limit for their category.",
+            "over90Label": "Workers > 90% limit",
+            "over90Sub": "Action level — reinforced surveillance",
+            "over90Tooltip": "Workers at action level — an overexposure case should be considered.",
+            "overexposureLabel": "Overexposure cases",
+            "overexposureSub": "Open cases (OPEN + INVESTIGATING)",
+            "overexposureTooltip": "Click to open the overexposure cases workflow (Phase 5).",
+            "fitnessExpiringLabel": "Fitness < 30d",
+            "fitnessExpiringSub": "Assessments expiring soon",
+            "fitnessExpiringTooltip": "Click to open the medical surveillance planning (occupational physician)."
+        },
+        "trend": {
+            "title": "Monthly trends (12 months)",
+            "subtitle": "Average / median / max annual dose. Ref. lines: 50% / 75% / 100% ICRP limit.",
+            "limitLabel": "ICRP limit",
+            "avg": "Average dose",
+            "median": "Median dose",
+            "max": "Max dose",
+            "refP50": "50% limit",
+            "refP75": "75% limit",
+            "refP100": "ICRP limit"
+        },
+        "distribution": {
+            "title": "Annual dose distribution",
+            "subtitle": "Worker distribution by % of regulatory limit (ICRP 103).",
+            "workers": "worker(s)",
+            "total": "Total"
+        },
+        "top": {
+            "title": "Top 10 most exposed workers",
+            "subtitle": "Year {{year}} — pseudonymized annual cumulative. Click a row to open the 360 file (RBAC DOSIMETRY_READ_NOMINATIVE).",
+            "rank": "Rank",
+            "workerId": "Worker ID",
+            "category": "Category",
+            "annualDose": "Annual dose (mSv)",
+            "percentLimit": "% limit",
+            "status": "Status",
+            "actions": "Actions",
+            "empty": "No exposed worker registered for this period.",
+            "loading": "Loading top 10…",
+            "privacyNotice": "Aggregated data — no medical data visible here. Worker name and badge number are only visible in the 360 file (permission DOSIMETRY_READ_NOMINATIVE).",
+            "viewWorker": "Open file",
+            "statusSafe": "Compliant",
+            "statusWatch": "Watch",
+            "statusInvestigation": "Investigation",
+            "statusAction": "Action",
+            "statusExceeded": "Exceeded"
+        },
+        "multimine": {
+            "title": "Multi-site comparison",
+            "subtitle": "KPIs aggregated by mine for the latest snapshot date. Click a card to filter the dashboard.",
+            "workers": "Workers",
+            "avgDose": "Avg.",
+            "maxDose": "Max",
+            "over100": ">100%",
+            "alerts": "Alerts",
+            "cases": "Cases",
+            "empty": "No comparison data available.",
+            "loading": "Loading…",
+            "currentBadge": "Active",
+            "clickHint": "Click to filter →"
+        }
     }
 }
