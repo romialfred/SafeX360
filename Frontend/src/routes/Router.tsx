@@ -216,7 +216,7 @@ const InspectionScheduleForm = lazy(() => import('../components/Inspection/Inspe
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
 const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
 
-// LOT — SafeX 360 Field (mobile Android Phase M0+M1+M2)
+// LOT — SafeX 360 Field (mobile Android Phase M0+M1+M2+M3)
 const MobileShell = lazy(() => import('../m/MobileShell'));
 const MobileHome = lazy(() => import('../m/pages/MobileHome'));
 const MobilePlaceholder = lazy(() => import('../m/pages/MobilePlaceholder'));
@@ -225,6 +225,11 @@ const MobileSosScreen = lazy(() => import('../m/pages/MobileSosScreen'));
 const MobileIncidentQuickDeclare = lazy(() => import('../m/pages/MobileIncidentQuickDeclare'));
 const MobileBlastNext = lazy(() => import('../m/pages/MobileBlastNext'));
 const MobileProfile = lazy(() => import('../m/pages/MobileProfile'));
+// Phase M3 — sous-pages profil (lecture seule, garde biometrique sur 2 d'entre elles)
+const MobilePersonalPpe = lazy(() => import('../m/pages/MobilePersonalPpe'));
+const MobilePersonalTrainings = lazy(() => import('../m/pages/MobilePersonalTrainings'));
+const MobilePersonalDosimetry = lazy(() => import('../m/pages/MobilePersonalDosimetry'));
+const MobilePersonalMedical = lazy(() => import('../m/pages/MobilePersonalMedical'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -312,10 +317,10 @@ const router = createBrowserRouter([
             { path: 'incident/:id', element: <BlastSuspense><MobilePlaceholder title="Incident" subtitle="Détail" accent="#B45309" phaseTag="Phase M3" /></BlastSuspense> },
             { path: 'blast/next', element: <BlastSuspense><MobileBlastNext /></BlastSuspense> },
             { path: 'profile', element: <BlastSuspense><MobileProfile /></BlastSuspense> },
-            { path: 'profile/ppe', element: <BlastSuspense><MobilePlaceholder title="Mes EPI" subtitle="Dotation personnelle" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
-            { path: 'profile/trainings', element: <BlastSuspense><MobilePlaceholder title="Mes formations" subtitle="Habilitations à jour" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
-            { path: 'profile/dosimetry', element: <BlastSuspense><MobilePlaceholder title="Ma dosimétrie" subtitle="Suivi personnel" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
-            { path: 'profile/medical', element: <BlastSuspense><MobilePlaceholder title="Mon dossier médical" subtitle="Suivi aptitude" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'profile/ppe', element: <BlastSuspense><MobilePersonalPpe /></BlastSuspense> },
+            { path: 'profile/trainings', element: <BlastSuspense><MobilePersonalTrainings /></BlastSuspense> },
+            { path: 'profile/dosimetry', element: <BlastSuspense><MobilePersonalDosimetry /></BlastSuspense> },
+            { path: 'profile/medical', element: <BlastSuspense><MobilePersonalMedical /></BlastSuspense> },
         ],
     },
 

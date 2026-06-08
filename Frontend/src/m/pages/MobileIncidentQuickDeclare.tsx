@@ -18,6 +18,7 @@ import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { mutateOffline } from '../services/mobileApi';
+import { capturePhoto } from '../services/cameraService';
 import { useAppSelector } from '../../slices/hooks';
 
 type IncidentType = 'NEAR_MISS' | 'INJURY' | 'PROPERTY' | 'ENVIRONMENTAL';
@@ -47,6 +48,7 @@ export default function MobileIncidentQuickDeclare() {
     const [severity, setSeverity] = useState<Severity | null>(null);
     const [description, setDescription] = useState<string>('');
     const [photoName, setPhotoName] = useState<string | null>(null);
+    const [photoSizeKb, setPhotoSizeKb] = useState<number | null>(null);
     const [sending, setSending] = useState<boolean>(false);
     const [done, setDone] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -55,17 +57,20 @@ export default function MobileIncidentQuickDeclare() {
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
     const canSubmit = !!type && !!severity && description.trim().length >= 10 && !sending;
 
-    const handleTakePhoto = () => {
+    const handleTakePhoto = async () => {
         haptic('light');
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.setAttribute('capture', 'environment');
-        input.onchange = () => {
-            const f = input.files?.[0];
-            if (f) setPhotoName(f.name);
-        };
-        input.click();
+        try {
+            // Capacitor Camera + compression (1024px max, JPEG q70, EXIF strip).
+            // Stockage immediat dans photoQueue IndexedDB pour upload differe.
+            const photo = await capturePhoto({ label: 'incident' });
+            setPhotoName(photo.filename);
+            setPhotoSizeKb(Math.round(photo.sizeBytes / 1024));
+            haptic('light');
+        } catch (e) {
+            // Annulation utilisateur : pas d'erreur visible (UX silencieuse)
+            // Erreur reelle : log uniquement pour ne pas effrayer le terrain.
+            console.warn('[incident] photo capture skipped', e);
+        }
     };
 
     const handleSubmit = async () => {
@@ -193,8 +198,15 @@ export default function MobileIncidentQuickDeclare() {
                         style={{ minHeight: 56 }}
                     >
                         <IconCamera size={18} stroke={1.8} />
-                        {photoName || 'Joindre une photo'}
+                        {photoName
+                            ? `${photoName}${photoSizeKb ? ` · ${photoSizeKb} Ko` : ''}`
+                            : 'Joindre une photo'}
                     </button>
+                    {photoName && (
+                        <p className="text-[11px] text-emerald-700 mt-1 px-1">
+                            ✓ Compressée et mise en file d'attente — sera envoyée au retour réseau
+                        </p>
+                    )}
                 </div>
 
                 {error && (
