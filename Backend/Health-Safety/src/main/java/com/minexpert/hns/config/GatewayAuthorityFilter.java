@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.minexpert.hns.blast.config.BlastRBACConfig;
 import com.minexpert.hns.dosimetry.config.DosimetryRBACConfig;
+import com.minexpert.hns.inspections.config.InspectionRBACConfig;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -76,7 +77,14 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
             BlastRBACConfig.BLAST_CONFIRM,
             BlastRBACConfig.BLAST_ALARM,
             BlastRBACConfig.BLAST_REPORT,
-            BlastRBACConfig.BLAST_ADMIN
+            BlastRBACConfig.BLAST_ADMIN,
+            // Inspections (refonte 2026-06) — toutes les permissions system-to-system
+            InspectionRBACConfig.INSPECTION_VIEW,
+            InspectionRBACConfig.INSPECTION_PLAN,
+            InspectionRBACConfig.INSPECTION_EXECUTE,
+            InspectionRBACConfig.INSPECTION_VALIDATE,
+            InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE,
+            InspectionRBACConfig.INSPECTION_ADMIN
     );
 
     @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")

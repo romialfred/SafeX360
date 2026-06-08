@@ -39,11 +39,26 @@ public class GeneralInspectionDTO {
     private LocalDateTime updatedAt;
 
     public GeneralInspection toEntity() {
-        return new GeneralInspection(this.id, this.activityId != null ? new Activity(activityId) : null,
-                this.siteId != null ? new Location(this.siteId) : null, this.plannedDate,
-                this.startTime, this.endTime, this.description, this.objectives,
-                riskTypes.toString(), ppe.toString(), StringListConverter.convertParticipantsToString(participants),
-                status, createdAt, updatedAt);
+        // Refonte 2026-06 : la nouvelle entite GeneralInspection a plus de
+        // champs (template, dates workflow). On utilise les setters pour
+        // rester resilient aux ajouts futurs et eviter de couler le contrat
+        // a l'ordre exact du @AllArgsConstructor.
+        GeneralInspection entity = new GeneralInspection();
+        entity.setId(this.id);
+        entity.setActivity(this.activityId != null ? new Activity(this.activityId) : null);
+        entity.setSite(this.siteId != null ? new Location(this.siteId) : null);
+        entity.setPlannedDate(this.plannedDate);
+        entity.setStartTime(this.startTime);
+        entity.setEndTime(this.endTime);
+        entity.setDescription(this.description);
+        entity.setObjectives(this.objectives);
+        entity.setRiskTypes(riskTypes != null ? riskTypes.toString() : null);
+        entity.setPpe(ppe != null ? ppe.toString() : null);
+        entity.setParticipants(StringListConverter.convertParticipantsToString(participants));
+        entity.setStatus(this.status);
+        entity.setCreatedAt(this.createdAt);
+        entity.setUpdatedAt(this.updatedAt);
+        return entity;
     }
 
 }
