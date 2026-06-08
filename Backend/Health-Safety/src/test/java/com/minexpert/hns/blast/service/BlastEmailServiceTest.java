@@ -127,9 +127,10 @@ class BlastEmailServiceTest {
 
         assertThat(ok).isTrue();
         verify(templateEngine).process(eq("blast/reminder_24h_fr"), any());
-        // Sujet FR : "Tir prevu demain"
+        // Sujet FR strict doc : "Tir prévu demain — …, dd/MM/yyyy à HH:mm"
+        // (accents conserves, doc Modeles_Emails_Rappels_Tir.md §1).
         verify(messageSender).send(eq("foreman@mine.test"),
-                contains("Tir prevu demain"), eq("<html>FR body</html>"));
+                contains("Tir prévu demain"), eq("<html>FR body</html>"));
 
         ArgumentCaptor<BlastEmailLog> logCap = ArgumentCaptor.forClass(BlastEmailLog.class);
         verify(emailLogRepository).save(logCap.capture());
@@ -264,6 +265,121 @@ class BlastEmailServiceTest {
         boolean ok = emailService.send(100L);
 
         assertThat(ok).isTrue();
+        verify(messageSender, never()).send(anyString(), anyString(), anyString());
+    }
+
+    // ── P5 — sendLifecycleEmail (CANCELLED / RESCHEDULED) ──────────────────
+
+    @Test
+    @DisplayName("P5/lifecycle: CANCELLED FR -> template + sujet FR + log SENT")
+    void lifecycleCancelledFr() throws Exception {
+        BlastRecipient r = BlastRecipient.builder()
+                .id(10L).externalEmail("ops@mine.test").preferredLanguage("FR").build();
+        Blast blast = buildBlast(List.of(r));
+        r.setBlast(blast);
+        when(settingRepository.findByMineId(7L)).thenReturn(Optional.empty());
+        when(templateEngine.process(anyString(), any())).thenReturn("<html>FR cancelled</html>");
+        configureSmtp(emailService, "smtp.minexpert.local");
+
+        boolean ok = emailService.sendLifecycleEmail(blast,
+                BlastEmailService.LifecycleEvent.CANCELLED);
+
+        assertThat(ok).isTrue();
+        verify(templateEngine).process(eq("blast/cancelled_fr"), any());
+        verify(messageSender).send(eq("ops@mine.test"),
+                argThat(s -> s != null && s.contains("Tir annulé")),
+                eq("<html>FR cancelled</html>"));
+
+        ArgumentCaptor<BlastEmailLog> logCap = ArgumentCaptor.forClass(BlastEmailLog.class);
+        verify(emailLogRepository).save(logCap.capture());
+        // job_id NULL pour les emails de lifecycle (V017).
+        assertThat(logCap.getValue().getJobId()).isNull();
+        assertThat(logCap.getValue().getStatus()).isEqualTo(EmailLogStatus.SENT);
+    }
+
+    @Test
+    @DisplayName("P5/lifecycle: RESCHEDULED EN -> template + sujet EN")
+    void lifecycleRescheduledEn() throws Exception {
+        BlastRecipient r = BlastRecipient.builder()
+                .id(11L).externalEmail("crew@mine.test").preferredLanguage("EN").build();
+        Blast blast = buildBlast(List.of(r));
+        r.setBlast(blast);
+        when(settingRepository.findByMineId(7L)).thenReturn(Optional.empty());
+        when(templateEngine.process(anyString(), any())).thenReturn("<html>EN rescheduled</html>");
+        configureSmtp(emailService, "smtp.minexpert.local");
+
+        emailService.sendLifecycleEmail(blast,
+                BlastEmailService.LifecycleEvent.RESCHEDULED);
+
+        verify(templateEngine).process(eq("blast/rescheduled_en"), any());
+        verify(messageSender).send(eq("crew@mine.test"),
+                argThat(s -> s != null && s.contains("Blast rescheduled")
+                        && s.contains("new date")),
+                anyString());
+    }
+
+    @Test
+    @DisplayName("P5/lifecycle: mode degrade SMTP -> aucun envoi tente, retour true")
+    void lifecycleDegradedMode() throws Exception {
+        BlastRecipient r = BlastRecipient.builder()
+                .id(12L).externalEmail("a@b.c").preferredLanguage("FR").build();
+        Blast blast = buildBlast(List.of(r));
+        configureSmtp(emailService, "smtp.example.com");
+
+        boolean ok = emailService.sendLifecycleEmail(blast,
+                BlastEmailService.LifecycleEvent.CANCELLED);
+
+        assertThat(ok).isTrue();
+        verify(messageSender, never()).send(anyString(), anyString(), anyString());
+        verify(templateEngine, never()).process(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("P5/lifecycle: blast sans recipients -> no-op OK")
+    void lifecycleNoRecipientsIsOk() throws Exception {
+        Blast blast = buildBlast(new ArrayList<>());
+        configureSmtp(emailService, "smtp.minexpert.local");
+
+        boolean ok = emailService.sendLifecycleEmail(blast,
+                BlastEmailService.LifecycleEvent.CANCELLED);
+
+        assertThat(ok).isTrue();
+        verify(messageSender, never()).send(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("P5/lifecycle: SMTP echec -> log FAILED avec erreur, retour false")
+    void lifecycleSmtpFailureLogged() throws Exception {
+        BlastRecipient r = BlastRecipient.builder()
+                .id(13L).externalEmail("ops@mine.test").preferredLanguage("FR").build();
+        Blast blast = buildBlast(List.of(r));
+        r.setBlast(blast);
+        when(settingRepository.findByMineId(7L)).thenReturn(Optional.empty());
+        when(templateEngine.process(anyString(), any())).thenReturn("<html>FR cancelled</html>");
+        configureSmtp(emailService, "smtp.minexpert.local");
+        org.mockito.Mockito.doThrow(new RuntimeException("Connection refused"))
+                .when(messageSender).send(anyString(), anyString(), anyString());
+
+        boolean ok = emailService.sendLifecycleEmail(blast,
+                BlastEmailService.LifecycleEvent.CANCELLED);
+
+        assertThat(ok).isFalse();
+        ArgumentCaptor<BlastEmailLog> logCap = ArgumentCaptor.forClass(BlastEmailLog.class);
+        verify(emailLogRepository).save(logCap.capture());
+        assertThat(logCap.getValue().getStatus()).isEqualTo(EmailLogStatus.FAILED);
+        assertThat(logCap.getValue().getError()).isEqualTo("Connection refused");
+        assertThat(logCap.getValue().getJobId()).isNull();
+    }
+
+    @Test
+    @DisplayName("P5/lifecycle: blast/event null -> no-op silencieux")
+    void lifecycleNullArgsAreSilent() throws Exception {
+        boolean ok1 = emailService.sendLifecycleEmail(null,
+                BlastEmailService.LifecycleEvent.CANCELLED);
+        boolean ok2 = emailService.sendLifecycleEmail(buildBlast(new ArrayList<>()), null);
+
+        assertThat(ok1).isTrue();
+        assertThat(ok2).isTrue();
         verify(messageSender, never()).send(anyString(), anyString(), anyString());
     }
 }

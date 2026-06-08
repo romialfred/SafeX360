@@ -18,9 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.blast.config.BlastRBACConfig;
+import com.minexpert.hns.blast.dto.BlastCancelRequestDTO;
 import com.minexpert.hns.blast.dto.BlastCreateDTO;
 import com.minexpert.hns.blast.dto.BlastDetailDTO;
 import com.minexpert.hns.blast.dto.BlastListItemDTO;
+import com.minexpert.hns.blast.dto.BlastMisfireRequestDTO;
+import com.minexpert.hns.blast.dto.BlastRescheduleRequestDTO;
+import com.minexpert.hns.blast.dto.BlastResolveMisfireRequestDTO;
 import com.minexpert.hns.blast.dto.BlastSearchFiltersDTO;
 import com.minexpert.hns.blast.dto.BlastUpdateDTO;
 import com.minexpert.hns.blast.service.BlastService;
@@ -72,23 +76,46 @@ public class BlastController {
         return new ResponseEntity<>(new ResponseDTO("Blast confirmed"), HttpStatus.OK);
     }
 
+    /**
+     * Annule un tir. P5 : accepte un body JSON {@code { "reason": "..." }} OU,
+     * pour retrocompatibilite avec les clients deployes en P1/P2, un query
+     * param {@code ?reason=...}. La precedence va au body JSON si les deux
+     * sont fournis.
+     */
     @PreAuthorize("hasAnyAuthority('" + BlastRBACConfig.BLAST_PLAN + "','"
             + BlastRBACConfig.BLAST_ADMIN + "')")
     @PostMapping("/cancel/{id}")
     public ResponseEntity<ResponseDTO> cancel(@PathVariable Long id,
-            @RequestParam("reason") String reason,
+            @RequestBody(required = false) BlastCancelRequestDTO body,
+            @RequestParam(value = "reason", required = false) String reasonParam,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        String reason = (body != null && body.getReason() != null) ? body.getReason() : reasonParam;
         service.cancel(id, reason, userId);
         return new ResponseEntity<>(new ResponseDTO("Blast cancelled"), HttpStatus.OK);
     }
 
+    /**
+     * Reporte un tir. P5 : accepte un body JSON
+     * {@code { "newScheduledAt": "...", "reason": "..." }} ; les query params
+     * historiques {@code ?newScheduledAt=...&reason=...} restent acceptes
+     * pour retrocompatibilite. Format ISO LocalDateTime
+     * ({@code 2026-06-18T14:00:00}).
+     */
     @PreAuthorize("hasAnyAuthority('" + BlastRBACConfig.BLAST_PLAN + "','"
             + BlastRBACConfig.BLAST_ADMIN + "')")
     @PostMapping("/reschedule/{id}")
     public ResponseEntity<ResponseDTO> reschedule(@PathVariable Long id,
-            @RequestParam("newScheduledAt") String newScheduledAt,
-            @RequestParam("reason") String reason,
+            @RequestBody(required = false) BlastRescheduleRequestDTO body,
+            @RequestParam(value = "newScheduledAt", required = false) String newScheduledAtParam,
+            @RequestParam(value = "reason", required = false) String reasonParam,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        String newScheduledAt = (body != null && body.getNewScheduledAt() != null)
+                ? body.getNewScheduledAt() : newScheduledAtParam;
+        String reason = (body != null && body.getReason() != null)
+                ? body.getReason() : reasonParam;
+        if (newScheduledAt == null || newScheduledAt.isBlank()) {
+            throw new IllegalArgumentException("newScheduledAt is required");
+        }
         LocalDateTime parsed = LocalDateTime.parse(newScheduledAt);
         service.reschedule(id, parsed, reason, userId);
         return new ResponseEntity<>(new ResponseDTO("Blast rescheduled"), HttpStatus.OK);
@@ -102,21 +129,46 @@ public class BlastController {
         return new ResponseEntity<>(new ResponseDTO("Blast declared fired"), HttpStatus.OK);
     }
 
+    /**
+     * Declare un raté. P5 : body JSON {@code { "reason": "..." }} accepte ; le
+     * query param {@code ?reason=...} reste accepte pour retrocompatibilite.
+     */
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_CONFIRM + "')")
     @PostMapping("/declare-misfire/{id}")
     public ResponseEntity<ResponseDTO> declareMisfire(@PathVariable Long id,
-            @RequestParam("reason") String reason,
+            @RequestBody(required = false) BlastMisfireRequestDTO body,
+            @RequestParam(value = "reason", required = false) String reasonParam,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        String reason = (body != null && body.getReason() != null) ? body.getReason() : reasonParam;
         service.declareMisfire(id, reason, userId);
         return new ResponseEntity<>(new ResponseDTO("Misfire declared"), HttpStatus.OK);
     }
 
+    /**
+     * Leve le verrou misfire. P5 : body JSON
+     * {@code { "resolutionNotes": "..." }} accepte (privilegie pour
+     * persistance dans la colonne {@code misfire_resolution_notes}). Les
+     * anciens clients qui envoient {@code ?reason=...} restent acceptes ; le
+     * texte est traite comme notes de resolution.
+     */
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_ADMIN + "')")
     @PostMapping("/resolve-misfire/{id}")
     public ResponseEntity<ResponseDTO> resolveMisfire(@PathVariable Long id,
-            @RequestParam(value = "reason", required = false) String reason,
+            @RequestBody(required = false) BlastResolveMisfireRequestDTO body,
+            @RequestParam(value = "reason", required = false) String reasonParam,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        service.resolveMisfire(id, reason, userId);
+        String notes = null;
+        if (body != null) {
+            if (body.getResolutionNotes() != null) {
+                notes = body.getResolutionNotes();
+            } else if (body.getReason() != null) {
+                notes = body.getReason();
+            }
+        }
+        if (notes == null) {
+            notes = reasonParam;
+        }
+        service.resolveMisfire(id, notes, userId);
         return new ResponseEntity<>(new ResponseDTO("Misfire resolved"), HttpStatus.OK);
     }
 

@@ -156,6 +156,17 @@ public class Blast {
     @Column(name = "misfire_resolved_at")
     private LocalDateTime misfireResolvedAt;
 
+    /**
+     * Notes de resolution du raté : description du protocole d'intervention
+     * (deminage manuel, re-amorcage du trou défaillant, contre-mine, etc.).
+     * Saisi par le BLAST_ADMIN lors de l'appel {@code resolveMisfire}.
+     * Conserve a vie pour audit reglementaire — l'historique complet des raisons
+     * (cas de raté multiples) est trace dans {@code blast_status_event}.
+     * Ajoute en V017 (P5).
+     */
+    @Column(name = "misfire_resolution_notes", columnDefinition = "TEXT")
+    private String misfireResolutionNotes;
+
     @Version
     @Column(name = "version", nullable = false)
     private int version;

@@ -234,6 +234,16 @@
         "saveSuccessUpdated": "Tir mis a jour.",
         "saveError": "L'enregistrement a echoue. Verifiez les champs et reessayez."
     },
+    "popup": {
+        "title": "Tir imminent",
+        "eyebrow": "Annonce de tir — Module Dynamitages",
+        "scheduledLabel": "Heure prévue",
+        "zoneLabel": "Zone concernée",
+        "remainingLabel": "Temps restant",
+        "referenceLabel": "Référence",
+        "ackButton": "J'ai pris connaissance",
+        "closeAriaLabel": "Fermer la popup"
+    },
     "detail": {
         "breadcrumbCurrent": "Detail du tir",
         "loading": "Chargement du tir…",
@@ -258,6 +268,7 @@
             "allClear": "Site degage",
             "openEvacReport": "Voir rapport d'evacuation",
             "edit": "Modifier",
+            "resolveMisfire": "Resoudre le raté",
             "allClearBlockedTooltip": "Le 'site degage' reste bloque tant qu'un BLAST_ADMIN n'a pas resolu le raté en cours."
         },
         "modals": {
@@ -273,6 +284,10 @@
             "allClearBody": "Confirmez que l'inspection est terminee et que le perimetre peut etre leve.",
             "firedTitle": "Declarer le tir tire",
             "firedBody": "Confirmez que le tir a eu lieu. L'inspection demarre, le 'site degage' reste a prononcer.",
+            "resolveMisfireTitle": "Resoudre le raté",
+            "resolveMisfireHint": "Action reservee aux BLAST_ADMIN. Apres validation, le verrou est leve et le 'site degage' redevient prononcable.",
+            "resolveMisfireNotes": "Notes de resolution",
+            "resolveMisfireNotesHint": "Decrivez le protocole applique : deminage manuel, re-amorcage, contre-mine, etc. Conserve pour audit reglementaire.",
             "validate": "Confirmer",
             "cancel": "Annuler"
         },
@@ -317,6 +332,62 @@
             "title": "Historique des statuts",
             "subtitle": "Journal append-only de tous les changements et actions tracees.",
             "phase3": "L'historique detaille sera affiche en Phase 3."
+        }
+    },
+    "evacReport": {
+        "title": "Rapport d'evacuation post-tir",
+        "subtitle": "Tir {{reference}} — synthese cloturant le perimetre apres ALL_CLEAR.",
+        "back": "Retour au tir",
+        "readOnly": "Lecture seule (signe)",
+        "alertMessage": "Message diffuse a T-10 : alerte generale d'evacuation bilingue vers tous les destinataires et les zones de production.",
+        "noIncidents": "Aucun incident enregistre durant cette evacuation.",
+        "signedBy": "Signe par l'utilisateur #{{user}} le {{at}}.",
+        "lockNote": "Apres signature, les incidents et le comptage sont verrouilles (defense applicative + trigger BDD).",
+        "pendingSignatureNote": "Ce rapport n'a pas encore ete signe. Les comptages et incidents peuvent encore etre completes par un agent HSE.",
+        "badges": {
+            "signed": "Signe",
+            "pending": "En attente de signature"
+        },
+        "sections": {
+            "blast": "Details du tir",
+            "alert": "Alerte d'evacuation",
+            "headcount": "Comptage evacuation",
+            "incidents": "Incidents",
+            "signature": "Signature"
+        },
+        "fields": {
+            "reference": "Reference",
+            "zone": "Zone couverte",
+            "scheduledAt": "Heure prevue",
+            "firedAt": "Heure du tir",
+            "allClearAt": "Site degage a",
+            "assemblyPoints": "Points de rassemblement",
+            "alarmTriggeredAt": "Heure de declenchement alarme",
+            "mustered": "Rassembles",
+            "missing": "Manquants",
+            "evacDuration": "Delai d'evacuation"
+        },
+        "actions": {
+            "addIncident": "Ajouter un incident",
+            "sign": "Signer le rapport",
+            "confirmSign": "Signer maintenant",
+            "downloadPdfFr": "Telecharger PDF (FR)",
+            "downloadPdfEn": "Telecharger PDF (EN)"
+        },
+        "modals": {
+            "addIncidentTitle": "Ajouter un incident",
+            "addIncidentHint": "Decrivez l'incident (lieu, victimes eventuelles, gravite, decisions prises). La saisie est append-only et tracee.",
+            "addIncidentPlaceholder": "Ex. Chute de pierre vers AP_SUD a 10:14, sans blesse, perimetre intact.",
+            "signTitle": "Signer le rapport",
+            "signWarning": "Apres signature, les incidents et les comptages deviennent verrouilles. Vous ne pourrez plus ajouter d'incident ; seul le telechargement PDF restera disponible.",
+            "cancel": "Annuler"
+        },
+        "errors": {
+            "notFound": "Aucun rapport d'evacuation pour ce tir. Verifiez qu'il a bien ete declare en ALL_CLEAR.",
+            "loadFailed": "Impossible de charger le rapport.",
+            "descriptionRequired": "Description requise.",
+            "actionFailed": "L'action a echoue. Verifiez vos droits ou ressayez plus tard.",
+            "downloadFailed": "Echec du telechargement du PDF."
         }
     }
 }

@@ -79,6 +79,28 @@ public class BlastServiceImpl implements BlastService {
     private final BlastAuditService auditService;
     private final BlastNotificationPlanner notificationPlanner;
 
+    /**
+     * Canal d'envoi des emails de cycle de vie (cancellation / reschedule).
+     * Optionnel : si SMTP est en mode degrade (dev/CI), le service retourne
+     * silencieusement {@code true} sans envoi reel.
+     */
+    private final BlastEmailService emailService;
+
+    /**
+     * Diffuseur STOMP des popups de raté (P5). Defense en profondeur : si la
+     * diffusion echoue (broker indisponible), l'erreur est loggee mais la
+     * declaration de misfire reste valide.
+     */
+    private final BlastMisfireBroadcaster misfireBroadcaster;
+
+    /**
+     * Service du rapport d'evacuation (P6). Optionnel cote {@code @Required}
+     * pour ne pas casser les tests unitaires qui ne montent pas le module ;
+     * en runtime Spring l'injecte toujours via le component scan.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private BlastEvacuationReportService evacuationReportService;
+
     @Override
     public Long create(BlastCreateDTO dto, Long userId) {
         if (dto.getScheduledAt() == null) {
@@ -212,8 +234,11 @@ public class BlastServiceImpl implements BlastService {
         blastRepository.save(blast);
         auditService.logTransition(id, from, BlastStatus.CONFIRMED, userId,
                 "Blast locked and notifications scheduled");
-        // Hook P3 : planification persistante des rappels et alertes.
-        notificationPlanner.scheduleForBlast(blast);
+        // Hook P3/P4 : planification persistante des rappels et alertes.
+        // Appel explicite a planFor(id) : passe par le chemin canonique qui
+        // recharge l'entite en cas de transaction differente, et reste
+        // strictement idempotent (cf. BlastNotificationPlannerImpl#planForInternal).
+        notificationPlanner.planFor(id);
     }
 
     @Override
@@ -238,6 +263,17 @@ public class BlastServiceImpl implements BlastService {
         // Conserve l'ancien helper local pour preserver les tests P1 qui
         // verifient que les jobs SCHEDULED en base sont basculés CANCELLED.
         cancelScheduledJobs(id);
+        // P5 : envoi synchrone d'un email "Tir annulé" bilingue a tous les
+        // destinataires. Defensif : si SMTP n'est pas configure ou si la
+        // liste est vide, l'envoi est un no-op (le service retourne true).
+        // Les exceptions inattendues sont attrapees ici pour ne pas faire
+        // rollback de l'annulation, qui est l'action metier critique.
+        try {
+            emailService.sendLifecycleEmail(blast, BlastEmailService.LifecycleEvent.CANCELLED);
+        } catch (Exception ex) {
+            LOGGER.error("[BlastService] cancel email failed for blast {}: {}",
+                    blast.getReference(), ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -282,6 +318,19 @@ public class BlastServiceImpl implements BlastService {
         if (from == BlastStatus.CONFIRMED) {
             notificationPlanner.rescheduleFor(id, newScheduledAt);
         }
+
+        // P5 : envoi synchrone d'un email "Tir reporté" bilingue a tous les
+        // destinataires. La nouvelle date/heure est portee par l'entite
+        // (deja setee plus haut), le template Thymeleaf l'affiche via
+        // {date}/{time}. Defensif : si SMTP non configure ou aucun
+        // destinataire, l'envoi est un no-op. Les exceptions sont attrapees
+        // pour ne pas faire rollback du reschedule.
+        try {
+            emailService.sendLifecycleEmail(blast, BlastEmailService.LifecycleEvent.RESCHEDULED);
+        } catch (Exception ex) {
+            LOGGER.error("[BlastService] reschedule email failed for blast {}: {}",
+                    blast.getReference(), ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -302,30 +351,67 @@ public class BlastServiceImpl implements BlastService {
             throw new IllegalArgumentException("reason is required to declare a misfire");
         }
         Blast blast = loadOrThrow(id);
+        // Garde-fou explicite P5 : seuls FIRED (cas nominal post-tir) et
+        // IMMINENT (cas d'echec detecte juste avant le tir, ex. fil rompu)
+        // autorisent la transition vers MISFIRE. assertTransition() applique
+        // deja cette regle, mais on duplique le check pour avoir un message
+        // d'erreur plus parlant en cas d'usage hors workflow.
+        if (blast.getStatus() != BlastStatus.FIRED
+                && blast.getStatus() != BlastStatus.IMMINENT) {
+            throw new IllegalStateException(
+                    "Cannot declare misfire when blast is in status " + blast.getStatus()
+                            + " (expected FIRED or IMMINENT)");
+        }
         assertTransition(blast, BlastStatus.MISFIRE);
         BlastStatus from = blast.getStatus();
         blast.setStatus(BlastStatus.MISFIRE);
         blast.setMisfireResolvedAt(null);
+        // Reset des notes de resolution : un nouveau cycle MISFIRE -> ALL_CLEAR
+        // demarre, l'historique complet est conserve dans blast_status_event.
+        blast.setMisfireResolutionNotes(null);
         blast.setUpdatedAt(LocalDateTime.now());
         blast.setUpdatedBy(userId);
         blastRepository.save(blast);
         auditService.logTransition(id, from, BlastStatus.MISFIRE, userId, reason);
+        // P5 : annule les jobs encore SCHEDULED (popups T-0..T-2h, alarme
+        // T-10, etc.) — la chaine de notifications planifiee n'a plus de
+        // sens une fois le tir en raté. Conserve les jobs SENT / FAILED.
+        notificationPlanner.cancelFor(id);
+        cancelScheduledJobs(id);
+        // P5 : notification STOMP au boutefeu + HSE_LEAD + salle de controle
+        // pour declenchement immediat du protocole d'intervention.
+        try {
+            misfireBroadcaster.broadcast(blast, reason);
+        } catch (Exception ex) {
+            LOGGER.error("[BlastService] misfire broadcast failed for blast {}: {}",
+                    blast.getReference(), ex.getMessage(), ex);
+        }
     }
 
     @Override
-    public void resolveMisfire(Long id, String reason, Long userId) {
+    public void resolveMisfire(Long id, String resolutionNotes, Long userId) {
         Blast blast = loadOrThrow(id);
         if (blast.getStatus() != BlastStatus.MISFIRE) {
             throw new IllegalStateException(
                     "Cannot resolve misfire when blast is in status " + blast.getStatus());
         }
         blast.setMisfireResolvedAt(LocalDateTime.now());
+        // P5 : persistance du protocole de resolution (deminage / re-amorcage).
+        // Champ texte libre conserve a vie pour audit reglementaire (V017).
+        if (resolutionNotes != null && !resolutionNotes.isBlank()) {
+            blast.setMisfireResolutionNotes(resolutionNotes.trim());
+        }
         blast.setUpdatedAt(LocalDateTime.now());
         blast.setUpdatedBy(userId);
         blastRepository.save(blast);
         // Trace via un evenement "self-transition" pour conserver l'horodatage.
+        // La raison inclut les notes de resolution pour les avoir aussi dans
+        // l'historique append-only meme si la colonne misfire_resolution_notes
+        // est ulterieurement ecrasee par un re-passage MISFIRE.
         auditService.logTransition(id, BlastStatus.MISFIRE, BlastStatus.MISFIRE, userId,
-                "Misfire resolved" + (reason != null ? ": " + reason : ""));
+                "Misfire resolved" + (resolutionNotes != null && !resolutionNotes.isBlank()
+                        ? ": " + resolutionNotes
+                        : ""));
     }
 
     @Override
@@ -344,6 +430,21 @@ public class BlastServiceImpl implements BlastService {
         blastRepository.save(blast);
         auditService.logTransition(id, from, BlastStatus.ALL_CLEAR, userId,
                 "All clear pronounced");
+
+        // P6 : creation automatique du rapport d'evacuation des le passage
+        // ALL_CLEAR. Idempotent cote service : si un rapport existe deja
+        // (ex. reproclamation apres re-MISFIRE -> ALL_CLEAR), l'appel est un
+        // no-op. Defense en profondeur : toute exception inattendue est
+        // attrapee pour ne pas faire rollback de la transition ALL_CLEAR
+        // qui reste l'action metier critique pour la levee du perimetre.
+        if (evacuationReportService != null) {
+            try {
+                evacuationReportService.createReport(id);
+            } catch (Exception ex) {
+                LOGGER.error("[BlastService] evac-report auto-creation failed for blast {}: {}",
+                        blast.getReference(), ex.getMessage(), ex);
+            }
+        }
     }
 
     @Override
@@ -632,6 +733,7 @@ public class BlastServiceImpl implements BlastService {
                 .alarmZoneScope(b.getAlarmZoneScope())
                 .mineId(b.getMineId())
                 .misfireResolvedAt(b.getMisfireResolvedAt())
+                .misfireResolutionNotes(b.getMisfireResolutionNotes())
                 .version(b.getVersion())
                 .createdAt(b.getCreatedAt())
                 .updatedAt(b.getUpdatedAt())

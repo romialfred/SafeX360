@@ -69,10 +69,19 @@ public interface BlastService {
     void declareMisfire(Long id, String reason, Long userId);
 
     /**
-     * Leve le verrou misfire (BLAST_ADMIN). Renseigne {@code misfireResolvedAt}.
-     * Apres cet appel, la transition MISFIRE -&gt; ALL_CLEAR est autorisee.
+     * Leve le verrou misfire (BLAST_ADMIN seul). Renseigne {@code misfireResolvedAt}
+     * et persiste {@code misfireResolutionNotes} (protocole d'intervention :
+     * deminage manuel, re-amorcage, contre-mine, etc.). Apres cet appel, la
+     * transition MISFIRE -&gt; ALL_CLEAR est autorisee.
+     *
+     * @param id              id du tir
+     * @param resolutionNotes texte libre decrivant le protocole applique
+     *                        (peut etre null/blank ; conserve en colonne
+     *                        {@code misfire_resolution_notes} si renseigne,
+     *                        et trace dans {@code blast_status_event}).
+     * @param userId          id de l'admin qui leve le verrou
      */
-    void resolveMisfire(Long id, String reason, Long userId);
+    void resolveMisfire(Long id, String resolutionNotes, Long userId);
 
     /**
      * Prononce le "site degage" : FIRED -&gt; ALL_CLEAR ; ou MISFIRE -&gt;

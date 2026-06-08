@@ -42,7 +42,13 @@ public class BlastEmailLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "job_id", nullable = false)
+    /**
+     * Job de notification a l'origine de l'envoi. {@code null} pour les emails
+     * de cycle de vie envoyes synchroniquement par {@code BlastService}
+     * (CANCELLED / RESCHEDULED), qui ne passent pas par {@code blast_notification_job}.
+     * Nullable depuis V017 (P5).
+     */
+    @Column(name = "job_id")
     private Long jobId;
 
     @Column(name = "recipient", nullable = false, length = 255)

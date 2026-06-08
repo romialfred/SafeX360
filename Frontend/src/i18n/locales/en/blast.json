@@ -234,6 +234,16 @@
         "saveSuccessUpdated": "Blast updated.",
         "saveError": "Save failed. Check the fields and retry."
     },
+    "popup": {
+        "title": "Imminent blast",
+        "eyebrow": "Blast notice — Blasting module",
+        "scheduledLabel": "Scheduled at",
+        "zoneLabel": "Affected zone",
+        "remainingLabel": "Time remaining",
+        "referenceLabel": "Reference",
+        "ackButton": "Acknowledged",
+        "closeAriaLabel": "Close popup"
+    },
     "detail": {
         "breadcrumbCurrent": "Blast detail",
         "loading": "Loading blast…",
@@ -258,6 +268,7 @@
             "allClear": "All clear",
             "openEvacReport": "Open evacuation report",
             "edit": "Edit",
+            "resolveMisfire": "Resolve misfire",
             "allClearBlockedTooltip": "All clear is blocked until a BLAST_ADMIN resolves the pending misfire."
         },
         "modals": {
@@ -273,6 +284,10 @@
             "allClearBody": "Confirm that the inspection is complete and the exclusion zone can be lifted.",
             "firedTitle": "Declare blast fired",
             "firedBody": "Confirm the blast has been fired. Inspection starts; 'all clear' is still to be pronounced.",
+            "resolveMisfireTitle": "Resolve misfire",
+            "resolveMisfireHint": "BLAST_ADMIN only. Once validated, the lock is lifted and 'all clear' becomes pronounceable again.",
+            "resolveMisfireNotes": "Resolution notes",
+            "resolveMisfireNotesHint": "Describe the applied protocol: manual disposal, re-priming, counter-blast, etc. Kept for regulatory audit.",
             "validate": "Confirm",
             "cancel": "Cancel"
         },
@@ -317,6 +332,62 @@
             "title": "Status history",
             "subtitle": "Append-only log of every change and traced action.",
             "phase3": "Detailed history will be available in Phase 3."
+        }
+    },
+    "evacReport": {
+        "title": "Post-blast evacuation report",
+        "subtitle": "Blast {{reference}} — summary closing the perimeter after ALL_CLEAR.",
+        "back": "Back to blast",
+        "readOnly": "Read-only (signed)",
+        "alertMessage": "Message broadcast at T-10: bilingual general evacuation alert to every recipient and production area.",
+        "noIncidents": "No incident recorded during this evacuation.",
+        "signedBy": "Signed by user #{{user}} on {{at}}.",
+        "lockNote": "After signature, incidents and head-count are locked (application guard + database trigger).",
+        "pendingSignatureNote": "This report has not been signed yet. HSE officers can still complete counts and incidents.",
+        "badges": {
+            "signed": "Signed",
+            "pending": "Pending signature"
+        },
+        "sections": {
+            "blast": "Blast details",
+            "alert": "Evacuation alert",
+            "headcount": "Head-count",
+            "incidents": "Incidents",
+            "signature": "Signature"
+        },
+        "fields": {
+            "reference": "Reference",
+            "zone": "Alert zone",
+            "scheduledAt": "Scheduled at",
+            "firedAt": "Fired at",
+            "allClearAt": "All clear at",
+            "assemblyPoints": "Assembly points",
+            "alarmTriggeredAt": "Alarm triggered at",
+            "mustered": "Mustered",
+            "missing": "Missing",
+            "evacDuration": "Evacuation duration"
+        },
+        "actions": {
+            "addIncident": "Add an incident",
+            "sign": "Sign the report",
+            "confirmSign": "Sign now",
+            "downloadPdfFr": "Download PDF (FR)",
+            "downloadPdfEn": "Download PDF (EN)"
+        },
+        "modals": {
+            "addIncidentTitle": "Add an incident",
+            "addIncidentHint": "Describe the incident (location, casualties, severity, decisions). Entry is append-only and traced.",
+            "addIncidentPlaceholder": "E.g. Rock fall near AP_SOUTH at 10:14, no injuries, perimeter intact.",
+            "signTitle": "Sign the report",
+            "signWarning": "After signature, incidents and counts become locked. You will no longer be able to add incidents; only PDF download will remain available.",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "notFound": "No evacuation report exists for this blast. Make sure it has been declared ALL_CLEAR.",
+            "loadFailed": "Unable to load the report.",
+            "descriptionRequired": "Description required.",
+            "actionFailed": "The action failed. Check your permissions or try again later.",
+            "downloadFailed": "Failed to download the PDF."
         }
     }
 }

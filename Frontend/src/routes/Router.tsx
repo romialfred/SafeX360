@@ -205,6 +205,8 @@ const DosimetryDashboardPage = lazy(() => import('../components/Dosimetry/Dosime
 const BlastRegistryPage = lazy(() => import('../components/Blast/BlastRegistryPage'));
 const BlastForm = lazy(() => import('../components/Blast/BlastForm'));
 const BlastDetailPage = lazy(() => import('../components/Blast/BlastDetailPage'));
+// LOT — P6 : rapport d'evacuation post-tir (signature + export PDF).
+const BlastEvacuationReportPage = lazy(() => import('../components/Blast/BlastEvacuationReportPage'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -543,6 +545,9 @@ const router = createBrowserRouter([
             { path: 'blast/new', element: <BlastSuspense><BlastForm /></BlastSuspense> },
             { path: 'blast/edit/:id', element: <BlastSuspense><BlastForm /></BlastSuspense> },
             { path: 'blast/detail/:id', element: <BlastSuspense><BlastDetailPage /></BlastSuspense> },
+            // P6 — Rapport d'evacuation post-tir (RBAC enforcement cote backend :
+            // BLAST_VIEW pour la lecture, BLAST_REPORT pour signer / ajouter incident).
+            { path: 'blast/evacuation-report/:blastId', element: <BlastSuspense><BlastEvacuationReportPage /></BlastSuspense> },
 
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },

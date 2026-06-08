@@ -64,6 +64,20 @@ public class BlastEmailService {
     static final String LANG_FR = "FR";
     static final String LANG_EN = "EN";
 
+    /**
+     * Types d'emails de cycle de vie (hors chaine de rappels horodatee).
+     * Utilises par {@link #sendLifecycleEmail(Blast, LifecycleEvent)} en P5
+     * lors d'une annulation ou d'un report de tir : ces envois ne sont pas
+     * planifies via {@code blast_notification_job} (transactionnels et
+     * synchrones a l'action operateur).
+     */
+    public enum LifecycleEvent {
+        /** Tir annule (CANCELLED). Aucune restriction d'acces ne s'applique. */
+        CANCELLED,
+        /** Tir reporte (POSTPONED -> PLANNED). Les rappels seront renvoyes. */
+        RESCHEDULED
+    }
+
     private final BlastNotificationJobRepository jobRepository;
     private final BlastSettingRepository settingRepository;
     private final BlastEmailLogRepository emailLogRepository;
@@ -76,6 +90,12 @@ public class BlastEmailService {
     @Value("${blast.email.from:hse-noreply@safex360.com}")
     private String fromAddress;
 
+    /**
+     * Libelle de site utilise en signature des e-mails. Resolu d'abord par mine
+     * via {@link BlastSetting#getSiteLabel()} ; si null/blank, on retombe sur
+     * cette property globale. Conserve par compatibilite ascendante avec
+     * l'environnement de dev / CI.
+     */
     @Value("${blast.site.label:Mine — Site principal}")
     private String defaultSiteLabel;
 
@@ -153,6 +173,116 @@ public class BlastEmailService {
         return allOk;
     }
 
+    /**
+     * Envoi synchrone d'un email de cycle de vie (annulation / report) a tous
+     * les destinataires d'un tir, dans leur langue preferee.
+     *
+     * <p>Contrairement a {@link #send(Long)}, cet envoi n'est pas declenche via
+     * {@code blast_notification_job} : il intervient immediatement apres la
+     * decision operateur (cancel / reschedule) et n'a donc pas de jobId
+     * associe. Pour conserver l'auditabilite, chaque envoi reste journalise
+     * dans {@code blast_email_log} avec {@code jobId = -1} comme marqueur
+     * "lifecycle" (sans clef etrangere ; voir
+     * {@link com.minexpert.hns.blast.entity.BlastEmailLog}).
+     *
+     * <p>Comportement defensif :
+     * <ul>
+     *   <li>Si {@code blast == null} : warn + retour true (no-op).</li>
+     *   <li>Si SMTP non configure : warn + retour true (mode degrade dev/CI).</li>
+     *   <li>Si aucun destinataire : info + retour true.</li>
+     *   <li>Un destinataire sans email externe est skipper avec un warn.</li>
+     * </ul>
+     *
+     * @return {@code true} si tous les envois ont reussi (ou s'il n'y avait
+     *         rien a envoyer), {@code false} si au moins un echec SMTP.
+     */
+    public boolean sendLifecycleEmail(Blast blast, LifecycleEvent event) {
+        if (blast == null || event == null) {
+            LOGGER.warn("[BlastEmailService] sendLifecycleEmail called with null blast/event — skipped.");
+            return true;
+        }
+        if (!isSmtpConfigured()) {
+            LOGGER.warn("[BlastEmailService] SMTP not configured (host='{}') — lifecycle email '{}' for blast {} skipped.",
+                    mailHost, event, blast.getReference());
+            return true;
+        }
+        if (blast.getRecipients() == null || blast.getRecipients().isEmpty()) {
+            LOGGER.info("[BlastEmailService] blast {} has no recipient — nothing to send for {}.",
+                    blast.getReference(), event);
+            return true;
+        }
+
+        boolean allOk = true;
+        BlastSetting setting = settingRepository.findByMineId(blast.getMineId()).orElse(null);
+
+        for (BlastRecipient recipient : blast.getRecipients()) {
+            String email = resolveEmail(recipient);
+            if (email == null || email.isBlank()) {
+                LOGGER.warn("[BlastEmailService] lifecycle ({}) recipient {} has no email — skipped.",
+                        event, recipient.getId());
+                continue;
+            }
+            String language = resolveLanguage(recipient);
+            String templateName = resolveLifecycleTemplateName(event, language);
+            String subject = resolveLifecycleSubject(event, language, blast);
+
+            Context ctx = buildContext(blast, setting);
+            String body;
+            try {
+                body = templateEngine.process(templateName, ctx);
+            } catch (Exception ex) {
+                LOGGER.error("[BlastEmailService] lifecycle template '{}' failed for blast {}: {}",
+                        templateName, blast.getReference(), ex.getMessage());
+                writeLog(null, email, subject, language, EmailLogStatus.FAILED, ex.getMessage());
+                allOk = false;
+                continue;
+            }
+
+            try {
+                messageSender.send(email, subject, body);
+                writeLog(null, email, subject, language, EmailLogStatus.SENT, null);
+            } catch (Exception ex) {
+                LOGGER.error("[BlastEmailService] SMTP failed for lifecycle ({}) blast {} -> {}: {}",
+                        event, blast.getReference(), email, ex.getMessage());
+                writeLog(null, email, subject, language, EmailLogStatus.FAILED, ex.getMessage());
+                allOk = false;
+            }
+        }
+        return allOk;
+    }
+
+    static String resolveLifecycleTemplateName(LifecycleEvent event, String language) {
+        String suffix = LANG_EN.equals(language) ? "en" : "fr";
+        return switch (event) {
+            case CANCELLED -> "blast/cancelled_" + suffix;
+            case RESCHEDULED -> "blast/rescheduled_" + suffix;
+        };
+    }
+
+    /**
+     * Sujet bilingue des emails de cycle de vie. Aligne sur le doc
+     * {@code Modeles_Emails_Rappels_Tir.md} (accents conserves) :
+     * <ul>
+     *   <li>CANCELLED   FR : « Tir annulé — {ref} » / EN : « Blast cancelled — {ref} »</li>
+     *   <li>RESCHEDULED FR : « Tir reporté — {ref}, nouvelle date {date} à {time} » /
+     *                    EN : « Blast rescheduled — {ref}, new date {date} at {time} »</li>
+     * </ul>
+     */
+    static String resolveLifecycleSubject(LifecycleEvent event, String language, Blast blast) {
+        String ref = blast.getReference() != null ? blast.getReference() : "—";
+        String time = blast.getScheduledAt() != null
+                ? blast.getScheduledAt().format(TIME_HH_MM) : "--:--";
+        boolean fr = !LANG_EN.equals(language);
+        return switch (event) {
+            case CANCELLED -> fr
+                    ? "Tir annulé — " + ref
+                    : "Blast cancelled — " + ref;
+            case RESCHEDULED -> fr
+                    ? "Tir reporté — " + ref + ", nouvelle date " + formatDate(blast, true) + " à " + time
+                    : "Blast rescheduled — " + ref + ", new date " + formatDate(blast, false) + " at " + time;
+        };
+    }
+
     // ── Public for tests ──────────────────────────────────────────────────
 
     /**
@@ -186,6 +316,16 @@ public class BlastEmailService {
         };
     }
 
+    /**
+     * Sujet bilingue du rappel. Les libelles francais reprennent verbatim le
+     * doc {@code Modeles_Emails_Rappels_Tir.md} (accents compris) :
+     * <ul>
+     *   <li>EMAIL_24H : « Tir prévu demain — {zone}, {date} à {time} »</li>
+     *   <li>EMAIL_6H  : « Rappel — tir aujourd'hui à {time} sur {zone} »</li>
+     *   <li>EMAIL_30M : « Tir dans 30 minutes — évacuez {zone} »</li>
+     * </ul>
+     * Les versions anglaises sont strictement alignees sur le doc.
+     */
     static String resolveSubject(JobType type, String language, Blast blast) {
         String zone = formatZone(blast);
         String time = blast.getScheduledAt() != null
@@ -193,13 +333,13 @@ public class BlastEmailService {
         boolean fr = !LANG_EN.equals(language);
         return switch (type) {
             case EMAIL_24H -> fr
-                    ? "Tir prevu demain — " + zone + ", " + formatDate(blast, true) + " a " + time
+                    ? "Tir prévu demain — " + zone + ", " + formatDate(blast, true) + " à " + time
                     : "Blast scheduled tomorrow — " + zone + ", " + formatDate(blast, false) + " at " + time;
             case EMAIL_6H -> fr
-                    ? "Rappel — tir aujourd'hui a " + time + " sur " + zone
+                    ? "Rappel — tir aujourd'hui à " + time + " sur " + zone
                     : "Reminder — blast today at " + time + " at " + zone;
             case EMAIL_30M -> fr
-                    ? "Tir dans 30 minutes — evacuez " + zone
+                    ? "Tir dans 30 minutes — évacuez " + zone
                     : "Blast in 30 minutes — clear " + zone;
             default -> "";
         };
@@ -234,7 +374,13 @@ public class BlastEmailService {
                 ? "Boutefeu #" + blast.getBlasterId() : "—");
         ctx.setVariable("controlRoom", setting != null && setting.getControlRoomLabel() != null
                 ? setting.getControlRoomLabel() : "Salle de controle");
-        ctx.setVariable("site", defaultSiteLabel);
+        // Resolution per-mine du libelle de site avec fallback property.
+        String resolvedSite = (setting != null
+                && setting.getSiteLabel() != null
+                && !setting.getSiteLabel().isBlank())
+                ? setting.getSiteLabel()
+                : defaultSiteLabel;
+        ctx.setVariable("site", resolvedSite);
         return ctx;
     }
 

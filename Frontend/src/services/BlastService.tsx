@@ -246,6 +246,12 @@ export interface BlastDetailDTO {
     notes?: string | null;
     mineId: number;
     misfireResolvedAt?: string | null;
+    /**
+     * Notes de resolution du dernier raté (V017 — P5). Renseigne par le
+     * BLAST_ADMIN lors de la levee du verrou misfire. Texte libre conserve
+     * pour audit reglementaire.
+     */
+    misfireResolutionNotes?: string | null;
     version?: number;
     createdAt?: string;
     updatedAt?: string;
@@ -312,18 +318,21 @@ const confirmBlast = async (id: number | string) => {
 };
 
 /**
- * Annule un tir avec raison obligatoire.
- * Backend : POST /hns/blast/cancel/{id}?reason={reason}  (RBAC : BLAST_PLAN ou BLAST_ADMIN)
+ * Annule un tir avec raison obligatoire. P5 : envoie un body JSON
+ * {@code { reason }} (le backend accepte aussi l'ancien query param
+ * {@code ?reason=...} pour retrocompatibilite).
+ * Backend : POST /hns/blast/cancel/{id}  (RBAC : BLAST_PLAN ou BLAST_ADMIN)
  */
 const cancelBlast = async (id: number | string, reason: string) => {
     return axiosInstance
-        .post(`${baseUrl}/cancel/${id}?reason=${encodeURIComponent(reason)}`, null, writeHeaders())
+        .post(`${baseUrl}/cancel/${id}`, { reason }, writeHeaders())
         .then((response) => response.data)
         .catch((error) => { throw error; });
 };
 
 /**
- * Reporte un tir avec une nouvelle heure prevue et une raison.
+ * Reporte un tir avec une nouvelle heure prevue et une raison. P5 : envoie un
+ * body JSON {@code { newScheduledAt, reason }}.
  * Backend : POST /hns/blast/reschedule/{id}  (RBAC : BLAST_PLAN ou BLAST_ADMIN)
  */
 const rescheduleBlast = async (
@@ -331,11 +340,12 @@ const rescheduleBlast = async (
     newScheduledAt: string,
     reason: string,
 ) => {
-    const qs =
-        `?newScheduledAt=${encodeURIComponent(newScheduledAt)}` +
-        `&reason=${encodeURIComponent(reason)}`;
     return axiosInstance
-        .post(`${baseUrl}/reschedule/${id}${qs}`, null, writeHeaders())
+        .post(
+            `${baseUrl}/reschedule/${id}`,
+            { newScheduledAt, reason },
+            writeHeaders(),
+        )
         .then((response) => response.data)
         .catch((error) => { throw error; });
 };
@@ -352,16 +362,16 @@ const declareFired = async (id: number | string) => {
 };
 
 /**
- * Declare un tir rate (FIRED -> MISFIRE). Periuetre maintenu, "site degage"
- * bloque tant que la situation n'est pas resolue par un BLAST_ADMIN.
- * Backend : POST /hns/blast/declare-misfire/{id}?reason={reason}
- *           (RBAC : BLAST_CONFIRM)
+ * Declare un tir rate (FIRED/IMMINENT -> MISFIRE). Perimetre maintenu, "site
+ * degage" bloque tant que la situation n'est pas resolue par un BLAST_ADMIN.
+ * P5 : envoie un body JSON {@code { reason }}.
+ * Backend : POST /hns/blast/declare-misfire/{id}  (RBAC : BLAST_CONFIRM)
  */
 const declareMisfire = async (id: number | string, reason: string) => {
     return axiosInstance
         .post(
-            `${baseUrl}/declare-misfire/${id}?reason=${encodeURIComponent(reason)}`,
-            null,
+            `${baseUrl}/declare-misfire/${id}`,
+            { reason },
             writeHeaders(),
         )
         .then((response) => response.data)
@@ -369,13 +379,22 @@ const declareMisfire = async (id: number | string, reason: string) => {
 };
 
 /**
- * Resout un raté (MISFIRE -> peut transitionner vers ALL_CLEAR).
+ * Resout un raté (MISFIRE -> peut transitionner vers ALL_CLEAR). P5 : envoie
+ * un body JSON {@code { resolutionNotes }} ; les notes sont persistees dans
+ * la colonne {@code misfire_resolution_notes} (V017) et tracees dans
+ * {@code blast_status_event} (append-only).
  * Backend : POST /hns/blast/resolve-misfire/{id}  (RBAC : BLAST_ADMIN)
  */
-const resolveMisfire = async (id: number | string, reason?: string) => {
-    const qs = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+const resolveMisfire = async (
+    id: number | string,
+    resolutionNotes?: string,
+) => {
     return axiosInstance
-        .post(`${baseUrl}/resolve-misfire/${id}${qs}`, null, writeHeaders())
+        .post(
+            `${baseUrl}/resolve-misfire/${id}`,
+            { resolutionNotes: resolutionNotes ?? null },
+            writeHeaders(),
+        )
         .then((response) => response.data)
         .catch((error) => { throw error; });
 };

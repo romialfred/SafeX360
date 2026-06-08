@@ -62,6 +62,14 @@ public class BlastDetailDTO {
 
     private Long mineId;
     private LocalDateTime misfireResolvedAt;
+
+    /**
+     * Notes de resolution du dernier raté (V017 — P5). Visible cote frontend
+     * pour traçabilite operationnelle : protocole de deminage / re-amorcage
+     * applique avant la levee du verrou misfire.
+     */
+    private String misfireResolutionNotes;
+
     private int version;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

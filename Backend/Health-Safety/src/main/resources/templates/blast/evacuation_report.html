@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Rapport d'evacuation post-tir</title>
+    <style type="text/css">
+        @page { size: A4; margin: 22mm 16mm 22mm 16mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1f2937; }
+        .brand { font-size: 18pt; font-weight: bold; color: #102a43; }
+        .subtitle { color: #6b7c93; font-size: 9.5pt; }
+        .title { font-size: 14pt; font-weight: bold; margin: 14pt 0 6pt 0; color: #102a43; }
+        .section-title { font-size: 11.5pt; font-weight: bold; margin: 12pt 0 4pt 0; color: #1d4ed8; }
+        .box { border: 1px solid #d0d7de; padding: 8pt 10pt; margin: 6pt 0; background: #fafafa; }
+        .box-warn { border: 1px solid #fbbf24; padding: 8pt 10pt; margin: 6pt 0; background: #fffbeb; }
+        .box-ok { border: 1px solid #34d399; padding: 8pt 10pt; margin: 6pt 0; background: #ecfdf5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 6pt; font-size: 9.5pt; }
+        th, td { border: 1px solid #d0d7de; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+        th { background: #f1f5f9; font-weight: bold; }
+        .label { color: #4b5563; font-weight: 600; }
+        .value { color: #111827; }
+        .footer { font-size: 8pt; color: #6b7c93; border-top: 1px solid #d0d7de; padding-top: 6pt; margin-top: 20pt; }
+        .footer-note { font-style: italic; }
+        .stamp { display: inline-block; padding: 6pt 12pt; border: 2px solid #16a34a; color: #16a34a; font-weight: bold; font-size: 11pt; letter-spacing: 1pt; }
+        .unsigned { display: inline-block; padding: 6pt 12pt; border: 2px dashed #b45309; color: #b45309; font-weight: bold; font-size: 11pt; letter-spacing: 1pt; }
+        .ref { font-family: 'Courier New', monospace; font-size: 11pt; color: #0f172a; }
+        .row { padding: 2pt 0; }
+        ul.incidents { padding-left: 16pt; margin-top: 4pt; }
+        ul.incidents li { padding: 2pt 0; }
+        .muted { color: #6b7c93; }
+    </style>
+</head>
+<body>
+
+<!-- Header officiel mine + logo SafeX 360 -->
+<table style="border: none; margin-bottom: 8pt;">
+    <tr>
+        <td style="border: none; width: 70%;">
+            <div class="brand" th:text="${brand}">SafeX 360</div>
+            <div class="subtitle" th:if="${!isEnglish}">Module Blast Management — Rapport d'evacuation post-tir</div>
+            <div class="subtitle" th:if="${isEnglish}">Blast Management Module — Post-blast evacuation report</div>
+        </td>
+        <td style="border: none; text-align: right; width: 30%;">
+            <span class="stamp" th:if="${signed}" th:text="${isEnglish} ? 'SIGNED' : 'SIGNE'">SIGNE</span>
+            <span class="unsigned" th:if="${!signed}" th:text="${isEnglish} ? 'PENDING SIGNATURE' : 'EN ATTENTE DE SIGNATURE'">EN ATTENTE</span>
+        </td>
+    </tr>
+</table>
+
+<div class="title" th:if="${!isEnglish}">
+    Rapport d'evacuation —
+    <span class="ref" th:text="${blast.reference}">BLT-2026-0000</span>
+</div>
+<div class="title" th:if="${isEnglish}">
+    Evacuation report —
+    <span class="ref" th:text="${blast.reference}">BLT-2026-0000</span>
+</div>
+
+<!-- Bloc Tir -->
+<div class="section-title" th:text="${isEnglish} ? 'Blast details' : 'Details du tir'">Details du tir</div>
+<table>
+    <tr>
+        <th th:text="${isEnglish} ? 'Field' : 'Champ'">Champ</th>
+        <th th:text="${isEnglish} ? 'Value' : 'Valeur'">Valeur</th>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Reference' : 'Reference'">Reference</td>
+        <td class="value ref" th:text="${blast.reference}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Pit / Bench / Block' : 'Fosse / Banc / Bloc'">Fosse / Banc / Bloc</td>
+        <td class="value">
+            <span th:text="${blast.pit}">-</span> /
+            <span th:text="${blast.bench}">-</span> /
+            <span th:text="${blast.block}">-</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Type' : 'Type'">Type</td>
+        <td class="value" th:text="${blast.type}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Alarm zone scope' : 'Zone couverte par l''alerte'">Zone couverte par l'alerte</td>
+        <td class="value" th:text="${blast.alarmZoneScope}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Assembly points' : 'Points de rassemblement'">Points de rassemblement</td>
+        <td class="value" th:text="${blast.assemblyPoints}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Scheduled at' : 'Heure prevue'">Heure prevue</td>
+        <td class="value" th:text="${blast.scheduledAt}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Fired at' : 'Heure du tir'">Heure du tir</td>
+        <td class="value" th:text="${report.firedAt}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'All clear at' : 'Site degage a'">Site degage a</td>
+        <td class="value" th:text="${report.allClearAt}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Timezone' : 'Fuseau horaire'">Fuseau horaire</td>
+        <td class="value" th:text="${blast.timezone}">-</td>
+    </tr>
+</table>
+
+<!-- Bloc Alerte -->
+<div class="section-title" th:text="${isEnglish} ? 'Alert' : 'Alerte'">Alerte</div>
+<div class="box-warn">
+    <div class="row">
+        <span class="label" th:text="${isEnglish} ? 'Alarm triggered at:' : 'Heure de declenchement :'">Heure de declenchement :</span>
+        <span class="value" th:text="${report.alarmTriggeredAt}">-</span>
+    </div>
+    <div class="row" th:if="${!isEnglish}">
+        <span class="label">Message diffuse :</span>
+        <span class="value">Alerte generale d'evacuation — tir imminent dans la zone
+            <span th:text="${blast.alarmZoneScope}">-</span>. Rejoignez immediatement
+            le point de rassemblement assigne. / General evacuation alert — imminent
+            blast in zone <span th:text="${blast.alarmZoneScope}">-</span>. Proceed
+            to your assigned assembly point immediately.</span>
+    </div>
+    <div class="row" th:if="${isEnglish}">
+        <span class="label">Broadcast message:</span>
+        <span class="value">General evacuation alert — imminent blast in zone
+            <span th:text="${blast.alarmZoneScope}">-</span>. Proceed to your
+            assigned assembly point immediately. / Alerte generale d'evacuation —
+            tir imminent dans la zone <span th:text="${blast.alarmZoneScope}">-</span>.
+            Rejoignez immediatement le point de rassemblement assigne.</span>
+    </div>
+</div>
+
+<!-- Bloc Evacuation -->
+<div class="section-title" th:text="${isEnglish} ? 'Evacuation head-count' : 'Comptage evacuation'">Comptage evacuation</div>
+<table>
+    <tr>
+        <th th:text="${isEnglish} ? 'Metric' : 'Indicateur'">Indicateur</th>
+        <th th:text="${isEnglish} ? 'Value' : 'Valeur'">Valeur</th>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Mustered (present at assembly points)' : 'Rassembles (presents aux points)'">
+            Rassembles
+        </td>
+        <td class="value" th:text="${report.musteredCount}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Missing' : 'Manquants'">Manquants</td>
+        <td class="value" th:text="${report.missingCount}">-</td>
+    </tr>
+    <tr>
+        <td class="label" th:text="${isEnglish} ? 'Evacuation duration' : 'Delai d''evacuation'">Delai d'evacuation</td>
+        <td class="value" th:text="${report.evacDurationHuman}">-</td>
+    </tr>
+</table>
+
+<!-- Bloc Incidents -->
+<div class="section-title" th:text="${isEnglish} ? 'Incidents' : 'Incidents'">Incidents</div>
+<div class="box" th:if="${#lists.isEmpty(incidents)}">
+    <span class="muted" th:text="${isEnglish} ? 'No incident recorded during this evacuation.' : 'Aucun incident enregistre durant cette evacuation.'">
+        Aucun incident enregistre durant cette evacuation.
+    </span>
+</div>
+<div class="box" th:if="${!#lists.isEmpty(incidents)}">
+    <ul class="incidents">
+        <li th:each="inc : ${incidents}" th:text="${inc}">-</li>
+    </ul>
+</div>
+
+<!-- Bloc Signature -->
+<div class="section-title" th:text="${isEnglish} ? 'Signature' : 'Signature'">Signature</div>
+<div th:if="${signed}" class="box-ok">
+    <div class="row">
+        <span class="label" th:text="${isEnglish} ? 'Signed by (HSE user id):' : 'Signe par (id utilisateur HSE) :'">
+            Signe par :
+        </span>
+        <span class="value" th:text="${report.signedOffBy}">-</span>
+    </div>
+    <div class="row">
+        <span class="label" th:text="${isEnglish} ? 'Signed at:' : 'Date de signature :'">Date de signature :</span>
+        <span class="value" th:text="${report.signedAt}">-</span>
+    </div>
+    <div class="row muted" style="margin-top: 4pt;" th:text="${isEnglish} ? 'After signature, incidents and head-count are read-only (database trigger + application guard).' : 'Apres signature, les incidents et le comptage sont en lecture seule (trigger BDD + garde applicative).'">
+        Apres signature, les incidents et le comptage sont en lecture seule.
+    </div>
+</div>
+<div th:if="${!signed}" class="box-warn">
+    <span class="label" th:text="${isEnglish} ? 'This report has not been signed yet.' : 'Ce rapport n''a pas encore ete signe.'">
+        Ce rapport n'a pas encore ete signe.
+    </span>
+</div>
+
+<!-- Footer reglementaire HSE mining -->
+<div class="footer">
+    <div th:if="${!isEnglish}">
+        <strong>Mention reglementaire :</strong> Document genere automatiquement par le module
+        Blast Management de SafeX 360 dans le cadre du suivi des operations de tir en mine
+        a ciel ouvert et souterraine. Conforme aux exigences HSE mining (codes du travail
+        applicables a l'exploitation des mines, conventions OIT C176 et reglements
+        miniers locaux). Les horodatages sont issus du journal append-only
+        <em>blast_status_event</em> ; toute modification ulterieure des comptages et
+        incidents est interdite apres signature.
+    </div>
+    <div th:if="${isEnglish}">
+        <strong>Regulatory notice:</strong> Document automatically generated by the SafeX 360
+        Blast Management module as part of blast operations monitoring in open-pit and
+        underground mining. Compliant with HSE mining requirements (applicable labour
+        codes for mine operations, ILO C176 convention, local mining regulations).
+        Timestamps are sourced from the append-only <em>blast_status_event</em> journal;
+        any subsequent modification of counts and incidents is prohibited after signature.
+    </div>
+    <div class="footer-note" style="margin-top: 4pt;">
+        <span th:text="${isEnglish} ? 'Generated at:' : 'Genere le :'">Genere le :</span>
+        <span th:text="${generatedAt}">-</span>
+        <span> · </span>
+        <span th:text="${isEnglish} ? 'Report id:' : 'Id rapport :'">Id rapport :</span>
+        <span th:text="${report.id}">-</span>
+        <span> · </span>
+        <span th:text="${isEnglish} ? 'Blast id:' : 'Id tir :'">Id tir :</span>
+        <span th:text="${blast.id}">-</span>
+    </div>
+</div>
+
+</body>
+</html>

@@ -23,17 +23,51 @@ import type { GeneralAlertDTO } from '../../../services/GeneralAlertService';
 
 type AlertListener = (alert: SosAlertDTO) => void;
 type GeneralAlertListener = (alert: GeneralAlertDTO) => void;
+type BlastPopupListener = (popup: BlastPopupPayload) => void;
+
+/**
+ * Payload d'une popup de tir diffusee par {@code BlastPopupBroadcaster}
+ * (LOT Blast P4). Aligne sur la spec backend : tous les champs sont nullables
+ * cote frontend pour rester defensif face a un payload tronque.
+ */
+export interface BlastPopupPayload {
+    type?: 'BLAST_POPUP';
+    blastId?: number | null;
+    reference?: string | null;
+    blastReference?: string | null;
+    zone?: string | null;
+    scheduledAt?: string | null;
+    timeRemainingSeconds?: number | null;
+    minutesToBlast?: number | null;
+    language?: 'FR' | 'EN' | 'BILINGUAL' | null;
+    mineId?: number | null;
+    pit?: string | null;
+    bench?: string | null;
+    exclusionRadiusM?: number | null;
+    assemblyPoints?: string | null;
+    jobId?: number | null;
+}
 
 interface EmergencyWebSocketContextValue {
     connected: boolean;
     subscribe: (listener: AlertListener) => () => void;
     subscribeGeneralAlert: (listener: GeneralAlertListener) => () => void;
+    /**
+     * Abonne un listener aux popups de tir. Renvoie une fonction de
+     * desabonnement a appeler dans le {@code useEffect} cleanup.
+     *
+     * <p>Le provider s'abonne au topic {@code /topic/blast-popup} (broadcast
+     * a tous les utilisateurs connectes, conforme a la spec P4 « envoie a
+     * tous les utilisateurs connectes »).
+     */
+    subscribeBlastPopup: (listener: BlastPopupListener) => () => void;
 }
 
 const EmergencyWebSocketContext = createContext<EmergencyWebSocketContextValue>({
     connected: false,
     subscribe: () => () => {},
     subscribeGeneralAlert: () => () => {},
+    subscribeBlastPopup: () => () => {},
 });
 
 export const useEmergencyWebSocket = () => useContext(EmergencyWebSocketContext);
@@ -60,6 +94,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     const clientRef = useRef<Client | null>(null);
     const listenersRef = useRef<Set<AlertListener>>(new Set());
     const generalListenersRef = useRef<Set<GeneralAlertListener>>(new Set());
+    const blastListenersRef = useRef<Set<BlastPopupListener>>(new Set());
 
     // Fonction subscribe stable (n'oblige pas les enfants à re-render)
     const subscribe = useCallback((listener: AlertListener) => {
@@ -73,6 +108,13 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
         generalListenersRef.current.add(listener);
         return () => {
             generalListenersRef.current.delete(listener);
+        };
+    }, []);
+
+    const subscribeBlastPopup = useCallback((listener: BlastPopupListener) => {
+        blastListenersRef.current.add(listener);
+        return () => {
+            blastListenersRef.current.delete(listener);
         };
     }, []);
 
@@ -116,6 +158,33 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                         } catch { /* non-JSON */ }
                     }
                 );
+                // LOT Blast P4 — Popups de tir (broadcast a tous + canal per-mine).
+                // Le frontend ecoute les deux : si une mine est selectionnee, le
+                // canal per-mine filtre naturellement ; sinon le broadcast global
+                // assure que les admins / coordinateurs centralises soient
+                // toujours notifies.
+                client.subscribe(
+                    '/topic/blast-popup',
+                    (msg: IMessage) => {
+                        try {
+                            const payload: BlastPopupPayload = JSON.parse(msg.body);
+                            blastListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
+                    }
+                );
+                client.subscribe(
+                    `/topic/blast-popup/mine/${selectedCompanyId}`,
+                    (msg: IMessage) => {
+                        try {
+                            const payload: BlastPopupPayload = JSON.parse(msg.body);
+                            blastListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
+                    }
+                );
             },
             onDisconnect: () => setConnected(false),
             onStompError: () => setConnected(false),
@@ -133,8 +202,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     }, [selectedCompanyId]);
 
     const value = useMemo(
-        () => ({ connected, subscribe, subscribeGeneralAlert }),
-        [connected, subscribe, subscribeGeneralAlert]
+        () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup }),
+        [connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup]
     );
 
     return (

@@ -61,6 +61,7 @@ import {
     rescheduleBlast,
     declareFired,
     declareMisfire,
+    resolveMisfire,
     allClear,
     type BlastDetailDTO,
     type BlastStatus,
@@ -126,6 +127,13 @@ export interface BlastAvailableActions {
      * MISFIRE et que misfireResolvedAt est null (raté non resolu).
      */
     allClearActionable: boolean;
+    /**
+     * Bouton "Resoudre raté" (P5). Visible uniquement si :
+     *   - le tir est en statut MISFIRE
+     *   - le raté n'est pas encore resolu (misfireResolvedAt == null)
+     *   - l'utilisateur a la permission BLAST_ADMIN
+     */
+    resolveMisfire: boolean;
     edit: boolean;
     evacReport: boolean;
 }
@@ -162,6 +170,11 @@ export const computeAvailableActions = (
     const allClearActionable =
         s === 'FIRED' || (s === 'MISFIRE' && misfireResolvedAt != null);
 
+    // P5 — bouton "Resoudre raté" : seul BLAST_ADMIN peut lever le verrou
+    // misfire, et uniquement tant qu'il n'est pas deja resolu.
+    const canResolveMisfire =
+        canAdmin && s === 'MISFIRE' && misfireResolvedAt == null;
+
     return {
         confirm: canConfirmAct,
         reschedule: canReschedule,
@@ -170,6 +183,7 @@ export const computeAvailableActions = (
         misfire: canMisfire,
         allClear: allClearVisible,
         allClearActionable,
+        resolveMisfire: canResolveMisfire,
         edit: canPlan,
         evacReport: s === 'ALL_CLEAR',
     };
@@ -220,8 +234,14 @@ const BlastDetailPage = () => {
         | 'fired'
         | 'misfire'
         | 'allClear'
+        | 'resolveMisfire'
     >(null);
     const [reason, setReason] = useState('');
+    /**
+     * Notes de resolution du raté (P5). Volontairement separe de `reason`
+     * pour ne pas melanger les semantiques entre les modales en cours.
+     */
+    const [resolutionNotes, setResolutionNotes] = useState('');
     const [newScheduledAt, setNewScheduledAt] = useState<Date | null>(null);
 
     const refresh = () => {
@@ -257,6 +277,7 @@ const BlastDetailPage = () => {
                 misfire: false,
                 allClear: false,
                 allClearActionable: false,
+                resolveMisfire: false,
                 edit: false,
                 evacReport: false,
             };
@@ -274,6 +295,7 @@ const BlastDetailPage = () => {
     const closeModal = () => {
         setModal(null);
         setReason('');
+        setResolutionNotes('');
         setNewScheduledAt(null);
         setActionError(null);
     };
@@ -362,6 +384,27 @@ const BlastDetailPage = () => {
         setActionLoading(true);
         try {
             await allClear(detail.id);
+            closeModal();
+            refresh();
+        } catch {
+            setActionError(t('detail.actionError'));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    /**
+     * P5 — Resoudre un raté (BLAST_ADMIN seul). Les notes de resolution sont
+     * obligatoires : on les remonte dans le DTO {@code resolutionNotes}.
+     */
+    const handleResolveMisfire = async () => {
+        if (!detail || !resolutionNotes.trim()) {
+            setActionError(t('form.validation.reasonRequired'));
+            return;
+        }
+        setActionLoading(true);
+        try {
+            await resolveMisfire(detail.id, resolutionNotes);
             closeModal();
             refresh();
         } catch {
@@ -561,6 +604,16 @@ const BlastDetailPage = () => {
                             {t('detail.actions.declareMisfire')}
                         </Button>
                     )}
+                    {availableActions.resolveMisfire && (
+                        <Button
+                            color="violet"
+                            leftSection={<IconShieldCheck size={14} />}
+                            onClick={() => setModal('resolveMisfire')}
+                            data-testid="resolve-misfire-button"
+                        >
+                            {t('detail.actions.resolveMisfire')}
+                        </Button>
+                    )}
                     {availableActions.allClear && (
                         availableActions.allClearActionable ? (
                             <Button
@@ -607,9 +660,9 @@ const BlastDetailPage = () => {
                             variant="light"
                             color="green"
                             leftSection={<IconFileText size={14} />}
-                            // Endpoint Phase 6 ; pour l'instant fallback navigation
+                            // P6 : la page de rapport est branchee sur la route dediee.
                             onClick={() =>
-                                navigate(`/blast/detail/${detail.id}#evac`)
+                                navigate(`/blast/evacuation-report/${detail.id}`)
                             }
                             className="ml-auto"
                         >
@@ -1065,6 +1118,47 @@ const BlastDetailPage = () => {
                         color="green"
                         loading={actionLoading}
                         onClick={handleAllClear}
+                    >
+                        {t('detail.modals.validate')}
+                    </Button>
+                </Group>
+            </Modal>
+
+            {/* P5 — Resoudre un raté (BLAST_ADMIN seul) */}
+            <Modal
+                opened={modal === 'resolveMisfire'}
+                onClose={closeModal}
+                title={
+                    <Text fw={600} size="md">
+                        {t('detail.modals.resolveMisfireTitle')}
+                    </Text>
+                }
+                centered
+            >
+                <Text
+                    size="sm"
+                    className="text-violet-700 mb-3 bg-violet-50 border border-violet-200 rounded px-3 py-2"
+                >
+                    {t('detail.modals.resolveMisfireHint')}
+                </Text>
+                <Textarea
+                    label={t('detail.modals.resolveMisfireNotes')}
+                    description={t('detail.modals.resolveMisfireNotesHint')}
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.currentTarget.value)}
+                    autosize
+                    minRows={3}
+                    className="mb-3"
+                    data-testid="resolve-misfire-notes"
+                />
+                <Group justify="flex-end" gap="sm">
+                    <Button variant="default" onClick={closeModal}>
+                        {t('detail.modals.cancel')}
+                    </Button>
+                    <Button
+                        color="violet"
+                        loading={actionLoading}
+                        onClick={handleResolveMisfire}
                     >
                         {t('detail.modals.validate')}
                     </Button>

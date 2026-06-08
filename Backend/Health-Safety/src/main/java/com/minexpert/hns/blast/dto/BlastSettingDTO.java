@@ -46,6 +46,9 @@ public class BlastSettingDTO {
     private String smtpFromAddress;
     private String controlRoomLabel;
 
+    /** Libelle de site utilise en signature des e-mails (par mine). */
+    private String siteLabel;
+
     private LocalDateTime updatedAt;
     private Long updatedBy;
 }

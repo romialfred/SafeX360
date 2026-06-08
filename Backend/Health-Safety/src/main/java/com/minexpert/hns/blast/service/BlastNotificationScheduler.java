@@ -13,8 +13,10 @@ import com.minexpert.hns.api.emergency.dto.GeneralAlertRequest;
 import com.minexpert.hns.api.emergency.service.GeneralAlertService;
 import com.minexpert.hns.blast.entity.Blast;
 import com.minexpert.hns.blast.entity.BlastNotificationJob;
+import com.minexpert.hns.blast.enums.BlastStatus;
 import com.minexpert.hns.blast.enums.JobStatus;
 import com.minexpert.hns.blast.repository.BlastNotificationJobRepository;
+import com.minexpert.hns.blast.repository.BlastRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,7 +58,28 @@ public class BlastNotificationScheduler {
     /** Backoff seconds par tentative (1ere retry = +60s, 2eme = +5min, 3eme = +30min). */
     static final long[] BACKOFF_SECONDS = {60L, 300L, 1800L};
 
+    /**
+     * Message bilingue diffuse lors du declenchement de l'Alerte Generale a
+     * T-10 minutes (Phase 4). Reutilise l'infrastructure
+     * {@link GeneralAlertService} (sirene + voix TTS + popup balayante)
+     * sans la re-implementer ; seul le texte du message change.
+     *
+     * <p>Format : « FR … // EN … » sur deux lignes. La voix TTS du
+     * GeneralAlertListener parle dans la langue UI courante de chaque
+     * utilisateur (FR ou EN), donc concatener les deux versions dans le
+     * meme champ {@code message} reste lisible cote operateur (le standard
+     * du LOT 48 prefixe deja un message bilingue de drill/real).
+     */
+    static final String GENERAL_ALARM_MESSAGE_FR =
+            "Ceci n'est pas un exercice. Attention, dynamitage imminent. "
+                    + "Veuillez evacuer immediatement et rejoindre le point "
+                    + "de rassemblement le plus proche.";
+    static final String GENERAL_ALARM_MESSAGE_EN =
+            "This is not a drill. Warning: blasting imminent. "
+                    + "Evacuate immediately and proceed to the nearest assembly point.";
+
     private final BlastNotificationJobRepository jobRepository;
+    private final BlastRepository blastRepository;
     private final BlastEmailService emailService;
     private final BlastPopupBroadcaster popupBroadcaster;
     private final GeneralAlertService generalAlertService;
@@ -105,11 +128,24 @@ public class BlastNotificationScheduler {
                             job.getId());
                     success = true;
                 } else {
+                    // 1) Bascule auto a IMMINENT (avant declenchement alerte)
+                    //    si le tir est encore CONFIRMED. Idempotent : si on
+                    //    est deja IMMINENT (re-execution / retry), on ne
+                    //    refait pas la transition.
+                    promoteToImminent(blast);
+
+                    // 2) Re-utilisation stricte de l'infrastructure existante
+                    //    GeneralAlertService.trigger (sirene + voix TTS +
+                    //    popup balayante, cf. LOT 48 Phase 4). Seul le
+                    //    message change : bilingue FR+EN, format strict de
+                    //    la specification P4. Le service est idempotent :
+                    //    si une alerte ACTIVE existe deja pour la mine,
+                    //    elle est retournee sans nouvelle creation, ce qui
+                    //    nous met a l'abri d'un double declenchement.
                     GeneralAlertRequest req = new GeneralAlertRequest();
                     req.setCompanyId(blast.getMineId());
                     req.setReasonCode("BLAST_T10");
-                    req.setMessage("Tir " + blast.getReference()
-                            + " — declenchement de l'alerte generale a T-10 minutes.");
+                    req.setMessage(buildBilingualAlarmMessage(blast));
                     req.setDrillMode(Boolean.FALSE);
                     generalAlertService.trigger(req, 0L);
                     success = true;
@@ -153,5 +189,95 @@ public class BlastNotificationScheduler {
         jobRepository.save(job);
         LOGGER.warn("[BlastNotificationScheduler] job {} attempt {}/{} failed; retry in {}s. Error: {}",
                 job.getId(), attempts, MAX_ATTEMPTS, backoff, error);
+    }
+
+    /**
+     * Bascule le statut d'un blast {@code CONFIRMED} vers {@code IMMINENT} en
+     * meme transaction que le declenchement de l'alerte T-10. Idempotent :
+     * <ul>
+     *   <li>Si le blast est deja {@code IMMINENT} / {@code FIRED} /
+     *       {@code MISFIRE} / {@code ALL_CLEAR}, aucune action.</li>
+     *   <li>Si le blast est dans un statut incompatible
+     *       ({@code CANCELLED}, {@code POSTPONED}, {@code DRAFT},
+     *       {@code PLANNED}), on logge un warning et on s'abstient — le
+     *       scheduler ne doit pas corriger un workflow casse cote operateur.</li>
+     * </ul>
+     *
+     * <p>Le blast est rerelu via le repository pour eviter d'agir sur une
+     * version detachee (le {@code job.getBlast()} peut etre une copie issue
+     * d'un fetch eager dans une transaction passee).
+     *
+     * <p>Volontairement package-private pour les tests unitaires (verifient
+     * l'idempotence et le rejet des statuts incompatibles).
+     */
+    void promoteToImminent(Blast snapshot) {
+        Long blastId = snapshot.getId();
+        if (blastId == null) {
+            LOGGER.warn("[BlastNotificationScheduler] promoteToImminent: transient blast — skipped.");
+            return;
+        }
+        Blast managed = blastRepository.findById(blastId).orElse(null);
+        if (managed == null) {
+            LOGGER.warn("[BlastNotificationScheduler] promoteToImminent: blast id={} disappeared — skipped.",
+                    blastId);
+            return;
+        }
+        BlastStatus current = managed.getStatus();
+        if (current == BlastStatus.IMMINENT
+                || current == BlastStatus.FIRED
+                || current == BlastStatus.MISFIRE
+                || current == BlastStatus.ALL_CLEAR) {
+            // Deja avance dans le workflow — on respecte la decision metier.
+            return;
+        }
+        if (current != BlastStatus.CONFIRMED) {
+            // CANCELLED / POSTPONED / DRAFT / PLANNED : l'alerte T-10 ne
+            // devrait normalement pas etre dispatchee dans ces cas-la (le
+            // job aurait du etre CANCELLED). Mais si elle l'est, on logge
+            // et on laisse passer : le scheduler n'est pas en position de
+            // corriger un workflow casse.
+            LOGGER.warn("[BlastNotificationScheduler] promoteToImminent: blast id={} in unexpected status {} — alarm dispatched anyway, status not changed.",
+                    blastId, current);
+            return;
+        }
+        managed.setStatus(BlastStatus.IMMINENT);
+        managed.setUpdatedAt(LocalDateTime.now());
+        blastRepository.save(managed);
+        LOGGER.info("[BlastNotificationScheduler] blast id={} ref={} promoted to IMMINENT (T-10 alarm).",
+                blastId, managed.getReference());
+    }
+
+    /**
+     * Construit le message bilingue de l'Alerte Generale T-10. Le frontend
+     * affiche la version adaptee a la langue UI active, mais on transporte
+     * les deux pour qu'un audit ulterieur soit auto-portant.
+     *
+     * <p>Format strict de la specification :</p>
+     * <ul>
+     *   <li>FR : « Ceci n'est pas un exercice. Attention, dynamitage imminent.
+     *       Veuillez evacuer immediatement et rejoindre le point de
+     *       rassemblement le plus proche. »</li>
+     *   <li>EN : « This is not a drill. Warning: blasting imminent. Evacuate
+     *       immediately and proceed to the nearest assembly point. »</li>
+     * </ul>
+     *
+     * <p>La reference et la zone du tir sont ajoutees a la fin entre
+     * parentheses pour la tracabilite (« — Reference: BLT-… — Zone: … »).
+     */
+    static String buildBilingualAlarmMessage(Blast blast) {
+        String ref = blast.getReference() != null ? blast.getReference() : "—";
+        StringBuilder zone = new StringBuilder();
+        if (blast.getPit() != null && !blast.getPit().isBlank()) {
+            zone.append(blast.getPit());
+        }
+        if (blast.getBench() != null && !blast.getBench().isBlank()) {
+            if (zone.length() > 0) zone.append(" — ");
+            zone.append("Gradin ").append(blast.getBench());
+        }
+        if (zone.length() == 0) zone.append(ref);
+        return GENERAL_ALARM_MESSAGE_FR
+                + " / " + GENERAL_ALARM_MESSAGE_EN
+                + " — Reference: " + ref
+                + " — Zone: " + zone;
     }
 }

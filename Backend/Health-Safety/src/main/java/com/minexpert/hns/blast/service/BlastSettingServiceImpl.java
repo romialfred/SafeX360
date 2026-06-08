@@ -58,6 +58,9 @@ public class BlastSettingServiceImpl implements BlastSettingService {
         if (dto.getControlRoomLabel() != null) {
             setting.setControlRoomLabel(dto.getControlRoomLabel());
         }
+        if (dto.getSiteLabel() != null) {
+            setting.setSiteLabel(dto.getSiteLabel());
+        }
         setting.setUpdatedAt(LocalDateTime.now());
         setting.setUpdatedBy(userId);
         repository.save(setting);
@@ -92,6 +95,7 @@ public class BlastSettingServiceImpl implements BlastSettingService {
                 .defaultTimezone(e.getDefaultTimezone())
                 .smtpFromAddress(e.getSmtpFromAddress())
                 .controlRoomLabel(e.getControlRoomLabel())
+                .siteLabel(e.getSiteLabel())
                 .updatedAt(e.getUpdatedAt())
                 .updatedBy(e.getUpdatedBy())
                 .build();

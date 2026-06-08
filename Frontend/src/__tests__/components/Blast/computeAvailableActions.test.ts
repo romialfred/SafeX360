@@ -99,5 +99,57 @@ describe('computeAvailableActions — autres actions (non-regression)', () => {
         expect(r.confirm).toBe(false);
         expect(r.cancel).toBe(false);
         expect(r.allClear).toBe(false);
+        expect(r.resolveMisfire).toBe(false);
+    });
+});
+
+describe('computeAvailableActions — bouton "Resoudre rate" (P5)', () => {
+    it('MISFIRE non resolu + BLAST_ADMIN → visible', () => {
+        const r = computeAvailableActions(
+            baseInput({
+                status: 'MISFIRE',
+                misfireResolvedAt: null,
+                canAdmin: true,
+            }),
+        );
+        expect(r.resolveMisfire).toBe(true);
+    });
+
+    it('MISFIRE deja resolu → non visible (action terminee)', () => {
+        const r = computeAvailableActions(
+            baseInput({
+                status: 'MISFIRE',
+                misfireResolvedAt: '2026-06-08T10:00:00',
+                canAdmin: true,
+            }),
+        );
+        expect(r.resolveMisfire).toBe(false);
+    });
+
+    it('MISFIRE + sans BLAST_ADMIN → non visible (RBAC stricte)', () => {
+        const r = computeAvailableActions(
+            baseInput({
+                status: 'MISFIRE',
+                misfireResolvedAt: null,
+                canAdmin: false,
+            }),
+        );
+        expect(r.resolveMisfire).toBe(false);
+    });
+
+    it.each([
+        'DRAFT',
+        'PLANNED',
+        'CONFIRMED',
+        'IMMINENT',
+        'FIRED',
+        'ALL_CLEAR',
+        'CANCELLED',
+        'POSTPONED',
+    ] as const)('hors MISFIRE (%s) → non visible meme avec BLAST_ADMIN', (status) => {
+        const r = computeAvailableActions(
+            baseInput({ status, misfireResolvedAt: null, canAdmin: true }),
+        );
+        expect(r.resolveMisfire).toBe(false);
     });
 });

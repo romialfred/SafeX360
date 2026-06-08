@@ -11,6 +11,7 @@ import InactivityHandler from "../components/UtilityComp/InactivityHandler";
 import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
 import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
 import GeneralAlertListener from "../components/EmergencyManagement/GeneralAlert/GeneralAlertListener";
+import BlastPopupListener from "../components/Blast/BlastPopupListener";
 import { installAutoReplay } from "../utility/OfflineSosQueue";
 import { installAutoReplayCheckIns } from "../utility/OfflineCheckInQueue";
 import { createSosAlert } from "../services/SosService";
@@ -121,6 +122,8 @@ const DashboardLayout = () => {
             <CoordinatorAlertListener />
             {/* LOT 48 Phase 4 — Popup global Alerte Générale pour tous */}
             <GeneralAlertListener />
+            {/* LOT Blast P4 — Popup d'avertissement de tir imminent (T-2h -> T-0) */}
+            <BlastPopupListener />
         </EmergencyWebSocketProvider>
     );
 };

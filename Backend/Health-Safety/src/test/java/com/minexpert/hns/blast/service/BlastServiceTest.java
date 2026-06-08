@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -27,6 +28,7 @@ import com.minexpert.hns.blast.dto.BlastCreateDTO;
 import com.minexpert.hns.blast.dto.BlastSearchFiltersDTO;
 import com.minexpert.hns.blast.entity.Blast;
 import com.minexpert.hns.blast.entity.BlastNotificationJob;
+import com.minexpert.hns.blast.entity.BlastRecipient;
 import com.minexpert.hns.blast.enums.BlastStatus;
 import com.minexpert.hns.blast.enums.BlastType;
 import com.minexpert.hns.blast.enums.JobStatus;
@@ -56,6 +58,12 @@ class BlastServiceTest {
 
     @Mock
     private BlastNotificationPlanner notificationPlanner;
+
+    @Mock
+    private BlastEmailService emailService;
+
+    @Mock
+    private BlastMisfireBroadcaster misfireBroadcaster;
 
     @InjectMocks
     private BlastServiceImpl service;
@@ -129,7 +137,7 @@ class BlastServiceTest {
     // ── CONFIRM ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("confirm: DRAFT -> CONFIRMED is allowed and schedules notifications")
+    @DisplayName("confirm: DRAFT -> CONFIRMED is allowed and schedules notifications (planFor)")
     void confirmFromDraft() {
         Blast b = buildBlast(BlastStatus.DRAFT);
         when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
@@ -140,7 +148,8 @@ class BlastServiceTest {
         verify(blastRepository).save(b);
         verify(auditService).logTransition(eq(42L), eq(BlastStatus.DRAFT),
                 eq(BlastStatus.CONFIRMED), eq(9L), anyString());
-        verify(notificationPlanner).scheduleForBlast(b);
+        // P4 : confirm() appelle desormais planFor(id) (chemin canonique).
+        verify(notificationPlanner).planFor(42L);
     }
 
     @Test
@@ -152,7 +161,7 @@ class BlastServiceTest {
         service.confirm(42L, 9L);
 
         assertThat(b.getStatus()).isEqualTo(BlastStatus.CONFIRMED);
-        verify(notificationPlanner).scheduleForBlast(b);
+        verify(notificationPlanner).planFor(42L);
     }
 
     @Test
@@ -164,6 +173,7 @@ class BlastServiceTest {
         assertThatThrownBy(() -> service.confirm(42L, 9L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Invalid blast status transition");
+        verify(notificationPlanner, never()).planFor(anyLong());
         verify(notificationPlanner, never()).scheduleForBlast(any());
     }
 
@@ -517,5 +527,207 @@ class BlastServiceTest {
 
         assertThatThrownBy(() -> service.getDetail(999L))
                 .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    // ── P5 — Procedure ratée + cascade jobs + emails de cycle de vie ───────
+
+    @Test
+    @DisplayName("P5/cancel: bascule les 5 jobs SCHEDULED en CANCELLED + email 'cancelled' envoye")
+    void cancelCancelsFiveJobsAndSendsEmail() {
+        // Cas representatif : 5 jobs SCHEDULED (24h, 6h, 30m, popup-15m, alarm-10m)
+        Blast b = buildBlast(BlastStatus.CONFIRMED);
+        b.getRecipients().add(BlastRecipient.builder()
+                .id(1L).externalEmail("ops@mine.test").preferredLanguage("FR").build());
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        List<BlastNotificationJob> five = List.of(
+                BlastNotificationJob.builder().id(1L).blast(b).type(JobType.EMAIL_24H)
+                        .status(JobStatus.SCHEDULED).scheduledAt(LocalDateTime.now()).attempts(0).build(),
+                BlastNotificationJob.builder().id(2L).blast(b).type(JobType.EMAIL_6H)
+                        .status(JobStatus.SCHEDULED).scheduledAt(LocalDateTime.now()).attempts(0).build(),
+                BlastNotificationJob.builder().id(3L).blast(b).type(JobType.EMAIL_30M)
+                        .status(JobStatus.SCHEDULED).scheduledAt(LocalDateTime.now()).attempts(0).build(),
+                BlastNotificationJob.builder().id(4L).blast(b).type(JobType.POPUP_15M)
+                        .status(JobStatus.SCHEDULED).scheduledAt(LocalDateTime.now()).attempts(0).build(),
+                BlastNotificationJob.builder().id(5L).blast(b).type(JobType.GENERAL_ALARM_10M)
+                        .status(JobStatus.SCHEDULED).scheduledAt(LocalDateTime.now()).attempts(0).build()
+        );
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED)).thenReturn(five);
+
+        service.cancel(42L, "Riverains preavis", 9L);
+
+        // Tous les jobs basculés CANCELLED
+        for (BlastNotificationJob j : five) {
+            assertThat(j.getStatus())
+                    .as("job %s should be CANCELLED", j.getType())
+                    .isEqualTo(JobStatus.CANCELLED);
+        }
+        verify(jobRepository, times(five.size())).save(any(BlastNotificationJob.class));
+        // Planner aussi appele pour annulation persistante (idempotent)
+        verify(notificationPlanner).cancelFor(42L);
+        // Email "cancelled" envoye (synchrone, pas via job).
+        verify(emailService).sendLifecycleEmail(eq(b),
+                eq(BlastEmailService.LifecycleEvent.CANCELLED));
+    }
+
+    @Test
+    @DisplayName("P5/cancel: l'echec d'envoi d'email NE FAIT PAS rollback de l'annulation")
+    void cancelEmailFailureDoesNotRollback() {
+        Blast b = buildBlast(BlastStatus.CONFIRMED);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+        org.mockito.Mockito.doThrow(new RuntimeException("SMTP boom"))
+                .when(emailService).sendLifecycleEmail(any(), any());
+
+        // Pas d'exception propagee : la cancellation reste persistee.
+        service.cancel(42L, "force majeure", 9L);
+
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("P5/reschedule: depuis CONFIRMED, replan via planner + email 'rescheduled'")
+    void rescheduleFromConfirmedTriggersReplanAndEmail() {
+        Blast b = buildBlast(BlastStatus.CONFIRMED);
+        b.getRecipients().add(BlastRecipient.builder()
+                .id(1L).externalEmail("crew@mine.test").preferredLanguage("EN").build());
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+        LocalDateTime newTime = LocalDateTime.now().plusDays(2);
+
+        service.reschedule(42L, newTime, "Pluies", 9L);
+
+        // Le tir revient en PLANNED avec la nouvelle date.
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.PLANNED);
+        assertThat(b.getScheduledAt()).isEqualTo(newTime);
+        // Planner appele pour re-genererer la chaine de 5 jobs sur la
+        // nouvelle echeance (rescheduleFor = cancelFor + planFor).
+        verify(notificationPlanner).rescheduleFor(42L, newTime);
+        // Email "rescheduled" envoye.
+        verify(emailService).sendLifecycleEmail(eq(b),
+                eq(BlastEmailService.LifecycleEvent.RESCHEDULED));
+    }
+
+    @Test
+    @DisplayName("P5/reschedule: depuis PLANNED, pas de replan (chaine pas encore demarree) mais email envoye")
+    void rescheduleFromPlannedNoReplanButEmail() {
+        Blast b = buildBlast(BlastStatus.PLANNED);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+        LocalDateTime newTime = LocalDateTime.now().plusDays(2);
+
+        service.reschedule(42L, newTime, "Pluies", 9L);
+
+        verify(notificationPlanner, never()).rescheduleFor(anyLong(), any());
+        // Email est tout de meme envoye pour preavis riverains.
+        verify(emailService).sendLifecycleEmail(eq(b),
+                eq(BlastEmailService.LifecycleEvent.RESCHEDULED));
+    }
+
+    @Test
+    @DisplayName("P5/declareMisfire: cancel les jobs SCHEDULED + broadcast STOMP popup")
+    void declareMisfireCancelsJobsAndBroadcasts() {
+        Blast b = buildBlast(BlastStatus.FIRED);
+        b.setBlasterId(11L);
+        b.setHseLeadId(22L);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+
+        service.declareMisfire(42L, "Trou 7 silencieux", 9L);
+
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.MISFIRE);
+        assertThat(b.getMisfireResolvedAt()).isNull();
+        // Planner appele pour annuler la chaine de notifications residuelles.
+        verify(notificationPlanner).cancelFor(42L);
+        // Broadcast STOMP pour notifier boutefeu + HSE_LEAD + control room.
+        verify(misfireBroadcaster).broadcast(eq(b), eq("Trou 7 silencieux"));
+    }
+
+    @Test
+    @DisplayName("P5/declareMisfire: l'echec de broadcast STOMP NE FAIT PAS rollback du raté")
+    void declareMisfireBroadcastFailureDoesNotRollback() {
+        Blast b = buildBlast(BlastStatus.FIRED);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+        org.mockito.Mockito.doThrow(new RuntimeException("broker down"))
+                .when(misfireBroadcaster).broadcast(any(), anyString());
+
+        service.declareMisfire(42L, "test", 9L);
+
+        // Status est bien MISFIRE meme si la popup n'a pas pu partir.
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.MISFIRE);
+    }
+
+    @Test
+    @DisplayName("P5/declareMisfire: bloque ALL_CLEAR jusqu'a resolveMisfire")
+    void misfireLocksAllClearUntilResolved() {
+        Blast b = buildBlast(BlastStatus.FIRED);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+        when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
+                .thenReturn(List.of());
+
+        service.declareMisfire(42L, "Detonateur 12", 9L);
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.MISFIRE);
+        assertThat(b.getMisfireResolvedAt()).isNull();
+
+        // ALL_CLEAR est bloque tant que misfireResolvedAt est null
+        assertThatThrownBy(() -> service.allClear(42L, 9L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("misfire");
+
+        // Une fois resolve, ALL_CLEAR passe
+        service.resolveMisfire(42L, "Contre-mine 14:25", 1L);
+        assertThat(b.getMisfireResolvedAt()).isNotNull();
+        assertThat(b.getMisfireResolutionNotes()).isEqualTo("Contre-mine 14:25");
+
+        service.allClear(42L, 9L);
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.ALL_CLEAR);
+    }
+
+    @Test
+    @DisplayName("P5/resolveMisfire: persiste les notes de resolution dans la colonne dediee")
+    void resolveMisfirePersistsNotes() {
+        Blast b = buildBlast(BlastStatus.MISFIRE);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+
+        service.resolveMisfire(42L, "Re-amorcage trou 7 a 14h25 par boutefeu #11", 1L);
+
+        assertThat(b.getMisfireResolvedAt()).isNotNull();
+        assertThat(b.getMisfireResolutionNotes())
+                .isEqualTo("Re-amorcage trou 7 a 14h25 par boutefeu #11");
+        // Audit trace aussi le contenu pour preserver l'historique
+        // append-only en cas de re-passage MISFIRE ulterieur.
+        verify(auditService).logTransition(eq(42L),
+                eq(BlastStatus.MISFIRE), eq(BlastStatus.MISFIRE),
+                eq(1L),
+                argThat(s -> s != null && s.contains("Re-amorcage trou 7")));
+    }
+
+    @Test
+    @DisplayName("P5/resolveMisfire: notes blank/null tolerees (audit garde la trace)")
+    void resolveMisfireWithoutNotesIsAllowed() {
+        Blast b = buildBlast(BlastStatus.MISFIRE);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+
+        service.resolveMisfire(42L, null, 1L);
+
+        assertThat(b.getMisfireResolvedAt()).isNotNull();
+        // Pas d'ecrasement si null
+        assertThat(b.getMisfireResolutionNotes()).isNull();
+    }
+
+    @Test
+    @DisplayName("P5/declareMisfire: depuis CONFIRMED rejete (sortie de workflow attendue)")
+    void misfireFromConfirmedRejectedExplicitMessage() {
+        Blast b = buildBlast(BlastStatus.CONFIRMED);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+
+        assertThatThrownBy(() -> service.declareMisfire(42L, "test", 9L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("FIRED or IMMINENT");
     }
 }

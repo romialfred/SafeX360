@@ -3,11 +3,14 @@ package com.minexpert.hns.blast.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ import com.minexpert.hns.blast.enums.BlastType;
 import com.minexpert.hns.blast.enums.JobStatus;
 import com.minexpert.hns.blast.enums.JobType;
 import com.minexpert.hns.blast.repository.BlastNotificationJobRepository;
+import com.minexpert.hns.blast.repository.BlastRepository;
 
 /**
  * Tests unitaires de {@link BlastNotificationScheduler} (Phase 3).
@@ -50,6 +54,9 @@ class BlastNotificationSchedulerTest {
 
     @Mock
     private BlastNotificationJobRepository jobRepository;
+
+    @Mock
+    private BlastRepository blastRepository;
 
     @Mock
     private BlastEmailService emailService;
@@ -127,11 +134,79 @@ class BlastNotificationSchedulerTest {
                 .thenReturn(List.of(job));
         when(generalAlertService.trigger(any(GeneralAlertRequest.class), anyLong()))
                 .thenReturn(new GeneralAlertDTO());
+        // P4 : la promotion vers IMMINENT relit le blast via le repository.
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(job.getBlast()));
 
         scheduler.poll();
 
         verify(generalAlertService).trigger(any(GeneralAlertRequest.class), eq(0L));
         assertThat(job.getStatus()).isEqualTo(JobStatus.SENT);
+    }
+
+    @Test
+    @DisplayName("poll: GENERAL_ALARM_10M -> message bilingue FR+EN injecte dans le trigger")
+    void pollGeneralAlarmCarriesBilingualMessage() {
+        BlastNotificationJob job = buildJob(JobType.GENERAL_ALARM_10M);
+        when(jobRepository.findDueJobs(eq(JobStatus.SCHEDULED), any(LocalDateTime.class)))
+                .thenReturn(List.of(job));
+        when(generalAlertService.trigger(any(GeneralAlertRequest.class), anyLong()))
+                .thenReturn(new GeneralAlertDTO());
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(job.getBlast()));
+
+        scheduler.poll();
+
+        verify(generalAlertService).trigger(
+                argThat((GeneralAlertRequest req) ->
+                        req != null
+                                && "BLAST_T10".equals(req.getReasonCode())
+                                && Boolean.FALSE.equals(req.getDrillMode())
+                                && req.getMessage() != null
+                                && req.getMessage().contains("Ceci n'est pas un exercice")
+                                && req.getMessage().contains("dynamitage imminent")
+                                && req.getMessage().contains("This is not a drill")
+                                && req.getMessage().contains("blasting imminent")
+                                && req.getMessage().contains("BLT-2026-0001")),
+                eq(0L));
+    }
+
+    @Test
+    @DisplayName("poll: GENERAL_ALARM_10M -> blast CONFIRMED bascule en IMMINENT")
+    void pollGeneralAlarmPromotesToImminent() {
+        BlastNotificationJob job = buildJob(JobType.GENERAL_ALARM_10M);
+        Blast blast = job.getBlast(); // CONFIRMED par defaut
+        when(jobRepository.findDueJobs(eq(JobStatus.SCHEDULED), any(LocalDateTime.class)))
+                .thenReturn(List.of(job));
+        when(generalAlertService.trigger(any(GeneralAlertRequest.class), anyLong()))
+                .thenReturn(new GeneralAlertDTO());
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(blast));
+
+        scheduler.poll();
+
+        assertThat(blast.getStatus()).isEqualTo(BlastStatus.IMMINENT);
+        verify(blastRepository).save(blast);
+    }
+
+    @Test
+    @DisplayName("poll: GENERAL_ALARM_10M -> idempotent si deja IMMINENT")
+    void pollGeneralAlarmIdempotentIfAlreadyImminent() {
+        BlastNotificationJob job = buildJob(JobType.GENERAL_ALARM_10M);
+        Blast blast = job.getBlast();
+        blast.setStatus(BlastStatus.IMMINENT);
+        when(jobRepository.findDueJobs(eq(JobStatus.SCHEDULED), any(LocalDateTime.class)))
+                .thenReturn(List.of(job));
+        when(generalAlertService.trigger(any(GeneralAlertRequest.class), anyLong()))
+                .thenReturn(new GeneralAlertDTO());
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(blast));
+
+        scheduler.poll();
+
+        // Le blast reste IMMINENT, save() n'est appele que pour le job, pas le blast.
+        assertThat(blast.getStatus()).isEqualTo(BlastStatus.IMMINENT);
+        verify(blastRepository, never()).save(any(Blast.class));
+        // Mais l'alerte est quand meme declenchee (idempotent cote
+        // GeneralAlertService : si une alerte active existe deja, elle est
+        // retournee).
+        verify(generalAlertService).trigger(any(GeneralAlertRequest.class), eq(0L));
     }
 
     @Test

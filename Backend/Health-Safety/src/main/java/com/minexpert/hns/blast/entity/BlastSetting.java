@@ -74,6 +74,15 @@ public class BlastSetting {
     @Column(name = "control_room_label", length = 128)
     private String controlRoomLabel;
 
+    /**
+     * Libelle du site utilise en signature des e-mails de tir (ex. "Mine de
+     * Boungou — Service HSE"). Resolu par mine pour ne plus dependre d'une
+     * property globale. Si {@code null}, fallback sur la property
+     * {@code blast.site.label} cote {@link com.minexpert.hns.blast.service.BlastEmailService}.
+     */
+    @Column(name = "site_label", length = 160)
+    private String siteLabel;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
