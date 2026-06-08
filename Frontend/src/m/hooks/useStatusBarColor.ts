@@ -12,22 +12,23 @@
  */
 
 import { useEffect } from 'react';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 
 type StatusBarStyle = 'LIGHT' | 'DARK';
+
+// Valeurs enum @capacitor/status-bar.Style (string literals au runtime)
+const StyleEnum = { Light: 'LIGHT', Dark: 'DARK' } as const;
 
 export function useStatusBarColor(hex: string, style: StatusBarStyle = 'LIGHT') {
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
-                const mod = await import(/* @vite-ignore */ '@capacitor/status-bar').catch(
-                    () => null,
-                );
-                if (!mod || cancelled) return;
-                const { StatusBar, Style } = mod;
-                await StatusBar.setBackgroundColor({ color: hex }).catch(() => undefined);
-                await StatusBar.setStyle({
-                    style: style === 'LIGHT' ? Style.Light : Style.Dark,
+                const StatusBar = getCapacitorPlugin<any>('StatusBar');
+                if (!StatusBar || cancelled) return;
+                await StatusBar.setBackgroundColor?.({ color: hex }).catch(() => undefined);
+                await StatusBar.setStyle?.({
+                    style: style === 'LIGHT' ? StyleEnum.Light : StyleEnum.Dark,
                 }).catch(() => undefined);
             } catch {
                 // ignore

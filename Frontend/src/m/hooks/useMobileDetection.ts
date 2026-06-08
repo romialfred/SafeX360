@@ -49,11 +49,12 @@ export function useMobileDetection(): MobileDetection {
         (async () => {
             let isCapacitor = false;
             try {
-                const cap = await import(/* @vite-ignore */ '@capacitor/core').catch(
-                    () => null,
-                );
-                if (cap) {
-                    isCapacitor = cap.Capacitor.isNativePlatform();
+                // Capacitor injecte window.Capacitor a l'execution native.
+                // Pas d'import statique : evite que Vite tente de resoudre
+                // @capacitor/core en dev web ou il n'est pas installe.
+                const w = typeof window !== 'undefined' ? (window as any) : null;
+                if (w?.Capacitor?.isNativePlatform) {
+                    isCapacitor = Boolean(w.Capacitor.isNativePlatform());
                 }
             } catch {
                 isCapacitor = false;

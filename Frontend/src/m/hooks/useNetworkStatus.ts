@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 
 type ConnectionType = 'wifi' | 'cellular' | 'ethernet' | 'unknown' | 'none';
 
@@ -40,17 +41,14 @@ export function useNetworkStatus(): NetworkStatus {
 
         (async () => {
             try {
-                const mod = await import(/* @vite-ignore */ '@capacitor/network').catch(
-                    () => null,
-                );
-                if (!mod || cancelled) {
+                const Network = getCapacitorPlugin<any>('Network');
+                if (!Network || cancelled) {
                     // Fallback web
                     window.addEventListener('online', onWebStatus);
                     window.addEventListener('offline', onWebStatus);
                     onWebStatus();
                     return;
                 }
-                const { Network } = mod;
                 const current = await Network.getStatus();
                 if (cancelled) return;
                 setStatus({
@@ -58,7 +56,7 @@ export function useNetworkStatus(): NetworkStatus {
                     connectionType: (current.connectionType as ConnectionType) || 'unknown',
                     ready: true,
                 });
-                const handle = await Network.addListener('networkStatusChange', (s) => {
+                const handle = await Network.addListener('networkStatusChange', (s: any) => {
                     setStatus({
                         online: s.connected,
                         connectionType: (s.connectionType as ConnectionType) || 'unknown',

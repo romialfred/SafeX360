@@ -10,9 +10,14 @@
  */
 
 import { photoEnqueue } from '../offline/db';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 
 const MAX_DIMENSION = 1024;
 const JPEG_QUALITY = 0.7;
+
+// Enum @capacitor/camera (string literals au runtime)
+const CameraResultType = { Base64: 'base64', DataUrl: 'dataUrl', Uri: 'uri' } as const;
+const CameraSource = { Camera: 'CAMERA', Photos: 'PHOTOS', Prompt: 'PROMPT' } as const;
 
 export interface CapturedPhoto {
     /** Blob compresse (JPEG, EXIF strip). */
@@ -74,9 +79,8 @@ export async function capturePhoto(opts: {
 
     // 1) Tentative Capacitor Camera (APK Android)
     try {
-        const mod = await import(/* @vite-ignore */ '@capacitor/camera').catch(() => null);
-        if (mod) {
-            const { Camera, CameraResultType, CameraSource } = mod;
+        const Camera = getCapacitorPlugin<any>('Camera');
+        if (Camera) {
             const photo = await Camera.getPhoto({
                 resultType: CameraResultType.Base64,
                 source: CameraSource.Camera,

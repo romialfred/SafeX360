@@ -16,6 +16,7 @@
  */
 
 import axiosInstance from '../../interceptors/AxiosInterceptor';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 
 interface RegisterResult {
     granted: boolean;
@@ -29,13 +30,10 @@ interface RegisterResult {
  */
 export async function registerPushNotifications(userId?: number): Promise<RegisterResult> {
     try {
-        const mod = await import(/* @vite-ignore */ '@capacitor/push-notifications').catch(
-            () => null,
-        );
-        if (!mod) {
+        const PushNotifications = getCapacitorPlugin<any>('PushNotifications');
+        if (!PushNotifications) {
             return { granted: false, error: 'Plugin absent (mode web)' };
         }
-        const { PushNotifications } = mod;
         const permission = await PushNotifications.requestPermissions();
         if (permission.receive !== 'granted') {
             return { granted: false, error: 'Permission refusee' };
@@ -43,7 +41,7 @@ export async function registerPushNotifications(userId?: number): Promise<Regist
         await PushNotifications.register();
         // Le token arrive en asynchrone via listener
         return new Promise<RegisterResult>((resolve) => {
-            const handle = PushNotifications.addListener('registration', async (token: any) => {
+            const handle = PushNotifications.addListener('registration', async (token: any): Promise<void> => {
                 const value = token?.value as string;
                 if (value && userId) {
                     // Enregistrer le token cote backend pour ciblage
@@ -86,14 +84,11 @@ export async function scheduleLocalNotification(opts: {
     extra?: Record<string, unknown>;
 }): Promise<void> {
     try {
-        const mod = await import(/* @vite-ignore */ '@capacitor/local-notifications').catch(
-            () => null,
-        );
-        if (!mod) {
+        const LocalNotifications = getCapacitorPlugin<any>('LocalNotifications');
+        if (!LocalNotifications) {
             console.warn('[notif] Plugin local notif absent — fallback no-op');
             return;
         }
-        const { LocalNotifications } = mod;
         const perm = await LocalNotifications.checkPermissions();
         if (perm.display !== 'granted') {
             const ask = await LocalNotifications.requestPermissions();
@@ -122,11 +117,9 @@ export async function scheduleLocalNotification(opts: {
  */
 export async function cancelLocalNotification(id: number): Promise<void> {
     try {
-        const mod = await import(/* @vite-ignore */ '@capacitor/local-notifications').catch(
-            () => null,
-        );
-        if (!mod) return;
-        await mod.LocalNotifications.cancel({ notifications: [{ id }] });
+        const LocalNotifications = getCapacitorPlugin<any>('LocalNotifications');
+        if (!LocalNotifications) return;
+        await LocalNotifications.cancel({ notifications: [{ id }] });
     } catch {
         // ignore
     }

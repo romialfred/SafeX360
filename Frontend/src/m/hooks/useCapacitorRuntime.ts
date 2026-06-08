@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { isNativePlatform, getPlatform } from '../utils/capacitorBridge';
 
 type Platform = 'android' | 'ios' | 'web';
 
@@ -46,21 +47,13 @@ export function useCapacitorRuntime(): CapacitorRuntime {
 
     useEffect(() => {
         let cancelled = false;
-        (async () => {
-            try {
-                // Import dynamique : ne casse pas le bundle web tant que
-                // Capacitor n'est pas installe (le module est lazy resolved
-                // au runtime). En cas d'echec, on garde le fallback web.
-                const cap = await import(/* @vite-ignore */ '@capacitor/core').catch(
-                    () => null,
-                );
-                if (!cap || cancelled) {
-                    setRuntime({ ...FALLBACK, ready: true });
-                    return;
-                }
-                const { Capacitor } = cap;
-                const platform = Capacitor.getPlatform() as Platform;
-                const isNative = Capacitor.isNativePlatform();
+        try {
+            // Lit window.Capacitor expose en runtime APK. Pas d'import statique :
+            // evite que Vite scanne @capacitor/core en dev web (ou il n'est pas
+            // installe). Cf. src/m/utils/capacitorBridge.ts pour les details.
+            const isNative = isNativePlatform();
+            const platform = getPlatform() as Platform;
+            if (!cancelled) {
                 setRuntime({
                     isNative,
                     platform,
@@ -70,10 +63,10 @@ export function useCapacitorRuntime(): CapacitorRuntime {
                     canBiometric: isNative,
                     ready: true,
                 });
-            } catch {
-                setRuntime({ ...FALLBACK, ready: true });
             }
-        })();
+        } catch {
+            if (!cancelled) setRuntime({ ...FALLBACK, ready: true });
+        }
         return () => {
             cancelled = true;
         };

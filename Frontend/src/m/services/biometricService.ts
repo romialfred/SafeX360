@@ -53,13 +53,16 @@ export async function requireBiometric(reason = 'Confirmez votre identite'): Pro
     if (recentlyUnlocked()) {
         return { granted: true, method: 'biometric' };
     }
-    // Tentative plugin biometric (non installe par defaut, optionnel)
+    // Tentative plugin biometric (non installe par defaut, optionnel).
+    // On lit window.Capacitor.Plugins.NativeBiometric — Capacitor enregistre
+    // automatiquement les plugins natifs sous ce namespace. Aucun import
+    // statique = aucun crash Vite si le plugin n'est pas dans le bundle.
     try {
-        const mod = await import(
-            /* @vite-ignore */ '@capgo/capacitor-native-biometric'
-        ).catch(() => null);
-        if (mod) {
-            const { NativeBiometric } = mod as any;
+        const NativeBiometric =
+            typeof window !== 'undefined'
+                ? (window as any)?.Capacitor?.Plugins?.NativeBiometric
+                : null;
+        if (NativeBiometric) {
             const available = await NativeBiometric.isAvailable();
             if (available.isAvailable) {
                 await NativeBiometric.verifyIdentity({

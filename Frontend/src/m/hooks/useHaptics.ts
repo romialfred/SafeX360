@@ -14,6 +14,7 @@
  */
 
 import { useCallback } from 'react';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 
 type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'sos';
 
@@ -27,41 +28,44 @@ const WEB_FALLBACK_MS: Record<HapticPattern, number | number[]> = {
     sos: 800,
 };
 
+// Constantes ImpactStyle / NotificationType de Capacitor (valeurs string,
+// definies dans @capacitor/haptics — on les reproduit ici pour ne pas
+// avoir besoin de l'import statique).
+const ImpactStyleEnum = { Heavy: 'HEAVY', Medium: 'MEDIUM', Light: 'LIGHT' } as const;
+const NotifTypeEnum = { Success: 'SUCCESS', Warning: 'WARNING', Error: 'ERROR' } as const;
+
 export function useHaptics() {
     return useCallback(async (pattern: HapticPattern) => {
         try {
-            const mod = await import(/* @vite-ignore */ '@capacitor/haptics').catch(
-                () => null,
-            );
-            if (!mod) {
+            const Haptics = getCapacitorPlugin<any>('Haptics');
+            if (!Haptics) {
                 // Fallback web
                 if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
                     navigator.vibrate(WEB_FALLBACK_MS[pattern]);
                 }
                 return;
             }
-            const { Haptics, ImpactStyle, NotificationType } = mod;
             switch (pattern) {
                 case 'light':
-                    await Haptics.impact({ style: ImpactStyle.Light });
+                    await Haptics.impact({ style: ImpactStyleEnum.Light });
                     break;
                 case 'medium':
-                    await Haptics.impact({ style: ImpactStyle.Medium });
+                    await Haptics.impact({ style: ImpactStyleEnum.Medium });
                     break;
                 case 'heavy':
-                    await Haptics.impact({ style: ImpactStyle.Heavy });
+                    await Haptics.impact({ style: ImpactStyleEnum.Heavy });
                     break;
                 case 'success':
-                    await Haptics.notification({ type: NotificationType.Success });
+                    await Haptics.notification({ type: NotifTypeEnum.Success });
                     break;
                 case 'warning':
-                    await Haptics.notification({ type: NotificationType.Warning });
+                    await Haptics.notification({ type: NotifTypeEnum.Warning });
                     break;
                 case 'error':
-                    await Haptics.notification({ type: NotificationType.Error });
+                    await Haptics.notification({ type: NotifTypeEnum.Error });
                     break;
                 case 'sos':
-                    // Vibration longue + 2 impacts heavy en complement
+                    // Vibration longue
                     await Haptics.vibrate({ duration: 800 });
                     break;
             }

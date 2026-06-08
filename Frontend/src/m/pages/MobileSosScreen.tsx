@@ -23,6 +23,7 @@ import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { mutateOffline } from '../services/mobileApi';
+import { getCapacitorPlugin } from '../utils/capacitorBridge';
 import { useAppSelector } from '../../slices/hooks';
 
 type ReasonCode = 'GENERAL' | 'MEDICAL' | 'FIRE' | 'COLLAPSE' | 'CHEMICAL' | 'ARMED_ATTACK';
@@ -46,9 +47,9 @@ const TILES: Tile[] = [
 
 async function getGeolocation(): Promise<{ lat: number; lng: number; accuracy: number } | null> {
     try {
-        const mod = await import(/* @vite-ignore */ '@capacitor/geolocation').catch(() => null);
-        if (mod) {
-            const pos = await mod.Geolocation.getCurrentPosition({
+        const Geolocation = getCapacitorPlugin<any>('Geolocation');
+        if (Geolocation) {
+            const pos = await Geolocation.getCurrentPosition({
                 enableHighAccuracy: true,
                 timeout: 5000,
             });
