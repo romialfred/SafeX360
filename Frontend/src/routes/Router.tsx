@@ -230,6 +230,9 @@ const MobilePersonalPpe = lazy(() => import('../m/pages/MobilePersonalPpe'));
 const MobilePersonalTrainings = lazy(() => import('../m/pages/MobilePersonalTrainings'));
 const MobilePersonalDosimetry = lazy(() => import('../m/pages/MobilePersonalDosimetry'));
 const MobilePersonalMedical = lazy(() => import('../m/pages/MobilePersonalMedical'));
+// Phase M6 — detail incident + historique signalements
+const MobileIncidentDetail = lazy(() => import('../m/pages/MobileIncidentDetail'));
+const MobileIncidentsHistory = lazy(() => import('../m/pages/MobileIncidentsHistory'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -314,7 +317,8 @@ const router = createBrowserRouter([
             { path: 'inspections/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
             { path: 'sos', element: <BlastSuspense><MobileSosScreen /></BlastSuspense> },
             { path: 'incident/new', element: <BlastSuspense><MobileIncidentQuickDeclare /></BlastSuspense> },
-            { path: 'incident/:id', element: <BlastSuspense><MobilePlaceholder title="Incident" subtitle="Détail" accent="#B45309" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'incident/:id', element: <BlastSuspense><MobileIncidentDetail /></BlastSuspense> },
+            { path: 'incidents/history', element: <BlastSuspense><MobileIncidentsHistory /></BlastSuspense> },
             { path: 'blast/next', element: <BlastSuspense><MobileBlastNext /></BlastSuspense> },
             { path: 'profile', element: <BlastSuspense><MobileProfile /></BlastSuspense> },
             { path: 'profile/ppe', element: <BlastSuspense><MobilePersonalPpe /></BlastSuspense> },

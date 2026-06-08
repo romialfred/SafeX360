@@ -24,6 +24,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileBottomNav from './components/MobileBottomNav';
 import SyncIndicator from './components/SyncIndicator';
+import AppUpdateBanner from './components/AppUpdateBanner';
 import PullToRefresh from './components/PullToRefresh';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { IconWifiOff } from '@tabler/icons-react';
@@ -58,6 +59,9 @@ export default function MobileShell() {
                     <span>Mode hors ligne — vos saisies seront envoyées au retour du réseau.</span>
                 </div>
             )}
+
+            {/* Bandeau "Nouvelle version disponible" (Phase M6) */}
+            <AppUpdateBanner />
 
             {/* Indicateur de synchronisation (X actions en attente) */}
             <SyncIndicator />

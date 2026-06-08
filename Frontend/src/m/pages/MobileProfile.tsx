@@ -17,6 +17,7 @@ import {
     IconLogout,
     IconChevronRight,
     IconUserCircle,
+    IconAlertOctagon,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
@@ -36,6 +37,7 @@ const TILES: ProfileTile[] = [
     { label: 'Mes formations', sublabel: 'Habilitations, certifications', path: '/m/profile/trainings', Icon: IconCertificate, accent: 'from-violet-500 to-purple-600' },
     { label: 'Ma dosimétrie', sublabel: 'Cumul annuel, exposition', path: '/m/profile/dosimetry', Icon: IconRadioactive, accent: 'from-amber-500 to-orange-600' },
     { label: 'Mon dossier médical', sublabel: 'Aptitude, visites', path: '/m/profile/medical', Icon: IconStethoscope, accent: 'from-cyan-500 to-blue-600' },
+    { label: 'Mes signalements', sublabel: 'Historique de mes incidents', path: '/m/incidents/history', Icon: IconAlertOctagon, accent: 'from-rose-500 to-pink-600' },
 ];
 
 export default function MobileProfile() {
@@ -158,7 +160,7 @@ export default function MobileProfile() {
                     Retour à l'accueil
                 </button>
                 <p className="text-[10.5px] text-slate-400 mt-2">
-                    SafeX 360 Field · v0.1.0 · ISO 45001
+                    SafeX 360 Field · v1.0.0 · ISO 45001
                 </p>
             </section>
         </>
