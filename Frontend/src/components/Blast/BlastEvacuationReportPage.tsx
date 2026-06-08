@@ -50,6 +50,7 @@ import BlastEvacuationReportService, {
     type BlastEvacuationReportDTO,
 } from '../../services/BlastEvacuationReportService';
 import { useAppSelector } from '../../slices/hooks';
+import { formatZoneScope } from './formatZone';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Helpers
@@ -371,7 +372,7 @@ const BlastEvacuationReportPage = () => {
                     />
                     <DetailRow
                         label={t('evacReport.fields.zone') as string}
-                        value={report.alarmZoneScope ?? '—'}
+                        value={formatZoneScope(report.alarmZoneScope)}
                     />
                     <DetailRow
                         label={t('evacReport.fields.scheduledAt') as string}

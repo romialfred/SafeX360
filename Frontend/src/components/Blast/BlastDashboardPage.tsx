@@ -59,6 +59,8 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useAppSelector } from '../../slices/hooks';
 import DosimetryKpiTile from '../Dosimetry/DosimetryKpiTile';
+import BlastEvacuationAlarm from './BlastEvacuationAlarm';
+import { formatZoneScope } from './formatZone';
 import {
     getBlastDashboardSummary,
     type BlastDashboardDTO,
@@ -330,7 +332,7 @@ function NextBlastCardImpl({ next, baselineNowIso, onOpen }: NextBlastCardProps)
                                     <span className="inline-flex items-center gap-1.5">
                                         <IconMapPin size={13} stroke={1.7} className="text-slate-400" />
                                         {t('dashboard.next.zoneLabel', { defaultValue: 'Zone d\'alerte' })} :{' '}
-                                        <span className="font-medium text-slate-800">{next.zone}</span>
+                                        <span className="font-medium text-slate-800">{formatZoneScope(next.zone)}</span>
                                     </span>
                                 )}
                             </div>
@@ -610,6 +612,17 @@ const BlastDashboardPage = () => {
 
     return (
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+            {/* Alarme d'evacuation automatique : montee au top du Dashboard pour
+                couvrir le retour de l'utilisateur sur cette page apres redirect.
+                Le composant gere lui-meme son tick + sirene + TTS + acquittement. */}
+            {next && (
+                <BlastEvacuationAlarm
+                    blastReference={next.reference}
+                    zone={next.zone}
+                    scheduledAtIso={next.scheduledAt}
+                    blastId={next.id}
+                />
+            )}
             <div className="w-full">
                 {/* ─── Breadcrumb ─── */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">

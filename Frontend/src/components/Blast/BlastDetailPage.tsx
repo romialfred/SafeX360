@@ -33,6 +33,7 @@ import {
     Tooltip,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import { formatZoneScope } from './formatZone';
 import {
     IconArrowLeft,
     IconChevronRight,
@@ -870,7 +871,7 @@ const BlastDetailPage = () => {
                             </h3>
                             <DetailRow
                                 label={t('detail.announcement.alarmZoneLabel')}
-                                value={detail.alarmZoneScope ?? '—'}
+                                value={formatZoneScope(detail.alarmZoneScope)}
                             />
                             <div className="mt-4">
                                 <h4 className="text-[13px] font-semibold text-slate-700 mb-2">
