@@ -207,6 +207,8 @@ const BlastForm = lazy(() => import('../components/Blast/BlastForm'));
 const BlastDetailPage = lazy(() => import('../components/Blast/BlastDetailPage'));
 // LOT — P6 : rapport d'evacuation post-tir (signature + export PDF).
 const BlastEvacuationReportPage = lazy(() => import('../components/Blast/BlastEvacuationReportPage'));
+// LOT — P7 : tableau de bord blast (landing par defaut + alias /blast/dashboard).
+const BlastDashboardPage = lazy(() => import('../components/Blast/BlastDashboardPage'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -541,7 +543,12 @@ const router = createBrowserRouter([
             // LOT — Module Gestion des Dynamitages / Blast Management (Phase 2)
             // Registre + Formulaire + Detail. RBAC enforcement cote backend
             // (BLAST_VIEW / BLAST_PLAN / BLAST_CONFIRM / BLAST_ADMIN).
-            { path: 'blast', element: <BlastSuspense><BlastRegistryPage /></BlastSuspense> },
+            // P7 : /blast est desormais le tableau de bord (landing). L'ancienne
+            // page registre est accessible via /blast/registry. L'alias
+            // /blast/dashboard reste valide pour les liens directs.
+            { path: 'blast', element: <BlastSuspense><BlastDashboardPage /></BlastSuspense> },
+            { path: 'blast/dashboard', element: <BlastSuspense><BlastDashboardPage /></BlastSuspense> },
+            { path: 'blast/registry', element: <BlastSuspense><BlastRegistryPage /></BlastSuspense> },
             { path: 'blast/new', element: <BlastSuspense><BlastForm /></BlastSuspense> },
             { path: 'blast/edit/:id', element: <BlastSuspense><BlastForm /></BlastSuspense> },
             { path: 'blast/detail/:id', element: <BlastSuspense><BlastDetailPage /></BlastSuspense> },

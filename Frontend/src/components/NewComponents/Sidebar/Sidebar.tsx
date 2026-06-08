@@ -102,6 +102,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Paramètres dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
     // LOT — Gestion des Dynamitages (ns 'blast')
     'Gestion des Dynamitages': 'blast:sidebar.blast',
+    'Tableau de bord dynamitage': 'blast:sidebar.blastDashboard',
     'Registre des tirs': 'blast:sidebar.blastRegistry',
     'Enregistrer un tir': 'blast:sidebar.blastNew',
 };
@@ -362,6 +363,8 @@ const menuItems: MenuItem[] = [
         icon: IconBolt,
         color: 'text-amber-700',
         subItems: [
+            // P7 — Tableau de bord en tete du sous-menu : landing par defaut /blast
+            { id: 'blast-dashboard', label: 'Tableau de bord dynamitage', icon: IconChartBar },
             { id: 'blast-registry', label: 'Registre des tirs', icon: IconClipboardCheck },
             { id: 'blast-new', label: 'Enregistrer un tir', icon: IconPlus },
         ],
@@ -530,7 +533,8 @@ export const menuIdToUrl: Record<string, string> = {
 
     // LOT — Module Gestion des Dynamitages / Blast Management
     "blast": "/blast",
-    "blast-registry": "/blast",
+    "blast-dashboard": "/blast/dashboard",
+    "blast-registry": "/blast/registry",
     "blast-new": "/blast/new",
 };
 
@@ -581,7 +585,8 @@ const Sidebar = () => {
         // (les autres sous-modules s'activeront via Module Management)
         'dosimetry', 'dosimetry-settings',
         // LOT — Blast Management : parent + sous-items toujours accessibles
-        'blast', 'blast-registry', 'blast-new',
+        // P7 : ajout du tableau de bord dans la liste autorisee
+        'blast', 'blast-dashboard', 'blast-registry', 'blast-new',
     ]);
 
     const handleItemClick = (itemId: string) => {

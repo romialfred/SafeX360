@@ -359,20 +359,55 @@ export const moduleConfigurations: any[] = [
 
     // Blast Management (LOT — Module Gestion des Dynamitages)
     // Aligne 1:1 avec les sous-items de la sidebar pour coherence
-    // entre la navigation et la gestion des modules.
+    // entre la navigation et la gestion des modules. Categorie navy+amber.
+    {
+        id: 'blast-dashboard',
+        name: 'Blast Dashboard',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Real-time overview of upcoming blasts, alerts and KPIs'
+    },
     {
         id: 'blast-registry',
         name: 'Blast Registry',
         isEnabled: true,
         category: 'Blast Management',
-        description: 'Plan, track and manage mine blasts and their announcement chain'
+        description: 'Search, filter and consult the historical and upcoming blasts register'
     },
     {
-        id: 'blast-new',
+        id: 'blast-form',
         name: 'Log a Blast',
         isEnabled: true,
         category: 'Blast Management',
-        description: 'Create a new blast: plan, exclusion zone, recipients, attachments'
+        description: 'Create or edit a blast: plan, exclusion zone, recipients, attachments'
+    },
+    {
+        id: 'blast-planning',
+        name: 'Reminders Planning',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Planning of T-24h/T-6h/T-30min reminders and general alarm chain'
+    },
+    {
+        id: 'blast-popups',
+        name: 'D-Day Tracking',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Live tracking of D-day popups, imminent status and general alarm'
+    },
+    {
+        id: 'blast-reports',
+        name: 'Evacuation Reports',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Post-blast evacuation reports (muster, incidents, sign-off)'
+    },
+    {
+        id: 'blast-settings',
+        name: 'Blast Settings',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Module configuration: reminder offsets, alarm scope, SMTP, RBAC'
     }
 ];
 

@@ -273,6 +273,54 @@ export interface BlastSearchFilters {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  DTO — Tableau de bord Blast Management (P7)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Resume du prochain tir confirme (compte a rebours en secondes). */
+export interface NextBlastSummaryDTO {
+    id: number;
+    reference: string;
+    scheduledAt: string;
+    /** Zone d'alerte ou pit concerne (libelle court pour affichage). */
+    zone: string;
+    /** Secondes restantes (peut etre negatif si le tir est en cours). */
+    secondsUntil: number;
+    status: BlastStatus;
+}
+
+/** Compteurs de l'etat des notifications du mois. */
+export interface NotificationsStateDTO {
+    sent: number;
+    scheduled: number;
+    failed: number;
+}
+
+/** Indicateurs cles agreges du mois courant. */
+export interface BlastDashboardKpisDTO {
+    blastsThisMonth: number;
+    totalExplosivesKg: number;
+    avgPowderFactor: number;
+    onTimeRate: number;
+    misfireCount: number;
+    blastsToday: number;
+}
+
+/**
+ * Agregat complet du tableau de bord Blast Management. Aligne 1:1 sur
+ * {@code BlastDashboardDTO.java} (Phase 7 backend).
+ */
+export interface BlastDashboardDTO {
+    upcomingToday: BlastListItemDTO[];
+    upcomingThisWeek: BlastListItemDTO[];
+    upcomingThisWeekCount: number;
+    nextConfirmedBlast: NextBlastSummaryDTO | null;
+    statusBreakdown: Partial<Record<BlastStatus, number>>;
+    notificationsState: NotificationsStateDTO;
+    lastFinishedBlasts: BlastListItemDTO[];
+    kpis: BlastDashboardKpisDTO;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  ENDPOINTS — /hns/blast/*
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -434,6 +482,17 @@ const getBlastDetail = async (id: number | string): Promise<BlastDetailDTO> => {
 };
 
 /**
+ * P7 — Recupere l'agregat consolide du tableau de bord pour une mine donnee.
+ * Backend : GET /hns/blast/dashboard/summary?mineId=X  (RBAC : BLAST_VIEW)
+ */
+const getBlastDashboardSummary = async (mineId: number): Promise<BlastDashboardDTO> => {
+    return axiosInstance
+        .get(`${baseUrl}/dashboard/summary`, { params: { mineId } })
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+};
+
+/**
  * Helper de duplication client-side : prepare un BlastCreateDTO a partir d'un
  * BlastDetailDTO existant. La reference et l'id sont volontairement vides pour
  * que le backend regenere une reference fraiche au format BLT-YYYY-NNNN.
@@ -483,6 +542,7 @@ const BlastService = {
     // Reads
     searchBlasts,
     getBlastDetail,
+    getBlastDashboardSummary,
     // Writes
     createBlast,
     updateBlast,
@@ -502,6 +562,7 @@ export default BlastService;
 export {
     searchBlasts,
     getBlastDetail,
+    getBlastDashboardSummary,
     createBlast,
     updateBlast,
     confirmBlast,

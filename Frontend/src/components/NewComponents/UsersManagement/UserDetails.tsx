@@ -80,6 +80,28 @@ const UserDetails = () => {
         { id: 'DOSIMETRY_ADMIN', name: 'Administration du module (paramètres, RBAC)' },
     ];
 
+    /**
+     * LOT Blast Management — Permissions effectives Spring Security (P8).
+     *
+     * Ces 6 autorisations granulaires sont accordées au runtime via le header
+     * X-Permissions propagé par la Gateway et consommées par les @PreAuthorize
+     * du backend Blast (cf. {@code BlastRBACConfig} + controllers Blast).
+     *
+     * Modèle ABAC : par défaut, SYSTEM_ADMINISTRATOR a TOUTES les permissions
+     * Blast (compat ascendante R-003). Les autres rôles ne reçoivent que le
+     * sous-ensemble pertinent (Boutefeu, HSE Manager, Employee).
+     *
+     * Affichage : badge "Accordée" pour SYSTEM_ADMINISTRATOR, "Selon rôle" sinon.
+     */
+    const blastPermissions = [
+        { id: 'BLAST_VIEW', name: 'Consulter les tirs et rapports' },
+        { id: 'BLAST_PLAN', name: 'Planifier et modifier les tirs' },
+        { id: 'BLAST_CONFIRM', name: 'Confirmer un tir et déclarer les statuts' },
+        { id: 'BLAST_ALARM', name: 'Déclencher et arrêter l\'alerte générale' },
+        { id: 'BLAST_REPORT', name: 'Établir et signer le rapport d\'évacuation' },
+        { id: 'BLAST_ADMIN', name: 'Administrer le module (paramètres, RBAC, résoudre misfire)' },
+    ];
+
     const moduleIdToApiField: Record<string, string> = {
         'home': 'home',
         'non-conformity': 'nonConformity',
@@ -276,6 +298,60 @@ const UserDetails = () => {
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm text-slate-800 font-medium">{perm.name}</p>
                                                     <p className="text-[11px] font-mono text-violet-700 mt-0.5">{perm.id}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    {granted ? (
+                                                        <>
+                                                            <IconCheck className="w-4 h-4 text-emerald-600" />
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                                Accordée
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <IconX className="w-4 h-4 text-slate-400" />
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                                                Selon rôle
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* ─── Section Gestion des Dynamitages (LOT P8) ───
+                                Permissions Spring Security granulaires accordees via la Gateway.
+                                Pour SYSTEM_ADMINISTRATOR : toutes accordees (compat ascendante R-003).
+                                Pour les autres roles : selon le profil RBAC effectif au runtime
+                                (Boutefeu / HSE Manager / Employee). */}
+                            <div className="mt-8 pt-6 border-t border-slate-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h3 className="text-base font-semibold text-slate-800">
+                                            Gestion des Dynamitages
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Autorisations granulaires du module Blast (Spring Security · cycle de vie des tirs et alerte générale)
+                                        </p>
+                                    </div>
+                                    <Badge color="orange" variant="light">
+                                        {profile.role === 'SYSTEM_ADMINISTRATOR' ? 'Toutes accordées' : 'Selon rôle'}
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {blastPermissions.map((perm) => {
+                                        const granted = profile.role === 'SYSTEM_ADMINISTRATOR';
+                                        return (
+                                            <div
+                                                key={perm.id}
+                                                className="flex items-center justify-between p-3 bg-amber-50/50 border border-amber-100 rounded-lg"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm text-slate-800 font-medium">{perm.name}</p>
+                                                    <p className="text-[11px] font-mono text-amber-800 mt-0.5">{perm.id}</p>
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-shrink-0">
                                                     {granted ? (

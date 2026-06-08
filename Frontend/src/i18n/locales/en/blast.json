@@ -6,7 +6,7 @@
     },
     "sidebar": {
         "blast": "Blast Management",
-        "blastDashboard": "Dashboard",
+        "blastDashboard": "Blast dashboard",
         "blastRegistry": "Blast registry",
         "blastNew": "Log a blast",
         "blastSettings": "Blast settings"
@@ -389,5 +389,89 @@
             "actionFailed": "The action failed. Check your permissions or try again later.",
             "downloadFailed": "Failed to download the PDF."
         }
+    },
+    "dashboard": {
+        "breadcrumbRoot": "Blasting",
+        "breadcrumbCurrent": "Dashboard",
+        "title": "Blast operations dashboard",
+        "subtitle": "Consolidated view of mine blasts: countdown to the next blast, key indicators, notifications status and recent history.",
+        "refresh": "Refresh",
+        "lastUpdate": "Last updated",
+        "autoRefresh": "Auto-refresh every 30 s",
+        "loadError": "The dashboard could not be loaded. Check your permissions or try again later.",
+        "next": {
+            "title": "Next confirmed blast",
+            "subtitle": "Real-time countdown to the next locked blast.",
+            "noUpcoming": "No confirmed blast scheduled within the next 7 days.",
+            "noUpcomingHint": "Lock a blast from the registry to make it appear here.",
+            "openDetail": "Open blast detail",
+            "zoneLabel": "Alarm zone",
+            "scheduledAt": "Scheduled at",
+            "imminent": "Blast imminent — T-10 alarm expected",
+            "inProgress": "Blast in progress",
+            "hours": "h",
+            "minutes": "min",
+            "seconds": "s",
+            "days": "d",
+            "delayed": "Blast delayed by {{value}}"
+        },
+        "kpi": {
+            "monthLabel": "Blasts this month",
+            "monthSub": "All statuses combined",
+            "explosivesLabel": "Explosives used",
+            "explosivesSub": "Cumulative on fired blasts this month",
+            "explosivesUnit": "kg",
+            "powderFactorLabel": "Average powder factor",
+            "powderFactorSub": "Average on completed blasts",
+            "powderFactorUnit": "kg/m³",
+            "onTimeLabel": "On-time rate",
+            "onTimeSub": "Blasts fired within +/- 15 min of schedule",
+            "onTimeUnit": "%",
+            "misfireLabel": "Misfires this month",
+            "misfireSub": "Must be resolved before next blast",
+            "todayLabel": "Blasts today",
+            "todaySub": "Scheduled within today"
+        },
+        "today": {
+            "title": "Today",
+            "subtitle": "Horizontal timeline of blasts scheduled within the day.",
+            "empty": "No blast is scheduled for today.",
+            "timeline": "Timeline"
+        },
+        "week": {
+            "title": "This week",
+            "subtitle": "Blasts scheduled in the next 7 days, soonest first.",
+            "empty": "No blasts scheduled for the next 7 days.",
+            "moreLink": "Open full registry",
+            "ref": "Reference",
+            "scheduled": "Scheduled at",
+            "type": "Type",
+            "status": "Status",
+            "pit": "Pit",
+            "totalCount_one": "{{count}} scheduled blast in total",
+            "totalCount_other": "{{count}} scheduled blasts in total"
+        },
+        "statusBreakdown": {
+            "title": "Status breakdown",
+            "subtitle": "Distribution of blasts this month across the lifecycle.",
+            "axisCount": "Count",
+            "empty": "No blasts recorded this month.",
+            "tooltipLabel": "{{count}} blast(s)"
+        },
+        "notifications": {
+            "title": "Notifications status",
+            "subtitle": "Tracking of email reminders, popups and T-10 alarms over the month.",
+            "sent": "Sent",
+            "scheduled": "Pending",
+            "failed": "Failed",
+            "viewLog": "View the full log"
+        },
+        "lastFinished": {
+            "title": "Recent blasts",
+            "subtitle": "Last five closed operations (all-clear or cancelled).",
+            "empty": "No closed blasts yet.",
+            "viewDetail": "Open blast"
+        },
+        "footer": "Aggregated, multi-tenant data. Blaster names and recipients are never displayed on this page."
     }
 }

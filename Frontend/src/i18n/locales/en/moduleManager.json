@@ -62,7 +62,8 @@
         "Knowledge Center": "Knowledge Center",
         "Safety Communication": "Safety Communication",
         "Emergency Management": "Emergency Management",
-        "Dosimetry & Exposures": "Dosimetry & Exposures"
+        "Dosimetry & Exposures": "Dosimetry & Exposures",
+        "Blast Management": "Blast Management"
     },
     "modules": {
         "non-conformity": {
@@ -252,6 +253,34 @@
         "dosimetry-settings": {
             "name": "Dosimetry Settings",
             "description": "Module configuration: regulatory limits, exposure bands and RBAC"
+        },
+        "blast-dashboard": {
+            "name": "Blast Dashboard",
+            "description": "Real-time overview of upcoming blasts, alerts and KPIs"
+        },
+        "blast-registry": {
+            "name": "Blast Registry",
+            "description": "Search, filter and consult historical and upcoming blasts"
+        },
+        "blast-form": {
+            "name": "Log a Blast",
+            "description": "Create or edit a blast: plan, exclusion zone, recipients, attachments"
+        },
+        "blast-planning": {
+            "name": "Reminders Planning",
+            "description": "Planning of T-24h/T-6h/T-30min reminders and general alarm chain"
+        },
+        "blast-popups": {
+            "name": "D-Day Tracking",
+            "description": "Live tracking of D-day popups, imminent status and general alarm"
+        },
+        "blast-reports": {
+            "name": "Evacuation Reports",
+            "description": "Post-blast evacuation reports (muster, incidents, sign-off)"
+        },
+        "blast-settings": {
+            "name": "Blast Settings",
+            "description": "Module configuration: reminder offsets, alarm scope, SMTP, RBAC"
         }
     }
 }

@@ -567,7 +567,7 @@ const BlastForm = () => {
             } else {
                 await createBlast(buildCreatePayload());
             }
-            navigate('/blast');
+            navigate('/blast/registry');
         } catch {
             setLoadError(t('form.saveError'));
         } finally {
@@ -598,7 +598,7 @@ const BlastForm = () => {
             }
             await confirmBlast(blastId);
             setShowConfirmModal(false);
-            navigate('/blast');
+            navigate('/blast/registry');
         } catch {
             setLoadError(t('form.saveError'));
         } finally {
@@ -619,7 +619,7 @@ const BlastForm = () => {
         try {
             await updateBlast(id as string, buildUpdatePayload(lockedReason), true);
             setShowLockedModal(false);
-            navigate('/blast');
+            navigate('/blast/registry');
         } catch {
             setLoadError(t('form.saveError'));
         } finally {
@@ -683,7 +683,7 @@ const BlastForm = () => {
                     <IconChevronRight size={10} className="text-slate-400" />
                     <button
                         type="button"
-                        onClick={() => navigate('/blast')}
+                        onClick={() => navigate('/blast/registry')}
                         className="uppercase tracking-[0.16em] font-medium hover:text-amber-700 hover:underline transition"
                     >
                         {t('registry.breadcrumbCurrent')}
@@ -733,7 +733,7 @@ const BlastForm = () => {
                             color="gray"
                             size="sm"
                             leftSection={<IconArrowLeft size={14} stroke={1.8} />}
-                            onClick={() => navigate('/blast')}
+                            onClick={() => navigate('/blast/registry')}
                         >
                             {t('common.back')}
                         </Button>
@@ -1708,7 +1708,7 @@ const BlastForm = () => {
                     <Group justify="flex-end" gap="sm">
                         <Button
                             variant="default"
-                            onClick={() => navigate('/blast')}
+                            onClick={() => navigate('/blast/registry')}
                         >
                             {t('common.cancel')}
                         </Button>

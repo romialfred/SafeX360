@@ -441,7 +441,7 @@ const BlastDetailPage = () => {
                             variant="subtle"
                             color="gray"
                             leftSection={<IconArrowLeft size={14} />}
-                            onClick={() => navigate('/blast')}
+                            onClick={() => navigate('/blast/registry')}
                         >
                             {t('common.back')}
                         </Button>
@@ -466,7 +466,7 @@ const BlastDetailPage = () => {
                     <IconChevronRight size={10} className="text-slate-400" />
                     <button
                         type="button"
-                        onClick={() => navigate('/blast')}
+                        onClick={() => navigate('/blast/registry')}
                         className="uppercase tracking-[0.16em] font-medium hover:text-amber-700 hover:underline transition"
                     >
                         {t('registry.breadcrumbCurrent')}
@@ -546,7 +546,7 @@ const BlastDetailPage = () => {
                                 color="gray"
                                 size="sm"
                                 leftSection={<IconArrowLeft size={14} stroke={1.8} />}
-                                onClick={() => navigate('/blast')}
+                                onClick={() => navigate('/blast/registry')}
                             >
                                 {t('common.back')}
                             </Button>

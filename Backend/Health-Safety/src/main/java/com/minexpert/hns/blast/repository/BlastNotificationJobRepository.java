@@ -31,4 +31,17 @@ public interface BlastNotificationJobRepository extends JpaRepository<BlastNotif
     List<BlastNotificationJob> findByBlastIdAndType(Long blastId, JobType type);
 
     long countByBlastIdAndStatus(Long blastId, JobStatus status);
+
+    /**
+     * P7 — Compte les jobs de notification dans un statut donne, pour les tirs
+     * d'une mine, dont la date de planification appartient a une fenetre
+     * temporelle (typiquement le mois courant pour le tableau de bord).
+     */
+    @Query("SELECT COUNT(j) FROM BlastNotificationJob j WHERE j.blast.mineId = :mineId "
+            + "AND j.status = :status "
+            + "AND j.scheduledAt BETWEEN :from AND :to")
+    long countByMineAndStatusAndWindow(@Param("mineId") Long mineId,
+            @Param("status") JobStatus status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
 }

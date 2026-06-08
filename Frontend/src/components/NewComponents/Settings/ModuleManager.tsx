@@ -118,6 +118,10 @@ const CATEGORY_TONES: Record<string, { dot: string; bgRow: string; ringActive: s
     'Emergency Management':   { dot: 'bg-red-700',     bgRow: 'bg-red-50/40',     ringActive: 'ring-red-400' },
     // LOT Dosimétrie & Expositions — violet/indigo signature radioprotection
     'Dosimetry & Exposures':  { dot: 'bg-violet-600',  bgRow: 'bg-violet-50/30',  ringActive: 'ring-violet-300' },
+    // LOT Blast Management — navy + amber : amber profond pour le risque, navy
+    // pour la rigueur reglementaire. Choix esthetique pour eviter le rouge
+    // (deja pris par Risk + Emergency) tout en signalant la criticite.
+    'Blast Management':       { dot: 'bg-amber-700',   bgRow: 'bg-amber-50/30',   ringActive: 'ring-amber-400' },
 };
 
 const CATEGORY_FR: Record<string, string> = {
@@ -132,6 +136,7 @@ const CATEGORY_FR: Record<string, string> = {
     'Safety Communication': 'Communication Sécurité',
     'Emergency Management': 'Gestion des Urgences',
     'Dosimetry & Exposures': 'Dosimétrie & Expositions',
+    'Blast Management': 'Gestion des Dynamitages',
 };
 
 const MODULE_FR: Record<string, string> = {

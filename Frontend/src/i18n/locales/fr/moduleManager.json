@@ -62,7 +62,8 @@
         "Knowledge Center": "Centre de Connaissances",
         "Safety Communication": "Communication Sécurité",
         "Emergency Management": "Gestion des Urgences",
-        "Dosimetry & Exposures": "Dosimétrie & Expositions"
+        "Dosimetry & Exposures": "Dosimétrie & Expositions",
+        "Blast Management": "Gestion des Dynamitages"
     },
     "modules": {
         "non-conformity": {
@@ -252,6 +253,34 @@
         "dosimetry-settings": {
             "name": "Paramètres Dosimétrie",
             "description": "Configuration du module : limites réglementaires, bandes d'exposition et RBAC"
+        },
+        "blast-dashboard": {
+            "name": "Tableau de bord Dynamitages",
+            "description": "Vue temps réel des tirs à venir, alertes et indicateurs clés"
+        },
+        "blast-registry": {
+            "name": "Registre des tirs",
+            "description": "Recherche, filtres et consultation des tirs historiques et planifiés"
+        },
+        "blast-form": {
+            "name": "Enregistrer un tir",
+            "description": "Créer ou éditer un tir : plan, zone d'exclusion, destinataires, pièces jointes"
+        },
+        "blast-planning": {
+            "name": "Planification des rappels",
+            "description": "Planification des rappels T-24h/T-6h/T-30min et chaîne d'alerte générale"
+        },
+        "blast-popups": {
+            "name": "Suivi du jour J",
+            "description": "Suivi en direct des popups jour J, statut imminent et alerte générale"
+        },
+        "blast-reports": {
+            "name": "Rapports d'évacuation",
+            "description": "Rapports d'évacuation post-tir (comptage, incidents, signature)"
+        },
+        "blast-settings": {
+            "name": "Paramètres Dynamitages",
+            "description": "Configuration : offsets de rappel, périmètre d'alerte, SMTP, RBAC"
         }
     }
 }

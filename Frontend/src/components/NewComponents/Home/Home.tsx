@@ -21,6 +21,7 @@ import {
     IconCrosshair,
     IconArrowRight,
     IconAtom2,
+    IconBomb,
 } from '@tabler/icons-react';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -87,6 +88,8 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     'modules-management':        '#4f46e5', // indigo-600
     // LOT Dosimétrie & Expositions — module radioprotection (violet/indigo)
     'dosimetry':                 '#7c3aed', // violet-600
+    // LOT Blast Management — module dynamitage (navy + amber/risque attenue)
+    'blast':                     '#b45309', // amber-700 (orange profond evoquant le risque sans alarmisme)
 };
 
 const moduleGroups: ModuleCard[] = [
@@ -174,6 +177,23 @@ const moduleGroups: ModuleCard[] = [
         bgColor: 'bg-violet-50/70 border-violet-200/60',
         items: ['Tableau de bord', 'Registre travailleurs', 'Suivi des doses', 'Mon dossier médical'],
         url: '/dosimetry',
+    },
+    {
+        // LOT Blast Management — Gestion des Dynamitages.
+        // Palette NAVY + AMBER : ton ambre/orange profond pour evoquer le risque
+        // sans alarmisme (le rouge est deja pris par Risk + Emergency). Icone
+        // IconBomb pour identification immediate des tirs de mine.
+        // requiredModuleId = sous-module pivot (dashboard) aligne sur les 7
+        // sous-modules presents dans ModuleConfig.tsx (categorie "Blast Management").
+        id: 'blast',
+        requiredModuleId: 'blast-dashboard',
+        title: 'Gestion des Dynamitages',
+        description: 'Planification des tirs, rappels automatiques et rapports d\'évacuation après l\'alerte générale.',
+        icon: IconBomb,
+        color: 'text-amber-800',
+        bgColor: 'bg-amber-50/70 border-amber-300/60',
+        items: ['Tableau de bord', 'Registre des tirs', 'Planification rappels', 'Rapports d\'évacuation'],
+        url: '/blast',
     },
     {
         id: 'ppe-management',

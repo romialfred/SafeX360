@@ -6,7 +6,7 @@
     },
     "sidebar": {
         "blast": "Gestion des Dynamitages",
-        "blastDashboard": "Tableau de bord",
+        "blastDashboard": "Tableau de bord dynamitage",
         "blastRegistry": "Registre des tirs",
         "blastNew": "Enregistrer un tir",
         "blastSettings": "Parametres dynamitage"
@@ -389,5 +389,89 @@
             "actionFailed": "L'action a echoue. Verifiez vos droits ou ressayez plus tard.",
             "downloadFailed": "Echec du telechargement du PDF."
         }
+    },
+    "dashboard": {
+        "breadcrumbRoot": "Dynamitages",
+        "breadcrumbCurrent": "Tableau de bord",
+        "title": "Tableau de bord dynamitage",
+        "subtitle": "Vue consolidee des tirs de mine : compte a rebours du prochain tir, indicateurs cles, etat des notifications et historique recent.",
+        "refresh": "Actualiser",
+        "lastUpdate": "Derniere mise a jour",
+        "autoRefresh": "Rafraichissement automatique toutes les 30 s",
+        "loadError": "Le tableau de bord n'a pas pu etre charge. Verifiez vos droits ou ressayez plus tard.",
+        "next": {
+            "title": "Prochain tir confirme",
+            "subtitle": "Compte a rebours en temps reel jusqu'au prochain tir verrouille.",
+            "noUpcoming": "Aucun tir confirme dans la fenetre de 7 jours.",
+            "noUpcomingHint": "Verrouillez un tir depuis le registre pour qu'il apparaisse ici.",
+            "openDetail": "Ouvrir la fiche du tir",
+            "zoneLabel": "Zone d'alerte",
+            "scheduledAt": "Heure prevue",
+            "imminent": "Tir imminent — alerte T-10 attendue",
+            "inProgress": "Tir en cours",
+            "hours": "h",
+            "minutes": "min",
+            "seconds": "s",
+            "days": "j",
+            "delayed": "Tir en retard de {{value}}"
+        },
+        "kpi": {
+            "monthLabel": "Tirs du mois",
+            "monthSub": "Tous statuts confondus",
+            "explosivesLabel": "Explosifs consommes",
+            "explosivesSub": "Cumul tirs realises ce mois",
+            "explosivesUnit": "kg",
+            "powderFactorLabel": "Charge specifique moyenne",
+            "powderFactorSub": "Moyenne sur tirs realises",
+            "powderFactorUnit": "kg/m³",
+            "onTimeLabel": "Taux a l'heure",
+            "onTimeSub": "Tirs tires a +/- 15 min de l'heure prevue",
+            "onTimeUnit": "%",
+            "misfireLabel": "Rates du mois",
+            "misfireSub": "A resoudre avant tout tir suivant",
+            "todayLabel": "Tirs aujourd'hui",
+            "todaySub": "Planifies dans la journee"
+        },
+        "today": {
+            "title": "Aujourd'hui",
+            "subtitle": "Chronologie horizontale des tirs prevus dans la journee.",
+            "empty": "Aucun tir n'est planifie pour aujourd'hui.",
+            "timeline": "Chronologie"
+        },
+        "week": {
+            "title": "Cette semaine",
+            "subtitle": "Tirs prevus sur les 7 prochains jours, plus proches en premier.",
+            "empty": "Aucun tir prevu sur les 7 prochains jours.",
+            "moreLink": "Voir tout le registre",
+            "ref": "Reference",
+            "scheduled": "Heure prevue",
+            "type": "Type",
+            "status": "Statut",
+            "pit": "Fosse",
+            "totalCount_one": "{{count}} tir planifie au total",
+            "totalCount_other": "{{count}} tirs planifies au total"
+        },
+        "statusBreakdown": {
+            "title": "Repartition par statut",
+            "subtitle": "Distribution des tirs du mois selon leur etat dans le cycle de vie.",
+            "axisCount": "Nombre",
+            "empty": "Aucun tir enregistre ce mois.",
+            "tooltipLabel": "{{count}} tir(s)"
+        },
+        "notifications": {
+            "title": "Etat des notifications",
+            "subtitle": "Suivi des rappels e-mails, popups et alertes T-10 sur le mois.",
+            "sent": "Envoyees",
+            "scheduled": "En attente",
+            "failed": "En echec",
+            "viewLog": "Consulter le journal complet"
+        },
+        "lastFinished": {
+            "title": "Derniers tirs",
+            "subtitle": "Cinq dernieres operations cloturees (site degage ou annule).",
+            "empty": "Aucun tir cloture pour le moment.",
+            "viewDetail": "Fiche du tir"
+        },
+        "footer": "Donnees agregees, multi-tenant. Les noms des boutefeux et des destinataires ne sont jamais affiches sur cette page."
     }
 }
