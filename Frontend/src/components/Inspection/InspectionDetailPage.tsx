@@ -113,8 +113,8 @@ export default function InspectionDetailPage() {
 
     if (error && !detail) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 py-6">
-                <div className="max-w-3xl mx-auto">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+                <div className="w-full">
                     <button
                         type="button"
                         onClick={() => navigate('/inspections')}
@@ -156,7 +156,7 @@ export default function InspectionDetailPage() {
 
     return (
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="w-full">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-3">
                     <span className="uppercase tracking-[0.16em] font-medium">

@@ -182,7 +182,7 @@ export default function InspectionExecutePage() {
     if (error && !detail) {
         return (
             <div className="min-h-full bg-[#FAF8F3] px-4 py-6">
-                <div className="max-w-2xl mx-auto">
+                <div className="w-full max-w-5xl mx-auto">
                     <button
                         type="button"
                         onClick={() => navigate('/inspections')}
@@ -211,7 +211,7 @@ export default function InspectionExecutePage() {
         <div className="min-h-full bg-[#FAF8F3] pb-28">
             {/* Header sticky */}
             <div className="sticky top-0 z-20 bg-[#FAF8F3]/95 backdrop-blur border-b border-slate-200 px-4 sm:px-5 py-3">
-                <div className="max-w-2xl mx-auto">
+                <div className="w-full max-w-5xl mx-auto">
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
                         <span className="uppercase tracking-[0.16em] font-medium">
                             {t('registry.breadcrumbRoot')}
@@ -252,7 +252,7 @@ export default function InspectionExecutePage() {
             {/* Bannieres etat */}
             {(detail.status === 'REJECTED' || isReadOnly) && (
                 <div className="px-4 sm:px-5 pt-3">
-                    <div className="max-w-2xl mx-auto">
+                    <div className="w-full max-w-5xl mx-auto">
                         {detail.status === 'REJECTED' && (
                             <div className="px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[12.5px] flex items-start gap-2">
                                 <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
@@ -271,7 +271,7 @@ export default function InspectionExecutePage() {
 
             {/* Liste des findings */}
             <div className="px-4 sm:px-5 py-4">
-                <div className="max-w-2xl mx-auto space-y-3">
+                <div className="w-full max-w-5xl mx-auto space-y-3">
                     {findings.map((f, idx) => (
                         <CheckpointCard
                             key={f.id ?? f.checkpointId ?? idx}
@@ -308,7 +308,7 @@ export default function InspectionExecutePage() {
             {/* Footer fixe */}
             {!isReadOnly && (
                 <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-200 px-4 sm:px-5 py-3">
-                    <div className="max-w-2xl mx-auto flex items-center justify-between gap-2 flex-wrap">
+                    <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 flex-wrap">
                         <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                             <IconClock size={12} stroke={1.8} />
                             {savedAt
