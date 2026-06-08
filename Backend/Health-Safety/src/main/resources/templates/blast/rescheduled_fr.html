@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tir reporté</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Le tir <span th:text="${blastReference}">BLT-----</span>
+   sur <span th:text="${zone}">--</span> est reporté.</p>
+
+<p>Nouvelle date et heure : <span th:text="${date}">--/--/----</span>
+   à <span th:text="${time}">--:--</span>.</p>
+
+<p>Les rappels seront renvoyés selon ce nouvel horaire.</p>
+
+<p>Pour toute question : <span th:text="${controlRoom}">--</span>.
+   — <span th:text="${site}">--</span>, Service HSE</p>
+</body>
+</html>

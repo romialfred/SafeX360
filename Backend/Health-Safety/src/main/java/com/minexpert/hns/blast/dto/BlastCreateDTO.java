@@ -40,10 +40,33 @@ public class BlastCreateDTO {
     private Double lat;
     private Double lng;
 
+    /** Voies d'acces concernees / signalisation (V015 — P2.1). */
+    private String accessConcerned;
+
+    /** Points de rassemblement (CSV libre, V015 — P2.1). */
+    private String assemblyPoints;
+
     private Double exclusionRadiusM;
     private Long blasterId;
+
+    /** Composition de l'equipe de tir (V015 — P2.1). */
+    private String team;
+
     private Long hseLeadId;
+
+    /** Limite PPV reglementaire (mm/s) (V015 — P2.1). */
+    private Double ppvLimit;
+
+    /** Recepteurs sensibles a proximite (V015 — P2.1). */
+    private String sensitiveReceivers;
+
     private String alarmZoneScope;
+
+    /** Notes sur les pieces jointes (V015 — P2.1). */
+    private String attachmentsNote;
+
+    /** Notes libres de fin de fiche (V015 — P2.1). */
+    private String notes;
 
     @NotNull
     private Long mineId;

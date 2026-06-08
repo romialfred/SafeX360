@@ -185,6 +185,9 @@
             "alarmZonePlaceholder": "Describe the zone covered by the General Alarm",
             "attachments": "Attachments",
             "attachmentsHint": "Blast permit, prior notice, JSA, blast plan, drill pattern.",
+            "attachmentsDropzoneTitle": "Drag & drop files here",
+            "attachmentsDropzoneSubtitle": "Allowed formats: PDF, DOCX, XLSX, PNG, JPG (20 MB max)",
+            "removeAttachment": "Remove",
             "notes": "Free notes",
             "notesPlaceholder": "Observations, restrictions, specific instructions"
         },
@@ -199,7 +202,9 @@
         "actions": {
             "saveDraft": "Save draft",
             "confirm": "Confirm blast",
-            "update": "Update"
+            "update": "Update",
+            "stepperPrev": "Previous",
+            "stepperNext": "Next"
         },
         "confirmModal": {
             "title": "Confirm this blast?",
@@ -252,7 +257,8 @@
             "declareMisfire": "Declare misfire",
             "allClear": "All clear",
             "openEvacReport": "Open evacuation report",
-            "edit": "Edit"
+            "edit": "Edit",
+            "allClearBlockedTooltip": "All clear is blocked until a BLAST_ADMIN resolves the pending misfire."
         },
         "modals": {
             "rescheduleTitle": "Postpone this blast",

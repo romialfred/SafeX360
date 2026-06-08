@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Reminder — blast today</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Hello,</p>
+
+<p>Reminder: blast <span th:text="${blastReference}">BLT-----</span>
+   will take place today at <span th:text="${time}">--:--</span>
+   at <span th:text="${zone}">--</span>.</p>
+
+<p>
+    Exclusion zone: <span th:text="${exclusionRadius}">-- m</span><br/>
+    Assembly points: <span th:text="${assemblyPoints}">--</span>
+</p>
+
+<p>Begin clearing the area and equipment. The zone must be empty and secured
+   before the blast time. A final reminder will be sent 30 minutes before.</p>
+
+<p>Questions: <span th:text="${controlRoom}">--</span>.</p>
+
+<p><span th:text="${site}">--</span> — HSE Department</p>
+</body>
+</html>

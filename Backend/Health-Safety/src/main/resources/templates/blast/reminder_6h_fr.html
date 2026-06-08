@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Rappel — tir aujourd'hui</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Bonjour,</p>
+
+<p>Rappel : le tir <span th:text="${blastReference}">BLT-----</span>
+   aura lieu aujourd'hui à <span th:text="${time}">--:--</span>
+   sur <span th:text="${zone}">--</span>.</p>
+
+<p>
+    Périmètre d'exclusion : <span th:text="${exclusionRadius}">-- m</span><br/>
+    Points de rassemblement : <span th:text="${assemblyPoints}">--</span>
+</p>
+
+<p>Commencez à dégager la zone et le matériel. Le périmètre devra être vide
+   et sécurisé avant l'heure du tir. Un dernier rappel vous sera envoyé
+   30 minutes avant.</p>
+
+<p>Pour toute question : <span th:text="${controlRoom}">--</span>.</p>
+
+<p><span th:text="${site}">--</span> — Service HSE</p>
+</body>
+</html>

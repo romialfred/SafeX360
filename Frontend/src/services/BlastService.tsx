@@ -138,10 +138,24 @@ export interface BlastCreateDTO {
     block?: string | null;
     lat?: number | null;
     lng?: number | null;
+    /** Voies d'acces concernees (V015 — P2.1). */
+    accessConcerned?: string | null;
+    /** Points de rassemblement (CSV libre, V015 — P2.1). */
+    assemblyPoints?: string | null;
     exclusionRadiusM?: number | null;
     blasterId?: number | null;
+    /** Composition de l'equipe (V015 — P2.1). */
+    team?: string | null;
     hseLeadId?: number | null;
+    /** Limite PPV (mm/s, V015 — P2.1). */
+    ppvLimit?: number | null;
+    /** Recepteurs sensibles (V015 — P2.1). */
+    sensitiveReceivers?: string | null;
     alarmZoneScope?: string | null;
+    /** Notes pieces jointes (V015 — P2.1). */
+    attachmentsNote?: string | null;
+    /** Notes libres (V015 — P2.1). */
+    notes?: string | null;
     mineId: number;
     plan?: BlastPlanDTO | null;
     guards?: BlastGuardDTO[];
@@ -159,10 +173,24 @@ export interface BlastUpdateDTO {
     block?: string | null;
     lat?: number | null;
     lng?: number | null;
+    /** Voies d'acces concernees (V015 — P2.1). */
+    accessConcerned?: string | null;
+    /** Points de rassemblement (V015 — P2.1). */
+    assemblyPoints?: string | null;
     exclusionRadiusM?: number | null;
     blasterId?: number | null;
+    /** Equipe de tir (V015 — P2.1). */
+    team?: string | null;
     hseLeadId?: number | null;
+    /** Limite PPV mm/s (V015 — P2.1). */
+    ppvLimit?: number | null;
+    /** Recepteurs sensibles (V015 — P2.1). */
+    sensitiveReceivers?: string | null;
     alarmZoneScope?: string | null;
+    /** Notes pieces jointes (V015 — P2.1). */
+    attachmentsNote?: string | null;
+    /** Notes libres (V015 — P2.1). */
+    notes?: string | null;
     plan?: BlastPlanDTO | null;
     guards?: BlastGuardDTO[];
     recipients?: BlastRecipientDTO[];
@@ -197,11 +225,25 @@ export interface BlastDetailDTO {
     block?: string | null;
     lat?: number | null;
     lng?: number | null;
+    /** Voies d'acces concernees (V015 — P2.1). */
+    accessConcerned?: string | null;
+    /** Points de rassemblement (V015 — P2.1). */
+    assemblyPoints?: string | null;
     status: BlastStatus;
     exclusionRadiusM?: number | null;
     blasterId?: number | null;
+    /** Equipe de tir (V015 — P2.1). */
+    team?: string | null;
     hseLeadId?: number | null;
+    /** Limite PPV mm/s (V015 — P2.1). */
+    ppvLimit?: number | null;
+    /** Recepteurs sensibles (V015 — P2.1). */
+    sensitiveReceivers?: string | null;
     alarmZoneScope?: string | null;
+    /** Notes pieces jointes (V015 — P2.1). */
+    attachmentsNote?: string | null;
+    /** Notes libres (V015 — P2.1). */
+    notes?: string | null;
     mineId: number;
     misfireResolvedAt?: string | null;
     version?: number;
@@ -388,6 +430,14 @@ const duplicateBlastPayload = (source: BlastDetailDTO): BlastCreateDTO => {
         block: source.block ?? null,
         lat: source.lat ?? null,
         lng: source.lng ?? null,
+        // V015 (P2.1) : on duplique aussi les 7 champs additionnels.
+        accessConcerned: source.accessConcerned ?? null,
+        assemblyPoints: source.assemblyPoints ?? null,
+        team: source.team ?? null,
+        ppvLimit: source.ppvLimit ?? null,
+        sensitiveReceivers: source.sensitiveReceivers ?? null,
+        attachmentsNote: source.attachmentsNote ?? null,
+        notes: source.notes ?? null,
         exclusionRadiusM: source.exclusionRadiusM ?? null,
         blasterId: source.blasterId ?? null,
         hseLeadId: source.hseLeadId ?? null,

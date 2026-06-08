@@ -207,6 +207,27 @@ app:
   mail:
     from: ${MAIL_FROM:no-replay@data-univers.com}
 
+# ─── Blast Management (LOT 49 / Phase 3) ─────────────────────────────────
+# Override SMTP credentials per-environment via env vars. When SMTP_HOST is
+# empty or points to example.com, BlastEmailService logs a WARN and treats
+# jobs as SENT without actually opening a connection — keeps CI / dev local
+# green without requiring a real mail relay.
+blast:
+  email:
+    from: ${BLAST_EMAIL_FROM:hse-noreply@safex360.com}
+  site:
+    label: ${BLAST_SITE_LABEL:Mine — Site principal}
+
+# Optionnel : la chaine SMTP utilisee par BlastEmailService est partagee avec
+# le reste du module HSE (spring.mail.* defini plus haut). Les variables
+# ci-dessous sont une surcharge explicite par environnement, conformes au
+# prompt P3.
+# spring.mail.host: ${SMTP_HOST:smtp.example.com}
+# spring.mail.port: ${SMTP_PORT:587}
+# spring.mail.username: ${SMTP_USER:}
+# spring.mail.password: ${SMTP_PASSWORD:}
+# spring.mail.properties.mail.smtp.starttls.enable: ${SMTP_STARTTLS:true}
+
 scheduler:
   poll-ms: 60000
   batch-size: 50

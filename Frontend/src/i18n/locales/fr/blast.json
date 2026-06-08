@@ -185,6 +185,9 @@
             "alarmZonePlaceholder": "Decrivez la zone couverte par l'Alerte Generale",
             "attachments": "Pieces jointes",
             "attachmentsHint": "Permis de tir, preavis, JSA, plan de tir, schema de foration.",
+            "attachmentsDropzoneTitle": "Glissez-deposez vos fichiers ici",
+            "attachmentsDropzoneSubtitle": "Formats acceptes : PDF, DOCX, XLSX, PNG, JPG (20 Mo max)",
+            "removeAttachment": "Retirer",
             "notes": "Notes libres",
             "notesPlaceholder": "Observations, restrictions, consignes specifiques"
         },
@@ -199,7 +202,9 @@
         "actions": {
             "saveDraft": "Enregistrer le brouillon",
             "confirm": "Confirmer le tir",
-            "update": "Mettre a jour"
+            "update": "Mettre a jour",
+            "stepperPrev": "Precedent",
+            "stepperNext": "Suivant"
         },
         "confirmModal": {
             "title": "Confirmer ce tir ?",
@@ -252,7 +257,8 @@
             "declareMisfire": "Declarer rate",
             "allClear": "Site degage",
             "openEvacReport": "Voir rapport d'evacuation",
-            "edit": "Modifier"
+            "edit": "Modifier",
+            "allClearBlockedTooltip": "Le 'site degage' reste bloque tant qu'un BLAST_ADMIN n'a pas resolu le raté en cours."
         },
         "modals": {
             "rescheduleTitle": "Reporter ce tir",

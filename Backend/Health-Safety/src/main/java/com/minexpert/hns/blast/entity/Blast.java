@@ -92,12 +92,46 @@ public class Blast {
     @Column(name = "lng")
     private Double lng;
 
+    /**
+     * Voies d'acces a fermer / signalisation a poser. Texte libre.
+     * Ajoute en V015 (P2.1) pour corriger une perte de donnees silencieuse.
+     */
+    @Column(name = "access_concerned", columnDefinition = "TEXT")
+    private String accessConcerned;
+
+    /**
+     * Liste des points de rassemblement couvrants. Texte libre (CSV de
+     * libelles ou d'IDs assembly_point selon l'usage operationnel).
+     */
+    @Column(name = "assembly_points", columnDefinition = "TEXT")
+    private String assemblyPoints;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
     private BlastStatus status;
 
     @Column(name = "exclusion_radius_m")
     private Double exclusionRadiusM;
+
+    /** Composition de l'equipe de tir (boutefeux assistants, aides). */
+    @Column(name = "team", length = 255)
+    private String team;
+
+    /** Limite reglementaire de vitesse particulaire de pic (mm/s). */
+    @Column(name = "ppv_limit")
+    private Double ppvLimit;
+
+    /** Recepteurs sensibles (hopital, ligne HT, monuments...). */
+    @Column(name = "sensitive_receivers", columnDefinition = "TEXT")
+    private String sensitiveReceivers;
+
+    /** Notes sur les pieces jointes (permis, JSA, schemas...). */
+    @Column(name = "attachments_note", columnDefinition = "TEXT")
+    private String attachmentsNote;
+
+    /** Notes libres de fin de fiche (observations, restrictions, consignes). */
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     /** Boutefeu agree en charge (Employee.id du module RH). */
     @Column(name = "blaster_id")

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Blast cancelled</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Blast <span th:text="${blastReference}">BLT-----</span>
+   scheduled for <span th:text="${date}">--/--/----</span>
+   at <span th:text="${time}">--:--</span>
+   at <span th:text="${zone}">--</span>
+   has been cancelled.</p>
+
+<p>No access restriction related to this blast applies.</p>
+
+<p><span th:text="${controlRoom}">--</span> remains reachable.
+   — <span th:text="${site}">--</span>, HSE Department</p>
+</body>
+</html>

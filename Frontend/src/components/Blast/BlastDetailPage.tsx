@@ -30,6 +30,7 @@ import {
     Modal,
     Textarea,
     Text,
+    Tooltip,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import {
@@ -108,6 +109,73 @@ const isoLocal = (d: Date): string => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Pure helper : matrice des actions disponibles selon statut + RBAC
+//  Extrait pour permettre des tests unitaires deterministes (P2.1).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BlastAvailableActions {
+    confirm: boolean;
+    reschedule: boolean;
+    cancel: boolean;
+    fired: boolean;
+    misfire: boolean;
+    /** Bouton "site degage" affiche (FIRED ou MISFIRE — phase d'inspection). */
+    allClear: boolean;
+    /**
+     * Bouton "site degage" reellement cliquable. False quand le statut est
+     * MISFIRE et que misfireResolvedAt est null (raté non resolu).
+     */
+    allClearActionable: boolean;
+    edit: boolean;
+    evacReport: boolean;
+}
+
+export interface BlastActionsInput {
+    status: BlastStatus;
+    misfireResolvedAt: string | null | undefined;
+    canPlan: boolean;
+    canConfirm: boolean;
+    canAdmin: boolean;
+}
+
+export const computeAvailableActions = (
+    input: BlastActionsInput,
+): BlastAvailableActions => {
+    const { status: s, misfireResolvedAt, canPlan, canConfirm, canAdmin } = input;
+    const canConfirmAct = canConfirm && (s === 'DRAFT' || s === 'PLANNED');
+    const canReschedule =
+        (canPlan || canAdmin) && (s === 'PLANNED' || s === 'CONFIRMED');
+    const canCancelAct =
+        (canPlan || canAdmin) &&
+        s !== 'FIRED' &&
+        s !== 'ALL_CLEAR' &&
+        s !== 'CANCELLED';
+    const canFired = canConfirm && (s === 'CONFIRMED' || s === 'IMMINENT');
+    const canMisfire = canConfirm && s === 'FIRED';
+
+    // P2.1 — logique "site degage" :
+    //   - FIRED                              → bouton actionnable
+    //   - MISFIRE + misfireResolvedAt != null → actionnable
+    //   - MISFIRE + misfireResolvedAt == null → visible mais disabled
+    const inInspectionPhase = s === 'FIRED' || s === 'MISFIRE';
+    const allClearVisible = canConfirm && inInspectionPhase;
+    const allClearActionable =
+        s === 'FIRED' || (s === 'MISFIRE' && misfireResolvedAt != null);
+
+    return {
+        confirm: canConfirmAct,
+        reschedule: canReschedule,
+        cancel: canCancelAct,
+        fired: canFired,
+        misfire: canMisfire,
+        allClear: allClearVisible,
+        allClearActionable,
+        edit: canPlan,
+        evacReport: s === 'ALL_CLEAR',
+    };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Sous-composant : entete de section
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -176,40 +244,30 @@ const BlastDetailPage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    // Actions disponibles selon le statut
-    const availableActions = useMemo(() => {
-        if (!detail) return { confirm: false, reschedule: false, cancel: false, fired: false, misfire: false, allClear: false, edit: false, evacReport: false };
-        const s = detail.status as BlastStatus;
-        const canConfirmAct = canConfirm && (s === 'DRAFT' || s === 'PLANNED');
-        const canReschedule =
-            (canPlan || canAdmin) &&
-            (s === 'PLANNED' || s === 'CONFIRMED');
-        const canCancelAct =
-            (canPlan || canAdmin) &&
-            s !== 'FIRED' &&
-            s !== 'ALL_CLEAR' &&
-            s !== 'CANCELLED';
-        const canFired = canConfirm && (s === 'CONFIRMED' || s === 'IMMINENT');
-        const canMisfire = canConfirm && s === 'FIRED';
-        const canAllClear =
-            canConfirm &&
-            s === 'FIRED' &&
-            // bloque si misfire non resolu
-            !detail.misfireResolvedAt
-                ? s === 'FIRED'
-                : true;
-        const canEdit = canPlan;
-        const canSeeEvac = s === 'ALL_CLEAR';
-        return {
-            confirm: canConfirmAct,
-            reschedule: canReschedule,
-            cancel: canCancelAct,
-            fired: canFired,
-            misfire: canMisfire,
-            allClear: canAllClear && s === 'FIRED',
-            edit: canEdit,
-            evacReport: canSeeEvac,
-        };
+    // Actions disponibles selon le statut. P2.1 : logique extraite dans
+    // computeAvailableActions() pour pouvoir etre couverte par des tests
+    // unitaires deterministes.
+    const availableActions = useMemo<BlastAvailableActions>(() => {
+        if (!detail) {
+            return {
+                confirm: false,
+                reschedule: false,
+                cancel: false,
+                fired: false,
+                misfire: false,
+                allClear: false,
+                allClearActionable: false,
+                edit: false,
+                evacReport: false,
+            };
+        }
+        return computeAvailableActions({
+            status: detail.status as BlastStatus,
+            misfireResolvedAt: detail.misfireResolvedAt,
+            canPlan,
+            canConfirm,
+            canAdmin,
+        });
     }, [detail, canPlan, canConfirm, canAdmin]);
 
     // Executeurs d'action
@@ -504,17 +562,36 @@ const BlastDetailPage = () => {
                         </Button>
                     )}
                     {availableActions.allClear && (
-                        <Button
-                            color="green"
-                            leftSection={<IconShieldCheck size={14} />}
-                            onClick={() => setModal('allClear')}
-                            disabled={
-                                detail.status === 'MISFIRE' &&
-                                !detail.misfireResolvedAt
-                            }
-                        >
-                            {t('detail.actions.allClear')}
-                        </Button>
+                        availableActions.allClearActionable ? (
+                            <Button
+                                color="green"
+                                leftSection={<IconShieldCheck size={14} />}
+                                onClick={() => setModal('allClear')}
+                            >
+                                {t('detail.actions.allClear')}
+                            </Button>
+                        ) : (
+                            <Tooltip
+                                label={t('detail.actions.allClearBlockedTooltip')}
+                                position="top"
+                                withArrow
+                                multiline
+                                w={260}
+                            >
+                                {/* span pour porter le tooltip sur un Button disabled. */}
+                                <span>
+                                    <Button
+                                        color="green"
+                                        leftSection={<IconShieldCheck size={14} />}
+                                        disabled
+                                        aria-disabled
+                                        data-testid="all-clear-button-disabled"
+                                    >
+                                        {t('detail.actions.allClear')}
+                                    </Button>
+                                </span>
+                            </Tooltip>
+                        )
                     )}
                     {availableActions.edit && (
                         <Button

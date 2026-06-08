@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tir annulé</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Le tir <span th:text="${blastReference}">BLT-----</span>
+   prévu le <span th:text="${date}">--/--/----</span>
+   à <span th:text="${time}">--:--</span>
+   sur <span th:text="${zone}">--</span>
+   est annulé.</p>
+
+<p>Aucune restriction d'accès liée à ce tir ne s'applique.</p>
+
+<p><span th:text="${controlRoom}">--</span> reste joignable.
+   — <span th:text="${site}">--</span>, Service HSE</p>
+</body>
+</html>

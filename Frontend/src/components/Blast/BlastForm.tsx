@@ -49,8 +49,10 @@ import {
     Modal,
     ActionIcon,
     Text,
+    Stepper,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import { Dropzone, MIME_TYPES, type FileWithPath } from '@mantine/dropzone';
 import {
     IconArrowLeft,
     IconChevronRight,
@@ -70,6 +72,10 @@ import {
     IconLock,
     IconPlus,
     IconTrash,
+    IconUpload,
+    IconX,
+    IconFile,
+    IconArrowRight,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import {
@@ -281,6 +287,70 @@ const BlastForm = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showLockedModal, setShowLockedModal] = useState(false);
     const [lockedReason, setLockedReason] = useState('');
+    /** P2.1 — index courant du Stepper mobile (0 a 9 ; 10 sections). */
+    const [mobileStep, setMobileStep] = useState(0);
+    /**
+     * P2.1 — Pieces jointes : liste de metadata (nom + taille) cote front
+     * uniquement. Aucun endpoint d'upload n'existe en P1 ; les fichiers ne sont
+     * pas envoyes au backend, on serialise leurs noms dans `attachmentsNote`
+     * (TEXT) au moment de la sauvegarde.
+     */
+    const [attachmentsFiles, setAttachmentsFiles] = useState<
+        Array<{ name: string; size: number }>
+    >([]);
+
+    /** Formattage humain d'une taille en octets. */
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} o`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+    };
+
+    const handleDropFiles = (files: FileWithPath[]) => {
+        if (locked) return;
+        const next = [
+            ...attachmentsFiles,
+            ...files.map((f) => ({ name: f.name, size: f.size })),
+        ];
+        setAttachmentsFiles(next);
+        // On reflete la liste dans le champ texte persiste (attachmentsNote)
+        // en complement d'eventuelles notes deja saisies par l'utilisateur.
+        const headline = next
+            .map((f) => `• ${f.name} (${formatFileSize(f.size)})`)
+            .join('\n');
+        setState((s) => ({ ...s, attachmentsNote: headline }));
+    };
+    const removeAttachmentAt = (idx: number) => {
+        const next = attachmentsFiles.filter((_, i) => i !== idx);
+        setAttachmentsFiles(next);
+        const headline = next
+            .map((f) => `• ${f.name} (${formatFileSize(f.size)})`)
+            .join('\n');
+        setState((s) => ({ ...s, attachmentsNote: headline }));
+    };
+
+    /**
+     * P2.1 — Stepper mobile : classe Tailwind a appliquer sur chaque section
+     * pour la masquer sur mobile (md hidden) tant qu'elle n'est pas l'etape
+     * courante. Sur desktop (md:block), toutes les sections restent visibles
+     * pour preserver la grille pleine page.
+     */
+    const stepClass = (idx: number): string =>
+        mobileStep === idx ? 'block md:block' : 'hidden md:block';
+
+    /** Libelles des 10 sections (cles i18n form.section{n}). */
+    const sectionTitles: Array<{ key: string; icon: React.ReactNode }> = [
+        { key: 'form.section1', icon: <IconId size={12} stroke={1.8} /> },
+        { key: 'form.section2', icon: <IconMapPin size={12} stroke={1.8} /> },
+        { key: 'form.section3', icon: <IconRuler size={12} stroke={1.8} /> },
+        { key: 'form.section4', icon: <IconFlame size={12} stroke={1.8} /> },
+        { key: 'form.section5', icon: <IconShieldHalfFilled size={12} stroke={1.8} /> },
+        { key: 'form.section6', icon: <IconUsers size={12} stroke={1.8} /> },
+        { key: 'form.section7', icon: <IconAlertOctagon size={12} stroke={1.8} /> },
+        { key: 'form.section8', icon: <IconMail size={12} stroke={1.8} /> },
+        { key: 'form.section9', icon: <IconPaperclip size={12} stroke={1.8} /> },
+        { key: 'form.section10', icon: <IconNote size={12} stroke={1.8} /> },
+    ];
 
     const locked = isLocked(originalStatus);
 
@@ -292,6 +362,10 @@ const BlastForm = () => {
             .then((d: BlastDetailDTO) => {
                 if (cancelled) return;
                 setOriginalStatus(d.status);
+                // P2.1 : re-injection des 7 champs additionnels desormais
+                // persistés cote backend (V015). Avant le fix, le load forçait
+                // ces champs a chaine vide → toute edition d'un brouillon
+                // ecrasait silencieusement le contenu saisi.
                 setState({
                     reference: d.reference ?? '',
                     scheduledAt: d.scheduledAt ? new Date(d.scheduledAt) : null,
@@ -302,7 +376,7 @@ const BlastForm = () => {
                     block: d.block ?? '',
                     lat: d.lat ?? '',
                     lng: d.lng ?? '',
-                    accessConcerned: '',
+                    accessConcerned: d.accessConcerned ?? '',
                     holeCount: d.plan?.holeCount ?? '',
                     holeDiameterMm: d.plan?.holeDiameterMm ?? '',
                     depthM: d.plan?.depthM ?? '',
@@ -314,17 +388,17 @@ const BlastForm = () => {
                     initiationSystem: d.plan?.initiationSystem ?? '',
                     delaySequence: d.plan?.delaySequence ?? '',
                     exclusionRadiusM: d.exclusionRadiusM ?? '',
-                    assemblyPoints: '',
+                    assemblyPoints: d.assemblyPoints ?? '',
                     guards: d.guards ?? [],
                     blasterId: d.blasterId ?? '',
-                    team: '',
+                    team: d.team ?? '',
                     hseLeadId: d.hseLeadId ?? '',
-                    ppvLimit: '',
-                    sensitiveReceivers: '',
+                    ppvLimit: d.ppvLimit ?? '',
+                    sensitiveReceivers: d.sensitiveReceivers ?? '',
                     recipients: d.recipients ?? [],
                     alarmZoneScope: d.alarmZoneScope ?? '',
-                    attachmentsNote: '',
-                    notes: '',
+                    attachmentsNote: d.attachmentsNote ?? '',
+                    notes: d.notes ?? '',
                 });
             })
             .catch(() => {
@@ -391,6 +465,9 @@ const BlastForm = () => {
     };
 
     // ───── Construction du payload (create ou update) ─────
+    // P2.1 : on envoie desormais les 7 champs flag par l'audit
+    // (accessConcerned, assemblyPoints, team, ppvLimit, sensitiveReceivers,
+    // attachmentsNote, notes) qui etaient silencieusement perdus.
     const buildCreatePayload = (): BlastCreateDTO => ({
         reference: state.reference || null,
         scheduledAt: isoLocal(state.scheduledAt as Date),
@@ -401,11 +478,18 @@ const BlastForm = () => {
         block: state.block || null,
         lat: state.lat === '' ? null : Number(state.lat),
         lng: state.lng === '' ? null : Number(state.lng),
+        accessConcerned: state.accessConcerned || null,
+        assemblyPoints: state.assemblyPoints || null,
         exclusionRadiusM:
             state.exclusionRadiusM === '' ? null : Number(state.exclusionRadiusM),
         blasterId: state.blasterId === '' ? null : Number(state.blasterId),
+        team: state.team || null,
         hseLeadId: state.hseLeadId === '' ? null : Number(state.hseLeadId),
+        ppvLimit: state.ppvLimit === '' ? null : Number(state.ppvLimit),
+        sensitiveReceivers: state.sensitiveReceivers || null,
         alarmZoneScope: state.alarmZoneScope || null,
+        attachmentsNote: state.attachmentsNote || null,
+        notes: state.notes || null,
         mineId,
         plan: {
             holeCount: state.holeCount === '' ? null : Number(state.holeCount),
@@ -436,11 +520,18 @@ const BlastForm = () => {
         block: state.block || null,
         lat: state.lat === '' ? null : Number(state.lat),
         lng: state.lng === '' ? null : Number(state.lng),
+        accessConcerned: state.accessConcerned || null,
+        assemblyPoints: state.assemblyPoints || null,
         exclusionRadiusM:
             state.exclusionRadiusM === '' ? null : Number(state.exclusionRadiusM),
         blasterId: state.blasterId === '' ? null : Number(state.blasterId),
+        team: state.team || null,
         hseLeadId: state.hseLeadId === '' ? null : Number(state.hseLeadId),
+        ppvLimit: state.ppvLimit === '' ? null : Number(state.ppvLimit),
+        sensitiveReceivers: state.sensitiveReceivers || null,
         alarmZoneScope: state.alarmZoneScope || null,
+        attachmentsNote: state.attachmentsNote || null,
+        notes: state.notes || null,
         plan: {
             holeCount: state.holeCount === '' ? null : Number(state.holeCount),
             holeDiameterMm:
@@ -679,8 +770,43 @@ const BlastForm = () => {
                     </div>
                 )}
 
+                {/* ─── P2.1 — Stepper mobile (uniquement < md) ─── */}
+                <div className="md:hidden mb-4">
+                    <Paper p="md" radius="md" withBorder className="bg-white">
+                        <Stepper
+                            active={mobileStep}
+                            onStepClick={setMobileStep}
+                            size="xs"
+                            color="amber"
+                            iconSize={22}
+                            allowNextStepsSelect
+                        >
+                            {sectionTitles.map((s, i) => (
+                                <Stepper.Step
+                                    key={s.key}
+                                    label={`${i + 1}`}
+                                    icon={s.icon}
+                                />
+                            ))}
+                        </Stepper>
+                        <Text
+                            size="xs"
+                            fw={500}
+                            className="text-slate-700 mt-2 text-center"
+                        >
+                            {mobileStep + 1}/{sectionTitles.length} —{' '}
+                            {t(sectionTitles[mobileStep].key)}
+                        </Text>
+                    </Paper>
+                </div>
+
                 {/* ─── SECTION 1 — Identification ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(0)}`}
+                >
                     <SectionHeader
                         icon={<IconId size={14} stroke={1.8} />}
                         title={t('form.section1')}
@@ -747,7 +873,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 2 — Localisation ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(1)}`}
+                >
                     <SectionHeader
                         icon={<IconMapPin size={14} stroke={1.8} />}
                         title={t('form.section2')}
@@ -838,7 +969,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 3 — Plan de tir ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(2)}`}
+                >
                     <SectionHeader
                         icon={<IconRuler size={14} stroke={1.8} />}
                         title={t('form.section3')}
@@ -971,7 +1107,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 4 — Explosifs & amorcage ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(3)}`}
+                >
                     <SectionHeader
                         icon={<IconFlame size={14} stroke={1.8} />}
                         title={t('form.section4')}
@@ -1058,7 +1199,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 5 — Perimetre & abris ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(4)}`}
+                >
                     <SectionHeader
                         icon={<IconShieldHalfFilled size={14} stroke={1.8} />}
                         title={t('form.section5')}
@@ -1180,7 +1326,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 6 — Equipe ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(5)}`}
+                >
                     <SectionHeader
                         icon={<IconUsers size={14} stroke={1.8} />}
                         title={t('form.section6')}
@@ -1238,7 +1389,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 7 — Environnement ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(6)}`}
+                >
                     <SectionHeader
                         icon={<IconAlertOctagon size={14} stroke={1.8} />}
                         title={t('form.section7')}
@@ -1281,7 +1437,12 @@ const BlastForm = () => {
                 </Paper>
 
                 {/* ─── SECTION 8 — Annonce ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(7)}`}
+                >
                     <SectionHeader
                         icon={<IconMail size={14} stroke={1.8} />}
                         title={t('form.section8')}
@@ -1372,12 +1533,105 @@ const BlastForm = () => {
                     )}
                 </Paper>
 
-                {/* ─── SECTION 9 — Pieces jointes ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                {/* ─── SECTION 9 — Pieces jointes (Dropzone simule, P2.1) ─── */}
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(8)}`}
+                >
                     <SectionHeader
                         icon={<IconPaperclip size={14} stroke={1.8} />}
                         title={t('form.section9')}
                     />
+                    <Text size="xs" c="dimmed" className="mb-2">
+                        {t('form.fields.attachmentsHint')}
+                    </Text>
+                    <Dropzone
+                        onDrop={handleDropFiles}
+                        onReject={() => {
+                            // ignore les fichiers non supportes silencieusement
+                        }}
+                        maxSize={20 * 1024 * 1024}
+                        accept={[
+                            MIME_TYPES.pdf,
+                            MIME_TYPES.docx,
+                            MIME_TYPES.xlsx,
+                            MIME_TYPES.png,
+                            MIME_TYPES.jpeg,
+                        ]}
+                        disabled={locked}
+                        radius="md"
+                        className="bg-amber-50/40 border-dashed border-amber-200"
+                    >
+                        <Group justify="center" gap="md" mih={90}>
+                            <Dropzone.Accept>
+                                <IconUpload
+                                    size={32}
+                                    stroke={1.6}
+                                    className="text-amber-600"
+                                />
+                            </Dropzone.Accept>
+                            <Dropzone.Reject>
+                                <IconX
+                                    size={32}
+                                    stroke={1.6}
+                                    className="text-red-500"
+                                />
+                            </Dropzone.Reject>
+                            <Dropzone.Idle>
+                                <IconUpload
+                                    size={32}
+                                    stroke={1.6}
+                                    className="text-amber-500"
+                                />
+                            </Dropzone.Idle>
+                            <div>
+                                <Text size="sm" fw={500} className="text-slate-700">
+                                    {t('form.fields.attachmentsDropzoneTitle')}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                    {t('form.fields.attachmentsDropzoneSubtitle')}
+                                </Text>
+                            </div>
+                        </Group>
+                    </Dropzone>
+
+                    {attachmentsFiles.length > 0 && (
+                        <div className="mt-3 flex flex-col gap-1.5">
+                            {attachmentsFiles.map((f, idx) => (
+                                <div
+                                    key={`${f.name}-${idx}`}
+                                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-slate-200 bg-slate-50"
+                                >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <IconFile
+                                            size={14}
+                                            stroke={1.8}
+                                            className="text-slate-500 flex-shrink-0"
+                                        />
+                                        <span className="text-[12.5px] text-slate-800 truncate">
+                                            {f.name}
+                                        </span>
+                                        <span className="text-[11px] text-slate-500 tabular-nums whitespace-nowrap">
+                                            {formatFileSize(f.size)}
+                                        </span>
+                                    </div>
+                                    <ActionIcon
+                                        size="sm"
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => removeAttachmentAt(idx)}
+                                        title={t('form.fields.removeAttachment')}
+                                        disabled={locked}
+                                    >
+                                        <IconTrash size={12} />
+                                    </ActionIcon>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <Textarea
                         label={t('form.fields.attachments')}
                         placeholder={t('form.fields.attachmentsHint')}
@@ -1390,11 +1644,17 @@ const BlastForm = () => {
                         }
                         autosize
                         minRows={2}
+                        className="mt-3"
                     />
                 </Paper>
 
                 {/* ─── SECTION 10 — Notes ─── */}
-                <Paper p="lg" radius="md" withBorder className="mb-4 bg-white">
+                <Paper
+                    p="lg"
+                    radius="md"
+                    withBorder
+                    className={`mb-4 bg-white ${stepClass(9)}`}
+                >
                     <SectionHeader
                         icon={<IconNote size={14} stroke={1.8} />}
                         title={t('form.section10')}
@@ -1410,6 +1670,38 @@ const BlastForm = () => {
                         minRows={3}
                     />
                 </Paper>
+
+                {/* ─── P2.1 — Navigation Stepper mobile (uniquement < md) ─── */}
+                <div className="md:hidden flex items-center justify-between gap-2 mb-3">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        leftSection={<IconArrowLeft size={14} />}
+                        disabled={mobileStep === 0}
+                        onClick={() =>
+                            setMobileStep((s) => Math.max(0, s - 1))
+                        }
+                    >
+                        {t('form.actions.stepperPrev')}
+                    </Button>
+                    <Text size="xs" c="dimmed">
+                        {mobileStep + 1}/{sectionTitles.length}
+                    </Text>
+                    <Button
+                        variant="filled"
+                        color="amber"
+                        size="sm"
+                        rightSection={<IconArrowRight size={14} />}
+                        disabled={mobileStep === sectionTitles.length - 1}
+                        onClick={() =>
+                            setMobileStep((s) =>
+                                Math.min(sectionTitles.length - 1, s + 1),
+                            )
+                        }
+                    >
+                        {t('form.actions.stepperNext')}
+                    </Button>
+                </div>
 
                 {/* ─── Actions ─── */}
                 <div className="sticky bottom-0 bg-white border-t border-slate-200 -mx-4 sm:-mx-5 lg:-mx-6 px-4 sm:px-5 lg:px-6 py-3 mt-4 shadow-md">

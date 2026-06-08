@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tir prévu demain</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Bonjour,</p>
+
+<p>Un tir de mine est prévu demain <span th:text="${date}">--/--/----</span>
+   à <span th:text="${time}">--:--</span>
+   sur <span th:text="${zone}">--</span>.</p>
+
+<p>
+    Référence : <span th:text="${blastReference}">BLT-----</span><br/>
+    Périmètre d'exclusion : <span th:text="${exclusionRadius}">-- m</span> autour de la zone<br/>
+    Points de rassemblement : <span th:text="${assemblyPoints}">--</span><br/>
+    Boutefeu responsable : <span th:text="${blaster}">--</span>
+</p>
+
+<p>Merci de planifier vos activités en conséquence et de libérer la zone
+   avant l'heure du tir. Aucun accès ne sera autorisé dans le périmètre
+   d'exclusion à l'approche du tir.</p>
+
+<p>Vous recevrez d'autres rappels le jour du tir.</p>
+
+<p>Pour toute question : <span th:text="${controlRoom}">--</span>.</p>
+
+<p><span th:text="${site}">--</span> — Service HSE</p>
+</body>
+</html>

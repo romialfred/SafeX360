@@ -33,10 +33,35 @@ public class BlastUpdateDTO {
     private String block;
     private Double lat;
     private Double lng;
+
+    /** Voies d'acces concernees (V015 — P2.1). */
+    private String accessConcerned;
+
+    /** Points de rassemblement (V015 — P2.1). */
+    private String assemblyPoints;
+
     private Double exclusionRadiusM;
     private Long blasterId;
+
+    /** Equipe de tir (V015 — P2.1). */
+    private String team;
+
     private Long hseLeadId;
+
+    /** Limite PPV (mm/s) (V015 — P2.1). */
+    private Double ppvLimit;
+
+    /** Recepteurs sensibles (V015 — P2.1). */
+    private String sensitiveReceivers;
+
     private String alarmZoneScope;
+
+    /** Notes sur les pieces jointes (V015 — P2.1). */
+    private String attachmentsNote;
+
+    /** Notes libres (V015 — P2.1). */
+    private String notes;
+
     private BlastPlanDTO plan;
     private List<BlastGuardDTO> guards;
     private List<BlastRecipientDTO> recipients;

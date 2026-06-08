@@ -110,6 +110,14 @@ public class BlastServiceImpl implements BlastService {
                 .block(dto.getBlock())
                 .lat(dto.getLat())
                 .lng(dto.getLng())
+                // V015 (P2.1) : champs additionnels jusqu'ici ignores cote API.
+                .accessConcerned(dto.getAccessConcerned())
+                .assemblyPoints(dto.getAssemblyPoints())
+                .team(dto.getTeam())
+                .ppvLimit(dto.getPpvLimit())
+                .sensitiveReceivers(dto.getSensitiveReceivers())
+                .attachmentsNote(dto.getAttachmentsNote())
+                .notes(dto.getNotes())
                 .status(BlastStatus.DRAFT)
                 .exclusionRadiusM(dto.getExclusionRadiusM())
                 .blasterId(dto.getBlasterId())
@@ -225,6 +233,10 @@ public class BlastServiceImpl implements BlastService {
         blast.setUpdatedBy(userId);
         blastRepository.save(blast);
         auditService.logTransition(id, from, BlastStatus.CANCELLED, userId, reason);
+        // P3 : annulation persistante via le planner (idempotent).
+        notificationPlanner.cancelFor(id);
+        // Conserve l'ancien helper local pour preserver les tests P1 qui
+        // verifient que les jobs SCHEDULED en base sont basculés CANCELLED.
         cancelScheduledJobs(id);
     }
 
@@ -261,6 +273,15 @@ public class BlastServiceImpl implements BlastService {
         blastRepository.save(blast);
         auditService.logTransition(id, BlastStatus.POSTPONED, BlastStatus.PLANNED, userId,
                 "Rescheduled to " + newScheduledAt);
+
+        // P3 : si le tir etait CONFIRMED, on regenere la chaine sur la nouvelle
+        // heure. Si le tir etait DRAFT / PLANNED, il n'y a pas de chaine a
+        // regenerer (planFor sera appele par confirm() ulterieurement). On
+        // utilise `from` pour decider, et non le statut courant (qui est
+        // PLANNED apres la bascule POSTPONED -> PLANNED).
+        if (from == BlastStatus.CONFIRMED) {
+            notificationPlanner.rescheduleFor(id, newScheduledAt);
+        }
     }
 
     @Override
@@ -474,6 +495,28 @@ public class BlastServiceImpl implements BlastService {
         if (dto.getAlarmZoneScope() != null) {
             blast.setAlarmZoneScope(dto.getAlarmZoneScope());
         }
+        // V015 (P2.1) : 7 champs additionnels — meme convention "set si non-null".
+        if (dto.getAccessConcerned() != null) {
+            blast.setAccessConcerned(dto.getAccessConcerned());
+        }
+        if (dto.getAssemblyPoints() != null) {
+            blast.setAssemblyPoints(dto.getAssemblyPoints());
+        }
+        if (dto.getTeam() != null) {
+            blast.setTeam(dto.getTeam());
+        }
+        if (dto.getPpvLimit() != null) {
+            blast.setPpvLimit(dto.getPpvLimit());
+        }
+        if (dto.getSensitiveReceivers() != null) {
+            blast.setSensitiveReceivers(dto.getSensitiveReceivers());
+        }
+        if (dto.getAttachmentsNote() != null) {
+            blast.setAttachmentsNote(dto.getAttachmentsNote());
+        }
+        if (dto.getNotes() != null) {
+            blast.setNotes(dto.getNotes());
+        }
     }
 
     private void applyPlanUpdate(Blast blast, BlastPlanDTO planDTO) {
@@ -574,6 +617,14 @@ public class BlastServiceImpl implements BlastService {
                 .block(b.getBlock())
                 .lat(b.getLat())
                 .lng(b.getLng())
+                // V015 (P2.1) : champs additionnels.
+                .accessConcerned(b.getAccessConcerned())
+                .assemblyPoints(b.getAssemblyPoints())
+                .team(b.getTeam())
+                .ppvLimit(b.getPpvLimit())
+                .sensitiveReceivers(b.getSensitiveReceivers())
+                .attachmentsNote(b.getAttachmentsNote())
+                .notes(b.getNotes())
                 .status(b.getStatus())
                 .exclusionRadiusM(b.getExclusionRadiusM())
                 .blasterId(b.getBlasterId())

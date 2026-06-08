@@ -315,12 +315,28 @@ const BlastRegistryPage = () => {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
+        // P2.1 — filtre periode : le backend attend un LocalDateTime ISO sans
+        // timezone (fuseau metier : Europe/Paris pour les opérations SafeX).
+        // Avant on envoyait toISOString() (UTC) ce qui pouvait shifter d'une
+        // journee sur les recherches "today only" (utilisateurs UTC+2/+0).
+        // On envoie maintenant YYYY-MM-DDTHH:mm:ss en horloge locale, exactement
+        // comme dans BlastForm.isoLocal — ainsi la borne "from" = 00:00:00 de
+        // la date selectionnee correspond a la journee operationnelle.
+        const toLocalIso = (d: Date | null, endOfDay: boolean): string | null => {
+            if (!d) return null;
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const y = d.getFullYear();
+            const mo = pad(d.getMonth() + 1);
+            const da = pad(d.getDate());
+            const time = endOfDay ? '23:59:59' : '00:00:00';
+            return `${y}-${mo}-${da}T${time}`;
+        };
         const serverFilters: BlastSearchFilters = {
             mineId,
             statuses:
                 filters.status !== 'all' ? [filters.status as BlastStatus] : null,
-            from: filters.from ? filters.from.toISOString() : null,
-            to: filters.to ? filters.to.toISOString() : null,
+            from: toLocalIso(filters.from, false),
+            to: toLocalIso(filters.to, true),
             pit: filters.pit.trim() ? filters.pit.trim() : null,
             blasterId:
                 filters.blasterId.trim() && !Number.isNaN(Number(filters.blasterId))

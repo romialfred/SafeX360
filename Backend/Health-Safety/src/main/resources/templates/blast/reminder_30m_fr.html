@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tir dans 30 minutes — évacuation</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Bonjour,</p>
+
+<p>Le tir <span th:text="${blastReference}">BLT-----</span>
+   aura lieu dans 30 minutes, à <span th:text="${time}">--:--</span>,
+   sur <span th:text="${zone}">--</span>.</p>
+
+<p>Évacuez la zone maintenant et rejoignez le point de rassemblement le
+   plus proche : <span th:text="${assemblyPoints}">--</span>.</p>
+
+<p>Ne revenez pas dans le périmètre tant que le signal « site dégagé »
+   n'a pas été donné. Une alerte sonore générale sera déclenchée
+   10 minutes avant le tir.</p>
+
+<p><span th:text="${controlRoom}">--</span> reste joignable.</p>
+
+<p><span th:text="${site}">--</span> — Service HSE</p>
+</body>
+</html>

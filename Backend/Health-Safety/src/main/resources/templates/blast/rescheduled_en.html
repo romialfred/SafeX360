@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Blast rescheduled</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Blast <span th:text="${blastReference}">BLT-----</span>
+   at <span th:text="${zone}">--</span> has been rescheduled.</p>
+
+<p>New date and time: <span th:text="${date}">--/--/----</span>
+   at <span th:text="${time}">--:--</span>.</p>
+
+<p>Reminders will be reissued according to this new schedule.</p>
+
+<p>Questions: <span th:text="${controlRoom}">--</span>.
+   — <span th:text="${site}">--</span>, HSE Department</p>
+</body>
+</html>

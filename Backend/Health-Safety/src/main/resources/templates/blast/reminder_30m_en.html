@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Blast in 30 minutes — clear area</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Hello,</p>
+
+<p>Blast <span th:text="${blastReference}">BLT-----</span>
+   will take place in 30 minutes, at <span th:text="${time}">--:--</span>,
+   at <span th:text="${zone}">--</span>.</p>
+
+<p>Clear the area now and proceed to the nearest assembly point:
+   <span th:text="${assemblyPoints}">--</span>.</p>
+
+<p>Do not re-enter the zone until the "all clear" has been given. A general
+   audible alarm will sound 10 minutes before the blast.</p>
+
+<p><span th:text="${controlRoom}">--</span> remains reachable.</p>
+
+<p><span th:text="${site}">--</span> — HSE Department</p>
+</body>
+</html>

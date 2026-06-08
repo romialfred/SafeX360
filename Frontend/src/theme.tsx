@@ -65,6 +65,14 @@ const hseBlue: MantineColorsTuple = [
   '#3B82F6', '#2563EB', '#1D4ED8', '#1E40AF', '#1E3A8A',
 ];
 
+// Amber — palette utilitaire (Tailwind amber-50 a amber-900) utilisee par les
+// modules Blast (signature visuelle "tir/dynamitage") et certains badges
+// thermiques. Mantine requiert exactement 10 nuances par color tuple.
+const amber: MantineColorsTuple = [
+  '#FFFBEB', '#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24',
+  '#F59E0B', '#D97706', '#B45309', '#92400E', '#78350F',
+];
+
 // ────────────────────────────────────────────────────────────────
 // Theme — primary pointe désormais vers brandTeal pour clarté,
 //         tout en gardant les alias `primary` et `secondary` pour
@@ -82,6 +90,9 @@ export const theme = createTheme({
     hseYellow,
     hseGreen,
     hseBlue,
+
+    // Utilitaire amber (module Blast Management — P2.1)
+    amber,
 
     // Aliases rétrocompatibles (le code existant utilise color="primary" et color="secondary")
     primary: brandTeal,
@@ -180,4 +191,5 @@ export { colorsTuple };
 export const designTokens = {
   brand: brandTeal,
   hse: { red: hseRed, orange: hseOrange, yellow: hseYellow, green: hseGreen, blue: hseBlue },
+  amber,
 };

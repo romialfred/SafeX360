@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Blast scheduled tomorrow</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #222;">
+<p>Hello,</p>
+
+<p>A blast is scheduled tomorrow, <span th:text="${date}">--/--/----</span>
+   at <span th:text="${time}">--:--</span>,
+   at <span th:text="${zone}">--</span>.</p>
+
+<p>
+    Reference: <span th:text="${blastReference}">BLT-----</span><br/>
+    Exclusion zone: <span th:text="${exclusionRadius}">-- m</span> around the area<br/>
+    Assembly points: <span th:text="${assemblyPoints}">--</span><br/>
+    Shotfirer in charge: <span th:text="${blaster}">--</span>
+</p>
+
+<p>Please plan your activities accordingly and clear the area before the
+   blast time. No access will be permitted within the exclusion zone as the
+   blast approaches.</p>
+
+<p>Further reminders will follow on the day of the blast.</p>
+
+<p>Questions: <span th:text="${controlRoom}">--</span>.</p>
+
+<p><span th:text="${site}">--</span> — HSE Department</p>
+</body>
+</html>
