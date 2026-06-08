@@ -90,7 +90,10 @@ const formatDateTime = (iso: string | null | undefined, lang: string): string =>
 
 function hasBlastPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATOR', 'SAFEX_ADMIN', 'OWNER'];
+    if (typeof user.role === 'string' && ADMIN_ROLES.includes(user.role.toUpperCase())) {
+        return true;
+    }
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {

@@ -178,7 +178,15 @@ interface FiltersState {
 
 function hasBlastPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    // Roles administrateurs reconnus comme proprietaires plateforme.
+    // Note : la chaine de garde finale reste cote backend (Spring @PreAuthorize)
+    // qui repond 403 si la permission n'est pas effective. Cote front, on est
+    // permissif pour ne pas masquer les actions a un compte ADMINISTRATOR
+    // standard de la plateforme.
+    const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATOR', 'SAFEX_ADMIN', 'OWNER'];
+    if (typeof user.role === 'string' && ADMIN_ROLES.includes(user.role.toUpperCase())) {
+        return true;
+    }
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {
