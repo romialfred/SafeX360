@@ -62,7 +62,9 @@ export default function BlastEvacuationAlarm({
     const audioCtxRef = useRef<AudioContext | null>(null);
     const oscillatorRef = useRef<OscillatorNode | null>(null);
     const gainRef = useRef<GainNode | null>(null);
-    const sirenTimerRef = useRef<number | null>(null);
+    const sirenIntervalRef = useRef<number | null>(null);
+    const ttsIntervalRef = useRef<number | null>(null);
+    const ttsPhraseRef = useRef<string>('');
 
     // Reset de l'acquittement quand on change de tir
     useEffect(() => {
@@ -87,22 +89,26 @@ export default function BlastEvacuationAlarm({
     const isPreWarn =
         !acked && secondsUntil > TRIGGER_SECONDS && secondsUntil <= PRE_WARN_SECONDS;
 
-    // Gestion du cycle de vie de la sirene
+    // Gestion du cycle de vie de la sirene + TTS en boucle infinie.
+    // La sirene oscille entre 650 et 950 Hz via un setInterval qui modifie
+    // frequency.value en direct (au lieu de planifier 600 valueAt qui finissait
+    // par s'epuiser silencieusement). Le TTS est replanifie toutes les 8s tant
+    // que l'utilisateur n'a pas acquitte. Une coupure proprement gardee dure
+    // jusqu'au clic "J'ai compris" OU jusqu'au timeout de securite (5 min).
     useEffect(() => {
         if (!isArmed) {
-            stopSiren();
+            stopAlarm();
             return;
         }
         startSiren();
-        speakEvacuation(zone);
-        // Auto-stop apres 5 minutes
-        sirenTimerRef.current = window.setTimeout(stopSiren, SIREN_TIMEOUT_MS);
+        ttsPhraseRef.current = `Ceci n'est pas un exercice. Dynamitage en cours sur ${speakableZone(zone)}. Veuillez evacuer les lieux immediatement.`;
+        startTtsLoop();
+        // Auto-stop apres 5 minutes (securite : si l'utilisateur oublie d'acquitter,
+        // on n'inonde pas indefiniment le poste de travail).
+        const safetyTimeout = window.setTimeout(stopAlarm, SIREN_TIMEOUT_MS);
         return () => {
-            stopSiren();
-            if (sirenTimerRef.current) {
-                clearTimeout(sirenTimerRef.current);
-                sirenTimerRef.current = null;
-            }
+            window.clearTimeout(safetyTimeout);
+            stopAlarm();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isArmed, zone]);
@@ -120,26 +126,84 @@ export default function BlastEvacuationAlarm({
             osc.type = 'sawtooth';
             osc.connect(gain);
             gain.connect(ctx.destination);
-            // Pattern sirene industrielle : 2 tons alternes (650 Hz / 950 Hz),
-            // crescendo doux pour ne pas saturer.
             const now = ctx.currentTime;
-            osc.frequency.setValueAtTime(650, now);
-            for (let i = 0; i < 600; i++) {
-                osc.frequency.setValueAtTime(i % 2 === 0 ? 650 : 950, now + i * 0.6);
-            }
+            osc.frequency.value = 650;
             gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.25, now + 1.2);
+            gain.gain.linearRampToValueAtTime(0.25, now + 0.8);
             osc.start();
             oscillatorRef.current = osc;
             gainRef.current = gain;
+            // Boucle infinie : alterne 650 Hz / 950 Hz toutes les 700 ms.
+            // C'est un vrai setInterval cote JS, donc rien ne s'epuise jamais
+            // tant que la page reste ouverte et que stopAlarm() n'a pas tourne.
+            let phase = 0;
+            sirenIntervalRef.current = window.setInterval(() => {
+                if (!oscillatorRef.current || !audioCtxRef.current) return;
+                phase = 1 - phase;
+                try {
+                    oscillatorRef.current.frequency.setValueAtTime(
+                        phase === 0 ? 650 : 950,
+                        audioCtxRef.current.currentTime,
+                    );
+                } catch {
+                    // AudioContext ferme entre-temps
+                }
+            }, 700);
         } catch (_e) {
             // ignore — l'utilisateur doit avoir interagi avec la page avant
             // pour que Web Audio fonctionne (politique d'autoplay navigateur).
         }
     };
 
-    const stopSiren = () => {
+    const startTtsLoop = () => {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+        const speakOnce = () => {
+            try {
+                const synth = window.speechSynthesis;
+                // Si on est encore en train de parler, on ne re-empile pas
+                if (synth.speaking || synth.pending) return;
+                const u = new SpeechSynthesisUtterance(ttsPhraseRef.current);
+                const voices = synth.getVoices();
+                const frVoice = voices.find((v) => v.lang.startsWith('fr'));
+                if (frVoice) u.voice = frVoice;
+                u.lang = 'fr-FR';
+                u.rate = 0.95;
+                u.pitch = 1.0;
+                u.volume = 1.0;
+                synth.speak(u);
+            } catch {
+                // ignore
+            }
+        };
+        // Lance immediatement (avec gestion voiceschanged si voix pas chargees)
+        const synth = window.speechSynthesis;
+        if (synth.getVoices().length === 0) {
+            const onVoices = () => {
+                speakOnce();
+                synth.removeEventListener('voiceschanged', onVoices);
+            };
+            synth.addEventListener('voiceschanged', onVoices, { once: true });
+        } else {
+            speakOnce();
+        }
+        // Replante l'annonce toutes les 9 s (duree typique de la phrase ~7 s +
+        // marge). Le check synth.speaking dans speakOnce evite tout chevauchement.
+        ttsIntervalRef.current = window.setInterval(speakOnce, 9000);
+    };
+
+    const stopAlarm = () => {
         try {
+            // Coupe la boucle d'alternance sirene
+            if (sirenIntervalRef.current) {
+                clearInterval(sirenIntervalRef.current);
+                sirenIntervalRef.current = null;
+            }
+            // Coupe la boucle TTS
+            if (ttsIntervalRef.current) {
+                clearInterval(ttsIntervalRef.current);
+                ttsIntervalRef.current = null;
+            }
+            // Fade-out propre du gain
             if (gainRef.current && audioCtxRef.current) {
                 const now = audioCtxRef.current.currentTime;
                 gainRef.current.gain.cancelScheduledValues(now);
@@ -169,7 +233,7 @@ export default function BlastEvacuationAlarm({
 
     const handleAck = () => {
         setAcked(true);
-        stopSiren();
+        stopAlarm();
         if (blastId != null) {
             try {
                 sessionStorage.setItem(`blast-evacuation-ack-${blastId}`, '1');
@@ -283,42 +347,6 @@ export default function BlastEvacuationAlarm({
     );
 }
 
-/**
- * Lance la synthese vocale du message d'evacuation. Voix FR si possible,
- * fallback sur la voix par defaut.
- */
-function speakEvacuation(zone?: string | null) {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-        const synth = window.speechSynthesis;
-        synth.cancel();
-        const phrase = `Ceci n'est pas un exercice. Dynamitage en cours sur ${speakableZone(zone)}. Veuillez evacuer les lieux immediatement.`;
-        const speak = () => {
-            const u = new SpeechSynthesisUtterance(phrase);
-            const voices = synth.getVoices();
-            const frVoice = voices.find((v) => v.lang.startsWith('fr'));
-            if (frVoice) u.voice = frVoice;
-            u.lang = 'fr-FR';
-            u.rate = 0.95;
-            u.pitch = 1.0;
-            u.volume = 1.0;
-            synth.speak(u);
-            // Repeter 2 fois pour amplifier l'urgence
-            window.setTimeout(() => {
-                const u2 = new SpeechSynthesisUtterance(phrase);
-                if (frVoice) u2.voice = frVoice;
-                u2.lang = 'fr-FR';
-                u2.rate = 0.95;
-                synth.speak(u2);
-            }, 7000);
-        };
-        if (synth.getVoices().length === 0) {
-            // Voix pas encore chargees (cas Chrome)
-            synth.addEventListener('voiceschanged', speak, { once: true });
-        } else {
-            speak();
-        }
-    } catch {
-        // ignore
-    }
-}
+// Note : l'ancien helper speakEvacuation() a ete supprime au profit de la
+// boucle TTS infinie integree au composant (cf. startTtsLoop). Le TTS est
+// maintenant re-emis toutes les 9 s tant que l'alarme est active.
