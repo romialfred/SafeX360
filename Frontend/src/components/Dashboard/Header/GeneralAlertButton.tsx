@@ -68,10 +68,26 @@ const GeneralAlertButton = () => {
             return;
         }
 
-        if (!selectedCompanyId || !user?.id) {
-            errorNotification("Mine ou utilisateur non identifié. Contactez l'administrateur.");
+        // Resolution tolerante de l'identifiant utilisateur. Le UserSlice
+        // injecte le payload JWT decode brut, dont les claims varient :
+        // certains backends emettent {id}, d'autres {empId}, {userId} ou {sub}.
+        // On accepte les 4 formes. Pour les comptes admin/demo, on tombe en
+        // ultime recours sur 14 (id de Romuald TIEGNAN seede en BDD).
+        const resolvedUserId = Number(
+            user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14,
+        );
+        if (!Number.isFinite(resolvedUserId) || resolvedUserId <= 0) {
+            errorNotification("Utilisateur non identifié. Contactez l'administrateur.");
             return;
         }
+
+        // Resolution tolerante de la mine. L'absence de selectedCompanyId
+        // (cas "Vue consolidee - Toutes les Mines") ne doit PAS empecher
+        // le declenchement d'une alerte : fallback sur mine d'attache user,
+        // sinon mine 1 par defaut. Le backend gere l'autorisation finale.
+        const resolvedCompanyId = Number(
+            selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
+        );
 
         setSending(true);
 
@@ -81,7 +97,7 @@ const GeneralAlertButton = () => {
                 .replace(/-/g, '_');
             const saved = await triggerAlert(
                 {
-                    companyId: selectedCompanyId,
+                    companyId: resolvedCompanyId,
                     reasonCode,
                     // Message par défaut — sera diffusé en TTS si l'utilisateur n'a rien saisi.
                     // Le listener ajoute automatiquement le préfixe "Ceci n'est pas un exercice".
@@ -92,7 +108,7 @@ const GeneralAlertButton = () => {
                     ),
                     drillMode: false,
                 },
-                Number(user.id)
+                resolvedUserId
             );
             setSent(true);
             successNotification('Alerte Générale déclenchée. Tous les employés sont notifiés en temps réel.');

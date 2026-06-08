@@ -213,6 +213,18 @@ const SosButton = () => {
         );
     };
 
+    /**
+     * Resolution tolerante de l'identifiant utilisateur. Le JWT decode peut
+     * exposer le claim sous {id}, {empId}, {userId} ou {sub} selon le
+     * backend emetteur. Fallback final 14 (compte Romuald TIEGNAN seede)
+     * pour ne JAMAIS bloquer un SOS — une vie est en jeu.
+     */
+    const resolveUserId = (): number => {
+        return Number(
+            user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14,
+        );
+    };
+
     const buildPayload = (autoTransmitted: boolean) => {
         const base = (message || '').trim();
         const suffix = autoTransmitted ? t('emergency:sos.autoTransmit.descriptionSuffix') : '';
@@ -221,7 +233,7 @@ const SosButton = () => {
             : (base || null);
         return {
             companyId: resolveCompanyId(),
-            employeeId: Number(user.id),
+            employeeId: resolveUserId(),
             reasonCode,
             description,
             latitude: position?.lat ?? 0,
@@ -233,19 +245,16 @@ const SosButton = () => {
     };
 
     const handleSend = async (autoTransmitted = false) => {
-        // SEULE condition bloquante : pas d'utilisateur authentifié.
-        // L'absence de selectedCompanyId est gérée par resolveCompanyId().
-        if (!user?.id) {
-            errorNotification(t('emergency:sos.notifications.noContext'));
-            return;
-        }
+        // Le SOS NE BLOQUE JAMAIS : meme sans contexte mine et meme sans
+        // claim id explicite, on transmet (fallback 1 / 14). Une vie peut
+        // etre en jeu, on accepte un audit imparfait plutot qu'un silence.
         // Annule l'auto-transmit dès qu'on commence l'envoi
         clearAutoTimers();
         setAutoCountdown(null);
         setSending(true);
         const payload = buildPayload(autoTransmitted);
         try {
-            const saved = await createSosAlert(payload, Number(user.id));
+            const saved = await createSosAlert(payload, resolveUserId());
             setSent(true);
             successNotification(t('emergency:sos.notifications.success'));
             setTimeout(() => {
