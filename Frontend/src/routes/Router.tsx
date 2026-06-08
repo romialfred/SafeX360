@@ -214,6 +214,7 @@ const BlastDashboardPage = lazy(() => import('../components/Blast/BlastDashboard
 const InspectionRegistryPage = lazy(() => import('../components/Inspection/InspectionRegistryPage'));
 const InspectionScheduleForm = lazy(() => import('../components/Inspection/InspectionScheduleForm'));
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
+const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -566,7 +567,7 @@ const router = createBrowserRouter([
             { path: 'inspections', element: <BlastSuspense><InspectionRegistryPage /></BlastSuspense> },
             { path: 'inspections/schedule', element: <BlastSuspense><InspectionScheduleForm /></BlastSuspense> },
             { path: 'inspections/execute/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
-            { path: 'inspections/detail/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
+            { path: 'inspections/detail/:id', element: <BlastSuspense><InspectionDetailPage /></BlastSuspense> },
 
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },

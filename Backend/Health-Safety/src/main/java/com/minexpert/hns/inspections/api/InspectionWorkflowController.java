@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.inspections.config.InspectionRBACConfig;
 import com.minexpert.hns.inspections.dto.ApprovalDTO;
@@ -24,6 +27,7 @@ import com.minexpert.hns.inspections.dto.FindingDTO;
 import com.minexpert.hns.inspections.dto.InspectionDetailDTO;
 import com.minexpert.hns.inspections.dto.InspectionSummaryDTO;
 import com.minexpert.hns.inspections.dto.ScheduleInspectionDTO;
+import com.minexpert.hns.inspections.service.InspectionReportPdfService;
 import com.minexpert.hns.inspections.service.InspectionWorkflowService;
 
 import jakarta.validation.Valid;
@@ -40,6 +44,9 @@ public class InspectionWorkflowController {
 
     @Autowired
     private InspectionWorkflowService workflowService;
+
+    @Autowired
+    private InspectionReportPdfService pdfService;
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/list")
@@ -106,6 +113,27 @@ public class InspectionWorkflowController {
      * nombre total d'approbations attendues (cardinalite de l'equipe).
      * Si non fourni, par defaut 1 (mono-approver).
      */
+    /**
+     * Telecharge le rapport PDF d'une inspection. Disponible pour tout statut
+     * (en cours, soumis, archive). Le PDF est rendu en francais par defaut
+     * sauf si {@code ?lang=en} est specifie.
+     *
+     * <p>Reference ISO 45001 §9.1 : surveillance, mesure, analyse et evaluation
+     * de la performance HSE. Le document est conserve a titre de preuve.</p>
+     */
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
+    @GetMapping("/{id}/report/pdf")
+    public ResponseEntity<byte[]> downloadReport(@PathVariable Long id,
+            @RequestParam(value = "lang", required = false, defaultValue = "fr") String lang) {
+        boolean english = "en".equalsIgnoreCase(lang);
+        byte[] pdf = pdfService.generate(id, english);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment",
+                "inspection-" + id + (english ? "-en" : "-fr") + ".pdf");
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+    }
+
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VALIDATE + "')")
     @PostMapping("/{id}/decide")
     public ResponseEntity<ResponseDTO> decide(@PathVariable Long id,
