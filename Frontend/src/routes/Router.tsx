@@ -216,10 +216,15 @@ const InspectionScheduleForm = lazy(() => import('../components/Inspection/Inspe
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
 const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
 
-// LOT — SafeX 360 Field (mobile Android Phase M0 foundation)
+// LOT — SafeX 360 Field (mobile Android Phase M0+M1+M2)
 const MobileShell = lazy(() => import('../m/MobileShell'));
 const MobileHome = lazy(() => import('../m/pages/MobileHome'));
 const MobilePlaceholder = lazy(() => import('../m/pages/MobilePlaceholder'));
+const MobileInspectionsList = lazy(() => import('../m/pages/MobileInspectionsList'));
+const MobileSosScreen = lazy(() => import('../m/pages/MobileSosScreen'));
+const MobileIncidentQuickDeclare = lazy(() => import('../m/pages/MobileIncidentQuickDeclare'));
+const MobileBlastNext = lazy(() => import('../m/pages/MobileBlastNext'));
+const MobileProfile = lazy(() => import('../m/pages/MobileProfile'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -299,17 +304,18 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <BlastSuspense><MobileHome /></BlastSuspense> },
             { path: 'home', element: <BlastSuspense><MobileHome /></BlastSuspense> },
-            { path: 'inspections', element: <BlastSuspense><MobilePlaceholder title="Inspections" subtitle="Mes inspections terrain" /></BlastSuspense> },
-            { path: 'inspections/:id', element: <BlastSuspense><MobilePlaceholder title="Inspection" subtitle="Saisie terrain" /></BlastSuspense> },
-            { path: 'sos', element: <BlastSuspense><MobilePlaceholder title="SOS" subtitle="Signalement d'urgence" accent="#B91C1C" /></BlastSuspense> },
-            { path: 'incident/new', element: <BlastSuspense><MobilePlaceholder title="Déclaration d'incident" subtitle="Mode rapide 90 secondes" accent="#B45309" /></BlastSuspense> },
-            { path: 'incident/:id', element: <BlastSuspense><MobilePlaceholder title="Incident" subtitle="Détail" accent="#B45309" /></BlastSuspense> },
-            { path: 'blast/next', element: <BlastSuspense><MobilePlaceholder title="Prochain tir" subtitle="Alarme évacuation" accent="#B45309" /></BlastSuspense> },
-            { path: 'profile', element: <BlastSuspense><MobilePlaceholder title="Mon profil" subtitle="EPI · Formations · Dossier" accent="#0F172A" /></BlastSuspense> },
-            { path: 'profile/ppe', element: <BlastSuspense><MobilePlaceholder title="Mes EPI" subtitle="Dotation personnelle" accent="#0F172A" /></BlastSuspense> },
-            { path: 'profile/trainings', element: <BlastSuspense><MobilePlaceholder title="Mes formations" subtitle="Habilitations à jour" accent="#0F172A" /></BlastSuspense> },
-            { path: 'profile/dosimetry', element: <BlastSuspense><MobilePlaceholder title="Ma dosimétrie" subtitle="Suivi personnel" accent="#0F172A" /></BlastSuspense> },
-            { path: 'profile/medical', element: <BlastSuspense><MobilePlaceholder title="Mon dossier médical" subtitle="Suivi aptitude" accent="#0F172A" /></BlastSuspense> },
+            { path: 'inspections', element: <BlastSuspense><MobileInspectionsList /></BlastSuspense> },
+            // Inspection execution mobile : reutilise le composant web existant qui est deja mobile-first.
+            { path: 'inspections/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
+            { path: 'sos', element: <BlastSuspense><MobileSosScreen /></BlastSuspense> },
+            { path: 'incident/new', element: <BlastSuspense><MobileIncidentQuickDeclare /></BlastSuspense> },
+            { path: 'incident/:id', element: <BlastSuspense><MobilePlaceholder title="Incident" subtitle="Détail" accent="#B45309" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'blast/next', element: <BlastSuspense><MobileBlastNext /></BlastSuspense> },
+            { path: 'profile', element: <BlastSuspense><MobileProfile /></BlastSuspense> },
+            { path: 'profile/ppe', element: <BlastSuspense><MobilePlaceholder title="Mes EPI" subtitle="Dotation personnelle" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'profile/trainings', element: <BlastSuspense><MobilePlaceholder title="Mes formations" subtitle="Habilitations à jour" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'profile/dosimetry', element: <BlastSuspense><MobilePlaceholder title="Ma dosimétrie" subtitle="Suivi personnel" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
+            { path: 'profile/medical', element: <BlastSuspense><MobilePlaceholder title="Mon dossier médical" subtitle="Suivi aptitude" accent="#0F172A" phaseTag="Phase M3" /></BlastSuspense> },
         ],
     },
 
