@@ -108,14 +108,23 @@ jobs:
                   KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
                   KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
               run: |
+                  # Reconstituer le keystore depuis le secret base64
                   echo "$KEYSTORE_BASE64" | base64 -d > app/safex360.keystore
-                  cat > keystore.properties <<EOF
+                  # Generer key.properties (aligne sur MOBILE_DEPLOY.md)
+                  cat > key.properties <<EOF
                   storeFile=safex360.keystore
                   storePassword=$KEYSTORE_PASSWORD
                   keyAlias=$KEY_ALIAS
                   keyPassword=$KEY_PASSWORD
                   EOF
+                  # Build APK signe
                   ./gradlew assembleRelease --stacktrace
+                  # Verification signature
+                  echo "::group::Verification signature APK"
+                  $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose \
+                      app/build/outputs/apk/release/app-release.apk || \
+                      echo "::warning::apksigner verify a echoue — verifier la cle"
+                  echo "::endgroup::"
 
             - name: Upload APK artifact
               uses: actions/upload-artifact@v4

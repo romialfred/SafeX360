@@ -1,0 +1,16 @@
+# Template du fichier de configuration de signature Android.
+#
+# IMPORTANT — Ce fichier sert UNIQUEMENT de modele.
+# Copier vers `key.properties` (au meme niveau) et y inscrire les vraies
+# valeurs. `key.properties` est gitignored — NE JAMAIS le commiter.
+#
+# Generation du keystore (a faire une seule fois) :
+#   keytool -genkey -v -keystore safex360-field-release.keystore \
+#     -alias safex360-field -keyalg RSA -keysize 4096 -validity 9125
+#
+# Documentation complete : Frontend/MOBILE_DEPLOY.md
+
+storeFile=C:/secure/safex360-field-release.keystore
+storePassword=REPLACE_WITH_STORE_PASSWORD
+keyAlias=safex360-field
+keyPassword=REPLACE_WITH_KEY_PASSWORD

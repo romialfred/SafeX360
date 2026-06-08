@@ -125,4 +125,28 @@ public class MobileFieldController {
         log.debug("GET /mobile/medical/personal/{}", userId);
         return ResponseEntity.ok(new ArrayList<>());
     }
+
+    /**
+     * Renvoie la derniere version stable de l'APK et son URL de telechargement.
+     * L'app mobile peut afficher un bandeau de mise a jour quand la version
+     * installee &lt; latestVersionCode.
+     *
+     * <p>Phase M5 stub : valeur statique alignee sur CHANGELOG_MOBILE.md.
+     * Phase M6 : table {@code mobile_app_version} avec gestion de plusieurs
+     * canaux (stable / beta / internal).
+     */
+    @GetMapping("/app-version")
+    public ResponseEntity<Map<String, Object>> getLatestAppVersion() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("latestVersionName", "1.0.0");
+        body.put("latestVersionCode", 10000);
+        body.put("releaseDate", "2026-06-08");
+        body.put("channel", "internal");
+        body.put("downloadUrl", "/api/admin/mobile/download/safex360-field-1.0.0.apk");
+        body.put("mandatoryUpgrade", false);
+        body.put("releaseNotes",
+            "Premiere version pilote : SOS offline, capture photo compressee,"
+            + " sirene tirs, re-auth biometrique.");
+        return ResponseEntity.ok(body);
+    }
 }

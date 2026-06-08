@@ -32,6 +32,7 @@ android/
 *.keystore
 *.jks
 keystore.properties
+key.properties
 google-services.json
 
 # Caches Capacitor
