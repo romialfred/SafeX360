@@ -184,8 +184,23 @@ public class BlastServiceImpl implements BlastService {
         Blast blast = loadOrThrow(dto.getId());
         BlastStatus current = blast.getStatus();
 
-        boolean isOpenForEdit = current == BlastStatus.DRAFT || current == BlastStatus.PLANNED;
-        if (!isOpenForEdit) {
+        // 2026-06-08 : elargissement du perimetre modifiable. Tant que le tir
+        // n'est pas execute ou cloture, il reste editable. Cela couvre :
+        //   - DRAFT, PLANNED : edition libre
+        //   - CONFIRMED, POSTPONED : edition autorisee (recalcul auto des
+        //     notifications si scheduledAt ou perimetre change)
+        // Les statuts verrouilles definitivement : IMMINENT (T-10 declenche),
+        // FIRED, ALL_CLEAR, MISFIRE, CANCELLED.
+        boolean isOpenForEdit = current == BlastStatus.DRAFT
+                || current == BlastStatus.PLANNED
+                || current == BlastStatus.CONFIRMED
+                || current == BlastStatus.POSTPONED;
+        boolean isLockedStatus = current == BlastStatus.IMMINENT
+                || current == BlastStatus.FIRED
+                || current == BlastStatus.ALL_CLEAR
+                || current == BlastStatus.MISFIRE
+                || current == BlastStatus.CANCELLED;
+        if (isLockedStatus) {
             if (!adminOverride) {
                 throw new IllegalStateException(
                         "Blast " + blast.getReference() + " is " + current
@@ -212,14 +227,24 @@ public class BlastServiceImpl implements BlastService {
         blast.setUpdatedBy(userId);
         blastRepository.save(blast);
 
-        // Si edition apres confirmation : trace un evenement d'override.
-        if (adminOverride && !isOpenForEdit) {
+        // Edition apres CONFIRMED ou POSTPONED : recalcul automatique des
+        // notifications (les rappels sont indexes sur scheduledAt, qui peut
+        // avoir change). On log aussi un evenement d'audit traceable.
+        boolean needsReplanning = current == BlastStatus.CONFIRMED
+                || current == BlastStatus.POSTPONED;
+        if (needsReplanning) {
             auditService.logTransition(blast.getId(), current, current, userId,
-                    "Admin override edit: " + dto.getReason());
-            // Recalcul des notifications (hook P3) : on annule les jobs SCHEDULED
-            // et on redemandera au planner de regenerer.
+                    dto.getReason() != null && !dto.getReason().isBlank()
+                            ? "Edit (" + current + "): " + dto.getReason()
+                            : "Edit while " + current + " (auto replanning)");
             cancelScheduledJobs(blast.getId());
             notificationPlanner.scheduleForBlast(blast);
+        }
+        // Cas admin override sur statut verrouille (workflow termine) : trace
+        // explicite mais pas de replanning des notifications (le tir est fini).
+        if (adminOverride && isLockedStatus) {
+            auditService.logTransition(blast.getId(), current, current, userId,
+                    "Admin override edit (locked status " + current + "): " + dto.getReason());
         }
     }
 

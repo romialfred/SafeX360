@@ -262,15 +262,15 @@ const Header = () => {
                 labels masques sur mobile (icones seules), gaps reduits.
                 FIX 2026-06-07 : min-h + contain:layout pour stopper l'oscillation propagee
                 par les anneaux pulses des boutons SOS / Alerte. */}
-            <div className="bg-white border-b border-slate-200 h-14 min-h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-x-auto scrollbar-hide" style={{ contain: 'layout style' }}>
+            <div className="bg-white border-b border-slate-200 h-14 min-h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-hidden" style={{ contain: 'layout style paint' }}>
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                     {/* LOT 45 — Boutons CTA pleins (vrai look "bouton d'action", plus "onglet") */}
                     <Tooltip label={t('navigation:header.reportIncident')}>
                         <button
                             onClick={() => navigate("/incidents/report")}
-                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(225,29,72,0.35)] hover:shadow-[0_3px_12px_rgba(225,29,72,0.5)] ring-1 ring-rose-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex-shrink-0"
+                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(225,29,72,0.35)] hover:shadow-[0_3px_12px_rgba(225,29,72,0.5)] ring-1 ring-rose-500/40 hover:brightness-110 transition-[filter,box-shadow,background-color] flex-shrink-0"
                         >
-                            <IconAlertTriangle stroke={2.2} size={14} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform" />
+                            <IconAlertTriangle stroke={2.2} size={14} className="text-white drop-shadow-sm" />
                             {/* Label masqué sur mobile (< sm) */}
                             <span className="hidden sm:inline">{t('navigation:header.reportIncident')}</span>
                         </button>
@@ -278,9 +278,9 @@ const Header = () => {
                     <Tooltip label={t('navigation:header.newEvent')}>
                         <button
                             onClick={() => navigate("/non-conformity/create")}
-                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex-shrink-0"
+                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:brightness-110 transition-[filter,box-shadow,background-color] flex-shrink-0"
                         >
-                            <IconClipboardData stroke={2.2} size={14} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform" />
+                            <IconClipboardData stroke={2.2} size={14} className="text-white drop-shadow-sm" />
                             <span className="hidden sm:inline">{t('navigation:header.newEvent')}</span>
                         </button>
                     </Tooltip>

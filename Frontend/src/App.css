@@ -169,13 +169,11 @@ h1, h2, h3, h4 {
 .safex-gyrophare-alert { animation: safex-gyrophare-glow-orange 2.2s ease-in-out infinite; }
 
 .safex-gyrophare-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px; /* aligne sur les boutons pleinement rounded-full */
-  pointer-events: none;
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: safex-gyrophare-pulse 2s ease-out infinite;
+  /* FIX 2026-06-08 : suppression de l'animation pulse infinie qui generait
+     un repaint a chaque frame et faisait trembler la barre header en local
+     (couplee a hover:scale et overflow-x-auto). Le drop-shadow pulse sur le
+     bouton parent suffit a signaler l'urgence sans deplacer le layout. */
+  display: none;
 }
 
 .safex-gyrophare-ring--red    { background-color: transparent; border: 1px solid rgba(248, 113, 113, 0.55); }

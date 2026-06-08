@@ -622,58 +622,60 @@ const BlastDashboardPage = () => {
                     </span>
                 </div>
 
-                {/* ─── Hero ─── */}
-                <div className="mb-5 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="relative px-5 py-5 flex items-start justify-between gap-4 flex-wrap">
-                        <div
-                            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500"
-                            aria-hidden="true"
-                        />
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md shadow-amber-200 flex-shrink-0">
-                                <IconBolt size={22} stroke={1.8} className="text-white" />
+                {/* ─── Hero compact (LOT 49 — densification) ─── */}
+                {/* Hauteur reduite : py-3 au lieu de py-5, icone 36px au lieu de 48px,
+                    titre clamp(18, 2vw, 22) au lieu de (22, 2.4vw, 28), suppression
+                    de la barre gradient haute et de la ligne "Derniere mise a jour"
+                    (deplacee a cote du bouton Actualiser). */}
+                <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                    <div className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                                <IconBolt size={18} stroke={1.8} className="text-white" />
                             </div>
                             <div className="min-w-0">
                                 <h1
-                                    className="text-slate-900 leading-tight"
+                                    className="text-slate-900 leading-tight truncate"
                                     style={{
                                         fontFamily: "'Source Serif 4', Georgia, serif",
                                         fontWeight: 600,
-                                        fontSize: 'clamp(22px, 2.4vw, 28px)',
-                                        letterSpacing: '-0.02em',
+                                        fontSize: 'clamp(17px, 1.6vw, 20px)',
+                                        letterSpacing: '-0.015em',
                                     }}
                                 >
                                     {t('dashboard.title', { defaultValue: 'Tableau de bord dynamitage' })}
                                 </h1>
-                                <p className="text-[13px] text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                                <p className="text-[12px] text-slate-500 truncate">
                                     {t('dashboard.subtitle', {
                                         defaultValue: 'Suivi des tirs et de la chaine d\'annonce.',
                                     })}
                                 </p>
-                                <p className="text-[11px] text-slate-500 mt-2">
-                                    {t('dashboard.lastUpdate', { defaultValue: 'Derniere mise a jour' })} :{' '}
-                                    <span className="font-mono tabular-nums text-slate-700">
-                                        {formatTimeOnly(lastFetchAt, locale)}
-                                    </span>
-                                </p>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="inline-flex items-center gap-1.5 px-3 py-[7px] text-[12px] rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition disabled:opacity-50"
-                            aria-label={t('dashboard.refresh', { defaultValue: 'Actualiser' })}
-                        >
-                            <IconRefresh
-                                size={13}
-                                stroke={1.8}
-                                className={refreshing ? 'animate-spin' : ''}
-                            />
-                            <span className="hidden sm:inline">
-                                {t('dashboard.refresh', { defaultValue: 'Actualiser' })}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="hidden md:inline text-[11px] text-slate-500">
+                                {t('dashboard.lastUpdate', { defaultValue: 'Derniere MAJ' })} :{' '}
+                                <span className="font-mono tabular-nums text-slate-700">
+                                    {formatTimeOnly(lastFetchAt, locale)}
+                                </span>
                             </span>
-                        </button>
+                            <button
+                                type="button"
+                                onClick={handleRefresh}
+                                disabled={refreshing}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition disabled:opacity-50"
+                                aria-label={t('dashboard.refresh', { defaultValue: 'Actualiser' })}
+                            >
+                                <IconRefresh
+                                    size={13}
+                                    stroke={1.8}
+                                    className={refreshing ? 'animate-spin' : ''}
+                                />
+                                <span className="hidden sm:inline">
+                                    {t('dashboard.refresh', { defaultValue: 'Actualiser' })}
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

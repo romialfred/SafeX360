@@ -366,7 +366,9 @@ const menuItems: MenuItem[] = [
             // P7 — Tableau de bord en tete du sous-menu : landing par defaut /blast
             { id: 'blast-dashboard', label: 'Tableau de bord dynamitage', icon: IconChartBar },
             { id: 'blast-registry', label: 'Registre des tirs', icon: IconClipboardCheck },
-            { id: 'blast-new', label: 'Enregistrer un tir', icon: IconPlus },
+            // "Enregistrer un tir" retire du sous-menu : accessible via le bouton
+            // "Nouveau tir" sur la page Registre (action contextuelle plutot que
+            // un item de navigation duplique).
         ],
     },
     // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
@@ -535,7 +537,8 @@ export const menuIdToUrl: Record<string, string> = {
     "blast": "/blast",
     "blast-dashboard": "/blast/dashboard",
     "blast-registry": "/blast/registry",
-    "blast-new": "/blast/new",
+    // "blast-new" retire de la sidebar : la route /blast/new reste valide
+    // mais on y accede via le bouton "Nouveau tir" du Registre des tirs.
 };
 
 
@@ -586,7 +589,7 @@ const Sidebar = () => {
         'dosimetry', 'dosimetry-settings',
         // LOT — Blast Management : parent + sous-items toujours accessibles
         // P7 : ajout du tableau de bord dans la liste autorisee
-        'blast', 'blast-dashboard', 'blast-registry', 'blast-new',
+        'blast', 'blast-dashboard', 'blast-registry',
     ]);
 
     const handleItemClick = (itemId: string) => {

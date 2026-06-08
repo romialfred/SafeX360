@@ -33,6 +33,7 @@ import {
     IconPlus,
     IconEye,
     IconCopy,
+    IconPencil,
     IconAlertOctagon,
     IconFilter,
     IconClock,
@@ -534,34 +535,56 @@ const BlastRegistryPage = () => {
         );
     };
 
-    const renderActions = (row: BlastListItemDTO) => (
-        <div
-            className="inline-flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-        >
-            <button
-                type="button"
-                onClick={() => navigate(`/blast/detail/${row.id}`)}
-                className="p-1 rounded text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition"
-                title={t('registry.actions.view')}
-                aria-label={t('registry.actions.view')}
+    const renderActions = (row: BlastListItemDTO) => {
+        // Un tir reste modifiable tant qu'il n'est pas execute / annule.
+        // Statuts editables : DRAFT, PLANNED, CONFIRMED, POSTPONED.
+        // Statuts NON editables (deja tire ou cloture) : IMMINENT (T-10 lance),
+        // FIRED, ALL_CLEAR, MISFIRE, CANCELLED.
+        const isEditable =
+            row.status === 'DRAFT' ||
+            row.status === 'PLANNED' ||
+            row.status === 'CONFIRMED' ||
+            row.status === 'POSTPONED';
+        return (
+            <div
+                className="inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
             >
-                <IconEye size={14} stroke={1.8} />
-            </button>
-            {canWrite && (
                 <button
                     type="button"
-                    onClick={() => handleDuplicate(row)}
-                    disabled={duplicating === row.id}
-                    className="p-1 rounded text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition disabled:opacity-50"
-                    title={t('registry.actions.duplicate')}
-                    aria-label={t('registry.actions.duplicate')}
+                    onClick={() => navigate(`/blast/detail/${row.id}`)}
+                    className="p-1 rounded text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition"
+                    title={t('registry.actions.view')}
+                    aria-label={t('registry.actions.view')}
                 >
-                    <IconCopy size={14} stroke={1.8} />
+                    <IconEye size={14} stroke={1.8} />
                 </button>
-            )}
-        </div>
-    );
+                {canWrite && isEditable && (
+                    <button
+                        type="button"
+                        onClick={() => navigate(`/blast/edit/${row.id}`)}
+                        className="p-1 rounded text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition"
+                        title={t('registry.actions.edit', { defaultValue: 'Modifier' })}
+                        aria-label={t('registry.actions.edit', { defaultValue: 'Modifier' })}
+                    >
+                        <IconPencil size={14} stroke={1.8} />
+                    </button>
+                )}
+                {canWrite && (
+                    <button
+                        type="button"
+                        onClick={() => handleDuplicate(row)}
+                        disabled={duplicating === row.id}
+                        className="p-1 rounded text-slate-500 hover:text-cyan-700 hover:bg-cyan-50 transition disabled:opacity-50"
+                        title={t('registry.actions.duplicate')}
+                        aria-label={t('registry.actions.duplicate')}
+                    >
+                        <IconCopy size={14} stroke={1.8} />
+                    </button>
+                )}
+            </div>
+        );
+    };
 
     // ───── Empty state premium ─────
     const emptyTemplate = (
@@ -722,48 +745,9 @@ const BlastRegistryPage = () => {
                     </div>
                 )}
 
-                {/* ─── SegmentedFilter Status ─── */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 mb-3 overflow-x-auto">
-                    <div className="flex items-center gap-1.5 min-w-max">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setFilters((f) => ({ ...f, status: 'all' }))
-                            }
-                            className={`px-3 py-1.5 rounded-md text-[12px] font-medium border min-h-[36px] transition ${
-                                filters.status === 'all'
-                                    ? 'bg-slate-900 text-white border-slate-900'
-                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        >
-                            {t('common.all')}
-                        </button>
-                        {ALL_STATUSES.map((s) => {
-                            const cfg = STATUS_CONFIG[s];
-                            const active = filters.status === s;
-                            return (
-                                <button
-                                    key={s}
-                                    type="button"
-                                    onClick={() =>
-                                        setFilters((f) => ({ ...f, status: s }))
-                                    }
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium border min-h-[36px] transition ${
-                                        active
-                                            ? `${cfg.bg} ${cfg.border} ${cfg.text} border-2`
-                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    <span
-                                        className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
-                                        aria-hidden="true"
-                                    />
-                                    {t(cfg.labelKey)}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                {/* ─── Filtre Statut (dropdown epure) ─── */}
+                {/* Liste deroulante au lieu d'onglets chips : economise une rangee
+                    visuelle et reste lisible quand on a 9 statuts dans le workflow. */}
 
                 {/* ─── Toolbar : recherche, filtres, actions ─── */}
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 mb-4">
@@ -785,6 +769,30 @@ const BlastRegistryPage = () => {
                                 className="w-full pl-8 pr-3 py-2 text-[12.5px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 min-h-[40px]"
                             />
                         </div>
+
+                        {/* Filtre statut (dropdown unique au lieu de 10 chips) */}
+                        <select
+                            value={filters.status}
+                            onChange={(e) =>
+                                setFilters((f) => ({
+                                    ...f,
+                                    status: e.target.value as typeof f.status,
+                                }))
+                            }
+                            className="px-2.5 py-2 text-[12.5px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 min-h-[40px] min-w-[150px]"
+                            aria-label={t('registry.filters.status', { defaultValue: 'Statut' })}
+                        >
+                            <option value="all">
+                                {t('registry.filters.allStatuses', {
+                                    defaultValue: 'Tous statuts',
+                                })}
+                            </option>
+                            {ALL_STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                    {t(STATUS_CONFIG[s].labelKey)}
+                                </option>
+                            ))}
+                        </select>
 
                         {/* Filtre fosse */}
                         <select

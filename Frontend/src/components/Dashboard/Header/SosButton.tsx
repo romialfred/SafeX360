@@ -329,7 +329,7 @@ const SosButton = () => {
             <Tooltip label={t('navigation:header.sosTooltip')} position="bottom">
                 <button
                     onClick={handleOpen}
-                    className="safex-gyrophare-sos group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white text-[12px] font-bold uppercase tracking-[0.15em] shadow-[0_4px_14px_rgba(239,68,68,0.45)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.6)] ring-1 ring-red-400/60 hover:scale-[1.03] transition-all duration-200 overflow-visible"
+                    className="safex-gyrophare-sos group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white text-[12px] font-bold uppercase tracking-[0.15em] shadow-[0_4px_14px_rgba(239,68,68,0.45)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.6)] ring-1 ring-red-400/60 hover:brightness-110 transition-[filter,box-shadow,background-color] duration-200 overflow-visible flex-shrink-0"
                 >
                     {/* Halos gyrophare — 3 anneaux pulsés décalés */}
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--red"></span>

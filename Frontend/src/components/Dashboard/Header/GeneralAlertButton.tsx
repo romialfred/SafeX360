@@ -112,7 +112,7 @@ const GeneralAlertButton = () => {
             <Tooltip label={t('header.alertTooltip')} position="bottom">
                 <button
                     onClick={open}
-                    className="safex-gyrophare-alert group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:via-orange-700 hover:to-amber-700 text-white text-[12px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_14px_rgba(249,115,22,0.45)] hover:shadow-[0_6px_20px_rgba(249,115,22,0.6)] ring-1 ring-orange-400/60 hover:scale-[1.03] transition-all duration-200 overflow-visible"
+                    className="safex-gyrophare-alert group relative inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:via-orange-700 hover:to-amber-700 text-white text-[12px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_14px_rgba(249,115,22,0.45)] hover:shadow-[0_6px_20px_rgba(249,115,22,0.6)] ring-1 ring-orange-400/60 hover:brightness-110 transition-[filter,box-shadow,background-color] duration-200 overflow-visible flex-shrink-0"
                 >
                     {/* Halos gyrophare orange */}
                     <span aria-hidden className="safex-gyrophare-ring safex-gyrophare-ring--orange"></span>
