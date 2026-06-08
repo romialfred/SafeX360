@@ -17,11 +17,14 @@ on:
                     - debug
                     - release
 
+permissions:
+    contents: write   # necessaire pour pousser l'APK dans Mobile/ apres build release
+
 jobs:
     build-apk:
         name: Build APK ${{ github.event.inputs.build_type || 'debug' }}
         runs-on: ubuntu-latest
-        timeout-minutes: 25
+        timeout-minutes: 30
 
         steps:
             - name: Checkout repository
@@ -67,9 +70,19 @@ jobs:
               working-directory: Frontend
               run: npx tsc --noEmit -p tsconfig.json
 
-            - name: Build web bundle (Vite production)
+            - name: Build web bundle (Vite production, mobile env)
               working-directory: Frontend
-              run: npm run build
+              # IMPORTANT : pour le build APK on utilise .env.mobile qui pointe
+              # vers la prod (https://safex360-gateway.onrender.com) au lieu de
+              # localhost:9000 dans le .env de dev. Sans ca, l'APK installe sur
+              # un device ne pourrait pas joindre le backend (BD Aiven).
+              run: |
+                  if [ -f .env.mobile ]; then
+                    cp .env.mobile .env.production.local
+                    echo "Build avec config mobile :"
+                    grep VITE_API_URL .env.production.local || true
+                  fi
+                  npm run build
 
             - name: Check Capacitor Android project exists
               id: android-check
@@ -131,7 +144,34 @@ jobs:
               with:
                   name: safex360-field-${{ github.event.inputs.build_type || 'debug' }}-${{ github.sha }}
                   path: Frontend/android/app/build/outputs/apk/${{ github.event.inputs.build_type || 'debug' }}/*.apk
-                  retention-days: 14
+                  retention-days: 90
+
+            - name: Copy APK to Mobile/ and Frontend/public/downloads/
+              run: |
+                  BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+                  SRC_DIR="Frontend/android/app/build/outputs/apk/$BUILD_TYPE"
+                  if [ -d "$SRC_DIR" ]; then
+                    APK_FILE=$(ls $SRC_DIR/*.apk | head -1)
+                    if [ -f "$APK_FILE" ]; then
+                      mkdir -p Mobile Frontend/public/downloads
+                      cp "$APK_FILE" Mobile/SafexMobile.apk
+                      cp "$APK_FILE" Frontend/public/downloads/SafexMobile.apk
+                      echo "✅ APK copie dans Mobile/SafexMobile.apk + Frontend/public/downloads/SafexMobile.apk"
+                      ls -lh Mobile/SafexMobile.apk
+                    fi
+                  fi
+
+            - name: Commit APK to repo (only on main + release)
+              if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.build_type == 'release' && github.event_name == 'workflow_dispatch' }}
+              run: |
+                  if [ -f Mobile/SafexMobile.apk ]; then
+                    git config user.name "github-actions[bot]"
+                    git config user.email "github-actions[bot]@users.noreply.github.com"
+                    git add Mobile/SafexMobile.apk Frontend/public/downloads/SafexMobile.apk
+                    git diff --cached --quiet || \
+                      git commit -m "ci(mobile): publish APK v${{ github.run_number }} (commit ${{ github.sha }})"
+                    git push || echo "::warning::Push echoue — peut-etre commit deja present"
+                  fi
 
             - name: Print install command
               run: |

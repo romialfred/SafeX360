@@ -55,6 +55,9 @@ const LoginsPage = () => {
             loginProgress: 'Connexion…',
             errorMessage: 'Identifiant ou mot de passe incorrect',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
+            mobileTitle: 'Application mobile terrain',
+            mobileSubtitle: 'Android · Hors ligne · ISO 45001',
+            mobileDownload: 'Télécharger SafeX 360 Field',
         }
         : {
             tagline: 'HSE platform for mining operations',
@@ -69,6 +72,9 @@ const LoginsPage = () => {
             loginProgress: 'Signing in…',
             errorMessage: 'Incorrect user ID or password',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
+            mobileTitle: 'Field mobile application',
+            mobileSubtitle: 'Android · Offline · ISO 45001',
+            mobileDownload: 'Download SafeX 360 Field',
         };
 
     const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
@@ -396,9 +402,59 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
+                {/* Bouton "Télécharger l'app Android" — Phase M6 */}
+                <a
+                    href="/downloads/SafexMobile.apk"
+                    download="SafexMobile.apk"
+                    className="mt-6 mx-auto flex items-center justify-between gap-3 px-4 py-2.5 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[340px] w-full"
+                    style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
+                    aria-label={t.mobileDownload}
+                >
+                    {/* Icône Google Play officielle (SVG triangle quadricolore) */}
+                    <svg
+                        viewBox="0 0 24 24"
+                        className="w-9 h-9 flex-shrink-0"
+                        aria-hidden="true"
+                    >
+                        <defs>
+                            <linearGradient id="gp-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#00D2FF" />
+                                <stop offset="100%" stopColor="#3A7BD5" />
+                            </linearGradient>
+                            <linearGradient id="gp-red" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#FF3A44" />
+                                <stop offset="100%" stopColor="#C31162" />
+                            </linearGradient>
+                            <linearGradient id="gp-yellow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#FFD43B" />
+                                <stop offset="100%" stopColor="#FF8800" />
+                            </linearGradient>
+                            <linearGradient id="gp-green" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#00F076" />
+                                <stop offset="100%" stopColor="#00B96B" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a.996.996 0 01.61-.92z" fill="url(#gp-blue)" />
+                        <path d="M16.61 8.819L5.51 1.86l9.89 9.89 1.21-2.93z" fill="url(#gp-green)" />
+                        <path d="M16.61 15.181L5.51 22.14l9.89-9.89 1.21 2.93z" fill="url(#gp-red)" />
+                        <path d="M20.16 10.81l-3.43-2.05L13.79 12l2.94 3.24 3.43-2.05a1.379 1.379 0 000-2.38z" fill="url(#gp-yellow)" />
+                    </svg>
+                    <div className="flex-1 min-w-0 text-left">
+                        <div className="text-[9.5px] uppercase tracking-[0.14em] text-white/70">
+                            {t.mobileTitle}
+                        </div>
+                        <div className="text-[14px] font-medium text-white leading-tight mt-0.5">
+                            {t.mobileDownload}
+                        </div>
+                        <div className="text-[10px] text-white/55 mt-0.5">
+                            {t.mobileSubtitle}
+                        </div>
+                    </div>
+                </a>
+
                 {/* Footer minimal — uniquement les normes ISO */}
                 <p
-                    className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60 text-center"
+                    className="mt-6 text-[11px] uppercase tracking-[0.18em] text-white/60 text-center"
                     style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
                 >
                     {t.standards}
