@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,8 +36,20 @@ import org.springframework.web.multipart.MultipartFile;
  * payload minimal stub renvoyant une liste vide (a brancher sur les
  * services metier existants en Phase M5).
  */
+/**
+ * Activation conditionnelle (Phase M5 — defense en profondeur).
+ *
+ * <p>Le bean ne sera instancie que si la propriete {@code mobile.enabled=true}
+ * est presente dans l'environnement de deploiement. Par defaut (prod
+ * actuelle) le controller n'est PAS charge, ce qui isole le code mobile
+ * d'eventuels effets de bord sur le boot Spring du service Health-Safety.
+ *
+ * <p>Pour activer en prod : ajouter {@code MOBILE_ENABLED=true} dans les
+ * variables d'environnement Render apres validation du dashboard blast.
+ */
 @RestController
 @RequestMapping("/mobile")
+@ConditionalOnProperty(name = "mobile.enabled", havingValue = "true", matchIfMissing = false)
 public class MobileFieldController {
 
     private static final Logger log = LoggerFactory.getLogger(MobileFieldController.class);
