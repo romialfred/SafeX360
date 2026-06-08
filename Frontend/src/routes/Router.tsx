@@ -216,6 +216,11 @@ const InspectionScheduleForm = lazy(() => import('../components/Inspection/Inspe
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
 const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
 
+// LOT — SafeX 360 Field (mobile Android Phase M0 foundation)
+const MobileShell = lazy(() => import('../m/MobileShell'));
+const MobileHome = lazy(() => import('../m/pages/MobileHome'));
+const MobilePlaceholder = lazy(() => import('../m/pages/MobilePlaceholder'));
+
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
  * Aligne sur DosimetrySuspense (meme bg, meme loader Mantine centre).
@@ -282,6 +287,30 @@ const router = createBrowserRouter([
     {
         path: '/forget-password',
         element: <PublicRoutes><PasswordPage /></PublicRoutes>,
+    },
+
+    // ── SafeX 360 Field — version mobile Android (Phase M0) ─────────────
+    // Routes prefixees /m/ sous un shell dedie (bottom nav + safe areas).
+    // Pas de DashboardLayout : la version mobile a sa propre chrome.
+    // Protege par ProtectedRoute pour exiger l'authentification.
+    {
+        path: '/m',
+        element: <ProtectedRoute><BlastSuspense><MobileShell /></BlastSuspense></ProtectedRoute>,
+        children: [
+            { index: true, element: <BlastSuspense><MobileHome /></BlastSuspense> },
+            { path: 'home', element: <BlastSuspense><MobileHome /></BlastSuspense> },
+            { path: 'inspections', element: <BlastSuspense><MobilePlaceholder title="Inspections" subtitle="Mes inspections terrain" /></BlastSuspense> },
+            { path: 'inspections/:id', element: <BlastSuspense><MobilePlaceholder title="Inspection" subtitle="Saisie terrain" /></BlastSuspense> },
+            { path: 'sos', element: <BlastSuspense><MobilePlaceholder title="SOS" subtitle="Signalement d'urgence" accent="#B91C1C" /></BlastSuspense> },
+            { path: 'incident/new', element: <BlastSuspense><MobilePlaceholder title="Déclaration d'incident" subtitle="Mode rapide 90 secondes" accent="#B45309" /></BlastSuspense> },
+            { path: 'incident/:id', element: <BlastSuspense><MobilePlaceholder title="Incident" subtitle="Détail" accent="#B45309" /></BlastSuspense> },
+            { path: 'blast/next', element: <BlastSuspense><MobilePlaceholder title="Prochain tir" subtitle="Alarme évacuation" accent="#B45309" /></BlastSuspense> },
+            { path: 'profile', element: <BlastSuspense><MobilePlaceholder title="Mon profil" subtitle="EPI · Formations · Dossier" accent="#0F172A" /></BlastSuspense> },
+            { path: 'profile/ppe', element: <BlastSuspense><MobilePlaceholder title="Mes EPI" subtitle="Dotation personnelle" accent="#0F172A" /></BlastSuspense> },
+            { path: 'profile/trainings', element: <BlastSuspense><MobilePlaceholder title="Mes formations" subtitle="Habilitations à jour" accent="#0F172A" /></BlastSuspense> },
+            { path: 'profile/dosimetry', element: <BlastSuspense><MobilePlaceholder title="Ma dosimétrie" subtitle="Suivi personnel" accent="#0F172A" /></BlastSuspense> },
+            { path: 'profile/medical', element: <BlastSuspense><MobilePlaceholder title="Mon dossier médical" subtitle="Suivi aptitude" accent="#0F172A" /></BlastSuspense> },
+        ],
     },
 
     {

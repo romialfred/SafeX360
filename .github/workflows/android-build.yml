@@ -1,0 +1,129 @@
+name: SafeX 360 Field — Build APK Android
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - 'Frontend/**'
+            - '.github/workflows/android-build.yml'
+    workflow_dispatch:
+        inputs:
+            build_type:
+                description: 'Type de build (debug | release)'
+                required: true
+                default: 'debug'
+                type: choice
+                options:
+                    - debug
+                    - release
+
+jobs:
+    build-apk:
+        name: Build APK ${{ github.event.inputs.build_type || 'debug' }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 1
+
+            - name: Setup Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+                  cache-dependency-path: Frontend/package-lock.json
+
+            - name: Setup JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: '17'
+
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@v3
+              with:
+                  api-level: 34
+                  build-tools-version: '34.0.0'
+                  ndk-version: '26.1.10909125'
+
+            - name: Cache Gradle
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.gradle/caches
+                      ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('Frontend/android/**/*.gradle*', 'Frontend/android/**/gradle-wrapper.properties') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+
+            - name: Install npm dependencies
+              working-directory: Frontend
+              run: npm ci
+
+            - name: TypeScript check
+              working-directory: Frontend
+              run: npx tsc --noEmit -p tsconfig.json
+
+            - name: Build web bundle (Vite production)
+              working-directory: Frontend
+              run: npm run build
+
+            - name: Check Capacitor Android project exists
+              id: android-check
+              working-directory: Frontend
+              run: |
+                  if [ -d "android" ]; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Capacitor add android (first time only)
+              if: steps.android-check.outputs.exists == 'false'
+              working-directory: Frontend
+              run: npx cap add android
+
+            - name: Capacitor sync android
+              working-directory: Frontend
+              run: npx cap sync android
+
+            - name: Make gradlew executable
+              working-directory: Frontend/android
+              run: chmod +x gradlew
+
+            - name: Build APK (debug)
+              if: ${{ github.event.inputs.build_type != 'release' }}
+              working-directory: Frontend/android
+              run: ./gradlew assembleDebug --stacktrace
+
+            - name: Build APK (release)
+              if: ${{ github.event.inputs.build_type == 'release' }}
+              working-directory: Frontend/android
+              env:
+                  KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+                  KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                  KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+              run: |
+                  echo "$KEYSTORE_BASE64" | base64 -d > app/safex360.keystore
+                  cat > keystore.properties <<EOF
+                  storeFile=safex360.keystore
+                  storePassword=$KEYSTORE_PASSWORD
+                  keyAlias=$KEY_ALIAS
+                  keyPassword=$KEY_PASSWORD
+                  EOF
+                  ./gradlew assembleRelease --stacktrace
+
+            - name: Upload APK artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: safex360-field-${{ github.event.inputs.build_type || 'debug' }}-${{ github.sha }}
+                  path: Frontend/android/app/build/outputs/apk/${{ github.event.inputs.build_type || 'debug' }}/*.apk
+                  retention-days: 14
+
+            - name: Print install command
+              run: |
+                  echo "::notice title=APK pret::Telecharger l'artifact safex360-field-* depuis Actions, puis sur appareil Android : adb install -r app-*.apk"

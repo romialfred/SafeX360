@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ── Capacitor / Android (SafeX 360 Field) ────────────────────────────
+# Le dossier android/ est genere par `npx cap add android` au build.
+# On le regenere a la demande (CI ou dev), pas besoin de le versionner.
+android/
+
+# Keystore et credentials (NE JAMAIS COMMITER)
+*.keystore
+*.jks
+keystore.properties
+google-services.json
+
+# Caches Capacitor
+.capacitor/
+
+# APK / AAB de sortie
+*.apk
+*.aab

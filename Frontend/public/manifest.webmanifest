@@ -1,0 +1,64 @@
+{
+    "name": "SafeX 360 Field",
+    "short_name": "SafeX Field",
+    "description": "Application terrain HSE pour l'industrie minière africaine — inspections, SOS, déclaration d'incidents, alarme évacuation.",
+    "start_url": "/m/home",
+    "scope": "/m/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#FAF8F3",
+    "theme_color": "#0E7490",
+    "lang": "fr",
+    "dir": "ltr",
+    "categories": ["productivity", "business", "utilities"],
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icons/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Déclarer un SOS",
+            "short_name": "SOS",
+            "description": "Signaler une urgence immédiate",
+            "url": "/m/sos",
+            "icons": [{ "src": "/icons/shortcut-sos.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Nouvelle inspection",
+            "short_name": "Inspection",
+            "description": "Démarrer une inspection planifiée",
+            "url": "/m/inspections",
+            "icons": [{ "src": "/icons/shortcut-inspection.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Déclarer un incident",
+            "short_name": "Incident",
+            "description": "Déclaration rapide en 90 secondes",
+            "url": "/m/incident/new",
+            "icons": [{ "src": "/icons/shortcut-incident.png", "sizes": "96x96" }]
+        }
+    ],
+    "prefer_related_applications": false
+}
