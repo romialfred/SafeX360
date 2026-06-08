@@ -86,8 +86,13 @@ public class MobileFieldController {
             @RequestBody Map<String, Object> body) {
         Object token = body.get("token");
         Object platform = body.get("platform");
-        log.info("Token push enregistre (platform={}) : {}", platform,
-            token != null ? String.valueOf(token).substring(0, Math.min(20, String.valueOf(token).length())) + "…" : null);
+        // Tronquer le token pour ne logger qu'un prefixe (PII / secret).
+        String tokenPreview = null;
+        if (token != null) {
+            String t = String.valueOf(token);
+            tokenPreview = t.substring(0, Math.min(20, t.length())) + "...";
+        }
+        log.info("Token push enregistre (platform={}) : {}", platform, tokenPreview);
         Map<String, Object> resp = new HashMap<>();
         resp.put("ok", true);
         resp.put("registeredAt", LocalDateTime.now().toString());
