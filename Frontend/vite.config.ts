@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 /**
@@ -20,7 +21,78 @@ import path from 'path';
  *      pour réduire les requêtes HTTP.
  */
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // SafeX 360 Field — Service Worker pour la version mobile (PWA + APK
+    // Capacitor). Strategie : prendre en cache l'app shell (JS/CSS/HTML) et
+    // les images statiques. Les appels API REST utilisent un NetworkFirst
+    // avec fallback cache (TTL 5 min sur GET /hns/*).
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest'],
+      manifestFilename: 'manifest.webmanifest',
+      // On reutilise public/manifest.webmanifest existant — pas de re-genere
+      manifest: false,
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [
+          // Les routes API ne doivent jamais retomber sur index.html
+          /^\/api/,
+          /^\/hns/,
+          /^\/hrms/,
+        ],
+        runtimeCaching: [
+          // App shell : Cache First avec revalidation
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'safex-shell',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 20, maxAgeSeconds: 7 * 24 * 3600 },
+            },
+          },
+          // Assets statiques (JS, CSS, fonts) : Cache First
+          {
+            urlPattern: ({ request }) =>
+              ['script', 'style', 'font'].includes(request.destination),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'safex-static',
+              expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+          // Images : Stale While Revalidate
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'safex-images',
+              expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+          // GET /hns/* : NetworkFirst 5s puis fallback cache
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/hns/') || url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            method: 'GET',
+            options: {
+              cacheName: 'safex-api-get',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 100, maxAgeSeconds: 5 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+      // En dev : on n'enregistre pas le SW pour eviter de stale-cache pendant
+      // les iterations Vite HMR (le SW intercepte les chunks).
+      devOptions: { enabled: false },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')

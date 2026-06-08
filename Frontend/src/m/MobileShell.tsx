@@ -20,13 +20,28 @@
  *   - Indicateur reseau global (banner amber si offline)
  */
 
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileBottomNav from './components/MobileBottomNav';
+import SyncIndicator from './components/SyncIndicator';
+import PullToRefresh from './components/PullToRefresh';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { IconWifiOff } from '@tabler/icons-react';
+import { syncEngine } from './offline/syncEngine';
 
 export default function MobileShell() {
     const { online, ready } = useNetworkStatus();
+
+    // Demarre le sync engine une seule fois pour toute la session mobile.
+    useEffect(() => {
+        syncEngine.start();
+        return () => syncEngine.stop();
+    }, []);
+
+    const handleRefresh = async () => {
+        // Pull-to-refresh : relance le sync + ping la route courante en arriere-plan
+        await syncEngine.run();
+    };
     return (
         <div
             className="min-h-screen bg-[#FAF8F3] flex flex-col"
@@ -44,6 +59,9 @@ export default function MobileShell() {
                 </div>
             )}
 
+            {/* Indicateur de synchronisation (X actions en attente) */}
+            <SyncIndicator />
+
             <main
                 className="flex-1 overflow-y-auto"
                 style={{
@@ -51,7 +69,9 @@ export default function MobileShell() {
                     WebkitOverflowScrolling: 'touch',
                 }}
             >
-                <Outlet />
+                <PullToRefresh onRefresh={handleRefresh}>
+                    <Outlet />
+                </PullToRefresh>
             </main>
 
             <MobileBottomNav />

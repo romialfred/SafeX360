@@ -18,6 +18,7 @@ import { createSosAlert } from "../services/SosService";
 import { checkInToAlert } from "../services/GeneralAlertService";
 import { successNotification } from "../utility/NotificationUtility";
 import DosimetryAlertsBanner from "../components/Dosimetry/DosimetryAlertsBanner";
+import MobileRedirectGuard from "../m/components/MobileRedirectGuard";
 
 /**
  * DashboardLayout — Coque générale post-login.
@@ -86,6 +87,10 @@ const DashboardLayout = () => {
 
     return (
         <EmergencyWebSocketProvider>
+            {/* LOT mobile Phase M1 — redirection auto vers /m/home si l'utilisateur
+                est detecte sur mobile (Capacitor APK ou UA mobile). N'affecte pas
+                les desktops. Render: null (effet de bord uniquement). */}
+            <MobileRedirectGuard />
             <InactivityHandler inactivityMinutes={inactivityMinutes} />
             <div className="flex w-full">
                 <Sidebar />
