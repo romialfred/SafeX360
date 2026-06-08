@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  * 30 secondes pour rafraichir le compte a rebours et les KPI.
  */
 @RestController
-@RequestMapping("/hns/blast/dashboard")
+@RequestMapping("/blast/dashboard")
 @CrossOrigin
 @RequiredArgsConstructor
 public class BlastDashboardController {

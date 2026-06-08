@@ -39,7 +39,9 @@ cur = conn.cursor()
 
 USER_ID = 14  # createdBy / updatedBy / actor par defaut
 MINE_ID = 1
-NOW_SQL = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+NOW = datetime.now()
+NOW_SQL = NOW.strftime('%Y-%m-%d %H:%M:%S')
+TODAY = NOW.replace(hour=0, minute=0, second=0, microsecond=0)
 TIMEZONE = 'Africa/Ouagadougou'
 
 # References cibles : on les efface AVANT d'inserer pour rendre le seed
@@ -270,7 +272,7 @@ def insert_notification_jobs(blast_id, scheduled_at_dt, status='SCHEDULED'):
 # Tir confirme dans le futur -> NotificationJobs SCHEDULED
 # ─────────────────────────────────────────────────────────────────────────────
 print('\n[3] Tir BLT-2026-0142 (CONFIRMED, futur)...')
-sched_0142 = datetime(2026, 6, 18, 14, 0, 0)
+sched_0142 = (TODAY + timedelta(days=2)).replace(hour=14, minute=0, second=0)
 id_0142 = insert_blast(
     reference='BLT-2026-0142',
     scheduled_at=sched_0142.strftime('%Y-%m-%d %H:%M:%S'),
@@ -317,7 +319,7 @@ print(f"  blast_id={id_0142}, {nb_jobs_0142} notification jobs SCHEDULED")
 # Pas encore confirme -> pas de notification jobs
 # ─────────────────────────────────────────────────────────────────────────────
 print('\n[4] Tir BLT-2026-0143 (PLANNED, futur)...')
-sched_0143 = datetime(2026, 6, 19, 11, 30, 0)
+sched_0143 = (TODAY + timedelta(days=5)).replace(hour=11, minute=30, second=0)
 id_0143 = insert_blast(
     reference='BLT-2026-0143',
     scheduled_at=sched_0143.strftime('%Y-%m-%d %H:%M:%S'),
@@ -361,7 +363,7 @@ print(f"  blast_id={id_0143} (pas de jobs car PLANNED non confirme)")
 # Petardage confirme -> jobs SCHEDULED
 # ─────────────────────────────────────────────────────────────────────────────
 print('\n[5] Tir BLT-2026-0144 (CONFIRMED, futur, petardage)...')
-sched_0144 = datetime(2026, 6, 17, 16, 0, 0)
+sched_0144 = (TODAY + timedelta(days=1)).replace(hour=16, minute=0, second=0)
 id_0144 = insert_blast(
     reference='BLT-2026-0144',
     scheduled_at=sched_0144.strftime('%Y-%m-%d %H:%M:%S'),
@@ -408,7 +410,7 @@ print(f"  blast_id={id_0144}, {nb_jobs_0144} notification jobs SCHEDULED")
 # Tir TERMINE -> rapport d'evacuation signe + jobs SENT
 # ─────────────────────────────────────────────────────────────────────────────
 print('\n[6] Tir BLT-2026-0139 (ALL_CLEAR, termine, rapport signe)...')
-sched_0139 = datetime(2026, 6, 12, 15, 0, 0)
+sched_0139 = (TODAY - timedelta(days=3)).replace(hour=15, minute=0, second=0)
 id_0139 = insert_blast(
     reference='BLT-2026-0139',
     scheduled_at=sched_0139.strftime('%Y-%m-%d %H:%M:%S'),
@@ -497,8 +499,8 @@ print(f"  blast_id={id_0139}, {nb_jobs_0139} jobs SENT, rapport d'evacuation sig
 # puis on REPLAN (nouveaux jobs SCHEDULED pour la date reportee).
 # ─────────────────────────────────────────────────────────────────────────────
 print('\n[7] Tir BLT-2026-0140 (POSTPONED, jobs CANCELLED + REPLAN)...')
-sched_0140_orig = datetime(2026, 6, 14, 10, 0, 0)
-sched_0140_new = datetime(2026, 6, 21, 10, 0, 0)  # report a +7j (operationnel)
+sched_0140_orig = (TODAY - timedelta(days=1)).replace(hour=10, minute=0, second=0)
+sched_0140_new = (TODAY + timedelta(days=6)).replace(hour=10, minute=0, second=0)  # report a +7j (operationnel)
 id_0140 = insert_blast(
     reference='BLT-2026-0140',
     scheduled_at=sched_0140_orig.strftime('%Y-%m-%d %H:%M:%S'),

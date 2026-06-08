@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
  * declenche d'alerte : ces canaux sont branches en Phase 3 et Phase 4.
  */
 @RestController
-@RequestMapping("/hns/blast")
+@RequestMapping("/blast")
 @CrossOrigin
 @RequiredArgsConstructor
 public class BlastController {

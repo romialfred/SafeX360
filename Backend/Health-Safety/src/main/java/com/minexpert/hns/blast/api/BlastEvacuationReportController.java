@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
  * </ul>
  */
 @RestController
-@RequestMapping("/hns/blast/evacuation-report")
+@RequestMapping("/blast/evacuation-report")
 @CrossOrigin
 @RequiredArgsConstructor
 public class BlastEvacuationReportController {

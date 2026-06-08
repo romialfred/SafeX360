@@ -394,10 +394,10 @@
         "breadcrumbRoot": "Dynamitages",
         "breadcrumbCurrent": "Tableau de bord",
         "title": "Tableau de bord dynamitage",
-        "subtitle": "Vue consolidee des tirs de mine : compte a rebours du prochain tir, indicateurs cles, etat des notifications et historique recent.",
+        "subtitle": "Suivi des tirs et de la chaine d'annonce.",
         "refresh": "Actualiser",
         "lastUpdate": "Derniere mise a jour",
-        "autoRefresh": "Rafraichissement automatique toutes les 30 s",
+        "autoRefresh": "",
         "loadError": "Le tableau de bord n'a pas pu etre charge. Verifiez vos droits ou ressayez plus tard.",
         "next": {
             "title": "Prochain tir confirme",

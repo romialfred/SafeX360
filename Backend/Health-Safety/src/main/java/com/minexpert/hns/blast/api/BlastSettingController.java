@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
  * Endpoints REST des parametres du module Blast Management (par mine).
  */
 @RestController
-@RequestMapping("/hns/blast-setting")
+@RequestMapping("/blast-setting")
 @CrossOrigin
 @RequiredArgsConstructor
 public class BlastSettingController {

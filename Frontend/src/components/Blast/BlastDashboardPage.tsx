@@ -647,8 +647,7 @@ const BlastDashboardPage = () => {
                                 </h1>
                                 <p className="text-[13px] text-slate-600 mt-1 max-w-2xl leading-relaxed">
                                     {t('dashboard.subtitle', {
-                                        defaultValue:
-                                            'Vue consolidee des tirs de mine : compte a rebours du prochain tir, indicateurs cles, etat des notifications et historique recent.',
+                                        defaultValue: 'Suivi des tirs et de la chaine d\'annonce.',
                                     })}
                                 </p>
                                 <p className="text-[11px] text-slate-500 mt-2">
@@ -656,10 +655,6 @@ const BlastDashboardPage = () => {
                                     <span className="font-mono tabular-nums text-slate-700">
                                         {formatTimeOnly(lastFetchAt, locale)}
                                     </span>
-                                    <span className="text-slate-400"> · </span>
-                                    {t('dashboard.autoRefresh', {
-                                        defaultValue: 'Rafraichissement automatique toutes les 30 s',
-                                    })}
                                 </p>
                             </div>
                         </div>

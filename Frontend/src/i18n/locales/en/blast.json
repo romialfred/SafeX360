@@ -394,10 +394,10 @@
         "breadcrumbRoot": "Blasting",
         "breadcrumbCurrent": "Dashboard",
         "title": "Blast operations dashboard",
-        "subtitle": "Consolidated view of mine blasts: countdown to the next blast, key indicators, notifications status and recent history.",
+        "subtitle": "Blast tracking and notification chain.",
         "refresh": "Refresh",
         "lastUpdate": "Last updated",
-        "autoRefresh": "Auto-refresh every 30 s",
+        "autoRefresh": "",
         "loadError": "The dashboard could not be loaded. Check your permissions or try again later.",
         "next": {
             "title": "Next confirmed blast",

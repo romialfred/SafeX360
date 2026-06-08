@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.minexpert.hns.blast.config.BlastRBACConfig;
 import com.minexpert.hns.dosimetry.config.DosimetryRBACConfig;
 
 import jakarta.servlet.FilterChain;
@@ -68,7 +69,14 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
             DosimetryRBACConfig.DOSIMETRY_MEDICAL,
             DosimetryRBACConfig.DOSIMETRY_PCR_RPO,
             DosimetryRBACConfig.DOSIMETRY_ADMIN,
-            DosimetryRBACConfig.DOSIMETRY_EXPORT_MEDICAL
+            DosimetryRBACConfig.DOSIMETRY_EXPORT_MEDICAL,
+            // Blast Management — toutes les permissions accordees aux requetes system-to-system
+            BlastRBACConfig.BLAST_VIEW,
+            BlastRBACConfig.BLAST_PLAN,
+            BlastRBACConfig.BLAST_CONFIRM,
+            BlastRBACConfig.BLAST_ALARM,
+            BlastRBACConfig.BLAST_REPORT,
+            BlastRBACConfig.BLAST_ADMIN
     );
 
     @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
