@@ -1,0 +1,184 @@
+{
+    "sidebar": {
+        "parent": "HSE Inspections",
+        "registry": "Inspections registry",
+        "schedule": "Schedule an inspection",
+        "templates": "Inspection templates"
+    },
+    "common": {
+        "all": "All"
+    },
+    "templateTypes": {
+        "EQUIPMENT": "Equipment",
+        "LOCATION": "Location",
+        "PROCEDURE": "Procedure"
+    },
+    "statuses": {
+        "SCHEDULED": "Scheduled",
+        "IN_PROGRESS": "In progress",
+        "SUBMITTED": "Submitted",
+        "APPROVED": "Approved",
+        "ARCHIVED": "Archived",
+        "REJECTED": "Rejected",
+        "PENDING": "Pending",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+    },
+    "registry": {
+        "breadcrumbRoot": "Inspections",
+        "breadcrumbCurrent": "Registry",
+        "title": "Inspections registry",
+        "subtitle": "Inspection tracking and team validation.",
+        "kpi": {
+            "scheduled": "Scheduled",
+            "scheduledLabel": "Upcoming runs",
+            "inProgress": "In progress",
+            "inProgressLabel": "Field entries open",
+            "submitted": "Pending review",
+            "submittedLabel": "Awaiting team",
+            "archived": "Archived",
+            "archivedLabel": "Frozen reports"
+        },
+        "filters": {
+            "searchPlaceholder": "Search by target or template code...",
+            "status": "Status",
+            "allStatuses": "All statuses",
+            "type": "Type",
+            "allTypes": "All types"
+        },
+        "actions": {
+            "newInspection": "Schedule an inspection",
+            "view": "View",
+            "execute": "Execute",
+            "exportCsv": "Export CSV"
+        },
+        "columns": {
+            "plannedDate": "Planned date",
+            "template": "Template",
+            "target": "Target",
+            "type": "Type",
+            "site": "Site",
+            "status": "Status",
+            "progress": "Progress",
+            "nonConform": "Non-conform",
+            "actions": "Actions"
+        },
+        "empty": {
+            "title": "No inspection yet",
+            "subtitle": "Schedule your first inspection from an existing template or create one.",
+            "cta": "Schedule an inspection"
+        },
+        "loadError": "Registry could not load. Check your access rights or try again."
+    },
+    "conformity": {
+        "CONFORM": "Compliant",
+        "WATCH": "Watch",
+        "NON_CONFORM": "Non-compliant",
+        "NOT_APPLICABLE": "Not applicable"
+    },
+    "execute": {
+        "breadcrumbCurrent": "Execution",
+        "progress": "{{done}} / {{total}} checkpoints recorded",
+        "criticalChip": "Critical",
+        "headerSavedAt": "Local save {{time}}",
+        "noteLabel": "Note or observation",
+        "notePlaceholder": "Details, context, anomaly noticed...",
+        "photoLabel": "Photo",
+        "photoHint": "Server upload will be available after use case validation. Record the photo reference here if needed.",
+        "photoFilename": "Photo name (optional)",
+        "rangeLabel": "Measured value",
+        "rangeHint": "Expected range: {{min}} {{unit}} - {{max}} {{unit}}",
+        "rangeOutOfRange": "Value outside expected range.",
+        "rangeInWatch": "Close to a bound, monitor.",
+        "freeTextLabel": "Observation",
+        "freeTextPlaceholder": "Describe what you observed.",
+        "booleanYes": "Compliant",
+        "booleanNo": "Non-compliant",
+        "visualGood": "Good",
+        "visualWatch": "Watch",
+        "visualPoor": "Poor",
+        "summaryHeading": "Report summary",
+        "summaryHint": "Summarize key findings and the overall recommendation. This text becomes part of the final report.",
+        "summaryPlaceholder": "After full inspection, the equipment remains fit for service provided...",
+        "footerSavedDraft": "Save draft",
+        "footerSubmit": "Submit for review",
+        "footerSubmitDisabled": "Fill all required checkpoints to submit",
+        "savedDraft": "Draft saved",
+        "submitted": "Inspection submitted for team review",
+        "saveError": "Save failed. Check your connection.",
+        "submitError": "Submission failed. Check required checkpoints.",
+        "readonlyBanner": "This inspection is archived. Values are read-only.",
+        "rejectedBanner": "This inspection was rejected by the team. Fix the findings and resubmit."
+    },
+    "schedule": {
+        "breadcrumbCurrent": "Schedule",
+        "title": "Schedule an inspection",
+        "subtitle": "Pick the target, the template to apply, then the execution date.",
+        "steps": {
+            "type": "Object type",
+            "target": "Target",
+            "template": "Template",
+            "details": "Details"
+        },
+        "typeStep": {
+            "heading": "What do you want to inspect?",
+            "EQUIPMENT": {
+                "title": "An equipment",
+                "description": "Machine, vehicle, tool"
+            },
+            "LOCATION": {
+                "title": "A location",
+                "description": "Workshop, magazine, work area, building"
+            },
+            "PROCEDURE": {
+                "title": "A procedure",
+                "description": "LOTO, working at height, confined space"
+            }
+        },
+        "targetStep": {
+            "heading": "Which target?",
+            "siteLabel": "Site (mine)",
+            "sitePlaceholder": "Select site",
+            "targetIdLabel": "Target identifier",
+            "targetIdHelp": "Equipment number / location id / procedure id",
+            "targetLabelLabel": "Display name",
+            "targetLabelPlaceholder": "Volvo A40G #18, North maintenance shop..."
+        },
+        "templateStep": {
+            "heading": "Which template?",
+            "noTemplate": "No template available for this type. Ask an administrator to create one.",
+            "checkpoints": "{{count}} checkpoints",
+            "estimated": "Estimated: {{min}} min"
+        },
+        "detailsStep": {
+            "heading": "Date and inspector",
+            "plannedDateLabel": "Planned date",
+            "startTimeLabel": "Start time (optional)",
+            "endTimeLabel": "End time (optional)",
+            "primaryInspectorLabel": "Primary inspector",
+            "primaryInspectorPlaceholder": "Select inspector",
+            "objectivesLabel": "Inspection objective",
+            "objectivesPlaceholder": "Check operating condition and safety devices before returning to service.",
+            "descriptionLabel": "Context or special conditions",
+            "descriptionPlaceholder": "Following the 04/06 incident, gradual restart..."
+        },
+        "buttons": {
+            "previous": "Previous",
+            "next": "Next",
+            "submit": "Schedule",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "typeRequired": "Choose an object type.",
+            "siteRequired": "Site is required.",
+            "targetIdRequired": "Target identifier is required.",
+            "targetLabelRequired": "Target display name is required.",
+            "templateRequired": "Choose an inspection template.",
+            "dateRequired": "Planned date is required.",
+            "submitFailed": "Scheduling failed. Check your access rights or try again."
+        },
+        "success": {
+            "submitted": "Inspection scheduled (id #{{id}})."
+        }
+    }
+}

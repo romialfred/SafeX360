@@ -210,6 +210,11 @@ const BlastEvacuationReportPage = lazy(() => import('../components/Blast/BlastEv
 // LOT — P7 : tableau de bord blast (landing par defaut + alias /blast/dashboard).
 const BlastDashboardPage = lazy(() => import('../components/Blast/BlastDashboardPage'));
 
+// LOT — Inspections HSE (refonte 2026-06, Phase 3 Frontend).
+const InspectionRegistryPage = lazy(() => import('../components/Inspection/InspectionRegistryPage'));
+const InspectionScheduleForm = lazy(() => import('../components/Inspection/InspectionScheduleForm'));
+const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
+
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
  * Aligne sur DosimetrySuspense (meme bg, meme loader Mantine centre).
@@ -555,6 +560,13 @@ const router = createBrowserRouter([
             // P6 — Rapport d'evacuation post-tir (RBAC enforcement cote backend :
             // BLAST_VIEW pour la lecture, BLAST_REPORT pour signer / ajouter incident).
             { path: 'blast/evacuation-report/:blastId', element: <BlastSuspense><BlastEvacuationReportPage /></BlastSuspense> },
+
+            // LOT — Module Inspections HSE (refonte 2026-06, Phase 3 Frontend)
+            // Reuse BlastSuspense (meme look & feel cream + Loader Mantine).
+            { path: 'inspections', element: <BlastSuspense><InspectionRegistryPage /></BlastSuspense> },
+            { path: 'inspections/schedule', element: <BlastSuspense><InspectionScheduleForm /></BlastSuspense> },
+            { path: 'inspections/execute/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
+            { path: 'inspections/detail/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
 
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },

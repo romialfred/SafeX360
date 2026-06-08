@@ -416,7 +416,7 @@ export const menuIdToUrl: Record<string, string> = {
 
     // Prevention Activities
     "non-conformity": "/non-conformity",
-    inspections: "/PGI",
+    inspections: "/inspections",
     meetings: "/hs-Meetings",
     "management-tour": "/steering-tours",
 

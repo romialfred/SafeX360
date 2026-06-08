@@ -1,0 +1,184 @@
+{
+    "sidebar": {
+        "parent": "Inspections HSE",
+        "registry": "Registre des inspections",
+        "schedule": "Planifier une inspection",
+        "templates": "Modeles d'inspection"
+    },
+    "common": {
+        "all": "Tous"
+    },
+    "templateTypes": {
+        "EQUIPMENT": "Equipement",
+        "LOCATION": "Lieu",
+        "PROCEDURE": "Procedure"
+    },
+    "statuses": {
+        "SCHEDULED": "Planifiee",
+        "IN_PROGRESS": "En cours",
+        "SUBMITTED": "Soumise",
+        "APPROVED": "Approuvee",
+        "ARCHIVED": "Archivee",
+        "REJECTED": "Rejetee",
+        "PENDING": "En attente",
+        "COMPLETED": "Terminee",
+        "CANCELLED": "Annulee"
+    },
+    "registry": {
+        "breadcrumbRoot": "Inspections",
+        "breadcrumbCurrent": "Registre",
+        "title": "Registre des inspections",
+        "subtitle": "Suivi des inspections et de leur validation collegiale.",
+        "kpi": {
+            "scheduled": "Planifiees",
+            "scheduledLabel": "A executer prochainement",
+            "inProgress": "En cours",
+            "inProgressLabel": "Saisies terrain ouvertes",
+            "submitted": "En validation",
+            "submittedLabel": "Attente equipe",
+            "archived": "Archivees",
+            "archivedLabel": "Rapports figes"
+        },
+        "filters": {
+            "searchPlaceholder": "Recherche par cible ou code modele...",
+            "status": "Statut",
+            "allStatuses": "Tous statuts",
+            "type": "Type",
+            "allTypes": "Tous types"
+        },
+        "actions": {
+            "newInspection": "Planifier une inspection",
+            "view": "Voir",
+            "execute": "Executer",
+            "exportCsv": "Exporter CSV"
+        },
+        "columns": {
+            "plannedDate": "Date prevue",
+            "template": "Modele",
+            "target": "Cible",
+            "type": "Type",
+            "site": "Site",
+            "status": "Statut",
+            "progress": "Avancement",
+            "nonConform": "Non conformes",
+            "actions": "Actions"
+        },
+        "empty": {
+            "title": "Aucune inspection enregistree",
+            "subtitle": "Planifiez votre premiere inspection a partir d'un modele existant ou creez-en un.",
+            "cta": "Planifier une inspection"
+        },
+        "loadError": "Le registre n'a pas pu etre charge. Verifiez vos droits ou ressayez."
+    },
+    "conformity": {
+        "CONFORM": "Conforme",
+        "WATCH": "A surveiller",
+        "NON_CONFORM": "Non conforme",
+        "NOT_APPLICABLE": "Non applicable"
+    },
+    "execute": {
+        "breadcrumbCurrent": "Realisation",
+        "progress": "{{done}} / {{total}} points renseignes",
+        "criticalChip": "Critique",
+        "headerSavedAt": "Sauvegarde locale {{time}}",
+        "noteLabel": "Note ou observation",
+        "notePlaceholder": "Precisions, contexte, anomalie observee...",
+        "photoLabel": "Photo",
+        "photoHint": "L'envoi sur le serveur sera disponible apres validation des cas d'usage. Notez la reference de la photo si necessaire.",
+        "photoFilename": "Nom de la photo (optionnel)",
+        "rangeLabel": "Valeur mesuree",
+        "rangeHint": "Plage attendue : {{min}} {{unit}} - {{max}} {{unit}}",
+        "rangeOutOfRange": "Valeur hors plage attendue.",
+        "rangeInWatch": "Proche d'une borne, a surveiller.",
+        "freeTextLabel": "Constatation",
+        "freeTextPlaceholder": "Decrivez ce que vous avez observe.",
+        "booleanYes": "Conforme",
+        "booleanNo": "Non conforme",
+        "visualGood": "Bon",
+        "visualWatch": "A surveiller",
+        "visualPoor": "Mauvais",
+        "summaryHeading": "Synthese du rapport",
+        "summaryHint": "Resumez les principaux constats et la recommandation generale. Ce texte fera partie du rapport final.",
+        "summaryPlaceholder": "Apres inspection complete, l'equipement reste apte au service sous reserve...",
+        "footerSavedDraft": "Sauvegarder le brouillon",
+        "footerSubmit": "Soumettre pour validation",
+        "footerSubmitDisabled": "Renseignez tous les points obligatoires pour soumettre",
+        "savedDraft": "Brouillon enregistre",
+        "submitted": "Inspection soumise pour validation collegiale",
+        "saveError": "Echec de la sauvegarde. Verifiez votre connexion.",
+        "submitError": "Echec de la soumission. Verifiez les points obligatoires.",
+        "readonlyBanner": "Cette inspection est archivee. Les valeurs sont en lecture seule.",
+        "rejectedBanner": "Cette inspection a ete rejetee par l'equipe. Corrigez les constats puis re-soumettez."
+    },
+    "schedule": {
+        "breadcrumbCurrent": "Planifier",
+        "title": "Planifier une inspection",
+        "subtitle": "Choisissez la cible, le modele a appliquer puis la date d'execution.",
+        "steps": {
+            "type": "Type d'objet",
+            "target": "Cible",
+            "template": "Modele",
+            "details": "Details"
+        },
+        "typeStep": {
+            "heading": "Que voulez-vous inspecter ?",
+            "EQUIPMENT": {
+                "title": "Un equipement",
+                "description": "Engin, machine, vehicule, outil"
+            },
+            "LOCATION": {
+                "title": "Un lieu",
+                "description": "Atelier, magasin, zone de travail, batiment"
+            },
+            "PROCEDURE": {
+                "title": "Une procedure",
+                "description": "Consignation, travail en hauteur, espace confine"
+            }
+        },
+        "targetStep": {
+            "heading": "Sur quelle cible ?",
+            "siteLabel": "Site (mine)",
+            "sitePlaceholder": "Selectionnez le site",
+            "targetIdLabel": "Identifiant de la cible",
+            "targetIdHelp": "Numero d'engin / id du lieu / id procedure",
+            "targetLabelLabel": "Designation",
+            "targetLabelPlaceholder": "Camion benne Volvo A40G #18, Atelier maintenance Nord..."
+        },
+        "templateStep": {
+            "heading": "Quel modele appliquer ?",
+            "noTemplate": "Aucun modele disponible pour ce type. Demandez a un administrateur de creer le modele correspondant.",
+            "checkpoints": "{{count}} points de controle",
+            "estimated": "Estimation : {{min}} min"
+        },
+        "detailsStep": {
+            "heading": "Date et inspecteur",
+            "plannedDateLabel": "Date prevue",
+            "startTimeLabel": "Heure debut (optionnel)",
+            "endTimeLabel": "Heure fin (optionnel)",
+            "primaryInspectorLabel": "Inspecteur principal",
+            "primaryInspectorPlaceholder": "Selectionnez l'inspecteur",
+            "objectivesLabel": "Objectif de l'inspection",
+            "objectivesPlaceholder": "Verifier l'etat de fonctionnement et les organes de securite avant remise en service.",
+            "descriptionLabel": "Contexte ou conditions particulieres",
+            "descriptionPlaceholder": "Apres incident du 04/06, redemarrage progressif..."
+        },
+        "buttons": {
+            "previous": "Precedent",
+            "next": "Continuer",
+            "submit": "Planifier",
+            "cancel": "Annuler"
+        },
+        "errors": {
+            "typeRequired": "Choisissez un type d'objet.",
+            "siteRequired": "Le site est obligatoire.",
+            "targetIdRequired": "L'identifiant de la cible est obligatoire.",
+            "targetLabelRequired": "La designation de la cible est obligatoire.",
+            "templateRequired": "Choisissez un modele d'inspection.",
+            "dateRequired": "La date prevue est obligatoire.",
+            "submitFailed": "Echec de la planification. Verifiez vos droits ou ressayez."
+        },
+        "success": {
+            "submitted": "Inspection planifiee avec succes (id #{{id}})."
+        }
+    }
+}
