@@ -355,6 +355,24 @@ export const moduleConfigurations: any[] = [
         isEnabled: true,
         category: 'Dosimetry & Exposures',
         description: 'Module configuration: regulatory limits, exposure bands and RBAC'
+    },
+
+    // Blast Management (LOT — Module Gestion des Dynamitages)
+    // Aligne 1:1 avec les sous-items de la sidebar pour coherence
+    // entre la navigation et la gestion des modules.
+    {
+        id: 'blast-registry',
+        name: 'Blast Registry',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Plan, track and manage mine blasts and their announcement chain'
+    },
+    {
+        id: 'blast-new',
+        name: 'Log a Blast',
+        isEnabled: true,
+        category: 'Blast Management',
+        description: 'Create a new blast: plan, exclusion zone, recipients, attachments'
     }
 ];
 

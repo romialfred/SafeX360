@@ -1,0 +1,316 @@
+{
+    "module": {
+        "name": "Gestion des Dynamitages",
+        "shortName": "Dynamitages",
+        "tagline": "Planification, annonce et tracabilite des tirs de mine"
+    },
+    "sidebar": {
+        "blast": "Gestion des Dynamitages",
+        "blastDashboard": "Tableau de bord",
+        "blastRegistry": "Registre des tirs",
+        "blastNew": "Enregistrer un tir",
+        "blastSettings": "Parametres dynamitage"
+    },
+    "common": {
+        "back": "Retour",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "edit": "Modifier",
+        "duplicate": "Dupliquer",
+        "export": "Exporter",
+        "search": "Rechercher",
+        "filter": "Filtrer",
+        "all": "Tous",
+        "yes": "Oui",
+        "no": "Non",
+        "reason": "Motif",
+        "loading": "Chargement…",
+        "noData": "Aucun resultat",
+        "reset": "Reinitialiser"
+    },
+    "statuses": {
+        "DRAFT": "Brouillon",
+        "PLANNED": "Planifie",
+        "CONFIRMED": "Confirme",
+        "IMMINENT": "Imminent",
+        "FIRED": "Tire",
+        "ALL_CLEAR": "Site degage",
+        "MISFIRE": "Rate",
+        "CANCELLED": "Annule",
+        "POSTPONED": "Reporte"
+    },
+    "types": {
+        "PRODUCTION": "Production",
+        "DEVELOPMENT": "Developpement",
+        "SECONDARY": "Secondaire (petardage)",
+        "PRESPLIT": "Presplit",
+        "FINAL": "Finition"
+    },
+    "registry": {
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Dynamitages",
+        "breadcrumbCurrent": "Registre des tirs",
+        "title": "Registre des tirs",
+        "subtitle": "Suivez et planifiez les tirs de mine, en gardant la chaine d'annonce et d'evacuation sous controle.",
+        "kpi": {
+            "today": "Tirs aujourd'hui",
+            "todayLabel": "Prevus dans la journee",
+            "week": "Cette semaine",
+            "weekLabel": "Sur 7 jours glissants",
+            "confirmed": "Confirmes",
+            "confirmedLabel": "Verrouilles, chaine demarree",
+            "toPlan": "A planifier",
+            "toPlanLabel": "Brouillons en attente"
+        },
+        "filters": {
+            "statusAll": "Tous statuts",
+            "pit": "Fosse",
+            "pitPlaceholder": "Toutes les fosses",
+            "period": "Periode",
+            "blaster": "Boutefeu",
+            "blasterPlaceholder": "Tous boutefeux",
+            "searchPlaceholder": "Recherche par reference (BLT-YYYY-NNNN)"
+        },
+        "view": {
+            "table": "Tableau",
+            "tiles": "Tuiles"
+        },
+        "actions": {
+            "newBlast": "Nouveau tir",
+            "duplicate": "Dupliquer",
+            "exportCsv": "Exporter CSV",
+            "view": "Voir le tir",
+            "edit": "Modifier"
+        },
+        "columns": {
+            "reference": "Reference",
+            "zone": "Zone",
+            "type": "Type",
+            "scheduledAt": "Heure prevue",
+            "status": "Statut",
+            "blaster": "Boutefeu",
+            "notifications": "Rappels",
+            "actions": "Actions"
+        },
+        "notifications": {
+            "pending": "Programmes",
+            "sending": "En cours",
+            "sent": "Envoyes",
+            "failed": "En echec",
+            "notStarted": "Non demarre"
+        },
+        "empty": {
+            "title": "Aucun tir dans le registre",
+            "subtitle": "Enregistrez un premier tir prevu pour declencher la planification et la chaine d'annonce.",
+            "cta": "Enregistrer un tir"
+        },
+        "loadError": "Impossible de charger le registre des tirs. Reessayez ulterieurement.",
+        "exportError": "L'export CSV a echoue. Verifiez vos droits et reessayez."
+    },
+    "form": {
+        "breadcrumbCurrentNew": "Nouveau tir",
+        "breadcrumbCurrentEdit": "Modifier le tir",
+        "titleNew": "Enregistrer un tir",
+        "titleEdit": "Modifier le tir",
+        "subtitleNew": "Saisissez le tir prevu. Vous pourrez verrouiller la planification au moment voulu.",
+        "subtitleEdit": "Mettez a jour les caracteristiques du tir. Toute modification est tracee.",
+        "section1": "Identification",
+        "section2": "Localisation",
+        "section3": "Plan de tir",
+        "section4": "Explosifs et amorcage",
+        "section5": "Perimetre et abris",
+        "section6": "Equipe et responsabilites",
+        "section7": "Environnement",
+        "section8": "Annonce",
+        "section9": "Pieces jointes",
+        "section10": "Notes",
+        "fields": {
+            "reference": "Reference",
+            "referencePlaceholder": "Genere automatiquement (BLT-YYYY-NNNN)",
+            "scheduledAt": "Heure de tir prevue",
+            "timezone": "Fuseau horaire",
+            "type": "Type de tir",
+            "typePlaceholder": "Selectionnez un type",
+            "pit": "Fosse",
+            "pitPlaceholder": "Ex. Fosse Nord",
+            "bench": "Gradin / Banc",
+            "benchPlaceholder": "Ex. Gradin 1080",
+            "block": "Bloc / Panneau",
+            "blockPlaceholder": "Ex. Bloc B3",
+            "lat": "Latitude",
+            "lng": "Longitude",
+            "accessConcerned": "Acces concernes",
+            "accessPlaceholder": "Decrivez les voies a fermer",
+            "holeCount": "Nombre de trous",
+            "holeDiameter": "Diametre",
+            "depth": "Profondeur",
+            "burden": "Banquette (burden)",
+            "spacing": "Espacement",
+            "stemming": "Bourrage (stemming)",
+            "patternCalculated": "Maille calculee",
+            "explosiveType": "Nature de l'explosif",
+            "explosiveTypePlaceholder": "Selectionnez un explosif",
+            "explosiveQty": "Quantite totale",
+            "powderFactor": "Charge specifique",
+            "initiationSystem": "Systeme d'amorcage",
+            "initiationPlaceholder": "Selectionnez un systeme",
+            "delaySequence": "Sequence de retards",
+            "delaySequencePlaceholder": "Ex. 25/42 ms",
+            "exclusionRadius": "Rayon d'exclusion",
+            "assemblyPoints": "Points de rassemblement",
+            "assemblyPointsPlaceholder": "Selectionnez les points",
+            "guards": "Postes des gardes",
+            "guardsPlaceholder": "Ajoutez un garde",
+            "addGuard": "Ajouter un garde",
+            "removeGuard": "Retirer",
+            "guardName": "Identifiant agent",
+            "guardPosition": "Poste affecte",
+            "blaster": "Boutefeu en charge",
+            "blasterPlaceholder": "Selectionnez un boutefeu agree",
+            "team": "Equipe de tir",
+            "teamPlaceholder": "Composition de l'equipe",
+            "hseLead": "Responsable HSE",
+            "hseLeadPlaceholder": "Selectionnez un responsable HSE",
+            "ppvLimit": "Limite PPV",
+            "sensitiveReceivers": "Recepteurs sensibles",
+            "sensitivePlaceholder": "Ex. hopital a 800 m, ligne haute tension a 250 m",
+            "recipients": "Destinataires des e-mails",
+            "recipientsPlaceholder": "Selectionnez les destinataires",
+            "addRecipient": "Ajouter un destinataire",
+            "removeRecipient": "Retirer",
+            "recipientEmail": "Adresse e-mail",
+            "recipientLanguage": "Langue preferee",
+            "alarmZoneScope": "Zone alerte T-10",
+            "alarmZonePlaceholder": "Decrivez la zone couverte par l'Alerte Generale",
+            "attachments": "Pieces jointes",
+            "attachmentsHint": "Permis de tir, preavis, JSA, plan de tir, schema de foration.",
+            "notes": "Notes libres",
+            "notesPlaceholder": "Observations, restrictions, consignes specifiques"
+        },
+        "units": {
+            "m": "m",
+            "mm": "mm",
+            "kg": "kg",
+            "kgPerM3": "kg/m3",
+            "mmPerS": "mm/s",
+            "holes": "trous"
+        },
+        "actions": {
+            "saveDraft": "Enregistrer le brouillon",
+            "confirm": "Confirmer le tir",
+            "update": "Mettre a jour"
+        },
+        "confirmModal": {
+            "title": "Confirmer ce tir ?",
+            "body": "Confirmer verrouille l'heure et le perimetre, et lance la chaine de rappels (24 h / 6 h / 30 min) ainsi que l'alerte a T-10. Cette decision est suivie d'effets immediats.",
+            "validate": "Oui, confirmer le tir",
+            "cancel": "Revenir au formulaire"
+        },
+        "lockedModal": {
+            "title": "Tir confirme - modification soumise a justification",
+            "body": "Ce tir est verrouille. Toute modification de l'heure ou du perimetre exige une raison tracee et recalculera la chaine d'annonce.",
+            "reasonLabel": "Raison de la modification",
+            "reasonPlaceholder": "Motif metier, autorisation, contrainte operationnelle…",
+            "validate": "Enregistrer la modification",
+            "cancel": "Annuler"
+        },
+        "validation": {
+            "scheduledAtRequired": "L'heure de tir est obligatoire.",
+            "scheduledAtPast": "L'heure de tir doit etre dans le futur.",
+            "typeRequired": "Selectionnez le type de tir.",
+            "exclusionRadiusInvalid": "Indiquez un rayon d'exclusion strictement positif.",
+            "holeCountInvalid": "Le nombre de trous doit etre positif.",
+            "explosiveQtyInvalid": "Quantite invalide.",
+            "reasonRequired": "Une raison est obligatoire pour modifier un tir confirme."
+        },
+        "saveSuccessDraft": "Brouillon enregistre.",
+        "saveSuccessConfirmed": "Tir confirme. La chaine d'annonce est programmee.",
+        "saveSuccessUpdated": "Tir mis a jour.",
+        "saveError": "L'enregistrement a echoue. Verifiez les champs et reessayez."
+    },
+    "detail": {
+        "breadcrumbCurrent": "Detail du tir",
+        "loading": "Chargement du tir…",
+        "loadError": "Impossible de charger le tir.",
+        "header": {
+            "blasterLabel": "Boutefeu",
+            "scheduledLabel": "Heure prevue"
+        },
+        "tabs": {
+            "plan": "Plan",
+            "team": "Equipe",
+            "announcement": "Annonce",
+            "reminders": "Etat des rappels",
+            "history": "Historique"
+        },
+        "actions": {
+            "confirm": "Confirmer",
+            "reschedule": "Reporter",
+            "cancel": "Annuler",
+            "declareFired": "Declarer tire",
+            "declareMisfire": "Declarer rate",
+            "allClear": "Site degage",
+            "openEvacReport": "Voir rapport d'evacuation",
+            "edit": "Modifier"
+        },
+        "modals": {
+            "rescheduleTitle": "Reporter ce tir",
+            "rescheduleNewDate": "Nouvelle heure de tir",
+            "rescheduleReason": "Raison du report",
+            "cancelTitle": "Annuler ce tir",
+            "cancelReason": "Raison de l'annulation",
+            "misfireTitle": "Declarer un raté",
+            "misfireReason": "Description du rate",
+            "misfireHint": "Le perimetre reste actif. Le 'site degage' restera bloque tant qu'un BLAST_ADMIN n'aura pas resolu la situation.",
+            "allClearTitle": "Prononcer le site degage",
+            "allClearBody": "Confirmez que l'inspection est terminee et que le perimetre peut etre leve.",
+            "firedTitle": "Declarer le tir tire",
+            "firedBody": "Confirmez que le tir a eu lieu. L'inspection demarre, le 'site degage' reste a prononcer.",
+            "validate": "Confirmer",
+            "cancel": "Annuler"
+        },
+        "actionSuccess": "Action enregistree.",
+        "actionError": "L'action a echoue.",
+        "plan": {
+            "title": "Plan de tir",
+            "holesLabel": "Trous",
+            "diameterLabel": "Diametre",
+            "depthLabel": "Profondeur",
+            "burdenLabel": "Banquette",
+            "spacingLabel": "Espacement",
+            "stemmingLabel": "Bourrage",
+            "explosiveLabel": "Explosif",
+            "qtyLabel": "Quantite",
+            "powderFactorLabel": "Charge specifique",
+            "initiationLabel": "Amorcage",
+            "delayLabel": "Retards",
+            "empty": "Le plan de tir n'a pas encore ete saisi."
+        },
+        "team": {
+            "title": "Equipe de tir",
+            "blasterLabel": "Boutefeu",
+            "hseLeadLabel": "Responsable HSE",
+            "guardsLabel": "Postes des gardes",
+            "empty": "Aucun garde affecte."
+        },
+        "announcement": {
+            "title": "Annonce et destinataires",
+            "alarmZoneLabel": "Zone alerte T-10",
+            "recipientsLabel": "Destinataires e-mails",
+            "languageLabel": "Langue",
+            "empty": "Aucun destinataire."
+        },
+        "reminders": {
+            "title": "Etat des rappels",
+            "subtitle": "Chaine d'annonce 24 h / 6 h / 30 min, popups toutes les 15 min, Alerte Generale a T-10.",
+            "notStarted": "La chaine d'annonce demarrera a la confirmation du tir.",
+            "phase3": "Le suivi detaille des envois sera disponible en Phase 3."
+        },
+        "history": {
+            "title": "Historique des statuts",
+            "subtitle": "Journal append-only de tous les changements et actions tracees.",
+            "phase3": "L'historique detaille sera affiche en Phase 3."
+        }
+    }
+}

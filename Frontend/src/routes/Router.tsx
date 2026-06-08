@@ -200,6 +200,31 @@ const DosimetryReportsPage = lazy(() => import('../components/Dosimetry/Dosimetr
 const RegulatoryExportsPage = lazy(() => import('../components/Dosimetry/RegulatoryExportsPage'));
 const DosimetryDashboardPage = lazy(() => import('../components/Dosimetry/DosimetryDashboardPage'));
 
+// LOT — Module Gestion des Dynamitages / Blast Management (Phase 2 Frontend)
+// Code-splitting actif pour eviter d'alourdir le bundle initial.
+const BlastRegistryPage = lazy(() => import('../components/Blast/BlastRegistryPage'));
+const BlastForm = lazy(() => import('../components/Blast/BlastForm'));
+const BlastDetailPage = lazy(() => import('../components/Blast/BlastDetailPage'));
+
+/**
+ * Fallback Suspense pour les pages Blast Management lazy-loaded.
+ * Aligne sur DosimetrySuspense (meme bg, meme loader Mantine centre).
+ */
+const BlastSuspense = ({ children }: { children: React.ReactNode }) => (
+    <Suspense
+        fallback={
+            <div className="min-h-[60vh] flex items-center justify-center bg-[#FAF8F3]">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader size="md" color="orange" />
+                    <p className="text-[12px] text-slate-500 tracking-wide">Chargement du module Dynamitages…</p>
+                </div>
+            </div>
+        }
+    >
+        {children}
+    </Suspense>
+);
+
 /**
  * Fallback Suspense pour les pages dosimetrie lazy-loaded.
  * Reste discret : un loader Mantine centre, sans flash visuel desagreable
@@ -510,6 +535,15 @@ const router = createBrowserRouter([
             { path: 'dosimetry/my-medical', element: <DosimetrySuspense><MyMedicalAreaPage /></DosimetrySuspense> },
             { path: 'dosimetry/reports', element: <DosimetrySuspense><DosimetryReportsPage /></DosimetrySuspense> },
             { path: 'dosimetry/regulatory-exports', element: <DosimetrySuspense><RegulatoryExportsPage /></DosimetrySuspense> },
+
+            // LOT — Module Gestion des Dynamitages / Blast Management (Phase 2)
+            // Registre + Formulaire + Detail. RBAC enforcement cote backend
+            // (BLAST_VIEW / BLAST_PLAN / BLAST_CONFIRM / BLAST_ADMIN).
+            { path: 'blast', element: <BlastSuspense><BlastRegistryPage /></BlastSuspense> },
+            { path: 'blast/new', element: <BlastSuspense><BlastForm /></BlastSuspense> },
+            { path: 'blast/edit/:id', element: <BlastSuspense><BlastForm /></BlastSuspense> },
+            { path: 'blast/detail/:id', element: <BlastSuspense><BlastDetailPage /></BlastSuspense> },
+
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },
 

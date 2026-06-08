@@ -1,0 +1,316 @@
+{
+    "module": {
+        "name": "Blast Management",
+        "shortName": "Blasting",
+        "tagline": "Planning, broadcast and traceability of mine blasts"
+    },
+    "sidebar": {
+        "blast": "Blast Management",
+        "blastDashboard": "Dashboard",
+        "blastRegistry": "Blast registry",
+        "blastNew": "Log a blast",
+        "blastSettings": "Blast settings"
+    },
+    "common": {
+        "back": "Back",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "export": "Export",
+        "search": "Search",
+        "filter": "Filter",
+        "all": "All",
+        "yes": "Yes",
+        "no": "No",
+        "reason": "Reason",
+        "loading": "Loading…",
+        "noData": "No results",
+        "reset": "Reset"
+    },
+    "statuses": {
+        "DRAFT": "Draft",
+        "PLANNED": "Planned",
+        "CONFIRMED": "Confirmed",
+        "IMMINENT": "Imminent",
+        "FIRED": "Fired",
+        "ALL_CLEAR": "All clear",
+        "MISFIRE": "Misfire",
+        "CANCELLED": "Cancelled",
+        "POSTPONED": "Postponed"
+    },
+    "types": {
+        "PRODUCTION": "Production",
+        "DEVELOPMENT": "Development",
+        "SECONDARY": "Secondary",
+        "PRESPLIT": "Presplit",
+        "FINAL": "Final pass"
+    },
+    "registry": {
+        "breadcrumbRoot": "SafeX 360",
+        "breadcrumbParent": "Blasting",
+        "breadcrumbCurrent": "Blast registry",
+        "title": "Blast registry",
+        "subtitle": "Track and plan mine blasts while keeping the announcement and evacuation chain under control.",
+        "kpi": {
+            "today": "Today's blasts",
+            "todayLabel": "Scheduled today",
+            "week": "This week",
+            "weekLabel": "Over a 7-day rolling window",
+            "confirmed": "Confirmed",
+            "confirmedLabel": "Locked, chain started",
+            "toPlan": "To plan",
+            "toPlanLabel": "Drafts awaiting"
+        },
+        "filters": {
+            "statusAll": "All statuses",
+            "pit": "Pit",
+            "pitPlaceholder": "All pits",
+            "period": "Period",
+            "blaster": "Blaster",
+            "blasterPlaceholder": "All blasters",
+            "searchPlaceholder": "Search by reference (BLT-YYYY-NNNN)"
+        },
+        "view": {
+            "table": "Table",
+            "tiles": "Tiles"
+        },
+        "actions": {
+            "newBlast": "New blast",
+            "duplicate": "Duplicate",
+            "exportCsv": "Export CSV",
+            "view": "Open blast",
+            "edit": "Edit"
+        },
+        "columns": {
+            "reference": "Reference",
+            "zone": "Zone",
+            "type": "Type",
+            "scheduledAt": "Scheduled at",
+            "status": "Status",
+            "blaster": "Blaster",
+            "notifications": "Reminders",
+            "actions": "Actions"
+        },
+        "notifications": {
+            "pending": "Scheduled",
+            "sending": "In progress",
+            "sent": "Sent",
+            "failed": "Failed",
+            "notStarted": "Not started"
+        },
+        "empty": {
+            "title": "No blast in the registry yet",
+            "subtitle": "Log a first planned blast to trigger the announcement chain and reminders.",
+            "cta": "Log a blast"
+        },
+        "loadError": "Could not load the blast registry. Please try again later.",
+        "exportError": "CSV export failed. Check your permissions and retry."
+    },
+    "form": {
+        "breadcrumbCurrentNew": "New blast",
+        "breadcrumbCurrentEdit": "Edit blast",
+        "titleNew": "Log a blast",
+        "titleEdit": "Edit blast",
+        "subtitleNew": "Enter the planned blast. You can lock the schedule when ready.",
+        "subtitleEdit": "Update the blast details. Every change is logged.",
+        "section1": "Identification",
+        "section2": "Location",
+        "section3": "Blast plan",
+        "section4": "Explosives and initiation",
+        "section5": "Exclusion zone and shelters",
+        "section6": "Team and responsibilities",
+        "section7": "Environment",
+        "section8": "Announcement",
+        "section9": "Attachments",
+        "section10": "Notes",
+        "fields": {
+            "reference": "Reference",
+            "referencePlaceholder": "Auto-generated (BLT-YYYY-NNNN)",
+            "scheduledAt": "Scheduled blast time",
+            "timezone": "Timezone",
+            "type": "Blast type",
+            "typePlaceholder": "Pick a type",
+            "pit": "Pit",
+            "pitPlaceholder": "e.g. North Pit",
+            "bench": "Bench",
+            "benchPlaceholder": "e.g. Bench 1080",
+            "block": "Block / panel",
+            "blockPlaceholder": "e.g. Block B3",
+            "lat": "Latitude",
+            "lng": "Longitude",
+            "accessConcerned": "Affected access routes",
+            "accessPlaceholder": "Describe routes to close",
+            "holeCount": "Number of holes",
+            "holeDiameter": "Diameter",
+            "depth": "Depth",
+            "burden": "Burden",
+            "spacing": "Spacing",
+            "stemming": "Stemming",
+            "patternCalculated": "Calculated pattern",
+            "explosiveType": "Explosive",
+            "explosiveTypePlaceholder": "Pick an explosive",
+            "explosiveQty": "Total quantity",
+            "powderFactor": "Powder factor",
+            "initiationSystem": "Initiation system",
+            "initiationPlaceholder": "Pick a system",
+            "delaySequence": "Delay sequence",
+            "delaySequencePlaceholder": "e.g. 25/42 ms",
+            "exclusionRadius": "Exclusion radius",
+            "assemblyPoints": "Assembly points",
+            "assemblyPointsPlaceholder": "Pick assembly points",
+            "guards": "Guard posts",
+            "guardsPlaceholder": "Add a guard",
+            "addGuard": "Add guard",
+            "removeGuard": "Remove",
+            "guardName": "Employee ID",
+            "guardPosition": "Assigned post",
+            "blaster": "Blaster in charge",
+            "blasterPlaceholder": "Pick a licensed blaster",
+            "team": "Blast team",
+            "teamPlaceholder": "Team composition",
+            "hseLead": "HSE lead",
+            "hseLeadPlaceholder": "Pick an HSE lead",
+            "ppvLimit": "PPV limit",
+            "sensitiveReceivers": "Sensitive receivers",
+            "sensitivePlaceholder": "e.g. hospital at 800 m, power line at 250 m",
+            "recipients": "Email recipients",
+            "recipientsPlaceholder": "Pick recipients",
+            "addRecipient": "Add recipient",
+            "removeRecipient": "Remove",
+            "recipientEmail": "Email address",
+            "recipientLanguage": "Preferred language",
+            "alarmZoneScope": "T-10 alarm zone",
+            "alarmZonePlaceholder": "Describe the zone covered by the General Alarm",
+            "attachments": "Attachments",
+            "attachmentsHint": "Blast permit, prior notice, JSA, blast plan, drill pattern.",
+            "notes": "Free notes",
+            "notesPlaceholder": "Observations, restrictions, specific instructions"
+        },
+        "units": {
+            "m": "m",
+            "mm": "mm",
+            "kg": "kg",
+            "kgPerM3": "kg/m3",
+            "mmPerS": "mm/s",
+            "holes": "holes"
+        },
+        "actions": {
+            "saveDraft": "Save draft",
+            "confirm": "Confirm blast",
+            "update": "Update"
+        },
+        "confirmModal": {
+            "title": "Confirm this blast?",
+            "body": "Confirming locks the time and exclusion zone, starts the reminders chain (24 h / 6 h / 30 min) and the T-10 General Alarm. This decision has immediate effects.",
+            "validate": "Yes, confirm the blast",
+            "cancel": "Back to form"
+        },
+        "lockedModal": {
+            "title": "Confirmed blast - change requires justification",
+            "body": "This blast is locked. Any change to the time or exclusion zone requires a logged reason and will recompute the announcement chain.",
+            "reasonLabel": "Reason for the change",
+            "reasonPlaceholder": "Operational constraint, authorisation, scheduling reason…",
+            "validate": "Save the change",
+            "cancel": "Cancel"
+        },
+        "validation": {
+            "scheduledAtRequired": "Blast time is required.",
+            "scheduledAtPast": "Blast time must be in the future.",
+            "typeRequired": "Pick the blast type.",
+            "exclusionRadiusInvalid": "Provide a positive exclusion radius.",
+            "holeCountInvalid": "Hole count must be positive.",
+            "explosiveQtyInvalid": "Invalid quantity.",
+            "reasonRequired": "A reason is required to update a confirmed blast."
+        },
+        "saveSuccessDraft": "Draft saved.",
+        "saveSuccessConfirmed": "Blast confirmed. The announcement chain is scheduled.",
+        "saveSuccessUpdated": "Blast updated.",
+        "saveError": "Save failed. Check the fields and retry."
+    },
+    "detail": {
+        "breadcrumbCurrent": "Blast detail",
+        "loading": "Loading blast…",
+        "loadError": "Could not load the blast.",
+        "header": {
+            "blasterLabel": "Blaster",
+            "scheduledLabel": "Scheduled at"
+        },
+        "tabs": {
+            "plan": "Plan",
+            "team": "Team",
+            "announcement": "Announcement",
+            "reminders": "Reminders status",
+            "history": "History"
+        },
+        "actions": {
+            "confirm": "Confirm",
+            "reschedule": "Postpone",
+            "cancel": "Cancel",
+            "declareFired": "Declare fired",
+            "declareMisfire": "Declare misfire",
+            "allClear": "All clear",
+            "openEvacReport": "Open evacuation report",
+            "edit": "Edit"
+        },
+        "modals": {
+            "rescheduleTitle": "Postpone this blast",
+            "rescheduleNewDate": "New blast time",
+            "rescheduleReason": "Reason for postponement",
+            "cancelTitle": "Cancel this blast",
+            "cancelReason": "Reason for cancellation",
+            "misfireTitle": "Declare misfire",
+            "misfireReason": "Misfire description",
+            "misfireHint": "The exclusion zone remains active. The 'all clear' is blocked until a BLAST_ADMIN resolves the situation.",
+            "allClearTitle": "Pronounce all clear",
+            "allClearBody": "Confirm that the inspection is complete and the exclusion zone can be lifted.",
+            "firedTitle": "Declare blast fired",
+            "firedBody": "Confirm the blast has been fired. Inspection starts; 'all clear' is still to be pronounced.",
+            "validate": "Confirm",
+            "cancel": "Cancel"
+        },
+        "actionSuccess": "Action saved.",
+        "actionError": "Action failed.",
+        "plan": {
+            "title": "Blast plan",
+            "holesLabel": "Holes",
+            "diameterLabel": "Diameter",
+            "depthLabel": "Depth",
+            "burdenLabel": "Burden",
+            "spacingLabel": "Spacing",
+            "stemmingLabel": "Stemming",
+            "explosiveLabel": "Explosive",
+            "qtyLabel": "Quantity",
+            "powderFactorLabel": "Powder factor",
+            "initiationLabel": "Initiation",
+            "delayLabel": "Delays",
+            "empty": "Blast plan has not been entered yet."
+        },
+        "team": {
+            "title": "Blast team",
+            "blasterLabel": "Blaster",
+            "hseLeadLabel": "HSE lead",
+            "guardsLabel": "Guard posts",
+            "empty": "No guard assigned."
+        },
+        "announcement": {
+            "title": "Announcement and recipients",
+            "alarmZoneLabel": "T-10 alarm zone",
+            "recipientsLabel": "Email recipients",
+            "languageLabel": "Language",
+            "empty": "No recipient."
+        },
+        "reminders": {
+            "title": "Reminders status",
+            "subtitle": "Chain at 24 h / 6 h / 30 min, popups every 15 min, T-10 General Alarm.",
+            "notStarted": "The announcement chain will start once the blast is confirmed.",
+            "phase3": "Detailed delivery tracking will be available in Phase 3."
+        },
+        "history": {
+            "title": "Status history",
+            "subtitle": "Append-only log of every change and traced action.",
+            "phase3": "Detailed history will be available in Phase 3."
+        }
+    }
+}

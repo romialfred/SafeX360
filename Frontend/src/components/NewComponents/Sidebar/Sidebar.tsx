@@ -100,6 +100,10 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Rapports & attestations': 'dosimetry:sidebar.dosimetryReports',
     'Exports réglementaires': 'dosimetry:sidebar.dosimetryRegulatoryExports',
     'Paramètres dosimétrie': 'dosimetry:sidebar.dosimetrySettings',
+    // LOT — Gestion des Dynamitages (ns 'blast')
+    'Gestion des Dynamitages': 'blast:sidebar.blast',
+    'Registre des tirs': 'blast:sidebar.blastRegistry',
+    'Enregistrer un tir': 'blast:sidebar.blastNew',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -351,6 +355,17 @@ const menuItems: MenuItem[] = [
             { id: 'dosimetry-settings', label: 'Paramètres dosimétrie', icon: IconSettings },
         ],
     },
+    // LOT — Module Gestion des Dynamitages / Blast Management
+    {
+        id: 'blast',
+        label: 'Gestion des Dynamitages',
+        icon: IconBolt,
+        color: 'text-amber-700',
+        subItems: [
+            { id: 'blast-registry', label: 'Registre des tirs', icon: IconClipboardCheck },
+            { id: 'blast-new', label: 'Enregistrer un tir', icon: IconPlus },
+        ],
+    },
     // LOT 48 P6.f — Eclatement Administration en 4 modules de premier niveau
     {
         id: 'admin',
@@ -512,6 +527,11 @@ export const menuIdToUrl: Record<string, string> = {
     // Phase 9-B Frontend : rapports PDF + exports reglementaires
     "dosimetry-reports": "/dosimetry/reports",
     "dosimetry-regulatory-exports": "/dosimetry/regulatory-exports",
+
+    // LOT — Module Gestion des Dynamitages / Blast Management
+    "blast": "/blast",
+    "blast-registry": "/blast",
+    "blast-new": "/blast/new",
 };
 
 
@@ -560,6 +580,8 @@ const Sidebar = () => {
         // LOT — Dosimetrie : parent + page de parametres toujours accessibles
         // (les autres sous-modules s'activeront via Module Management)
         'dosimetry', 'dosimetry-settings',
+        // LOT — Blast Management : parent + sous-items toujours accessibles
+        'blast', 'blast-registry', 'blast-new',
     ]);
 
     const handleItemClick = (itemId: string) => {
