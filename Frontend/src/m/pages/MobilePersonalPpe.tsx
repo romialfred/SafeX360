@@ -37,7 +37,7 @@ export default function MobilePersonalPpe() {
         (async () => {
             try {
                 const res = await getCached<PpeItem[]>({
-                    endpoint: `/hns/ppe/personal/${userId}`,
+                    endpoint: `/hns/mobile/ppe/personal/${userId}`,
                     cacheStore: 'userProfileCache',
                     cacheKey: `ppe-${userId}`,
                     ttlMs: 24 * 60 * 60 * 1000,

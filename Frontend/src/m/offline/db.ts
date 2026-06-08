@@ -248,3 +248,58 @@ export async function photoPendingCount(): Promise<number> {
     // 0 = false ; les index booleens IDB sont en numeriques
     return db.countFromIndex('photoQueue', 'by-uploaded', IDBKeyRange.only(0));
 }
+
+/** Retourne toutes les photos non encore uploadees (FIFO par createdAt). */
+export async function photoPending(): Promise<PhotoRecord[]> {
+    const db = await getDB();
+    // IDB index booleen : 0 = false
+    const all = await db.getAllFromIndex('photoQueue', 'by-uploaded', IDBKeyRange.only(0));
+    return all.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** Marque une photo comme uploadee (avec optionnellement l'url serveur). */
+export async function photoMarkUploaded(id: number, serverUrl?: string): Promise<void> {
+    const db = await getDB();
+    const existing = await db.get('photoQueue', id);
+    if (!existing) return;
+    await db.put('photoQueue', {
+        ...existing,
+        uploaded: true,
+        serverUrl,
+    });
+}
+
+/** Supprime une photo (ex. apres upload + acquittement metier). */
+export async function photoDelete(id: number): Promise<void> {
+    const db = await getDB();
+    await db.delete('photoQueue', id);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Helpers mutation queue — etats avances (failed/syncing) pour M4
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Recupere toutes les mutations en echec definitif (pour UI conflit). */
+export async function queueFailed(): Promise<MutationRecord[]> {
+    const db = await getDB();
+    return db.getAllFromIndex('mutationQueue', 'by-status', 'failed');
+}
+
+/** Replace une mutation 'failed' en 'pending' pour relancer (action user). */
+export async function queueRetry(id: number): Promise<void> {
+    const db = await getDB();
+    const existing = await db.get('mutationQueue', id);
+    if (!existing) return;
+    await db.put('mutationQueue', {
+        ...existing,
+        status: 'pending',
+        retryCount: 0,
+        lastError: undefined,
+    });
+}
+
+/** Supprime une mutation de la queue (action user "abandonner"). */
+export async function queueDelete(id: number): Promise<void> {
+    const db = await getDB();
+    await db.delete('mutationQueue', id);
+}

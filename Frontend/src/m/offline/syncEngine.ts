@@ -20,6 +20,9 @@ import {
     queuePending,
     queueUpdate,
     queueCountByStatus,
+    photoPending,
+    photoMarkUploaded,
+    photoPendingCount,
     type MutationRecord,
 } from './db';
 
@@ -39,6 +42,7 @@ interface SyncStats {
     syncing: number;
     failed: number;
     done: number;
+    photosPending: number;
 }
 
 type Listener = (stats: SyncStats) => void;
@@ -63,13 +67,14 @@ class SyncEngine {
     }
 
     async getStats(): Promise<SyncStats> {
-        const [pending, syncing, failed, done] = await Promise.all([
+        const [pending, syncing, failed, done, photosPending] = await Promise.all([
             queueCountByStatus('pending'),
             queueCountByStatus('syncing'),
             queueCountByStatus('failed'),
             queueCountByStatus('done'),
+            photoPendingCount(),
         ]);
-        return { pending, syncing, failed, done };
+        return { pending, syncing, failed, done, photosPending };
     }
 
     /**
@@ -85,11 +90,14 @@ class SyncEngine {
         this.isRunning = true;
         await this.emit('started');
         try {
+            // 1) Mutations metier (incident, inspection, SOS)
             const pending = await queuePending();
             for (const m of pending) {
                 await this.processOne(m);
                 await this.emit('progress');
             }
+            // 2) Photos preuves (apres mutations metier pour avoir un lien valide)
+            await this.flushPhotos();
             await this.emit('completed');
         } catch (e) {
             console.warn('[SyncEngine] run() exception', e);
@@ -113,6 +121,14 @@ class SyncEngine {
             await queueUpdate(m.id, { status: 'done', lastError: undefined });
         } catch (e: any) {
             const status = e?.response?.status;
+            // 409 Conflict : signaler comme failed pour resolution manuelle UI
+            if (status === 409) {
+                await queueUpdate(m.id, {
+                    status: 'failed',
+                    lastError: 'Conflit serveur — necessite resolution manuelle',
+                });
+                return;
+            }
             // 4xx (sauf 408/429) = erreur metier definitive, ne pas retry
             if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
                 await queueUpdate(m.id, {
@@ -121,7 +137,10 @@ class SyncEngine {
                 });
                 return;
             }
-            // Sinon : retry exponentiel
+            // Sinon : retry exponentiel — on remet en pending et on laisse
+            // le polling/visibilitychange re-tenter ; PAS de setTimeout
+            // bloquant ici (sinon on bloque la boucle pour tous les items
+            // suivants). Le run() suivant verra cet item revenu en pending.
             const next = m.retryCount + 1;
             if (next >= MAX_RETRIES) {
                 await queueUpdate(m.id, {
@@ -136,8 +155,43 @@ class SyncEngine {
                 retryCount: next,
                 lastError: e?.message,
             });
-            // Attendre avant de passer au suivant (backoff progressif)
-            await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS[next]));
+            // Planifier un re-run apres le backoff sans bloquer cette boucle
+            const delay = RETRY_BACKOFF_MS[Math.min(next, RETRY_BACKOFF_MS.length - 1)];
+            if (typeof window !== 'undefined') {
+                window.setTimeout(() => void this.run(), delay);
+            }
+        }
+    }
+
+    /**
+     * Upload des photos en attente. POST multipart sur
+     * /hns/mobile/photo-upload (le backend doit retourner { url }).
+     * Echec silencieux (re-essai au prochain run).
+     */
+    private async flushPhotos(): Promise<void> {
+        const photos = await photoPending();
+        for (const photo of photos) {
+            if (photo.id === undefined) continue;
+            try {
+                const form = new FormData();
+                form.append('photo', photo.blob, `photo-${photo.id}.jpg`);
+                if (photo.findingId !== undefined) {
+                    form.append('findingId', String(photo.findingId));
+                }
+                const res = await axiosInstance.post<{ url: string }>(
+                    '/hns/mobile/photo-upload',
+                    form,
+                    { headers: { 'Content-Type': 'multipart/form-data' } },
+                );
+                await photoMarkUploaded(photo.id, res.data?.url);
+            } catch (e: any) {
+                // En cas d'echec, on laisse uploaded=false pour le prochain run.
+                // Si le backend repond 404 (endpoint pas encore deploye), on
+                // arrete le flush et on retentera plus tard pour ne pas spammer.
+                if (e?.response?.status === 404) {
+                    return;
+                }
+            }
         }
     }
 

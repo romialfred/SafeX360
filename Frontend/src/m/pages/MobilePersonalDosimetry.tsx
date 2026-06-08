@@ -56,7 +56,7 @@ export default function MobilePersonalDosimetry() {
         (async () => {
             try {
                 const res = await getCached<DosimetryRecord[]>({
-                    endpoint: `/hns/dosimetry/personal/${userId}`,
+                    endpoint: `/hns/mobile/dosimetry/personal/${userId}`,
                     cacheStore: 'userProfileCache',
                     cacheKey: `dosimetry-${userId}`,
                     ttlMs: 12 * 60 * 60 * 1000, // 12h car donnees sensibles

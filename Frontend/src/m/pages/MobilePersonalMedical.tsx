@@ -54,7 +54,7 @@ export default function MobilePersonalMedical() {
         (async () => {
             try {
                 const res = await getCached<MedicalVisit[]>({
-                    endpoint: `/hns/medical/personal/${userId}`,
+                    endpoint: `/hns/mobile/medical/personal/${userId}`,
                     cacheStore: 'userProfileCache',
                     cacheKey: `medical-${userId}`,
                     ttlMs: 6 * 60 * 60 * 1000,

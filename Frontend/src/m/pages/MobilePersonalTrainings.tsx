@@ -35,7 +35,7 @@ export default function MobilePersonalTrainings() {
         (async () => {
             try {
                 const res = await getCached<Training[]>({
-                    endpoint: `/hns/trainings/personal/${userId}`,
+                    endpoint: `/hns/mobile/trainings/personal/${userId}`,
                     cacheStore: 'userProfileCache',
                     cacheKey: `trainings-${userId}`,
                     ttlMs: 24 * 60 * 60 * 1000,

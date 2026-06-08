@@ -15,6 +15,7 @@ interface SyncQueueState {
     syncing: number;
     failed: number;
     done: number;
+    photosPending: number;
     running: boolean;
 }
 
@@ -23,6 +24,7 @@ const INITIAL: SyncQueueState = {
     syncing: 0,
     failed: 0,
     done: 0,
+    photosPending: 0,
     running: false,
 };
 
