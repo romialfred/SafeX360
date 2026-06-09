@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { IconCalendar, IconCircleCheck, IconClock, IconTarget, IconTrendingUp } from "@tabler/icons-react";
 import { getAllAudit } from "../../../../services/AuditService";
+import { PremiumKpiTile } from "../../../../design-system/premium";
 
 /**
  * Statuts d'audit (backend AuditStatus enum, ORDINAL ou STRING) :
@@ -22,6 +24,7 @@ const normalizeStatus = (raw: any): string => {
 
 const AuditDashHeader = () => {
     const [audits, setAudits] = useState<any[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         getAllAudit()
@@ -56,84 +59,59 @@ const AuditDashHeader = () => {
         return { planned, inProgress, completed, upcoming, executionRate };
     }, [audits]);
 
-    const cards = [
+    /**
+     * Refonte ISO Phase 2 (2026-06-09) : utilisation de PremiumKpiTile pour
+     * alignement avec le DS Premium (extrait de Non-conformité). Aucune
+     * régression : mêmes endpoints, mêmes calculs, mêmes valeurs affichées.
+     * Seul le rendu visuel est unifié sur le DS plateforme.
+     */
+    const cards: { value: string | number; label: string; trend: string; icon: any; onClick?: () => void }[] = [
         {
             value: stats.planned,
             label: 'Audits planifiés',
-            sublabel: 'Total programme',
+            trend: 'Total programme',
             icon: IconCalendar,
-            iconColor: 'text-blue-700',
-            bg: 'bg-blue-50/70',
-            border: 'border-blue-200',
-            accent: 'bg-blue-500',
+            onClick: () => navigate('/audit-management'),
         },
         {
             value: stats.inProgress,
             label: 'En exécution',
-            sublabel: 'Audits en cours',
+            trend: 'Audits en cours',
             icon: IconTarget,
-            iconColor: 'text-amber-700',
-            bg: 'bg-amber-50/70',
-            border: 'border-amber-200',
-            accent: 'bg-amber-500',
         },
         {
             value: stats.completed,
             label: 'Clôturés',
-            sublabel: 'Rapports finalisés',
+            trend: 'Rapports finalisés',
             icon: IconCircleCheck,
-            iconColor: 'text-green-700',
-            bg: 'bg-green-50/70',
-            border: 'border-green-200',
-            accent: 'bg-green-500',
         },
         {
             value: stats.upcoming,
             label: 'À venir',
-            sublabel: 'Démarrage planifié',
+            trend: 'Démarrage planifié',
             icon: IconClock,
-            iconColor: 'text-pink-700',
-            bg: 'bg-pink-50/70',
-            border: 'border-pink-200',
-            accent: 'bg-pink-500',
         },
         {
             value: stats.executionRate,
             label: "Taux d'exécution",
-            sublabel: 'Clôturés / Total',
+            trend: 'Clôturés / Total — ISO 19011',
             icon: IconTrendingUp,
-            iconColor: 'text-violet-700',
-            bg: 'bg-violet-50/70',
-            border: 'border-violet-200',
-            accent: 'bg-violet-500',
         },
     ];
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {cards.map((card, idx) => {
-                const Icon = card.icon;
-                return (
-                    <div
-                        key={idx}
-                        className={`relative bg-white rounded-lg border ${card.border} hover:shadow-md transition-all overflow-hidden`}
-                    >
-                        <div className={`h-1 ${card.accent}`}></div>
-                        <div className="p-3">
-                            <div className="flex items-start justify-between mb-2">
-                                <div className={`p-1.5 rounded-md ${card.bg} ${card.border} border`}>
-                                    <Icon size={15} className={card.iconColor} stroke={2} />
-                                </div>
-                            </div>
-                            <p className={`text-2xl ${card.iconColor} tabular-nums leading-none`}>
-                                {String(card.value)}
-                            </p>
-                            <p className="text-[11px] text-slate-800 mt-1.5 leading-tight">{card.label}</p>
-                            <p className="text-[10px] text-slate-500 mt-0.5">{card.sublabel}</p>
-                        </div>
-                    </div>
-                );
-            })}
+            {cards.map((card, idx) => (
+                <PremiumKpiTile
+                    key={idx}
+                    index={idx}
+                    value={card.value}
+                    label={card.label}
+                    trend={card.trend}
+                    icon={card.icon}
+                    onClick={card.onClick}
+                />
+            ))}
         </div>
     );
 };
