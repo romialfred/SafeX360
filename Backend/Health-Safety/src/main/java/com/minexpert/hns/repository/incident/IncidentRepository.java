@@ -29,6 +29,8 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                 i.department_id as departmentId,
                                 i.occurred_at AS incidentDate,
                                 i.reporter_id AS reporterId,
+                                i.source AS source,
+                                i.ai_confidence AS aiConfidence,
                                CASE i.status
                 WHEN 0 THEN 'PENDING'
                 WHEN 1 THEN 'REPORTED'

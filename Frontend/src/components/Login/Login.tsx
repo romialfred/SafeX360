@@ -7,7 +7,9 @@ import { getUser, loginUser } from "../../services/LoginService";
 import { setUser } from "../../slices/UserSlice";
 import { IconLock, IconUser } from "@tabler/icons-react";
 
-import bgImg from "@/assets/Picture1.png";
+// LOT — Background Login : photo reelle de 2 mineurs africains avec overlay
+// HSE digital cyan, mine au coucher de soleil. Source : imgs/Login/Login 1.png
+import bgImg from "@/assets/login-mine-team.png";
 import name from "@/assets/name.png";
 
 

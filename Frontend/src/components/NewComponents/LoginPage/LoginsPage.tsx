@@ -57,7 +57,10 @@ const LoginsPage = () => {
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Application mobile terrain',
             mobileSubtitle: 'Android · Hors ligne · ISO 45001',
-            mobileDownload: 'Télécharger SafeX 360 Field',
+            // LOT — Suppression de "Field", texte raccourci a "Telecharger SafeX 360"
+            // SafeX 360 sera stylise comme le logo (X teal, 360 rouge) dans le JSX.
+            mobileDownloadPrefix: 'Télécharger',
+            mobileDownloadAria: 'Télécharger SafeX 360',
         }
         : {
             tagline: 'HSE platform for mining operations',
@@ -72,9 +75,10 @@ const LoginsPage = () => {
             loginProgress: 'Signing in…',
             errorMessage: 'Incorrect user ID or password',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileTitle: 'Field mobile application',
+            mobileTitle: 'Mobile application',
             mobileSubtitle: 'Android · Offline · ISO 45001',
-            mobileDownload: 'Download SafeX 360 Field',
+            mobileDownloadPrefix: 'Download',
+            mobileDownloadAria: 'Download SafeX 360',
         };
 
     const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
@@ -116,22 +120,26 @@ const LoginsPage = () => {
             <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
-                    backgroundImage: `url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
-                    // Refonte LOT 48 P6.d : flou réduit (4px → 1.2px), saturation et
-                    // luminosité plus naturelles → l'image de la mine est lisible.
-                    filter: 'blur(1.2px) saturate(1.1) brightness(1.02)',
-                    transform: 'scale(1.02)',
+                    // LOT — Background Login : photo reelle "2 mineurs africains + tablette
+                    // + overlay digital HSE cyan, mine au coucher de soleil"
+                    // Source : imgs/Login/Login 1.png → public/login-mine-team.png
+                    // Fallback en chaine : nouvelle image, ancienne image, image Unsplash
+                    backgroundImage: `url('/login-mine-team.png'), url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
+                    // LOT — Flou augmente (1.2px → 5px) pour effet "softer" et plus
+                    // d'opacite via overlay : la photo respire mais ne distrait pas du formulaire.
+                    filter: 'blur(5px) saturate(1.05) brightness(0.95)',
+                    transform: 'scale(1.06)', // scale superieur pour absorber les bords flous
                 }}
             />
 
-            {/* ═══ Overlay dégradé — beaucoup plus léger, teinte teal pour cohérence identité ═══ */}
+            {/* ═══ Overlay dégradé — opacite augmentee pour effet "translucide/depoli" ═══ */}
             <div
                 className="absolute inset-0"
                 style={{
-                    // Refonte : opacité ramenée de 0.55/0.42/0.65 à 0.32/0.20/0.42
-                    // + teinte teal profond (au lieu du bleu marine slate-950) pour
-                    // matcher la couleur de la nouvelle carte de connexion.
-                    background: `linear-gradient(135deg, rgba(2,44,40,0.32) 0%, rgba(2,44,40,0.20) 50%, rgba(2,44,40,0.42) 100%)`,
+                    // LOT — Opacite augmentee (0.32→0.55, 0.20→0.45, 0.42→0.65) pour
+                    // assombrir/voiler davantage la photo. Le texte est plus lisible et
+                    // l'effet "verre depoli" plus marque.
+                    background: `linear-gradient(135deg, rgba(2,44,40,0.55) 0%, rgba(2,44,40,0.45) 50%, rgba(2,44,40,0.65) 100%)`,
                 }}
             />
 
@@ -155,8 +163,11 @@ const LoginsPage = () => {
                 <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
 
-            {/* ═══ Container centré — h-full + overflow-y-auto fallback uniquement si trop petit ═══ */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-4 py-3 md:py-5 overflow-hidden">
+            {/* LOT — Container : le bloc complet (logo + formulaire + badge) est decale
+                de 200px vers la GAUCHE par rapport au centre de la page, MAIS chaque element
+                reste centre HORIZONTALEMENT par rapport aux autres (alignement interne).
+                Sur mobile (< md), pas de decalage pour rester lisible. */}
+            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-4 py-3 md:py-5 overflow-hidden md:-translate-x-[100px] lg:-translate-x-[200px]">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
                 <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md">
@@ -410,7 +421,7 @@ const LoginsPage = () => {
                     download="SafexMobile.apk"
                     className="mt-3 md:mt-4 mx-auto flex items-center justify-between gap-3 px-3 py-2 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[340px] w-full"
                     style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
-                    aria-label={t.mobileDownload}
+                    aria-label={t.mobileDownloadAria}
                 >
                     {/* Icône Google Play officielle (SVG triangle quadricolore) */}
                     <svg
@@ -445,8 +456,39 @@ const LoginsPage = () => {
                         <div className="text-[9.5px] uppercase tracking-[0.14em] text-white/70">
                             {t.mobileTitle}
                         </div>
-                        <div className="text-[14px] font-medium text-white leading-tight mt-0.5">
-                            {t.mobileDownload}
+                        {/* LOT — Wordmark stylise comme le logo de marque : "Safe" + X teal + 360 rouge */}
+                        <div
+                            className="text-[14px] font-medium leading-tight mt-0.5 flex items-baseline gap-1"
+                            aria-label={t.mobileDownloadAria}
+                        >
+                            <span className="text-white">{t.mobileDownloadPrefix}</span>
+                            <span
+                                className="inline-flex items-baseline"
+                                style={{
+                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                    fontWeight: 700,
+                                    letterSpacing: '-0.01em',
+                                }}
+                            >
+                                <span className="text-white">Safe</span>
+                                <span
+                                    style={{
+                                        color: '#2DD4BF',
+                                        textShadow: '0 0 10px rgba(45,212,191,0.55)',
+                                    }}
+                                >
+                                    X
+                                </span>
+                                <span
+                                    style={{
+                                        color: '#EF4444',
+                                        marginLeft: '0.2rem',
+                                        textShadow: '0 0 10px rgba(239,68,68,0.55)',
+                                    }}
+                                >
+                                    360
+                                </span>
+                            </span>
                         </div>
                         <div className="text-[10px] text-white/55 mt-0.5">
                             {t.mobileSubtitle}

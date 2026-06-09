@@ -28,4 +28,13 @@ public interface IncidentResponse {
     Long getReporterId();
 
     Long getDepartmentId();
+
+    /**
+     * Origine de la declaration : "EMPLOYEE" (saisie directe) ou "AI" (wizard Declaration par IA).
+     * Peut etre null pour les enregistrements legacy — le frontend defaultera sur EMPLOYEE.
+     */
+    String getSource();
+
+    /** Confiance IA (0-1) si source=AI. */
+    Double getAiConfidence();
 }

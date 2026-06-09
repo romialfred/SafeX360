@@ -504,9 +504,10 @@ export const menuIdToUrl: Record<string, string> = {
     parameters: "/operational-references",       // parent → renvoie sur la page Donnees de References par defaut
     "operational-references": "/operational-references",
     "system-settings": "/advanced-configuration",
-    "users-management-hub": "/users-management",
-    "users-list": "/users-management",
-    "roles-permissions": "/users-management",    // pour l'instant même URL — onglet futur
+    // LOT 49 — Nouvelle page admin Gestion utilisateurs (creation + permissions modules)
+    "users-management-hub": "/users-admin",
+    "users-list": "/users-admin",
+    "roles-permissions": "/users-admin",
     "modules-management": "/modules-management",
 
     // LOT — Module Dosimetrie & Expositions

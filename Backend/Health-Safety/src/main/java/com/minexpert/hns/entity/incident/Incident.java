@@ -53,6 +53,19 @@ public class Incident {
         private String involvedPersons;
         private String witnesses;
         private String evidence;
+        /**
+         * Origine de la declaration. Valeurs : EMPLOYEE (saisie manuelle) | AI (assistee par IA Vision).
+         * Permet de tracer les incidents declares via le wizard IA vs les declarations classiques.
+         * Default EMPLOYEE pour les enregistrements existants.
+         */
+        @Column(name = "source", length = 20)
+        private String source;
+        /** Confiance IA (0-1) si source=AI, sinon null. */
+        @Column(name = "ai_confidence")
+        private Double aiConfidence;
+        /** Modele IA utilise (ex: claude-sonnet-4-5) si source=AI. */
+        @Column(name = "ai_model", length = 64)
+        private String aiModel;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -74,6 +87,9 @@ public class Incident {
                 dto.setReporterId(reporterId);
                 dto.setInvolvedPersons(StringListConverter.convertToLongList(involvedPersons));
                 dto.setWitnesses(StringListConverter.convertToLongList(witnesses));
+                dto.setSource(source != null ? source : "EMPLOYEE");
+                dto.setAiConfidence(aiConfidence);
+                dto.setAiModel(aiModel);
                 return dto;
         }
 

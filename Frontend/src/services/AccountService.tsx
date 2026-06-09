@@ -13,4 +13,11 @@ const resetPassword = async (account: any) => {
         .catch(error => { throw error; });
 }
 
-export { updatePassword, resetPassword }
+/** Liste tous les comptes utilisateurs (admin). */
+const getAllAccounts = async () => {
+    return axiosInstance.get(`${url}/getAll`)
+        .then(result => result.data)
+        .catch(error => { throw error; });
+}
+
+export { updatePassword, resetPassword, getAllAccounts }

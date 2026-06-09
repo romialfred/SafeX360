@@ -53,6 +53,16 @@ public class IncidentDTO {
     private String residualRiskAssessment;
     private String departmentName;
 
+    /**
+     * Origine de la declaration : "EMPLOYEE" (par defaut) ou "AI" (Wizard Declaration IA Vision).
+     * Permet le filtre Source sur la page Gestion des incidents.
+     */
+    private String source;
+    /** Confiance de l'analyse IA, entre 0 et 1 (uniquement si source=AI). */
+    private Double aiConfidence;
+    /** Modele IA utilise (ex: "claude-sonnet-4-5"). */
+    private String aiModel;
+
     public Incident toIncident() {
         Incident incident = new Incident();
         incident.setId(id);
@@ -71,6 +81,10 @@ public class IncidentDTO {
         incident.setStatus(status);
         incident.setInvolvedPersons(involvedPersons != null ? involvedPersons.toString() : null);
         incident.setWitnesses(witnesses != null ? witnesses.toString() : null);
+        // Trace l'origine : par defaut EMPLOYEE si non specifie (saisie classique).
+        incident.setSource(source != null && !source.isBlank() ? source.toUpperCase() : "EMPLOYEE");
+        incident.setAiConfidence(aiConfidence);
+        incident.setAiModel(aiModel);
         return incident;
     }
 

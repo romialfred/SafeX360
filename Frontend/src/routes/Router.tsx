@@ -23,6 +23,7 @@ import AddCorrectivePage from '../pages/dashboard/LaggingIndicator/CorrectiveAct
 import UpdateCorrectivePage from '../pages/dashboard/LaggingIndicator/CorrectiveAction/UpdateCorrectivePage';
 import LaggingIndicatorPage from '../pages/dashboard/LaggingIndicator/Incident/LaggingIndicatorPage';
 import AddIncidentsPage from '../pages/dashboard/LaggingIndicator/Incident/AddIncidentsPage';
+import AIIncidentDeclarationPage from '../pages/dashboard/LaggingIndicator/Incident/AIIncidentDeclarationPage';
 import PgiPage from '../pages/dashboard/LeadingIndicator/PGI/PgiPage';
 import AddPgiPage from '../pages/dashboard/LeadingIndicator/PGI/AddPgiPage';
 import CalenderPage from '../pages/dashboard/LeadingIndicator/PGI/CalenderPage';
@@ -163,6 +164,10 @@ import EditAdhocAction from '../components/NewComponents/AdhocActions/EditAdhocA
 import ChemicalDetails from '../components/NewComponents/ChemicalRegister/ChemicalDetails';
 import ModuleNotFoundPage from '../pages/dashboard/ModuleNotFoundPage';
 import IsoMappingPage from '../pages/dashboard/IsoMappingPage';
+// LOT 49 — Module Gestion Utilisateurs
+import UsersAdminPage from '../components/NewComponents/UsersManagement/UsersAdminPage';
+import FirstLoginPasswordChange from '../pages/auth/FirstLoginPasswordChange';
+import FirstLoginGuard from './FirstLoginGuard';
 // LOT — Module Dosimetrie & Expositions (2026-06-07: code-splitting actif)
 // Les 33 pages Dosimetrie sont lazy-loaded pour reduire la taille du bundle
 // initial (de ~5.4MB a ~3.6MB observe). Chaque page est telechargee a la
@@ -303,6 +308,14 @@ const router = createBrowserRouter([
         element: <PublicRoutes><PasswordPage /></PublicRoutes>,
     },
 
+    // LOT 49 — Page bloquante de premier changement de mot de passe.
+    // Accessible uniquement quand l'utilisateur a un JWT valide ET firstLogin=true.
+    // Pas de layout dashboard : on isole completement l'utilisateur de l'app.
+    {
+        path: '/first-login',
+        element: <FirstLoginPasswordChange />,
+    },
+
     // ── SafeX 360 Field — version mobile Android (Phase M0) ─────────────
     // Routes prefixees /m/ sous un shell dedie (bottom nav + safe areas).
     // Pas de DashboardLayout : la version mobile a sa propre chrome.
@@ -333,7 +346,9 @@ const router = createBrowserRouter([
         path: '/',
         // RootGate : non-auth → LandingPage (vitrine commerciale)
         //            auth → DashboardLayout (application)
-        element: <RootGate><DashboardLayout /></RootGate>,
+        // LOT 49 — FirstLoginGuard verifie firstLogin et redirige vers /first-login
+        // si l'utilisateur doit changer son MDP avant d'acceder a l'application.
+        element: <RootGate><FirstLoginGuard><DashboardLayout /></FirstLoginGuard></RootGate>,
         children: [
             { path: '', element: <HomePage /> },
             { path: 'module-not-found', element: <ModuleNotFoundPage /> },
@@ -344,6 +359,7 @@ const router = createBrowserRouter([
             { path: 'iso-mapping', element: <IsoMappingPage /> },
             { path: 'incidents', element: <ModuleGuard moduleId='incident-management'><LaggingIndicatorPage /></ModuleGuard>, },
             { path: 'incidents/report', element: <ModuleGuard moduleId='incident-management'><AddIncidentsPage /></ModuleGuard> },
+            { path: 'incidents/ai-declare', element: <ModuleGuard moduleId='incident-management'><AIIncidentDeclarationPage /></ModuleGuard> },
             { path: 'incidents/:id', element: <ModuleGuard moduleId='incident-management'><ViewDetailsPage /></ModuleGuard> },
             { path: 'incidents/investigation/:id', element: <ModuleGuard moduleId='investigations'><InvestigationPage /></ModuleGuard> },
             { path: 'incidents/edit/:id', element: <ModuleGuard moduleId='incident-management'><UpdateIncidentsPage /></ModuleGuard> },
@@ -513,6 +529,8 @@ const router = createBrowserRouter([
 
 
             { path: "users-management", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserManagementTabsPage /></DemoPermissionGuard> },
+            // LOT 49 — Nouvelle page admin Gestion utilisateurs (creation+ permissions modules)
+            { path: "users-admin", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UsersAdminPage /></DemoPermissionGuard> },
             {
                 path: 'users-management/create-user', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><AddUserForm onBackToUsers={handleBackToUsers}
                     onCreateUser={handleCreateUser} /></DemoPermissionGuard>,

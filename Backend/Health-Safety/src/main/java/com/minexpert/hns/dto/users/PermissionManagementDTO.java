@@ -61,6 +61,7 @@ public class PermissionManagementDTO {
         return new PermissionManagement(
                 this.id,
                 this.employeeId,
+                null, // accountId (ajoute LOT 49 — non porte par le DTO legacy)
                 this.status,
                 this.role,
                 this.nonConformity,

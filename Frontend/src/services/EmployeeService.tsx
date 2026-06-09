@@ -23,6 +23,11 @@ const getEmployeesByIds = (ids: number[]) => {
         .then(res => res.data);
 };
 const getProfilePicture = async (empId: any) => {
+    // Garde anti-undefined : evite l'appel /getPicture/undefined qui retourne 500.
+    // Survient quand le composant appelant n'a pas encore charge l'employee (UI initial state).
+    if (empId === undefined || empId === null || empId === '' || empId === 'undefined' || empId === 'null') {
+        return Promise.resolve(null);
+    }
     return axiosInstance.get(`${url}/getPicture/` + empId)
         .then(result => result.data)
         .catch(error => { throw error; });

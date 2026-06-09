@@ -22,6 +22,14 @@ public class PermissionManagement {
 
     private Long employeeId;
 
+    /**
+     * Lien direct vers l'Account MineXpert (HRMS). C'est l'identifiant utilise par
+     * le wizard de creation utilisateur SafeX 360 (cote AdminUserController MX).
+     * Permet de retrouver le profil de permissions depuis le JWT cookie.
+     */
+    @Column(name = "account_id")
+    private Long accountId;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 

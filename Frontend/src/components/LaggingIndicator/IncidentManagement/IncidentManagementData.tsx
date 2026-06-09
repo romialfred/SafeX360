@@ -15,7 +15,10 @@ import {
     IconSearch,
     IconUpload,
     IconLayoutGrid,
-    IconLayoutList
+    IconLayoutList,
+    IconSparkles,
+    IconUser,
+    IconUsersGroup,
 } from '@tabler/icons-react';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
@@ -47,6 +50,9 @@ const IncidentManagementData = () => {
     const navigate = useNavigate();
     const [selectedLevel, setSelectedLevel] = useState<string>('All');
     const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('All');
+    // Source filter : ALL / EMPLOYEE / AI — permet de distinguer les declarations classiques
+    // des declarations assistees par IA Vision (wizard Declaration par IA).
+    const [selectedSource, setSelectedSource] = useState<'ALL' | 'EMPLOYEE' | 'AI'>('ALL');
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
     const toast = useRef<Toast>(null);
@@ -115,11 +121,45 @@ const IncidentManagementData = () => {
         setGlobalFilterValue(value);
     };
 
-    const nameBodyTemplate = (rowData: any) => (
-        <Link to={`${rowData.id}`} className='hover:underline text-blue-500'>
-            {rowData.title}
-        </Link>
-    );
+    /**
+     * Indique si l'incident provient du wizard "Declaration par IA".
+     * Detecte via :
+     *  1) Champ DTO incident.source === 'AI' (nouveau, post-LOT 49)
+     *  2) Fallback : titre commencant par "[IA]" (compat retro pour incidents migres)
+     */
+    const isAIIncident = (incident: any): boolean => {
+        if (!incident) return false;
+        if (typeof incident.source === 'string' && incident.source.toUpperCase() === 'AI') return true;
+        if (typeof incident.title === 'string' && incident.title.trim().startsWith('[IA]')) return true;
+        return false;
+    };
+
+    const nameBodyTemplate = (rowData: any) => {
+        const ai = isAIIncident(rowData);
+        // On nettoie le prefixe [IA] visuel : le badge le remplace
+        const cleanTitle = ai && rowData.title ? rowData.title.replace(/^\[IA\]\s*/i, '') : rowData.title;
+        return (
+            <div className="flex items-center gap-2">
+                <Link to={`${rowData.id}`} className='hover:underline text-blue-500'>
+                    {cleanTitle}
+                </Link>
+                {ai && (
+                    <Tooltip label={`Declaration assistee par IA${rowData.aiConfidence ? ` (confiance ${Math.round(rowData.aiConfidence * 100)}%)` : ''}`}>
+                        <Badge
+                            size="xs"
+                            radius="sm"
+                            variant="light"
+                            color="violet"
+                            leftSection={<IconSparkles size={10} />}
+                            styles={{ root: { textTransform: 'none', fontWeight: 600, cursor: 'help' } }}
+                        >
+                            IA
+                        </Badge>
+                    </Tooltip>
+                )}
+            </div>
+        );
+    };
 
     const rightToolbarTemplate = () => (
         <div className="flex gap-4 items-center">
@@ -340,19 +380,113 @@ const IncidentManagementData = () => {
         }));
     }, [incidents, deptMap, emps]);
 
+    // Compteurs source (calcules sur incidents bruts pour rester stables independamment des autres filtres)
+    const sourceCounts = useMemo(() => {
+        const ai = enrichedIncidents.filter(isAIIncident).length;
+        return { all: enrichedIncidents.length, ai, employee: enrichedIncidents.length - ai };
+    }, [enrichedIncidents]);
+
     const filteredData = useMemo(() => {
         return enrichedIncidents.filter((incident: any) => {
             const levelMatch = selectedLevel === 'All' || incident.maxSeverityLevel == selectedLevel;
             const categoryMatch = selectedCategoryTab === 'All' || incident.incidentCategoryName === selectedCategoryTab;
             const statusMatch = selectedStatus === 'All' || incident.status === selectedStatus;
             const departmentMatch = selectedDepartment === 'All' || (incident.departmentId && selectedDepartment === "" + incident.departmentId);
-            return levelMatch && categoryMatch && statusMatch && departmentMatch;
+            const ai = isAIIncident(incident);
+            const sourceMatch =
+                selectedSource === 'ALL' ||
+                (selectedSource === 'AI' && ai) ||
+                (selectedSource === 'EMPLOYEE' && !ai);
+            return levelMatch && categoryMatch && statusMatch && departmentMatch && sourceMatch;
         });
-    }, [enrichedIncidents, selectedLevel, selectedCategoryTab, selectedStatus, selectedDepartment]);
+    }, [enrichedIncidents, selectedLevel, selectedCategoryTab, selectedStatus, selectedDepartment, selectedSource]);
+
+    /**
+     * Bandeau de filtre Source — pleine largeur, premiere ligne au-dessus de la table.
+     * Distingue 3 segments : Tous / Employes / IA.
+     * Pattern visuel aligne sur la palette plateforme (vert teal + indigo IA).
+     */
+    const sourceFilterBanner = (
+        <div className="mb-3 flex items-center gap-3 flex-wrap rounded-xl border border-slate-200 bg-gradient-to-r from-white via-slate-50/60 to-white px-3 py-2 shadow-sm">
+            <span className="text-[12px] uppercase tracking-wide text-slate-500 font-semibold pl-1">
+                Source
+            </span>
+            <div className="flex items-center gap-1.5">
+                {/* TOUS */}
+                <button
+                    type="button"
+                    onClick={() => setSelectedSource('ALL')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                        selectedSource === 'ALL'
+                            ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                >
+                    <IconUsersGroup size={14} />
+                    Toutes les sources
+                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                        selectedSource === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                        {sourceCounts.all}
+                    </span>
+                </button>
+                {/* EMPLOYES */}
+                <button
+                    type="button"
+                    onClick={() => setSelectedSource('EMPLOYEE')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                        selectedSource === 'EMPLOYEE'
+                            ? 'bg-teal-700 text-white border-teal-700 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-50 hover:border-teal-300'
+                    }`}
+                >
+                    <IconUser size={14} />
+                    Employes
+                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                        selectedSource === 'EMPLOYEE' ? 'bg-white/25 text-white' : 'bg-teal-50 text-teal-700'
+                    }`}>
+                        {sourceCounts.employee}
+                    </span>
+                </button>
+                {/* IA */}
+                <button
+                    type="button"
+                    onClick={() => setSelectedSource('AI')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                        selectedSource === 'AI'
+                            ? 'bg-violet-700 text-white border-violet-700 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-violet-50 hover:border-violet-300'
+                    }`}
+                >
+                    <IconSparkles size={14} />
+                    Intelligence Artificielle
+                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                        selectedSource === 'AI' ? 'bg-white/25 text-white' : 'bg-violet-50 text-violet-700'
+                    }`}>
+                        {sourceCounts.ai}
+                    </span>
+                </button>
+            </div>
+            {selectedSource === 'AI' && (
+                <span className="ml-auto flex items-center gap-1.5 text-[12px] text-violet-700 bg-violet-50 px-2.5 py-1 rounded-md border border-violet-200">
+                    <IconSparkles size={12} />
+                    Declarations capturees via le wizard photo + analyse Claude Vision
+                </span>
+            )}
+            {selectedSource === 'EMPLOYEE' && (
+                <span className="ml-auto flex items-center gap-1.5 text-[12px] text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200">
+                    <IconUser size={12} />
+                    Declarations saisies directement par les employes
+                </span>
+            )}
+        </div>
+    );
 
     return (
         <div className="card">
             <Toast ref={toast} />
+            {/* NOUVEAU LOT 49 — Filtre Source en tete : Employes vs IA */}
+            {sourceFilterBanner}
             <Toolbar className="mb-3 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} />
             <Toolbar className="mb-4 !p-2" left={categoryTemplate} right={dropdownFilterTemplate} />
             {

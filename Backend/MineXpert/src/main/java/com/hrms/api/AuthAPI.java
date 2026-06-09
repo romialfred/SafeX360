@@ -69,11 +69,17 @@ public class AuthAPI {
 
             final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
             final String jwt = helper.generateToken(userDetails);
-            EmployeeDTO empDTO = new EmployeeDTO();
             CustomUserDetails user = (CustomUserDetails) userDetails;
-            empDTO.setId(user.getEmpId());
-            auditLogService.logAudit(new AuditLogDTO(null, user.getEmpId() != null ? empDTO : null, request.getLogin(),
-                    LocalDateTime.now(), "Successfully Logged In"));
+            // FIX LOT 49 : on logge un audit SANS Employee attache pour eviter
+            // TransientObjectException quand un compte admin n'a pas d'employee lie.
+            // L'identite est tracee via le champ "login" (= username).
+            try {
+                auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
+                        LocalDateTime.now(), "Successfully Logged In"));
+            } catch (Exception auditEx) {
+                // L'audit ne doit pas faire echouer le login. On loge mais on continue.
+                logger.warn("AuditLog non persiste pour login successful: {}", auditEx.getMessage());
+            }
             // LOT 41 P1 SECURITY: max-age cookie aligné sur JWT_EXPIRATION_HOURS (défaut 8h)
             // au lieu de 30 jours, pour limiter la fenêtre d'exploitation d'un vol de cookie.
             // LOT 42 hotfix : SameSite=None obligatoire car frontend (Vercel
@@ -102,11 +108,13 @@ public class AuthAPI {
                 throw new UsernameNotFoundException(message);
 
             } else {
-
-                EmployeeDTO empDTO = new EmployeeDTO();
-                empDTO.setId(user.getEmpId());
-                auditLogService.logAudit(
-                        new AuditLogDTO(null, empDTO, request.getLogin(), LocalDateTime.now(), "Incorrect Password"));
+                // FIX LOT 49 : meme correctif que pour le succes — eviter Employee transient
+                try {
+                    auditLogService.logAudit(
+                            new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Incorrect Password"));
+                } catch (Exception auditEx) {
+                    logger.warn("AuditLog non persiste pour bad credentials: {}", auditEx.getMessage());
+                }
                 throw new Exception(message, e);
             }
         } catch (AuthenticationException e) {
