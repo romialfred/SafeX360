@@ -1700,8 +1700,15 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
     return (
         <section
             id="hero"
-            className="relative overflow-hidden"
-            style={{ minHeight: '78vh', background: '#0F172A' }}
+            className="relative overflow-hidden w-full"
+            style={{
+                // LOT — Hero fixe a 2/3 de l'ecran (66.67vh) en hauteur dynamique
+                // selon le viewport, et 100% en largeur. Sur tres petite hauteur (< 520px),
+                // on garde une hauteur min absolue de 520px pour preserver la lisibilite.
+                height: '66vh',
+                minHeight: '520px',
+                background: '#0F172A',
+            }}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
         >
@@ -1776,7 +1783,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
             />
 
             {/* ─── COUCHE 5 : Contenu principal ─── */}
-            <div className="relative z-30 max-w-7xl mx-auto px-6 pt-28 pb-24 flex flex-col justify-center" style={{ minHeight: '78vh' }}>
+            <div className="relative z-30 max-w-7xl mx-auto px-6 pt-20 pb-16 flex flex-col justify-center h-full">
                 {/* Eyebrow dynamique */}
                 <div
                     key={`eb-${active}`}
@@ -1804,9 +1811,9 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                     style={{
                         fontFamily: "'Source Serif 4', Georgia, serif",
                         fontWeight: 600,
-                        fontSize: 'clamp(44px, 7vw, 100px)',
-                        letterSpacing: '-0.030em',
-                        lineHeight: 0.98,
+                        fontSize: 'clamp(36px, 5.5vw, 72px)',
+                        letterSpacing: '-0.028em',
+                        lineHeight: 1.0,
                         color: 'white',
                         maxWidth: '900px',
                         animation: 'hero-reveal-up 900ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -1833,9 +1840,9 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 {/* Description */}
                 <p
                     key={`desc-${active}`}
-                    className="mt-7 max-w-2xl"
+                    className="mt-5 max-w-2xl"
                     style={{
-                        fontSize: 'clamp(16px, 1.4vw, 21px)',
+                        fontSize: 'clamp(14.5px, 1.2vw, 18px)',
                         lineHeight: 1.55,
                         color: 'rgba(248, 250, 252, 0.92)',
                         animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -1851,7 +1858,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
 
                 {/* CTAs */}
                 <div
-                    className="mt-10 flex flex-wrap items-center gap-3"
+                    className="mt-7 flex flex-wrap items-center gap-3"
                     style={{
                         animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
                         animationDelay: '300ms',
@@ -1908,7 +1915,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
 
                 {/* Trust signals */}
                 <div
-                    className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2.5"
+                    className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2"
                     style={{
                         animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
                         animationDelay: '450ms',
@@ -2000,14 +2007,14 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 </div>
             </div>
 
-            {/* Scroll indicator en bas centre */}
+            {/* Scroll indicator en bas centre (au-dessus du marquee) */}
             <a
                 href="#features"
-                className="cursor-pointer absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 text-white/70 hover:text-white transition-colors"
+                className="cursor-pointer absolute bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors"
                 style={{ animation: 'float-y 2.5s ease-in-out infinite' }}
             >
-                <span className="text-[10px] uppercase tracking-[0.28em] font-bold">Explorer</span>
-                <IconChevronDown size={20} stroke={2} />
+                <span className="text-[9.5px] uppercase tracking-[0.28em] font-bold">Explorer</span>
+                <IconChevronDown size={18} stroke={2} />
             </a>
         </section>
     );
