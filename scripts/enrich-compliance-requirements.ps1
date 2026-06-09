@@ -3,7 +3,10 @@
 # catalogue minier français et complète jusqu'à 15. Conserve les IDs pour ne
 # pas casser les affectations de postes ni les documents existants.
 
-$h = @{ 'X-Secret-Key' = 'a-very-long-random-string-must-be-rotated-prod-XYZ-2026-LOT41' }
+# Secret interne lu depuis Backend/.env (jamais en dur dans le depot).
+$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
+$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
+$h = @{ 'X-Secret-Key' = $secret }
 $base = 'http://localhost:8081/hns/compliance-requirement'
 
 $catalogue = @(
