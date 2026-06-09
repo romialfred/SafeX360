@@ -47,6 +47,7 @@ import TechMeasurementsPage from '../pages/dashboard/SettingFolder/TechMeasureme
 import InspectionPage from '../pages/dashboard/LeadingIndicator/PGI/InspectionPage';
 import ComingSoonPage from '../pages/ComingSoonPage';
 import PublicRoutes from './PublicRoutes';
+import RootGate from './RootGate';
 import ViewDeatailsPgiPage from '../pages/dashboard/LeadingIndicator/PGI/ViewDeatailsPgiPage';
 import HealthMeetingPage from '../pages/dashboard/LeadingIndicator/Hs-Meetings/HealthMeetingPage';
 import AddHealthMeetingPage from '../pages/dashboard/LeadingIndicator/Hs-Meetings/AddHealthMeetingPage';
@@ -330,7 +331,9 @@ const router = createBrowserRouter([
 
     {
         path: '/',
-        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+        // RootGate : non-auth → LandingPage (vitrine commerciale)
+        //            auth → DashboardLayout (application)
+        element: <RootGate><DashboardLayout /></RootGate>,
         children: [
             { path: '', element: <HomePage /> },
             { path: 'module-not-found', element: <ModuleNotFoundPage /> },
