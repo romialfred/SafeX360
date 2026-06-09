@@ -17,7 +17,7 @@ const HealthMeeting = () => {
                 icon={<IconUsers size={22} stroke={2} />}
                 iconColor="green"
                 title="Réunions sécurité"
-                subtitle="Enregistrement, suivi et clôture des points d'action issus des réunions sécurité"
+                subtitle="ISO 45001 §5.4 — Consultation et participation des travailleurs : ordres du jour, comptes-rendus, points d'action"
                 actions={
                     <>
                         <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />}>

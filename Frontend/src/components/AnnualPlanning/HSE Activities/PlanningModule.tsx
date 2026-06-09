@@ -75,8 +75,8 @@ export default function PlanningModule() {
                 ]}
                 icon={<IconCalendarStats size={22} stroke={2} />}
                 iconColor="amber"
-                title="Planification des activités HSE"
-                subtitle="Programmation et suivi des causeries, formations, tournées et campagnes de sensibilisation"
+                title="Planification annuelle des activités HSE"
+                subtitle="ISO 45001 §6.1.4 — Programmation des causeries, formations, tournées et campagnes de sensibilisation"
                 actions={<Button size="sm" leftSection={<IconDownload size={15} />} variant="default">Exporter</Button>}
             />
 
