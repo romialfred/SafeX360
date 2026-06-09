@@ -40,7 +40,7 @@ import { useNavigate } from 'react-router-dom';
 
 type ModuleItem = string | { label: string; url: string; moduleId?: string };
 
-interface ModuleCard {
+export interface ModuleCard {
     id: string;
     title: string;
     description: string;
@@ -92,7 +92,7 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     'blast':                     '#b45309', // amber-700 (orange profond evoquant le risque sans alarmisme)
 };
 
-const moduleGroups: ModuleCard[] = [
+export const moduleGroups: ModuleCard[] = [
     {
         id: 'preventives-activities',
         title: 'Activités Préventives',
