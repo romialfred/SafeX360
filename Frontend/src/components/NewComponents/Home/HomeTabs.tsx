@@ -24,7 +24,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Text } from '@mantine/core';
-import { IconArrowRight, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronRight, IconApps } from '@tabler/icons-react';
 import { moduleGroups, type ModuleCard } from './Home';
 import { HOME_TABS, type HomeTabId, type HomeTab } from './homeCategories';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -54,18 +54,39 @@ const ACCENT_HEX: Record<string, string> = {
     'blast': '#b45309',
 };
 
+/**
+ * Onglet synthese "Toutes les applications" — affiche TOUS les modules dans
+ * l'ordre du moduleGroups d'origine. Ajoute en tete de la liste d'onglets
+ * pour offrir une vue d'ensemble sans naviguer dans les categories.
+ */
+const ALL_APPS_TAB: HomeTab = {
+    id: 'all' as HomeTabId,
+    label: 'Toutes les applications',
+    icon: IconApps,
+    description: 'Vue d’ensemble exhaustive des modules de la plateforme SafeX 360',
+    accentHex: '#0F766E', // teal-700 — couleur identite SafeX
+    moduleIds: [], // place-holder — la liste reelle est calculee dynamiquement
+};
+
 export default function HomeTabs() {
     const navigate = useNavigate();
-    const [activeTabId, setActiveTabId] = useState<HomeTabId>('pilotage');
+    const [activeTabId, setActiveTabId] = useState<HomeTabId>('all' as HomeTabId);
     const [pendingSubscription, setPendingSubscription] = useState<ModuleCard | null>(null);
 
+    /** Liste complete des onglets : "Toutes" + 6 categories thematiques. */
+    const ALL_TABS = useMemo<HomeTab[]>(() => [ALL_APPS_TAB, ...HOME_TABS], []);
+
     const activeTab = useMemo<HomeTab>(
-        () => HOME_TABS.find((t) => t.id === activeTabId) ?? HOME_TABS[0],
-        [activeTabId],
+        () => ALL_TABS.find((t) => t.id === activeTabId) ?? ALL_TABS[0],
+        [activeTabId, ALL_TABS],
     );
 
-    /** Modules visibles dans l'onglet actif, dans l'ordre déclaré. */
+    /** Modules visibles dans l'onglet actif, dans l'ordre declare. */
     const visibleModules = useMemo(() => {
+        // Onglet "Toutes les applications" : retourne moduleGroups dans l'ordre d'origine
+        if (activeTab.id === ('all' as HomeTabId)) {
+            return moduleGroups;
+        }
         return activeTab.moduleIds
             .map((id) => moduleGroups.find((m) => m.id === id))
             .filter((m): m is ModuleCard => Boolean(m));
@@ -73,7 +94,8 @@ export default function HomeTabs() {
 
     /** Compte des modules par onglet (badge sur le tab). */
     const tabCounts = useMemo(() => {
-        const counts: Record<HomeTabId, number> = {
+        const counts: Record<string, number> = {
+            all: moduleGroups.length,
             pilotage: 0, securite: 0, sante: 0, environnement: 0, iso: 0, admin: 0,
         };
         HOME_TABS.forEach((t) => {
@@ -105,7 +127,7 @@ export default function HomeTabs() {
                             fontSize: '26px',
                         }}
                     >
-                        Tableau de bord HSE
+                        Vos Applications
                     </h1>
                     <p className="text-[13px] text-slate-500 mt-1 max-w-2xl">
                         Plateforme intégrée Santé · Sécurité · Environnement —
@@ -121,7 +143,7 @@ export default function HomeTabs() {
                 aria-label="Catégories de modules HSE"
             >
                 <div className="flex gap-1 overflow-x-auto -mb-px">
-                    {HOME_TABS.map((tab) => {
+                    {ALL_TABS.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = tab.id === activeTabId;
                         const count = tabCounts[tab.id];
@@ -133,7 +155,7 @@ export default function HomeTabs() {
                                 aria-selected={isActive}
                                 aria-controls={`tab-panel-${tab.id}`}
                                 onClick={() => setActiveTabId(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg whitespace-nowrap transition-all border-b-2 ${
+                                className={`cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-t-lg whitespace-nowrap transition-all border-b-2 ${
                                     isActive
                                         ? 'bg-white text-slate-900 border-current shadow-sm'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border-transparent'
@@ -228,7 +250,7 @@ export default function HomeTabs() {
                                     key={module.id}
                                     type="button"
                                     onClick={() => openModule(module)}
-                                    className={`group relative text-left bg-white border border-slate-200 rounded-2xl p-4 transition-all hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 ${
+                                    className={`cursor-pointer group relative text-left bg-white border border-slate-200 rounded-2xl p-4 transition-all hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 ${
                                         !enabled ? 'opacity-75' : ''
                                     }`}
                                     aria-label={`Ouvrir le module ${module.title}`}
@@ -295,7 +317,7 @@ export default function HomeTabs() {
                 <div className="text-center pt-4">
                     <p className="text-[10.5px] text-slate-400 uppercase tracking-[0.16em]">
                         SafeX 360 · Plateforme HSE ·{' '}
-                        {HOME_TABS.reduce((sum, t) => sum + tabCounts[t.id], 0)} modules
+                        {moduleGroups.length} modules
                     </p>
                 </div>
             </section>
