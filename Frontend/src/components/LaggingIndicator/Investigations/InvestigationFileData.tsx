@@ -1,7 +1,7 @@
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { ActionIcon, Button, Progress, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Progress, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
 import { IconEdit, IconLayoutGrid, IconLayoutList, IconSearch, IconUpload } from '@tabler/icons-react';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';

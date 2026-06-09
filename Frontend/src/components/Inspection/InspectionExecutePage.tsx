@@ -143,14 +143,14 @@ export default function InspectionExecutePage() {
             // Reset dirty flags
             setFindings((prev) => prev.map((f) => ({ ...f, dirty: false })));
             setSavedAt(new Date());
-            successNotification(t('execute.savedDraft'), '');
+            successNotification(t('execute.savedDraft'));
         } catch (e: any) {
             const msg =
                 e?.response?.data?.message ||
                 e?.response?.data?.error ||
                 t('execute.saveError');
             setError(msg);
-            errorNotification(msg, '');
+            errorNotification(msg);
         } finally {
             setSaving(false);
         }
@@ -164,7 +164,7 @@ export default function InspectionExecutePage() {
         setError(null);
         try {
             await submitInspection(detail.id);
-            successNotification(t('execute.submitted'), '');
+            successNotification(t('execute.submitted'));
             navigate('/inspections');
         } catch (e: any) {
             const msg =
@@ -172,7 +172,7 @@ export default function InspectionExecutePage() {
                 e?.response?.data?.error ||
                 t('execute.submitError');
             setError(msg);
-            errorNotification(msg, '');
+            errorNotification(msg);
         } finally {
             setSubmitting(false);
         }

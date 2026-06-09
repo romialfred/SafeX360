@@ -109,7 +109,8 @@ const LoginsPage = () => {
     };
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-slate-950 text-white">
+        // Refonte 2026-06-09 : h-screen + overflow-hidden pour ZERO scroll vertical
+        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-slate-950 text-white">
 
             {/* ═══ Image plein écran — flou minimal pour rendre la scene mine bien visible ═══ */}
             <div
@@ -154,19 +155,20 @@ const LoginsPage = () => {
                 <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
 
-            {/* ═══ Container centré ═══ */}
-            <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
+            {/* ═══ Container centré — h-full + overflow-y-auto fallback uniquement si trop petit ═══ */}
+            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-4 py-3 md:py-5 overflow-hidden">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
-                <div className="flex flex-col items-center text-center mb-8 max-w-md">
+                <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md">
                     {/* Bouclier coloré (gradient teal → rouge — identité HSE forte) */}
                     <div
-                        className="mb-4"
+                        className="mb-2 md:mb-3"
                         style={{ filter: 'drop-shadow(0 10px 30px rgba(20,184,166,0.6))' }}
                     >
                         <svg
-                            width="84"
-                            height="84"
+                            width="64"
+                            height="64"
+                            className="md:w-[76px] md:h-[76px]"
                             viewBox="0 0 64 64"
                             xmlns="http://www.w3.org/2000/svg"
                             aria-label="SafeX 360"
@@ -212,7 +214,7 @@ const LoginsPage = () => {
                         style={{
                             fontFamily: "'Source Serif 4', Georgia, serif",
                             fontWeight: 600,
-                            fontSize: 'clamp(40px, 5.5vw, 52px)',
+                            fontSize: 'clamp(32px, 4.5vw, 44px)',
                             letterSpacing: '-0.022em',
                             lineHeight: 1,
                             textShadow: '0 4px 28px rgba(0,0,0,0.7)',
@@ -232,13 +234,13 @@ const LoginsPage = () => {
 
                     {/* Tagline */}
                     <p
-                        className="text-white/85 mt-4 max-w-sm"
+                        className="text-white/85 mt-2 md:mt-3 max-w-sm"
                         style={{
                             fontFamily: "'Source Serif 4', Georgia, serif",
                             fontWeight: 400,
-                            fontSize: '15px',
+                            fontSize: '13.5px',
                             letterSpacing: '0.005em',
-                            lineHeight: 1.5,
+                            lineHeight: 1.45,
                             textShadow: '0 2px 14px rgba(0,0,0,0.7)',
                         }}
                     >
@@ -262,7 +264,7 @@ const LoginsPage = () => {
                         boxShadow: '0 20px 60px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(94,234,212,0.08) inset',
                     }}
                 >
-                    <div className="p-7 sm:p-8">
+                    <div className="p-5 sm:p-6">
 
                         {/* Titre Connexion — BLANC PUR, gros, sans décorations qui le rendent illisible */}
                         <h2
@@ -270,7 +272,7 @@ const LoginsPage = () => {
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
                                 fontWeight: 600,
-                                fontSize: '28px',
+                                fontSize: '24px',
                                 letterSpacing: '-0.014em',
                                 lineHeight: 1.15,
                                 color: '#FFFFFF',
@@ -287,23 +289,23 @@ const LoginsPage = () => {
                             }}
                             aria-hidden="true"
                         />
-                        <p className="text-[13.5px] text-white/85 text-center">
+                        <p className="text-[12.5px] text-white/85 text-center">
                             {t.loginSubtitle}
                         </p>
 
                         {/* Erreur */}
                         {error && (
                             <div
-                                className="mt-5 p-3 rounded-lg bg-red-500/15 border border-red-400/40 flex items-center gap-2"
+                                className="mt-3 p-2 rounded-lg bg-red-500/15 border border-red-400/40 flex items-center gap-2"
                                 role="alert"
                                 aria-live="assertive"
                             >
-                                <IconAlertTriangle size={15} className="text-red-300 flex-shrink-0" aria-hidden="true" />
-                                <span className="text-[13px] text-red-100">{t.errorMessage}</span>
+                                <IconAlertTriangle size={14} className="text-red-300 flex-shrink-0" aria-hidden="true" />
+                                <span className="text-[12.5px] text-red-100">{t.errorMessage}</span>
                             </div>
                         )}
 
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-6 space-y-4">
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-4 space-y-3">
 
                             <TextInput
                                 label={
@@ -385,8 +387,8 @@ const LoginsPage = () => {
                                         fontSize: '14px',
                                         fontWeight: 500,
                                         letterSpacing: '0.005em',
-                                        height: '46px',
-                                        marginTop: '8px',
+                                        height: '42px',
+                                        marginTop: '4px',
                                         border: 'none',
                                         boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
                                     },
@@ -406,14 +408,14 @@ const LoginsPage = () => {
                 <a
                     href="/downloads/SafexMobile.apk"
                     download="SafexMobile.apk"
-                    className="mt-6 mx-auto flex items-center justify-between gap-3 px-4 py-2.5 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[340px] w-full"
+                    className="mt-3 md:mt-4 mx-auto flex items-center justify-between gap-3 px-3 py-2 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[340px] w-full"
                     style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
                     aria-label={t.mobileDownload}
                 >
                     {/* Icône Google Play officielle (SVG triangle quadricolore) */}
                     <svg
                         viewBox="0 0 24 24"
-                        className="w-9 h-9 flex-shrink-0"
+                        className="w-7 h-7 flex-shrink-0"
                         aria-hidden="true"
                     >
                         <defs>
@@ -454,7 +456,7 @@ const LoginsPage = () => {
 
                 {/* Footer minimal — uniquement les normes ISO */}
                 <p
-                    className="mt-6 text-[11px] uppercase tracking-[0.18em] text-white/60 text-center"
+                    className="mt-3 md:mt-4 text-[10.5px] uppercase tracking-[0.18em] text-white/60 text-center"
                     style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
                 >
                     {t.standards}

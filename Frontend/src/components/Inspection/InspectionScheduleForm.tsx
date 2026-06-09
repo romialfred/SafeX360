@@ -150,10 +150,7 @@ export default function InspectionScheduleForm() {
                     : null,
             };
             const id = await scheduleInspection(payload);
-            successNotification(
-                t('schedule.success.submitted', { id }),
-                ''
-            );
+            successNotification(t('schedule.success.submitted', { id }));
             navigate('/inspections');
         } catch (e: any) {
             const msg =
@@ -161,7 +158,7 @@ export default function InspectionScheduleForm() {
                 e?.response?.data?.error ||
                 t('schedule.errors.submitFailed');
             setErrors([msg]);
-            errorNotification(msg, '');
+            errorNotification(msg);
         } finally {
             setSubmitting(false);
         }

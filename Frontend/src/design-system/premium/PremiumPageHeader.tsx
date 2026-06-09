@@ -37,7 +37,7 @@ export interface PremiumPageHeaderProps {
     /** Icône du module (élément ReactNode pour respecter PageHeader). */
     icon?: ReactNode;
     /** Couleur Mantine de l'icône. */
-    iconColor?: string;
+    iconColor?: 'teal' | 'green' | 'red' | 'orange' | 'yellow' | 'blue' | 'indigo' | 'slate' | 'cyan' | 'pink' | 'amber' | 'violet';
     /** Numéro de référence (ex. AUD-2026-007) affiché comme badge mono. */
     refNumber?: string;
     /** Badge custom (à la place de refNumber). */

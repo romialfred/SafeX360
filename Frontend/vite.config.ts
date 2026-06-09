@@ -36,6 +36,8 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Bundle JS principal ~4 MB → augmenter la limite a 8 MB pour precache PWA
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           // Les routes API ne doivent jamais retomber sur index.html

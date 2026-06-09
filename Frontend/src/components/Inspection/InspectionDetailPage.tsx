@@ -75,7 +75,6 @@ export default function InspectionDetailPage() {
                 decision === 'APPROVE'
                     ? 'Approbation enregistree'
                     : 'Rejet enregistre',
-                '',
             );
             setRejectMode(false);
             setRejectComment('');
@@ -85,7 +84,7 @@ export default function InspectionDetailPage() {
                 e?.response?.data?.message ||
                 e?.response?.data?.error ||
                 'Echec de la decision';
-            errorNotification(msg, '');
+            errorNotification(msg);
         } finally {
             setDeciding(false);
         }
@@ -107,7 +106,7 @@ export default function InspectionDetailPage() {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (e: any) {
-            errorNotification('Telechargement impossible', '');
+            errorNotification('Telechargement impossible');
         }
     };
 

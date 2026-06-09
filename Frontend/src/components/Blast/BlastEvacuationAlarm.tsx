@@ -173,7 +173,7 @@ export default function BlastEvacuationAlarm({
             keepaliveRef.current = window.setInterval(() => {
                 const c = audioCtxRef.current;
                 if (!c) return;
-                if (c.state === 'suspended' || c.state === 'interrupted') {
+                if (c.state === 'suspended' || (c.state as string) === 'interrupted') {
                     c.resume().catch(() => undefined);
                 }
                 // Si on a perdu la source pour une raison quelconque, recree
