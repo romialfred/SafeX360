@@ -1,28 +1,25 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import AssignData from "./AssignData"
+import { IconUserCheck } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import AssignData from "./AssignData";
 
+/** Affectations d'exigences par poste de travail (LOT 49). */
 const CompAssignment = () => {
     return (
-        <div>
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-2xl font-semibold text-slate-900">Position Compliance Assignments</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Position Compliance Assignments</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-            <p className=' italic my-3'>
-
-                Mapping job roles to mandatory safety requirements, ensuring compliance responsibilities are clearly assigned.
-            </p>
-            <div className='mt-5   '>
-                <AssignData />
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Conformité Réglementaire' },
+                    { label: 'Affectations par poste' },
+                ]}
+                icon={<IconUserCheck size={22} stroke={2} />}
+                iconColor="teal"
+                title="Affectations par poste"
+                subtitle="Exigences réglementaires applicables à chaque poste de travail du site"
+            />
+            <AssignData />
         </div>
-    )
-}
+    );
+};
 
-export default CompAssignment
+export default CompAssignment;

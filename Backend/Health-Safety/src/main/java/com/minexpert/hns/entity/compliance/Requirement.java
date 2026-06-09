@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.dto.compliance.RequirementDTO;
 import com.minexpert.hns.enums.Status;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,6 +27,17 @@ public class Requirement {
     private String category;
     private String renewalFrequency;
     private String docType;
+
+    // LOT 49 — traçabilité réglementaire (colonnes additives, ddl-auto=update)
+    @Column(name = "reference_code", length = 32)
+    private String referenceCode;
+    @Column(name = "legal_source", length = 160)
+    private String legalSource;
+    @Column(length = 120)
+    private String authority;
+    @Column(length = 16)
+    private String criticality;
+
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -35,7 +47,7 @@ public class Requirement {
     }
 
     public RequirementDTO toDTO() {
-        return new RequirementDTO(id, title, description, category, renewalFrequency, docType, status, createdAt,
-                updatedAt);
+        return new RequirementDTO(id, title, description, category, renewalFrequency, docType,
+                referenceCode, legalSource, authority, criticality, status, createdAt, updatedAt);
     }
 }

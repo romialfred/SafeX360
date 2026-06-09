@@ -1,26 +1,25 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import ValidationData from "./ValidationData"
+import { IconSquareCheck } from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import ValidationData from "./ValidationData";
+
+/** Validation des documents de conformité (LOT 49). */
 const DocumentValidation = () => {
     return (
-        <div>
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-2xl font-semibold text-slate-900">Document Validation</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Document Validation</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-            <p className=' italic my-3'>
-                Systematic review and approval of compliance documents to ensure accuracy and regulatory adherence
-            </p>
-            <div className='mt-5   '>
-                <ValidationData />
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Conformité Réglementaire' },
+                    { label: 'Validation des documents' },
+                ]}
+                icon={<IconSquareCheck size={22} stroke={2} />}
+                iconColor="teal"
+                title="Validation des documents"
+                subtitle="Revue des justificatifs déposés : approbation ou rejet motivé par l'équipe HSE"
+            />
+            <ValidationData />
         </div>
-    )
-}
+    );
+};
 
-export default DocumentValidation
+export default DocumentValidation;

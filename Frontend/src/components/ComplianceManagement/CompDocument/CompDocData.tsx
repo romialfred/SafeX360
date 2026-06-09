@@ -1,216 +1,192 @@
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { ActionIcon, Badge, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
-import { IconEye, IconSearch } from '@tabler/icons-react';
-import { FilterMatchMode } from 'primereact/api';
-import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
-import { Toast } from 'primereact/toast';
-import { useEffect, useMemo, useRef, useState } from 'react';
-
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { ActionIcon, TextInput, Tooltip } from '@mantine/core';
+import { IconEye, IconFolderOpen, IconSearch } from '@tabler/icons-react';
 import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { useNavigate } from 'react-router-dom';
 import { getAllComplianceDocuments } from '../../../services/ComplianceDocumentService';
-import { useDispatch } from 'react-redux';
-import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
-import { formatDateShort } from '../../../utility/DateFormats';
+import { errorNotification } from '../../../utility/NotificationUtility';
+import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
+import EmptyState from '../../UtilityComp/EmptyState';
+import { docStatusConfig, formatDateFr } from '../complianceLabels';
 
-
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-}
-
+/**
+ * Registre des documents de conformité (LOT 49).
+ * Le statut affiché est recalculé : un document VALID dont la date
+ * d'expiration est dépassée est présenté comme Expiré.
+ */
 
 const CompDocData = () => {
     const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [_globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const toast = useRef<Toast>(null);
     const [documents, setDocuments] = useState<any[]>([]);
-    const [tab, setTab] = useState<string>('Pending');
+    const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState<string>('PENDING');
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
-        dispatch(showOverlay());
+        setLoading(true);
         getAllComplianceDocuments()
             .then((res) => {
-                const formatted = res.map((item: any) => {
+                const formatted = (res ?? []).map((item: any) => {
                     const rawStatus = (item.status ?? '').toString().toUpperCase();
                     const expiryDate = item.expiryDate ? new Date(item.expiryDate) : null;
                     const hasValidExpiry = expiryDate instanceof Date && !Number.isNaN(expiryDate.getTime());
-                    const isExpired = rawStatus === 'VALID'
-                        && hasValidExpiry
-                        && expiryDate !== null
-                        && expiryDate.getTime() < Date.now();
-
-                    const computedStatus = (() => {
-                        if (isExpired) return 'EXPIRED';
-                        if (rawStatus === 'INVALID' || rawStatus === 'REJECTED') return rawStatus;
-                        if (rawStatus === 'PENDING') return 'PENDING';
-                        if (rawStatus === 'VALID') return 'VALID';
-                        return rawStatus;
-                    })();
-
-                    const displayStatus = (() => {
-                        switch (computedStatus) {
-                            case 'VALID':
-                                return 'Valid';
-                            case 'PENDING':
-                                return 'Pending';
-                            case 'EXPIRED':
-                                return 'Expired';
-                            case 'INVALID':
-                                return 'Invalid';
-                            case 'REJECTED':
-                                return 'Rejected';
-                            default:
-                                return computedStatus.charAt(0) + computedStatus.slice(1).toLowerCase();
-                        }
-                    })();
-
-                    return {
-                        ...item,
-                        computedStatus,
-                        displayStatus,
-                    };
+                    const isExpired = rawStatus === 'VALID' && hasValidExpiry && expiryDate!.getTime() < Date.now();
+                    const computedStatus = isExpired
+                        ? 'EXPIRED'
+                        : rawStatus === 'REJECTED'
+                            ? 'INVALID'
+                            : rawStatus;
+                    return { ...item, computedStatus };
                 });
                 setDocuments(formatted);
-            }).catch((_err) => {
-
             })
-            .finally(() => {
-                dispatch(hideOverlay());
-            });
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des documents');
+            })
+            .finally(() => setLoading(false));
     }, []);
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
     const statusCounts = useMemo(() => {
-        return documents.reduce((acc, doc) => {
-            const status = (doc.computedStatus ?? '').toString().toUpperCase();
-            if (status === 'VALID') acc.valid += 1;
-            else if (status === 'PENDING') acc.pending += 1;
-            else if (status === 'EXPIRED') acc.expired += 1;
-            else if (status === 'INVALID' || status === 'REJECTED') acc.invalid += 1;
-            else acc.other += 1;
-            return acc;
-        }, { pending: 0, valid: 0, invalid: 0, expired: 0, other: 0 });
+        return documents.reduce(
+            (acc, doc) => {
+                const status = (doc.computedStatus ?? '').toString();
+                if (status === 'VALID') acc.valid += 1;
+                else if (status === 'PENDING') acc.pending += 1;
+                else if (status === 'EXPIRED') acc.expired += 1;
+                else if (status === 'INVALID') acc.invalid += 1;
+                return acc;
+            },
+            { pending: 0, valid: 0, invalid: 0, expired: 0 }
+        );
     }, [documents]);
 
-    const segmentedOptions = useMemo(() => ([
-        { label: `Pending (${statusCounts.pending})`, value: 'Pending' },
-        { label: `Valid (${statusCounts.valid})`, value: 'Valid' },
-        { label: `Invalid (${statusCounts.invalid})`, value: 'Invalid' },
-        { label: `Expired (${statusCounts.expired})`, value: 'Expired' },
-    ]), [statusCounts]);
-
-    const actionBodyTemplate = (rowData: any) => {
-        const id = rowData.id;
-        return (
-            <div className='flex gap-3 '>
-                <Tooltip label="View Details">
-                    <ActionIcon onClick={() => navigate(`details-documents/${id}`)} variant="filled" size="sm" color="primary" >
-                        <IconEye style={{ width: '90%', height: '90%' }} stroke={1.5} /></ActionIcon>
-                </Tooltip>
-            </div>
-        )
-    }
-
-    const statusBodyTemplate = (rowData: any) => {
-        const status = (rowData.computedStatus ?? '').toString().toUpperCase();
-        const badgeConfig = (() => {
-            switch (status) {
-                case 'VALID':
-                    return { color: 'green', label: rowData.displayStatus };
-                case 'PENDING':
-                    return { color: 'orange', label: rowData.displayStatus };
-                case 'EXPIRED':
-                    return { color: 'red', label: rowData.displayStatus };
-                case 'INVALID':
-                case 'REJECTED':
-                    return { color: 'red', label: rowData.displayStatus };
-                default:
-                    return { color: 'gray', label: rowData.displayStatus ?? status };
-            }
-        })();
-        return (
-            <Badge color={badgeConfig.color} variant="light">
-                {badgeConfig.label}
-            </Badge>
-        );
-    };
-
-
-    const renderHeader = () => {
-        return (
-            <div className='flex justify-between p-2'>
-                <SegmentedControl
-                    value={tab}
-                    variant='filled'
-                    color="primary"
-                    onChange={setTab}
-                    data={segmentedOptions}
-                />
-                <TextInput fw={400}
-                    leftSection={<IconSearch size={16} />}
-                    placeholder="Search Document..."
-                    type="search"
-                    onChange={(e) => onGlobalFilterChange(e)}
-                />
-
-                {/* <div className='flex gap-2 items-center'>
-                    <Button variant='outline' leftSection={<IconFilter />}>Filter</Button>
-                    <Select data={["All Status", "Valid", "Invalid", "Pending Review", "Expired"]} placeholder='Select status' />
-                </div> */}
-            </div>
-
-
-        );
-    };
-
-    const header = renderHeader();
     const filteredDocuments = useMemo(() => {
-        return documents.filter(doc => {
-            const status = (doc.computedStatus ?? '').toString().toUpperCase();
-            if (tab === 'Pending') return status === 'PENDING';
-            if (tab === 'Valid') return status === 'VALID';
-            if (tab === 'Invalid') return status === 'INVALID' || status === 'REJECTED';
-            if (tab === 'Expired') return status === 'EXPIRED';
-            return true; // Default case, show all documents
+        const q = search.trim().toLowerCase();
+        return documents.filter((doc) => {
+            if ((doc.computedStatus ?? '') !== tab) return false;
+            if (!q) return true;
+            const haystack = [doc.docName, doc.requirement, doc.uploadedBy]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
         });
-    }, [documents, tab]);
-    return (
-        <div className="card ">
-            <Toast ref={toast} />
+    }, [documents, tab, search]);
 
-
-            <DataTable selectionMode="single" size='small' stripedRows removableSort paginator rows={10} header={header} value={filteredDocuments} globalFilter={_globalFilterValue} className='[&_.p-datatable-tbody]:!text-sm'
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]} dataKey="id" filters={filters} globalFilterFields={['docName', 'uploadedBy', 'displayStatus', 'computedStatus']}
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" onFilter={(e) => setFilters(e.filters)}
-            >
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Document Name' field='docName' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Uploaded By' field='uploadedBy' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Upload Date' field='uploadDate' sortable body={(rowData) => formatDateShort(rowData.uploadDate)} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Expiry Date' field='expiryDate' body={(rowData) => formatDateShort(rowData.expiryDate)} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Status' field='status' body={statusBodyTemplate} />
-                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-
-
-
-
-            </DataTable>
+    const documentBody = (row: any) => (
+        <div className="min-w-0 max-w-sm">
+            <p className="text-[13px] text-slate-800 leading-snug truncate">{row.docName || '—'}</p>
+            {row.requirement && <p className="text-[11px] text-slate-500 mt-0.5 truncate">{row.requirement}</p>}
         </div>
-    )
-}
+    );
 
-export default CompDocData
+    const uploadedByBody = (row: any) => (
+        <span className="text-[12.5px] text-slate-600">{row.uploadedBy || '—'}</span>
+    );
+
+    const statusBody = (row: any) => {
+        const cfg = docStatusConfig(row.computedStatus);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
+
+    const actionBody = (row: any) => (
+        <Tooltip label="Voir le détail du document" withArrow>
+            <ActionIcon
+                onClick={() => navigate(`details-documents/${row.id}`)}
+                variant="light"
+                size="sm"
+                color="teal"
+                aria-label="Voir le détail du document"
+            >
+                <IconEye size={14} stroke={1.5} />
+            </ActionIcon>
+        </Tooltip>
+    );
+
+    return (
+        <div className="space-y-3">
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <SegmentedFilter
+                    value={tab}
+                    onChange={setTab}
+                    options={[
+                        { value: 'PENDING', label: 'En attente', count: statusCounts.pending, color: 'indigo' },
+                        { value: 'VALID', label: 'Validés', count: statusCounts.valid, color: 'green' },
+                        { value: 'INVALID', label: 'Rejetés', count: statusCounts.invalid, color: 'red' },
+                        { value: 'EXPIRED', label: 'Expirés', count: statusCounts.expired, color: 'orange' },
+                    ]}
+                    rightElement={
+                        <TextInput
+                            placeholder="Rechercher un document, une exigence, un employé…"
+                            leftSection={<IconSearch size={14} />}
+                            value={search}
+                            onChange={(e) => setSearch(e.currentTarget.value)}
+                            size="xs"
+                            w={300}
+                        />
+                    }
+                />
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loading ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredDocuments.length ? (
+                    <EmptyState
+                        icon={<IconFolderOpen size={24} />}
+                        title="Aucun document dans cette catégorie"
+                        description="Les justificatifs déposés par les employés apparaîtront ici selon leur statut."
+                        compact
+                    />
+                ) : (
+                    <DataTable
+                        value={filteredDocuments}
+                        size="small"
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    >
+                        <Column header="Document" body={documentBody} sortable sortField="docName" />
+                        <Column header="Déposé par" body={uploadedByBody} sortable sortField="uploadedBy" style={{ width: '12rem' }} />
+                        <Column
+                            header="Déposé le"
+                            sortable
+                            sortField="uploadDate"
+                            body={(row) => <span className="text-[12.5px] text-slate-600">{formatDateFr(row.uploadDate)}</span>}
+                            style={{ width: '9rem' }}
+                        />
+                        <Column
+                            header="Expire le"
+                            sortable
+                            sortField="expiryDate"
+                            body={(row) => <span className="text-[12.5px] text-slate-600">{formatDateFr(row.expiryDate)}</span>}
+                            style={{ width: '9rem' }}
+                        />
+                        <Column header="Statut" body={statusBody} style={{ width: '7.5rem' }} />
+                        <Column header="" body={actionBody} headerStyle={{ width: '4rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                    </DataTable>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default CompDocData;

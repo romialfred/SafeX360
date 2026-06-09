@@ -43,8 +43,13 @@ public class RequirementServiceImpl implements RequirementService {
         requirementDTO.setStatus(Status.ACTIVE);
         requirementDTO.setCreatedAt(LocalDateTime.now());
         requirementDTO.setUpdatedAt(LocalDateTime.now());
-        return requirementRepository.save(requirementDTO.toEntity()).getId();
-
+        Requirement saved = requirementRepository.save(requirementDTO.toEntity());
+        // LOT 49 : code de référence auto si absent (EXG-001, EXG-002, ...)
+        if (saved.getReferenceCode() == null || saved.getReferenceCode().isBlank()) {
+            saved.setReferenceCode(String.format("EXG-%03d", saved.getId()));
+            requirementRepository.save(saved);
+        }
+        return saved.getId();
     }
 
     @Override
@@ -78,6 +83,12 @@ public class RequirementServiceImpl implements RequirementService {
         requirement.setDescription(requirementDTO.getDescription());
         requirement.setDocType(requirementDTO.getDocType());
         requirement.setRenewalFrequency(requirementDTO.getRenewalFrequency());
+        requirement.setLegalSource(requirementDTO.getLegalSource());
+        requirement.setAuthority(requirementDTO.getAuthority());
+        requirement.setCriticality(requirementDTO.getCriticality());
+        if (requirementDTO.getReferenceCode() != null && !requirementDTO.getReferenceCode().isBlank()) {
+            requirement.setReferenceCode(requirementDTO.getReferenceCode());
+        }
         requirement.setStatus(requirementDTO.getStatus());
         requirement.setUpdatedAt(LocalDateTime.now());
         requirementRepository.save(requirement);

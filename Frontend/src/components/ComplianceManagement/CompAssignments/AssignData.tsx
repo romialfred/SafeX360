@@ -1,127 +1,133 @@
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { ActionIcon, Button, Input, Tooltip } from '@mantine/core';
-import { IconEye, IconFilter, IconSearch } from '@tabler/icons-react';
-import { FilterMatchMode } from 'primereact/api';
-import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
-import { Toast } from 'primereact/toast';
-import { useEffect, useRef, useState } from 'react';
-
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { ActionIcon, TextInput, Tooltip } from '@mantine/core';
+import { IconBriefcase, IconEye, IconSearch } from '@tabler/icons-react';
 import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { useNavigate } from 'react-router-dom';
 import { GetAllPostionAssignment } from '../../../services/AssignmentService';
 import { errorNotification } from '../../../utility/NotificationUtility';
+import EmptyState from '../../UtilityComp/EmptyState';
 
-
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-}
-
-
-
+/**
+ * Liste des postes et du nombre d'exigences qui leur sont affectées (LOT 49).
+ */
 const AssignData = () => {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [_globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const toast = useRef<Toast>(null);
     const [data, setData] = useState<any[]>([]);
-
-
-
-
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
-
+        setLoading(true);
         GetAllPostionAssignment({})
-            .then((res) => {
-                const formatted = res.map((item: any) => ({
-                    ...item,
-                    // remove or handle `status` safely
-                    status: item.status ? item.status.toUpperCase() : 'UNKNOWN',
-                }));
-                setData(formatted);
-            })
+            .then((res) => setData(res ?? []))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch assignments");
-            });
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des affectations');
+            })
+            .finally(() => setLoading(false));
     }, []);
 
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return data;
+        return data.filter((row) => (row.position ?? '').toLowerCase().includes(q));
+    }, [data, search]);
 
+    const positionBody = (row: any) => (
+        <div className="flex items-center gap-2.5">
+            <span className="inline-flex p-1.5 rounded-md bg-teal-50 text-teal-700 flex-shrink-0">
+                <IconBriefcase size={14} stroke={1.8} aria-hidden="true" />
+            </span>
+            <span className="text-[13px] text-slate-800">{row.position || '—'}</span>
+        </div>
+    );
 
-
-
-    const actionBodyTemplate = (rowData: any) => {
-        const id = rowData.id;
+    const countBody = (row: any) => {
+        const count = row.reqCount ?? 0;
         return (
-            <div className='flex gap-3 '>
-                <Tooltip label="View Details">
-                    <ActionIcon onClick={() => navigate(`view-details/${id}`)} variant="filled" size="sm" color="primary" >
-                        <IconEye style={{ width: '90%', height: '90%' }} stroke={1.5} /></ActionIcon>
-                </Tooltip>
-
-
-
-            </div>
-        )
-    }
-
-    const renderHeader = () => {
-
-
-        return (
-
-            <div className='flex justify-between p-2'>
-                <Input
-                    leftSection={<IconSearch size={16} />}
-                    placeholder="Search Postions..."
-                    type="search"
-
-                    onChange={(e) => onGlobalFilterChange(e)}
-                />
-
-                <div>
-                    <Button variant='outline' leftSection={<IconFilter />}>Filter</Button>
-                </div>
-            </div>
-
-
+            <span
+                className={`inline-flex items-center rounded border px-2 py-0.5 text-[11.5px] ${
+                    count > 0
+                        ? 'bg-teal-50 text-teal-700 border-teal-200'
+                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                }`}
+            >
+                {count} exigence{count > 1 ? 's' : ''}
+            </span>
         );
     };
 
-    const header = renderHeader();
-    return (
-        <div className="card ">
-            <Toast ref={toast} />
-
-            <DataTable selectionMode="single" size='small' stripedRows removableSort paginator rows={10} header={header} value={data} className='[&_.p-datatable-tbody]:!text-sm'
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]} dataKey="name" filters={filters} globalFilterFields={['name', 'shortName', 'sector', 'company']}
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" onFilter={(e) => setFilters(e.filters)}
+    const actionBody = (row: any) => (
+        <Tooltip label="Voir les exigences du poste" withArrow>
+            <ActionIcon
+                onClick={() => navigate(`view-details/${row.id}`)}
+                variant="light"
+                size="sm"
+                color="teal"
+                aria-label="Voir les exigences du poste"
             >
+                <IconEye size={14} stroke={1.5} />
+            </ActionIcon>
+        </Tooltip>
+    );
 
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Postion' field='position' sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Requirement Count' field='reqCount' sortable />
+    return (
+        <div className="space-y-3">
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                        placeholder="Rechercher un poste…"
+                        leftSection={<IconSearch size={14} />}
+                        value={search}
+                        onChange={(e) => setSearch(e.currentTarget.value)}
+                        size="xs"
+                        className="flex-1 min-w-[220px]"
+                    />
+                    <span className="text-[11.5px] text-slate-500 ml-auto">
+                        {loading ? 'Chargement…' : `${filtered.length} poste${filtered.length > 1 ? 's' : ''}`}
+                    </span>
+                </div>
+            </div>
 
-                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-
-
-
-
-            </DataTable>
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loading ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filtered.length ? (
+                    <EmptyState
+                        icon={<IconBriefcase size={24} />}
+                        title="Aucun poste trouvé"
+                        description="Les postes définis dans le référentiel RH apparaîtront ici avec leurs exigences."
+                        compact
+                    />
+                ) : (
+                    <DataTable
+                        value={filtered}
+                        size="small"
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    >
+                        <Column header="Poste" body={positionBody} sortable sortField="position" />
+                        <Column header="Exigences affectées" body={countBody} sortable sortField="reqCount" style={{ width: '12rem' }} />
+                        <Column header="" body={actionBody} headerStyle={{ width: '4rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                    </DataTable>
+                )}
+            </div>
         </div>
-    )
-}
+    );
+};
 
-export default AssignData
+export default AssignData;

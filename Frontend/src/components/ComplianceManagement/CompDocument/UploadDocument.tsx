@@ -1,243 +1,224 @@
-import { Breadcrumbs, Modal, Text, Button } from "@mantine/core";
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import ImagePdfDropzone from "../../UtilityComp/ImagePdfDropzone";
+import { useEffect, useState } from "react";
+import { Alert, Button, Select } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
+import { IconAlertCircle, IconCloudUpload, IconUpload, IconUser } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import PageHeader from "../../UtilityComp/PageHeader";
+import PdfDropzone from "../../UtilityComp/PdfDropzone";
+import {
+    createComplianceDocument,
+    getEmployeeComplianceStatus,
+    getRequirementsByEmpId,
+} from "../../../services/ComplianceDocumentService";
+import { getBase64 } from "../../../utility/DocumentUtility";
+import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
+import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 
-const complianceData = [
-    {
-        id: 1,
-        title: 'Eye Examination',
-        description: 'Annual eye examination for all employees working with screens more than 4 hours daily.',
-        status: 'Compliant',
-    },
-    {
-        id: 2,
-        title: 'Health and Safety Training',
-        description: 'Mandatory training on workplace health and safety procedures.',
-        status: 'Upcoming Expiry',
-    },
-    {
-        id: 3,
-        title: 'Work Permit',
-        description: 'Legal documentation confirming the right to work.',
-        status: 'Expired < 30 Days',
-    },
-    {
-        id: 4,
-        title: 'Forklift Operation Certificate',
-        description: 'Certification for operating forklifts and similar machinery.',
-        status: 'Missing',
-    },
-    {
-        id: 5,
-        title: 'Fire Safety Drill',
-        description: 'Scheduled fire safety drills conducted quarterly.',
-        status: 'Compliant',
-    },
-    {
-        id: 6,
-        title: 'Emergency Evacuation Plan',
-        description: 'Plan outlining emergency exits and procedures.',
-        status: 'Upcoming Expiry',
-    },
-    {
-        id: 7,
-        title: 'Hazard Communication Training',
-        description: 'Training to ensure awareness of chemical hazards.',
-        status: 'Missing',
-    },
-    {
-        id: 8,
-        title: 'Electrical Safety Certificate',
-        description: 'Certification for safe electrical equipment handling.',
-        status: 'Expired < 30 Days',
-    },
-    {
-        id: 9,
-        title: 'First Aid Training',
-        description: 'Basic first aid training for emergency response.',
-        status: 'Compliant',
-    },
-    {
-        id: 10,
-        title: 'Machine Safety Certification',
-        description: 'Certification for operating industrial machines.',
-        status: 'Compliant',
-    },
-    {
-        id: 11,
-        title: 'COVID-19 Safety Protocol',
-        description: 'Guidelines and practices for COVID-19 safety.',
-        status: 'Upcoming Expiry',
-    },
-    {
-        id: 12,
-        title: 'Ergonomic Assessment',
-        description: 'Workstation assessments to prevent strain injuries.',
-        status: 'Compliant',
-    },
-    {
-        id: 13,
-        title: 'Hearing Test',
-        description: 'Annual hearing check-up for noisy environments.',
-        status: 'Missing',
-    },
-    {
-        id: 14,
-        title: 'Respirator Fit Test',
-        description: 'Fit testing for workers using respirators.',
-        status: 'Expired < 30 Days',
-    },
-    {
-        id: 15,
-        title: 'Safety Audit',
-        description: 'Routine safety inspections and reports.',
-        status: 'Compliant',
-    },
-    {
-        id: 16,
-        title: 'Chemical Handling Permit',
-        description: 'Permit required for handling hazardous chemicals.',
-        status: 'Upcoming Expiry',
-    },
-    {
-        id: 17,
-        title: 'Confined Space Training',
-        description: 'Training for working in confined spaces.',
-        status: 'Expired < 30 Days',
-    },
-    {
-        id: 18,
-        title: 'Ladder Safety Certificate',
-        description: 'Certification for safe ladder usage.',
-        status: 'Missing',
-    },
-    {
-        id: 19,
-        title: 'Workplace Violence Prevention',
-        description: 'Policy and training on preventing workplace violence.',
-        status: 'Compliant',
-    },
-    {
-        id: 20,
-        title: 'Incident Reporting Training',
-        description: 'Training on how to report workplace incidents.',
-        status: 'Compliant',
-    },
-];
+/**
+ * Dépôt d'un document de conformité (LOT 49).
+ *
+ * Remplace l'ancienne page maquette (données fictives, bouton inactif) par un
+ * dépôt réel : choix de l'employé, exigence à justifier, pièce PDF et date
+ * d'expiration. Le document part en statut « En attente de validation ».
+ */
 
-
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case "Compliant":
-            return "bg-green-100 text-green-700";
-        case "Upcoming Expiry":
-            return "bg-yellow-100 text-yellow-700";
-        case "Expired < 30 Days":
-            return "bg-gray-200 text-gray-700";
-        case "Missing":
-            return "bg-red-100 text-red-700";
-        default:
-            return "";
-    }
-};
+interface EmployeeOption {
+    value: string;
+    label: string;
+}
 
 const UploadDocument = () => {
-    const [selectedItem, setSelectedItem] = useState<any>(null);
-    const [modalOpen, setModalOpen] = useState(false);
-
-    const openModal = (item: any) => {
-        setSelectedItem(item);
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setSelectedItem(null);
-    };
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+    const [requirements, setRequirements] = useState<any[]>([]);
+    const [loadingRequirements, setLoadingRequirements] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const form = useForm({
         initialValues: {
-
+            employeeId: '',
+            requirementId: '',
+            file: [] as any[],
+            expiryDate: null as Date | null,
         },
         validate: {
-
+            employeeId: (value) => (value ? null : "L'employé est obligatoire"),
+            requirementId: (value) => (value ? null : "L'exigence à justifier est obligatoire"),
+            file: (value) => (value && value.length > 0 ? null : 'La pièce justificative est obligatoire'),
+            expiryDate: (value) => (value ? null : "La date d'expiration est obligatoire"),
         },
-    })
+    });
+
+    useEffect(() => {
+        getEmployeeComplianceStatus()
+            .then((res) => {
+                setEmployees(
+                    (res ?? []).map((emp: any) => ({
+                        value: String(emp.id),
+                        label: emp.position ? `${emp.name} — ${emp.position}` : emp.name,
+                    }))
+                );
+            })
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'La liste des employés est indisponible');
+            });
+    }, []);
+
+    const handleEmployeeChange = (employeeId: string | null) => {
+        form.setFieldValue('employeeId', employeeId ?? '');
+        form.setFieldValue('requirementId', '');
+        setRequirements([]);
+        if (!employeeId) return;
+        setLoadingRequirements(true);
+        getRequirementsByEmpId(employeeId)
+            .then((res) => setRequirements(res?.requirements ?? []))
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Les exigences du poste sont indisponibles');
+            })
+            .finally(() => setLoadingRequirements(false));
+    };
+
+    const pendingRequirements = requirements.filter((r) => r.status === 'Non-Compliance');
+
+    const handleSubmit = async (values: typeof form.values) => {
+        setSubmitting(true);
+        dispatch(showOverlay());
+        try {
+            const base64: any = await getBase64(values.file[0].file);
+            const payload = {
+                requirementId: values.requirementId,
+                expiryDate: values.expiryDate,
+                employeeId: Number(values.employeeId),
+                media: {
+                    name: values.file[0].file?.name,
+                    file: base64.split(',')[1],
+                },
+            };
+            await createComplianceDocument(payload);
+            successNotification('Document déposé. Il est en attente de validation HSE.');
+            navigate('/compliance-documents');
+        } catch (err: any) {
+            errorNotification(err.response?.data?.errorMessage || "Le dépôt du document a échoué");
+        } finally {
+            setSubmitting(false);
+            dispatch(hideOverlay());
+        }
+    };
 
     return (
-        <div className="flex flex-col gap-10">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-2xl font-semibold text-slate-900">
-                        Upload Documents
-                    </div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/compliance-documents">
-                            <Text variant="gradient" className="hover:!underline cursor-pointer">Compliance Documents</Text>
-                        </Link>
-                        <Text variant="gradient">Upload Documents</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Conformité Réglementaire' },
+                    { label: 'Documents', to: '/compliance-documents' },
+                    { label: 'Déposer un document' },
+                ]}
+                icon={<IconCloudUpload size={22} stroke={2} />}
+                iconColor="teal"
+                title="Déposer un document de conformité"
+                subtitle="Justificatif d'une exigence réglementaire pour un employé : certificat, habilitation, examen médical"
+            />
 
-            <div className="bg-white p-4 rounded-lg shadow-xl border border-gray-300 flex flex-col gap-5">
-                <div>
-                    <h1 className="text-lg text-primary">Select Requirement for Upload</h1>
-                </div>
-
-                <div className="flex flex-col gap-5 mt-4">
-                    {complianceData.map((item) => (
-                        <div
-                            key={item.id}
-                            onClick={() => openModal(item)}
-                            className="bg-blue-50 shadow-sm p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-blue-100 transition"
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+                <div className="max-w-3xl mx-auto flex flex-col gap-4">
+                    <section className="bg-white rounded-xl border border-slate-200 p-4">
+                        <h3
+                            className="text-slate-800 mb-3 pb-3 border-b border-slate-100"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                         >
-                            <div>
-                                <h2 className="text-lg mb-1">{item.title}</h2>
-                                <p className="text-sm mb-2">{item.description}</p>
-                            </div>
-                            <div className={`px-3 py-1 rounded-full text-sm ${getStatusColor(item.status)}`}>
-                                {item.status}
-                            </div>
+                            Employé et exigence concernés
+                        </h3>
+                        <div className="flex flex-col gap-3">
+                            <Select
+                                label="Employé"
+                                placeholder="Rechercher un employé"
+                                leftSection={<IconUser size={14} />}
+                                data={employees}
+                                searchable
+                                withAsterisk
+                                size="sm"
+                                value={form.values.employeeId || null}
+                                onChange={handleEmployeeChange}
+                                error={form.errors.employeeId}
+                            />
+                            <Select
+                                label="Exigence à justifier"
+                                placeholder={
+                                    !form.values.employeeId
+                                        ? "Choisir d'abord un employé"
+                                        : loadingRequirements
+                                            ? 'Chargement des exigences…'
+                                            : pendingRequirements.length
+                                                ? 'Choisir une exigence non conforme'
+                                                : 'Aucune exigence en attente pour cet employé'
+                                }
+                                data={pendingRequirements.map((r) => ({
+                                    value: String(r.requirementId),
+                                    label: r.requirementName,
+                                }))}
+                                disabled={!form.values.employeeId || loadingRequirements || !pendingRequirements.length}
+                                searchable
+                                withAsterisk
+                                size="sm"
+                                {...form.getInputProps('requirementId')}
+                            />
+                            {form.values.employeeId && !loadingRequirements && !pendingRequirements.length && (
+                                <Alert color="teal" variant="light" icon={<IconAlertCircle size={14} />}>
+                                    <span className="text-[12.5px]">
+                                        Toutes les exigences de cet employé sont déjà couvertes par un justificatif valide ou en attente.
+                                    </span>
+                                </Alert>
+                            )}
                         </div>
-                    ))}
-                </div>
+                    </section>
 
-                <div className="flex justify-end">
-                    <Button variant="outline">Cancel</Button>
-                </div>
-            </div>
-
-            {/* MODAL */}
-            <Modal opened={modalOpen} onClose={closeModal} title={
-                <div className="text-lg text-blue-500">
-                    Upload Document
-                </div>
-            } centered size="lg">
-                {selectedItem && (
-                    <div className="space-y-4">
-                        <h2 className="text-lg">{selectedItem.title}</h2>
-                        <p>{selectedItem.description}</p>
-                        <div className="text-sm text-gray-600 space-y-1">
-                            <p><strong>Category:</strong> {selectedItem.category}</p>
-                            <p><strong>Renewal:</strong> {selectedItem.renewal}</p>
-                            <p><strong>Document Type:</strong> {selectedItem.documentType}</p>
+                    <section className="bg-white rounded-xl border border-slate-200 p-4">
+                        <h3
+                            className="text-slate-800 mb-3 pb-3 border-b border-slate-100"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
+                        >
+                            Pièce justificative
+                        </h3>
+                        <div className="flex flex-col gap-3">
+                            <PdfDropzone title="Document (PDF)" id="file" form={form} withAsterisk single />
+                            <DateInput
+                                label="Date d'expiration du justificatif"
+                                placeholder="jj/mm/aaaa"
+                                minDate={new Date()}
+                                withAsterisk
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                {...form.getInputProps('expiryDate')}
+                            />
                         </div>
+                    </section>
 
-                        <ImagePdfDropzone name="Supporting Documents" id="report.docs" form={form} />
-
-                        <div className="flex justify-end gap-2">
-                            <Button variant="default" onClick={closeModal}>Cancel</Button>
-                            <Button>Upload</Button>
-                        </div>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => navigate('/compliance-documents')}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            color="teal"
+                            size="sm"
+                            loading={submitting}
+                            leftSection={<IconUpload size={15} />}
+                        >
+                            Déposer le document
+                        </Button>
                     </div>
-                )}
-            </Modal>
+                </div>
+            </form>
         </div>
     );
 };

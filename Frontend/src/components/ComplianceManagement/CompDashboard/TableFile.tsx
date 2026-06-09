@@ -1,10 +1,10 @@
-import { Card, Text } from "@mantine/core";
 import { IconCircleCheck, IconUser } from "@tabler/icons-react";
 import { Column } from "primereact/column";
 import { DataTable, DataTablePageEvent } from "primereact/datatable";
 import "primereact/resources/primereact.min.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import { CompliantEmployee } from "../../../services/ComplianceDashboardService";
+import { formatDateFr } from "../complianceLabels";
 
 interface TableFileProps {
     employees: CompliantEmployee[];
@@ -15,61 +15,48 @@ interface TableFileProps {
     loading?: boolean;
 }
 
-const formatDate = (value?: string | null) => {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString();
-};
-
-const getLastReviewLabel = (employee: CompliantEmployee) => {
-    const completedOn = formatDate(employee.lastReview?.completedOn);
-    const validator = employee.lastReview?.validatedBy ? ` (${employee.lastReview.validatedBy})` : "";
-    return completedOn ? `${completedOn}${validator}` : "—";
-};
-
-const getNextReviewLabel = (employee: CompliantEmployee) => {
-    const dueOn = formatDate(employee.nextReview?.dueOn);
-    const days = typeof employee.nextReview?.daysUntilDue === "number" ? employee.nextReview.daysUntilDue : null;
-    if (!dueOn) return "Not scheduled";
-    return days !== null ? `${dueOn} (${days} days)` : dueOn;
-};
-
+/**
+ * Registre des employés conformes (LOT 49) — carte sobre, libellés FR,
+ * colonnes typographiées selon la charte (13px, slate).
+ */
 const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = false }: TableFileProps) => {
     const nameBodyTemplate = (rowData: CompliantEmployee) => (
-        <div className="flex items-center gap-2">
-            <div className="p-3 rounded-4xl bg-green-100">
-                <IconUser className="text-green-600" size={25} />
-            </div>
-
-            <div>
-                <p className="text-sm text-gray-800 leading-tight">
-                    {rowData.name}
-                </p>
-                <p className="text-xs text-gray-500">{rowData.jobTitle}</p>
+        <div className="flex items-center gap-2.5">
+            <span className="inline-flex p-1.5 rounded-md bg-emerald-50 text-emerald-600 flex-shrink-0">
+                <IconUser size={14} stroke={1.8} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+                <p className="text-[13px] text-slate-800 leading-tight">{rowData.name}</p>
+                <p className="text-[11.5px] text-slate-500">{rowData.jobTitle || '—'}</p>
             </div>
         </div>
     );
 
     const departmentBodyTemplate = (rowData: CompliantEmployee) => (
-        <div className="flex items-center gap-2">
-            <div className="bg-blue-50 rounded-2xl p-2">
-                <p className="text-sm text-blue-600 leading-tight">
-                    {rowData.department}
-                </p>
-            </div>
-        </div>
+        <span className="text-[12.5px] text-slate-600">{rowData.department || '—'}</span>
     );
 
-    const nextReviewBodyTemplate = (rowData: CompliantEmployee) => (
-        <div className="flex items-center gap-2">
-            <div className="bg-green-50 rounded-2xl p-2">
-                <p className="text-sm text-green-600 leading-tight">
-                    {getNextReviewLabel(rowData)}
-                </p>
-            </div>
-        </div>
+    const requirementBodyTemplate = (rowData: CompliantEmployee) => (
+        <span className="text-[12.5px] text-slate-700">{rowData.requirement || '—'}</span>
     );
+
+    const lastReviewBodyTemplate = (rowData: CompliantEmployee) => (
+        <span className="text-[12.5px] text-slate-600">
+            {formatDateFr(rowData.lastReview?.completedOn)}
+        </span>
+    );
+
+    const nextReviewBodyTemplate = (rowData: CompliantEmployee) => {
+        const dueOn = rowData.nextReview?.dueOn;
+        const days = rowData.nextReview?.daysUntilDue;
+        if (!dueOn) return <span className="text-[12.5px] text-slate-400">Non planifiée</span>;
+        return (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11.5px] text-emerald-700">
+                {formatDateFr(dueOn)}
+                {typeof days === 'number' && <span className="text-emerald-500">· J-{days}</span>}
+            </span>
+        );
+    };
 
     const handlePage = (event: DataTablePageEvent) => {
         if (!onPageChange) return;
@@ -79,43 +66,59 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
     };
 
     const totalRecords = typeof total === "number" && total > 0 ? total : employees.length;
-    const startIndex = totalRecords ? page * pageSize : 0;
-    const endIndex = totalRecords ? Math.min(startIndex + employees.length, totalRecords) : 0;
 
     return (
-        <Card shadow="md" padding={0} radius="md" className="!bg-green-50 border border-gray-200">
-            <div className="flex items-center gap-2 mb-5 p-2">
-                <IconCircleCheck color="green" />
-                <div className="flex flex-col">
-                    <p className="text-lg text-green-600 ">Compliant Employees</p>
-                    <p className="text-gray-500 ">Employees with up-to-date compliance requirements</p>
-                    <Text size="sm" c="dimmed">
-                        Showing {endIndex} of {totalRecords} records
-                    </Text>
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2.5 mb-3">
+                <span className="inline-flex p-1.5 rounded-md bg-emerald-50 text-emerald-600">
+                    <IconCircleCheck size={16} stroke={1.8} aria-hidden="true" />
+                </span>
+                <div>
+                    <h3
+                        className="text-slate-800"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '14.5px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        Employés conformes
+                    </h3>
+                    <p className="text-[11.5px] text-slate-500">
+                        Salariés dont les justificatifs réglementaires sont valides à date · {totalRecords} enregistrement{totalRecords > 1 ? 's' : ''}
+                    </p>
                 </div>
             </div>
 
             <DataTable
                 value={employees}
-                selectionMode="single"
                 paginator={Boolean(onPageChange)}
                 rows={pageSize}
                 totalRecords={totalRecords}
                 first={(page - 1) * pageSize}
-                className="p-datatable-sm rounded border border-gray-300 [&_.p-datatable-tbody]:!text-sm"
+                size="small"
                 stripedRows
+                className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                 tableClassName="min-w-full"
                 loading={loading}
                 lazy={Boolean(onPageChange)}
                 onPage={handlePage}
+                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+                emptyMessage={
+                    <div className="py-8 text-center text-[13px] text-slate-500">
+                        Aucun employé conforme à afficher pour le moment.
+                    </div>
+                }
             >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Employee" body={nameBodyTemplate} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Department" body={departmentBodyTemplate} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="requirement" header="Requirement" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Last Review" body={(rowData: CompliantEmployee) => getLastReviewLabel(rowData)} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Next Review" body={nextReviewBodyTemplate} />
+                <Column header="Employé" body={nameBodyTemplate} />
+                <Column header="Département" body={departmentBodyTemplate} />
+                <Column header="Exigence" body={requirementBodyTemplate} />
+                <Column header="Dernière validation" body={lastReviewBodyTemplate} />
+                <Column header="Prochaine échéance" body={nextReviewBodyTemplate} />
             </DataTable>
-        </Card >
+        </div>
     );
 };
 

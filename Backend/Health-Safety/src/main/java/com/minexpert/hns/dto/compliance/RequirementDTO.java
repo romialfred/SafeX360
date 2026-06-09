@@ -19,12 +19,16 @@ public class RequirementDTO {
     private String category;
     private String renewalFrequency;
     private String docType;
+    private String referenceCode;
+    private String legalSource;
+    private String authority;
+    private String criticality;
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Requirement toEntity() {
-        return new Requirement(id, title, description, category, renewalFrequency, docType, status, createdAt,
-                updatedAt);
+        return new Requirement(id, title, description, category, renewalFrequency, docType,
+                referenceCode, legalSource, authority, criticality, status, createdAt, updatedAt);
     }
 }

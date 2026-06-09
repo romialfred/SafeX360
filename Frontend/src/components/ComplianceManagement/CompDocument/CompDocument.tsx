@@ -1,29 +1,38 @@
-import { Breadcrumbs, Text } from "@mantine/core"
-import { Link } from "react-router-dom"
-import CompDocData from "./CompDocData"
+import { Button } from "@mantine/core";
+import { IconFolderOpen, IconUpload } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../../UtilityComp/PageHeader";
+import CompDocData from "./CompDocData";
 
-
+/** Registre des documents de conformité (LOT 49). */
 const CompDocument = () => {
+    const navigate = useNavigate();
     return (
-        <div>
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-2xl font-semibold text-slate-900">Compliance Documents</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Text variant="gradient">Compliance Documents</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
-            <p className=' italic my-3'>
-
-                Centralized repository of policies, procedures, and records supporting regulatory compliance
-            </p>
-            <div className='mt-5   '>
-                <CompDocData />
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Conformité Réglementaire' },
+                    { label: 'Documents' },
+                ]}
+                icon={<IconFolderOpen size={22} stroke={2} />}
+                iconColor="teal"
+                title="Documents de conformité"
+                subtitle="Justificatifs déposés par les employés : certificats, habilitations et examens médicaux"
+                actions={
+                    <Button
+                        size="xs"
+                        color="teal"
+                        leftSection={<IconUpload size={14} />}
+                        onClick={() => navigate('upload-document')}
+                    >
+                        Déposer un document
+                    </Button>
+                }
+            />
+            <CompDocData />
         </div>
-    )
-}
+    );
+};
 
-export default CompDocument
+export default CompDocument;

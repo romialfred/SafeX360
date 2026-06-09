@@ -1,125 +1,106 @@
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconEye } from '@tabler/icons-react';
-import { FilterMatchMode } from 'primereact/api';
-import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
-import { Toast } from 'primereact/toast';
-import { useRef, useState } from 'react';
 import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { getMedia } from '../../../services/MediaService';
 import { errorNotification } from '../../../utility/NotificationUtility';
 import { openPDF } from '../../../utility/DocumentUtility';
-import { capitalizeFirstLetter } from '../../../utility/OtherUtilities';
-import { formatDate, formatDateShort, isPastDate } from '../../../utility/DateFormats';
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
-
+import { isPastDate } from '../../../utility/DateFormats';
+import { docStatusConfig, formatDateFr } from '../complianceLabels';
 
 interface DocumentTableProps {
-    documents: any[];  // Tum apne hisaab se type specify kar sakti ho
+    documents: any[];
 }
+
+/** Justificatifs déposés par un employé (LOT 49). */
 const DocumentTable = ({ documents }: DocumentTableProps) => {
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const dispatch = useDispatch();
-    const toast = useRef<Toast>(null);
-
-    console.log(documents);
-
-    const actionBodyTemplate = (rowData: any) => {
-
-        return (
-            <div className='flex gap-3'>
-                <Tooltip label="View Details">
-                    <ActionIcon onClick={() => openDoc(rowData.docId)} variant="filled" size="sm" color="primary">
-                        <IconEye style={{ width: '90%', height: '90%' }} stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-            </div>
-        );
-    };
-
-    const statusBodyTemplate = (rowData: any) => {
-        const status = isPastDate(rowData.expiryDate) ? "INVALID" : rowData.status;
-
-        const getStatusClasses = (status: string) => {
-            switch (status) {
-                case 'VALID':
-                    return 'bg-green-100 text-green-800';
-                case 'PENDING':
-                    return 'bg-yellow-100 text-yellow-800';
-                case 'INVALID':
-                    return 'bg-red-100 text-red-800';
-                default:
-                    return 'bg-gray-100 text-gray-800';
-            }
-        };
-
-        return (
-            <span
-                className={`px-3 py-1  rounded-xl text-sm ${getStatusClasses(status)}`}
-            >
-                {capitalizeFirstLetter(status)}
-            </span>
-        );
-    };
-
 
     const openDoc = (docId: any) => {
         dispatch(showOverlay());
         getMedia(docId)
-            .then((res) => {
-                openPDF(res.file);
-            })
+            .then((res) => openPDF(res.file))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Failed to open document');
-            }).finally(() => {
-                dispatch(hideOverlay());
-            }
-            );
-    }
+                errorNotification(err.response?.data?.errorMessage || "Le document n'a pas pu être ouvert");
+            })
+            .finally(() => dispatch(hideOverlay()));
+    };
+
+    const documentBody = (row: any) => (
+        <div className="min-w-0 max-w-sm">
+            <p className="text-[13px] text-slate-800 leading-snug truncate">{row.docName || '—'}</p>
+            {row.requirement && <p className="text-[11px] text-slate-500 mt-0.5 truncate">{row.requirement}</p>}
+        </div>
+    );
+
+    const statusBody = (row: any) => {
+        const raw = (row.status ?? '').toString().toUpperCase();
+        const computed = raw === 'VALID' && row.expiryDate && isPastDate(row.expiryDate) ? 'EXPIRED' : raw;
+        const cfg = docStatusConfig(computed);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
+
+    const actionBody = (row: any) => (
+        <Tooltip label="Ouvrir le document" withArrow>
+            <ActionIcon
+                onClick={() => openDoc(row.docId)}
+                variant="light"
+                size="sm"
+                color="teal"
+                aria-label="Ouvrir le document"
+            >
+                <IconEye size={14} stroke={1.5} />
+            </ActionIcon>
+        </Tooltip>
+    );
 
     return (
-        <div className="card">
-            <Toast ref={toast} />
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                rows={10}
+        <DataTable
+            value={documents}
+            size="small"
+            stripedRows
+            removableSort
+            paginator
+            rows={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            dataKey="id"
+            className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+            currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+            emptyMessage={
+                <div className="py-8 text-center text-[13px] text-slate-500">
+                    Aucun document déposé par cet employé.
+                </div>
+            }
+        >
+            <Column header="Document" body={documentBody} sortable sortField="docName" />
+            <Column
+                header="Déposé le"
+                body={(row: any) => <span className="text-[12.5px] text-slate-600">{row.uploadDate ? formatDateFr(row.uploadDate) : '—'}</span>}
+                sortable
+                sortField="uploadDate"
+                style={{ width: '9rem' }}
+            />
+            <Column
+                header="Expire le"
+                body={(row: any) => <span className="text-[12.5px] text-slate-600">{row.expiryDate ? formatDateFr(row.expiryDate) : '—'}</span>}
+                sortable
+                sortField="expiryDate"
+                style={{ width: '9rem' }}
+            />
+            <Column header="Statut" body={statusBody} style={{ width: '8rem' }} />
+            <Column header="" body={actionBody} headerStyle={{ width: '4rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+        </DataTable>
+    );
+};
 
-                value={documents}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="requirement"
-                filters={filters}
-                globalFilterFields={['requirement', 'category', 'renewalFrequency', 'status']}
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Document Name' field='docName' body={(rowData) => <span className='!line-clamp-1'>{rowData.docName}</span>} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Requirement' field='requirement' />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Uploaded By' field='uploadedBy' />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Expires' field='expiryDate' body={(rowData: any) => rowData.expiryDate ? formatDateShort(rowData.expiryDate) : ""} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Upload Date' field='uploadDate' body={(rowData: any) => rowData.uploadDate ? formatDate(rowData.uploadDate) : ""} />
-                {/* <Column header='Comment' field='comment' /> */}
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Status" body={statusBodyTemplate} field='status' />
-                <Column
-                    headerStyle={{ width: '5rem', textAlign: 'center' }}
-                    bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
-                    body={actionBodyTemplate}
-                />
-            </DataTable>
-        </div>
-
-    )
-}
-
-export default DocumentTable
+export default DocumentTable;
