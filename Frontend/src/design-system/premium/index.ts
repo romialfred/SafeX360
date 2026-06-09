@@ -13,12 +13,14 @@ export { default as PremiumPageHeader } from './PremiumPageHeader';
 export { default as PremiumKpiTile } from './PremiumKpiTile';
 export { default as PremiumStatusBadge } from './PremiumStatusBadge';
 export { default as PremiumFormSection } from './PremiumFormSection';
+export { default as PremiumHelpPanel } from './PremiumHelpPanel';
 
 // Types
 export type { PremiumPageHeaderProps } from './PremiumPageHeader';
 export type { PremiumKpiTileProps } from './PremiumKpiTile';
 export type { PremiumStatusBadgeProps } from './PremiumStatusBadge';
 export type { PremiumFormSectionProps } from './PremiumFormSection';
+export type { PremiumHelpPanelProps } from './PremiumHelpPanel';
 
 // Tokens et helpers
 export {
