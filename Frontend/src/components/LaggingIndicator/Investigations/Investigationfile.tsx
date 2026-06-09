@@ -14,7 +14,7 @@ const Investigationfile = () => {
                 icon={<IconSearch size={22} stroke={2} />}
                 iconColor="blue"
                 title="Investigations d'incidents"
-                subtitle="Analyse des causes profondes des incidents et dangers pour mise en œuvre des actions correctives"
+                subtitle="ISO 45001 §10.2 — Analyse des causes profondes (RCA, 5 Whys, Ishikawa) et mise en œuvre des actions correctives"
             />
             <InvestigationFileData />
         </div>

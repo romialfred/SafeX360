@@ -242,7 +242,22 @@ const InvestigationFileData = () => {
                                     </Progress.Root>
                                 )}
                             />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData: any) => statusLabels[rowData.status]} />
+                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Statut" body={(rowData: any) => {
+                                /* Refonte ISO Phase 4 : badge semantique aligne NC */
+                                const colors: Record<string, string> = {
+                                    PENDING: 'cyan',
+                                    IN_PROGRESS: 'amber',
+                                    COMPLETED: 'green',
+                                    CANCELLED: 'gray',
+                                    ON_HOLD: 'orange',
+                                };
+                                const color = colors[String(rowData?.status ?? '').toUpperCase()] ?? 'gray';
+                                return (
+                                    <Badge color={color} variant="light" size="sm" radius="xl" className="whitespace-nowrap">
+                                        {statusLabels[rowData.status]}
+                                    </Badge>
+                                );
+                            }} />
 
                             <Column bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate}
                             />
