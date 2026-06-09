@@ -128,7 +128,7 @@ const PPEManagementDashboard = () => {
                 icon={<IconShieldCheck size={22} stroke={2} />}
                 iconColor="yellow"
                 title="Vue d'ensemble — Équipements de protection individuelle"
-                subtitle="Contrôle centralisé du cycle de vie, conformité et disponibilité des EPI"
+                subtitle="ISO 45001 §8.1.2 — Dotation, suivi de cycle de vie, conformité et disponibilité des EPI"
                 actions={
                     <>
                         <Button variant="default" size="sm" leftSection={<IconDownload size={14} />}>

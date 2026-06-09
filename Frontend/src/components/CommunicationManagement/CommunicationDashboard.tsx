@@ -361,7 +361,7 @@ const CommunicationDashboard = () => {
                 icon={<IconMessageCircle size={22} stroke={2} />}
                 iconColor="pink"
                 title="Tableau de bord — Communication HSE"
-                subtitle="Vue en temps réel sur la portée, l'engagement et la distribution des communications"
+                subtitle="ISO 45001 §7.4 — Communications internes, sensibilisation et engagement des collaborateurs"
             />
 
             {/* LOT 41 E: ErrorBanner unifié */}
