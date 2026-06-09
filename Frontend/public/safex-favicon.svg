@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!--
+    SafeX 360 — Favicon onglet navigateur.
+    Bouclier teal avec gradient + chevrons blancs (identité HSE SafeX 360).
+    Optimise pour rester lisible a 16x16 (favicon).
+  -->
+  <defs>
+    <linearGradient id="favbg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="100%" stop-color="#0F766E" />
+    </linearGradient>
+  </defs>
+
+  <!-- Bouclier herauldique aux coins arrondis -->
+  <path
+    d="M32 3
+       L56 11
+       C56.5 11.2, 57 11.6, 57 12.3
+       L57 30
+       C57 44, 36 60, 32.7 61.6
+       C32.3 61.8, 31.7 61.8, 31.3 61.6
+       C28 60, 7 44, 7 30
+       L7 12.3
+       C7 11.6, 7.5 11.2, 8 11
+       Z"
+    fill="url(#favbg)"
+    stroke="#0F766E"
+    stroke-width="0.5"
+  />
+
+  <!-- Chevron principal (large, blanc) -->
+  <path
+    d="M19 33 L32 20 L45 33"
+    stroke="#FFFFFF"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- Chevron secondaire -->
+  <path
+    d="M22 43 L32 33 L42 43"
+    stroke="#FFFFFF"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.75"
+  />
+</svg>
