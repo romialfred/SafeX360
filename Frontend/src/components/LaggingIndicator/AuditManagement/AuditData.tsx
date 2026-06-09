@@ -19,6 +19,22 @@ import AuditDashboard from './AuditDashboard/AuditDashboard';
 import { auditStatuses, auditStatusMap } from '../../../Data/DropdownData';
 import { formatDateShort } from '../../../utility/DateFormats';
 import { GetAllAuditArea } from '../../../services/AuditAreaService';
+import { Badge } from '@mantine/core';
+
+/**
+ * Refonte ISO Phase 2 : mapping couleur par statut d'audit.
+ * Aligné sur le pattern Non-conformité (getStatusColor) avec une
+ * traduction vers les enum AuditStatus du backend ISO 19011.
+ */
+const AUDIT_STATUS_COLOR: Record<string, string> = {
+    PLANNING: 'blue',
+    PREPARATION: 'cyan',
+    EXECUTION: 'amber',
+    CLOSED: 'green',
+    CANCELLED: 'gray',
+};
+const getAuditStatusColor = (s?: string | null): string =>
+    AUDIT_STATUS_COLOR[String(s ?? '').toUpperCase()] ?? 'gray';
 
 
 
@@ -286,12 +302,16 @@ const AuditData = () => {
                                 <Column style={{ fontSize: "13px" }} field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} sortable />
                                 <Column style={{ fontSize: "13px" }} field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
 
-                                <Column style={{ fontSize: "13px" }} field="status" header="Statut" body={(rowData) => <Button
-                                    color="indigo"
-                                    size="compact-xs"
-                                    variant="light"
-                                    radius="sm"
-                                >{auditStatusMap[rowData.status ?? ""] ?? rowData.status}</Button>} />
+                                <Column style={{ fontSize: "13px" }} field="status" header="Statut" body={(rowData) => (
+                                    <Badge
+                                        color={getAuditStatusColor(rowData.status)}
+                                        size="sm"
+                                        variant="light"
+                                        className="rounded-full whitespace-nowrap"
+                                    >
+                                        {auditStatusMap[rowData.status ?? ""] ?? rowData.status}
+                                    </Badge>
+                                )} />
 
                                 <Column style={{ fontSize: "13px" }} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
                             </DataTable>
