@@ -274,9 +274,33 @@ const IncidentManagementData = () => {
     //     }
     // };
 
-    const getSeverity = (rowData: any) => (
-        <Badge radius="sm" className='!capitalize !font-medium' color="purple" variant='outline'>{incidentStatusMap[rowData.status]}</Badge>
-    );
+    /**
+     * Refonte ISO Phase 3 : couleur de badge semantique par statut.
+     * Aligne sur le pattern Non-conformite (couleurs workflow) + ISO 45001.
+     */
+    const INCIDENT_STATUS_COLOR: Record<string, string> = {
+        REPORTED: 'blue',
+        ANALYSIS: 'yellow',
+        ACTION_TAKEN: 'orange',
+        IN_INVESTIGATION: 'cyan',
+        CLOSED: 'green',
+        REJECTED: 'red',
+        CANCELLED: 'gray',
+    };
+    const getSeverity = (rowData: any) => {
+        const color = INCIDENT_STATUS_COLOR[String(rowData?.status ?? '').toUpperCase()] ?? 'gray';
+        return (
+            <Badge
+                radius="xl"
+                size="sm"
+                className="whitespace-nowrap"
+                color={color}
+                variant="light"
+            >
+                {incidentStatusMap[rowData.status]}
+            </Badge>
+        );
+    };
 
     const actionBodyTemplate = (rowData: any) => {
         const statusUpper = String(rowData?.status || '').toUpperCase();

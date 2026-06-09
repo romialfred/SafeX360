@@ -21,7 +21,7 @@ const IncidentManagement = () => {
                 icon={<IconAlertTriangle size={22} />}
                 iconColor="red"
                 title="Gestion des incidents"
-                subtitle="Centralisation et suivi des incidents et risques déclarés à travers les sites miniers"
+                subtitle="ISO 45001 §10.2 — Déclaration, analyse et clôture des incidents et quasi-accidents HSE"
             />
 
             <IncidentManagementData />
