@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-    Breadcrumbs,
     Text,
     Card,
     TextInput,
@@ -18,8 +17,9 @@ import {
     Radio,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { IconCalendar, IconFileText, IconInfoCircle, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
-import { Link, useNavigate } from "react-router-dom";
+import { IconCalendar, IconClipboardCheck, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPlus, IconTrash, IconUsers, IconX } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
+import { PremiumPageHeader } from "../../../design-system/premium";
 import TextEditor from "../../UtilityComp/TextEditor";
 import { useForm } from "@mantine/form";
 import { useDispatch } from "react-redux";
@@ -472,26 +472,44 @@ const NewAuditPlan: React.FC = () => {
         }
     };
     return (
-        <div>
-            <div>
-                {/* LOT 40 P1: page title color */}
-                <div className="text-2xl text-slate-900 w-fit">New Audit</div>
-                <Breadcrumbs mt="xs" mb="lg">
-                    <Link className="hover:!underline" to="/">
-                        <Text variant="gradient">Home</Text>
-                    </Link>
-                    <Link className="hover:!underline" to="/audit-management">
-                        <Text variant="gradient">Audit Management</Text>
-                    </Link>
-                    <Text variant="gradient">New Audit</Text>
-                </Breadcrumbs>
-            </div>
+        <div className="space-y-5 w-full">
+            {/* Refonte ISO Phase 2 : PremiumPageHeader avec reference ISO 19011 */}
+            <PremiumPageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des audits', to: '/audit-management' },
+                    { label: 'Programmer un audit' },
+                ]}
+                icon={<IconClipboardCheck size={22} stroke={2} />}
+                iconColor="indigo"
+                title="Programmer un nouvel audit"
+                isoRef="AUDIT"
+                actions={
+                    <>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            leftSection={<IconX size={15} />}
+                            onClick={() => navigate(-1)}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            color="indigo"
+                            size="sm"
+                            leftSection={<IconDeviceFloppy size={15} />}
+                            onClick={handleSubmit}
+                        >
+                            Enregistrer
+                        </Button>
+                    </>
+                }
+            />
 
-            <Card className="bg-white" shadow="xl" withBorder radius="md">
-                <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect>
-                    <Stepper.Step icon={<IconFileText size={18} />} label="Audit Details" />
-                    <Stepper.Step icon={<IconUsers size={18} />} label="Process & Team" />
-
+            <Card className="bg-white" shadow="sm" withBorder radius="md">
+                <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect color="indigo" size="sm">
+                    <Stepper.Step icon={<IconFileText size={16} />} label={<Text size="sm">Informations</Text>} description={<Text size="xs" c="dimmed">Cadrage et planning</Text>} />
+                    <Stepper.Step icon={<IconUsers size={16} />} label={<Text size="sm">Processus & équipe</Text>} description={<Text size="xs" c="dimmed">Périmètre et auditeurs</Text>} />
                 </Stepper>
 
                 <div className="mt-6">{renderSection()}</div>
