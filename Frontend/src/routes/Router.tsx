@@ -434,7 +434,6 @@ const router = createBrowserRouter([
             { path: 'audit-management/new-audit', element: <NewAuditPlanPage />, },
             { path: 'audit-management/edit-audit', element: <EditAuditPage />, },
             { path: 'audit-management/execute/:id', element: <ExecuteAuditPage />, },
-            // { path: 'audit-management/details/:id', element: <ViewDetailsAuditPage />, },
             { path: 'audit-management/details/:id', element: <AuditDetailsTabsPage />, },
             { path: 'audit-management/edit-schedule/:id', element: <EditScheduleAuditPage />, },
 
