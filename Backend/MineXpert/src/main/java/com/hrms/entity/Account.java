@@ -80,6 +80,22 @@ public class Account {
     private Boolean firstLogin;
     private String status;
 
+    /**
+     * LOT 52 — source d'identité du compte :
+     *   LOCAL            : identifiants créés dans SafeX (mot de passe bcrypt local)
+     *   ACTIVE_DIRECTORY : compte importé de l'annuaire, authentification déléguée
+     *                      (bind LDAP), aucun mot de passe local utilisable.
+     */
+    private String identitySource;
+
+    /**
+     * LOT 52 — expiration de l'invitation : tant que firstLogin est vrai, le mot
+     * de passe temporaire n'est valable que jusqu'à cette date (72 h). Au-delà,
+     * la connexion est refusée avec INVITATION_EXPIRED et l'admin doit renvoyer
+     * une invitation. Null pour les comptes AD et les comptes déjà activés.
+     */
+    private LocalDateTime invitationExpiresAt;
+
     public AccountDTO toDTO() {
         return new AccountDTO(
                 this.id,

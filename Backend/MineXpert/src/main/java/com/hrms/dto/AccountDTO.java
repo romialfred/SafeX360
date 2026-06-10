@@ -130,6 +130,10 @@ public class AccountDTO {
                 this.workHourCodes,
                 this.timesheetPermissions,
                 this.firstLogin,
-                this.status);
+                this.status,
+                // LOT 52 — champs identité non exposés par le DTO : valeurs par
+                // défaut sûres (source locale, pas d'invitation en cours).
+                "LOCAL",
+                null);
     }
 }

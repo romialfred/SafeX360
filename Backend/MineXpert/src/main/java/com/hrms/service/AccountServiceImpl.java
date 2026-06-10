@@ -122,12 +122,17 @@ public class AccountServiceImpl implements AccountService {
             @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
     })
     public void updateAccount(AccountDTO accountDTO) throws Exception {
-        accountRepository.findById(accountDTO.getId())
+        Account existing = accountRepository.findById(accountDTO.getId())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
         Optional<Account> opt = accountRepository.findByLogin(accountDTO.getLogin());
         if (opt.isPresent() && !opt.get().getId().equals(accountDTO.getId()))
             throw new HRMSException("LOGIN_ALREADY_EXISTS");
-        accountRepository.save(accountDTO.toEntity());
+        Account entity = accountDTO.toEntity();
+        // LOT 52 : champs d'identité non exposés par le DTO — préserver les
+        // valeurs existantes (un compte AD doit rester AD, invitation intacte).
+        entity.setIdentitySource(existing.getIdentitySource());
+        entity.setInvitationExpiresAt(existing.getInvitationExpiresAt());
+        accountRepository.save(entity);
     }
 
     @Override

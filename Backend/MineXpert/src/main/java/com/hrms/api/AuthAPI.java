@@ -28,10 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hrms.Jwt.CustomUserDetails;
 import com.hrms.Jwt.JwtHelper;
+import com.hrms.directory.DirectoryService;
 import com.hrms.dto.AuditLogDTO;
 import com.hrms.dto.AuthenticationRequest;
 import com.hrms.dto.AuthenticationResponse;
 import com.hrms.dto.EmployeeDTO;
+import com.hrms.entity.Account;
+import com.hrms.repository.AccountRepository;
 import com.hrms.service.AuditLogService;
 
 import io.jsonwebtoken.Claims;
@@ -55,6 +58,12 @@ public class AuthAPI {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private DirectoryService directoryService;
+
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
     private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
@@ -64,8 +73,37 @@ public class AuthAPI {
             HttpServletResponse response) throws Exception {
         String message = "Incorrect username or password";
         try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getLogin(), request.getPassword()));
+            // ─── LOT 52 : contrôles préalables sur le compte ───
+            Account preAccount = accountRepository.findByLogin(request.getLogin()).orElse(null);
+            boolean adAccount = preAccount != null
+                    && "ACTIVE_DIRECTORY".equalsIgnoreCase(preAccount.getIdentitySource());
+
+            if (preAccount != null && !adAccount
+                    && Boolean.TRUE.equals(preAccount.getFirstLogin())
+                    && preAccount.getInvitationExpiresAt() != null
+                    && LocalDateTime.now().isAfter(preAccount.getInvitationExpiresAt())) {
+                // Invitation périmée : le mot de passe temporaire n'est plus valable.
+                try {
+                    auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
+                            LocalDateTime.now(), "Login refused: invitation expired"));
+                } catch (Exception ignored) { }
+                throw new Exception("INVITATION_EXPIRED");
+            }
+
+            if (adAccount) {
+                // Authentification déléguée à l'annuaire (LDAP réel ou démo) —
+                // aucun mot de passe local n'est utilisable pour ces comptes.
+                if (!directoryService.authenticate(request.getLogin(), request.getPassword())) {
+                    try {
+                        auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
+                                LocalDateTime.now(), "Incorrect Password (annuaire AD)"));
+                    } catch (Exception ignored) { }
+                    throw new Exception(message);
+                }
+            } else {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.getLogin(), request.getPassword()));
+            }
 
             final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
             final String jwt = helper.generateToken(userDetails);
