@@ -91,6 +91,7 @@ import AuditDetailsTabsPage from '../pages/dashboard/LaggingIndicator/AuditManag
 import NonConformityDashboard from '../components/LeadingIndicator/Non-conformity/NonConformityDashboard';
 import ModuleGuard from './ModuleGuard';
 import DemoPermissionGuard from './DemoPermissionGuard';
+import CreateUserPage from '../components/NewComponents/UsersManagement/CreateUserPage';
 import NonConformityForm from '../components/LeadingIndicator/Non-conformity/NonConformityForm';
 import NonConformityDetails from '../components/LeadingIndicator/Non-conformity/details/NonConformityDetails';
 import NonConformityEditPage from '../pages/NonConformityEditPage';
@@ -512,6 +513,8 @@ const router = createBrowserRouter([
             { path: "users-management", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserManagementTabsPage /></DemoPermissionGuard> },
             // LOT 49 — Nouvelle page admin Gestion utilisateurs (creation+ permissions modules)
             { path: "users-admin", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UsersAdminPage /></DemoPermissionGuard> },
+            // LOT 52 A2 — création d'utilisateur en page pleine largeur (remplace le modal)
+            { path: "users-admin/new", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><CreateUserPage /></DemoPermissionGuard> },
             {
                 path: 'users-management/create-user', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><AddUserForm onBackToUsers={handleBackToUsers}
                     onCreateUser={handleCreateUser} /></DemoPermissionGuard>,

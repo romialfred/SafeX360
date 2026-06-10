@@ -265,7 +265,9 @@ export default function UsersAdminPage() {
                         <Button
                             size="sm"
                             leftSection={<IconUserPlus size={14} />}
-                            onClick={() => setWizardOpen(true)}
+                            // LOT 52 — la création passe par la page pleine largeur (CreateUserPage),
+                            // le modal CreateUserWizard reste en place mais n'est plus ouvert.
+                            onClick={() => navigate('/users-admin/new')}
                             styles={{
                                 root: {
                                     background: 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',

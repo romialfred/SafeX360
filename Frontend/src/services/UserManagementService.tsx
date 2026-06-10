@@ -26,6 +26,8 @@ export interface CreateUserRequest {
     allowedModules?: string; // CSV moduleIds
     companyId?: number;
     departmentId?: number;
+    /** LOT 52 — LOCAL (MDP temporaire SafeX) ou ACTIVE_DIRECTORY (identifiants AD). */
+    identitySource?: 'LOCAL' | 'ACTIVE_DIRECTORY';
 }
 
 export interface CreateUserResponse {

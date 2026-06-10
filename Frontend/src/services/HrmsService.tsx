@@ -23,4 +23,11 @@ const getEmployeesWithPosition = () => {
         .then(result => result.data)
         .catch(error => { throw error; });
 }
-export { getEmployeesByDepartment, getAllDepartments, getAllCompanies, getEmployeesWithPosition }
+
+// LOT 52 — départements filtrés par mine (création d'utilisateur)
+const getDepartmentsByCompany = (companyId: number) => {
+    return axiosInstance.get(`${url}/department/getByCompanyId/${companyId}`)
+        .then(result => result.data)
+        .catch(error => { throw error; });
+}
+export { getEmployeesByDepartment, getAllDepartments, getAllCompanies, getEmployeesWithPosition, getDepartmentsByCompany }
