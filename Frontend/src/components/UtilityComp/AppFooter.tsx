@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SafeXLogoColor from './SafeXLogoColor';
+import IsoBadge from './IsoBadge';
 
 /**
  * AppFooter — Footer global de la plateforme SafeX 360 (LOT 45 v2 — refonte mono-ligne).
@@ -71,6 +72,14 @@ const AppFooter = () => {
                             {t('footer.support')}
                         </a>
                     </nav>
+
+                    {/* Règle plateforme : les médaillons ISO ne vivent que sur le login et ici,
+                        dans le footer — jamais dans le contenu des pages. */}
+                    <div className="flex items-center gap-2" aria-label="Normes ISO couvertes par la plateforme">
+                        {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
+                            <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
+                        ))}
+                    </div>
 
                     {/* LOT 45 — Statut système déplacé dans la sidebar (pied) — n'apparaît plus ici.
                         À droite du footer : adresse maintainer pour équilibrer la ligne. */}

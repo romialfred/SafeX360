@@ -12,7 +12,6 @@ import {
 } from '@tabler/icons-react';
 import { Breadcrumbs, Button, Center, SegmentedControl, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import IsoBadge from '../../UtilityComp/IsoBadge';
 
 // ... (DocumentSection, ISODocument interfaces and isoDocuments array remain unchanged)
 interface DocumentSection {
@@ -585,8 +584,6 @@ const ISODocuments = () => {
                                     }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        {/* Règle plateforme : badge officiel de la norme, pas d'icône générique */}
-                                        <IsoBadge norm={doc.title.split(':')[0]} size="sm" />
                                         <div>
                                             <div className={`${selectedDocument === doc.id ? doc.color : 'text-gray-900'}`}>
                                                 {doc.title}
