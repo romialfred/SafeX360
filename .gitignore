@@ -5,6 +5,8 @@
 # === SECRETS — NE JAMAIS COMMITER ===
 .env
 **/.env
+**/.env.bak*
+.env.bak*
 !.env.example
 !**/.env.example
 

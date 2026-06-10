@@ -1,9 +1,12 @@
 """
-db_env — connexion MySQL Aiven pour les scripts de seed/migration SafeX.
+db_env — connexion MySQL pour les scripts de seed/migration SafeX.
 
-Lit les identifiants depuis Backend/.env : JAMAIS de credentials en dur dans
-ces scripts, le depot GitHub est public. Les valeurs du .env sont entourees
-de quotes simples ; l'hote et le port sont extraits de DB_URL_HNS.
+Cible la base configuree dans Backend/.env (DB_URL_HNS) : depuis LOT 51 c'est
+le MySQL local Docker (safex-mysql, localhost:3306) ; les URLs Aiven (prod)
+sont conservees en DB_URL_AIVEN / DB_URL_HNS_AIVEN pour la synchronisation
+(scripts/sync-aiven-vers-local.ps1). JAMAIS de credentials en dur dans ces
+scripts, le depot GitHub est public. Les valeurs du .env sont entourees de
+quotes simples ; l'hote et le port sont extraits de DB_URL_HNS.
 
 Schemas :
     'healthsafety' -> service Health-Safety (inspections, dosimetrie, blast, HSE)
