@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Loader } from '@mantine/core';
+import { PageLoader } from '../components/UtilityComp/SandglassLoader';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmergencySettingsPage from '../components/EmergencyManagement/Settings/EmergencySettingsPage';
@@ -245,16 +245,7 @@ const MobileIncidentsHistory = lazy(() => import('../m/pages/MobileIncidentsHist
  * Aligne sur DosimetrySuspense (meme bg, meme loader Mantine centre).
  */
 const BlastSuspense = ({ children }: { children: React.ReactNode }) => (
-    <Suspense
-        fallback={
-            <div className="min-h-[60vh] flex items-center justify-center bg-[#FAF8F3]">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader size="md" color="orange" />
-                    <p className="text-[12px] text-slate-500 tracking-wide">Chargement du module Dynamitages…</p>
-                </div>
-            </div>
-        }
-    >
+    <Suspense fallback={<PageLoader label="Chargement de la page…" sublabel="Module Dynamitages" />}>
         {children}
     </Suspense>
 );
@@ -265,16 +256,7 @@ const BlastSuspense = ({ children }: { children: React.ReactNode }) => (
  * (delai naturel <200ms sur les chunks deja en cache).
  */
 const DosimetrySuspense = ({ children }: { children: React.ReactNode }) => (
-    <Suspense
-        fallback={
-            <div className="min-h-[60vh] flex items-center justify-center bg-[#FAF8F3]">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader size="md" color="indigo" />
-                    <p className="text-[12px] text-slate-500 tracking-wide">Chargement du module Dosimétrie…</p>
-                </div>
-            </div>
-        }
-    >
+    <Suspense fallback={<PageLoader label="Chargement de la page…" sublabel="Module Dosimétrie" />}>
         {children}
     </Suspense>
 );

@@ -4,6 +4,7 @@ import navigateToLogin from './Navigation';
 import { errorNotification } from '../utility/NotificationUtility';
 import store from '../Store';
 import { COMPANY_SELECTION_STORAGE_KEY } from '../slices/CompanySelectionSlice';
+import { startRequest, endRequest } from '../utility/loadingBus';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 const axiosInstance = axios.create({
@@ -24,6 +25,30 @@ const axiosInstance = axios.create({
 //         return Promise.reject(error);
 //     }
 // );
+// Compteur global de requêtes en vol — alimente le sablier d'attente
+// (GlobalLoadingIndicator). Enregistré en premier pour compter TOUTES les
+// requêtes, y compris celles qui court-circuitent l'injection companyId.
+axiosInstance.interceptors.request.use(
+    (config) => {
+        startRequest();
+        return config;
+    },
+    (error) => {
+        endRequest();
+        return Promise.reject(error);
+    }
+);
+axiosInstance.interceptors.response.use(
+    (response: AxiosResponse) => {
+        endRequest();
+        return response;
+    },
+    (error) => {
+        endRequest();
+        return Promise.reject(error);
+    }
+);
+
 axiosInstance.interceptors.request.use(
     (config) => {
         // Le module Dosimetrie (/hns/dosimetry/*) utilise un parametrage
