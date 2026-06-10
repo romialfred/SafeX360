@@ -15,6 +15,7 @@ import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
 import { useForm } from '@mantine/form';
 import SafeXBrandMark from '../../UtilityComp/SafeXBrandMark';
+import IsoBadge from '../../UtilityComp/IsoBadge';
 
 /**
  * SafeX 360 — Page de connexion v4 (LOT 41).
@@ -125,10 +126,10 @@ const LoginsPage = () => {
                     // Source : imgs/Login/Login 1.png → public/login-mine-team.png
                     // Fallback en chaine : nouvelle image, ancienne image, image Unsplash
                     backgroundImage: `url('/login-mine-team.png'), url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
-                    // LOT — Flou augmente (1.2px → 5px) pour effet "softer" et plus
-                    // d'opacite via overlay : la photo respire mais ne distrait pas du formulaire.
-                    filter: 'blur(5px) saturate(1.05) brightness(0.95)',
-                    transform: 'scale(1.06)', // scale superieur pour absorber les bords flous
+                    // LOT 49 — Photo nette : flou ramene a 1.5px (le 5px noyait la scene).
+                    // La lisibilite est portee par l'overlay leger + le panneau verre depoli.
+                    filter: 'blur(1.5px) saturate(1.05)',
+                    transform: 'scale(1.03)', // absorbe les bords adoucis
                 }}
             />
 
@@ -136,10 +137,9 @@ const LoginsPage = () => {
             <div
                 className="absolute inset-0"
                 style={{
-                    // LOT — Opacite augmentee (0.32→0.55, 0.20→0.45, 0.42→0.65) pour
-                    // assombrir/voiler davantage la photo. Le texte est plus lisible et
-                    // l'effet "verre depoli" plus marque.
-                    background: `linear-gradient(135deg, rgba(2,44,40,0.55) 0%, rgba(2,44,40,0.45) 50%, rgba(2,44,40,0.65) 100%)`,
+                    // LOT 49 — Voile allege : la photo reste visible et nette, le
+                    // contraste du texte est assure par les text-shadows et le panneau.
+                    background: `linear-gradient(135deg, rgba(2,44,40,0.38) 0%, rgba(2,44,40,0.26) 50%, rgba(2,44,40,0.48) 100%)`,
                 }}
             />
 
@@ -496,13 +496,13 @@ const LoginsPage = () => {
                     </div>
                 </a>
 
-                {/* Footer minimal — uniquement les normes ISO */}
-                <p
-                    className="mt-3 md:mt-4 text-[10.5px] uppercase tracking-[0.18em] text-white/60 text-center"
-                    style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
-                >
-                    {t.standards}
-                </p>
+                {/* Footer minimal — badges officiels des normes ISO (règle plateforme :
+                    jamais de norme en texte nu) */}
+                <div className="mt-3 md:mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                    {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
+                        <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
+                    ))}
+                </div>
             </div>
         </div>
     );

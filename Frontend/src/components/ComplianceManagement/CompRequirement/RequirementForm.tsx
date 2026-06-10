@@ -11,6 +11,7 @@ import {
     IconScale,
 } from "@tabler/icons-react";
 import PageHeader from "../../UtilityComp/PageHeader";
+import IsoBadge from "../../UtilityComp/IsoBadge";
 import {
     createRequirement,
     getRequirementById,
@@ -401,9 +402,10 @@ const RequirementForm = ({ mode }: RequirementFormProps) => {
                                     </dl>
                                 </div>
 
-                                <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
+                                <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center gap-2">
+                                    <IsoBadge norm="ISO 45001" size="sm" />
                                     <p className="text-[10.5px] text-slate-500">
-                                        ISO 45001 · 6.1.3 — Détermination des exigences légales et autres exigences
+                                        § 6.1.3 — Détermination des exigences légales et autres exigences
                                     </p>
                                 </div>
                             </div>

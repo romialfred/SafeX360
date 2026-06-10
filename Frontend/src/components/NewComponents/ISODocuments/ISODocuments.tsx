@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react';
 import { Breadcrumbs, Button, Center, SegmentedControl, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import IsoBadge from '../../UtilityComp/IsoBadge';
 
 // ... (DocumentSection, ISODocument interfaces and isoDocuments array remain unchanged)
 interface DocumentSection {
@@ -36,7 +37,7 @@ const isoDocuments: ISODocument[] = [
     {
         id: 'iso-45001',
         title: 'ISO 45001:2018',
-        subtitle: 'Occupational Health & Safety Management Systems',
+        subtitle: 'Systèmes de management de la santé et de la sécurité au travail',
         year: '2018',
         color: 'text-red-600',
         bgColor: 'bg-red-50 border-red-200',
@@ -127,7 +128,7 @@ const isoDocuments: ISODocument[] = [
     {
         id: 'iso-19011',
         title: 'ISO 19011:2018',
-        subtitle: 'Guidelines for auditing management systems',
+        subtitle: "Lignes directrices pour l'audit des systèmes de management",
         year: '2018',
         color: 'text-blue-600',
         bgColor: 'bg-blue-50 border-blue-200',
@@ -251,7 +252,7 @@ const isoDocuments: ISODocument[] = [
     {
         id: 'iso-9001',
         title: 'ISO 9001:2015',
-        subtitle: 'Quality Management Systems - Requirements',
+        subtitle: 'Systèmes de management de la qualité — Exigences',
         year: '2015',
         color: 'text-green-600',
         bgColor: 'bg-green-50 border-green-200',
@@ -583,8 +584,9 @@ const ISODocuments = () => {
                                         setExpandedSections(new Set());
                                     }}
                                 >
-                                    <div className="flex items-center">
-                                        <IconFileText className={`w-5 h-5 ${doc.color} mr-3`} />
+                                    <div className="flex items-center gap-3">
+                                        {/* Règle plateforme : badge officiel de la norme, pas d'icône générique */}
+                                        <IsoBadge norm={doc.title.split(':')[0]} size="sm" />
                                         <div>
                                             <div className={`${selectedDocument === doc.id ? doc.color : 'text-gray-900'}`}>
                                                 {doc.title}

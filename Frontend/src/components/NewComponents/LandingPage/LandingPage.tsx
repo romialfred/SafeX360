@@ -47,6 +47,7 @@ import {
     IconSend,
     IconLoader2,
 } from '@tabler/icons-react';
+import IsoBadge from '../../UtilityComp/IsoBadge';
 
 // ───────────────────────────────────────────────────────────────────────
 // PALETTE — vert teal + noir + accents sémantiques
@@ -1978,18 +1979,23 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 <div className="flex" style={{ animation: 'marquee 45s linear infinite', width: 'fit-content' }}>
                     {[...HERO_MARQUEE, ...HERO_MARQUEE].map((stat, i) => (
                         <div key={i} className="flex items-center gap-3 px-8 whitespace-nowrap">
-                            <span
-                                className="text-[26px] font-bold"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    background: 'linear-gradient(110deg, #5EEAD4 0%, #99F6E4 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                }}
-                            >
-                                {stat.value}
-                            </span>
+                            {/* Règle plateforme : une norme ISO s'affiche avec son badge, pas en texte */}
+                            {stat.value.startsWith('ISO') ? (
+                                <IsoBadge norm={stat.value} theme="dark" size="md" />
+                            ) : (
+                                <span
+                                    className="text-[26px] font-bold"
+                                    style={{
+                                        fontFamily: "'Source Serif 4', Georgia, serif",
+                                        background: 'linear-gradient(110deg, #5EEAD4 0%, #99F6E4 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                    }}
+                                >
+                                    {stat.value}
+                                </span>
+                            )}
                             <span className="text-[12px] uppercase tracking-[0.16em] font-semibold" style={{ color: 'rgba(255,255,255,0.75)' }}>
                                 {stat.label}
                             </span>

@@ -29,6 +29,7 @@ import { moduleGroups, type ModuleCard } from './Home';
 import { HOME_TABS, type HomeTabId, type HomeTab } from './homeCategories';
 import { isModuleEnabled } from '../data/ModuleConfig';
 import ModuleSubscriptionModal from './ModuleSubscriptionModal';
+import IsoBadge from '../../UtilityComp/IsoBadge';
 
 const ACCENT_HEX: Record<string, string> = {
     'preventives-activities': '#10b981',
@@ -130,9 +131,14 @@ export default function HomeTabs() {
                         Vos Applications
                     </h1>
                     <p className="text-[13px] text-slate-500 mt-1 max-w-2xl">
-                        Plateforme intégrée Santé · Sécurité · Environnement —
-                        conforme ISO 9001, 14001, 19011 et 45001
+                        Plateforme intégrée Santé · Sécurité · Environnement
                     </p>
+                    {/* Règle plateforme : les normes ISO s'affichent avec leur badge couleur */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                        {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
+                            <IsoBadge key={norm} norm={norm} size="sm" />
+                        ))}
+                    </div>
                 </div>
             </header>
 
