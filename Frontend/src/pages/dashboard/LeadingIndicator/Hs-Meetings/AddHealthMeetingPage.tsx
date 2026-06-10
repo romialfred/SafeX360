@@ -2,7 +2,7 @@ import AddHealthMeeting from "../../../../components/LeadingIndicator/Hs-Meeting
 
 const AddHealthMeetingPage = () => {
     return (
-        <div className="p-5"><AddHealthMeeting /></div>
+        <div><AddHealthMeeting /></div>
     )
 }
 

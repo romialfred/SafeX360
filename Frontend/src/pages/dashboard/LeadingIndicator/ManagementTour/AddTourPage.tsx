@@ -2,7 +2,7 @@ import AddNewTour from '../../../../components/LeadingIndicator/ManagementTour/A
 
 const AddTourPage = () => {
     return (
-        <div className='p-5'><AddNewTour /></div>
+        <div><AddNewTour /></div>
     )
 }
 

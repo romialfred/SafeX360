@@ -1,10 +1,9 @@
-import { Breadcrumbs, Text, Button, Card, Progress, Select, NumberInput, Badge, Group } from "@mantine/core";
-import { IconClock, IconFileText, IconAlertCircle, IconUser, IconCalendar, IconBulb } from "@tabler/icons-react";
+import { Button, Card, Progress, Select, NumberInput, Text } from "@mantine/core";
+import { IconClock, IconFileText, IconAlertCircle, IconUser, IconCalendar, IconBulb, IconPencilCheck } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import FileDropzone from "../../UtilityComp/FileDropzone";
 import { useForm } from "@mantine/form";
-import { actionStatuses, actionStatusesMap } from "../../../Data/DropdownData";
 import { formatDateShort } from "../../../utility/DateFormats";
 import { addActionProcess, getAllActionProcessByActionId } from "../../../services/ActionProcessService";
 import { convertFileToBase64DTO } from "../../../utility/DocumentUtility";
@@ -15,11 +14,14 @@ import { getActionById } from "../../../services/CorrectiveActionService";
 import TextEditor from "../../UtilityComp/TextEditor";
 import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
+import PageHeader from "../../UtilityComp/PageHeader";
+import { CA_STATUS_OPTIONS, caStatusConfig, SERIF } from "./correctiveLabels";
 
 const UpdateCorrectiveAction = () => {
   const { id } = useParams();
   const [actionHistory, setActionHistory] = useState<any[]>([]);
   const [selectedRow, setSelectedRow] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -31,29 +33,29 @@ const UpdateCorrectiveAction = () => {
       docs: [] as any[]
     },
     validate: {
-      status: (value) => (value?.trim().length > 0 ? null : 'Status is Required'),
-      progress: (value) => (value !== undefined && value !== null ? null : 'Progress is Required'),
-      description: (value) => (isValidRichText(value) ? null : 'Description is Required')
+      status: (value) => (value?.trim().length > 0 ? null : 'Le statut est requis'),
+      progress: (value) => (value !== undefined && value !== null ? null : 'La progression est requise'),
+      description: (value) => (isValidRichText(value) ? null : 'La description est requise')
     }
   });
 
-  // Track initial and previous values for sync + revert logic
+  // Suivi des valeurs initiales et précédentes (synchronisation + retour arrière)
   const [initialStatus, setInitialStatus] = useState<string>('');
   const [initialProgress, setInitialProgress] = useState<number>(0);
   const prevProgressRef = useRef<number>(0);
   const prevStatusRef = useRef<string>('');
 
-  // UI sync: progress <-> status with revert
+  // Synchronisation progression ↔ statut avec retour arrière
   useEffect(() => {
     const progress = Number(form.values.progress ?? 0);
     const status = String(form.values.status || '').toUpperCase();
 
-    // Progress hits 100 -> force COMPLETED
+    // Progression à 100 % → statut Réalisée forcé
     if (progress >= 100 && status !== 'COMPLETED') {
       form.setFieldValue('status', 'COMPLETED');
     }
 
-    // Drop from 100 -> revert to initial status
+    // Retour sous 100 % → retour au statut initial
     if (prevProgressRef.current === 100 && progress < 100 && initialStatus) {
       form.setFieldValue('status', initialStatus);
     }
@@ -65,12 +67,12 @@ const UpdateCorrectiveAction = () => {
     const progress = Number(form.values.progress ?? 0);
     const status = String(form.values.status || '').toUpperCase();
 
-    // Status COMPLETED -> force progress 100
+    // Statut Réalisée → progression 100 % forcée
     if (status === 'COMPLETED' && progress < 100) {
       form.setFieldValue('progress', 100);
     }
 
-    // Status changed away from COMPLETED -> revert progress to initial
+    // Statut quitté de Réalisée → retour à la progression initiale
     if (prevStatusRef.current === 'COMPLETED' && status !== 'COMPLETED') {
       form.setFieldValue('progress', initialProgress);
     }
@@ -100,20 +102,21 @@ const UpdateCorrectiveAction = () => {
         prevStatusRef.current = String(res.status || '').toUpperCase();
         prevProgressRef.current = Number(res.progress ?? 0);
       }).catch((err) => {
-        errorNotification(err.response?.data?.errorMessage || "Failed to load action details");
+        errorNotification(err.response?.data?.errorMessage || "Échec du chargement de l'action");
       });
 
     getAllActionProcessByActionId(id)
       .then((res) => setActionHistory(res))
       .catch((err) => {
-        errorNotification(err.response?.data?.errorMessage || "Failed to load update history");
+        errorNotification(err.response?.data?.errorMessage || "Échec du chargement de l'historique");
       });
   }, [id]);
 
   const handleSubmit = async (values: any) => {
+    setSubmitting(true);
     dispatch(showOverlay());
     const docs = await Promise.all(values.docs?.map(convertFileToBase64DTO));
-    // Sanitize to enforce consistency server-side too
+    // Cohérence progression / statut garantie aussi côté payload
     const sanitizedValues = { ...values } as any;
     const numericProgress = Number(sanitizedValues.progress ?? 0);
     if (numericProgress >= 100) {
@@ -127,179 +130,171 @@ const UpdateCorrectiveAction = () => {
     const payload = { ...sanitizedValues, correctiveActionId: id, docs };
     addActionProcess(payload)
       .then((_res) => {
-        successNotification("Action Plan Updated.");
+        successNotification("Plan d'action mis à jour");
         navigate("/corrective");
       })
       .catch((err) => {
-        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+        errorNotification(err.response?.data?.errorMessage || "La mise à jour du plan d'action a échoué");
       })
-      .finally(() => dispatch(hideOverlay()));
+      .finally(() => {
+        setSubmitting(false);
+        dispatch(hideOverlay());
+      });
   };
 
+  const currentStatusCfg = caStatusConfig(selectedRow?.status);
+
   return (
-    <div className="flex flex-col gap-5 p-5">
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="text-2xl font-semibold text-slate-900">Update Action Plan</div>
-          <Breadcrumbs mt="xs">
-            <Link className="hover:!underline" to="/">
-              <Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text>
-            </Link>
-            <Link className="hover:!underline" to="/corrective">
-              <Text variant="gradient" className="hover:!underline cursor-pointer">Action Plans</Text>
-            </Link>
-            <Text variant="gradient">Update Action Plan</Text>
-          </Breadcrumbs>
-        </div>
-      </div>
+    <div className="p-5 space-y-4 w-full">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Accueil', to: '/' },
+          { label: 'Actions correctives', to: '/corrective' },
+          { label: "Mise à jour du plan d'action" },
+        ]}
+        icon={<IconPencilCheck size={22} stroke={2} />}
+        iconColor="orange"
+        title="Mettre à jour le plan d'action"
+        subtitle="Progression, statut et preuves des actions menées"
+      />
 
-      <div className="grid grid-cols-3 gap-5">
-        {/* Left Side: Form column with details box above */}
-        <div className='flex self-start flex-col col-span-2 gap-3 shadow-sm p-5 rounded-md border border-gray-200'>
-          {/* Action Plan Details box */}
-          <div className="bg-white rounded-md">
-            <div className="mb-5">
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <IconFileText className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-blue-900">Action Plan Details</p>
-                    <p className="text-xs text-blue-700">Review the corrective action context and assignments.</p>
-                  </div>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Colonne principale : contexte + formulaire */}
+        <div className='flex self-start flex-col lg:col-span-2 gap-3 bg-white p-4 rounded-xl border border-slate-200'>
+          {/* Contexte du plan d'action */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <IconFileText className="w-5 h-5 text-slate-600" aria-hidden="true" />
+              <div>
+                <p className="text-slate-800" style={{ fontFamily: SERIF, fontSize: '14px', fontWeight: 600 }}>Contexte du plan d'action</p>
+                <p className="text-[11.5px] text-slate-500">Source, responsable et état d'avancement actuel.</p>
               </div>
-            </div>
-            <div className=" space-y-4">
-              {/* Top meta: Incident and Assignee */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-2">
-                  <span className="p-1.5 rounded-md bg-blue-50 text-blue-600"><IconAlertCircle size={16} /></span>
-                  <div>
-                    <p className="text-xs capitalize tracking-wide text-gray-500">Incident / Source</p>
-                    <p className="text-sm text-gray-900">{selectedRow?.incidentTitle || '-'}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="p-1.5 rounded-md bg-violet-50 text-violet-600"><IconUser size={16} /></span>
-                  <div>
-                    <p className="text-xs capitalize tracking-wide text-gray-500">Assigned To</p>
-                    <p className="text-sm text-gray-900">{selectedRow?.assignedEmployeeName || '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action name */}
-              <div className="flex items-start gap-2">
-                <span className="p-1.5 rounded-md bg-cyan-50 text-cyan-600"><IconFileText size={16} /></span>
-                <div className="w-full">
-                  <p className="text-xs capitalize tracking-wide text-gray-500">Action Plan</p>
-                  <p className="text-sm text-gray-900">{selectedRow?.actionName || '-'}</p>
-                </div>
-              </div>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> Deadline</p>
-                  <p className="text-sm text-gray-900">{selectedRow?.deadline ? formatDateShort(selectedRow.deadline) : '-'}</p>
-                </div>
-                <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Progress</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-900">{selectedRow?.progress ?? 0}%</p>
-                  </div>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                    <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${selectedRow?.progress ?? 0}%` }} />
-                  </div>
-                </div>
-                <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Status</p>
-                  <Badge size="sm" radius="sm" variant="light" color="yellow" className="!capitalize">
-                    <Group gap={4}><IconClock size={14} /> {actionStatusesMap[selectedRow?.status] || '-'}</Group>
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedRow?.description && (
-                <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
-                  {/* LOT 41 P0 XSS fix */}
-                  <SafeHtml html={selectedRow?.description} className="text-gray-700 text-sm" />
-                </div>
-              )}
             </div>
           </div>
-
-          {/* Separator between Details and Update */}
-          <hr className="my-2 border-t border-gray-200" />
-
-          {/* Update heading */}
-          <div className="px-1">
-            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <IconClock className="w-5 h-5 text-blue-600" />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-2">
+                <span className="p-1.5 rounded-md bg-sky-50 text-sky-600"><IconAlertCircle size={16} aria-hidden="true" /></span>
                 <div>
-                  <p className="text-sm text-blue-900">Status Update</p>
-                  <p className="text-xs text-blue-700">Update progress and capture corrective actions taken.</p>
+                  <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Source</p>
+                  <p className="text-[13px] text-slate-900">{selectedRow?.incidentTitle || '—'}</p>
                 </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="p-1.5 rounded-md bg-violet-50 text-violet-600"><IconUser size={16} aria-hidden="true" /></span>
+                <div>
+                  <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Responsable</p>
+                  <p className="text-[13px] text-slate-900">{selectedRow?.assignedEmployeeName || '—'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="p-1.5 rounded-md bg-cyan-50 text-cyan-600"><IconFileText size={16} aria-hidden="true" /></span>
+              <div className="w-full">
+                <p className="text-[10.5px] uppercase tracking-wider text-slate-500">Plan d'action</p>
+                <p className="text-[13px] text-slate-900">{selectedRow?.actionName || '—'}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-md border border-slate-200 p-3">
+                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><IconCalendar size={14} aria-hidden="true" /> Échéance</p>
+                <p className="text-[13px] text-slate-900">{selectedRow?.deadline ? formatDateShort(selectedRow.deadline) : '—'}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 p-3">
+                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Progression actuelle</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] text-slate-900 tabular-nums">{selectedRow?.progress ?? 0}%</p>
+                </div>
+                <div className="mt-2 w-full bg-slate-200 rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full bg-teal-500" style={{ width: `${selectedRow?.progress ?? 0}%` }} />
+                </div>
+              </div>
+              <div className="rounded-md border border-slate-200 p-3">
+                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Statut actuel</p>
+                <span className={`inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border ${currentStatusCfg.chip}`}>
+                  {currentStatusCfg.label}
+                </span>
+              </div>
+            </div>
+
+            {selectedRow?.description && (
+              <div className="rounded-md border border-slate-200 p-3">
+                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Description</p>
+                <SafeHtml html={selectedRow?.description} className="text-slate-700 text-[12.5px]" />
+              </div>
+            )}
+          </div>
+
+          <hr className="my-2 border-t border-slate-200" />
+
+          {/* Saisie de la mise à jour */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <IconClock className="w-5 h-5 text-slate-600" aria-hidden="true" />
+              <div>
+                <p className="text-slate-800" style={{ fontFamily: SERIF, fontSize: '14px', fontWeight: 600 }}>Mise à jour du statut</p>
+                <p className="text-[11.5px] text-slate-500">Actualisez la progression et documentez les actions menées.</p>
               </div>
             </div>
           </div>
 
           {cannotUpdate ? (
-            <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-green-50 border-green-200' : isCancelled ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-              {isCompleted && (<Text c="green">This action is already completed (100% or status Completed). Further updates are not allowed.</Text>)}
-              {isPending && (<Text c="yellow">This action is pending approval. Updates are not allowed until it is approved.</Text>)}
-              {isCancelled && (<Text c="red">This action has been cancelled. Further updates are not allowed.</Text>)}
+            <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-emerald-50 border-emerald-200' : isCancelled ? 'bg-rose-50 border-rose-200' : 'bg-violet-50 border-violet-200'}`}>
+              {isCompleted && (<Text size="sm" c="green">Cette action est déjà réalisée (100 % ou statut Réalisée). Aucune mise à jour possible.</Text>)}
+              {isPending && (<Text size="sm" c="violet">Cette action est en attente de validation. Les mises à jour seront possibles après approbation.</Text>)}
+              {isCancelled && (<Text size="sm" c="red">Cette action a été annulée. Aucune mise à jour possible.</Text>)}
             </Card>
           ) : (
             <form className='space-y-3' onSubmit={form.onSubmit(handleSubmit)}>
-              <div className="grid grid-cols-2 gap-3">
-                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
-                <Select size="sm" disabled={cannotUpdate} label="Status" data={actionStatuses.slice(actionStatuses.findIndex((item) => item.value === (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status)))}  {...form.getInputProps('status')} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progression (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
+                <Select size="sm" disabled={cannotUpdate} label="Statut" data={CA_STATUS_OPTIONS.slice(CA_STATUS_OPTIONS.findIndex((item) => item.value === (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status)))} {...form.getInputProps('status')} />
               </div>
               <TextEditor form={form} id="description" title="Description" withAsterisk />
               {!cannotUpdate && <FileDropzone form={form} id="docs" />}
-              <div className="flex gap-2 mt-2">
-                <Button variant="default" onClick={() => navigate('/corrective')}>Cancel</Button>
-                <Button disabled={cannotUpdate} variant='gradient' type='submit'>Save</Button>
+              <div className="flex gap-2 justify-end mt-2">
+                <Button variant="default" size="sm" onClick={() => navigate('/corrective')}>Annuler</Button>
+                <Button disabled={cannotUpdate} color="teal" size="sm" loading={submitting} type='submit'>Enregistrer</Button>
               </div>
             </form>
           )}
         </div>
 
-        {/* Right Side: History */}
+        {/* Colonne latérale : historique des mises à jour */}
         {selectedRow.progress >= 0 && (
-          <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200 ">
-            <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
+          <div className="lg:col-span-1 self-start p-4 space-y-4 rounded-xl border border-slate-200 bg-white">
+            <p className="flex items-center gap-1.5 text-slate-800" style={{ fontFamily: SERIF, fontSize: '14.5px', fontWeight: 600 }}>
+              <IconClock size={16} className="text-amber-600" aria-hidden="true" /> Historique des mises à jour
+            </p>
             {actionHistory.length === 0 && (
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-                <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Tips</h4>
-                <ul className="text-xs text-blue-700 space-y-1">
-                  <li>• Update progress regularly</li>
-                  <li>• Add details about obstacles encountered</li>
-                  <li>• Attach photos or documents if necessary</li>
-                  <li>• Notify the assignee of important changes</li>
+              <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                <h4 className="text-[13px] text-slate-800 mb-2 flex items-center gap-1"><IconBulb size={16} className="text-amber-600" aria-hidden="true" /> Conseils</h4>
+                <ul className="text-[12px] text-slate-600 space-y-1">
+                  <li>• Actualisez la progression régulièrement</li>
+                  <li>• Décrivez les obstacles rencontrés</li>
+                  <li>• Joignez photos ou documents justificatifs</li>
+                  <li>• Informez le responsable des changements importants</li>
                 </ul>
               </div>
             )}
             {actionHistory.slice().reverse().map((x: any, index: number, arr: any[]) => {
               const previousProgress = index < arr.length - 1 ? arr[index + 1].progress : 0;
               const progressMade = x.progress - previousProgress;
+              const histCfg = caStatusConfig(x.status);
               return (
-                <Card key={index} shadow="sm" padding="sm" radius="md" withBorder className="">
-                  <div className="flex flex-col gap-4">
-                    {/* Header */}
+                <Card key={index} shadow="sm" padding="sm" radius="md" withBorder>
+                  <div className="flex flex-col gap-3">
                     <div className="flex justify-between items-center">
-                      <div className="rounded-4xl">
-                        <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
-                          <IconClock /> {formatDateShort(x.createdAt)}
-                        </p>
-                      </div>
-                      <Badge radius="sm" variant="outline" color="purple" className="!capitalize">{actionStatusesMap[x.status]}</Badge>
+                      <p className="text-[12px] text-slate-600 flex gap-1 items-center">
+                        <IconClock size={14} aria-hidden="true" /> {formatDateShort(x.createdAt)}
+                      </p>
+                      <span className={`inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border ${histCfg.chip}`}>
+                        {histCfg.label}
+                      </span>
                     </div>
-                    {/* Progress Section */}
-                    <Progress.Root size={20}>
+                    <Progress.Root size={18}>
                       <Progress.Section value={previousProgress} color="blue">
                         <Progress.Label>{previousProgress}</Progress.Label>
                       </Progress.Section>
@@ -309,21 +304,19 @@ const UpdateCorrectiveAction = () => {
                         </Progress.Section>
                       )}
                     </Progress.Root>
-                    <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                      <p className="text-blue-400">Update Details</p>
-                      {/* LOT 41 P0 XSS fix */}
-                      <SafeHtml html={x.description || "-"} className="text-gray-700 mt-1 text-sm" />
+                    <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Détail de la mise à jour</p>
+                      <SafeHtml html={x.description || "—"} className="text-slate-700 mt-1 text-[12.5px]" />
                     </div>
                   </div>
                 </Card>
               );
             })}
-            {actionHistory.length > 0 && null}
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default UpdateCorrectiveAction;

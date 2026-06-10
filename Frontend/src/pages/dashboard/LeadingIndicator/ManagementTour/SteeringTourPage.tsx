@@ -3,7 +3,7 @@ import SteeringTour from "../../../../components/LeadingIndicator/ManagementTour
 
 const SteeringTourPage = () => {
     return (
-        <div className="p-5"><SteeringTour /></div>
+        <div><SteeringTour /></div>
     )
 }
 

@@ -1,5 +1,5 @@
 import {
-    Alert, Badge, Button, Modal, NumberInput, Select, Text, Textarea, Tooltip
+    Alert, Button, Modal, NumberInput, Select, Text, Textarea, Tooltip
 } from "@mantine/core";
 import {
     IconCalendarEvent, IconClock, IconFileCheck, IconFileText, IconHistory,
@@ -21,11 +21,10 @@ import { errorNotification, successNotification } from "../../../utility/Notific
 import ViewDetailsMeeting from "../Hs-Meetings/Hs-MeetingsDetails/ViewDetailsMeeting";
 import CorrectiveActions from "../Hs-Meetings/Hs-MeetingsDetails/CorrectiveActions";
 import ActivityHistory from "../Hs-Meetings/Hs-MeetingsDetails/ActivityHistory";
-import { formatDateShort, formatTimeToAmPm } from "../../../utility/DateFormats";
-import { actionStatusesMap, inspectionStatuses } from "../../../Data/DropdownData";
+import { formatDateShort } from "../../../utility/DateFormats";
 import { getActivityById } from "../../../services/HsActivityService";
 import ActivityReport from "../Hs-Meetings/Hs-MeetingsDetails/ActivityReport";
-
+import { TOUR_STATUS_OPTIONS, tourStatusConfig, formatTimeFr, SERIF } from "./tourLabels";
 
 const SteeringTourDetails = () => {
     const [activeTab, setActiveTab] = useState('details');
@@ -40,8 +39,6 @@ const SteeringTourDetails = () => {
     const [activity, setActivity] = useState<any>({});
     const [locked, setLocked] = useState<{ locked: boolean; status: string }>({ locked: false, status: '' });
 
-
-
     const form = useForm<{
         ownerId: string;
         date: Date | null;
@@ -53,7 +50,6 @@ const SteeringTourDetails = () => {
             date: null,
             status: "",
             comment: "",
-
         },
         validate: {
             ownerId: (value) => value ? null : "Le responsable est requis",
@@ -61,22 +57,22 @@ const SteeringTourDetails = () => {
             status: (value) => value ? null : "Le statut est requis",
         }
     });
+
     useEffect(() => {
         if (!searchParams) return;
-        const tab = searchParams.get('tab')
+        const tab = searchParams.get('tab');
         if (tab) {
             setActiveTab(tab);
         }
     }, [searchParams]);
 
     useEffect(() => {
-
-        dispatch(showOverlay())
+        dispatch(showOverlay());
         getEmployeeDropdown()
             .then((res) => {
                 const mappedEmployees = res.map((emp: any) => ({
                     label: emp.name,
-                    value: String(emp.id), // ensure value is string if form field is string
+                    value: String(emp.id),
                 }));
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
@@ -100,7 +96,6 @@ const SteeringTourDetails = () => {
                 dispatch(hideOverlay());
             });
         fetchHistory();
-
     }, []);
 
     const normalizedStatus = String(activity?.status || '').toUpperCase();
@@ -117,19 +112,21 @@ const SteeringTourDetails = () => {
         allowedStatusSet.add('CANCELLED');
     }
 
-    const statusSelectOptions = inspectionStatuses.filter((option) => allowedStatusSet.has(option.value));
+    const statusSelectOptions = TOUR_STATUS_OPTIONS.filter((option) => allowedStatusSet.has(option.value));
 
     const fetchHistory = () => {
         getHsActivityHistoryById(id).then((res) => {
             setHistory(res);
-        }).catch((err) => {
-            console.log(err);
-        });
-    }
+        }).catch((_err) => { });
+    };
+
+    const lockedMessage = (locked.status || normalizedStatus) === 'COMPLETED'
+        ? 'Cette tournée est clôturée. Aucune modification possible.'
+        : 'Cette tournée est annulée. Aucune modification possible.';
 
     const handleSubmit = async (values: any) => {
         if (locked.locked) {
-            errorNotification(locked.status === 'COMPLETED' ? 'Cette tournée est clôturée. Aucune modification possible.' : 'Cette tournée est annulée. Aucune modification possible.');
+            errorNotification(lockedMessage);
             return;
         }
         dispatch(showOverlay());
@@ -141,8 +138,7 @@ const SteeringTourDetails = () => {
 
         addHsActivityHistory(payload)
             .then((_res) => {
-                console.log(_res)
-                successNotification("Statut mis à jour avec succès");
+                successNotification("Statut mis à jour");
                 close();
                 setMeeting((prev: any) => ({
                     ...prev,
@@ -166,7 +162,6 @@ const SteeringTourDetails = () => {
                 dispatch(hideOverlay());
             });
     };
-
 
     const tabData = {
         details: {
@@ -195,7 +190,6 @@ const SteeringTourDetails = () => {
         },
     };
 
-
     const handleStatusChange = () => {
         if (locked.locked || isFinalStatus) return;
 
@@ -210,9 +204,12 @@ const SteeringTourDetails = () => {
         });
 
         open();
-    }
+    };
+
+    const statusCfg = tourStatusConfig(activity?.status);
+
     return (
-        <div className="p-5 space-y-5 w-full" >
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -220,33 +217,35 @@ const SteeringTourDetails = () => {
                     { label: 'Détails de la tournée' },
                 ]}
                 icon={<IconRoute size={22} stroke={2} />}
-                iconColor="indigo"
+                iconColor="green"
                 title="Détails de la tournée Leadership"
-                subtitle="Visite terrain proactive — observations, actions correctives et suivi"
+                subtitle="Visite terrain proactive : observations, actions correctives et suivi"
             />
 
-            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-md">
+            <div className="rounded-xl p-4 space-y-3 bg-gradient-to-br from-green-600 to-green-800 shadow-md">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div className='flex flex-col gap-1.5'>
-                        <h2 className="text-lg text-white">{activity.title}</h2>
-                        <div className="flex items-center gap-1.5 text-indigo-50 text-sm">
-                            <IconCalendarEvent size={16} />
-                            <span>{formatDateShort(activity?.plannedDate)} — {formatTimeToAmPm(activity?.startTime)} à {formatTimeToAmPm(activity?.endTime)}</span>
+                        <h2 className="text-white" style={{ fontFamily: SERIF, fontSize: '17px', fontWeight: 600 }}>
+                            {activity.title}
+                        </h2>
+                        <div className="flex items-center gap-1.5 text-green-50 text-[12.5px]">
+                            <IconCalendarEvent size={15} aria-hidden="true" />
+                            <span>{formatDateShort(activity?.plannedDate)} — {formatTimeFr(activity?.startTime)} à {formatTimeFr(activity?.endTime)}</span>
                         </div>
                     </div>
 
                     <div className="flex items-end gap-2 flex-col">
-                        <Tooltip label={(locked.locked || isFinalStatus) ? ((locked.status || normalizedStatus) === 'COMPLETED' ? 'Tournée clôturée : statut non modifiable' : 'Tournée annulée : statut non modifiable') : 'Changer le statut'}>
+                        <Tooltip label={(locked.locked || isFinalStatus) ? ((locked.status || normalizedStatus) === 'COMPLETED' ? 'Tournée clôturée : statut non modifiable' : 'Tournée annulée : statut non modifiable') : 'Changer le statut'} withArrow>
                             <span className="inline-flex">
-                                <Button size="sm" leftSection={<IconClock size={15} />} onClick={handleStatusChange} disabled={locked.locked || isFinalStatus} className="!bg-white !text-indigo-700 hover:!bg-indigo-50">
-                                    {actionStatusesMap[activity?.status] || 'Statut'}
+                                <Button size="sm" leftSection={<IconClock size={15} />} onClick={handleStatusChange} disabled={locked.locked || isFinalStatus} className="!bg-white !text-green-700 hover:!bg-green-50">
+                                    Changer le statut
                                 </Button>
                             </span>
                         </Tooltip>
                         {activity?.status && (
-                            <Badge color={activity.status === 'COMPLETED' ? 'green.2' : activity.status === 'CANCELLED' ? 'red.4' : 'yellow.4'} variant="filled" radius="sm" size="sm" className="!text-slate-900">
-                                {actionStatusesMap[activity?.status]}
-                            </Badge>
+                            <span className="inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border bg-white/15 text-white border-white/40">
+                                {statusCfg.label}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -254,9 +253,7 @@ const SteeringTourDetails = () => {
 
             {locked.locked && (
                 <Alert color={locked.status === 'COMPLETED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text size="sm">
-                        {locked.status === 'COMPLETED' ? 'Cette tournée est clôturée. Aucune modification possible.' : 'Cette tournée est annulée. Aucune modification possible.'}
-                    </Text>
+                    <Text size="sm">{lockedMessage}</Text>
                 </Alert>
             )}
 
@@ -269,19 +266,19 @@ const SteeringTourDetails = () => {
                                     key={key}
                                     type="button"
                                     onClick={() => setActiveTab(key)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
-                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === key
+                                        ? 'bg-green-600 text-white shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}
                                 >
-                                    <Icon size={14} />
+                                    <Icon size={14} aria-hidden="true" />
                                     {label}
                                 </button>
                             )
                         ))}
                     </div>
                 </div>
-                <div className="p-5">
+                <div className="p-4">
                     {Object.entries(tabData).map(([key, { content, hide }]) => (
                         !hide && activeTab === key && (
                             <div key={key}>{content}</div>
@@ -295,7 +292,7 @@ const SteeringTourDetails = () => {
                 onClose={close}
                 title={
                     <div className='text-base flex items-center gap-2'>
-                        <span className='bg-indigo-100 text-indigo-700 rounded-full p-2'><IconLock size={18} /></span>
+                        <span className='bg-green-100 text-green-700 rounded-full p-2'><IconLock size={18} /></span>
                         Changer le statut de la tournée
                     </div>
                 }
@@ -307,9 +304,9 @@ const SteeringTourDetails = () => {
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-                    {/* LOT 40 P1: grille responsive (mobile→single col) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
+                            size="sm"
                             label="Responsable"
                             placeholder="Sélectionner le responsable"
                             data={emps}
@@ -318,6 +315,7 @@ const SteeringTourDetails = () => {
                         />
 
                         <DateInput
+                            size="sm"
                             maxDate={new Date()}
                             label="Date"
                             placeholder="Sélectionner la date"
@@ -327,6 +325,7 @@ const SteeringTourDetails = () => {
                     </div>
 
                     <Select
+                        size="sm"
                         label="Statut"
                         placeholder="Sélectionner le statut"
                         data={statusSelectOptions}
@@ -334,9 +333,10 @@ const SteeringTourDetails = () => {
                         withAsterisk
                     />
 
-                    {form.values.status === 'CLOSED' ? (
+                    {form.values.status === 'COMPLETED' ? (
                         <>
                             <NumberInput
+                                size="sm"
                                 label="Évaluation qualité (1-10)"
                                 placeholder="Note de la tournée"
                                 withAsterisk
@@ -344,14 +344,16 @@ const SteeringTourDetails = () => {
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Rapport de clôture"
-                                placeholder="Synthèse, validation des actions, commentaires finaux..."
+                                placeholder="Synthèse, validation des actions, commentaires finaux"
                                 withAsterisk
                                 minRows={3}
                                 {...form.getInputProps("closingReport")}
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Leçons apprises"
                                 withAsterisk
                                 placeholder="Points d'amélioration, bonnes pratiques identifiées, recommandations"
@@ -361,6 +363,7 @@ const SteeringTourDetails = () => {
                         </>
                     ) : (
                         <Textarea
+                            size="sm"
                             label="Commentaire"
                             withAsterisk
                             placeholder="Saisir votre commentaire"
@@ -370,18 +373,17 @@ const SteeringTourDetails = () => {
                     )}
 
                     <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="default" onClick={close}>
+                        <Button variant="default" size="sm" onClick={close}>
                             Annuler
                         </Button>
-                        <Button color="indigo" type='submit' disabled={locked.locked}>
+                        <Button color="teal" size="sm" type='submit' disabled={locked.locked}>
                             Soumettre
                         </Button>
                     </div>
                 </form>
             </Modal>
+        </div>
+    );
+};
 
-        </div >
-    )
-}
-
-export default SteeringTourDetails
+export default SteeringTourDetails;

@@ -24,35 +24,37 @@ import { getEmployeeDropdown } from "../../../services/EmployeeService";
 import { createActivity } from "../../../services/HsActivityService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
-import { activityTypes } from "../../../Data/DropdownData";
 import { getActivitiesByYearStatusAndCategory } from "../../../services/HSEActivityService";
+import { toLocalDate } from "../../../utility/dateConversion";
 import PageHeader from "../../UtilityComp/PageHeader";
 import FormWithHelp from "../../UtilityComp/FormWithHelp";
+import { ACTIVITY_TYPE_OPTIONS, MEETING_ROLES, PPE_OPTIONS, SERIF } from "./hsMeetingsLabels";
 
+/** En-tête de section : icône chip + titre serif + sous-titre. */
+const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
+    <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
+        <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
+                <Icon size={16} className="text-green-700" />
+            </div>
+            <div>
+                <h2 className="text-slate-900" style={{ fontFamily: SERIF, fontSize: '14px', fontWeight: 600 }}>{title}</h2>
+                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+            </div>
+        </div>
+    </header>
+);
 
 const AddHealthMeeting = () => {
-
     const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
     const [location, setLocation] = useState<any[]>([]);
     const ref = useRef<HTMLInputElement>(null);
     const ref1 = useRef<HTMLInputElement>(null);
     const [emps, setEmps] = useState<any[]>([]);
     const [activities, setActivities] = useState<any[]>([]);
+    const [submitting, setSubmitting] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    // const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
-
-
-    const [ppe, _setPPE] = useState([
-        { id: 'helmet', name: 'Safety Helmet', required: false, worn: false },
-        { id: 'goggles', name: 'Safety Goggles', required: false, worn: false },
-        { id: 'gloves', name: 'Safety Gloves', required: false, worn: false },
-        { id: 'boots', name: 'Safety Boots', required: false, worn: false },
-        { id: 'vest', name: 'High-Visibility Vest', required: false, worn: false },
-        { id: 'mask', name: 'Respiratory Mask', required: false, worn: false },
-        { id: 'harness', name: 'Safety Harness', required: false, worn: false }
-    ]);
-
 
     const form = useForm({
         initialValues: {
@@ -67,56 +69,42 @@ const AddHealthMeeting = () => {
             expectedResults: '',
             ppe: [],
             participants: [],
-
         },
         validate: {
-            activityId: (value) => (value ? null : "Activity is required"),
-            type: (value) => (value ? null : 'Type is Required'),
-            locationId: (value) => (value ? null : 'Location is Required'),
-            plannedDate: (value) => (value ? null : 'Planned Date is Required'),
-            startTime: (value) => (value ? null : 'Start Time is Required'),
-            endTime: (value) => (value ? null : 'End Time is Required'),
-
-
-
+            activityId: (value) => (value ? null : "L'activité de référence est requise"),
+            type: (value) => (value ? null : 'Le type est requis'),
+            locationId: (value) => (value ? null : 'Le lieu est requis'),
+            plannedDate: (value) => (value ? null : 'La date est requise'),
+            startTime: (value) => (value ? null : "L'heure de début est requise"),
+            endTime: (value) => (value ? null : "L'heure de fin est requise"),
         },
     });
 
-
-
     useEffect(() => {
         getEmployeeDropdown().then((res: any) => {
-
             setEmps(res);
         }).catch((_err: any) => { });
 
         getAllLocations({}).then((res) => {
             setLocation(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        })
-            .catch((_err: any) => {
+        }).catch((_err: any) => { });
 
-            })
         getActivitiesByYearStatusAndCategory(new Date().getFullYear(), "PENDING", "HSE").then((res) => {
-            console.log(res);
             setActivities(res.map((x: any) => ({ label: x.title, value: String(x.id) })));
-        }).catch(() => { })
+        }).catch(() => { });
     }, []);
-
 
     const onChange = (event: any) => {
         setEmps(event.source?.map((x: any) => ({ ...x, pos: "Source" })));
-
         form.setFieldValue('participants', (event.target?.map((x: any) => ({ ...x, pos: "Target" }))));
     };
 
     const handleRoleChange = (id: number, value: string) => {
-        let selEmp: any = form.values.participants
+        const selEmp: any = form.values.participants;
         form.setFieldValue('participants', selEmp.map((item: any) =>
-
-            item.id === id ? { ...item, role: value } : item)
-
-        )
-        setEditingRoleId(null); // hide dropdown after selection
+            item.id === id ? { ...item, role: value } : item
+        ));
+        setEditingRoleId(null);
     };
 
     const itemTemplate = (item: any) => {
@@ -131,16 +119,16 @@ const AddHealthMeeting = () => {
                         {editingRoleId === item.id || !item.role ? (
                             <Select
                                 autoFocus
-                                label="Role"
+                                label="Rôle"
                                 placeholder="Sélectionner le rôle"
-                                data={['Employé', 'Manager', 'Superviseur', 'Responsable HSE', 'Auditeur externe']}
+                                data={MEETING_ROLES}
                                 value={item.role}
                                 onChange={(val) => handleRoleChange(item.id, val!)}
                                 className="w-full"
                             />
                         ) : (
                             <div
-                                className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                                className="cursor-pointer text-sm px-3 py-2 bg-slate-100 rounded hover:bg-slate-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
                                 {item.role}
@@ -151,41 +139,39 @@ const AddHealthMeeting = () => {
             </div>
         );
     };
+
     const handleSubmit = (values: any) => {
-        console.log(values)
-        dispatch(showOverlay())
-        createActivity(values).then((_res) => {
-            successNotification("Activity created successfully");
-            navigate("/hs-Meetings");
-        })
+        setSubmitting(true);
+        dispatch(showOverlay());
+        // LocalDate backend : sérialisation 'yyyy-MM-dd' en fuseau LOCAL (pas UTC)
+        createActivity({ ...values, plannedDate: toLocalDate(values.plannedDate) })
+            .then((_res) => {
+                successNotification("Réunion créée");
+                navigate("/hs-Meetings");
+            })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "La création de la réunion a échoué");
             })
             .finally(() => {
-                dispatch(hideOverlay())
-            })
-    }
-
-
-
-
-
+                setSubmitting(false);
+                dispatch(hideOverlay());
+            });
+    };
 
     const pickerControl = (
-        <ActionIcon variant="subtle" color="gray" onClick={() => ref.current?.showPicker()}>
+        <ActionIcon variant="subtle" color="gray" onClick={() => ref.current?.showPicker()} aria-label="Ouvrir le sélecteur d'heure de début">
             <IconClock size={16} stroke={1.5} />
         </ActionIcon>
     );
 
     const pickerControl1 = (
-        <ActionIcon variant="subtle" color="gray" onClick={() => ref1.current?.showPicker()}>
+        <ActionIcon variant="subtle" color="gray" onClick={() => ref1.current?.showPicker()} aria-label="Ouvrir le sélecteur d'heure de fin">
             <IconClock size={16} stroke={1.5} />
         </ActionIcon>
     );
 
-
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -195,13 +181,13 @@ const AddHealthMeeting = () => {
                 icon={<IconUsers size={22} stroke={2} />}
                 iconColor="green"
                 title="Nouvelle réunion sécurité"
-                subtitle="Planification d'une réunion HSE — objectifs, agenda et résultats attendus"
+                subtitle="Planification d'une réunion HSE : objectifs, agenda et résultats attendus"
                 actions={
                     <>
                         <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
                             Annuler
                         </Button>
-                        <Button color="green" size="sm" leftSection={<IconDeviceFloppy size={15} />} onClick={() => form.onSubmit(handleSubmit)()}>
+                        <Button color="teal" size="sm" loading={submitting} leftSection={<IconDeviceFloppy size={15} />} onClick={() => form.onSubmit(handleSubmit)()}>
                             Enregistrer
                         </Button>
                     </>
@@ -280,45 +266,24 @@ const AddHealthMeeting = () => {
                 ]}
                 helpTip="Le compte-rendu de réunion peut être annexé après la session via la fiche détaillée. Les décisions deviennent des actions traçables."
             >
-                <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-5">
+                <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-4">
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
-                                    <IconUsers size={16} className="text-green-700" />
-                                </div>
-                                <div>
-                                    <h2 className="text-sm text-slate-900">Informations sur la réunion</h2>
-                                    <p className="text-xs text-slate-500">Type, lieu, date et créneau</p>
-                                </div>
-                            </div>
-                        </header>
-                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Select withAsterisk label="Activité de référence" placeholder="Sélectionner l'activité" data={activities} {...form.getInputProps('activityId')} />
-                            <Select withAsterisk label="Type de réunion" placeholder="Sélectionner le type" data={activityTypes} disabled {...form.getInputProps('type')} />
-                            <Select label="Lieu" placeholder="Sélectionner le lieu" leftSection={<IconMapPin size={16} />} data={location} withAsterisk {...form.getInputProps('locationId')} />
-                            <DatePickerInput label="Date" placeholder="Sélectionner la date" withAsterisk {...form.getInputProps('plannedDate')} />
-                            {/* LOT 40 P1: grille responsive pour les créneaux horaires */}
+                        <SectionHeader icon={IconUsers} title="Informations sur la réunion" subtitle="Type, lieu, date et créneau" />
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select size="sm" withAsterisk label="Activité de référence" placeholder="Sélectionner l'activité" data={activities} {...form.getInputProps('activityId')} />
+                            <Select size="sm" withAsterisk label="Type de réunion" placeholder="Sélectionner le type" data={ACTIVITY_TYPE_OPTIONS} disabled {...form.getInputProps('type')} />
+                            <Select size="sm" label="Lieu" placeholder="Sélectionner le lieu" leftSection={<IconMapPin size={16} />} data={location} withAsterisk {...form.getInputProps('locationId')} />
+                            <DatePickerInput size="sm" label="Date" placeholder="Sélectionner la date" withAsterisk {...form.getInputProps('plannedDate')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
-                                <TimeInput label="Heure de début" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
-                                <TimeInput label="Heure de fin" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
+                                <TimeInput size="sm" label="Heure de début" ref={ref} rightSection={pickerControl} withAsterisk {...form.getInputProps('startTime')} />
+                                <TimeInput size="sm" label="Heure de fin" ref={ref1} rightSection={pickerControl1} withAsterisk {...form.getInputProps('endTime')} />
                             </div>
                         </div>
                     </section>
 
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
-                                    <IconFileText size={16} className="text-green-700" />
-                                </div>
-                                <div>
-                                    <h2 className="text-sm text-slate-900">Objectifs, agenda et résultats attendus</h2>
-                                    <p className="text-xs text-slate-500">Préparation de la réunion conformément à ISO 45001 §5.4</p>
-                                </div>
-                            </div>
-                        </header>
-                        <div className="p-5 space-y-4">
+                        <SectionHeader icon={IconFileText} title="Objectifs, agenda et résultats attendus" subtitle="Préparation de la réunion conformément à ISO 45001 §5.4" />
+                        <div className="p-4 space-y-4">
                             <TextEditor form={form} id="objectives" title="Objectifs" />
                             <TextEditor form={form} id="agenda" title="Agenda" />
                             <TextEditor form={form} id="expectedResults" title="Résultats attendus" />
@@ -326,18 +291,8 @@ const AddHealthMeeting = () => {
                     </section>
 
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
-                                    <IconUsers size={16} className="text-green-700" />
-                                </div>
-                                <div>
-                                    <h2 className="text-sm text-slate-900">Participants</h2>
-                                    <p className="text-xs text-slate-500">Employés conviés avec attribution des rôles</p>
-                                </div>
-                            </div>
-                        </header>
-                        <div className="p-5">
+                        <SectionHeader icon={IconUsers} title="Participants" subtitle="Employés conviés avec attribution des rôles" />
+                        <div className="p-4">
                             <PickList
                                 dataKey="id"
                                 filter
@@ -360,25 +315,15 @@ const AddHealthMeeting = () => {
                     </section>
 
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <header className="px-5 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-white">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 rounded-lg bg-green-100 border border-green-200">
-                                    <IconShield size={16} className="text-green-700" />
-                                </div>
-                                <div>
-                                    <h2 className="text-sm text-slate-900">Équipements de protection individuelle (EPI)</h2>
-                                    <p className="text-xs text-slate-500">Requis si la réunion inclut une visite ou démonstration terrain</p>
-                                </div>
-                            </div>
-                        </header>
-                        <div className="p-5">
+                        <SectionHeader icon={IconShield} title="Équipements de protection individuelle (EPI)" subtitle="Requis si la réunion inclut une visite ou démonstration terrain" />
+                        <div className="p-4">
                             <Checkbox.Group size="md" {...form.getInputProps("ppe")} label="">
                                 <div className="flex flex-wrap gap-2">
-                                    {ppe.map((item: any) => (
+                                    {PPE_OPTIONS.map((item) => (
                                         <Checkbox.Card key={item.id}
                                             value={item.id}
                                             radius="md"
-                                            className="group border border-slate-300 transition duration-150 cursor-pointer
+                                            className="group border border-slate-300 transition-colors duration-150 cursor-pointer
                                                 hover:!border-green-500 hover:!bg-green-50
                                                 data-[checked]:!border-green-500 data-[checked]:!bg-green-50
                                                 data-[checked]:shadow-sm"
@@ -390,7 +335,7 @@ const AddHealthMeeting = () => {
                                                     size="xs"
                                                     className="text-slate-800 group-data-[checked]:text-green-900 group-data-[checked]:font-medium"
                                                 >
-                                                    {item.name}
+                                                    {item.label}
                                                 </Text>
                                             </Group>
                                         </Checkbox.Card>
@@ -401,17 +346,17 @@ const AddHealthMeeting = () => {
                     </section>
 
                     <div className="flex gap-2 justify-end pt-2">
-                        <Button variant="default" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
+                        <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
                             Annuler
                         </Button>
-                        <Button type="submit" color="green" leftSection={<IconDeviceFloppy size={15} />}>
+                        <Button type="submit" color="teal" size="sm" loading={submitting} leftSection={<IconDeviceFloppy size={15} />}>
                             Créer la réunion
                         </Button>
                     </div>
                 </form>
             </FormWithHelp>
         </div>
-    )
-}
+    );
+};
 
-export default AddHealthMeeting
+export default AddHealthMeeting;

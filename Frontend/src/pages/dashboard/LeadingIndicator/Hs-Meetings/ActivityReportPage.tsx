@@ -3,7 +3,7 @@ import ActivityReport from "../../../../components/LeadingIndicator/Hs-Meetings/
 
 const ActivityReportPage = () => {
     return (
-        <div className="p-5"><ActivityReport /></div>
+        <div><ActivityReport /></div>
     )
 }
 

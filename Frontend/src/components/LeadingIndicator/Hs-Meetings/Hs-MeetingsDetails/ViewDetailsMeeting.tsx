@@ -2,9 +2,9 @@ import {
     IconCalendarEvent, IconMapPin, IconClock, IconFileText, IconChecks,
     IconUsers, IconShield, IconTarget,
 } from '@tabler/icons-react';
-import { formatDateWithDay, formatTo12Hour } from "../../../../utility/DateFormats";
-import { ppeRecord } from "../../../../Data/IncidentsData";
+import { formatDateWithDay } from "../../../../utility/DateFormats";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
+import { formatTimeFr, ppeLabel, SERIF } from "../hsMeetingsLabels";
 
 const Section = ({ title, icon: Icon, accent = 'green', hint, children, count }: {
     title: string; icon: any; accent?: 'green' | 'blue' | 'amber' | 'teal' | 'violet' | 'slate' | 'yellow';
@@ -26,7 +26,7 @@ const Section = ({ title, icon: Icon, accent = 'green', hint, children, count }:
                 <div className={`p-1 rounded ${c.iconBg}`}>
                     <Icon size={14} className={c.text} />
                 </div>
-                <h3 className="text-xs text-slate-800 uppercase tracking-wider flex-1">{title}</h3>
+                <h3 className="text-slate-800 flex-1" style={{ fontFamily: SERIF, fontSize: '14px', fontWeight: 600 }}>{title}</h3>
                 {count !== undefined && <span className="text-[10px] text-slate-500">{count}</span>}
                 {hint && <span className="text-[10px] text-slate-500 italic hidden md:inline">{hint}</span>}
             </header>
@@ -77,7 +77,7 @@ const ViewDetailsMeeting = ({ activity }: any) => {
                         </div>
                         <p className="text-sm text-slate-800">
                             {activity.startTime && activity.endTime
-                                ? `${formatTo12Hour(activity.startTime)} → ${formatTo12Hour(activity.endTime)}`
+                                ? `${formatTimeFr(activity.startTime)} → ${formatTimeFr(activity.endTime)}`
                                 : '—'}
                         </p>
                     </div>
@@ -150,7 +150,7 @@ const ViewDetailsMeeting = ({ activity }: any) => {
                     <div className="flex flex-wrap gap-2">
                         {(Array.isArray(activity.ppe) ? activity.ppe : String(activity.ppe).split(',')).map((x: any, index: number) => (
                             <span key={index} className="inline-flex items-center px-2.5 py-1 text-xs rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800">
-                                {ppeRecord[x?.toString().trim()] || x}
+                                {ppeLabel(x?.toString())}
                             </span>
                         ))}
                     </div>

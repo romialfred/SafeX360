@@ -2,7 +2,7 @@ import SteeringTourDetails from "../../../../components/LeadingIndicator/Managem
 
 const SteeringDetailsPage = () => {
     return (
-        <div className="p-5"><SteeringTourDetails /></div>
+        <div><SteeringTourDetails /></div>
     )
 }
 

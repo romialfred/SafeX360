@@ -2,7 +2,7 @@ import MeetingDetailsTabs from "../../../../components/LeadingIndicator/Hs-Meeti
 
 const MeetingDetailsTabsPage = () => {
     return (
-        <div className="p-5"><MeetingDetailsTabs /></div>
+        <div><MeetingDetailsTabs /></div>
     )
 }
 

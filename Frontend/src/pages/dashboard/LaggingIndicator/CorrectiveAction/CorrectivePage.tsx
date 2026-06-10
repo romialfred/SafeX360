@@ -2,7 +2,7 @@ import Corrective from "../../../../components/LaggingIndicator/CorrectiveAction
 
 const CorrectivePage = () => {
     return (
-        <div className="p-5"><Corrective /></div>
+        <div><Corrective /></div>
     )
 }
 

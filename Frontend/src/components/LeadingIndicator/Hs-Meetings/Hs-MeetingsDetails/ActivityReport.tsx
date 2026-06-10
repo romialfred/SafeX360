@@ -11,8 +11,16 @@ import { errorNotification, successNotification } from "../../../../utility/Noti
 import TextEditor from "../../../UtilityComp/TextEditor";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
-import { IconCheck, IconPhoto } from "@tabler/icons-react";
+import { IconCheck, IconEdit, IconPhoto } from "@tabler/icons-react";
 import { mapIdToName } from "../../../../utility/OtherUtilities";
+import { SERIF } from "../hsMeetingsLabels";
+
+/** Titre de section du compte rendu (serif, charte R7). */
+const ReportTitle = ({ children }: { children: React.ReactNode }) => (
+    <h3 className="text-slate-800 mt-4 first:mt-0" style={{ fontFamily: SERIF, fontSize: '14px', fontWeight: 600 }}>
+        {children}
+    </h3>
+);
 
 const ActivityReport = () => {
     const { id } = useParams();
@@ -29,7 +37,7 @@ const ActivityReport = () => {
                 setParticipants(res.participants || []);
                 setParticipantsMap(mapIdToName(res.participants));
             })
-            .catch((err) => console.error("Error fetching activity info:", err));
+            .catch((_err) => { });
         fetchActivityReport();
     }, []);
 
@@ -45,7 +53,7 @@ const ActivityReport = () => {
                         docs: docs,
                         signOff: res.signOff?.map((x: any) => String(x)) || [],
                         activityId: id,
-                        id: res.id // In case needed for update
+                        id: res.id,
                     });
                 }
             })
@@ -59,7 +67,7 @@ const ActivityReport = () => {
             docs: [] as any[],
             signOff: [] as any[],
             activityId: id,
-            id: undefined // for update
+            id: undefined,
         },
         validate: {},
     });
@@ -69,20 +77,20 @@ const ActivityReport = () => {
         dispatch(showOverlay());
         const payload = {
             ...form.values,
-            docs: docs
+            docs: docs,
         };
         const apiCall = editMode && activityReport
-            ? updateActivityReport(payload) // <-- You must implement this service
+            ? updateActivityReport(payload)
             : createActivityReportDTO(payload);
 
         apiCall
             .then((_res) => {
-                successNotification(editMode ? "Activity report updated successfully" : "Activity report created successfully");
+                successNotification(editMode ? "Compte rendu mis à jour" : "Compte rendu enregistré");
                 setEditMode(false);
                 fetchActivityReport();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "L'enregistrement du compte rendu a échoué");
             })
             .finally(() => {
                 dispatch(hideOverlay());
@@ -91,7 +99,6 @@ const ActivityReport = () => {
 
     const handleEdit = () => {
         setEditMode(true);
-        // Form values already set in fetchActivityReport()
     };
 
     const handleCancelEdit = () => {
@@ -103,132 +110,118 @@ const ActivityReport = () => {
             docs: docs,
             signOff: activityReport.signOff?.map((x: any) => String(x)) || [],
             activityId: id,
-            id: activityReport.id
+            id: activityReport.id,
         });
     };
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-4">
             {(activityReport && !editMode) ? (
-                // === READ-ONLY REPORT DISPLAY ===
+                // ─── Consultation du compte rendu ───────────────────────────
                 <>
                     <div className="flex justify-between items-center">
-
-                        <h2>Activity Report</h2>
-                        <Button size="sm" onClick={handleEdit} variant="gradient">
-                            Edit
+                        <h2 className="text-slate-800" style={{ fontFamily: SERIF, fontSize: '14.5px', fontWeight: 600 }}>
+                            Compte rendu d'exécution
+                        </h2>
+                        <Button size="sm" onClick={handleEdit} color="teal" variant="light" leftSection={<IconEdit size={14} />}>
+                            Modifier
                         </Button>
                     </div>
-                    <Text size="md" mt={6}>Summary</Text>
-                    {/* LOT 41 P0 XSS fix */}
-                    <SafeHtml html={activityReport.summary || "<span>-</span>"} className="prose max-w-none text-sm text-gray-700" />
+                    <ReportTitle>Synthèse</ReportTitle>
+                    <SafeHtml html={activityReport.summary || "<span>—</span>"} className="prose max-w-none text-[13px] text-slate-700" />
 
-                    < Text size="md" mt={6} > Findings & Observations</Text >
-                    {/* LOT 41 P0 XSS fix */}
-                    <SafeHtml html={activityReport.findings || "<span>-</span>"} className="prose max-w-none text-sm text-gray-700" />
+                    <ReportTitle>Constats et observations</ReportTitle>
+                    <SafeHtml html={activityReport.findings || "<span>—</span>"} className="prose max-w-none text-[13px] text-slate-700" />
 
-                    <Text size="md" mt={6}>Evidence & Documentation</Text>
-                    {
-                        activityReport.docs && activityReport.docs.length > 0 ? (
-                            <Group className="flex flex-wrap flex-col !gap-1">
-                                {activityReport?.docs?.map((doc: any) => (
-                                    <Badge
-                                        key={doc.name}
-                                        size="sm"
-                                        className="!cursor-pointer !capitalize !hover:!underline"
-                                        onClick={() => handlePreview(doc)}
-                                        leftSection={<IconPhoto size={12} />}
-                                        color="orange"
-                                        variant="transparent"
-                                    >
-                                        {doc.name}
-                                    </Badge>
-                                ))}
-                            </Group>
-                        ) : (
-                            <Text size="sm" color="dimmed">No documents.</Text>
-                        )
-                    }
+                    <ReportTitle>Preuves et documentation</ReportTitle>
+                    {activityReport.docs && activityReport.docs.length > 0 ? (
+                        <Group className="flex flex-wrap flex-col !gap-1">
+                            {activityReport?.docs?.map((doc: any) => (
+                                <Badge
+                                    key={doc.name}
+                                    size="sm"
+                                    className="!cursor-pointer !capitalize"
+                                    onClick={() => handlePreview(doc)}
+                                    leftSection={<IconPhoto size={12} />}
+                                    color="orange"
+                                    variant="transparent"
+                                >
+                                    {doc.name}
+                                </Badge>
+                            ))}
+                        </Group>
+                    ) : (
+                        <Text size="sm" c="dimmed">Aucun document joint.</Text>
+                    )}
 
-                    <Text className="!text-base !mb-2 mt-6">
-                        Participant Sign-off ({activityReport.signOff?.length || 0}/{participants.length})
-                    </Text>
-                    <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="lg" className="mt-4">
+                    <ReportTitle>
+                        Émargement des participants ({activityReport.signOff?.length || 0}/{participants.length})
+                    </ReportTitle>
+                    <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm" className="mt-2">
                         {activityReport.signOff?.map((person: any) => (
                             <div
                                 key={person}
-                                className="rounded-2xl border border-primary bg-primary/10 p-4 flex flex-row items-center gap-4"
+                                className="rounded-xl border border-teal-200 bg-teal-50/60 p-3 flex flex-row items-center gap-3"
                             >
-                                <Avatar radius="xl" size="md" color="primary" name={participantsMap[person]?.name} />
-                                <div>
-                                    <Text size="sm">{participantsMap[person]?.name}</Text>
-                                    <Text size="sm" color="dimmed">{participantsMap[person]?.role}</Text>
+                                <Avatar radius="xl" size="sm" color="teal" name={participantsMap[person]?.name} />
+                                <div className="min-w-0">
+                                    <Text size="sm" className="truncate">{participantsMap[person]?.name}</Text>
+                                    <Text size="xs" c="dimmed" className="truncate">{participantsMap[person]?.role || 'Participant'}</Text>
                                 </div>
-                                <IconCheck className="ml-auto text-primary" size={18} />
+                                <IconCheck className="ml-auto text-teal-600" size={16} aria-hidden="true" />
                             </div>
                         ))}
                     </SimpleGrid>
-
-
                 </>
             ) : (
-                // === FORM VIEW (create or edit) ===
+                // ─── Saisie ou modification du compte rendu ─────────────────
                 <>
-                    <TextEditor form={form} id="summary" title="Summary" />
-                    <TextEditor form={form} id="findings" title="Findings & Observations" />
-                    <FileUpdateDropzone title="Evidence & Documentation" id="docs" form={form} />
+                    <TextEditor form={form} id="summary" title="Synthèse" />
+                    <TextEditor form={form} id="findings" title="Constats et observations" />
+                    <FileUpdateDropzone title="Preuves et documentation" id="docs" form={form} />
 
-                    <Text className="!text-xl !mb-2">
-                        Participant Sign-off ({form.values.signOff.length}/{participants.length})
-                    </Text>
-                    <Text size="sm" color="dimmed" mb={16}>
-                        Select the participants that were/are present
+                    <ReportTitle>
+                        Émargement des participants ({form.values.signOff.length}/{participants.length})
+                    </ReportTitle>
+                    <Text size="sm" c="dimmed" mb={12}>
+                        Cochez les participants présents à la réunion
                     </Text>
                     <Checkbox.Group
                         {...form.getInputProps("signOff")}
-                        className="flex flex-col gap-6"
+                        className="flex flex-col gap-4"
                     >
-                        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="lg">
+                        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="sm">
                             {participants.map((person) => {
                                 const isSelected = form.values.signOff.includes(person.id.toString());
                                 return (
                                     <label
                                         key={person.id}
                                         htmlFor={`signoff-${person.id}`}
-                                        className={`relative group cursor-pointer rounded-2xl border
-                        transition-all duration-200 p-4
-                        flex flex-col items-center shadow-md
-                        hover:shadow-lg
-                        ${isSelected
-                                                ? "border-primary bg-gradient-to-b from-primary/10 to-white scale-[1.03]"
-                                                : "border-gray-200 bg-white"
+                                        className={`relative cursor-pointer rounded-xl border p-3 flex flex-col transition-colors duration-150 ${isSelected
+                                            ? "border-teal-300 bg-teal-50/60"
+                                            : "border-slate-200 bg-white"
                                             }`}
-                                        style={{
-                                            minHeight: "100px",
-                                            minWidth: "220px",
-                                        }}
                                     >
-                                        <div className="flex flex-row items-center gap-4 w-full">
+                                        <div className="flex flex-row items-center gap-3 w-full">
                                             <div className="relative">
                                                 <Avatar
                                                     radius="xl"
-                                                    size="lg"
-                                                    color={isSelected ? "primary" : "blue"}
+                                                    size="md"
+                                                    color={isSelected ? "teal" : "blue"}
                                                     name={person.name}
-                                                    className={`ring-2 ${isSelected ? "ring-primary" : "ring-gray-200"}`}
                                                 />
                                                 {isSelected && (
-                                                    <span className="absolute -right-2 -top-2 bg-primary text-white rounded-full p-1">
-                                                        <IconCheck size={16} />
+                                                    <span className="absolute -right-1.5 -top-1.5 bg-teal-600 text-white rounded-full p-0.5">
+                                                        <IconCheck size={12} aria-hidden="true" />
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <Text size="sm" className="text-gray-900">
+                                            <div className="flex flex-col min-w-0">
+                                                <Text size="sm" className="text-slate-900 truncate">
                                                     {person.name}
                                                 </Text>
-                                                <Text size="sm" color="dimmed" className="text-gray-500">
-                                                    {person.role}
+                                                <Text size="xs" c="dimmed" className="truncate">
+                                                    {person.role || 'Participant'}
                                                 </Text>
                                             </div>
                                         </div>
@@ -237,7 +230,7 @@ const ActivityReport = () => {
                                             value={person.id.toString()}
                                             checked={isSelected}
                                             tabIndex={-1}
-                                            className="absolute top-[35%] right-4 pointer-events-none"
+                                            className="absolute top-[35%] right-3 pointer-events-none"
                                             readOnly
                                         />
                                     </label>
@@ -245,28 +238,28 @@ const ActivityReport = () => {
                             })}
                         </SimpleGrid>
                     </Checkbox.Group>
-                    <div className="flex gap-2 mt-8 justify-center">
+                    <div className="flex gap-2 justify-end pt-2">
                         <Button
-                            size="md"
-                            variant="outline"
+                            size="sm"
+                            variant="default"
                             onClick={() => {
                                 editMode && activityReport ? handleCancelEdit() : navigate(-1);
                             }}
                         >
-                            {editMode ? "Cancel" : "Cancel"}
+                            Annuler
                         </Button>
                         <Button
-                            size="md"
+                            size="sm"
+                            color="teal"
                             onClick={handleSubmit}
                             type="submit"
-                            variant="gradient"
                         >
-                            {editMode ? "Update Report" : "Submit Report"}
+                            {editMode ? "Mettre à jour le compte rendu" : "Soumettre le compte rendu"}
                         </Button>
                     </div>
                 </>
             )}
-        </div >
+        </div>
     );
 };
 

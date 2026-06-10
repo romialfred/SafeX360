@@ -1,67 +1,77 @@
-import { Badge, Button, Tooltip } from '@mantine/core';
-import { IconEdit, IconSearch } from '@tabler/icons-react';
+import { Button, Tooltip } from '@mantine/core';
+import { IconCalendarEvent, IconClock, IconEdit, IconEye } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import { actionStatusesMap, activityTypesMap } from '../../../Data/DropdownData';
-import { formatDateWithDay, formatTo12Hour } from '../../../utility/DateFormats';
+import {
+    activityStatusConfig,
+    activityTypeLabel,
+    formatDateFr,
+    formatTimeFr,
+} from './hsMeetingsLabels';
 
 interface HealthCardProps {
     healthData: any;
 }
 
 const HealthCard = ({ healthData }: HealthCardProps) => {
+    const statusCfg = activityStatusConfig(healthData.status);
+    const statusUpper = String(healthData?.status || '').toUpperCase();
+    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
+    const editTooltip = canEdit
+        ? 'Modifier la réunion'
+        : statusUpper === 'COMPLETED'
+            ? 'Réunion réalisée — modification impossible'
+            : 'Réunion annulée — modification impossible';
+
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.0] cursor-pointer mt-4 hover:border-primary">
-            <div className="flex gap-4">
-                <span className="text-sm bg-green-50 text-green-800 px-2 py-1 rounded-full border border-green-200">
-                    {activityTypesMap[healthData.type]}
+        <div className="rounded-xl border border-slate-200 p-4 bg-white flex flex-col gap-2.5">
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border bg-teal-50 text-teal-700 border-teal-200">
+                    {activityTypeLabel(healthData.type)}
                 </span>
-                <Badge radius="xl" color='yellow' size="lg" variant="outline" className="!capitalize">
-                    {actionStatusesMap[healthData.status]}
-                </Badge>
+                <span className={`inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border ${statusCfg.chip}`}>
+                    {statusCfg.label}
+                </span>
             </div>
 
-            <h2 className="text-blue-600">{healthData.title}</h2>
+            <Link to={`details-meeting/${healthData.id}`} className="text-[13px] text-slate-800 leading-snug hover:text-teal-700">
+                {healthData.title}
+            </Link>
 
-            <div className="text-gray-500 text-sm">
-                Planned Date: {formatDateWithDay(healthData.plannedDate)}
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                <IconCalendarEvent size={13} stroke={1.6} aria-hidden="true" />
+                {formatDateFr(healthData.plannedDate)}
             </div>
-            <div className="text-gray-500 text-sm">
-                Time: {formatTo12Hour(healthData.startTime)} - {formatTo12Hour(healthData.endTime)}
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                <IconClock size={13} stroke={1.6} aria-hidden="true" />
+                {formatTimeFr(healthData.startTime)} – {formatTimeFr(healthData.endTime)}
             </div>
 
-            <div className="flex  grow gap-4">
-                {(() => {
-                    const statusUpper = String(healthData?.status || '').toUpperCase();
-                    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
-                    const tooltip = canEdit ? 'Edit' : (statusUpper === 'COMPLETED' ? 'Completed — modification not possible' : 'Cancelled — modification not possible');
-                    return (
-                        <Tooltip label={tooltip}>
-                            <span className="inline-flex">
-                                <Button
-                                    size="xs"
-                                    variant="subtle"
-                                    leftSection={<IconEdit size={15} />}
-                                    color="primary"
-                                    component={Link}
-                                    to={canEdit ? `editActivity/${healthData.id}` : '#'}
-                                    onClick={(e) => { if (!canEdit) e.preventDefault(); }}
-                                    disabled={!canEdit}
-                                >
-                                    Edit
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    );
-                })()}
+            <div className="flex grow items-end gap-2 pt-1">
+                <Tooltip label={editTooltip} withArrow>
+                    <span className="inline-flex">
+                        <Button
+                            size="xs"
+                            variant="subtle"
+                            leftSection={<IconEdit size={14} />}
+                            color="blue"
+                            component={Link}
+                            to={canEdit ? `editActivity/${healthData.id}` : '#'}
+                            onClick={(e) => { if (!canEdit) e.preventDefault(); }}
+                            disabled={!canEdit}
+                        >
+                            Modifier
+                        </Button>
+                    </span>
+                </Tooltip>
                 <Button
                     size="xs"
                     variant="subtle"
-                    leftSection={<IconSearch size={15} />}
-                    color="green"
+                    leftSection={<IconEye size={14} />}
+                    color="teal"
                     component={Link}
                     to={`details-meeting/${healthData.id}`}
                 >
-                    Details
+                    Détails
                 </Button>
             </div>
         </div>

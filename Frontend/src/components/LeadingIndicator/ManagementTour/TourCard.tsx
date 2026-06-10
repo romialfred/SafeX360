@@ -1,85 +1,84 @@
 import { Button, Tooltip } from "@mantine/core";
-import { IconEdit, IconSearch } from "@tabler/icons-react";
+import { IconCalendarEvent, IconClock, IconEdit, IconEye, IconRepeat } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
-import { formatDateWithDay, formatTo12Hour } from "../../../utility/DateFormats";
-import { activityTypesMap, actionStatusesMap } from "../../../Data/DropdownData";
+import {
+    tourStatusConfig,
+    tourTypeLabel,
+    formatDateFr,
+    formatTimeFr,
+} from "./tourLabels";
 
 interface TourDataProps {
     tourData: any;
 }
 
-const badgeColors: Record<string, string> = {
-    PENDING: "bg-blue-100 text-blue-600",
-    ONGOING: "bg-yellow-100 text-yellow-600",
-    COMPLETED: "bg-green-100 text-green-600",
-    CANCELLED: "bg-red-100 text-red-600",
-};
-
 const TourCard = ({ tourData }: TourDataProps) => {
-    const statusColor = badgeColors[tourData.status] || "bg-gray-100 text-gray-700";
+    const statusCfg = tourStatusConfig(tourData.status);
+    const statusUpper = String(tourData?.status || '').toUpperCase();
+    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
+    const editTooltip = canEdit
+        ? 'Modifier la tournée'
+        : statusUpper === 'COMPLETED'
+            ? 'Tournée réalisée — modification impossible'
+            : 'Tournée annulée — modification impossible';
 
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-md hover:scale-[1.02] cursor-pointer">
-            <div className="flex gap-4">
-                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
-                    {activityTypesMap[tourData.type] || "N/A"}
+        <div className="rounded-xl border border-slate-200 p-4 bg-white flex flex-col gap-2.5">
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border bg-teal-50 text-teal-700 border-teal-200">
+                    {tourTypeLabel(tourData.type)}
                 </span>
-                <span className={`text-sm px-2 py-1 rounded-lg ${statusColor}`}>
-                    {actionStatusesMap[tourData.status] || tourData.status}
+                <span className={`inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border ${statusCfg.chip}`}>
+                    {statusCfg.label}
                 </span>
             </div>
 
-            <h2 className="text-gray-900 text-base">{tourData.title}</h2>
+            <Link to={`details-meeting/${tourData.id}`} className="text-[13px] text-slate-800 leading-snug hover:text-teal-700">
+                {tourData.title}
+            </Link>
 
-            <div className="text-gray-500 text-sm">
-                Frequency: {tourData.frequency}
+            {tourData.frequency && (
+                <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                    <IconRepeat size={13} stroke={1.6} aria-hidden="true" />
+                    Fréquence : {tourData.frequency}
+                </div>
+            )}
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                <IconCalendarEvent size={13} stroke={1.6} aria-hidden="true" />
+                {formatDateFr(tourData.plannedDate)}
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                <IconClock size={13} stroke={1.6} aria-hidden="true" />
+                {formatTimeFr(tourData.startTime)} – {formatTimeFr(tourData.endTime)}
             </div>
 
-            <div className="text-gray-500 text-sm">
-                Planned Date: {formatDateWithDay(tourData.plannedDate)}
-            </div>
-
-            <div className="text-gray-500 text-sm">
-                Time: {formatTo12Hour(tourData.startTime)} - {formatTo12Hour(tourData.endTime)}
-            </div>
-
-            <div className="flex justify-center gap-4 mt-2">
-                {(() => {
-                    const statusUpper = String(tourData?.status || '').toUpperCase();
-                    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
-                    const tooltip = canEdit ? 'Edit' : (statusUpper === 'COMPLETED' ? 'Completed — modification not possible' : 'Cancelled — modification not possible');
-                    return (
-                        <Tooltip label={tooltip}>
-                            <span className="inline-flex">
-                                <Button
-                                    size="xs"
-                                    variant="subtle"
-                                    leftSection={<IconEdit size={15} />}
-                                    color="primary"
-                                    component={Link}
-                                    to={canEdit ? `edit/${tourData.id}` : '#'}
-                                    onClick={(e) => { if (!canEdit) e.preventDefault(); }}
-                                    disabled={!canEdit}
-                                >
-                                    Edit
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    );
-                })()}
+            <div className="flex grow items-end gap-2 pt-1">
+                <Tooltip label={editTooltip} withArrow>
+                    <span className="inline-flex">
+                        <Button
+                            size="xs"
+                            variant="subtle"
+                            leftSection={<IconEdit size={14} />}
+                            color="blue"
+                            component={Link}
+                            to={canEdit ? `edit/${tourData.id}` : '#'}
+                            onClick={(e) => { if (!canEdit) e.preventDefault(); }}
+                            disabled={!canEdit}
+                        >
+                            Modifier
+                        </Button>
+                    </span>
+                </Tooltip>
                 <Button
                     size="xs"
                     variant="subtle"
-                    leftSection={<IconSearch size={15} />}
-                    color="blue"
+                    leftSection={<IconEye size={14} />}
+                    color="teal"
                     component={Link}
                     to={`details-meeting/${tourData.id}`}
                 >
-                    View
+                    Détails
                 </Button>
-                {/* <Button size="xs" variant="subtle" leftSection={<IconClipboardList size={15} />} color="teal">
-                    Report
-                </Button> */}
             </div>
         </div>
     );

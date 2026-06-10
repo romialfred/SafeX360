@@ -1,7 +1,8 @@
-import { Timeline, Text, Card, Badge, Group } from '@mantine/core';
+import { Timeline, Text, Card, Group } from '@mantine/core';
 import { IconUser, IconCalendar, IconClock } from '@tabler/icons-react';
 import dayjs from 'dayjs';
-import { auditStatusMap } from '../../../../Data/DropdownData';
+import { formatDateShort } from '../../../../utility/DateFormats';
+import { activityStatusConfig } from '../hsMeetingsLabels';
 
 type MeetingStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -18,15 +19,14 @@ interface MeetingHistoryDetails {
 
 interface MeetingHistoryProps {
     history: MeetingHistoryDetails[];
-
     empMap: any;
-    meeting: any
+    meeting: any;
 }
+
 const ActivityHistory = ({ history, meeting: _meeting, empMap }: MeetingHistoryProps) => {
     const sortedHistory = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return (
-        <div className="p-6">
-
+        <div className="p-4">
             <Timeline active={history.length} bulletSize={24} lineWidth={3}>
                 {sortedHistory.map((entry, index) => {
                     const currentDate = dayjs(entry.date);
@@ -35,27 +35,30 @@ const ActivityHistory = ({ history, meeting: _meeting, empMap }: MeetingHistoryP
                         : dayjs();
 
                     const daysInStatus = nextDate.diff(currentDate, 'day');
+                    const statusCfg = activityStatusConfig(entry.status);
 
                     return (
-                        <Timeline.Item key={entry.id} title={auditStatusMap[entry.status]}>
+                        <Timeline.Item key={entry.id} title={statusCfg.label}>
                             <Card shadow="sm" radius="md" className="bg-white mt-2" withBorder>
                                 <Group justify="space-between" className="mb-2">
-                                    <Text size="sm" className="text-gray-500 flex items-center gap-1">
-                                        <IconUser size={14} /> {empMap ? empMap[entry.ownerId]?.name : ""}
+                                    <Text size="sm" className="text-slate-500 flex items-center gap-1">
+                                        <IconUser size={14} aria-hidden="true" /> {empMap ? empMap[entry.ownerId]?.name : ""}
                                     </Text>
-                                    <Badge color="gray" className='!capitalize' variant="light">{entry.status}</Badge>
+                                    <span className={`inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border ${statusCfg.chip}`}>
+                                        {statusCfg.label}
+                                    </span>
                                 </Group>
 
-                                <Text size="sm" className="text-gray-700">{entry.comment || 'No comment provided.'}</Text>
+                                <Text size="sm" className="text-slate-700">{entry.comment || 'Aucun commentaire.'}</Text>
 
-                                <Group justify="space-between" className="mt-2 text-xs text-gray-400">
+                                <Group justify="space-between" className="mt-2 text-xs text-slate-400">
                                     <div className="flex items-center gap-1">
-                                        <IconCalendar size={14} />
-                                        {dayjs(entry.date).format('DD MMM YYYY')}
+                                        <IconCalendar size={14} aria-hidden="true" />
+                                        {formatDateShort(entry.date)}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <IconClock size={14} />
-                                        In this status for {daysInStatus} day{daysInStatus !== 1 ? 's' : ''}
+                                        <IconClock size={14} aria-hidden="true" />
+                                        Dans ce statut depuis {daysInStatus} jour{daysInStatus > 1 ? 's' : ''}
                                     </div>
                                 </Group>
                             </Card>
@@ -63,15 +66,13 @@ const ActivityHistory = ({ history, meeting: _meeting, empMap }: MeetingHistoryP
                     );
                 })}
             </Timeline>
-            {
-                sortedHistory.length === 0 && (
-                    <Text size="sm" className="text-gray-500 mt-4">
-                        No meetings history available.
-                    </Text>
-                )
-            }
+            {sortedHistory.length === 0 && (
+                <Text size="sm" className="text-slate-500 mt-4">
+                    Aucun historique pour cette activité.
+                </Text>
+            )}
         </div>
-    )
-}
+    );
+};
 
-export default ActivityHistory
+export default ActivityHistory;

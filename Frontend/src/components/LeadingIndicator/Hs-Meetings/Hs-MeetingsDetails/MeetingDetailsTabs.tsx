@@ -1,6 +1,5 @@
 import {
     Alert,
-    Badge,
     Button,
     Modal,
     NumberInput,
@@ -25,7 +24,6 @@ import PageHeader from "../../../UtilityComp/PageHeader";
 
 import { useDisclosure } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
-import { actionStatusesMap, inspectionStatuses } from "../../../../Data/DropdownData";
 import { useForm } from "@mantine/form";
 import { getEmployeesWithDepartment } from "../../../../services/EmployeeService";
 
@@ -40,8 +38,8 @@ import CorrectiveActions from "./CorrectiveActions";
 import ActivityReport from "./ActivityReport";
 import { addHsActivityHistory, getHsActivityHistoryById } from "../../../../services/ActivityHistoryService";
 import { getActivityById } from "../../../../services/HsActivityService";
-import { formatDateShort, formatTimeToAmPm } from "../../../../utility/DateFormats";
-
+import { formatDateShort } from "../../../../utility/DateFormats";
+import { ACTIVITY_STATUS_OPTIONS, activityStatusConfig, formatTimeFr } from "../hsMeetingsLabels";
 
 const MeetingDetailsTabs = () => {
     const [activeTab, setActiveTab] = useState('details');
@@ -56,38 +54,35 @@ const MeetingDetailsTabs = () => {
     const [activity, setActivity] = useState<any>({});
     const [locked, setLocked] = useState<{ locked: boolean; status: string }>({ locked: false, status: '' });
 
-
-
     const form = useForm({
         initialValues: {
             ownerId: "",
             date: "",
             status: "",
             comment: "",
-
         },
         validate: {
-            ownerId: (value) => value ? null : "Owner is required",
-            date: (value) => value ? null : "Date is required",
-            status: (value) => value ? null : "Status is required",
+            ownerId: (value) => value ? null : "Le responsable est requis",
+            date: (value) => value ? null : "La date est requise",
+            status: (value) => value ? null : "Le statut est requis",
         }
     });
+
     useEffect(() => {
         if (!searchParams) return;
-        const tab = searchParams.get('tab')
+        const tab = searchParams.get('tab');
         if (tab) {
             setActiveTab(tab);
         }
     }, [searchParams]);
 
     useEffect(() => {
-
-        dispatch(showOverlay())
+        dispatch(showOverlay());
         getEmployeesWithDepartment()
             .then((res) => {
                 const mappedEmployees = res.map((emp: any) => ({
                     label: emp.name,
-                    value: String(emp.id), // ensure value is string if form field is string
+                    value: String(emp.id),
                 }));
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
@@ -105,20 +100,21 @@ const MeetingDetailsTabs = () => {
                 dispatch(hideOverlay());
             });
         fetchHistory();
-
     }, []);
 
     const fetchHistory = () => {
         getHsActivityHistoryById(id).then((res) => {
             setHistory(res);
-        }).catch((err) => {
-            console.log(err);
-        });
-    }
+        }).catch((_err) => { });
+    };
+
+    const lockedMessage = locked.status === 'COMPLETED'
+        ? 'Cette réunion est clôturée. Aucune modification possible.'
+        : 'Cette réunion est annulée. Aucune modification possible.';
 
     const handleSubmit = async (values: any) => {
         if (locked.locked) {
-            errorNotification(locked.status === 'COMPLETED' ? 'This activity is completed. Modifications are not allowed.' : 'This activity is cancelled. Modifications are not allowed.');
+            errorNotification(lockedMessage);
             return;
         }
         dispatch(showOverlay());
@@ -126,27 +122,32 @@ const MeetingDetailsTabs = () => {
         const payload = {
             ...values,
             hsActivityId: parseInt(id || "")
-
         };
 
         addHsActivityHistory(payload)
             .then((_res) => {
-                successNotification("Status changed successfully");
+                successNotification("Statut mis à jour");
                 close();
                 setMeeting((prev: any) => ({
                     ...prev,
                     status: values.status,
                 }));
+                setActivity((prev: any) => ({
+                    ...prev,
+                    status: values.status,
+                }));
+                if (['COMPLETED', 'CANCELLED'].includes(String(values.status || '').toUpperCase())) {
+                    setLocked({ locked: true, status: String(values.status || '').toUpperCase() });
+                }
                 fetchHistory();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
             })
             .finally(() => {
                 dispatch(hideOverlay());
             });
     };
-
 
     const tabData = {
         details: {
@@ -175,13 +176,15 @@ const MeetingDetailsTabs = () => {
         },
     };
 
-
     const handleStatusChange = () => {
         if (locked.locked) return;
         open();
-    }
+    };
+
+    const statusCfg = activityStatusConfig(activity?.status);
+
     return (
-        <div className="p-5 space-y-5 w-full" >
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -194,18 +197,20 @@ const MeetingDetailsTabs = () => {
                 subtitle="Compte rendu, actions correctives et suivi de la réunion HSE"
             />
 
-            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-green-600 to-green-800 shadow-md">
+            <div className="rounded-xl p-4 space-y-3 bg-gradient-to-br from-green-600 to-green-800 shadow-md">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div className='flex flex-col gap-1.5'>
-                        <h2 className="text-lg text-white">{activity.title}</h2>
-                        <div className="flex items-center gap-1.5 text-green-50 text-sm">
-                            <IconCalendarEvent size={16} />
-                            <span>{formatDateShort(activity?.plannedDate)} — {formatTimeToAmPm(activity?.startTime)} à {formatTimeToAmPm(activity?.endTime)}</span>
+                        <h2 className="text-white" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '17px', fontWeight: 600 }}>
+                            {activity.title}
+                        </h2>
+                        <div className="flex items-center gap-1.5 text-green-50 text-[12.5px]">
+                            <IconCalendarEvent size={15} aria-hidden="true" />
+                            <span>{formatDateShort(activity?.plannedDate)} — {formatTimeFr(activity?.startTime)} à {formatTimeFr(activity?.endTime)}</span>
                         </div>
                     </div>
 
                     <div className="flex items-end gap-2 flex-col">
-                        <Tooltip label={locked.locked ? (locked.status === 'COMPLETED' ? 'Réunion clôturée : statut non modifiable' : 'Réunion annulée : statut non modifiable') : 'Changer le statut'}>
+                        <Tooltip label={locked.locked ? (locked.status === 'COMPLETED' ? 'Réunion clôturée : statut non modifiable' : 'Réunion annulée : statut non modifiable') : 'Changer le statut'} withArrow>
                             <span className="inline-flex">
                                 <Button
                                     size="sm"
@@ -214,14 +219,14 @@ const MeetingDetailsTabs = () => {
                                     disabled={locked.locked}
                                     className="!bg-white !text-green-700 hover:!bg-green-50"
                                 >
-                                    {actionStatusesMap[activity?.status] || "Statut"}
+                                    Changer le statut
                                 </Button>
                             </span>
                         </Tooltip>
                         {activity?.status && (
-                            <Badge color={activity.status === 'COMPLETED' ? 'green.2' : activity.status === 'CANCELLED' ? 'red.4' : 'yellow.4'} variant="filled" radius="sm" size="sm" className="!text-slate-900">
-                                {actionStatusesMap[activity?.status]}
-                            </Badge>
+                            <span className="inline-flex items-center px-2 py-0.5 text-[10.5px] uppercase tracking-wider rounded border bg-white/15 text-white border-white/40">
+                                {statusCfg.label}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -229,9 +234,7 @@ const MeetingDetailsTabs = () => {
 
             {locked.locked && (
                 <Alert color={locked.status === 'COMPLETED' ? 'green' : 'red'} variant="light" className="border">
-                    <Text size="sm">
-                        {locked.status === 'COMPLETED' ? 'Cette réunion est clôturée. Aucune modification possible.' : 'Cette réunion est annulée. Aucune modification possible.'}
-                    </Text>
+                    <Text size="sm">{lockedMessage}</Text>
                 </Alert>
             )}
 
@@ -244,19 +247,19 @@ const MeetingDetailsTabs = () => {
                                     key={key}
                                     type="button"
                                     onClick={() => setActiveTab(key)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === key
                                         ? 'bg-green-600 text-white shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}
                                 >
-                                    <Icon size={14} />
+                                    <Icon size={14} aria-hidden="true" />
                                     {label}
                                 </button>
                             )
                         ))}
                     </div>
                 </div>
-                <div className="p-5">
+                <div className="p-4">
                     {Object.entries(tabData).map(([key, { content, hide }]) => (
                         !hide && activeTab === key && (
                             <div key={key}>{content}</div>
@@ -282,9 +285,9 @@ const MeetingDetailsTabs = () => {
                 }}
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
-                    {/* LOT 40 P1: grille responsive (mobile→single col) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
+                            size="sm"
                             label="Responsable"
                             placeholder="Sélectionner le responsable"
                             data={emps}
@@ -293,6 +296,7 @@ const MeetingDetailsTabs = () => {
                         />
 
                         <DateInput
+                            size="sm"
                             maxDate={new Date()}
                             label="Date"
                             placeholder="Sélectionner la date"
@@ -302,16 +306,18 @@ const MeetingDetailsTabs = () => {
                     </div>
 
                     <Select
+                        size="sm"
                         label="Statut"
                         placeholder="Sélectionner le statut"
-                        data={inspectionStatuses}
+                        data={ACTIVITY_STATUS_OPTIONS}
                         {...form.getInputProps("status")}
                         withAsterisk
                     />
 
-                    {form.values.status === 'CLOSED' ? (
+                    {form.values.status === 'COMPLETED' ? (
                         <>
                             <NumberInput
+                                size="sm"
                                 label="Évaluation qualité (1-10)"
                                 placeholder="Note de la réunion"
                                 withAsterisk
@@ -319,14 +325,16 @@ const MeetingDetailsTabs = () => {
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Rapport de clôture"
-                                placeholder="Synthèse, validation des décisions, commentaires finaux..."
+                                placeholder="Synthèse, validation des décisions, commentaires finaux"
                                 withAsterisk
                                 minRows={3}
                                 {...form.getInputProps("closingReport")}
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Leçons apprises"
                                 withAsterisk
                                 placeholder="Points d'amélioration, bonnes pratiques identifiées, recommandations"
@@ -336,6 +344,7 @@ const MeetingDetailsTabs = () => {
                         </>
                     ) : (
                         <Textarea
+                            size="sm"
                             label="Commentaire"
                             withAsterisk
                             placeholder="Saisir votre commentaire"
@@ -345,18 +354,17 @@ const MeetingDetailsTabs = () => {
                     )}
 
                     <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="default" onClick={close}>
+                        <Button variant="default" size="sm" onClick={close}>
                             Annuler
                         </Button>
-                        <Button color="green" type='submit' disabled={locked.locked}>
+                        <Button color="teal" size="sm" type='submit' disabled={locked.locked}>
                             Soumettre
                         </Button>
                     </div>
                 </form>
             </Modal>
+        </div>
+    );
+};
 
-        </div >
-    )
-}
-
-export default MeetingDetailsTabs
+export default MeetingDetailsTabs;

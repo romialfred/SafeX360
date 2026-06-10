@@ -63,7 +63,7 @@ const SOURCES = [
 
 const AddCorrective = () => {
     return (
-        <div className="safex-page max-w-6xl mx-auto space-y-6">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -77,12 +77,12 @@ const AddCorrective = () => {
             />
 
             {/* Grille des 4 sources */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {SOURCES.map((src) => (
                     <Link
                         key={src.id}
                         to={src.route}
-                        className="group bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all overflow-hidden focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                        className="group bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-[box-shadow,border-color] overflow-hidden focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
                     >
                         <div className={`px-5 py-4 border-b ${src.accent} flex items-center gap-3`}>
                             <div className="w-10 h-10 rounded-lg bg-white/70 flex items-center justify-center flex-shrink-0">
@@ -101,7 +101,7 @@ const AddCorrective = () => {
                             </h3>
                             <IconArrowRight
                                 size={16}
-                                className="text-slate-500 group-hover:translate-x-0.5 transition-transform"
+                                className="text-slate-500"
                                 aria-hidden="true"
                             />
                         </div>
@@ -138,7 +138,7 @@ const AddCorrective = () => {
                 <p className="text-[13px] text-slate-600 leading-relaxed">
                     Selon la norme <span className="text-slate-900">ISO 45001 §10.2</span>, toute action
                     corrective doit être traçable à sa cause racine et à son événement déclencheur.
-                    SafeX 360 enforce ce principe en exigeant une source explicite à la création.
+                    SafeX 360 applique ce principe en exigeant une source explicite à la création.
                 </p>
             </div>
         </div>

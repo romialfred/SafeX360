@@ -2,7 +2,7 @@ import Details from "../../../../components/LaggingIndicator/CorrectiveAction/De
 
 const DetailsPage = () => {
     return (
-        <div className="p-5"><Details /></div>
+        <div><Details /></div>
     )
 }
 
