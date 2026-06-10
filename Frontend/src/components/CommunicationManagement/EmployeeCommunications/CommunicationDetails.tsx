@@ -1,88 +1,108 @@
-import { Tabs, Breadcrumbs, Text } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { Tabs } from '@mantine/core';
+import { IconBellRinging, IconInfoCircle, IconMessageCircle, IconUsers } from '@tabler/icons-react';
+import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import PageHeader from '../../UtilityComp/PageHeader';
 import CommunicationDetailsTab from './CommunicationDetailsTab';
 import CommunicationRecipientsPage from './CommunicationRecipientsPage';
-import { Link, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import CommunicationNotificationHistory from './CommunicationNotificationHistory';
 import { getCommunicationById } from '../../../services/CommunicationService';
 import { getAllDepartments, getEmployeesWithPosition } from '../../../services/HrmsService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
 import { GetAllWorkArea } from '../../../services/WorkAreaService';
-import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
-import CommunicationNotificationHistory from './CommunicationNotificationHistory';
+import { errorNotification } from '../../../utility/NotificationUtility';
+
+/**
+ * Fiche d'une communication HSE : détails et planification, destinataires,
+ * historique des notifications générées.
+ */
 
 const CommunicationDetails = () => {
-    const { id } = useParams(); // id string hogi (e.g. "COMM-001")
+    const { id } = useParams();
 
     const [communication, setCommunication] = useState<any>({});
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
     const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
     const [zoneMap, setZoneMap] = useState<Record<string, any>>({});
     const dispatch = useDispatch();
+
     useEffect(() => {
         dispatch(showOverlay());
-        getCommunicationById(id).then((data) => {
-            setCommunication(data);
-            console.log(data);
-
-        }).finally(() => {
-            dispatch(hideOverlay());
-        })
+        getCommunicationById(id)
+            .then((data) => {
+                setCommunication(data ?? {});
+            })
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || "La communication n'a pas pu être chargée");
+            })
+            .finally(() => {
+                dispatch(hideOverlay());
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     useEffect(() => {
-        getEmployeesWithPosition().then((data) => {
-            setEmpMap(mapIdToName(data));
-        });
-        getAllDepartments().then((data) => {
-            setDepartmentMap(mapIdToName(data));
-        });
-        GetAllWorkArea({}).then((data) => {
-            setZoneMap(mapIdToName(data));
-        });
+        getEmployeesWithPosition()
+            .then((data) => setEmpMap(mapIdToName(data)))
+            .catch(() => {
+                // les noms d'employés resteront vides
+            });
+        getAllDepartments()
+            .then((data) => setDepartmentMap(mapIdToName(data)))
+            .catch(() => {
+                // les noms de départements resteront vides
+            });
+        GetAllWorkArea({})
+            .then((data) => setZoneMap(mapIdToName(data)))
+            .catch(() => {
+                // les noms de zones resteront vides
+            });
     }, []);
 
     return (
-        <div className='p-5'>
-            <div>
-                <div className="text-2xl text-blue-500 w-fit">Communication Details</div>
-                <Breadcrumbs mt="xs" mb="lg">
-                    <Link className="hover:!underline" to="/">
-                        <Text variant="gradient">Home</Text>
-                    </Link>
-                    <Link className="hover:!underline" to="/communications">
-                        <Text variant="gradient">Employee Communications</Text>
-                    </Link>
-                    <Text variant="gradient">Communication Details</Text>
-                </Breadcrumbs>
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Communication Sécurité' },
+                    { label: 'Communications HSE', to: '/communications' },
+                    { label: 'Détail de la communication' },
+                ]}
+                icon={<IconMessageCircle size={22} stroke={2} />}
+                iconColor="pink"
+                title={communication?.title || 'Détail de la communication'}
+                subtitle="Contenu, planification, destinataires et historique des envois"
+            />
 
-
-            <Tabs defaultValue="details">
-                <Tabs.List mb="md">
-                    <Tabs.Tab value="details">Details</Tabs.Tab>
-                    <Tabs.Tab value="recipients">Recipients</Tabs.Tab>
-                    <Tabs.Tab value="notifications">Notification History</Tabs.Tab>
+            <Tabs defaultValue="details" color="teal">
+                <Tabs.List>
+                    <Tabs.Tab value="details" leftSection={<IconInfoCircle size={15} />}>
+                        Détails
+                    </Tabs.Tab>
+                    <Tabs.Tab value="recipients" leftSection={<IconUsers size={15} />}>
+                        Destinataires
+                    </Tabs.Tab>
+                    <Tabs.Tab value="notifications" leftSection={<IconBellRinging size={15} />}>
+                        Historique des envois
+                    </Tabs.Tab>
                 </Tabs.List>
 
                 <Tabs.Panel value="details" pt="md">
-                    <CommunicationDetailsTab communication={communication} departmentMap={departmentMap} zoneMap={zoneMap} />
-
-
+                    <CommunicationDetailsTab
+                        communication={communication}
+                        departmentMap={departmentMap}
+                        zoneMap={zoneMap}
+                    />
                 </Tabs.Panel>
-
-
 
                 <Tabs.Panel value="recipients" pt="md">
                     <CommunicationRecipientsPage communication={communication} empMap={empMap} />
-
-
                 </Tabs.Panel>
 
                 <Tabs.Panel value="notifications" pt="md">
                     <CommunicationNotificationHistory communicationId={communication?.id} />
-
-
                 </Tabs.Panel>
             </Tabs>
         </div>

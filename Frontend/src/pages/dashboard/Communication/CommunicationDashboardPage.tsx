@@ -1,9 +1,8 @@
 import CommunicationDashboard from "../../../components/CommunicationManagement/CommunicationDashboard"
 
+// Le composant racine porte déjà `p-5 space-y-4 w-full` : le wrapper n'ajoute rien.
 const CommunicationDashboardPage = () => {
-    return (
-        <div className="p-5"><CommunicationDashboard /></div>
-    )
+    return <CommunicationDashboard />
 }
 
 export default CommunicationDashboardPage

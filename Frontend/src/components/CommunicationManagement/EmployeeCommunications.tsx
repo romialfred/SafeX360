@@ -1,92 +1,72 @@
-import { useState, useMemo, useEffect, MouseEvent, ReactNode } from 'react';
-import {
-    Card,
-    Text,
-    Group,
-    Button,
-    Select,
-    Breadcrumbs,
-    Input,
-    ActionIcon,
-    Tooltip,
-    Loader,
-} from '@mantine/core';
-import {
-    IconSearch,
-    IconPlus,
-    IconCheck,
-    IconMessageCircle,
-    IconBolt,
-    IconAlertTriangle,
-    IconLayoutGrid,
-    IconLayoutList,
-    IconPlayerPlay,
-    IconPlayerPause,
-    IconPlayerStop,
-} from '@tabler/icons-react';
-import { communicationTypes, communicationCategories } from '../../Data/dummyData/communicationData';
-
-import { Link, useNavigate } from 'react-router-dom';
-import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
-import { FilterMatchMode } from 'primereact/api';
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { Toolbar } from 'primereact/toolbar';
+import { useState, useMemo, useEffect, MouseEvent, ReactNode } from 'react';
+import { ActionIcon, Badge, Button, Select, TextInput, Tooltip } from '@mantine/core';
+import {
+    IconCircleCheck,
+    IconDownload,
+    IconLayoutGrid,
+    IconLayoutList,
+    IconMessageCircle,
+    IconPlayerPause,
+    IconPlayerPlay,
+    IconPlayerStop,
+    IconPlus,
+    IconSearch,
+    IconSend,
+} from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { modals } from '@mantine/modals';
+import PageHeader from '../UtilityComp/PageHeader';
+import KpiTile from '../UtilityComp/KpiTile';
+import EmptyState from '../UtilityComp/EmptyState';
 import {
     getAllCommunications,
     resumeCommunicationSchedule,
     pauseCommunicationSchedule,
     cancelCommunicationSchedule,
 } from '../../services/CommunicationService';
-import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../slices/OverlaySlice';
-import { formatDateShort } from '../../utility/DateFormats';
 import { getAllDepartments } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
-import CommunicationCard from './EmployeeCommunications/CommunicationCard';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
-import { modals } from '@mantine/modals';
-import StatusSummaryCards, { type StatusSummaryCardConfig } from './StatusSummaryCards';
+import CommunicationCard from './EmployeeCommunications/CommunicationCard';
+import {
+    CATEGORY_COLORS,
+    CATEGORY_OPTIONS,
+    TYPE_OPTIONS,
+    categoryLabel,
+    commStatusConfig,
+    formatDateFr,
+    parseRecipientIds,
+    scheduleTypeLabel,
+    typeLabel,
+    urgencyConfig,
+} from './communicationLabels';
 
+/**
+ * Registre des communications HSE : diffusion, planification et suivi des
+ * messages sécurité envoyés aux employés. Vue tableau ou cartes, filtres,
+ * export CSV et pilotage des planifications (reprendre / suspendre / annuler).
+ */
 
+const ALL = 'ALL';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-}
-const formatEnumValue = (value?: string | null) => {
-    if (!value) return '-';
-    return value
-        .toString()
-        .toLowerCase()
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-};
+type ScheduleAction = 'resume' | 'pause' | 'cancel';
 
-const normalizeRecipients = (recipients: unknown): number[] => {
-    if (Array.isArray(recipients)) {
-        return recipients.map((r) => Number(r)).filter((r) => !Number.isNaN(r));
-    }
-
-    if (typeof recipients === 'string') {
-        try {
-            const parsed = JSON.parse(recipients);
-            if (Array.isArray(parsed)) {
-                return parsed.map((r) => Number(r)).filter((r) => !Number.isNaN(r));
-            }
-        } catch (_error) {
-            return [];
-        }
-    }
-
-    return [];
+const STATUS_BUCKETS: Record<string, string[]> = {
+    ACTIVE: ['ACTIVE', 'SCHEDULED', 'PENDING', 'RUNNING'],
+    PAUSED: ['PAUSED', 'ON_HOLD', 'HALTED'],
+    COMPLETED: ['COMPLETED', 'FINISHED', 'DONE'],
+    CANCELLED: ['CANCELLED', 'CANCELED'],
 };
 
 const normalizeCommunication = (comm: any) => {
-    const recipientsList = normalizeRecipients(comm?.recipients);
+    const recipientsList = parseRecipientIds(comm?.recipients);
     const schedule = comm?.schedule ?? {};
 
     return {
@@ -101,76 +81,58 @@ const normalizeCommunication = (comm: any) => {
     };
 };
 
-const getActionLoaderColor = (color: string) => {
-    switch (color) {
-        case 'yellow':
-            return 'orange';
-        case 'green':
-            return 'teal';
-        default:
-            return color;
-    }
-};
-
 const EmployeeCommunications = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedType, setSelectedType] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-
+    const navigate = useNavigate();
     const dispatch = useDispatch();
+
+    const [communications, setCommunications] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [departmentMap, setDepartmentMap] = useState<Record<number, any>>({});
     const [departments, setDepartments] = useState<any[]>([]);
-    const [communications, setCommunications] = useState<any[]>([]);
     const [viewType, setViewType] = useState<'table' | 'card'>('table');
-    const navigate = useNavigate();
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [_globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [scheduleActionLoading, setScheduleActionLoading] = useState<Record<number, 'resume' | 'pause' | 'cancel'>>({});
+    const [scheduleActionLoading, setScheduleActionLoading] = useState<Record<number, ScheduleAction>>({});
 
-
-    useEffect(() => {
-        dispatch(showOverlay());
-        getAllCommunications().then((data) => {
-            const normalized = (data || []).map((comm: any) => normalizeCommunication(comm));
-            setCommunications(normalized);
-        }).finally(() => {
-            dispatch(hideOverlay());
-        });
-        getAllDepartments().then((data) => {
-            setDepartments(data);
-            setDepartmentMap(mapIdToName(data));
-        }).finally(() => {
-            dispatch(hideOverlay());
-        });
-    }, [])
+    const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState<string>(ALL);
+    const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
+    const [departmentFilter, setDepartmentFilter] = useState<string>(ALL);
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
 
     useEffect(() => {
-        if (!Object.keys(departmentMap).length) {
-            return;
-        }
+        setLoading(true);
+        getAllCommunications()
+            .then((data) => {
+                setCommunications((data || []).map((comm: any) => normalizeCommunication(comm)));
+            })
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des communications');
+            })
+            .finally(() => setLoading(false));
 
-        setCommunications((prev) => {
-            let changed = false;
-            const updated = prev.map((comm) => {
-                const key = comm?.departmentId !== undefined && comm?.departmentId !== null
-                    ? Number(comm.departmentId)
-                    : null;
-                if (key === null || Number.isNaN(key)) {
-                    return comm;
-                }
-                const mappedName = departmentMap[key]?.name;
-                if (mappedName && comm.departmentName !== mappedName) {
-                    changed = true;
-                    return { ...comm, departmentName: mappedName };
-                }
-                return comm;
+        getAllDepartments()
+            .then((data) => {
+                setDepartments(data ?? []);
+                setDepartmentMap(mapIdToName(data ?? []));
+            })
+            .catch(() => {
+                // les noms de départements resteront vides
             });
-            return changed ? updated : prev;
-        });
-    }, [departmentMap]);
+    }, []);
 
-    const handleScheduleAction = async (communication: any, action: 'resume' | 'pause' | 'cancel') => {
+    const resolveDepartmentName = (comm: any) => {
+        const key = comm?.departmentId !== undefined && comm?.departmentId !== null
+            ? Number(comm.departmentId)
+            : null;
+        return (key !== null && !Number.isNaN(key) ? departmentMap[key]?.name : undefined)
+            ?? comm?.departmentName
+            ?? comm?.department?.name
+            ?? (typeof comm?.department === 'string' ? comm.department : null)
+            ?? '—';
+    };
+
+    // ─── Pilotage des planifications ─────────────────────────────────────────
+
+    const handleScheduleAction = async (communication: any, action: ScheduleAction) => {
         const id = communication?.id;
         if (!id) return;
 
@@ -178,10 +140,10 @@ const EmployeeCommunications = () => {
         setScheduleActionLoading((prev) => ({ ...prev, [numericId]: action }));
         dispatch(showOverlay());
 
-        const successMessages: Record<typeof action, string> = {
-            resume: 'Schedule resumed successfully',
-            pause: 'Schedule paused successfully',
-            cancel: 'Schedule cancelled successfully',
+        const successMessages: Record<ScheduleAction, string> = {
+            resume: 'Planification reprise',
+            pause: 'Planification suspendue',
+            cancel: 'Planification annulée',
         };
 
         try {
@@ -198,8 +160,7 @@ const EmployeeCommunications = () => {
             setCommunications((prev) => prev.map((comm) => (comm.id === normalized.id ? normalized : comm)));
             successNotification(successMessages[action]);
         } catch (error: any) {
-            const message = error?.response?.data?.message || 'Failed to update schedule';
-            errorNotification(message);
+            errorNotification(error?.response?.data?.message || 'La mise à jour de la planification a échoué');
         } finally {
             dispatch(hideOverlay());
             setScheduleActionLoading((prev) => {
@@ -210,55 +171,51 @@ const EmployeeCommunications = () => {
         }
     };
 
-    const getScheduleActionDisabled = (communication: any, action: 'resume' | 'pause' | 'cancel') => {
+    const getScheduleActionDisabled = (communication: any, action: ScheduleAction) => {
         const status = String(communication?.status ?? '').toUpperCase();
         const hasSchedule = Boolean(communication?.scheduleType);
         if (!hasSchedule) return true;
 
-        if (action === 'resume') {
-            return !['PAUSED', 'CANCELLED'].includes(status);
-        }
-
-        if (action === 'pause') {
-            return ['PAUSED', 'CANCELLED', 'COMPLETED'].includes(status);
-        }
-
-        if (action === 'cancel') {
-            return ['CANCELLED', 'COMPLETED'].includes(status);
-        }
-
-        return false;
+        if (action === 'resume') return !['PAUSED', 'CANCELLED'].includes(status);
+        if (action === 'pause') return ['PAUSED', 'CANCELLED', 'COMPLETED'].includes(status);
+        return ['CANCELLED', 'COMPLETED'].includes(status);
     };
 
     const renderScheduleActionButtons = (communication: any) => {
         const id = Number(communication?.id);
         const loadingAction = scheduleActionLoading[id];
 
-        const actionMeta: Record<'resume' | 'pause' | 'cancel', { label: string; color: string; icon: ReactNode; confirmation: string; confirmLabel: string; }> = {
+        const actionMeta: Record<ScheduleAction, {
+            label: string;
+            color: string;
+            icon: ReactNode;
+            confirmation: string;
+            confirmLabel: string;
+        }> = {
             resume: {
-                label: 'Resume schedule',
-                color: 'green',
-                icon: <IconPlayerPlay size={16} />,
-                confirmation: 'This will resume the schedule and calculate the next run time. Do you want to continue?',
-                confirmLabel: 'Resume',
+                label: 'Reprendre la planification',
+                color: 'teal',
+                icon: <IconPlayerPlay size={14} stroke={1.5} />,
+                confirmation: 'La planification reprendra et la prochaine exécution sera recalculée. Continuer ?',
+                confirmLabel: 'Reprendre',
             },
             pause: {
-                label: 'Pause schedule',
-                color: 'yellow',
-                icon: <IconPlayerPause size={16} />,
-                confirmation: 'This will pause the schedule and stop future runs until resumed. Continue?',
-                confirmLabel: 'Pause',
+                label: 'Suspendre la planification',
+                color: 'orange',
+                icon: <IconPlayerPause size={14} stroke={1.5} />,
+                confirmation: "Les envois seront suspendus jusqu'à la reprise de la planification. Continuer ?",
+                confirmLabel: 'Suspendre',
             },
             cancel: {
-                label: 'Cancel schedule',
+                label: 'Annuler la planification',
                 color: 'red',
-                icon: <IconPlayerStop size={16} />,
-                confirmation: 'This will cancel the schedule permanently. You will need to create a new schedule to resume. Are you sure?',
-                confirmLabel: 'Cancel Schedule',
+                icon: <IconPlayerStop size={14} stroke={1.5} />,
+                confirmation: 'La planification sera annulée définitivement. Il faudra en créer une nouvelle pour reprendre les envois. Confirmer ?',
+                confirmLabel: 'Annuler la planification',
             },
         };
 
-        const openConfirmation = (event: MouseEvent<HTMLButtonElement>, action: 'resume' | 'pause' | 'cancel') => {
+        const openConfirmation = (event: MouseEvent<HTMLButtonElement>, action: ScheduleAction) => {
             event.preventDefault();
             event.stopPropagation();
             if (getScheduleActionDisabled(communication, action) || loadingAction) {
@@ -267,14 +224,17 @@ const EmployeeCommunications = () => {
 
             const meta = actionMeta[action];
             modals.openConfirmModal({
-                title: meta.label,
+                title: <span className="text-base">{meta.label}</span>,
                 centered: true,
                 children: (
-                    <Text size="sm">
+                    <span className="text-sm">
+                        Communication : <strong>{communication?.title}</strong>.
+                        <br />
                         {meta.confirmation}
-                    </Text>
+                    </span>
                 ),
-                labels: { confirm: meta.confirmLabel, cancel: 'Close' },
+                labels: { confirm: meta.confirmLabel, cancel: 'Fermer' },
+                cancelProps: { color: 'gray', variant: 'default' },
                 confirmProps: { color: meta.color },
                 onConfirm: () => handleScheduleAction(communication, action),
             });
@@ -286,384 +246,420 @@ const EmployeeCommunications = () => {
             const isLoading = loadingAction === action;
 
             return (
-                <Tooltip key={action} label={meta.label}>
+                <Tooltip key={action} label={meta.label} withArrow>
                     <ActionIcon
                         color={meta.color}
                         variant="light"
-                        size="md"
+                        size="sm"
                         disabled={isDisabled}
+                        loading={isLoading}
                         onClick={(event) => openConfirmation(event, action)}
+                        aria-label={meta.label}
                     >
-                        {isLoading ? <Loader size="sm" color={getActionLoaderColor(meta.color)} /> : meta.icon}
+                        {meta.icon}
                     </ActionIcon>
                 </Tooltip>
             );
         });
     };
 
-    // Filter communications based on search criteria
+    // ─── Filtres et compteurs ────────────────────────────────────────────────
+
     const filteredCommunications = useMemo(() => {
-        let filtered = communications;
-
-        if (searchTerm) {
-            const term = searchTerm.toLowerCase();
-            filtered = filtered.filter(comm => {
-                const titleMatch = (comm?.title ?? '').toLowerCase().includes(term);
-                const contentMatch = (comm?.content ?? '').toLowerCase().includes(term);
-                const typeMatch = (comm?.type ?? '').toLowerCase().includes(term);
-                const senderSource = comm?.sender ?? comm?.senderName ?? '';
-                const senderMatch = senderSource.toLowerCase().includes(term);
-
-                return titleMatch || contentMatch || typeMatch || senderMatch;
-            });
-        }
-
-        if (selectedType) {
-            filtered = filtered.filter(comm => comm.type === selectedType);
-        }
-
-        if (selectedCategory) {
-            filtered = filtered.filter(comm => comm.category === selectedCategory);
-        }
-
-        if (selectedDepartment) {
-            filtered = filtered.filter(comm => comm.departmentId == selectedDepartment);
-        }
-
-
-
-        return filtered;
-    }, [searchTerm, selectedType, selectedCategory, selectedDepartment, communications]);
-
-    const summaryCards = useMemo<StatusSummaryCardConfig[]>(() => {
-        const total = communications.length;
-        const normalize = (status: any) => String(status ?? '').toUpperCase();
-        const activeStatuses = new Set(['ACTIVE', 'SCHEDULED', 'PENDING', 'RUNNING']);
-        const completedStatuses = new Set(['COMPLETED', 'FINISHED', 'DONE']);
-        const pausedStatuses = new Set(['PAUSED', 'ON_HOLD', 'HALTED', 'CANCELLED', 'CANCELED']);
-        const now = new Date();
-
-        const formatCount = (value: number) => new Intl.NumberFormat('en-US').format(value);
-        const percentageLabel = (count: number) => (
-            total > 0 ? `${Math.round((count / total) * 100)}% of total` : 'Awaiting first record'
-        );
-
-        const active = communications.filter((comm) => {
-            const status = normalize(comm?.status);
-            if (activeStatuses.has(status)) return true;
-            if (completedStatuses.has(status) || pausedStatuses.has(status)) return false;
-            if (comm?.expiresAt) {
-                return new Date(comm.expiresAt) > now;
+        const q = search.trim().toLowerCase();
+        return communications.filter((comm) => {
+            if (typeFilter !== ALL && comm.type !== typeFilter) return false;
+            if (categoryFilter !== ALL && comm.category !== categoryFilter) return false;
+            if (departmentFilter !== ALL && String(comm.departmentId ?? '') !== departmentFilter) return false;
+            if (statusFilter !== ALL) {
+                const status = String(comm.status ?? '').toUpperCase();
+                if (!STATUS_BUCKETS[statusFilter]?.includes(status)) return false;
             }
-            return Boolean(comm?.scheduleType);
-        }).length;
+            if (!q) return true;
+            const haystack = [comm.title, comm.content, comm.senderName, comm.sender]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
+        });
+    }, [communications, search, typeFilter, categoryFilter, departmentFilter, statusFilter]);
 
-        const completed = communications.filter((comm) =>
-            completedStatuses.has(normalize(comm?.status))
-        ).length;
-
-        const paused = communications.filter((comm) =>
-            pausedStatuses.has(normalize(comm?.status))
-        ).length;
-
-        return [
-            {
-                key: 'total',
-                title: 'Total Communications',
-                value: formatCount(total),
-                icon: IconMessageCircle,
-                color: 'blue',
-                description: 'All HSE communications created and tracked.',
-            },
-            {
-                key: 'active',
-                title: 'Active',
-                value: formatCount(active),
-                icon: IconBolt,
-                color: 'teal',
-                description: 'Currently scheduled or running deliveries.',
-                meta: { label: percentageLabel(active), color: 'teal' },
-            },
-            {
-                key: 'completed',
-                title: 'Completed',
-                value: formatCount(completed),
-                icon: IconCheck,
-                color: 'indigo',
-                description: 'Campaigns finished with completion status.',
-                meta: { label: percentageLabel(completed), color: 'indigo' },
-            },
-            {
-                key: 'paused',
-                title: 'Paused',
-                value: formatCount(paused),
-                icon: IconAlertTriangle,
-                color: 'orange',
-                description: 'Schedules paused and awaiting action.',
-                meta: { label: percentageLabel(paused), color: 'orange' },
-            },
-        ] satisfies StatusSummaryCardConfig[];
+    const counts = useMemo(() => {
+        const inBucket = (comm: any, bucket: string) =>
+            STATUS_BUCKETS[bucket].includes(String(comm?.status ?? '').toUpperCase());
+        return {
+            total: communications.length,
+            active: communications.filter((c) => inBucket(c, 'ACTIVE')).length,
+            completed: communications.filter((c) => inBucket(c, 'COMPLETED')).length,
+            paused: communications.filter((c) => inBucket(c, 'PAUSED') || inBucket(c, 'CANCELLED')).length,
+        };
     }, [communications]);
 
-
-    // --- Templates for columns ---
-
-    const leftToolbarTemplate = () => {
-        return (
-            <div className="flex gap-2">
-                <Select
-                    placeholder="Filter by Type"
-                    data={communicationTypes}
-                    value={selectedType}
-                    onChange={setSelectedType}
-                    clearable
-                />
-                <Select
-                    placeholder="Filter by Category"
-                    data={communicationCategories}
-                    value={selectedCategory}
-                    onChange={setSelectedCategory}
-                    clearable
-                />
-                <Select
-                    placeholder="Filter by Department"
-                    data={departments.map(dep => ({ value: "" + dep.id, label: dep.name }))}
-                    value={selectedDepartment}
-                    onChange={setSelectedDepartment}
-                    clearable
-                />
-                {/* <Select
-                    placeholder="Filter by Status"
-                    data={[
-                        { value: 'Active', label: 'Active' },
-                        { value: 'Archived', label: 'Archived' },
-                        { value: 'Draft', label: 'Draft' }
-                    ]}
-                    value={selectedStatus}
-                    onChange={setSelectedStatus}
-                    clearable
-                /> */}
-            </div>
+    const exportCsv = () => {
+        const headers = [
+            'Titre', 'Type', 'Catégorie', 'Urgence', 'Statut', 'Département',
+            'Destinataires', 'Planification', 'Prochaine exécution', 'Échéance',
+        ];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredCommunications.map((comm) =>
+            [
+                comm.title,
+                typeLabel(comm.type),
+                categoryLabel(comm.category),
+                urgencyConfig(comm.urgency).label,
+                commStatusConfig(comm.status).label,
+                resolveDepartmentName(comm) === '—' ? '' : resolveDepartmentName(comm),
+                comm.recipientCount ?? 0,
+                comm.scheduleType ? scheduleTypeLabel(comm.scheduleType) : '',
+                comm.nextRunAt ? formatDateFr(comm.nextRunAt) : '',
+                comm.expiresAt ? formatDateFr(comm.expiresAt) : '',
+            ].map(escape).join(';')
         );
-    };
-    const rightToolbarTemplate = () => {
-        return (
-            <div className='flex items-center gap-3'>
-                <div className="flex items-center gap-1 border border-blue-200 rounded-lg p-1 bg-blue-50">
-                    <Tooltip label="Table View">
-                        <ActionIcon
-                            variant={viewType === 'table' ? 'filled' : 'light'}
-                            color="blue"
-                            onClick={() => setViewType('table')}
-                        >
-                            <IconLayoutList size={18} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Card View">
-                        <ActionIcon
-                            variant={viewType === 'card' ? 'filled' : 'light'}
-                            color="blue"
-                            onClick={() => setViewType('card')}
-                        >
-                            <IconLayoutGrid size={18} />
-                        </ActionIcon>
-                    </Tooltip>
-                </div>
-                <Input
-                    value={_globalFilterValue}
-                    leftSection={<IconSearch size={16} />}
-                    placeholder="Search Communication..."
-                    type="search"
-                    size='md'
-                    onChange={onGlobalFilterChange}
-                />
-            </div>
-        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `communications_hse_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredCommunications.length} communication${filteredCommunications.length > 1 ? 's' : ''} exportée${filteredCommunications.length > 1 ? 's' : ''}`);
     };
 
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
-    const titleTemplate = (rowData: any) => (
-        <div className="flex flex-col gap-1">
-            <a
-                onClick={() => navigate(`communications-details/${rowData.id}`)}
-                className="text-sm text-blue-700 hover:underline cursor-pointer transition"
+    const titleBody = (comm: any) => (
+        <div className="min-w-0 max-w-md">
+            <button
+                type="button"
+                onClick={() => navigate(`communications-details/${comm.id}`)}
+                className="text-[13px] text-slate-800 leading-snug text-left hover:text-teal-700 hover:underline"
             >
-                {rowData.title}
-            </a>
-
-
-
-            {/* <p className="text-xs text-gray-500">{rowData.content}</p> */}
+                {comm.title}
+            </button>
+            <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(comm.type)}</p>
         </div>
     );
 
-    const typeTemplate = (rowData: any) => formatEnumValue(rowData.type);
-
-    const categoryTemplate = (rowData: any) => rowData.category ?? '-';
-
-
-
-    const formatDateValue = (value?: string | null) => (value ? formatDateShort(value) : '-');
-
-    const recipientsTemplate = (rowData: any) => (
-        <span style={{ fontWeight: 500 }}>{rowData.recipientCount ?? 0}</span>
+    const categoryBody = (comm: any) => (
+        <Badge
+            color={CATEGORY_COLORS[comm.category ?? ''] ?? 'gray'}
+            variant="light"
+            size="sm"
+            radius="sm"
+        >
+            {categoryLabel(comm.category)}
+        </Badge>
     );
 
-
-
-    const dateTemplate = (rowData: any) => (
-        <div>
-            <span>{formatDateValue(rowData.scheduledAt)}</span>
-
-        </div>
-    );
-    const expiryDateTemplate = (rowData: any) => (
-        <div>
-            <span>{formatDateValue(rowData.expiresAt)}</span>
-
-        </div>
-    );
-
-    const departmentTemplate = (rowData: any) => (
-        <span>{resolveDepartmentName(rowData)}</span>
-    );
-
-    const urgencyTemplate = (rowData: any) => {
-        const value = formatEnumValue(rowData.urgency);
-        const severity = rowData.urgency === 'URGENT' ? 'danger' : 'success';
+    const urgencyBody = (comm: any) => {
+        const cfg = urgencyConfig(comm.urgency);
         return (
-            <Tag
-                value={value}
-                severity={severity}
-                className="text-xs px-2 py-1 rounded-full"
-            />
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
         );
     };
 
-    const statusTemplate = (rowData: any) => {
-        const status = rowData.status;
-        const normalized = formatEnumValue(status);
-        const severity = (() => {
-            if (!status) return 'secondary';
-            const upper = status.toString().toUpperCase();
-            if (upper === 'COMPLETED' || upper === 'ACTIVE' || upper === 'SENT') return 'success';
-            if (upper === 'PENDING' || upper === 'SCHEDULED') return 'warning';
-            if (upper === 'FAILED' || upper === 'CANCELLED') return 'danger';
-            return 'secondary';
-        })();
-
+    const statusBody = (comm: any) => {
+        const cfg = commStatusConfig(comm.status);
         return (
-            <Tag
-                value={normalized}
-                severity={severity}
-                className="text-xs px-2 py-1 rounded-full"
-            />
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
         );
     };
 
-    const scheduleTypeTemplate = (rowData: any) => formatEnumValue(rowData.scheduleType);
-
-    const nextRunTemplate = (rowData: any) => (
-        <div>
-            <span>{formatDateValue(rowData.nextRunAt)}</span>
-
+    const scheduleBody = (comm: any) => (
+        <div className="min-w-0">
+            <p className="text-[12.5px] text-slate-600">
+                {comm.scheduleType ? scheduleTypeLabel(comm.scheduleType) : '—'}
+            </p>
+            {comm.nextRunAt && (
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                    Prochain envoi : {formatDateFr(comm.nextRunAt)}
+                </p>
+            )}
         </div>
     );
-    const scheduleActionsTemplate = (rowData: any) => (
-        <Group gap="xs">{renderScheduleActionButtons(rowData)}</Group>
+
+    const actionsBody = (comm: any) => (
+        <div className="flex gap-1.5 justify-center">{renderScheduleActionButtons(comm)}</div>
     );
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-        setSearchTerm(value);
+
+    const hasActiveFilters =
+        search.trim() !== '' ||
+        typeFilter !== ALL ||
+        categoryFilter !== ALL ||
+        departmentFilter !== ALL ||
+        statusFilter !== ALL;
+
+    const resetFilters = () => {
+        setSearch('');
+        setTypeFilter(ALL);
+        setCategoryFilter(ALL);
+        setDepartmentFilter(ALL);
+        setStatusFilter(ALL);
     };
 
-    const resolveDepartmentName = (comm: any) => {
-        const key = comm?.departmentId !== undefined && comm?.departmentId !== null
-            ? Number(comm.departmentId)
-            : null;
-        return (key !== null && !Number.isNaN(key) ? departmentMap[key]?.name : undefined)
-            ?? comm?.departmentName
-            ?? comm?.department?.name
-            ?? (typeof comm?.department === 'string' ? comm.department : null)
-            ?? '-';
-    };
-
+    const emptyState = (
+        <EmptyState
+            icon={<IconSearch size={24} />}
+            title={hasActiveFilters ? 'Aucune communication ne correspond aux filtres' : 'Aucune communication enregistrée'}
+            description={
+                hasActiveFilters
+                    ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.'
+                    : 'Créez la première communication sécurité à diffuser aux équipes.'
+            }
+            compact
+            action={
+                hasActiveFilters ? (
+                    <Button variant="default" size="xs" onClick={resetFilters}>
+                        Réinitialiser les filtres
+                    </Button>
+                ) : (
+                    <Button
+                        size="xs"
+                        color="teal"
+                        leftSection={<IconPlus size={14} />}
+                        onClick={() => navigate('create-communications')}
+                    >
+                        Nouvelle communication
+                    </Button>
+                )
+            }
+        />
+    );
 
     return (
-        <div className='flex flex-col gap-3 p-5'>
-            <div className='flex justify-between items-center'>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Communication Sécurité' },
+                    { label: 'Communications HSE' },
+                ]}
+                icon={<IconMessageCircle size={22} stroke={2} />}
+                iconColor="pink"
+                title="Communications HSE"
+                subtitle="Diffusion et suivi des communications sécurité envoyées aux employés"
+                actions={
+                    <Button
+                        size="sm"
+                        color="teal"
+                        leftSection={<IconPlus size={15} />}
+                        onClick={() => navigate('create-communications')}
+                    >
+                        Nouvelle communication
+                    </Button>
+                }
+            />
 
-                <div>
-                    {/* LOT 40 P1: text-blue-500 -> text-slate-900 for consistent header tokens */}
-                    <div className="text-2xl text-slate-900 w-fit">Employee Communications</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-
-                        <Text variant="gradient">Employee Communications</Text>
-                    </Breadcrumbs>
-                </div>
-
-                <Button size="xs" onClick={() => navigate('create-communications')} leftSection={<IconPlus />} variant="gradient">New Communication</Button>
+            {/* KPI du registre */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile
+                    label="Total communications"
+                    value={loading ? '…' : counts.total}
+                    tone="slate"
+                    icon={<IconMessageCircle size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Actives"
+                    value={loading ? '…' : counts.active}
+                    tone="green"
+                    icon={<IconSend size={14} stroke={1.8} />}
+                    referenceValue="Planifiées ou en diffusion"
+                />
+                <KpiTile
+                    label="Terminées"
+                    value={loading ? '…' : counts.completed}
+                    tone="teal"
+                    icon={<IconCircleCheck size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Suspendues / annulées"
+                    value={loading ? '…' : counts.paused}
+                    tone="amber"
+                    icon={<IconPlayerPause size={14} stroke={1.8} />}
+                    referenceValue="En attente d'une décision"
+                />
             </div>
-            <p className='italic text-gray-600'>Manage Health & Safety communications sent to employees</p>
-            <div className='flex flex-col gap-8'>
-                <StatusSummaryCards cards={summaryCards} />
 
-
-
-                <Card shadow="sm" padding="md" radius="md" withBorder>
-                    <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
-                    {viewType === 'table' ? (
-                        <DataTable
-                            selectionMode="single" size='small' stripedRows removableSort paginator rows={10}
-                            value={filteredCommunications}
-                            responsiveLayout="scroll"
-                            className='[&_.p-datatable-tbody]:!text-sm'
-                            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                            rowsPerPageOptions={[10, 25, 50]} dataKey="name" filters={filters} globalFilterFields={['title', 'type', 'category', 'department']}
-                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" onFilter={(e) => setFilters(e.filters)}
+            {/* Barre de filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                        placeholder="Rechercher par titre, contenu ou expéditeur…"
+                        leftSection={<IconSearch size={14} />}
+                        value={search}
+                        onChange={(e) => setSearch(e.currentTarget.value)}
+                        size="xs"
+                        className="flex-1 min-w-[220px]"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Tous types' }, ...TYPE_OPTIONS]}
+                        value={typeFilter}
+                        onChange={(v) => setTypeFilter(v ?? ALL)}
+                        size="xs"
+                        w={170}
+                        aria-label="Filtrer par type"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Toutes catégories' }, ...CATEGORY_OPTIONS]}
+                        value={categoryFilter}
+                        onChange={(v) => setCategoryFilter(v ?? ALL)}
+                        size="xs"
+                        w={155}
+                        aria-label="Filtrer par catégorie"
+                    />
+                    <Select
+                        data={[
+                            { value: ALL, label: 'Tous départements' },
+                            ...departments.map((dep) => ({ value: String(dep.id), label: dep.name })),
+                        ]}
+                        value={departmentFilter}
+                        onChange={(v) => setDepartmentFilter(v ?? ALL)}
+                        size="xs"
+                        w={165}
+                        searchable
+                        aria-label="Filtrer par département"
+                    />
+                    <Select
+                        data={[
+                            { value: ALL, label: 'Tous statuts' },
+                            { value: 'ACTIVE', label: 'Actives' },
+                            { value: 'PAUSED', label: 'En pause' },
+                            { value: 'COMPLETED', label: 'Terminées' },
+                            { value: 'CANCELLED', label: 'Annulées' },
+                        ]}
+                        value={statusFilter}
+                        onChange={(v) => setStatusFilter(v ?? ALL)}
+                        size="xs"
+                        w={135}
+                        aria-label="Filtrer par statut"
+                    />
+                    <div className="flex items-center gap-2 ml-auto">
+                        <div className="inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-slate-50 p-0.5">
+                            <Tooltip label="Vue tableau" withArrow>
+                                <ActionIcon
+                                    variant={viewType === 'table' ? 'filled' : 'subtle'}
+                                    color="teal"
+                                    size="sm"
+                                    onClick={() => setViewType('table')}
+                                    aria-label="Vue tableau"
+                                >
+                                    <IconLayoutList size={14} stroke={1.5} />
+                                </ActionIcon>
+                            </Tooltip>
+                            <Tooltip label="Vue cartes" withArrow>
+                                <ActionIcon
+                                    variant={viewType === 'card' ? 'filled' : 'subtle'}
+                                    color="teal"
+                                    size="sm"
+                                    onClick={() => setViewType('card')}
+                                    aria-label="Vue cartes"
+                                >
+                                    <IconLayoutGrid size={14} stroke={1.5} />
+                                </ActionIcon>
+                            </Tooltip>
+                        </div>
+                        <Button
+                            variant="default"
+                            size="xs"
+                            leftSection={<IconDownload size={14} />}
+                            onClick={exportCsv}
+                            disabled={!filteredCommunications.length}
                         >
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" header="Title" body={titleTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="type" header="Type" body={typeTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Category" body={categoryTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="urgency" header="Urgency" body={urgencyTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={statusTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="departmentId" header="Department" body={departmentTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="recipientCount" header="Recipients" body={recipientsTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="scheduleType" header="Schedule Type" body={scheduleTypeTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="nextRunAt" header="Next Run" body={nextRunTemplate} />
-                            {/* <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Acknowledgment" body={ackTemplate} /> */}
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="date" header="Scheduled Date" body={dateTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="date" header="Expiry Date" body={expiryDateTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} body={scheduleActionsTemplate} header="Actions" />
-                        </DataTable>
-                    ) : (
-                        filteredCommunications.length ? (
-                            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                                {filteredCommunications.map((comm) => (
-                                    <CommunicationCard
-                                        key={comm.id ?? comm.title}
-                                        communication={comm}
-                                        departmentName={resolveDepartmentName(comm)}
-                                        actions={renderScheduleActionButtons(comm)}
-                                        onViewDetails={() => navigate(`communications-details/${comm.id}`)}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center text-sm text-gray-500 py-6">No communications found</div>
-                        )
-                    )}
-                </Card>
+                            Exporter CSV
+                        </Button>
+                    </div>
+                </div>
+                <p className="text-[11.5px] text-slate-500 mt-2">
+                    {loading
+                        ? 'Chargement du registre…'
+                        : `${filteredCommunications.length} communication${filteredCommunications.length > 1 ? 's' : ''} affichée${filteredCommunications.length > 1 ? 's' : ''} sur ${communications.length}`}
+                </p>
             </div>
 
+            {/* Registre */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loading ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredCommunications.length ? (
+                    emptyState
+                ) : viewType === 'table' ? (
+                    <DataTable
+                        value={filteredCommunications}
+                        size="small"
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    >
+                        <Column header="Communication" body={titleBody} sortable sortField="title" />
+                        <Column header="Catégorie" body={categoryBody} sortable sortField="category" style={{ width: '8.5rem' }} />
+                        <Column header="Urgence" body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
+                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column
+                            header="Département"
+                            body={(comm: any) => (
+                                <span className="text-[12.5px] text-slate-600">{resolveDepartmentName(comm)}</span>
+                            )}
+                            sortable
+                            sortField="departmentId"
+                            style={{ width: '9rem' }}
+                        />
+                        <Column
+                            header="Destinataires"
+                            body={(comm: any) => (
+                                <span className="text-[12.5px] text-slate-600 tabular-nums">{comm.recipientCount ?? 0}</span>
+                            )}
+                            sortable
+                            sortField="recipientCount"
+                            style={{ width: '7.5rem' }}
+                            bodyStyle={{ textAlign: 'center' }}
+                            headerStyle={{ textAlign: 'center' }}
+                        />
+                        <Column header="Planification" body={scheduleBody} sortable sortField="nextRunAt" style={{ width: '11rem' }} />
+                        <Column
+                            header="Échéance"
+                            body={(comm: any) => (
+                                <span className="text-[12.5px] text-slate-600">{formatDateFr(comm.expiresAt)}</span>
+                            )}
+                            sortable
+                            sortField="expiresAt"
+                            style={{ width: '7.5rem' }}
+                        />
+                        <Column
+                            header="Actions"
+                            body={actionsBody}
+                            headerStyle={{ width: '7.5rem', textAlign: 'center' }}
+                            bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
+                        />
+                    </DataTable>
+                ) : (
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 p-1">
+                        {filteredCommunications.map((comm) => (
+                            <CommunicationCard
+                                key={comm.id ?? comm.title}
+                                communication={comm}
+                                departmentName={resolveDepartmentName(comm)}
+                                actions={renderScheduleActionButtons(comm)}
+                                onViewDetails={() => navigate(`communications-details/${comm.id}`)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

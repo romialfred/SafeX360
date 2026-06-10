@@ -1,20 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    Box,
-    Card,
-    Center,
-    Grid,
-    Group,
-    Loader,
-    SimpleGrid,
-    Text,
-    ThemeIcon,
-    Timeline,
-    Title,
-    ScrollArea,
-    Badge,
-    Skeleton,
-} from '@mantine/core';
+import { Badge, Box, Center, Loader, ScrollArea, ThemeIcon, Timeline } from '@mantine/core';
 import { DonutChart, BarChart } from '@mantine/charts';
 import {
     IconAlertTriangle,
@@ -22,16 +7,31 @@ import {
     IconChartBar,
     IconClock,
     IconMail,
-    IconUsers,
     IconMessageCircle,
+    IconUsers,
 } from '@tabler/icons-react';
+import { useElementSize } from '@mantine/hooks';
 import PageHeader from '../UtilityComp/PageHeader';
+import KpiTile from '../UtilityComp/KpiTile';
 import ErrorBanner from '../UtilityComp/ErrorBanner';
+import EmptyState from '../UtilityComp/EmptyState';
 import { getCommunicationStats, getRecentCommunications } from '../../services/CommunicationService';
 import { getAllDepartments } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
-import { formatDateShort } from '../../utility/DateFormats';
-import { useElementSize } from '@mantine/hooks';
+import {
+    categoryLabel,
+    commStatusConfig,
+    formatDateFr,
+    isUrgentValue,
+    parseRecipientIds,
+    scheduleTypeLabel,
+    typeLabel,
+} from './communicationLabels';
+
+/**
+ * Tableau de bord Communication HSE : volumes par canal, par catégorie et par
+ * département, et fil des dernières communications diffusées.
+ */
 
 type CommunicationTypeCount = { type?: string | null; total?: number | null };
 type CommunicationCategoryCount = { category?: string | null; total?: number | null };
@@ -50,15 +50,13 @@ type CommunicationScheduleSummary = {
     nextRunAt?: string | null;
 };
 
-type RecipientValue = string | string[] | null | undefined;
-
 type CommunicationSummary = {
     id: number | string;
     category?: string | null;
     createdAt?: string | null;
     departmentId?: number | null;
     expiresAt?: string | null;
-    recipients?: RecipientValue;
+    recipients?: string | string[] | null;
     senderName?: string | null;
     title?: string | null;
     type?: string | null;
@@ -91,21 +89,11 @@ const DEFAULT_STATS: CommunicationStatsResponse = {
     byDepartment: [],
 };
 
-const formatEnumValue = (value?: string | null) => {
-    if (!value) return '-';
-    return value
-        .toString()
-        .toLowerCase()
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-};
-
 const formatCount = (value?: number | null) => {
     if (typeof value !== 'number' || Number.isNaN(value)) {
-        return '--';
+        return '—';
     }
-    return value.toLocaleString();
+    return value.toLocaleString('fr-FR');
 };
 
 const calculateShare = (part?: number | null, total?: number | null) => {
@@ -115,51 +103,19 @@ const calculateShare = (part?: number | null, total?: number | null) => {
     return Math.round((part / total) * 100);
 };
 
-const resolveRecipientCount = (recipients: RecipientValue): number => {
-    if (!recipients) return 0;
-    if (Array.isArray(recipients)) return recipients.length;
-    if (typeof recipients === 'string') {
-        return recipients
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean).length;
-    }
-    return 0;
-};
-
-const getScheduleBadgeColor = (status?: string | null) => {
-    const normalized = (status ?? '').toUpperCase();
-    switch (normalized) {
-        case 'ACTIVE':
-            return 'green';
-        case 'PAUSED':
-        case 'PENDING':
-            return 'orange';
-        case 'CANCELLED':
-        case 'CANCELED':
-        case 'FAILED':
-            return 'red';
-        default:
-            return 'gray';
-    }
-};
-
-const getCategoryColor = (category?: string | null) => {
-    switch ((category ?? '').toLowerCase()) {
-        case 'safety':
-            return 'red';
-        case 'operations':
-            return 'blue';
-        case 'training':
-            return 'green';
-        case 'administrative':
-            return 'gray';
-        case 'emergency':
-            return 'orange';
-        default:
-            return 'gray';
-    }
-};
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <h3
+        className="text-slate-800"
+        style={{
+            fontFamily: "'Source Serif 4', Georgia, serif",
+            fontSize: '14.5px',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+        }}
+    >
+        {children}
+    </h3>
+);
 
 const CommunicationDashboard = () => {
     const [stats, setStats] = useState<CommunicationStatsResponse>(DEFAULT_STATS);
@@ -201,7 +157,7 @@ const CommunicationDashboard = () => {
                 setDepartmentMap(mapIdToName(departmentsList) as DepartmentsMap);
             } catch (_err) {
                 if (!ignore) {
-                    setError('Unable to load communication dashboard data at the moment.');
+                    setError('Les données du tableau de bord sont momentanément indisponibles.');
                     setStats(DEFAULT_STATS);
                     setRecentCommunications([]);
                     setDepartmentMap({});
@@ -251,7 +207,7 @@ const CommunicationDashboard = () => {
 
     const typeChartData = useMemo(
         () => sortedByType.map((item, index) => ({
-            name: formatEnumValue(item.type),
+            name: typeLabel(item.type),
             value: item.total ?? 0,
             color: CHART_COLORS[index % CHART_COLORS.length],
         })),
@@ -260,7 +216,7 @@ const CommunicationDashboard = () => {
 
     const categoryChartData = useMemo(
         () => sortedByCategory.map((item, index) => ({
-            name: formatEnumValue(item.category),
+            name: categoryLabel(item.category),
             total: item.total ?? 0,
             color: CHART_COLORS[index % CHART_COLORS.length],
         })),
@@ -268,8 +224,8 @@ const CommunicationDashboard = () => {
     );
 
     const resolveDepartmentName = useCallback((id?: number | null) => {
-        if (id === null || typeof id === 'undefined') return 'Unassigned';
-        return departmentMap[id]?.name || `Department ${id}`;
+        if (id === null || typeof id === 'undefined') return 'Non affecté';
+        return departmentMap[id]?.name || `Département ${id}`;
     }, [departmentMap]);
 
     const departmentDonutData = useMemo(
@@ -282,14 +238,9 @@ const CommunicationDashboard = () => {
     );
 
     const departmentDonutSize = useMemo(() => {
-        const effectiveHeight = departmentChartHeight || 0;
-        const effectiveWidth = departmentChartWidth || 0;
-        const limitingDimension = Math.min(effectiveHeight, effectiveWidth);
-
+        const limitingDimension = Math.min(departmentChartHeight || 0, departmentChartWidth || 0);
         if (limitingDimension > 0) {
-            const rawSize = limitingDimension - 48; // account for padding around the chart
-            const clamped = Math.max(200, Math.min(rawSize, 360));
-            return clamped;
+            return Math.max(200, Math.min(limitingDimension - 48, 360));
         }
         return 240;
     }, [departmentChartHeight, departmentChartWidth]);
@@ -312,46 +263,8 @@ const CommunicationDashboard = () => {
     const topTypeShare = calculateShare(topType?.total ?? null, totalByType);
     const topDepartmentShare = calculateShare(topDepartment?.total ?? null, totalByDepartment);
 
-    const metricCards = useMemo(
-        () => [
-            {
-                label: 'Total communications',
-                primary: loading ? '--' : formatCount(totalByType),
-                secondary: 'Records',
-                icon: IconMail,
-                iconColor: 'blue',
-                background: 'linear-gradient(135deg, rgba(76,110,245,0.18) 0%, rgba(37,201,173,0.05) 100%)',
-            },
-            {
-                label: 'Top Type',
-                primary: loading ? '--' : formatEnumValue(topType?.type),
-                secondary: loading ? 'Calculating most common channel' : topType ? `${formatCount(topType.total)} communications${topTypeShare ? ` • ${topTypeShare}%` : ''}` : 'Awaiting statistics',
-                icon: IconBell,
-                iconColor: 'orange',
-                background: 'linear-gradient(135deg, rgba(255,146,43,0.18) 0%, rgba(253,203,110,0.08) 100%)',
-            },
-            {
-                label: 'Top Category',
-                primary: loading ? '--' : formatEnumValue(topCategory?.category),
-                secondary: loading ? 'Crunching category mix' : topCategory ? `${formatCount(topCategory.total)} communications` : 'Awaiting statistics',
-                icon: IconChartBar,
-                iconColor: 'teal',
-                background: 'linear-gradient(135deg, rgba(18,184,134,0.18) 0%, rgba(111,197,169,0.08) 100%)',
-            },
-            {
-                label: 'Département le plus actif',
-                primary: loading ? '--' : resolveDepartmentName(topDepartment?.departmentId),
-                secondary: loading ? 'Highlighting departments' : topDepartment ? `${formatCount(topDepartment.total)} communications${topDepartmentShare ? ` • ${topDepartmentShare}% share` : ''}` : 'Awaiting statistics',
-                icon: IconUsers,
-                iconColor: 'grape',
-                background: 'linear-gradient(135deg, rgba(132,94,247,0.18) 0%, rgba(232,201,255,0.1) 100%)',
-            },
-        ],
-        [loading, totalByType, topType, topTypeShare, topCategory, topDepartment, topDepartmentShare, resolveDepartmentName],
-    );
-
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -364,332 +277,343 @@ const CommunicationDashboard = () => {
                 subtitle="ISO 45001 §7.4 — Communications internes, sensibilisation et engagement des collaborateurs"
             />
 
-            {/* LOT 41 E: ErrorBanner unifié */}
             {error && (
                 <ErrorBanner tone="error" title="Échec du chargement">
                     {error}
                 </ErrorBanner>
             )}
 
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-                {/* LOT 40 P1: removed dead commented ThemeIcon block from metric cards */}
-                {metricCards.map((metric) => {
-                    return (
-                        <Card
-                            key={metric.label}
-                            shadow="sm"
-                            padding="lg"
-                            radius="lg"
-                            withBorder
-                            className="relative overflow-hidden"
-                            style={{ borderColor: 'var(--mantine-color-gray-3)' }}
-                        >
-                            <Box className="absolute inset-0 pointer-events-none" style={{ background: metric.background }} />
-                            <Group justify="space-between" align="flex-start" className="relative z-10">
-                                <Box>
-                                    <Text size="xs" c="dimmed" className="uppercase tracking-wide">
-                                        {metric.label}
-                                    </Text>
-                                    <Text style={{ fontSize: '1rem', lineHeight: 1.1 }} mt={6}>
-                                        {metric.primary}
-                                    </Text>
-                                    <Text size="sm" c="dimmed" mt={8}>
-                                        {metric.secondary}
-                                    </Text>
-                                </Box>
-                            </Group>
-                        </Card>
-                    );
-                })}
-            </SimpleGrid>
+            {/* KPI */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile
+                    label="Total communications"
+                    value={loading ? '…' : formatCount(totalByType)}
+                    tone="slate"
+                    icon={<IconMail size={14} stroke={1.8} />}
+                    referenceValue="Toutes périodes confondues"
+                />
+                <KpiTile
+                    label="Canal principal"
+                    value={loading ? '…' : topType ? typeLabel(topType.type) : '—'}
+                    tone="blue"
+                    icon={<IconBell size={14} stroke={1.8} />}
+                    referenceValue={
+                        loading
+                            ? undefined
+                            : topType
+                                ? `${formatCount(topType.total)} envoi${(topType.total ?? 0) > 1 ? 's' : ''}${topTypeShare ? ` · ${topTypeShare}%` : ''}`
+                                : 'En attente de statistiques'
+                    }
+                />
+                <KpiTile
+                    label="Catégorie principale"
+                    value={loading ? '…' : topCategory ? categoryLabel(topCategory.category) : '—'}
+                    tone="teal"
+                    icon={<IconChartBar size={14} stroke={1.8} />}
+                    referenceValue={
+                        loading
+                            ? undefined
+                            : topCategory
+                                ? `${formatCount(topCategory.total)} communication${(topCategory.total ?? 0) > 1 ? 's' : ''}`
+                                : 'En attente de statistiques'
+                    }
+                />
+                <KpiTile
+                    label="Département le plus actif"
+                    value={loading ? '…' : topDepartment ? resolveDepartmentName(topDepartment.departmentId) : '—'}
+                    tone="violet"
+                    icon={<IconUsers size={14} stroke={1.8} />}
+                    referenceValue={
+                        loading
+                            ? undefined
+                            : topDepartment
+                                ? `${formatCount(topDepartment.total)} communication${(topDepartment.total ?? 0) > 1 ? 's' : ''}${topDepartmentShare ? ` · ${topDepartmentShare}% du volume` : ''}`
+                                : 'En attente de statistiques'
+                    }
+                />
+            </div>
 
-            <Grid gutter="xl" align="stretch">
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
-                        <Group justify="space-between" mb="lg">
-                            <Title order={3}>Communications par type</Title>
-                            <Text size="sm" c="dimmed">
-                                {loading
-                                    ? 'Chargement...'
-                                    : typeChartData.length
-                                        ? `${typeChartData.length} canal${typeChartData.length > 1 ? 'x' : ''} suivi${typeChartData.length > 1 ? 's' : ''}`
-                                        : 'Aucune donnée'}
-                            </Text>
-                        </Group>
-                        <Grid align="center" justify='center'>
-                            <Grid.Col span={{ base: 12, sm: 7 }}>
-                                <Box h={260} className="flex items-center justify-center">
-                                    {loading ? (
-                                        <Center h="100%">
-                                            <Loader color="blue" />
-                                        </Center>
-                                    ) : typeChartData.length ? (
-                                        <DonutChart
-                                            data={typeChartData}
-                                            size={220}
-                                            thickness={42}
-                                            withTooltip
-                                            paddingAngle={3}
-                                            strokeWidth={2}
-                                            chartLabel={totalByType ? formatCount(totalByType) : '0'}
-                                            valueFormatter={(value) => formatCount(value)}
-                                            pieProps={{ cornerRadius: 8 }}
-                                        />
-                                    ) : (
-                                        <Center h="100%">
-                                            <Text c="dimmed">No type data available.</Text>
-                                        </Center>
-                                    )}
-                                </Box>
-                            </Grid.Col>
-                            <Grid.Col span={{ base: 12, sm: 5 }}>
-                                <Group gap="sm" wrap="wrap">
-                                    {typeChartData.map((item) => (
-                                        <Card
-                                            key={item.name}
-                                            padding="xs"
-                                            radius="md"
-                                            withBorder
-                                            className="flex items-center !flex-row gap-3"
-                                            style={{ borderColor: 'var(--mantine-color-gray-3)' }}
-                                        >
-                                            <Box
-                                                w={10}
-                                                h={10}
+            {/* Répartitions par canal et par catégorie */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Communications par canal</SectionTitle>
+                        <span className="text-[11.5px] text-slate-500">
+                            {loading
+                                ? 'Chargement…'
+                                : typeChartData.length
+                                    ? `${typeChartData.length} can${typeChartData.length > 1 ? 'aux suivis' : 'al suivi'}`
+                                    : 'Aucune donnée'}
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div className="sm:col-span-7">
+                            <Box h={250} className="flex items-center justify-center">
+                                {loading ? (
+                                    <Center h="100%">
+                                        <Loader color="teal" size="sm" />
+                                    </Center>
+                                ) : typeChartData.length ? (
+                                    <DonutChart
+                                        data={typeChartData}
+                                        size={210}
+                                        thickness={40}
+                                        withTooltip
+                                        paddingAngle={3}
+                                        strokeWidth={2}
+                                        chartLabel={totalByType ? formatCount(totalByType) : '0'}
+                                        valueFormatter={(value) => formatCount(value)}
+                                        pieProps={{ cornerRadius: 6 }}
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        icon={<IconChartBar size={20} />}
+                                        title="Aucune donnée par canal"
+                                        description="Les volumes apparaîtront après les premières diffusions."
+                                        compact
+                                    />
+                                )}
+                            </Box>
+                        </div>
+                        <div className="sm:col-span-5">
+                            <div className="flex flex-col gap-1.5">
+                                {typeChartData.map((item) => (
+                                    <div
+                                        key={item.name}
+                                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-1.5"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span
+                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                                 style={{ backgroundColor: item.color }}
-                                                className="rounded-full"
+                                                aria-hidden="true"
                                             />
-                                            <Box className='!flex-row'>
-                                                <Text size="xs">{item.name}</Text>
-                                                <Text size="xs" c="dimmed">{formatCount(item.value)}</Text>
-                                            </Box>
-                                        </Card>
-                                    ))}
-                                </Group>
-                            </Grid.Col>
-                        </Grid>
-                    </Card>
-                </Grid.Col>
+                                            <span className="text-[12px] text-slate-700 truncate">{item.name}</span>
+                                        </div>
+                                        <span className="text-[12px] text-slate-500 tabular-nums">{formatCount(item.value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
-                        <Group justify="space-between" mb="lg">
-                            <Title order={3}>Communications by Category</Title>
-                            <Text size="sm" c="dimmed">
-                                {loading
-                                    ? 'Loading breakdown...'
-                                    : categoryChartData.length
-                                        ? 'Category split of recent communications'
-                                        : 'No data available'}
-                            </Text>
-                        </Group>
-                        <Box h={280}>
-                            {loading ? (
-                                <Center h="100%">
-                                    <Loader color="blue" />
-                                </Center>
-                            ) : categoryChartData.length ? (
-                                <BarChart
-                                    h={260}
-                                    data={categoryChartData}
-                                    dataKey="name"
-                                    series={[{ name: 'total', color: CHART_COLORS[0], label: 'Communications' }]}
-                                    withTooltip
-                                    // withLegend
-                                    legendProps={{ verticalAlign: 'bottom', height: 36 }}
-                                    gridAxis="y"
-                                    strokeDasharray="3 3"
-                                    maxBarWidth={28}
-                                    barProps={{ radius: [8, 8, 0, 0] }}
-                                    valueFormatter={(value) => `${formatCount(value)}`}
-                                />
-                            ) : (
-                                <Center h="100%">
-                                    <Text c="dimmed">No category data available.</Text>
-                                </Center>
-                            )}
-                        </Box>
-                    </Card>
-                </Grid.Col>
-            </Grid>
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Communications par catégorie</SectionTitle>
+                        <span className="text-[11.5px] text-slate-500">
+                            {loading
+                                ? 'Chargement…'
+                                : categoryChartData.length
+                                    ? 'Répartition des envois'
+                                    : 'Aucune donnée'}
+                        </span>
+                    </div>
+                    <Box h={260}>
+                        {loading ? (
+                            <Center h="100%">
+                                <Loader color="teal" size="sm" />
+                            </Center>
+                        ) : categoryChartData.length ? (
+                            <BarChart
+                                h={250}
+                                data={categoryChartData}
+                                dataKey="name"
+                                series={[{ name: 'total', color: CHART_COLORS[0], label: 'Communications' }]}
+                                withTooltip
+                                gridAxis="y"
+                                strokeDasharray="3 3"
+                                maxBarWidth={28}
+                                barProps={{ radius: [6, 6, 0, 0] }}
+                                valueFormatter={(value) => formatCount(value)}
+                            />
+                        ) : (
+                            <EmptyState
+                                icon={<IconChartBar size={20} />}
+                                title="Aucune donnée par catégorie"
+                                description="Les volumes apparaîtront après les premières diffusions."
+                                compact
+                            />
+                        )}
+                    </Box>
+                </div>
+            </div>
 
-            <Grid gutter="xl" align="stretch">
-                <Grid.Col span={{ base: 12, lg: 6 }}>
-                    <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
-                        <Group justify="space-between" mb="md">
-                            <Title order={4}>Department Distribution</Title>
-                            {/* LOT 40 P1: loading skeleton + dash fallback for null state */}
-                            {loading ? (
-                                <Skeleton h={20} w={120} />
-                            ) : topDepartmentShare ? (
-                                <Text size="sm" c="dimmed">Top share: {topDepartmentShare}%</Text>
-                            ) : (
-                                <Text size="sm" c="dimmed">—</Text>
-                            )}
-                        </Group>
-                        <Grid align="stretch">
-                            <Grid.Col span={{ base: 12, sm: 7 }} className="flex">
-                                <Box
-                                    ref={departmentChartRef}
-                                    className="flex items-center justify-center h-full w-full"
-                                    style={{ minHeight: 260 }}
-                                >
-                                    {loading ? (
-                                        <Center h="100%">
-                                            <Loader color="blue" />
-                                        </Center>
-                                    ) : departmentDonutData.length ? (
-                                        <DonutChart
-                                            data={departmentDonutData}
-                                            size={departmentDonutSize}
-                                            thickness={departmentDonutThickness}
-                                            withTooltip
-                                            paddingAngle={2}
-                                            strokeWidth={2}
-                                            chartLabel={totalByDepartment ? formatCount(totalByDepartment) : '0'}
-                                            valueFormatter={(value) => formatCount(value)}
-                                            pieProps={{ cornerRadius: 8 }}
-                                        />
-                                    ) : (
-                                        <Center h="100%">
-                                            <Text c="dimmed">No department data available.</Text>
-                                        </Center>
-                                    )}
-                                </Box>
-                            </Grid.Col>
-                            <Grid.Col span={{ base: 12, sm: 5 }} className="flex">
-                                <Group gap="sm" wrap="wrap" align="stretch" className="my-auto">
-                                    {departmentDonutData.map((item) => (
-                                        <Card
-                                            key={item.name}
-                                            padding="xs"
-                                            radius="md"
-                                            withBorder
-                                            className="flex !flex-row items-center gap-3"
-                                            style={{ borderColor: 'var(--mantine-color-gray-3)' }}
-                                        >
-                                            <Box
-                                                w={10}
-                                                h={10}
+            {/* Répartition par département + fil récent */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Répartition par département</SectionTitle>
+                        <span className="text-[11.5px] text-slate-500">
+                            {loading
+                                ? 'Chargement…'
+                                : topDepartmentShare
+                                    ? `Part principale : ${topDepartmentShare}%`
+                                    : '—'}
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div className="sm:col-span-7">
+                            <Box
+                                ref={departmentChartRef}
+                                className="flex items-center justify-center w-full"
+                                style={{ minHeight: 250 }}
+                            >
+                                {loading ? (
+                                    <Center h="100%">
+                                        <Loader color="teal" size="sm" />
+                                    </Center>
+                                ) : departmentDonutData.length ? (
+                                    <DonutChart
+                                        data={departmentDonutData}
+                                        size={departmentDonutSize}
+                                        thickness={departmentDonutThickness}
+                                        withTooltip
+                                        paddingAngle={2}
+                                        strokeWidth={2}
+                                        chartLabel={totalByDepartment ? formatCount(totalByDepartment) : '0'}
+                                        valueFormatter={(value) => formatCount(value)}
+                                        pieProps={{ cornerRadius: 6 }}
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        icon={<IconUsers size={20} />}
+                                        title="Aucune donnée par département"
+                                        description="Les volumes apparaîtront après les premières diffusions."
+                                        compact
+                                    />
+                                )}
+                            </Box>
+                        </div>
+                        <div className="sm:col-span-5">
+                            <div className="flex flex-col gap-1.5">
+                                {departmentDonutData.map((item) => (
+                                    <div
+                                        key={item.name}
+                                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-1.5"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span
+                                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                                 style={{ backgroundColor: item.color }}
-                                                className="rounded-full"
+                                                aria-hidden="true"
                                             />
-                                            <Box>
-                                                <Text size="xs">{item.name}</Text>
-                                                <Text size="xs" c="dimmed">{formatCount(item.value)}</Text>
-                                            </Box>
-                                        </Card>
-                                    ))}
-                                </Group>
-                            </Grid.Col>
-                        </Grid>
-                    </Card>
-                </Grid.Col>
+                                            <span className="text-[12px] text-slate-700 truncate">{item.name}</span>
+                                        </div>
+                                        <span className="text-[12px] text-slate-500 tabular-nums">{formatCount(item.value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <Grid.Col span={{ base: 12, lg: 6 }}>
-                    <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ height: '100%' }}>
-                        <Group justify="space-between" mb="md">
-                            <Title order={4}>Recent Communications</Title>
-                            <Text size="sm" c="dimmed">
-                                {loading
-                                    ? 'Fetching latest records...'
-                                    : timelineItems.length
-                                        ? 'Most recent five entries'
-                                        : 'No recent communications'}
-                            </Text>
-                        </Group>
-                        <ScrollArea h={300} >
-                            {loading ? (
-                                <Center py="xl">
-                                    <Loader color="blue" />
-                                </Center>
-                            ) : (
-                                <Timeline bulletSize={18} p="md" lineWidth={2} radius="lg" color="blue">
-                                    {timelineItems.length ? (
-                                        timelineItems.map((comm) => {
-                                            const urgency = (comm.urgency ?? '').toUpperCase();
-                                            const isUrgent = ['URGENT', 'HIGH', 'CRITICAL'].includes(urgency);
-                                            const scheduleStatus = comm.schedule?.status;
-                                            const recipientsTotal = resolveRecipientCount(comm.recipients);
-                                            const departmentName = resolveDepartmentName(comm.departmentId);
-                                            const BulletIcon = isUrgent ? IconAlertTriangle : IconMail;
-                                            const bulletColor = isUrgent ? 'red' : 'blue';
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Dernières communications</SectionTitle>
+                        <span className="text-[11.5px] text-slate-500">
+                            {loading
+                                ? 'Chargement…'
+                                : timelineItems.length
+                                    ? 'Cinq entrées les plus récentes'
+                                    : 'Aucune communication récente'}
+                        </span>
+                    </div>
+                    <ScrollArea h={300}>
+                        {loading ? (
+                            <Center py="xl">
+                                <Loader color="teal" size="sm" />
+                            </Center>
+                        ) : timelineItems.length ? (
+                            <Timeline bulletSize={22} lineWidth={2} color="teal" className="px-2 pt-1">
+                                {timelineItems.map((comm) => {
+                                    const urgent = isUrgentValue(comm.urgency);
+                                    const scheduleStatus = comm.schedule?.status;
+                                    const statusCfg = scheduleStatus ? commStatusConfig(scheduleStatus) : null;
+                                    const recipientsTotal = parseRecipientIds(comm.recipients).length;
+                                    const departmentName = resolveDepartmentName(comm.departmentId);
+                                    const BulletIcon = urgent ? IconAlertTriangle : IconMail;
 
-                                            return (
-                                                <Timeline.Item
-                                                    key={comm.id}
-                                                    title={comm.title || 'Untitled Communication'}
-                                                    bullet={(
-                                                        <ThemeIcon radius="xl" size={26} color={bulletColor} variant={isUrgent ? 'filled' : 'light'}>
-                                                            <BulletIcon size={16} />
-                                                        </ThemeIcon>
-                                                    )}
+                                    return (
+                                        <Timeline.Item
+                                            key={comm.id}
+                                            title={
+                                                <span className="text-[13px] text-slate-800">
+                                                    {comm.title || 'Communication sans titre'}
+                                                </span>
+                                            }
+                                            bullet={(
+                                                <ThemeIcon
+                                                    radius="xl"
+                                                    size={22}
+                                                    color={urgent ? 'red' : 'teal'}
+                                                    variant={urgent ? 'filled' : 'light'}
                                                 >
-                                                    <Group justify="space-between" align="flex-start" mb="xs" wrap="wrap">
-                                                        <Group gap="xs" wrap="wrap">
-                                                            {comm.category && (
-                                                                <Badge color={getCategoryColor(comm.category)} variant="light" size="sm">
-                                                                    {formatEnumValue(comm.category)}
-                                                                </Badge>
-                                                            )}
-                                                            {isUrgent && (
-                                                                <Badge color="red" variant="filled" size="sm">
-                                                                    Urgent
-                                                                </Badge>
-                                                            )}
-                                                            {scheduleStatus && (
-                                                                <Badge color={getScheduleBadgeColor(scheduleStatus)} variant="light" size="sm">
-                                                                    {formatEnumValue(scheduleStatus)}
-                                                                </Badge>
-                                                            )}
-                                                            {comm.schedule?.scheduleType && (
-                                                                <Badge color="blue" variant="outline" size="sm">
-                                                                    {formatEnumValue(comm.schedule.scheduleType)}
-                                                                </Badge>
-                                                            )}
-                                                            <Badge color="gray" variant="light" size="sm">
-                                                                {departmentName}
-                                                            </Badge>
-                                                        </Group>
-                                                        <Text size="xs" c="dimmed">{comm.createdAt ? formatDateShort(comm.createdAt) : '-'}</Text>
-                                                    </Group>
-                                                    <Text size="sm" c="dimmed" mb="xs">
-                                                        {formatEnumValue(comm.type)} • {recipientsTotal} {recipientsTotal === 1 ? 'recipient' : 'recipients'}
-                                                    </Text>
-                                                    {comm.schedule?.nextRunAt && (
-                                                        <Group gap="xs" mb="xs">
-                                                            <ThemeIcon size={20} radius="xl" color="blue" variant="light">
-                                                                <IconClock size={14} />
-                                                            </ThemeIcon>
-                                                            <Text size="xs" c="dimmed">
-                                                                Next run: {formatDateShort(comm.schedule.nextRunAt)}
-                                                            </Text>
-                                                        </Group>
+                                                    <BulletIcon size={13} />
+                                                </ThemeIcon>
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {comm.category && (
+                                                        <Badge color="gray" variant="light" size="xs" radius="sm">
+                                                            {categoryLabel(comm.category)}
+                                                        </Badge>
                                                     )}
-                                                    {comm.expiresAt && (
-                                                        <Text size="xs" c="dimmed" mb="xs">
-                                                            Expires: {formatDateShort(comm.expiresAt)}
-                                                        </Text>
+                                                    {urgent && (
+                                                        <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-rose-700">
+                                                            Urgente
+                                                        </span>
                                                     )}
-                                                    {comm.senderName && (
-                                                        <Text size="xs" c="dimmed">
-                                                            Sender: {comm.senderName}
-                                                        </Text>
+                                                    {statusCfg && (
+                                                        <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${statusCfg.chip}`}>
+                                                            {statusCfg.label}
+                                                        </span>
                                                     )}
-                                                </Timeline.Item>
-                                            );
-                                        })
-                                    ) : (
-                                        <Timeline.Item title="No recent communications">
-                                            <Text size="sm" c="dimmed">No communications records were returned.</Text>
+                                                </div>
+                                                <span className="text-[11px] text-slate-500 flex-shrink-0">
+                                                    {comm.createdAt ? formatDateFr(comm.createdAt) : '—'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] text-slate-600">
+                                                {typeLabel(comm.type)} · {recipientsTotal} destinataire{recipientsTotal > 1 ? 's' : ''} · {departmentName}
+                                            </p>
+                                            {comm.schedule?.scheduleType && (
+                                                <p className="text-[11.5px] text-slate-500 mt-0.5">
+                                                    Planification : {scheduleTypeLabel(comm.schedule.scheduleType)}
+                                                </p>
+                                            )}
+                                            {comm.schedule?.nextRunAt && (
+                                                <p className="text-[11.5px] text-slate-500 mt-0.5 inline-flex items-center gap-1">
+                                                    <IconClock size={12} aria-hidden="true" />
+                                                    Prochain envoi : {formatDateFr(comm.schedule.nextRunAt)}
+                                                </p>
+                                            )}
+                                            {comm.expiresAt && (
+                                                <p className="text-[11.5px] text-slate-500 mt-0.5">
+                                                    Échéance : {formatDateFr(comm.expiresAt)}
+                                                </p>
+                                            )}
+                                            {comm.senderName && (
+                                                <p className="text-[11.5px] text-slate-500 mt-0.5">
+                                                    Expéditeur : {comm.senderName}
+                                                </p>
+                                            )}
                                         </Timeline.Item>
-                                    )}
-                                </Timeline>
-                            )}
-                        </ScrollArea>
-                    </Card>
-                </Grid.Col>
-            </Grid>
+                                    );
+                                })}
+                            </Timeline>
+                        ) : (
+                            <EmptyState
+                                icon={<IconMessageCircle size={20} />}
+                                title="Aucune communication récente"
+                                description="Les dernières diffusions apparaîtront ici."
+                                compact
+                            />
+                        )}
+                    </ScrollArea>
+                </div>
+            </div>
         </div>
     );
 };

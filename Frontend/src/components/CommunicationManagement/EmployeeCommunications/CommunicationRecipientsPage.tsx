@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Card, Group, Title, Text, ScrollArea } from '@mantine/core';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
+import { useEffect, useMemo, useState } from 'react';
+import { IconUsers } from '@tabler/icons-react';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import EmptyState from '../../UtilityComp/EmptyState';
 import { getNotificationsByCommunication } from '../../../services/NotificationService';
+import { notifStatusConfig, parseRecipientIds } from '../communicationLabels';
 
+/**
+ * Onglet « Destinataires » : liste des employés visés par la communication
+ * et état du dernier envoi qui leur a été adressé.
+ */
 
 const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
     const [latestNotificationStatus, setLatestNotificationStatus] = useState<string | null>(null);
@@ -68,82 +73,99 @@ const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
     }, [communication?.id]);
 
     const rows = useMemo(() => {
-
-        return communication?.recipients
-            ?.map((recipientId: any) => {
-                return {
-                    id: recipientId,
-                    name: empMap[recipientId]?.name || 'Unknown',
-                    department: empMap[recipientId]?.department || 'Unknown',
-                    position: empMap[recipientId]?.position || 'Unknown',
-                    isActive: true,
-                    sentStatus: latestNotificationStatus,
-                };
-            })
-            .filter(Boolean) as any[];
+        return parseRecipientIds(communication?.recipients).map((recipientId: string) => ({
+            id: recipientId,
+            name: empMap[recipientId]?.name || 'Employé inconnu',
+            department: empMap[recipientId]?.department || '—',
+            position: empMap[recipientId]?.position || '—',
+            sentStatus: latestNotificationStatus,
+        }));
     }, [communication, empMap, latestNotificationStatus]);
-    const statusBody = (row: any) => (
-        <Tag
-            value={row.isActive ? 'Active' : 'Inactive'}
-            severity={row.isActive ? 'success' : 'danger'}
-            rounded
-            className="text-xs"
-        />
-    );
-
-    const formatStatusLabel = (status?: string | null) => {
-        if (!status) return 'Not Sent';
-        return status
-            .toString()
-            .toLowerCase()
-            .split('_')
-            .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ');
-    };
-
-    const booleanIcon = (isSuccess: boolean, label: string) => (
-        <i
-            className={`pi ${isSuccess ? 'pi-check-circle' : 'pi-times-circle'}`}
-            style={{ fontSize: 16, color: isSuccess ? 'var(--green-600)' : 'var(--red-500)' }}
-            aria-label={label}
-            title={label}
-        />
-    );
 
     const sentStatusBody = (row: any) => {
-        const normalized = row.sentStatus?.toString?.().toUpperCase?.() ?? null;
-        const isSuccess = normalized === 'SUCCESS';
-        const label = formatStatusLabel(row.sentStatus);
-        return booleanIcon(isSuccess, label);
+        if (!row.sentStatus) {
+            return (
+                <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10.5px] uppercase tracking-wider text-slate-600">
+                    Non envoyée
+                </span>
+            );
+        }
+        const cfg = notifStatusConfig(row.sentStatus);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
     };
 
     return (
-        <Card shadow="sm" padding="lg" radius="md" withBorder mb="md">
-            <Group justify="space-between" mb="md">
-                <Title order={3}>Recipients List</Title>
-                <Text size="sm" c="dimmed">
-                    {communication?.recipients?.length} recipients
-                </Text>
-            </Group>
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                <h3
+                    className="text-slate-800"
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    Liste des destinataires
+                </h3>
+                <span className="text-[11.5px] text-slate-500">
+                    {rows.length} destinataire{rows.length > 1 ? 's' : ''}
+                </span>
+            </div>
 
-            <ScrollArea h={400}>
+            {!rows.length ? (
+                <EmptyState
+                    icon={<IconUsers size={24} />}
+                    title="Aucun destinataire"
+                    description="Cette communication ne cible encore aucun employé."
+                    compact
+                />
+            ) : (
                 <DataTable
                     value={rows}
                     dataKey="id"
                     stripedRows
-                    rowHover
                     size="small"
-                    tableStyle={{ minWidth: '52rem' }}
-                    emptyMessage="No recipients found."
+                    paginator
+                    rows={10}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                    currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    emptyMessage="Aucun destinataire."
                 >
-                    <Column field="name" header="Name" />
-                    <Column field="department" header="Department" />
-                    <Column field="position" header="Position" />
-                    <Column align="center" header="Status" body={statusBody} />
-                    <Column align="center" header="Sent" body={sentStatusBody} />
+                    <Column
+                        field="name"
+                        header="Nom"
+                        body={(row) => <span className="text-[13px] text-slate-800">{row.name}</span>}
+                        sortable
+                    />
+                    <Column
+                        field="department"
+                        header="Département"
+                        body={(row) => <span className="text-[12.5px] text-slate-600">{row.department}</span>}
+                        sortable
+                    />
+                    <Column
+                        field="position"
+                        header="Poste"
+                        body={(row) => <span className="text-[12.5px] text-slate-600">{row.position}</span>}
+                        sortable
+                    />
+                    <Column
+                        header="Dernier envoi"
+                        body={sentStatusBody}
+                        style={{ width: '9rem' }}
+                        bodyStyle={{ textAlign: 'center' }}
+                        headerStyle={{ textAlign: 'center' }}
+                    />
                 </DataTable>
-            </ScrollArea>
-        </Card>
+            )}
+        </div>
     );
 };
 

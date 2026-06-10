@@ -1,7 +1,21 @@
-import { Card, Group, Badge, Stack, Text, Button } from '@mantine/core';
 import { ReactNode } from 'react';
+import { Badge, Button } from '@mantine/core';
 import { IconEye } from '@tabler/icons-react';
-import { formatDateShort } from '../../../utility/DateFormats';
+import {
+    CATEGORY_COLORS,
+    categoryLabel,
+    commStatusConfig,
+    formatDateFr,
+    scheduleTypeLabel,
+    typeLabel,
+    urgencyConfig,
+    isUrgentValue,
+} from '../communicationLabels';
+
+/**
+ * Carte d'une communication HSE (vue « cartes » du registre).
+ * Reprend la même palette de statuts que la vue tableau (charte R7).
+ */
 
 interface CommunicationCardProps {
     communication: any;
@@ -10,93 +24,87 @@ interface CommunicationCardProps {
     actions?: ReactNode;
 }
 
-const formatEnumValue = (value?: string | null) => {
-    if (!value) return '-';
-    return value
-        .toString()
-        .toLowerCase()
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-};
-
 const CommunicationCard = ({ communication, departmentName, onViewDetails, actions }: CommunicationCardProps) => {
-    const typeLabel = communication?.type ? formatEnumValue(communication.type) : null;
-    const categoryLabel = communication?.category ?? null;
-    const urgency = communication?.urgency ? String(communication.urgency).toUpperCase() : null;
-    const status = communication?.status ? String(communication.status).toUpperCase() : null;
-
-    const scheduleTypeLabel = communication?.scheduleType ? formatEnumValue(communication.scheduleType) : null;
-    const nextRunLabel = communication?.nextRunAt ? formatDateShort(communication.nextRunAt) : null;
-    const expiresAtLabel = communication?.expiresAt ? formatDateShort(communication.expiresAt) : null;
-    const departmentLabel = departmentName && departmentName !== '-' ? departmentName : null;
+    const statusCfg = commStatusConfig(communication?.status);
+    const urgencyCfg = urgencyConfig(communication?.urgency);
+    const departmentLabel = departmentName && departmentName !== '—' ? departmentName : null;
     const recipientsCount = communication?.recipientCount;
-
-    const getStatusColor = () => {
-        if (!status) return 'gray';
-        if (['COMPLETED', 'ACTIVE', 'SENT'].includes(status)) return 'green';
-        if (['PENDING', 'SCHEDULED'].includes(status)) return 'yellow';
-        if (['FAILED', 'CANCELLED', 'ERROR'].includes(status)) return 'red';
-        return 'gray';
-    };
-
     const actionsContent = Array.isArray(actions) ? actions : actions ? [actions] : [];
 
     return (
-        <Card withBorder padding="md" radius="md" className="transition-all duration-200 hover:shadow-lg hover:translate-y-[-2px]">
-            <Stack gap="sm">
-                <Group gap="xs" justify="space-between" align="flex-start">
-                    <Group gap="xs">
-                        {typeLabel && (
-                            <Badge color="blue" variant="light">{typeLabel}</Badge>
-                        )}
-                        {categoryLabel && (
-                            <Badge color="violet" variant="light">{categoryLabel}</Badge>
-                        )}
-                        {urgency && (
-                            <Badge
-                                color={urgency === 'URGENT' ? 'red' : 'green'}
-                                variant="light"
-                            >
-                                {formatEnumValue(urgency)}
-                            </Badge>
-                        )}
-                        {status && (
-                            <Badge color={getStatusColor()} variant="light">{formatEnumValue(status)}</Badge>
-                        )}
-                    </Group>
-                </Group>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+                {communication?.category && (
+                    <Badge
+                        color={CATEGORY_COLORS[communication.category] ?? 'gray'}
+                        variant="light"
+                        size="sm"
+                        radius="sm"
+                    >
+                        {categoryLabel(communication.category)}
+                    </Badge>
+                )}
+                {isUrgentValue(communication?.urgency) && (
+                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${urgencyCfg.chip}`}>
+                        {urgencyCfg.label}
+                    </span>
+                )}
+                <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                    {statusCfg.label}
+                </span>
+            </div>
 
-                <Text size="lg" c="dark">{communication.title}</Text>
+            <div className="min-w-0">
+                <p className="text-[13.5px] text-slate-800 leading-snug">{communication?.title}</p>
+                <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(communication?.type)}</p>
+            </div>
 
-                <Stack gap={4} className="text-sm text-gray-600">
-                    {departmentLabel && (
-                        <Text size="sm">Department: <Text span>{departmentLabel}</Text></Text>
-                    )}
-                    {typeof recipientsCount === 'number' && recipientsCount >= 0 && (
-                        <Text size="sm">Recipients: <Text span>{recipientsCount}</Text></Text>
-                    )}
-                    {scheduleTypeLabel && (
-                        <Text size="sm">Schedule: <Text span>{scheduleTypeLabel}</Text></Text>
-                    )}
-                    {nextRunLabel && (
-                        <Text size="sm">Next Run: <Text span>{nextRunLabel}</Text></Text>
-                    )}
-                    {expiresAtLabel && (
-                        <Text size="sm">Expires At: <Text span>{expiresAtLabel}</Text></Text>
-                    )}
-                </Stack>
+            <dl className="grid grid-cols-1 gap-1 text-[12px]">
+                {departmentLabel && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-slate-500">Département</dt>
+                        <dd className="text-slate-700 text-right">{departmentLabel}</dd>
+                    </div>
+                )}
+                {typeof recipientsCount === 'number' && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-slate-500">Destinataires</dt>
+                        <dd className="text-slate-700 tabular-nums">{recipientsCount}</dd>
+                    </div>
+                )}
+                {communication?.scheduleType && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-slate-500">Planification</dt>
+                        <dd className="text-slate-700 text-right">{scheduleTypeLabel(communication.scheduleType)}</dd>
+                    </div>
+                )}
+                {communication?.nextRunAt && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-slate-500">Prochain envoi</dt>
+                        <dd className="text-slate-700 text-right">{formatDateFr(communication.nextRunAt)}</dd>
+                    </div>
+                )}
+                {communication?.expiresAt && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-slate-500">Échéance</dt>
+                        <dd className="text-slate-700 text-right">{formatDateFr(communication.expiresAt)}</dd>
+                    </div>
+                )}
+            </dl>
 
-                <Group justify="space-between" align="center">
-                    <Group gap="xs">
-                        {actionsContent}
-                    </Group>
-                    <Button size="xs" variant="light" leftSection={<IconEye size={14} />} onClick={onViewDetails}>
-                        View Details
-                    </Button>
-                </Group>
-            </Stack>
-        </Card>
+            <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-slate-100">
+                <div className="flex gap-1.5">{actionsContent}</div>
+                <Button
+                    size="xs"
+                    variant="light"
+                    color="teal"
+                    leftSection={<IconEye size={14} />}
+                    onClick={onViewDetails}
+                >
+                    Voir le détail
+                </Button>
+            </div>
+        </div>
     );
 };
 

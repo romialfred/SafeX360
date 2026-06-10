@@ -1,150 +1,133 @@
-import { Badge, Card, Divider, Grid, Group, Stack, Text, Title } from "@mantine/core";
-import { getFriendlyFileType } from "../../utility/DocumentUtility";
-import { documentStatusesMap } from "../../Data/dummyData/documentData";
-import { formatDateShort } from "../../utility/DateFormats";
+import { Badge } from '@mantine/core';
+import { getFriendlyFileType } from '../../utility/DocumentUtility';
+import {
+    accessLevelConfig,
+    docCategoryLabel,
+    docStatusConfig,
+    formatDateFr,
+} from './documentLabels';
+
+/**
+ * Onglet « Métadonnées » : fiche signalétique complète du document
+ * (identification, gestion, dates, versions) en lecture seule.
+ */
+
+const MetaRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
+        <dt className="text-slate-500 flex-shrink-0">{label}</dt>
+        <dd className="text-slate-800 text-right">{children}</dd>
+    </div>
+);
+
+const MetaGroupTitle = ({ children }: { children: React.ReactNode }) => (
+    <p className="text-[10.5px] uppercase tracking-[0.12em] text-slate-500 font-medium mb-1">
+        {children}
+    </p>
+);
 
 const DocumentMetadata = ({ document, versions, empMap, departmentMap }: any) => {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return 'gray';
-            case 'UNDER_REVIEW': return 'yellow';
-            case 'APPROVED': return 'green';
-            case 'ARCHIVED': return 'red';
-            default: return 'gray';
-        }
-    };
-
-    const getAccessLevelColor = (level: string) => {
-        switch (level) {
-            case 'PUBLIC': return 'green';
-            case 'INTERNAL': return 'blue';
-            case 'CONFIDENTIAL': return 'orange';
-            case 'RESTRICTED': return 'red';
-            default: return 'gray';
-        }
-    };
+    const statusCfg = docStatusConfig(document?.status);
+    const accessCfg = accessLevelConfig(document?.accessLevel);
+    const latestVersion = versions?.length ? versions[versions.length - 1] : null;
 
     return (
-        <div>
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-                <Title order={3} mb="md">Complete Metadata</Title>
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="mb-3 pb-3 border-b border-slate-100">
+                <h3
+                    className="text-slate-800"
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    Fiche signalétique
+                </h3>
+                <p className="text-[11.5px] text-slate-500">
+                    Métadonnées complètes du document, telles qu'enregistrées dans le référentiel
+                </p>
+            </div>
 
-                <Grid>
-                    <Grid.Col span={6}>
-                        <Text size="sm" mb="xs">Identification</Text>
-                        <Stack gap="xs" mb="md">
-                            {/* <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Document ID:</Text>
-                                <Text size="sm">{document?.id}</Text>
-                            </Group> */}
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Name:</Text>
-                                <Text size="sm">{document?.documentName}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Category:</Text>
-                                <Text size="sm">{document?.category}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">File Type:</Text>
-                                <Text size="sm">{getFriendlyFileType(versions?.[versions.length - 1]?.mediaType)}</Text>
-                            </Group>
-                        </Stack>
-                    </Grid.Col>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-[12.5px]">
+                <div>
+                    <MetaGroupTitle>Identification</MetaGroupTitle>
+                    <dl>
+                        <MetaRow label="Nom">{document?.documentName ?? '—'}</MetaRow>
+                        <MetaRow label="Catégorie">{docCategoryLabel(document?.category)}</MetaRow>
+                        <MetaRow label="Type de fichier">
+                            {getFriendlyFileType(latestVersion?.mediaType) || '—'}
+                        </MetaRow>
+                    </dl>
+                </div>
 
-                    <Grid.Col span={6}>
-                        <Text size="sm" mb="xs">Gestion</Text>
-                        <Stack gap="xs" mb="md">
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Owner:</Text>
-                                <Text size="sm">{empMap[document?.ownerId]?.name}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Department:</Text>
-                                <Text size="sm">{departmentMap[document?.departmentId]?.name}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Status:</Text>
-                                <Badge color={getStatusColor(document?.status)} variant="light" size="sm">
-                                    {documentStatusesMap[document?.status]}
-                                </Badge>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Access Level:</Text>
-                                <Badge color={getAccessLevelColor(document?.accessLevel)} variant="light" size="sm">
-                                    {document?.accessLevel}
-                                </Badge>
-                            </Group>
-                        </Stack>
-                    </Grid.Col>
+                <div>
+                    <MetaGroupTitle>Gestion</MetaGroupTitle>
+                    <dl>
+                        <MetaRow label="Propriétaire">{empMap[document?.ownerId]?.name ?? '—'}</MetaRow>
+                        <MetaRow label="Département">{departmentMap[document?.departmentId]?.name ?? '—'}</MetaRow>
+                        <MetaRow label="Statut">
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                                {statusCfg.label}
+                            </span>
+                        </MetaRow>
+                        <MetaRow label="Niveau d'accès">
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${accessCfg.chip}`}>
+                                {accessCfg.label}
+                            </span>
+                        </MetaRow>
+                    </dl>
+                </div>
 
-                    <Grid.Col span={6}>
-                        <Text size="sm" mb="xs">Dates</Text>
-                        <Stack gap="xs" mb="md">
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Creation Date:</Text>
-                                <Text size="sm">{formatDateShort(document?.createdAt)}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Last Modified:</Text>
-                                <Text size="sm">{formatDateShort(document?.updatedAt)}</Text>
-                            </Group>
-                            {document?.approvalDate && (
-                                <Group justify="space-between">
-                                    <Text size="sm" c="dimmed">Approval Date:</Text>
-                                    <Text size="sm">{formatDateShort(document?.approvalDate)}</Text>
-                                </Group>
-                            )}
-                            {document?.reviewDate && (
-                                <Group justify="space-between">
-                                    <Text size="sm" c="dimmed">Next Review:</Text>
-                                    <Text size="sm">{formatDateShort(document?.reviewDate)}</Text>
-                                </Group>
-                            )}
-                        </Stack>
-                    </Grid.Col>
+                <div>
+                    <MetaGroupTitle>Dates</MetaGroupTitle>
+                    <dl>
+                        <MetaRow label="Créé le">{formatDateFr(document?.createdAt)}</MetaRow>
+                        <MetaRow label="Modifié le">{formatDateFr(document?.updatedAt)}</MetaRow>
+                        {document?.approvalDate && (
+                            <MetaRow label="Approuvé le">{formatDateFr(document?.approvalDate)}</MetaRow>
+                        )}
+                        {document?.reviewDate && (
+                            <MetaRow label="Prochaine révision">{formatDateFr(document?.reviewDate)}</MetaRow>
+                        )}
+                        {document?.expiryDate && (
+                            <MetaRow label="Expire le">{formatDateFr(document?.expiryDate)}</MetaRow>
+                        )}
+                    </dl>
+                </div>
 
-                    <Grid.Col span={6}>
-                        <Text size="sm" mb="xs">Statistiques</Text>
-                        <Stack gap="xs" mb="md">
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Current Version:</Text>
-                                <Text size="sm">v{versions?.[versions.length - 1]?.version}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Number of Versions:</Text>
-                                <Text size="sm">{versions?.length}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Total Views:</Text>
-                                <Text size="sm">{101}</Text>
-                            </Group>
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Downloads:</Text>
-                                <Text size="sm">{78}</Text>
-                            </Group>
-                        </Stack>
-                    </Grid.Col>
-                </Grid>
+                <div>
+                    <MetaGroupTitle>Versions</MetaGroupTitle>
+                    <dl>
+                        <MetaRow label="Version courante">
+                            {latestVersion?.version ? `v${latestVersion.version}` : '—'}
+                        </MetaRow>
+                        <MetaRow label="Nombre de versions">{versions?.length ?? 0}</MetaRow>
+                    </dl>
+                </div>
+            </div>
 
-                <Divider my="md" />
+            {document?.tags?.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                    <MetaGroupTitle>Étiquettes</MetaGroupTitle>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                        {document.tags.map((tag: string, index: number) => (
+                            <Badge key={index} variant="outline" color="gray" size="sm" radius="sm">
+                                {tag}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+            )}
 
-                <Text size="sm" mb="xs">Tags</Text>
-                <Group mb="md">
-                    {document?.tags?.map((tag: any, index: number) => (
-                        <Badge key={index} variant="outline" size="sm">
-                            {tag}
-                        </Badge>
-                    ))}
-                </Group>
-
-                <Text size="sm" mb="xs">Full Description</Text>
-                <Text size="sm" c="dimmed">
-                    {document?.description}
-                </Text>
-            </Card>
+            <div className="mt-4 pt-3 border-t border-slate-100">
+                <MetaGroupTitle>Description complète</MetaGroupTitle>
+                <p className="text-[12.5px] text-slate-600 leading-relaxed mt-1">
+                    {document?.description || 'Aucune description renseignée.'}
+                </p>
+            </div>
         </div>
-    )
-}
+    );
+};
 
-export default DocumentMetadata
+export default DocumentMetadata;

@@ -1,91 +1,102 @@
-import React from 'react';
+import { IconAlertTriangle, IconCircleCheck, IconHourglassHigh, IconUsers } from '@tabler/icons-react';
+import KpiTile from '../../UtilityComp/KpiTile';
 import {
-    Card,
-    Group,
-    Title,
-    Badge,
-    Grid,
-    Text,
-    Progress,
-    Box,
-    Alert,
-} from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
-import {
-    Notification,
-} from '../../../Data/dummyData/communicationData';
+    formatDateTimeFr,
+    isNotifFailure,
+    notifStatusConfig,
+    parseRecipientIds,
+} from '../communicationLabels';
 
-interface NotificationDeliveryProps {
-    notification: Notification;
-}
+/**
+ * Onglet « Livraison » : état réel de l'envoi tel que retourné par le canal
+ * de diffusion (réussite, attente ou échec).
+ */
 
-const getDeliveryStatusColor = (status: string) => {
-    switch (status) {
-        case 'Delivered': return 'green';
-        case 'Partially Delivered': return 'yellow';
-        case 'Failed': return 'red';
-        case 'Pending': return 'blue';
-        default: return 'gray';
-    }
+const DELIVERED_STATUSES = ['SUCCESS', 'SENT', 'DELIVERED', 'COMPLETED'];
+const PENDING_STATUSES = ['PENDING', 'QUEUED', 'IN_PROGRESS', 'SENDING', 'SCHEDULED'];
+
+const NotificationDelivery = ({ notification }: any) => {
+    const statusCfg = notifStatusConfig(notification?.status);
+    const status = (notification?.status ?? '').toUpperCase();
+    const recipientsCount = parseRecipientIds(notification?.recipients).length;
+
+    const isDelivered = DELIVERED_STATUSES.includes(status);
+    const isPending = PENDING_STATUSES.includes(status);
+    const isFailed = isNotifFailure(status);
+
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile
+                    label="Destinataires"
+                    value={recipientsCount}
+                    tone="slate"
+                    icon={<IconUsers size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Livraison réussie"
+                    value={isDelivered ? recipientsCount : 0}
+                    tone="green"
+                    icon={<IconCircleCheck size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="En attente"
+                    value={isPending ? recipientsCount : 0}
+                    tone="violet"
+                    icon={<IconHourglassHigh size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="En échec"
+                    value={isFailed ? recipientsCount : 0}
+                    tone="rose"
+                    icon={<IconAlertTriangle size={14} stroke={1.8} />}
+                />
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                    <h3
+                        className="text-slate-800"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        État de livraison
+                    </h3>
+                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                        {statusCfg.label}
+                    </span>
+                </div>
+
+                <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
+                    <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
+                        <dt className="text-slate-500 flex-shrink-0">Envoyée le</dt>
+                        <dd className="text-slate-800 text-right">{formatDateTimeFr(notification?.createdAt)}</dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
+                        <dt className="text-slate-500 flex-shrink-0">Retour du canal</dt>
+                        <dd className={`text-right ${isFailed ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {notification?.responseMessage ||
+                                (isFailed
+                                    ? "L'envoi a échoué sans détail complémentaire."
+                                    : 'Aucun détail complémentaire.')}
+                        </dd>
+                    </div>
+                </dl>
+
+                <p className="text-[11.5px] text-slate-500 mt-3 pt-3 border-t border-slate-100">
+                    {isFailed
+                        ? "Vérifiez la communication d'origine puis relancez un envoi depuis sa fiche (« Envoyer maintenant »)."
+                        : isPending
+                            ? "L'envoi est en cours de traitement : le statut sera mis à jour automatiquement."
+                            : "La notification a été remise au canal de diffusion pour l'ensemble des destinataires."}
+                </p>
+            </div>
+        </div>
+    );
 };
-
-const NotificationDelivery: React.FC<NotificationDeliveryProps> = ({ notification }) => (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Group justify="space-between" mb="md">
-            <Title order={3}>Delivery Status</Title>
-            <Badge color={getDeliveryStatusColor(notification.deliveryStatus)} variant="light">
-                {notification.deliveryStatus}
-            </Badge>
-        </Group>
-
-        <Grid mb="md">
-            <Grid.Col span={3}>
-                <Card withBorder p="md" style={{ backgroundColor: '#E7F5FF' }}>
-                    <Text size="lg" c="blue">{notification.recipientCount}</Text>
-                    <Text size="sm" c="dimmed">Total Sent</Text>
-                </Card>
-            </Grid.Col>
-            <Grid.Col span={3}>
-                <Card withBorder p="md" style={{ backgroundColor: '#D3F9D8' }}>
-                    <Text size="lg" c="green">{notification.readCount}</Text>
-                    <Text size="sm" c="dimmed">Delivered</Text>
-                </Card>
-            </Grid.Col>
-            <Grid.Col span={3}>
-                <Card withBorder p="md" style={{ backgroundColor: '#FFF3CD' }}>
-                    <Text size="lg" c="orange">{notification.recipientCount - notification.readCount}</Text>
-                    <Text size="sm" c="dimmed">Pending</Text>
-                </Card>
-            </Grid.Col>
-            <Grid.Col span={3}>
-                <Card withBorder p="md" style={{ backgroundColor: '#F8D7DA' }}>
-                    <Text size="lg" c="red">0</Text>
-                    <Text size="sm" c="dimmed">Failed</Text>
-                </Card>
-            </Grid.Col>
-        </Grid>
-
-        <Box mb="md">
-            <Text size="sm" mb="xs">Delivery Progress</Text>
-            <Progress
-                value={(notification.readCount / notification.recipientCount) * 100}
-                color="green"
-                size="lg"
-            />
-            <Text size="xs" c="dimmed" mt="xs">
-                {notification.readCount} of {notification.recipientCount} recipients have received the notification
-            </Text>
-        </Box>
-
-        {notification.status === 'Sent' && (
-            <Alert icon={<IconInfoCircle size={16} />} color="blue">
-                <Text size="sm">
-                    This notification was sent on {notification.sentDate}.
-                    Delivery tracking is updated in real-time as recipients read the message.
-                </Text>
-            </Alert>
-        )}
-    </Card>
-);
 
 export default NotificationDelivery;

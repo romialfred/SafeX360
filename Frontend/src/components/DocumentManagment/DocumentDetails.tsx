@@ -1,182 +1,144 @@
-import { ActionIcon, Badge, Box, Card, Grid, Group, Stack, Text, Title } from "@mantine/core";
-import { IconDownload, IconEye, IconFile, IconFileTypeDoc, IconFileTypePdf, IconFileTypeXls, IconPhoto, IconPresentation } from "@tabler/icons-react";
-import { documentsData, documentStatusesMap } from "../../Data/dummyData/documentData";
-import { getFriendlyFileType } from "../../utility/DocumentUtility";
-import { formatDateShort } from "../../utility/DateFormats";
+import { Badge } from '@mantine/core';
+import {
+    IconFile,
+    IconFileTypeDoc,
+    IconFileTypePdf,
+    IconFileTypeXls,
+    IconPhoto,
+    IconPresentation,
+} from '@tabler/icons-react';
+import { getFriendlyFileType } from '../../utility/DocumentUtility';
+import {
+    DOC_CATEGORY_COLORS,
+    accessLevelConfig,
+    docCategoryLabel,
+    docStatusConfig,
+    formatDateFr,
+} from './documentLabels';
 
+/**
+ * Onglet « Détails » de la fiche document : informations générales à gauche,
+ * dates clés à droite. Données issues du backend uniquement.
+ */
 
+const FILE_TYPE_ICONS: Record<string, React.ReactNode> = {
+    PDF: <IconFileTypePdf size={16} className="text-rose-500" />,
+    Word: <IconFileTypeDoc size={16} className="text-sky-500" />,
+    Excel: <IconFileTypeXls size={16} className="text-emerald-500" />,
+    PowerPoint: <IconPresentation size={16} className="text-orange-500" />,
+    Image: <IconPhoto size={16} className="text-violet-500" />,
+};
+
+const getFileTypeIcon = (fileType?: string) =>
+    FILE_TYPE_ICONS[fileType ?? ''] ?? <IconFile size={16} className="text-slate-400" />;
+
+const InfoRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
+        <dt className="text-slate-500 flex-shrink-0">{label}</dt>
+        <dd className="text-slate-800 text-right">{children}</dd>
+    </div>
+);
+
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <h3
+        className="text-slate-800"
+        style={{
+            fontFamily: "'Source Serif 4', Georgia, serif",
+            fontSize: '14px',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+        }}
+    >
+        {children}
+    </h3>
+);
 
 const DocumentDetails = ({ document, version, empMap, departmentMap }: any) => {
-
-    const getFileTypeIcon = (fileType: string) => {
-        switch (fileType) {
-            case 'PDF': return <IconFileTypePdf size={16} color="#FF6B6B" />;
-            case 'Word': return <IconFileTypeDoc size={16} color="#339AF0" />;
-            case 'Excel': return <IconFileTypeXls size={16} color="#51CF66" />;
-            case 'PowerPoint': return <IconPresentation size={16} color="#FF922B" />;
-            case 'Image': return <IconPhoto size={16} color="#9775FA" />;
-            default: return <IconFile size={16} color="#868E96" />;
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return 'gray';
-            case 'UNDER_REVIEW': return 'yellow';
-            case 'APPROVED': return 'green';
-            case 'ARCHIVED': return 'red';
-            default: return 'gray';
-        }
-    };
-    const getAccessLevelColor = (level: string) => {
-        switch (level) {
-            case 'PUBLIC': return 'green';
-            case 'INTERNAL': return 'blue';
-            case 'CONFIDENTIAL': return 'orange';
-            case 'RESTRICTED': return 'red';
-            default: return 'gray';
-        }
-    };
+    const statusCfg = docStatusConfig(document?.status);
+    const accessCfg = accessLevelConfig(document?.accessLevel);
+    const fileType = getFriendlyFileType(version?.mediaType);
 
     return (
-        <Grid>
-            <Grid.Col span={{ base: 12, lg: 8 }}>
-                <Card shadow="sm" padding="lg" radius="md" withBorder mb="md">
-                    <Group justify="space-between" mb="md">
-                        <Title order={3}>General Information</Title>
-                        <Group>
-                            {getFileTypeIcon(getFriendlyFileType(version?.mediaType))}
-                            <Badge color={getStatusColor(document?.status)} variant="light">
-                                {documentStatusesMap[document?.status]}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
+            <div className="xl:col-span-3">
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Informations générales</SectionTitle>
+                        <div className="flex items-center gap-2">
+                            {getFileTypeIcon(fileType)}
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                                {statusCfg.label}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed mb-3">
+                        {document?.description || 'Aucune description renseignée.'}
+                    </p>
+
+                    <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
+                        <InfoRow label="Catégorie">
+                            <Badge
+                                color={DOC_CATEGORY_COLORS[document?.category ?? ''] ?? 'gray'}
+                                variant="light"
+                                size="sm"
+                                radius="sm"
+                            >
+                                {docCategoryLabel(document?.category)}
                             </Badge>
-                        </Group>
-                    </Group>
+                        </InfoRow>
+                        <InfoRow label="Type de fichier">{fileType || '—'}</InfoRow>
+                        <InfoRow label="Propriétaire">{empMap[document?.ownerId]?.name ?? '—'}</InfoRow>
+                        <InfoRow label="Département">{departmentMap[document?.departmentId]?.name ?? '—'}</InfoRow>
+                        <InfoRow label="Niveau d'accès">
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${accessCfg.chip}`}>
+                                {accessCfg.label}
+                            </span>
+                        </InfoRow>
+                        <InfoRow label="Version courante">
+                            {version?.version ? `v${version.version}` : '—'}
+                        </InfoRow>
+                    </dl>
 
-                    <Grid>
-                        <Grid.Col span={12}>
-                            <Text size="sm" c="dimmed">Description:</Text>
-                            <Text size="sm" mb="md">{document?.description}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">Category:</Text>
-                            <Badge variant="light" color="blue" mb="md">{document?.category}</Badge>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">File Type:</Text>
-                            <Text size="sm" mb="md">{getFriendlyFileType(version?.mediaType)}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">Owner:</Text>
-                            <Text size="sm" mb="md">{empMap[document?.ownerId]?.name}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">Department:</Text>
-                            <Text size="sm" mb="md">{departmentMap[document?.departmentId]?.name}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">Access Level:</Text>
-                            <Badge color={getAccessLevelColor(document?.accessLevel)} variant="light" mb="md">
-                                {document?.accessLevel}
-                            </Badge>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Text size="sm" c="dimmed">Current Version:</Text>
-                            <Text size="sm" mb="md">v{version?.version}</Text>
-                        </Grid.Col>
-                    </Grid>
+                    {document?.tags?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                            <p className="text-[11.5px] text-slate-500 mb-1.5">Étiquettes</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {document.tags.map((tag: string, index: number) => (
+                                    <Badge key={index} variant="outline" color="gray" size="sm" radius="sm">
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-                    <Text size="sm" c="dimmed" mb="xs">Tags:</Text>
-                    <Group mb="md">
-                        {document?.tags?.map((tag: any, index: any) => (
-                            <Badge key={index} variant="outline" size="sm">
-                                {tag}
-                            </Badge>
-                        ))}
-                    </Group>
-                </Card>
-
-                <Card shadow="sm" padding="lg" radius="md" withBorder>
-                    <Title order={3} mb="md">Usage Statistics</Title>
-                    <Grid>
-                        <Grid.Col span={6}>
-                            <Group>
-                                <IconEye size={20} color="#339AF0" />
-                                <Box>
-                                    <Text size="lg">{86}</Text>
-                                    <Text size="sm" c="dimmed">Views</Text>
-                                </Box>
-                            </Group>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
-                            <Group>
-                                <IconDownload size={20} color="#51CF66" />
-                                <Box>
-                                    <Text size="lg">{10}</Text>
-                                    <Text size="sm" c="dimmed">Downloads</Text>
-                                </Box>
-                            </Group>
-                        </Grid.Col>
-                    </Grid>
-                </Card>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, lg: 4 }}>
-                <Card shadow="sm" padding="lg" radius="md" withBorder mb="md">
-                    <Title order={4} mb="md">Important Dates</Title>
-                    <Stack gap="sm">
-                        <Group justify="space-between">
-                            <Text size="sm" c="dimmed">Created:</Text>
-                            <Text size="sm">{formatDateShort(document?.createdAt)}</Text>
-                        </Group>
-                        <Group justify="space-between">
-                            <Text size="sm" c="dimmed">Modified:</Text>
-                            <Text size="sm">{formatDateShort(document?.updatedAt)}</Text>
-                        </Group>
+            <div className="xl:col-span-2">
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="mb-3 pb-3 border-b border-slate-100">
+                        <SectionTitle>Dates clés</SectionTitle>
+                    </div>
+                    <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
+                        <InfoRow label="Créé le">{formatDateFr(document?.createdAt)}</InfoRow>
+                        <InfoRow label="Modifié le">{formatDateFr(document?.updatedAt)}</InfoRow>
                         {document?.approvalDate && (
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Approved:</Text>
-                                <Text size="sm">{document?.approvalDate}</Text>
-                            </Group>
+                            <InfoRow label="Approuvé le">{formatDateFr(document?.approvalDate)}</InfoRow>
                         )}
                         {document?.reviewDate && (
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Review Due:</Text>
-                                <Text size="sm">{formatDateShort(document?.reviewDate)}</Text>
-                            </Group>
+                            <InfoRow label="Prochaine révision">{formatDateFr(document?.reviewDate)}</InfoRow>
                         )}
                         {document?.expiryDate && (
-                            <Group justify="space-between">
-                                <Text size="sm" c="dimmed">Expires:</Text>
-                                <Text size="sm" c="orange">{formatDateShort(document?.expiryDate)}</Text>
-                            </Group>
+                            <InfoRow label="Expire le">
+                                <span className="text-amber-700">{formatDateFr(document?.expiryDate)}</span>
+                            </InfoRow>
                         )}
-                    </Stack>
-                </Card>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    );
+};
 
-                {document?.relatedDocuments?.length > 0 && (
-                    <Card shadow="sm" padding="lg" radius="md" withBorder>
-                        <Title order={4} mb="md">Related Documents</Title>
-                        <Stack gap="xs">
-                            {document?.relatedDocuments?.map((docId: any, index: any) => {
-                                const relatedDoc: any = documentsData.find((d: any) => d.id === docId);
-                                return relatedDoc ? (
-                                    <Group key={index} justify="space-between">
-                                        <Group>
-                                            {getFileTypeIcon(relatedDoc.fileType)}
-                                            <Text size="sm">{relatedDoc.name}</Text>
-                                        </Group>
-                                        <ActionIcon variant="light" size="sm">
-                                            <IconEye size={14} />
-                                        </ActionIcon>
-                                    </Group>
-                                ) : null;
-                            })}
-                        </Stack>
-                    </Card>
-                )}
-            </Grid.Col>
-        </Grid>
-    )
-}
-
-export default DocumentDetails
+export default DocumentDetails;

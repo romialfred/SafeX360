@@ -1,28 +1,40 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    Card,
-    Text,
-    Select,
-    Input,
-    Tooltip,
-} from '@mantine/core';
-import { IconSearch, IconBell, IconCheck, IconAlertTriangle, IconBolt } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
-import PageHeader from '../UtilityComp/PageHeader';
-import { SkeletonTable } from '../UtilityComp/LoadingSkeleton';
-import EmptyState from '../UtilityComp/EmptyState';
-import { Toolbar } from 'primereact/toolbar';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
-import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActionIcon, Select, TextInput, Tooltip } from '@mantine/core';
+import {
+    IconBell,
+    IconCircleCheck,
+    IconEye,
+    IconHourglassHigh,
+    IconSearch,
+    IconAlertTriangle,
+} from '@tabler/icons-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import PageHeader from '../UtilityComp/PageHeader';
+import KpiTile from '../UtilityComp/KpiTile';
+import EmptyState from '../UtilityComp/EmptyState';
 import { getNotifications } from '../../services/NotificationService';
 import { errorNotification } from '../../utility/NotificationUtility';
 import { getAllDepartments } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
-import StatusSummaryCards, { type StatusSummaryCardConfig } from './StatusSummaryCards';
+import {
+    TYPE_OPTIONS,
+    formatDateTimeFr,
+    isNotifFailure,
+    notifStatusConfig,
+    parseRecipientIds,
+    typeLabel,
+    urgencyConfig,
+} from './communicationLabels';
+
+/**
+ * Centre de notifications : suivi des envois générés par les communications
+ * (statut de livraison, urgence, zone, département).
+ */
 
 type NotificationSummary = {
     id: number;
@@ -40,77 +52,20 @@ type NotificationSummary = {
     departmentName?: string;
 };
 
-const formatEnumValue = (value?: string | null) => {
-    if (!value) return '-';
-    return value
-        .toString()
-        .toLowerCase()
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-};
-
-const parseRecipients = (recipients: NotificationSummary['recipients']): string[] => {
-    if (!recipients) return [];
-    if (Array.isArray(recipients)) return recipients.map((item) => String(item));
-    if (typeof recipients === 'string') {
-        try {
-            const parsed = JSON.parse(recipients);
-            if (Array.isArray(parsed)) return parsed.map((item) => String(item));
-        } catch (_err) {
-            // value is not JSON, fall back to comma split
-        }
-        return recipients.split(',').map((item) => item.trim()).filter(Boolean);
-    }
-    if (typeof recipients === 'object') {
-        return Object.values(recipients).map((item) => String(item));
-    }
-    return [String(recipients)];
-};
-
-const getStatusSeverity = (status: string) => {
-    switch (status.toUpperCase()) {
-        case 'SUCCESS':
-        case 'SENT':
-            return 'success';
-        case 'FAILURE':
-        case 'FAILED':
-        case 'ERROR':
-            return 'danger';
-        case 'PENDING':
-        case 'QUEUED':
-        case 'IN_PROGRESS':
-            return 'warning';
-        default:
-            return 'info';
-    }
-};
-
-const getUrgencySeverity = (urgency?: string | null) => {
-    switch ((urgency ?? '').toUpperCase()) {
-        case 'URGENT':
-        case 'HIGH':
-            return 'danger';
-        case 'MEDIUM':
-            return 'warning';
-        case 'LOW':
-        case 'NORMAL':
-            return 'info';
-        default:
-            return 'info';
-    }
-};
+const ALL = 'ALL';
 
 const NotificationsManagement = () => {
+    const navigate = useNavigate();
     const [notificationsList, setNotificationsList] = useState<NotificationSummary[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedType, setSelectedType] = useState<string | null>(null);
-    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-    const [selectedUrgency, setSelectedUrgency] = useState<string | null>(null);
-    const [selectedZone, setSelectedZone] = useState<string | null>(null);
-    const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
     const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
+
+    const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState<string>(ALL);
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
+    const [urgencyFilter, setUrgencyFilter] = useState<string>(ALL);
+    const [zoneFilter, setZoneFilter] = useState<string>(ALL);
+    const [departmentFilter, setDepartmentFilter] = useState<string>(ALL);
 
     useEffect(() => {
         setLoading(true);
@@ -119,7 +74,7 @@ const NotificationsManagement = () => {
                 setNotificationsList(response ?? []);
             })
             .catch((error: any) => {
-                errorNotification(error?.response?.data?.errorMessage || 'Failed to load notifications.');
+                errorNotification(error?.response?.data?.errorMessage || 'Échec du chargement des notifications');
             })
             .finally(() => setLoading(false));
     }, []);
@@ -129,35 +84,14 @@ const NotificationsManagement = () => {
             .then((data) => {
                 setDepartmentMap(mapIdToName(data));
             })
-            .catch((_err) => {
-                // non critical; keep map empty
+            .catch(() => {
+                // non bloquant : les noms de départements resteront vides
             });
     }, []);
 
-    const statusOptions = useMemo(() => {
-        const values = Array.from(new Set(notificationsList.map((item) => item.status).filter(Boolean)));
-        return values.map((value) => ({ value, label: formatEnumValue(value) }));
-    }, [notificationsList]);
-
-    const typeOptions = useMemo(() => {
-        const values = Array.from(new Set(notificationsList.map((item) => item.type).filter(Boolean)));
-        return values.map((value) => ({ value: value!, label: formatEnumValue(value!) }));
-    }, [notificationsList]);
-
-    const urgencyOptions = useMemo(() => {
-        const values = Array.from(new Set(notificationsList.map((item) => item.urgency).filter(Boolean)));
-        return values.map((value) => ({ value: value!, label: formatEnumValue(value!) }));
-    }, [notificationsList]);
-
-    const zoneOptions = useMemo(() => {
-        const values = Array.from(new Set(notificationsList.map((item) => item.zoneName).filter(Boolean)));
-        return values.map((value) => ({ value: value!, label: value! }));
-    }, [notificationsList]);
-
     const resolveDepartmentName = useCallback((departmentId?: number | null) => {
         if (departmentId === null || departmentId === undefined) return undefined;
-        const key = String(departmentId);
-        const department = departmentMap[key];
+        const department = departmentMap[String(departmentId)];
         return department?.name ?? department?.departmentName ?? undefined;
     }, [departmentMap]);
 
@@ -167,10 +101,36 @@ const NotificationsManagement = () => {
             const hasDepartment = notification.departmentId !== null && notification.departmentId !== undefined;
             return {
                 ...notification,
-                departmentName: departmentName ?? (hasDepartment ? `Department ${notification.departmentId}` : undefined),
+                departmentName: departmentName ?? (hasDepartment ? `Département ${notification.departmentId}` : undefined),
             };
         });
     }, [notificationsList, resolveDepartmentName]);
+
+    // ─── Options de filtres dérivées des données ─────────────────────────────
+
+    const typeOptions = useMemo(() => {
+        const values = Array.from(new Set(enrichedNotifications.map((item) => item.type).filter(Boolean)));
+        const known = TYPE_OPTIONS.filter((opt) => values.includes(opt.value));
+        const unknown = values
+            .filter((value) => !TYPE_OPTIONS.some((opt) => opt.value === value))
+            .map((value) => ({ value: value!, label: typeLabel(value) }));
+        return [...known, ...unknown];
+    }, [enrichedNotifications]);
+
+    const statusOptions = useMemo(() => {
+        const values = Array.from(new Set(enrichedNotifications.map((item) => item.status).filter(Boolean)));
+        return values.map((value) => ({ value, label: notifStatusConfig(value).label }));
+    }, [enrichedNotifications]);
+
+    const urgencyOptions = useMemo(() => {
+        const values = Array.from(new Set(enrichedNotifications.map((item) => item.urgency).filter(Boolean)));
+        return values.map((value) => ({ value: value!, label: urgencyConfig(value).label }));
+    }, [enrichedNotifications]);
+
+    const zoneOptions = useMemo(() => {
+        const values = Array.from(new Set(enrichedNotifications.map((item) => item.zoneName).filter(Boolean)));
+        return values.map((value) => ({ value: value!, label: value! }));
+    }, [enrichedNotifications]);
 
     const departmentOptions = useMemo(() => {
         const values = Array.from(
@@ -182,272 +142,125 @@ const NotificationsManagement = () => {
         );
         return values.map((value) => ({
             value: String(value),
-            label: resolveDepartmentName(value) ?? `Department ${value}`,
+            label: resolveDepartmentName(value) ?? `Département ${value}`,
         }));
     }, [enrichedNotifications, resolveDepartmentName]);
 
     const filteredNotifications = useMemo(() => {
-        let filtered = [...enrichedNotifications];
+        const q = search.trim().toLowerCase();
+        const filtered = enrichedNotifications.filter((notification) => {
+            if (typeFilter !== ALL && notification.type !== typeFilter) return false;
+            if (statusFilter !== ALL && notification.status !== statusFilter) return false;
+            if (urgencyFilter !== ALL && notification.urgency !== urgencyFilter) return false;
+            if (zoneFilter !== ALL && notification.zoneName !== zoneFilter) return false;
+            if (departmentFilter !== ALL && String(notification.departmentId ?? '') !== departmentFilter) return false;
+            if (!q) return true;
+            const haystack = [notification.title, notification.responseMessage, notification.zoneName]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
+        });
 
-        if (searchTerm.trim()) {
-            const term = searchTerm.trim().toLowerCase();
-            filtered = filtered.filter((notification) => (
-                (notification.title ?? '').toLowerCase().includes(term) ||
-                (notification.responseMessage ?? '').toLowerCase().includes(term) ||
-                (notification.type ?? '').toLowerCase().includes(term) ||
-                (notification.zoneName ?? '').toLowerCase().includes(term)
-            ));
-        }
-
-        if (selectedType) {
-            filtered = filtered.filter((notification) => notification.type === selectedType);
-        }
-
-        if (selectedStatus) {
-            filtered = filtered.filter((notification) => notification.status === selectedStatus);
-        }
-
-        if (selectedUrgency) {
-            filtered = filtered.filter((notification) => notification.urgency === selectedUrgency);
-        }
-
-        if (selectedZone) {
-            filtered = filtered.filter((notification) => notification.zoneName === selectedZone);
-        }
-
-        if (selectedDepartment) {
-            filtered = filtered.filter((notification) => String(notification.departmentId ?? '') === selectedDepartment);
-        }
-
-        filtered.sort((a, b) => {
+        return filtered.sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
         });
+    }, [enrichedNotifications, search, typeFilter, statusFilter, urgencyFilter, zoneFilter, departmentFilter]);
 
-        return filtered;
-    }, [enrichedNotifications, searchTerm, selectedType, selectedStatus, selectedUrgency, selectedZone, selectedDepartment]);
-
-    const summaryCards = useMemo<StatusSummaryCardConfig[]>(() => {
-        const total = enrichedNotifications.length;
-        const normalize = (status: any) => String(status ?? '').toUpperCase();
-        const activeStatuses = new Set(['PENDING', 'QUEUED', 'IN_PROGRESS', 'SENDING', 'SCHEDULED']);
-        const completedStatuses = new Set(['SUCCESS', 'SENT', 'DELIVERED', 'COMPLETED']);
-        const pausedStatuses = new Set(['PAUSED', 'ON_HOLD', 'HALTED', 'CANCELLED', 'CANCELED', 'STOPPED', 'FAILED', 'FAILURE', 'ERROR']);
-
-        let active = 0;
-        let completed = 0;
-        let paused = 0;
+    const counts = useMemo(() => {
+        const deliveredStatuses = new Set(['SUCCESS', 'SENT', 'DELIVERED', 'COMPLETED']);
+        const pendingStatuses = new Set(['PENDING', 'QUEUED', 'IN_PROGRESS', 'SENDING', 'SCHEDULED']);
+        let delivered = 0;
+        let pending = 0;
         let failed = 0;
 
         enrichedNotifications.forEach((notification) => {
-            const status = normalize(notification.status);
-            if (completedStatuses.has(status)) {
-                completed += 1;
-            } else if (pausedStatuses.has(status)) {
-                paused += 1;
-                if (status === 'FAILED' || status === 'FAILURE' || status === 'ERROR') {
-                    failed += 1;
-                }
-            } else if (activeStatuses.has(status)) {
-                active += 1;
-            }
+            const status = (notification.status ?? '').toUpperCase();
+            if (deliveredStatuses.has(status)) delivered += 1;
+            else if (pendingStatuses.has(status)) pending += 1;
+            else if (isNotifFailure(status)) failed += 1;
         });
 
-        const formatCount = (value: number) => new Intl.NumberFormat('en-US').format(value);
-        const percentageLabel = (count: number) => (
-            total > 0 ? `${Math.round((count / total) * 100)}% of total` : 'Awaiting first record'
-        );
-        const successRate = total > 0 ? ((completed / total) * 100).toFixed(1) : '0.0';
-        const failedLabel = failed > 0 ? `${formatCount(failed)} failed deliveries` : 'No failures logged';
-
-        return [
-            {
-                key: 'total',
-                title: 'Total notifications',
-                value: formatCount(total),
-                icon: IconBell,
-                color: 'blue',
-                description: 'Every notification generated across communications.',
-            },
-            {
-                key: 'active',
-                title: 'Active',
-                value: formatCount(active),
-                icon: IconBolt,
-                color: 'teal',
-                description: 'Queued, pending or in-progress deliveries.',
-                meta: { label: percentageLabel(active), color: 'teal' },
-            },
-            {
-                key: 'completed',
-                title: 'Completed',
-                value: formatCount(completed),
-                icon: IconCheck,
-                color: 'indigo',
-                description: 'Successfully delivered notifications.',
-                meta: { label: `${successRate}% success rate`, color: 'indigo' },
-            },
-            {
-                key: 'paused',
-                title: 'Paused',
-                value: formatCount(paused),
-                icon: IconAlertTriangle,
-                color: 'orange',
-                description: 'Paused, cancelled or failed attempts.',
-                meta: { label: failedLabel, color: failed > 0 ? 'red' : 'gray', variant: 'light' },
-            },
-        ] satisfies StatusSummaryCardConfig[];
+        const total = enrichedNotifications.length;
+        const successRate = total > 0 ? Math.round((delivered / total) * 100) : null;
+        return { total, delivered, pending, failed, successRate };
     }, [enrichedNotifications]);
 
-    const toolbarTemplate = () => (
-        <div className="flex gap-2 items-center overflow-x-auto">
-            <Select
-                placeholder="Filtrer par type"
-                data={typeOptions}
-                value={selectedType}
-                onChange={setSelectedType}
-                clearable
-                size="sm"
-                className="min-w-[160px]"
-            />
-            <Select
-                placeholder="Filtrer par statut"
-                data={statusOptions}
-                value={selectedStatus}
-                onChange={setSelectedStatus}
-                clearable
-                size="sm"
-                className="min-w-[160px]"
-            />
-            <Select
-                placeholder="Filtrer par urgence"
-                data={urgencyOptions}
-                value={selectedUrgency}
-                onChange={setSelectedUrgency}
-                clearable
-                size="sm"
-                className="min-w-[160px]"
-            />
-            <Select
-                placeholder="Filtrer par zone"
-                data={zoneOptions}
-                value={selectedZone}
-                onChange={setSelectedZone}
-                clearable
-                size="sm"
-                className="min-w-[160px]"
-            />
-            <Select
-                placeholder="Filtrer par département"
-                data={departmentOptions}
-                value={selectedDepartment}
-                onChange={setSelectedDepartment}
-                clearable
-                size="sm"
-                className="min-w-[180px]"
-            />
-            <Input
-                leftSection={<IconSearch size={16} />}
-                placeholder="Rechercher des notifications..."
-                type="search"
-                size="sm"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.currentTarget.value)}
-                className="min-w-[200px]"
-            />
-        </div>
-    );
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
     const resolveDescription = (rowData: NotificationSummary) => {
-        const upperStatus = rowData.status?.toUpperCase?.() ?? '';
-        if (['FAILED', 'FAILURE', 'ERROR'].includes(upperStatus)) {
-            return 'Error sending message.';
+        if (isNotifFailure(rowData.status)) {
+            return rowData.responseMessage || "Erreur lors de l'envoi du message.";
         }
-        return rowData.responseMessage || 'Notification sent successfully.';
+        return rowData.responseMessage || 'Notification transmise.';
     };
 
-    const titleTemplate = (rowData: NotificationSummary) => {
+    const titleBody = (rowData: NotificationSummary) => {
         const description = resolveDescription(rowData);
-        const isFailure = ['FAILED', 'FAILURE', 'ERROR'].includes((rowData.status ?? '').toUpperCase());
+        const failure = isNotifFailure(rowData.status);
         return (
-            <div className="flex flex-col gap-1">
-                <Text
-                    component={Link}
-                    to={`/communications/communications-details/${rowData.communicationId ?? rowData.id}`}
-                    size="sm"
-                    c="blue"
-                    className="hover:underline"
-                >
-                    {rowData.title || `Notification #${rowData.id}`}
-                </Text>
-                {description && (
-                    <Tooltip label={description} withArrow position="top-start">
-                        <Text size="xs" c={isFailure ? 'red' : 'dimmed'} lineClamp={1}>
-                            {description}
-                        </Text>
-                    </Tooltip>
+            <div className="min-w-0 max-w-md">
+                {rowData.communicationId ? (
+                    <Link
+                        to={`/communications/communications-details/${rowData.communicationId}`}
+                        className="text-[13px] text-slate-800 leading-snug hover:text-teal-700 hover:underline"
+                    >
+                        {rowData.title || `Notification n° ${rowData.id}`}
+                    </Link>
+                ) : (
+                    <p className="text-[13px] text-slate-800 leading-snug">
+                        {rowData.title || `Notification n° ${rowData.id}`}
+                    </p>
                 )}
+                <p className={`text-[11.5px] mt-0.5 truncate ${failure ? 'text-rose-600' : 'text-slate-500'}`}>
+                    {description}
+                </p>
             </div>
         );
     };
 
-    const statusTemplate = (rowData: NotificationSummary) => (
-        <Tag
-            value={formatEnumValue(rowData.status)}
-            severity={getStatusSeverity(rowData.status)}
-            className="text-xs px-2 py-1 rounded-full"
-        />
-    );
-
-    const urgencyTemplate = (rowData: NotificationSummary) => (
-        <Tag
-            value={formatEnumValue(rowData.urgency)}
-            severity={getUrgencySeverity(rowData.urgency)}
-            className="text-xs px-2 py-1 rounded-full"
-        />
-    );
-
-    const recipientsTemplate = (rowData: NotificationSummary) => {
-        const recipients = parseRecipients(rowData.recipients);
-        if (!recipients.length) return <Text size="sm">-</Text>;
+    const statusBody = (rowData: NotificationSummary) => {
+        const cfg = notifStatusConfig(rowData.status);
         return (
-            <Tooltip label={recipients.join(', ')} withArrow position="top">
-                <Text size="sm" className="cursor-help">
-                    {recipients.length}
-                </Text>
-            </Tooltip>
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
         );
     };
 
-    const zoneTemplate = (rowData: NotificationSummary) => (
-        <Text size="sm">{rowData.zoneName || '-'}</Text>
-    );
-
-    const departmentTemplate = (rowData: NotificationSummary) => {
-        if (rowData.departmentId === null || rowData.departmentId === undefined) return <Text size="sm">-</Text>;
-        const deptName = rowData.departmentName ?? resolveDepartmentName(rowData.departmentId);
-        if (!deptName) return <Text size="sm">-</Text>;
-        return <Text size="sm">{deptName}</Text>;
+    const urgencyBody = (rowData: NotificationSummary) => {
+        const cfg = urgencyConfig(rowData.urgency);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
     };
 
-    const dateTemplate = (rowData: NotificationSummary) => (
-        <Text size="sm">
-            {rowData.createdAt
-                ? new Date(rowData.createdAt).toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                })
-                : '-'}
-        </Text>
+    const recipientsBody = (rowData: NotificationSummary) => {
+        const recipients = parseRecipientIds(rowData.recipients);
+        if (!recipients.length) return <span className="text-[12.5px] text-slate-500">—</span>;
+        return <span className="text-[12.5px] text-slate-600 tabular-nums">{recipients.length}</span>;
+    };
+
+    const actionsBody = (rowData: NotificationSummary) => (
+        <Tooltip label="Consulter la notification" withArrow>
+            <ActionIcon
+                variant="light"
+                size="sm"
+                color="teal"
+                onClick={() => navigate(`notifications-details/${rowData.id}`)}
+                aria-label="Consulter la notification"
+            >
+                <IconEye size={14} stroke={1.5} />
+            </ActionIcon>
+        </Tooltip>
     );
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -457,48 +270,183 @@ const NotificationsManagement = () => {
                 icon={<IconBell size={22} stroke={2} />}
                 iconColor="pink"
                 title="Centre de notifications"
-                subtitle="Gestion et suivi de toutes les notifications de communication dans l'organisation"
+                subtitle="Suivi des envois générés par les communications : livraison, urgence et destinataires"
             />
 
-            <StatusSummaryCards cards={summaryCards} />
+            {/* KPI des envois */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile
+                    label="Total notifications"
+                    value={loading ? '…' : counts.total}
+                    tone="slate"
+                    icon={<IconBell size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Envoyées"
+                    value={loading ? '…' : counts.delivered}
+                    tone="green"
+                    icon={<IconCircleCheck size={14} stroke={1.8} />}
+                    referenceValue={counts.successRate !== null ? `Taux de réussite : ${counts.successRate}%` : undefined}
+                />
+                <KpiTile
+                    label="En attente"
+                    value={loading ? '…' : counts.pending}
+                    tone="violet"
+                    icon={<IconHourglassHigh size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Échecs"
+                    value={loading ? '…' : counts.failed}
+                    tone="rose"
+                    icon={<IconAlertTriangle size={14} stroke={1.8} />}
+                    referenceValue={counts.failed > 0 ? 'Envois à relancer' : 'Aucun échec enregistré'}
+                />
+            </div>
 
-            <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Toolbar className="mb-3 !p-2" left={toolbarTemplate}></Toolbar>
+            {/* Barre de filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                        placeholder="Rechercher par titre, message ou zone…"
+                        leftSection={<IconSearch size={14} />}
+                        value={search}
+                        onChange={(e) => setSearch(e.currentTarget.value)}
+                        size="xs"
+                        className="flex-1 min-w-[200px]"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Tous types' }, ...typeOptions]}
+                        value={typeFilter}
+                        onChange={(v) => setTypeFilter(v ?? ALL)}
+                        size="xs"
+                        w={165}
+                        aria-label="Filtrer par type"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Tous statuts' }, ...statusOptions]}
+                        value={statusFilter}
+                        onChange={(v) => setStatusFilter(v ?? ALL)}
+                        size="xs"
+                        w={140}
+                        aria-label="Filtrer par statut"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Toutes urgences' }, ...urgencyOptions]}
+                        value={urgencyFilter}
+                        onChange={(v) => setUrgencyFilter(v ?? ALL)}
+                        size="xs"
+                        w={145}
+                        aria-label="Filtrer par urgence"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Toutes zones' }, ...zoneOptions]}
+                        value={zoneFilter}
+                        onChange={(v) => setZoneFilter(v ?? ALL)}
+                        size="xs"
+                        w={140}
+                        searchable
+                        aria-label="Filtrer par zone"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Tous départements' }, ...departmentOptions]}
+                        value={departmentFilter}
+                        onChange={(v) => setDepartmentFilter(v ?? ALL)}
+                        size="xs"
+                        w={165}
+                        searchable
+                        aria-label="Filtrer par département"
+                    />
+                </div>
+                <p className="text-[11.5px] text-slate-500 mt-2">
+                    {loading
+                        ? 'Chargement des notifications…'
+                        : `${filteredNotifications.length} notification${filteredNotifications.length > 1 ? 's' : ''} affichée${filteredNotifications.length > 1 ? 's' : ''} sur ${enrichedNotifications.length}`}
+                </p>
+            </div>
+
+            {/* Journal des envois */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
                 {loading ? (
-                    /* LOT 41 E: SkeletonTable pendant le chargement */
-                    <SkeletonTable rows={6} cols={7} />
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredNotifications.length ? (
+                    <EmptyState
+                        icon={<IconBell size={24} />}
+                        title="Aucune notification trouvée"
+                        description="Aucun envoi ne correspond aux filtres sélectionnés. Les nouvelles notifications apparaîtront ici."
+                        compact
+                    />
                 ) : (
                     <DataTable
                         value={filteredNotifications}
                         size="small"
                         stripedRows
+                        removableSort
                         paginator
                         rows={10}
                         rowsPerPageOptions={[10, 25, 50]}
-                        responsiveLayout="scroll"
-                        className="[&_.p-datatable-tbody]:!text-sm"
-                        /* LOT 41 E: EmptyState unifié dans la DataTable */
-                        emptyMessage={
-                            <EmptyState
-                                icon={<IconBell size={28} />}
-                                title="Aucune notification trouvée"
-                                description="Aucune notification ne correspond aux filtres sélectionnés."
-                                iconColor="slate"
-                                compact
-                            />
-                        }
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
                     >
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px', maxWidth: '360px' }} header="Notification" body={titleTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Type" body={(rowData: NotificationSummary) => <Text size="sm">{formatEnumValue(rowData.type)}</Text>} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Status" body={statusTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Urgency" body={urgencyTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Recipients" body={recipientsTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Zone" body={zoneTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Department" body={departmentTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: '14px' }} header="Sent At" body={dateTemplate} />
+                        <Column header="Notification" body={titleBody} sortable sortField="title" />
+                        <Column
+                            header="Type"
+                            body={(rowData: NotificationSummary) => (
+                                <span className="text-[12.5px] text-slate-600">{typeLabel(rowData.type)}</span>
+                            )}
+                            sortable
+                            sortField="type"
+                            style={{ width: '10rem' }}
+                        />
+                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header="Urgence" body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
+                        <Column
+                            header="Destinataires"
+                            body={recipientsBody}
+                            style={{ width: '7.5rem' }}
+                            bodyStyle={{ textAlign: 'center' }}
+                        />
+                        <Column
+                            header="Zone"
+                            body={(rowData: NotificationSummary) => (
+                                <span className="text-[12.5px] text-slate-600">{rowData.zoneName || '—'}</span>
+                            )}
+                            sortable
+                            sortField="zoneName"
+                            style={{ width: '9rem' }}
+                        />
+                        <Column
+                            header="Département"
+                            body={(rowData: NotificationSummary) => (
+                                <span className="text-[12.5px] text-slate-600">{rowData.departmentName || '—'}</span>
+                            )}
+                            sortable
+                            sortField="departmentName"
+                            style={{ width: '9.5rem' }}
+                        />
+                        <Column
+                            header="Envoyée le"
+                            body={(rowData: NotificationSummary) => (
+                                <span className="text-[12.5px] text-slate-600">{formatDateTimeFr(rowData.createdAt)}</span>
+                            )}
+                            sortable
+                            sortField="createdAt"
+                            style={{ width: '10.5rem' }}
+                        />
+                        <Column
+                            header="Actions"
+                            body={actionsBody}
+                            headerStyle={{ width: '5rem', textAlign: 'center' }}
+                            bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
+                        />
                     </DataTable>
                 )}
-            </Card>
+            </div>
         </div>
     );
 };
