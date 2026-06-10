@@ -3,7 +3,7 @@ import { IconUser, IconCalendar, IconClock } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
-import { incidentStatusMap } from '../../../../Data/DropdownData';
+import { incidentStatusLabel } from '../incidentLabels';
 
 dayjs.extend(relativeTime);
 dayjs.extend(duration);
@@ -50,7 +50,7 @@ const IncidentHistory = ({ history, incident: _incident }: IncidentHistoryProps)
                     return (
                         <Timeline.Item key={entry.id} title={
                             <span className="text-xs text-slate-800 uppercase tracking-wider">
-                                {incidentStatusMap[entry.status]}
+                                {incidentStatusLabel(entry.status)}
                             </span>
                         }>
                             <Card shadow="none" radius="md" className="!bg-white mt-2 !border !border-slate-200" p="sm">
@@ -60,7 +60,7 @@ const IncidentHistory = ({ history, incident: _incident }: IncidentHistoryProps)
                                         <span className="font-medium">{entry.ownerName || 'Utilisateur inconnu'}</span>
                                     </Text>
                                     <Badge color="teal" variant="light" size="xs" radius="sm">
-                                        {incidentStatusMap[entry.status]}
+                                        {incidentStatusLabel(entry.status)}
                                     </Badge>
                                 </Group>
 

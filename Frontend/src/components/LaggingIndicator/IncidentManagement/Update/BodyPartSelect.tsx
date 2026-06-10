@@ -8,7 +8,6 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
 
 
     useEffect(() => {
-        console.log(form.getInputProps(id)?.value);
         setSelectedImages(form.getInputProps(id)?.value || []);
     }, [form.getInputProps(id)?.value]);
     const handleConfirm = () => {
@@ -27,8 +26,8 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
     return (
         <div>
             <MultiSelect
-                label="Body Parts Affected"
-                placeholder="Select body parts"
+                label="Parties du corps touchées"
+                placeholder="Sélectionner les parties du corps"
                 data={bodyParts}
                 readOnly
                 onClick={() => setImageModalOpen(true)}
@@ -39,7 +38,7 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
                 centered
                 opened={imageModalOpen}
                 onClose={() => setImageModalOpen(false)}
-                title="Select Body Parts"
+                title="Sélectionner les parties du corps"
                 size="70%"
             >
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -49,7 +48,7 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
                             <div
                                 key={item.value}
                                 onClick={() => toggleSelection(item.value)}
-                                className={`relative cursor-pointer rounded-lg shadow transition-all flex flex-col gap-5 p-5 border-2 ${isSelected ? "border-blue-600 ring-2 ring-blue-300" : "border-gray-300"
+                                className={`relative cursor-pointer rounded-lg shadow transition-colors flex flex-col gap-5 p-5 border-2 ${isSelected ? "border-blue-600 ring-2 ring-blue-300" : "border-gray-300"
                                     }`}
                             >
                                 <img
@@ -72,7 +71,7 @@ const BodyPartSelect = ({ bodyParts, form, id }: any) => {
                 </div>
 
                 <div className="mt-4 text-right">
-                    <Button onClick={handleConfirm}>Confirm</Button>
+                    <Button onClick={handleConfirm}>Valider</Button>
                 </div>
             </Modal>
         </div>

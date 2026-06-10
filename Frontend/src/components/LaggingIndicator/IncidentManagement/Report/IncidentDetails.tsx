@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import TextEditor from "../../../UtilityComp/TextEditor";
 import BodyPartSelect from "./BodyPartSelect";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
-import { incidentStatuses } from "../../../../Data/DropdownData";
+import { INCIDENT_STATUS_OPTIONS } from "../incidentLabels";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, workAreas, workProcesses, departments }: any) => {
 
@@ -110,7 +110,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         </div>
                         <h2 className="text-xs text-slate-800 uppercase tracking-wider">Informations générales</h2>
                     </div>
-                    <Select size="xs" {...form.getInputProps("status")} data={incidentStatuses} allowDeselect={false} w={180} />
+                    <Select size="xs" aria-label="Statut de l'incident" {...form.getInputProps("status")} data={INCIDENT_STATUS_OPTIONS} allowDeselect={false} w={180} />
                 </header>
                 <div className="p-4 grid grid-cols-1 gap-3">
                     <TextInput size="sm" {...form.getInputProps("title")} label="Titre de l'incident" placeholder="Description courte et factuelle" withAsterisk />

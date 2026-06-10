@@ -32,7 +32,7 @@ import EmptyState from '../../UtilityComp/EmptyState';
 import { IconShieldExclamation } from '@tabler/icons-react';
 
 import { getAllIncidents } from '../../../services/IncidentService';
-import { incidentStatuses, incidentStatusMap } from '../../../Data/DropdownData';
+import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel, PAGINATOR_FR } from './incidentLabels';
 import { formatDateShort } from '../../../utility/DateFormats';
 import { getUniqueSeverityLevel } from '../../../services/SeverityLevelService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
@@ -96,7 +96,7 @@ const IncidentManagementData = () => {
                     label: level.name,
                     value: "" + level.level,
                 }));
-                setLevels([{ label: "All", value: "All" }, ...uniqueLevels]);
+                setLevels([{ label: "Tous", value: "All" }, ...uniqueLevels]);
             })
             .catch((err) => {
                 console.error('Error fetching unique severity levels:', err);
@@ -161,36 +161,55 @@ const IncidentManagementData = () => {
         );
     };
 
+    /** Export CSV simple du registre filtré (colonnes visibles). */
+    const handleExportCsv = () => {
+        const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const header = ['Numéro', 'Incident', 'Catégorie', 'Département', 'Déclarant', 'Gravité', 'Date de déclaration', 'Statut'];
+        const rows = filteredData.map((i: any) => [
+            i.number, i.title, i.incidentCategoryName, i.departmentName, i.reporterName,
+            i.severityLevelName, formatDateShort(i.incidentDate), incidentStatusLabel(i.status),
+        ].map(esc).join(';'));
+        const blob = new Blob(['﻿' + [header.map(esc).join(';'), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `incidents-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const rightToolbarTemplate = () => (
         <div className="flex gap-4 items-center">
             <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                <Tooltip label="Table View">
+                <Tooltip label="Vue tableau">
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
+                        aria-label="Vue tableau"
                         onClick={() => setViewType('table')}
                     >
                         <IconLayoutList size={18} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Card View">
+                <Tooltip label="Vue cartes">
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
+                        aria-label="Vue cartes"
                         onClick={() => setViewType('card')}
                     >
                         <IconLayoutGrid size={18} />
                     </ActionIcon>
                 </Tooltip>
             </div>
-            <Button size="sm" variant="outline" leftSection={<IconUpload />}>
-                Export
+            <Button size="sm" variant="outline" leftSection={<IconUpload />} onClick={handleExportCsv}>
+                Exporter
             </Button>
             <TextInput
                 value={globalFilterValue}
                 onChange={onGlobalFilterChange}
                 size="sm"
-                placeholder="Search"
+                placeholder="Rechercher"
                 leftSection={<IconSearch />}
             />
         </div>
@@ -198,7 +217,7 @@ const IncidentManagementData = () => {
 
     // Severity Tabs (like NonConformityDashboard)
     const severityTabOptions = [
-        { value: 'All', label: 'All', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
+        { value: 'All', label: 'Tous', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
         ...levels.filter(l => l.value !== 'All').map(l => {
             let colorClass = '!text-slate-600';
             switch (l.value) {
@@ -225,7 +244,7 @@ const IncidentManagementData = () => {
                     <Tabs.Tab
                         key={opt.value}
                         value={opt.value}
-                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-all duration-200`}
+                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
                     >
                         {levels.find(l => l.value === opt.value)?.label || opt.label} ({incidents.filter(x => (opt.value === 'All' || x.maxSeverityLevel == opt.value)).length})
                     </Tabs.Tab>
@@ -243,7 +262,7 @@ const IncidentManagementData = () => {
         }
         return {
             value: category,
-            label: category,
+            label: category === 'All' ? 'Tous' : category,
             tabClass: `!text-slate-600 ${colorClass}`
         };
     });
@@ -255,7 +274,7 @@ const IncidentManagementData = () => {
                     <Tabs.Tab
                         key={opt.value}
                         value={opt.value}
-                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-all duration-200`}
+                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
                     >
                         {opt.label} ({incidents.filter(x => (selectedLevel === 'All' || x.maxSeverityLevel == selectedLevel) && (opt.value === 'All' || x.incidentCategoryName === opt.value)).length})
                     </Tabs.Tab>
@@ -268,13 +287,15 @@ const IncidentManagementData = () => {
         <div className="flex items-center gap-2">
             <Select allowDeselect={false}
                 size='sm'
-                data={[{ label: "All", value: "All" }, ...incidentStatuses]}
+                aria-label="Filtrer par statut"
+                data={[{ label: "Tous les statuts", value: "All" }, ...INCIDENT_STATUS_OPTIONS]}
                 value={selectedStatus}
                 onChange={setSelectedStatus}
             />
             <Select allowDeselect={false}
                 size='sm'
-                data={[{ label: "All", value: "All" }, ...departments]}
+                aria-label="Filtrer par département"
+                data={[{ label: "Tous les départements", value: "All" }, ...departments]}
                 value={selectedDepartment}
                 onChange={setSelectedDepartment}
 
@@ -296,7 +317,7 @@ const IncidentManagementData = () => {
 
     const levelBodyTemplate = (rowData: any) => {
         const level = rowData.maxSeverityLevel;
-        const severityLevelName = rowData.severityLevelName || 'Unknown';
+        const severityLevelName = rowData.severityLevelName || '—';
         return (
             <span className={`px-2 py-1 rounded text-xs w-fit capitalize ${getTailwindColorForSeverityLevel(level)}`}>
                 {`${level} - ${severityLevelName}`}
@@ -337,7 +358,7 @@ const IncidentManagementData = () => {
                 color={color}
                 variant="light"
             >
-                {incidentStatusMap[rowData.status]}
+                {incidentStatusLabel(rowData.status)}
             </Badge>
         );
     };
@@ -348,20 +369,20 @@ const IncidentManagementData = () => {
         const isRejected = statusUpper === 'REJECTED';
         const canEdit = !(isClosed || isRejected);
         const canInvestigate = !(isClosed || isRejected);
-        const editTooltip = canEdit ? 'Edit' : (isClosed ? 'Closed — modification not possible' : 'Rejected — modification not possible');
-        const invTooltip = canInvestigate ? 'Investigation' : (isClosed ? 'Closed — investigation not allowed' : 'Rejected — investigation not allowed');
+        const editTooltip = canEdit ? 'Modifier' : (isClosed ? 'Incident clôturé — modification impossible' : 'Incident rejeté — modification impossible');
+        const invTooltip = canInvestigate ? 'Investigation' : (isClosed ? 'Incident clôturé — investigation impossible' : 'Incident rejeté — investigation impossible');
         return (
             <div className='flex gap-3 justify-center'>
                 <Tooltip label={editTooltip}>
                     <span className="inline-flex">
-                        <ActionIcon onClick={() => { if (canEdit) navigate(`edit/${rowData.id}`); }} variant="filled" size="sm" color="primary" disabled={!canEdit}>
+                        <ActionIcon aria-label={editTooltip} onClick={() => { if (canEdit) navigate(`edit/${rowData.id}`); }} variant="filled" size="sm" color="primary" disabled={!canEdit}>
                             <IconEdit style={{ width: '90%', height: '90%' }} stroke={1.5} />
                         </ActionIcon>
                     </span>
                 </Tooltip>
                 <Tooltip label={invTooltip}>
                     <span className="inline-flex">
-                        <ActionIcon onClick={() => { if (canInvestigate) navigate(`investigation/${rowData.id}`); }} variant="filled" size="sm" color="blue" disabled={!canInvestigate}>
+                        <ActionIcon aria-label={invTooltip} onClick={() => { if (canInvestigate) navigate(`investigation/${rowData.id}`); }} variant="filled" size="sm" color="blue" disabled={!canInvestigate}>
                             <IconSearch style={{ width: '90%', height: '90%' }} stroke={1.5} />
                         </ActionIcon>
                     </span>
@@ -375,8 +396,8 @@ const IncidentManagementData = () => {
     const enrichedIncidents = useMemo(() => {
         return incidents.map((i: any) => ({
             ...i,
-            departmentName: deptMap[i?.departmentId]?.name ?? 'Unknown',
-            reporterName: emps[i?.reporterId]?.name ?? '-',
+            departmentName: deptMap[i?.departmentId]?.name ?? '—',
+            reporterName: emps[i?.reporterId]?.name ?? '—',
         }));
     }, [incidents, deptMap, emps]);
 
@@ -416,7 +437,7 @@ const IncidentManagementData = () => {
                 <button
                     type="button"
                     onClick={() => setSelectedSource('ALL')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'ALL'
                             ? 'bg-slate-900 text-white border-slate-900 shadow-md'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -434,7 +455,7 @@ const IncidentManagementData = () => {
                 <button
                     type="button"
                     onClick={() => setSelectedSource('EMPLOYEE')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'EMPLOYEE'
                             ? 'bg-teal-700 text-white border-teal-700 shadow-md'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-50 hover:border-teal-300'
@@ -452,7 +473,7 @@ const IncidentManagementData = () => {
                 <button
                     type="button"
                     onClick={() => setSelectedSource('AI')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'AI'
                             ? 'bg-violet-700 text-white border-violet-700 shadow-md'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-violet-50 hover:border-violet-300'
@@ -502,19 +523,20 @@ const IncidentManagementData = () => {
                         rows={10}
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                         rowsPerPageOptions={[10, 25, 50]}
-                        dataKey="name"
+                        dataKey="id"
                         filters={filters}
                         globalFilterFields={['title', 'incidentCategoryName', 'status', 'departmentName', 'reporterName']}
-                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                        currentPageReportTemplate={PAGINATOR_FR}
+                        emptyMessage="Aucun incident ne correspond aux filtres sélectionnés."
                         onFilter={(e) => setFilters(e.filters)}
                     >
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" body={nameBodyTemplate} header="Incident Name" sortable />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentCategoryName" header="Category" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="departmentName" header="Department" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="reporterName" header="Reporter" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="severity" header="Severity Level" body={levelBodyTemplate} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentDate" header="Report Date" body={(rowData: any) => formatDateShort(rowData.incidentDate)} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={getSeverity} />
+                        <Column style={{ fontWeight: 'normal' }} field="title" body={nameBodyTemplate} header="Incident" sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentCategoryName" header="Catégorie" />
+                        <Column style={{ fontWeight: 'normal' }} field="departmentName" header="Département" />
+                        <Column style={{ fontWeight: 'normal' }} field="reporterName" header="Déclarant" />
+                        <Column style={{ fontWeight: 'normal' }} field="severity" header="Gravité" body={levelBodyTemplate} />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentDate" header="Date de déclaration" body={(rowData: any) => formatDateShort(rowData.incidentDate)} />
+                        <Column style={{ fontWeight: 'normal' }} field="status" header="Statut" body={getSeverity} />
                         <Column bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                     </DataTable>
                 ) : (

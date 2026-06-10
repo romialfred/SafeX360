@@ -258,7 +258,7 @@ const EmergencyDashboardPage = () => {
                                     key={d}
                                     type="button"
                                     onClick={() => setWindowDays(d)}
-                                    className={`px-2.5 py-1 rounded-md text-[11.5px] font-medium transition-all ${
+                                    className={`px-2.5 py-1 rounded-md text-[11.5px] font-medium transition-colors ${
                                         windowDays === d
                                             ? 'bg-white text-slate-900 shadow-sm'
                                             : 'text-slate-600 hover:text-slate-900'

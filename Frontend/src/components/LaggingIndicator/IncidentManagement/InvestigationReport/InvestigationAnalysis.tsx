@@ -3,17 +3,61 @@ import { Text, Group, Loader, Accordion, Checkbox, Title } from '@mantine/core';
 import { IconUser, IconPencil, IconCalculator, IconAlertTriangle, IconFile } from '@tabler/icons-react';
 import TextEditor from '../../../UtilityComp/TextEditor';
 import FileUpdateDropzone from '../../../UtilityComp/FileUpdateDropzone';
+import {
+    HUMAN_CAUSE_OPTIONS,
+    TASK_CAUSE_OPTIONS,
+    WORKING_CAUSE_OPTIONS,
+    ORGANIZATION_CAUSE_OPTIONS,
+} from '../incidentLabels';
 
+/**
+ * Étape 2 du wizard d'investigation — analyse des causes (méthode ICAM).
+ * Les valeurs des causes restent les codes historiques anglais du backend ;
+ * seul l'affichage est traduit (voir incidentLabels.ts).
+ */
+
+/** Groupe de cases à cocher des causes potentielles (valeur backend, libellé FR). */
+const CauseCheckboxGroup = ({ form, fieldId, options }: {
+    form: any;
+    fieldId: string;
+    options: { value: string; label: string }[];
+}) => (
+    <Checkbox.Group size="md"
+        {...form.getInputProps(fieldId)}
+        label="Causes potentielles :"
+        withAsterisk
+    >
+        <div className="flex flex-wrap mt-5 gap-2">
+            {options.map((opt) => (
+                <div key={opt.value} className="">
+                    <Checkbox.Card
+                        value={opt.value}
+                        radius="md"
+                        className="group border border-gray-300 transition duration-150 cursor-pointer
+                     hover:!border-primary hover:!bg-primary/10
+                     data-[checked]:!border-primary data-[checked]:!bg-primary/20
+                     data-[checked]:shadow-sm"
+                        p="xs"
+                    >
+                        <Group align="center" gap="xs">
+                            <Checkbox.Indicator size="xs" className=" text-blue-600" />
+                            <Text
+                                size="xs"
+                                className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
+                            >
+                                {opt.label}
+                            </Text>
+                        </Group>
+                    </Checkbox.Card>
+                </div>
+            ))}
+        </div>
+    </Checkbox.Group>
+);
 
 const InvestigationAnalysis = ({ form }: any) => {
     const [activeSections, setActiveSections] = useState<string[]>(['details']);
     const [isSaving, setIsSaving] = useState(false);
-
-    const auditTypes = ["Errors", "Procedural violations", "Fatigue", "Distraction", "Work overload", "Insufficient training or skills"]
-    const factors = ["Inadequate procedures", "Unsuitable tools or equipment", "Difficult working conditions"]
-    const working = ["Ineffective supervision", "Failed communication", "Dangerous or uncontrolled environment"]
-    const latent = ["Insufficient security policy", "Lack of training across the organization", "Poor safety culture", "Defects in the design of systems/processes"]
-
 
     useEffect(() => {
         const saveData = async () => {
@@ -25,27 +69,25 @@ const InvestigationAnalysis = ({ form }: any) => {
     }, []);
 
     const progressItems = [
-        { label: "Human Actions", status: form.values.humanCauses.length > 0 ? "done" : "pending" },
-        { label: "Task-related Factors", status: form.values.taskCauses.length > 0 ? "done" : "pending" },
-        { label: "Working Conditions", status: form.values.workingCauses.length > 0 ? "done" : "pending" },
-        { label: "Organizational & Latent Failures", status: form.values.organizationCauses.length > 0 ? "done" : "pending" },
-        { label: "Evidence", status: form.values.evidence.length > 0 ? "done" : "pending" },
+        { label: "Actions humaines", status: form.values.humanCauses.length > 0 ? "done" : "pending" },
+        { label: "Facteurs liés à la tâche", status: form.values.taskCauses.length > 0 ? "done" : "pending" },
+        { label: "Conditions de travail", status: form.values.workingCauses.length > 0 ? "done" : "pending" },
+        { label: "Défaillances organisationnelles", status: form.values.organizationCauses.length > 0 ? "done" : "pending" },
+        { label: "Preuves", status: form.values.evidence.length > 0 ? "done" : "pending" },
     ];
-
-
 
     return (
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-lg  text-gray-800">Investigation Analysis</h2>
-                    <p className='text-gray-500'>Incident Cause Analysis Method - Select potential causes and provide detailed analysis</p>
+                    <h2 className="text-lg  text-gray-800">Analyse des causes</h2>
+                    <p className='text-gray-500'>Méthode ICAM — sélectionner les causes potentielles et détailler l'analyse</p>
                 </div>
 
                 {isSaving && (
                     <Group gap="xs">
                         <Loader size="xs" />
-                        <Text size="sm" color="dimmed">Saving...</Text>
+                        <Text size="sm" c="dimmed">Enregistrement…</Text>
                     </Group>
                 )}
             </div>
@@ -59,183 +101,55 @@ const InvestigationAnalysis = ({ form }: any) => {
             >
                 <Accordion.Item value="details">
                     <Accordion.Control className='rounded-2xl' bg="blue.1" icon={<IconUser size={20} />}>
-                        Human Actions
+                        Actions humaines
                     </Accordion.Control>
                     <Accordion.Panel>
                         <div className="flex mt-3 flex-col gap-5">
-                            <Checkbox.Group size="md"
-                                {...form.getInputProps('humanCauses')}
-                                label="Select Potential Causes:"
-                                withAsterisk
-                            >
-                                <div className="flex flex-wrap mt-5 gap-2">
-                                    {auditTypes.map((type) => (
-                                        <div key={type} className="">
-                                            <Checkbox.Card
-                                                value={type}
-                                                radius="md"
-                                                className="group border border-gray-300 transition duration-150 cursor-pointer 
-                     hover:!border-primary hover:!bg-primary/10 
-                     data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                     data-[checked]:shadow-sm"
-                                                p="xs"
-                                            >
-                                                <Group align="center" gap="xs">
-                                                    <Checkbox.Indicator size="xs" className=" text-blue-600" />
-                                                    <Text
-                                                        size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
-                                                    >
-                                                        {type}
-                                                    </Text>
-                                                </Group>
-                                            </Checkbox.Card>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Checkbox.Group>
-
-                            <TextEditor withAsterisk form={form} id="humanAnalysis" title="Detailed Analysis:" />
+                            <CauseCheckboxGroup form={form} fieldId="humanCauses" options={HUMAN_CAUSE_OPTIONS} />
+                            <TextEditor withAsterisk form={form} id="humanAnalysis" title="Analyse détaillée" />
                         </div>
                     </Accordion.Panel>
                 </Accordion.Item>
                 <Accordion.Item value="investigation">
                     <Accordion.Control className='rounded-2xl' bg="pink.1" icon={<IconPencil size={20} />}>
-                        Task-related Factors
+                        Facteurs liés à la tâche
                     </Accordion.Control>
                     <Accordion.Panel>
                         <div className="flex mt-3 flex-col gap-5">
-                            <Checkbox.Group size="md"
-                                {...form.getInputProps('taskCauses')}
-                                label="Select Potential Causes:"
-                                withAsterisk
-                            >
-                                <div className="flex flex-wrap mt-5 gap-2">
-                                    {factors.map((type) => (
-                                        <div key={type} className="">
-                                            <Checkbox.Card
-                                                value={type}
-                                                radius="md"
-                                                className="group border border-gray-300 transition duration-150 cursor-pointer 
-                     hover:!border-primary hover:!bg-primary/10 
-                     data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                     data-[checked]:shadow-sm"
-                                                p="xs"
-                                            >
-                                                <Group align="center" gap="xs">
-                                                    <Checkbox.Indicator size="xs" className=" text-blue-600" />
-                                                    <Text
-                                                        size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
-                                                    >
-                                                        {type}
-                                                    </Text>
-                                                </Group>
-                                            </Checkbox.Card>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Checkbox.Group>
-
-                            <TextEditor withAsterisk form={form} id="taskAnalysis" title="Detailed Analysis:" />
+                            <CauseCheckboxGroup form={form} fieldId="taskCauses" options={TASK_CAUSE_OPTIONS} />
+                            <TextEditor withAsterisk form={form} id="taskAnalysis" title="Analyse détaillée" />
                         </div>
                     </Accordion.Panel>
                 </Accordion.Item>
 
                 <Accordion.Item value="environmental">
                     <Accordion.Control className='rounded-2xl' bg="green.1" icon={<IconCalculator size={20} />}>
-                        Working Condtions
+                        Conditions de travail
                     </Accordion.Control>
                     <Accordion.Panel>
-
                         <div className="flex mt-3 flex-col gap-5">
-                            <Checkbox.Group size="md"
-                                {...form.getInputProps('workingCauses')}
-                                label="Select Potential Causes:"
-                                withAsterisk
-                            >
-                                <div className="flex flex-wrap mt-5 gap-2">
-                                    {working.map((type) => (
-                                        <div key={type} className="">
-                                            <Checkbox.Card
-                                                value={type}
-                                                radius="md"
-                                                className="group border border-gray-300 transition duration-150 cursor-pointer 
-                     hover:!border-primary hover:!bg-primary/10 
-                     data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                     data-[checked]:shadow-sm"
-                                                p="xs"
-                                            >
-                                                <Group align="center" gap="xs">
-                                                    <Checkbox.Indicator size="xs" className=" text-blue-600" />
-                                                    <Text
-                                                        size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
-                                                    >
-                                                        {type}
-                                                    </Text>
-                                                </Group>
-                                            </Checkbox.Card>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Checkbox.Group>
-
-                            <TextEditor withAsterisk form={form} id="workingAnalysis" title="Detailed Analysis:" />
+                            <CauseCheckboxGroup form={form} fieldId="workingCauses" options={WORKING_CAUSE_OPTIONS} />
+                            <TextEditor withAsterisk form={form} id="workingAnalysis" title="Analyse détaillée" />
                         </div>
-
                     </Accordion.Panel>
                 </Accordion.Item>
 
                 <Accordion.Item value="financial">
                     <Accordion.Control className='rounded-2xl' bg="violet.1" icon={<IconAlertTriangle size={20} />}>
-                        Organizational & Latent Faliures
+                        Défaillances organisationnelles et latentes
                     </Accordion.Control>
                     <Accordion.Panel>
-
                         <div className="flex mt-3 flex-col gap-5">
-                            <Checkbox.Group size="md"
-                                {...form.getInputProps('organizationCauses')}
-                                label="Select Potential Causes:"
-                                withAsterisk
-                            >
-                                <div className="flex flex-wrap mt-5 gap-2">
-                                    {latent.map((type) => (
-                                        <div key={type} className="">
-                                            <Checkbox.Card
-                                                value={type}
-                                                radius="md"
-                                                className="group border border-gray-300 transition duration-150 cursor-pointer 
-                     hover:!border-primary hover:!bg-primary/10 
-                     data-[checked]:!border-primary data-[checked]:!bg-primary/20 
-                     data-[checked]:shadow-sm"
-                                                p="xs"
-                                            >
-                                                <Group align="center" gap="xs">
-                                                    <Checkbox.Indicator size="xs" className=" text-blue-600" />
-                                                    <Text
-                                                        size="xs"
-                                                        className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
-                                                    >
-                                                        {type}
-                                                    </Text>
-                                                </Group>
-                                            </Checkbox.Card>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Checkbox.Group>
-
-                            <TextEditor withAsterisk form={form} id="organizationAnalysis" title="Detailed Analysis:" />
+                            <CauseCheckboxGroup form={form} fieldId="organizationCauses" options={ORGANIZATION_CAUSE_OPTIONS} />
+                            <TextEditor withAsterisk form={form} id="organizationAnalysis" title="Analyse détaillée" />
                         </div>
-
                     </Accordion.Panel>
                 </Accordion.Item>
 
-                {/* Community Impact */}
+                {/* Preuves */}
                 <Accordion.Item value="community">
                     <Accordion.Control className='rounded-2xl' bg="yellow.1" icon={<IconFile size={20} />}>
-                        Evidence
+                        Preuves
                     </Accordion.Control>
                     <Accordion.Panel>
                         <div className='flex mt-3 flex-col gap-5'>
@@ -243,16 +157,16 @@ const InvestigationAnalysis = ({ form }: any) => {
                             <div className="bg-blue-50 border border-blue-600 rounded-xl shadow-sm p-4">
 
                                 <Title order={4} className="text-blue-500">
-                                    Evidence Guidelines
+                                    Consignes pour les preuves
                                 </Title>
 
 
                                 <ul className="p-5 list-disc list-inside text-sm text-blue-800 space-y-2">
-                                    <li>Upload photos of the incident scene, damaged equipment, or safety violations</li>
-                                    <li>Include relevant documents such as procedures, training records, or maintenance logs</li>
-                                    <li>Add witness statements, expert reports, or technical analyses</li>
-                                    <li>Ensure all evidence is relevant to the incident investigation</li>
-                                    <li>Maximum file size: <strong>2MB</strong> per file</li>
+                                    <li>Joindre des photos de la scène, des équipements endommagés ou des manquements constatés</li>
+                                    <li>Inclure les documents pertinents : procédures, dossiers de formation, registres de maintenance</li>
+                                    <li>Ajouter les témoignages, rapports d'experts ou analyses techniques</li>
+                                    <li>Vérifier que chaque pièce est en lien direct avec l'investigation</li>
+                                    <li>Taille maximale : <strong>2 Mo</strong> par fichier</li>
                                 </ul>
                             </div>
                         </div>
@@ -261,7 +175,7 @@ const InvestigationAnalysis = ({ form }: any) => {
             </Accordion>
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-600 shadow-sm">
-                <h2 className="text-lg text-blue-500 mb-4">Analysis Progress</h2>
+                <h2 className="text-lg text-blue-500 mb-4">Avancement de l'analyse</h2>
 
                 <div className="flex  gap-3">
                     {progressItems.map((item, index) => (

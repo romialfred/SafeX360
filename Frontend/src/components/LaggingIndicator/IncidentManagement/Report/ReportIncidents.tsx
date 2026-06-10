@@ -134,31 +134,31 @@ const ReportIncidents = () => {
 
         },
         validate: {
-            title: (value) => value.trim()?.length > 0 ? null : "Title is required",
-            locationId: (value) => value ? null : "Location is required",
-            weatherConditions: (value) => value.length > 0 ? null : "Weather condition is required",
-            occurredAt: (value) => value ? null : "Occurrence date and time is required",
-            discoveryTime: (value) => value ? null : "Discovery date and time is required",
+            title: (value) => value.trim()?.length > 0 ? null : "Le titre est requis",
+            locationId: (value) => value ? null : "Le lieu est requis",
+            weatherConditions: (value) => value.length > 0 ? null : "Les conditions environnementales sont requises",
+            occurredAt: (value) => value ? null : "La date et l'heure de survenance sont requises",
+            discoveryTime: (value) => value ? null : "La date et l'heure de découverte sont requises",
             incidentDetails: {
-                incidentCategoryId: (value) => value ? null : "Incident category is required",
-                incidentTypeId: (value) => value ? null : "Incident type is required",
-                severityLevelId: (value) => value ? null : "Severity level is required",
+                incidentCategoryId: (value) => value ? null : "La catégorie d'incident est requise",
+                incidentTypeId: (value) => value ? null : "Le type d'incident est requis",
+                severityLevelId: (value) => value ? null : "Le niveau de gravité est requis",
             },
-            department: (value) => value ? null : "Department is required",
-            workAreaId: (value) => value ? null : "Work area is required",
-            workProcessId: (value) => value ? null : "Work process is required",
-            reporterId: (value) => value || active == 0 ? null : "Reporter is required",
-            factualDescription: (value) => isValidRichText(value) || active < 2 ? null : "Factual description is required",
-            immediateCauses: (value) => isValidRichText(value) || active < 2 ? null : "Immediate causes is required",
-            rootCauses: (value) => isValidRichText(value) || active < 2 ? null : "Root causes is required",
-            contributingFactors: (value) => isValidRichText(value) || active < 2 ? null : "Contributing factors is required",
-            immediateConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Immediate consequences is required",
-            potentialConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Potential consequences is required",
-            immediateActions: (value) => isValidRichText(value) || active < 2 ? null : "Immediate actions is required",
-            probability: (value) => value ? null : "Probability is required",
-            severity: (value) => value ? null : "Severity is required",
-            existingControlMeasures: (value) => isValidRichText(value) || active < 3 ? null : "Existing control measures is required",
-            residualRiskAssessment: (value) => isValidRichText(value) || active < 3 ? null : "Residual risk assessment is required",
+            department: (value) => value ? null : "Le département est requis",
+            workAreaId: (value) => value ? null : "La zone de travail est requise",
+            workProcessId: (value) => value ? null : "Le processus de travail est requis",
+            reporterId: (value) => value || active == 0 ? null : "Le déclarant est requis",
+            factualDescription: (value) => isValidRichText(value) || active < 2 ? null : "La description factuelle est requise",
+            immediateCauses: (value) => isValidRichText(value) || active < 2 ? null : "Les causes immédiates sont requises",
+            rootCauses: (value) => isValidRichText(value) || active < 2 ? null : "Les causes profondes sont requises",
+            contributingFactors: (value) => isValidRichText(value) || active < 2 ? null : "Les facteurs contributifs sont requis",
+            immediateConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Les conséquences immédiates sont requises",
+            potentialConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Les conséquences potentielles sont requises",
+            immediateActions: (value) => isValidRichText(value) || active < 2 ? null : "Les actions immédiates sont requises",
+            probability: (value) => value ? null : "La probabilité est requise",
+            severity: (value) => value ? null : "La gravité est requise",
+            existingControlMeasures: (value) => isValidRichText(value) || active < 3 ? null : "Les mesures de maîtrise existantes sont requises",
+            residualRiskAssessment: (value) => isValidRichText(value) || active < 3 ? null : "L'évaluation du risque résiduel est requise",
 
         }
     })
@@ -446,7 +446,7 @@ const ReportIncidents = () => {
                     <button
                         type="button"
                         onClick={() => setHelpPanelVisible(true)}
-                        className="fixed right-0 top-1/3 z-40 bg-teal-600 hover:bg-teal-700 text-white px-3 py-3 rounded-l-lg shadow-xl flex flex-col items-center gap-1 transition-all"
+                        className="fixed right-0 top-1/3 z-40 bg-teal-600 hover:bg-teal-700 text-white px-3 py-3 rounded-l-lg shadow-xl flex flex-col items-center gap-1 transition-colors"
                         aria-label="Afficher le volet d'aide"
                     >
                         <IconLayoutSidebarRightExpand size={18} />

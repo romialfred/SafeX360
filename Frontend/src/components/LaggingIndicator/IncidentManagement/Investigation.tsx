@@ -94,7 +94,7 @@ const Investigation = () => {
 
     const nextStep = () => {
         if (lockedInfo.locked) {
-            errorNotification(lockedInfo.status === 'CLOSED' ? 'This incident is closed. Investigation is not allowed.' : 'This incident is rejected. Investigation is not allowed.');
+            errorNotification(lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. L\'investigation n\'est plus autorisée.' : 'Cet incident est rejeté. L\'investigation n\'est pas autorisée.');
             return;
         }
         form.validate();
@@ -103,7 +103,7 @@ const Investigation = () => {
             setActive((current) => (current < 3 ? current + 1 : current));
         }
         else {
-            setErrorMessage("Please fill all required fields correctly.");
+            setErrorMessage("Veuillez remplir correctement tous les champs obligatoires.");
             return;
         }
     }
@@ -131,32 +131,32 @@ const Investigation = () => {
 
         },
         validate: {
-            method: (value) => (value ? null : "Investigation method is required"),
-            startDate: (value) => (value ? null : "Investigation start date is required"),
+            method: (value) => (value ? null : "La méthode d'investigation est requise"),
+            startDate: (value) => (value ? null : "La date de début de l'investigation est requise"),
 
-            humanCauses: (value) => (value.length > 0 || active < 1 ? null : "At least one human cause is required"),
-            taskCauses: (value) => (value.length > 0 || active < 1 ? null : "At least one task cause is required"),
-            workingCauses: (value) => (value.length > 0 || active < 1 ? null : "At least one working cause is required"),
-            organizationCauses: (value) => (value.length > 0 || active < 1 ? null : "At least one organizational cause is required"),
-            taskAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "Task analysis is required"),
-            workingAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "Working analysis is required"),
-            humanAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "Human analysis is required"),
-            organizationAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "Organizational analysis is required"),
-            report: (value) => (isValidRichText(value) || active < 3 ? null : "Investigation report is required"),
+            humanCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause humaine est requise"),
+            taskCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause liée à la tâche est requise"),
+            workingCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause liée aux conditions de travail est requise"),
+            organizationCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause organisationnelle est requise"),
+            taskAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des tâches est requise"),
+            workingAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des conditions de travail est requise"),
+            humanAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des actions humaines est requise"),
+            organizationAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse organisationnelle est requise"),
+            report: (value) => (isValidRichText(value) || active < 3 ? null : "Le rapport d'investigation est requis"),
             correctiveActions: {
-                actionName: (value) => value.trim()?.length > 0 || active < 2 ? null : "Action name is required",
-                deadline: (value) => value || active < 2 ? null : "Deadline is required",
+                actionName: (value) => value.trim()?.length > 0 || active < 2 ? null : "L'intitulé de l'action est requis",
+                deadline: (value) => value || active < 2 ? null : "L'échéance est requise",
 
-                status: (value) => value || active < 2 ? null : "Status is required",
-                description: (value) => isValidRichText(value) || active < 2 ? null : "Description is required"
+                status: (value) => value || active < 2 ? null : "Le statut est requis",
+                description: (value) => isValidRichText(value) || active < 2 ? null : "La description est requise"
             },
             team: (value: TeamMember[]) => {
                 if (!value || value.length === 0) {
-                    return "At least one team member is required";
+                    return "Au moins un membre d'équipe est requis";
                 }
                 for (let i = 0; i < value.length; i++) {
                     if (!value[i].role || value[i]?.role?.trim() === "") {
-                        return `Role is required for team member `;
+                        return `Un rôle est requis pour chaque membre de l'équipe`;
                     }
                 }
                 return null;
@@ -166,7 +166,7 @@ const Investigation = () => {
 
     const handleSubmit = async () => {
         if (lockedInfo.locked) {
-            errorNotification(lockedInfo.status === 'CLOSED' ? 'This incident is closed. Investigation is not allowed.' : 'This incident is rejected. Investigation is not allowed.');
+            errorNotification(lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. L\'investigation n\'est plus autorisée.' : 'Cet incident est rejeté. L\'investigation n\'est pas autorisée.');
             return;
         }
         form.validate();
@@ -180,7 +180,7 @@ const Investigation = () => {
             dispatch(showOverlay());
             if (investigation) {
                 updateInvestigation(data).then((_res: any) => {
-                    successNotification("Investigation Updated Successfully");
+                    successNotification("Investigation mise à jour avec succès");
                     form.reset();
                     navigate("/incidents")
                 }).catch((err: any) => {
@@ -192,7 +192,7 @@ const Investigation = () => {
             }
             else {
                 reportInvestigation(data).then((_res: any) => {
-                    successNotification("Investigation Reported Successfully");
+                    successNotification("Investigation enregistrée avec succès");
                     form.reset();
                     navigate("/incidents")
                 }).catch((err: any) => {
@@ -203,7 +203,7 @@ const Investigation = () => {
 
             }
         } else {
-            setErrorMessage("Please fill all required fields correctly.");
+            setErrorMessage("Veuillez remplir correctement tous les champs obligatoires.");
         }
 
     }
@@ -215,15 +215,15 @@ const Investigation = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Incident Investigation</div>
+                    <div className="text-2xl text-blue-500 w-fit">Investigation d'incident</div>
                     <Breadcrumbs my="xs" >
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text variant="gradient">Accueil</Text>
                         </Link>
                         <Link className="hover:!underline" to="/incidents">
-                            <Text variant="gradient">Incidents Management</Text>
+                            <Text variant="gradient">Gestion des incidents</Text>
                         </Link>
-                        <Text variant="gradient">Incident Investigation</Text>
+                        <Text variant="gradient">Investigation d'incident</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -246,8 +246,8 @@ const Investigation = () => {
                 <div className="flex flex-col gap-1 items-end">
                     <p className="text-sm  text-red-700">{formatDateWithDay(incident.incidentDate)}</p>
                     <p className="text-sm text-red-700">
-                        Reported by: <span className="font-medium">
-                            {empMap[incident.reporterId] ? empMap[incident.reporterId]?.name : "Unknown"}</span>
+                        Déclaré par : <span className="font-medium">
+                            {empMap[incident.reporterId] ? empMap[incident.reporterId]?.name : "—"}</span>
                     </p>
                 </div>
 
@@ -256,32 +256,32 @@ const Investigation = () => {
             {lockedInfo.locked && (
                 <Alert color={lockedInfo.status === 'CLOSED' ? 'green' : 'red'} variant="light" className="border">
                     <Text>
-                        {lockedInfo.status === 'CLOSED' ? 'This incident is closed. Investigation is not allowed.' : 'This incident is rejected. Investigation is not allowed.'}
+                        {lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. L\'investigation n\'est plus autorisée.' : 'Cet incident est rejeté. L\'investigation n\'est pas autorisée.'}
                     </Text>
                 </Alert>
             )}
 
             <div className="flex flex-col gap-5   [&_.mantine-Stepper-steps]:p-5  [&_.mantine-Stepper-steps]:gap-5">
                 <Stepper active={active} onStepClick={(s) => { if (!lockedInfo.locked) setActive(s); }}>
-                    <Stepper.Step label="Step 1" description="Investigation Details">
+                    <Stepper.Step label="Étape 1" description="Détails de l'investigation">
                         <InvestigationDetails incident={incident} form={form} employees={emps} />
                     </Stepper.Step>
 
-                    <Stepper.Step label="Step 2" description="Investigation Analysis">
+                    <Stepper.Step label="Étape 2" description="Analyse des causes">
                         <InvestigationAnalysis form={form} />
                     </Stepper.Step>
-                    <Stepper.Step label="Step 3" description="Action Plans">
+                    <Stepper.Step label="Étape 3" description="Plan d'actions">
                         <InvestigationPlan incident={incident} form={form} />
                     </Stepper.Step>
-                    <Stepper.Step label="Step 4" description="Report & Submit">
+                    <Stepper.Step label="Étape 4" description="Rapport et soumission">
                         <InvestigationReport form={form} />
                     </Stepper.Step>
 
                 </Stepper>
-                {errorMessage && <Text color="red" mx="auto" size="nd" mt="md">{errorMessage}</Text>}
+                {errorMessage && <Text c="red" mx="auto" size="sm" mt="md">{errorMessage}</Text>}
                 <Group justify="center" >
-                    <Button variant="default" onClick={prevStep}>Back</Button>
-                    {(active < 3) ? <Button onClick={nextStep} variant="gradient" disabled={lockedInfo.locked}>Next step</Button> : <Button onClick={handleSubmit} variant="gradient" disabled={lockedInfo.locked}>Submit</Button>}
+                    <Button variant="default" onClick={prevStep}>Précédent</Button>
+                    {(active < 3) ? <Button onClick={nextStep} variant="gradient" disabled={lockedInfo.locked}>Suivant</Button> : <Button onClick={handleSubmit} variant="gradient" disabled={lockedInfo.locked}>Soumettre</Button>}
                 </Group>
             </div>
         </div>

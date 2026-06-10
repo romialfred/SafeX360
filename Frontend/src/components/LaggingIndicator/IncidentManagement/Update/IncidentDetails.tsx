@@ -20,19 +20,19 @@ import { modals } from "@mantine/modals";
 import { removeIncidentDetail } from "../../../../services/IncidentDetailService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
-import { incidentStatuses } from "../../../../Data/DropdownData";
+import { INCIDENT_STATUS_OPTIONS, PPE_LABELS } from "../incidentLabels";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, departments, workAreas, workProcesses }: any) => {
 
 
     const [ppe, _setPPE] = useState([
-        { id: 'helmet', name: 'Safety Helmet', required: false, worn: false },
-        { id: 'goggles', name: 'Safety Goggles', required: false, worn: false },
-        { id: 'gloves', name: 'Safety Gloves', required: false, worn: false },
-        { id: 'boots', name: 'Safety Boots', required: false, worn: false },
-        { id: 'vest', name: 'High-Visibility Vest', required: false, worn: false },
-        { id: 'mask', name: 'Respiratory Mask', required: false, worn: false },
-        { id: 'harness', name: 'Safety Harness', required: false, worn: false }
+        { id: 'helmet', name: PPE_LABELS.helmet, required: false, worn: false },
+        { id: 'goggles', name: PPE_LABELS.goggles, required: false, worn: false },
+        { id: 'gloves', name: PPE_LABELS.gloves, required: false, worn: false },
+        { id: 'boots', name: PPE_LABELS.boots, required: false, worn: false },
+        { id: 'vest', name: PPE_LABELS.vest, required: false, worn: false },
+        { id: 'mask', name: PPE_LABELS.mask, required: false, worn: false },
+        { id: 'harness', name: PPE_LABELS.harness, required: false, worn: false }
     ]);
 
 
@@ -68,16 +68,16 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
     const handleRemoveIncident = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='text-2xl'>Are you sure?</span>,
+                title: <span className='text-lg'>Supprimer cette classification</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
-                        You want to remove this incident? This action cannot be undone.
+                        La classification sera définitivement retirée de l'incident. Cette opération est irréversible.
                     </span>
                 ),
-                labels: { confirm: `Yes, Remove`, cancel: 'Cancel' },
-                cancelProps: { color: 'red', variant: "filled" },
-                confirmProps: { color: 'green', variant: "filled" },
+                labels: { confirm: `Supprimer`, cancel: 'Annuler' },
+                cancelProps: { variant: "default" },
+                confirmProps: { color: 'red', variant: "filled" },
 
                 closeOnEscape: false,
                 closeOnClickOutside: false,
@@ -86,10 +86,10 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                     form.removeListItem('incidentDetails', index);
                     removeIncidentDetail(id)
                         .then((_res) => {
-                            successNotification("Incident removed successfully");
+                            successNotification("Classification supprimée");
                         }
                         ).catch((err) => {
-                            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                         }
                         )
                 },
@@ -135,22 +135,22 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
             <div className="flex justify-between items-center mb-2">
 
-                <h2 className="text-lg text-gray-800 mb-4">Incident Information</h2>
-                <Select {...form.getInputProps("status")} data={incidentStatuses} allowDeselect={false} />
+                <h2 className="text-lg text-gray-800 mb-4">Informations générales</h2>
+                <Select aria-label="Statut de l'incident" {...form.getInputProps("status")} data={INCIDENT_STATUS_OPTIONS} allowDeselect={false} />
             </div>
             <div className="grid grid-cols-1 gap-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <TextInput disabled {...form.getInputProps("number")} readOnly label="Incident Number" placeholder="Enter incident number" withAsterisk />
-                    <TextInput {...form.getInputProps("title")} label="Incident Title" placeholder="Enter incident title" withAsterisk />
+                    <TextInput disabled {...form.getInputProps("number")} readOnly label="Numéro d'incident" placeholder="Numéro généré automatiquement" withAsterisk />
+                    <TextInput {...form.getInputProps("title")} label="Titre de l'incident" placeholder="Description courte et factuelle" withAsterisk />
 
-                    <DateTimePicker maxDate={form.values.discoveryTime}  {...form.getInputProps("occurredAt")} label="Incident Date and Time" placeholder="Pick date and time" withAsterisk />
-                    <DateTimePicker minDate={form.values.occurredAt} maxDate={new Date()} {...form.getInputProps("discoveryTime")} label="Discovery Date and Time" placeholder="Pick date and time" withAsterisk />
+                    <DateTimePicker maxDate={form.values.discoveryTime}  {...form.getInputProps("occurredAt")} label="Date et heure de survenance" placeholder="Sélectionner la date et l'heure" withAsterisk />
+                    <DateTimePicker minDate={form.values.occurredAt} maxDate={new Date()} {...form.getInputProps("discoveryTime")} label="Date et heure de découverte" placeholder="Sélectionner la date et l'heure" withAsterisk />
 
                 </div>
 
                 <Checkbox.Group size="md"
                     {...form.getInputProps("ppe")}
-                    label="Personal Protective Equipment (PPE)"
+                    label="Équipements de protection individuelle (EPI)"
                 >
                     <div className="flex flex-wrap mt-5 gap-2">
                         {ppe.map((item: any) => (
@@ -183,28 +183,28 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                 <div className="flex flex-col gap-5">
                     <div className="flex justify-between items-center">
 
-                        <h3 className="text-lg text-gray-800 mb-4">Incident Classification</h3>
-                        <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient" >Add Incident</Button>
+                        <h3 className="text-lg text-gray-800 mb-4">Classification de l'incident</h3>
+                        <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient" >Ajouter une classification</Button>
                     </div>
                     {form.values.incidentDetails && form.values.incidentDetails.map((x: any, index: any) => <Fieldset key={index} className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
                         <div className="text-lg text-blue-500">Incident {index + 1}</div>
-                        <ActionIcon onClick={() => handleRemoveIncident(index, x.id)} variant="filled" color="red" aria-label="Settings">
+                        <ActionIcon onClick={() => handleRemoveIncident(index, x.id)} variant="filled" color="red" aria-label="Supprimer la classification">
                             <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                         </ActionIcon>
                     </div>}>
-                        <Select withAsterisk {...form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)} onChange={(e) => handleCategoryChange(e, index)} data={categories} label="Incident Category" placeholder="Select incident category" />
+                        <Select withAsterisk {...form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)} onChange={(e) => handleCategoryChange(e, index)} data={categories} label="Catégorie" placeholder="Sélectionner une catégorie" />
                         <div className="flex flex-col gap-1">
 
                             <Select
                                 withAsterisk
-                                renderOption={renderSelectOption}{...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Incident Type" placeholder="Select incident type" />
-                            {severityLevelMap[x.severityLevelId]?.level > 3 && <Text color="red">This incident will require deep investigation</Text>}
+                                renderOption={renderSelectOption}{...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Type d'incident" placeholder="Sélectionner un type" />
+                            {severityLevelMap[x.severityLevelId]?.level > 3 && <Text c="red">Cet incident nécessitera une investigation approfondie</Text>}
                         </div>
                         {/* <Select readOnly {...form.getInputProps(`incidentDetails.${index}.severityLevelId`)} data={severityLevels} label="Severity Level" placeholder="Select severity level" /> */}
 
                         {(incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Blessure avec traitement" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Premiers soins" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "First Aid" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Injury with treatment") &&
                             <div className="space-y-4 col-span-3 bg-red-50 p-4 rounded-lg mt-4">
-                                <h3 className="text-gray-800">Injury Details</h3>
+                                <h3 className="text-gray-800">Détails de la blessure</h3>
 
                                 <BodyPartSelect bodyParts={bodyParts} form={form} id={`incidentDetails.${index}.affectedBodyParts`} />
 
@@ -213,9 +213,9 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         }
                         {
                             categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" && < div className="space-y-4 col-span-3 bg-green-50 p-4 rounded-lg mt-4">
-                                <h3 className="text-gray-800">Environment Incident Details</h3>
-                                <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Environmental Impact" />
-                                <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Containment Measures" />
+                                <h3 className="text-gray-800">Détails de l'incident environnemental</h3>
+                                <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Impact environnemental" />
+                                <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Mesures de confinement" />
                             </div>
                         }
                     </Fieldset>)}
@@ -224,18 +224,18 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                 {/* <TextEditor withAsterisk form={form} id="description" title="Description" /> */}
 
                 <div className="flex flex-col gap-3">
-                    <h2 className="text-lg text-gray-800 mb-4">Location and Work Context</h2>
+                    <h2 className="text-lg text-gray-800 mb-4">Localisation et contexte de travail</h2>
                     <div className="flex flex-col gap-4">
                         <div>
-                            <Select {...form.getInputProps("locationId")} data={locations} label="Incident Location" placeholder="Select incident location" withAsterisk />
+                            <Select {...form.getInputProps("locationId")} data={locations} label="Lieu de l'incident" placeholder="Sélectionner le lieu" withAsterisk />
                         </div>
                         <div className="grid grid-cols-3 gap-4">
-                            <Select {...form.getInputProps("department")} label="Department" placeholder="Select department" withAsterisk data={departments} />
-                            <Select {...form.getInputProps("workAreaId")} label="Work Area" placeholder="Select work area" withAsterisk data={workAreas.filter((x: any) => x.departmentId == form.values.department)} />
-                            <Select {...form.getInputProps("workProcessId")} label="Work Process" placeholder="Select work process" withAsterisk data={workProcesses.filter((x: any) => x.departmentId == form.values.department)} />
+                            <Select {...form.getInputProps("department")} label="Département" placeholder="Sélectionner le département" withAsterisk data={departments} />
+                            <Select {...form.getInputProps("workAreaId")} label="Zone de travail" placeholder="Sélectionner la zone" withAsterisk data={workAreas.filter((x: any) => x.departmentId == form.values.department)} />
+                            <Select {...form.getInputProps("workProcessId")} label="Processus de travail" placeholder="Sélectionner le processus" withAsterisk data={workProcesses.filter((x: any) => x.departmentId == form.values.department)} />
                         </div>
                         <div>
-                            <MultiSelect {...form.getInputProps("weatherConditions")} data={weatherConditions} label="Environmental Conditions" placeholder="Select environmental conditions" withAsterisk />
+                            <MultiSelect {...form.getInputProps("weatherConditions")} data={weatherConditions} label="Conditions environnementales" placeholder="Sélectionner les conditions" withAsterisk />
                         </div>
                     </div>
 

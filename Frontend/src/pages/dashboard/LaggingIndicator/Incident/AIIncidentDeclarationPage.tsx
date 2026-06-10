@@ -7,7 +7,8 @@ import AIIncidentDeclaration from "../../../../components/LaggingIndicator/Incid
  */
 const AIIncidentDeclarationPage = () => {
     return (
-        <div className="p-5">
+        // Pas de padding ici : AIIncidentDeclaration applique déjà .safex-page
+        <div>
             <AIIncidentDeclaration />
         </div>
     );

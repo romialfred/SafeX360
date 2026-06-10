@@ -14,10 +14,8 @@ import { getAllInvestigations } from '../../../services/InvestigationService';
 import { investMethodMap } from '../../../Data/DropdownData';
 import { formatDateShort } from '../../../utility/DateFormats';
 import InvestigationCard from './InvestigationCard';
-// import { useForm } from '@mantine/form';
-//
-import { statusLabels } from '../../../Data/IncidentsData';
-// removed primereact Tag in favor of Mantine Badge for history entries
+import EmptyState from '../../UtilityComp/EmptyState';
+import { actionStatusColor, actionStatusLabel, PAGINATOR_FR } from '../IncidentManagement/incidentLabels';
 
 
 
@@ -56,24 +54,43 @@ const InvestigationFileData = () => {
         setGlobalFilterValue(value);
     };
 
+    /** Export CSV simple du registre filtré (colonnes visibles). */
+    const handleExportCsv = () => {
+        const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const header = ['Incident', 'Méthode', 'Début', 'Fin', 'Avancement', 'Statut'];
+        const rows = filteredData.map((i: any) => [
+            i.incidentTitle, investMethodMap[i.method] || i.method, formatDateShort(i.startDate),
+            i.endDate ? formatDateShort(i.endDate) : '', `${i.progress ?? 0}%`, actionStatusLabel(i.status),
+        ].map(esc).join(';'));
+        const blob = new Blob(['﻿' + [header.map(esc).join(';'), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `investigations-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const rightToolbarTemplate = () => {
         return (
             <div className="flex gap-4 items-center">
 
                 <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                    <Tooltip label="Table View">
+                    <Tooltip label="Vue tableau">
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
                             color="blue"
+                            aria-label="Vue tableau"
                             onClick={() => setViewType('table')}
                         >
                             <IconLayoutList size={18} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Card View">
+                    <Tooltip label="Vue cartes">
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
                             color="blue"
+                            aria-label="Vue cartes"
                             onClick={() => setViewType('card')}
                         >
                             <IconLayoutGrid size={18} />
@@ -81,15 +98,15 @@ const InvestigationFileData = () => {
                     </Tooltip>
                 </div>
                 <div className="flex gap-2">
-                    <Button size="sm" variant="outline" leftSection={<IconUpload />}>
-                        Export
+                    <Button size="sm" variant="outline" leftSection={<IconUpload />} onClick={handleExportCsv}>
+                        Exporter
                     </Button>
                 </div>
                 <TextInput
                     value={globalFilterValue}
                     onChange={onGlobalFilterChange}
                     size="sm"
-                    placeholder="Search"
+                    placeholder="Rechercher"
                     leftSection={<IconSearch />}
                 />
 
@@ -115,7 +132,7 @@ const InvestigationFileData = () => {
                     value={selectedMethod}
                     onChange={setSelectedMethod}
                     data={methodOptions.map(method => ({
-                        label: `${investMethodMap[method] || 'All'} (${investigations.filter(i => method === 'All' || i.method === method).length})`,
+                        label: `${method === 'All' ? 'Toutes les méthodes' : (investMethodMap[method] || method)} (${investigations.filter(i => method === 'All' || i.method === method).length})`,
                         value: method,
                     }))}
                     color="blue"
@@ -131,17 +148,17 @@ const InvestigationFileData = () => {
         const canUpdate = progress < 100 && !['COMPLETED', 'PENDING', 'CANCELLED'].includes(statusUpper);
 
         const editTooltip = canEdit
-            ? 'Edit'
-            : statusUpper === 'COMPLETED' ? 'Cannot edit a completed investigation'
-            : statusUpper === 'CANCELLED' ? 'Cannot edit a cancelled investigation'
-            : 'Editing is only allowed while pending';
+            ? 'Modifier'
+            : statusUpper === 'COMPLETED' ? 'Investigation terminée — modification impossible'
+            : statusUpper === 'CANCELLED' ? 'Investigation annulée — modification impossible'
+            : 'Modification possible uniquement en attente d\'approbation';
 
         const updateTooltip = canUpdate
-            ? 'Update Progress'
-            : statusUpper === 'PENDING' ? 'Pending approval — cannot update yet'
-            : statusUpper === 'CANCELLED' ? 'Investigation cancelled — cannot update'
-            : progress >= 100 || statusUpper === 'COMPLETED' ? 'Already completed'
-            : 'Update not allowed';
+            ? 'Mettre à jour l\'avancement'
+            : statusUpper === 'PENDING' ? 'En attente d\'approbation — mise à jour impossible'
+            : statusUpper === 'CANCELLED' ? 'Investigation annulée — mise à jour impossible'
+            : progress >= 100 || statusUpper === 'COMPLETED' ? 'Investigation déjà terminée'
+            : 'Mise à jour non autorisée';
 
         return (
             <div className="flex gap-3 justify-center">
@@ -152,7 +169,7 @@ const InvestigationFileData = () => {
                             onClick={() => canUpdate && navigate(`/investigation/update/${rowData.id}`)}
                             disabled={!canUpdate}
                         >
-                            Update
+                            Mettre à jour
                         </Button>
                     </span>
                 </Tooltip>
@@ -163,6 +180,7 @@ const InvestigationFileData = () => {
                             variant="filled"
                             size="sm"
                             color="primary"
+                            aria-label={editTooltip}
                             disabled={!canEdit}
                         >
                             <IconEdit stroke={1.5} style={{ width: '90%', height: '90%' }} />
@@ -177,7 +195,7 @@ const InvestigationFileData = () => {
         return (
             <span>
 
-                {investMethodMap[rowData.method] || 'Unknown Method'}</span>
+                {investMethodMap[rowData.method] || rowData.method || '—'}</span>
         );
     };
 
@@ -210,25 +228,21 @@ const InvestigationFileData = () => {
                             rows={10}
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                             rowsPerPageOptions={[10, 25, 50]}
-                            dataKey="name"
+                            dataKey="id"
                             filters={filters}
-                            globalFilterFields={[
-                                'name',
-                                'shortName',
-                                'sector',
-                                'company',
-                            ]}
-                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                            globalFilterFields={['incidentTitle', 'method', 'status']}
+                            currentPageReportTemplate={PAGINATOR_FR}
+                            emptyMessage="Aucune investigation ne correspond aux filtres."
                             onFilter={(e) => setFilters(e.filters)}
                         >
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentTitle" header="Incident" body={nameBodyTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="method" header="Method" body={methodBodyTemplate} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="startDate" header="Start Date" body={(rowData) => formatDateShort(rowData.startDate)} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="endDate" header="End Date" body={(rowData) => formatDateShort(rowData.endDate)} />
+                            <Column style={{ fontWeight: 'normal' }} field="incidentTitle" header="Incident" body={nameBodyTemplate} />
+                            <Column style={{ fontWeight: 'normal' }} field="method" header="Méthode" body={methodBodyTemplate} />
+                            <Column style={{ fontWeight: 'normal' }} field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} />
+                            <Column style={{ fontWeight: 'normal' }} field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
                             <Column
-                                style={{ fontWeight: 'normal', fontSize: "14px" }}
+                                style={{ fontWeight: 'normal' }}
                                 field="progress"
-                                header="Progress"
+                                header="Avancement"
                                 body={(rowData: any) => (
                                     <Progress.Root size={15}>
                                         <Tooltip label={`${rowData.progress}%`} withArrow>
@@ -242,19 +256,11 @@ const InvestigationFileData = () => {
                                     </Progress.Root>
                                 )}
                             />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Statut" body={(rowData: any) => {
-                                /* Refonte ISO Phase 4 : badge semantique aligne NC */
-                                const colors: Record<string, string> = {
-                                    PENDING: 'cyan',
-                                    IN_PROGRESS: 'amber',
-                                    COMPLETED: 'green',
-                                    CANCELLED: 'gray',
-                                    ON_HOLD: 'orange',
-                                };
-                                const color = colors[String(rowData?.status ?? '').toUpperCase()] ?? 'gray';
+                            <Column style={{ fontWeight: 'normal' }} field="status" header="Statut" body={(rowData: any) => {
+                                /* Palette charte R7 : violet=en attente, amber=en cours, vert=terminé */
                                 return (
-                                    <Badge color={color} variant="light" size="sm" radius="xl" className="whitespace-nowrap">
-                                        {statusLabels[rowData.status]}
+                                    <Badge color={actionStatusColor(rowData?.status)} variant="light" size="sm" radius="xl" className="whitespace-nowrap">
+                                        {actionStatusLabel(rowData.status)}
                                     </Badge>
                                 );
                             }} />
@@ -269,8 +275,13 @@ const InvestigationFileData = () => {
                                 <InvestigationCard key={investigation.id} investigation={investigation} />
                             ))}
                             {filteredData.length === 0 && (
-                                <div className="text-xl text-gray-600 col-span-3 mx-auto">
-                                    No investigations available
+                                <div className="col-span-full">
+                                    <EmptyState
+                                        icon={<IconSearch size={28} />}
+                                        title="Aucune investigation à afficher"
+                                        description="Aucune investigation ne correspond aux filtres sélectionnés."
+                                        iconColor="slate"
+                                    />
                                 </div>
                             )}
                         </div>

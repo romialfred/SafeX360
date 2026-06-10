@@ -45,12 +45,12 @@ const UpdateIncidents = () => {
     const [departments, setDepartments] = useState<any[]>([]);
     const nextStep = () => {
         if (lockedInfo.locked) {
-            errorNotification(lockedInfo.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.');
+            errorNotification(lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées.' : 'Cet incident est rejeté. Les modifications ne sont pas autorisées.');
             return;
         }
         form.validate();
         if (form.values.incidentDetails.length === 0) {
-            setErrorMessage("At least one incident detail is required");
+            setErrorMessage("Au moins une classification d'incident est requise");
             return;
         } else {
             setErrorMessage(null);
@@ -58,7 +58,7 @@ const UpdateIncidents = () => {
         if (form.isValid())
             setActive((current) => (current < 3 ? current + 1 : current));
         else {
-            setErrorMessage("Please fill all required fields correctly.");
+            setErrorMessage("Veuillez remplir correctement tous les champs obligatoires.");
             return;
         }
     }
@@ -104,31 +104,31 @@ const UpdateIncidents = () => {
             residualRiskAssessment: '',
         },
         validate: {
-            title: (value) => value.trim()?.length > 0 ? null : "Title is required",
-            locationId: (value) => value ? null : "Location is required",
-            weatherConditions: (value) => value.length > 0 ? null : "Weather condition is required",
-            occurredAt: (value) => value ? null : "Occurrence date and time is required",
-            discoveryTime: (value) => value ? null : "Discovery date and time is required",
+            title: (value) => value.trim()?.length > 0 ? null : "Le titre est requis",
+            locationId: (value) => value ? null : "Le lieu est requis",
+            weatherConditions: (value) => value.length > 0 ? null : "Les conditions environnementales sont requises",
+            occurredAt: (value) => value ? null : "La date et l'heure de survenance sont requises",
+            discoveryTime: (value) => value ? null : "La date et l'heure de découverte sont requises",
             incidentDetails: {
-                incidentCategoryId: (value) => value ? null : "Incident category is required",
-                incidentTypeId: (value) => value ? null : "Incident type is required",
-                severityLevelId: (value) => value ? null : "Severity level is required",
+                incidentCategoryId: (value) => value ? null : "La catégorie d'incident est requise",
+                incidentTypeId: (value) => value ? null : "Le type d'incident est requis",
+                severityLevelId: (value) => value ? null : "Le niveau de gravité est requis",
             },
-            department: (value) => value ? null : "Department is required",
-            workAreaId: (value) => value ? null : "Work area is required",
-            workProcessId: (value) => value ? null : "Work process is required",
-            reporterId: (value) => value || active == 0 ? null : "Reporter is required",
-            factualDescription: (value) => isValidRichText(value) || active < 2 ? null : "Factual description is required",
-            immediateCauses: (value) => isValidRichText(value) || active < 2 ? null : "Immediate causes is required",
-            rootCauses: (value) => isValidRichText(value) || active < 2 ? null : "Root causes is required",
-            contributingFactors: (value) => isValidRichText(value) || active < 2 ? null : "Contributing factors is required",
-            immediateConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Immediate consequences is required",
-            potentialConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Potential consequences is required",
-            immediateActions: (value) => isValidRichText(value) || active < 2 ? null : "Immediate actions is required",
-            probability: (value) => value ? null : "Probability is required",
-            severity: (value) => value ? null : "Severity is required",
-            existingControlMeasures: (value) => isValidRichText(value) || active < 3 ? null : "Existing control measures is required",
-            residualRiskAssessment: (value) => isValidRichText(value) || active < 3 ? null : "Residual risk assessment is required",
+            department: (value) => value ? null : "Le département est requis",
+            workAreaId: (value) => value ? null : "La zone de travail est requise",
+            workProcessId: (value) => value ? null : "Le processus de travail est requis",
+            reporterId: (value) => value || active == 0 ? null : "Le déclarant est requis",
+            factualDescription: (value) => isValidRichText(value) || active < 2 ? null : "La description factuelle est requise",
+            immediateCauses: (value) => isValidRichText(value) || active < 2 ? null : "Les causes immédiates sont requises",
+            rootCauses: (value) => isValidRichText(value) || active < 2 ? null : "Les causes profondes sont requises",
+            contributingFactors: (value) => isValidRichText(value) || active < 2 ? null : "Les facteurs contributifs sont requis",
+            immediateConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Les conséquences immédiates sont requises",
+            potentialConsequences: (value) => isValidRichText(value) || active < 2 ? null : "Les conséquences potentielles sont requises",
+            immediateActions: (value) => isValidRichText(value) || active < 2 ? null : "Les actions immédiates sont requises",
+            probability: (value) => value ? null : "La probabilité est requise",
+            severity: (value) => value ? null : "La gravité est requise",
+            existingControlMeasures: (value) => isValidRichText(value) || active < 3 ? null : "Les mesures de maîtrise existantes sont requises",
+            residualRiskAssessment: (value) => isValidRichText(value) || active < 3 ? null : "L'évaluation du risque résiduel est requise",
 
         }
     })
@@ -154,7 +154,7 @@ const UpdateIncidents = () => {
             }
         }).catch((err: any) => {
             console.log(err);
-            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
         }).finally(() => {
             dispatch(hideOverlay());
         })
@@ -212,7 +212,7 @@ const UpdateIncidents = () => {
 
     const handleSubmit = async () => {
         if (lockedInfo.locked) {
-            errorNotification(lockedInfo.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.');
+            errorNotification(lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées.' : 'Cet incident est rejeté. Les modifications ne sont pas autorisées.');
             return;
         }
         const values = form.values;
@@ -220,11 +220,11 @@ const UpdateIncidents = () => {
         dispatch(showOverlay());
         const deptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
         updateIncident({ ...values, departmentId: deptId, evidence: evidence, involvedPersons: values.involvedPersons?.map((x: any) => x.id), witnesses: values.witnesses?.map((x: any) => x.id) }).then((_res: any) => {
-            successNotification("Incident updated successfully");
+            successNotification("Incident mis à jour avec succès");
             navigate("/incidents");
         }
         ).catch((err: any) => {
-            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
         }
         ).finally(() => {
             dispatch(hideOverlay());
@@ -233,13 +233,13 @@ const UpdateIncidents = () => {
     }
 
     const footer = () => (<div className="w-full">
-        {errorMessage && <Text color="red" mx="auto" ta="center" mt="md">{errorMessage}</Text>}
+        {errorMessage && <Text c="red" mx="auto" ta="center" mt="md">{errorMessage}</Text>}
         <Group justify="space-between" >
-            <Button variant="default" onClick={prevStep}>Back</Button>
+            <Button variant="default" onClick={prevStep}>Précédent</Button>
             <div className="flex items-center gap-2">
 
-                {(active < 3) && <Button onClick={nextStep} variant="gradient" disabled={lockedInfo.locked}>Next step</Button>}
-                <Button onClick={handleSubmit} variant="filled" color="red" disabled={lockedInfo.locked}>Submit</Button>
+                {(active < 3) && <Button onClick={nextStep} variant="gradient" disabled={lockedInfo.locked}>Suivant</Button>}
+                <Button onClick={handleSubmit} variant="filled" color="red" disabled={lockedInfo.locked}>Enregistrer</Button>
             </div>
         </Group>
     </div>
@@ -250,28 +250,28 @@ const UpdateIncidents = () => {
         <div className="p-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Update Incidents</div>
+                    <div className="text-2xl text-blue-500 w-fit">Modifier l'incident</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text variant="gradient">Accueil</Text>
                         </Link>
                         <Link className="hover:!underline" to="/incidents">
-                            <Text variant="gradient">Incidents Management</Text>
+                            <Text variant="gradient">Gestion des incidents</Text>
                         </Link>
-                        <Text variant="gradient">Update Incidents</Text>
+                        <Text variant="gradient">Modifier l'incident</Text>
                     </Breadcrumbs>
                 </div>
             </div>
             {lockedInfo.locked && (
                 <Alert color={lockedInfo.status === 'CLOSED' ? 'green' : 'red'} variant="light" className="mb-4 border">
                     <Text>
-                        {lockedInfo.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.'}
+                        {lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées.' : 'Cet incident est rejeté. Les modifications ne sont pas autorisées.'}
                     </Text>
                 </Alert>
             )}
             <div className="flex flex-col gap-5    [&_.mantine-Stepper-steps]:gap-5">
                 <Stepper active={active} onStepClick={(s) => { if (!lockedInfo.locked) setActive(s as number); }}>
-                    <Stepper.Step label="Step 1" description="Incident Details">
+                    <Stepper.Step label="Étape 1" description="Détails de l'incident">
                         <div className="grid grid-cols-3 gap-5">
                             <div className="col-span-2 space-y-5">
                                 <IncidentDetails
@@ -291,7 +291,7 @@ const UpdateIncidents = () => {
                             <ReportHelp activeStep={active} />
                         </div>
                     </Stepper.Step>
-                    <Stepper.Step label="Step 2" description="Witnesses & Involved Persons">
+                    <Stepper.Step label="Étape 2" description="Témoins et personnes impliquées">
                         <div className="grid grid-cols-3 gap-5">
                             <div className="col-span-2 space-y-5">
                                 <WitnessesSection form={form} employees={emps} />
@@ -300,7 +300,7 @@ const UpdateIncidents = () => {
                             <ReportHelp activeStep={active} />
                         </div>
                     </Stepper.Step>
-                    <Stepper.Step label="Step 3" description="Incident Analysis">
+                    <Stepper.Step label="Étape 3" description="Analyse de l'incident">
                         <div className="grid grid-cols-3 gap-5">
                             <div className="col-span-2 space-y-5">
                                 <IncidentAnalysis form={form} employees={emps} /> {footer()}
@@ -308,7 +308,7 @@ const UpdateIncidents = () => {
                             <ReportHelp activeStep={active} />
                         </div>
                     </Stepper.Step>
-                    <Stepper.Step label="Step 4" description="Risk Assessment">
+                    <Stepper.Step label="Étape 4" description="Évaluation du risque">
                         <div className="grid grid-cols-3 gap-5">
                             <div className="col-span-2 space-y-5">
                                 <IncidentRisk form={form} employees={emps} /> {footer()}

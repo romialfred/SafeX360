@@ -257,7 +257,7 @@ const WeeklyPlanningSection = ({ companyId }: Props) => {
                         return (
                             <article
                                 key={weekIso}
-                                className={`border rounded-lg overflow-hidden bg-white transition-all ${
+                                className={`border rounded-lg overflow-hidden bg-white transition-colors ${
                                     current
                                         ? 'border-cyan-300 ring-1 ring-cyan-100'
                                         : 'border-slate-200'

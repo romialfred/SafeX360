@@ -1,5 +1,5 @@
 import { IconAlertTriangle, IconChartBar, IconScale, IconShield, IconLock } from "@tabler/icons-react";
-import { probabilitiesMap, riskLevels, severitiesMap } from "../../../Data/DropdownData";
+import { PROBABILITY_LABELS, RISK_LEVEL_LABELS, SEVERITY_LABELS } from "./incidentLabels";
 import SafeHtml from "../../UtilityComp/SafeHtml";
 
 /**
@@ -38,7 +38,7 @@ const RiskAssessment = ({ incident }: any) => {
                             Probabilité (1-5)
                         </div>
                         <p className="text-2xl text-blue-800 tabular-nums leading-none">{probability ?? '—'}</p>
-                        <p className="text-[11px] text-slate-600 mt-1">{probabilitiesMap[probability] || 'Non renseignée'}</p>
+                        <p className="text-[11px] text-slate-600 mt-1">{PROBABILITY_LABELS[probability] || 'Non renseignée'}</p>
                     </div>
                     <div className="bg-red-50/60 border border-red-200/70 rounded-md p-3">
                         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-red-700 mb-1">
@@ -46,7 +46,7 @@ const RiskAssessment = ({ incident }: any) => {
                             Gravité (1-5)
                         </div>
                         <p className="text-2xl text-red-800 tabular-nums leading-none">{severity ?? '—'}</p>
-                        <p className="text-[11px] text-slate-600 mt-1">{severitiesMap[severity] || 'Non renseignée'}</p>
+                        <p className="text-[11px] text-slate-600 mt-1">{SEVERITY_LABELS[severity] || 'Non renseignée'}</p>
                     </div>
                     <div className={`${riskBand?.bg || 'bg-slate-50/60'} border ${riskBand?.border || 'border-slate-200/70'} rounded-md p-3`}>
                         <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider ${riskBand?.color || 'text-slate-700'} mb-1`}>
@@ -62,7 +62,7 @@ const RiskAssessment = ({ incident }: any) => {
                             Niveau de risque
                         </div>
                         <p className={`text-lg ${riskBand?.color || 'text-slate-800'} leading-tight`}>
-                            {riskBand?.label || riskLevels[severity] || '—'}
+                            {riskBand?.label || RISK_LEVEL_LABELS[severity] || '—'}
                         </p>
                         <p className="text-[11px] text-slate-600 mt-1">Détermine la priorité CAPA</p>
                     </div>

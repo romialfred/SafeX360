@@ -3,7 +3,8 @@ import LessonLearn from "../../../../components/LaggingIndicator/LessonLearn/Les
 
 const LessonLearnPage = () => {
     return (
-        <div className="p-5"><LessonLearn /></div>
+        // Pas de padding ici : LessonLearn applique déjà p-5
+        <div><LessonLearn /></div>
     )
 }
 

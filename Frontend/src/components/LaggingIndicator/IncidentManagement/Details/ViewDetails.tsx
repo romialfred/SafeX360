@@ -17,7 +17,7 @@ import {
     IconPrinter,
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getIncidentById } from '../../../../services/IncidentService';
 import { mapIdToName } from '../../../../utility/OtherUtilities';
 import { formatDate } from '../../../../utility/DateFormats';
@@ -28,7 +28,7 @@ import { hideOverlay, showOverlay } from '../../../../slices/OverlaySlice';
 import IncidentDetailsTab from './IncidentDetailsTab';
 import ImpactAnalysis from '../ImpactAnalysis';
 import Lesson from './Lesson';
-import { incidentHistoryStatus, incidentStatusMap } from '../../../../Data/DropdownData';
+import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from '../incidentLabels';
 import RiskAssessment from '../RiskAssessment';
 import { getInvestigationByIncidentId } from '../../../../services/InvestigationService';
 import InvestigationDetailsTab from './InvestigationDetailsTab';
@@ -46,6 +46,7 @@ import { getAllInvestigationProcessByInvestigationId } from '../../../../service
 const ViewDetails = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const [employees, setEmployees] = useState<Record<number, any>>([]);
     const [incident, setIncident] = useState<any>({});
@@ -156,20 +157,20 @@ const ViewDetails = () => {
             incidentId: incidentId
         },
         validate: {
-            ownerId: (value) => value ? null : "Owner is required",
-            date: (value) => value ? null : "Date is required",
-            status: (value) => value ? null : "Status is required",
+            ownerId: (value) => value ? null : "Le responsable est requis",
+            date: (value) => value ? null : "La date est requise",
+            status: (value) => value ? null : "Le statut est requis",
         }
     });
 
     const handleSubmit = async (values: any) => {
         if (locked.locked) {
-            errorNotification(locked.status === 'CLOSED' ? 'This incident is closed. Modifications are not allowed.' : 'This incident is rejected. Modifications are not allowed.');
+            errorNotification(locked.status === 'CLOSED' ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées.' : 'Cet incident est rejeté. Les modifications ne sont pas autorisées.');
             return;
         }
         dispatch(showOverlay());
         addIncidentHistory(values).then((_res) => {
-            successNotification("Status changed successfully");
+            successNotification("Statut modifié avec succès");
             close();
             setIncident((prev: any) => ({
                 ...prev,
@@ -177,7 +178,7 @@ const ViewDetails = () => {
             }));
             fetchHistory();
         }).catch((err) => {
-            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
         }).finally(() => {
             dispatch(hideOverlay());
         });
@@ -258,7 +259,7 @@ const ViewDetails = () => {
     };
     const currentStatusKey = String(incident?.status || '').toUpperCase();
     const statusColor = statusColorMap[currentStatusKey] || 'gray';
-    const statusLabel = incidentStatusMap[incident?.status] || (incident?.status ? String(incident.status) : '—');
+    const statusLabel = incidentStatusLabel(incident?.status);
     const reporterName = employees[incident?.reporterId]?.name || 'Inconnu';
 
     const isLoading = !incident?.id;
@@ -292,10 +293,10 @@ const ViewDetails = () => {
                         Retour
                     </Button>
                     <Tooltip label="Imprimer le rapport d'incident">
-                        <Button size="sm" variant="default" leftSection={<IconPrinter size={14} />}>Imprimer</Button>
+                        <Button size="sm" variant="default" leftSection={<IconPrinter size={14} />} onClick={() => window.print()}>Imprimer</Button>
                     </Tooltip>
                     <Tooltip label="Modifier les informations de l'incident" disabled={locked.locked}>
-                        <Button size="sm" variant="default" leftSection={<IconEdit size={14} />} disabled={locked.locked} onClick={() => window.location.href = `/incidents/update/${incidentId}`}>
+                        <Button size="sm" variant="default" leftSection={<IconEdit size={14} />} disabled={locked.locked} onClick={() => { if (!locked.locked) navigate(`/incidents/edit/${incidentId}`); }}>
                             Modifier
                         </Button>
                     </Tooltip>
@@ -421,7 +422,7 @@ const ViewDetails = () => {
                                     const isCurrent = currentIdx === i;
                                     return (
                                         <div key={step} className="flex items-center gap-1 flex-shrink-0">
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] transition-all
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] transition-colors
                                                 ${isCurrent ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
                                                   : isDone ? 'bg-teal-50 text-teal-700 border-teal-200'
                                                   : rejected && i === 0 ? 'bg-red-50 text-red-700 border-red-200'
@@ -466,7 +467,7 @@ const ViewDetails = () => {
                                 key={key}
                                 value={key}
                                 leftSection={<Icon size={15} />}
-                                className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-all"
+                                className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-colors"
                             >
                                 {label}
                             </Tabs.Tab>
@@ -520,7 +521,7 @@ const ViewDetails = () => {
                     <Select
                         label="Nouveau statut"
                         placeholder="Sélectionner le statut"
-                        data={incidentHistoryStatus.slice(incidentHistoryStatus.findIndex((item) => item.value === (history.length > 0 ? history[history.length - 1]?.status : incident.status)))}
+                        data={INCIDENT_STATUS_OPTIONS.slice(INCIDENT_STATUS_OPTIONS.findIndex((item) => item.value === (history.length > 0 ? history[history.length - 1]?.status : incident.status)))}
                         {...form.getInputProps("status")}
                         withAsterisk
                     />

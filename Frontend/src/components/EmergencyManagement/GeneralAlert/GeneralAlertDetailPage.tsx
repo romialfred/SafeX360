@@ -362,7 +362,7 @@ const GeneralAlertDetailPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setEditStatus('SAFE')}
-                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-all ${
+                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-colors ${
                                     editStatus === 'SAFE'
                                         ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200'
                                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -374,7 +374,7 @@ const GeneralAlertDetailPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setEditStatus('INJURED')}
-                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-all ${
+                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-colors ${
                                     editStatus === 'INJURED'
                                         ? 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-200'
                                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -386,7 +386,7 @@ const GeneralAlertDetailPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setEditStatus('MISSING')}
-                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-all ${
+                                className={`flex flex-col items-center justify-center gap-1 p-3 rounded-md border-2 transition-colors ${
                                     editStatus === 'MISSING'
                                         ? 'bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200'
                                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -506,7 +506,7 @@ function CategoryPanel({
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-emerald-500 transition-all"
+                            className="h-full bg-emerald-500 transition-[width]"
                             style={{ width: `${pct}%` }}
                         />
                     </div>

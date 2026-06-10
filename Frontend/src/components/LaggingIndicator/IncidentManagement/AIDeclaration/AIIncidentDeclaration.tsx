@@ -416,7 +416,7 @@ function StepperHeader({ currentStep }: { currentStep: Step }) {
                     return (
                         <div key={step.id} className="flex items-center gap-2 flex-1 min-w-0">
                             <div
-                                className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap"
+                                className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                                 style={{
                                     background: isActive ? '#EEF2FF' : isDone ? '#ECFDF5' : 'transparent',
                                     border: `1px solid ${isActive ? '#C7D2FE' : isDone ? '#A7F3D0' : 'transparent'}`,
@@ -504,7 +504,7 @@ function UploadStep({
                     <div
                         onDrop={onDrop}
                         onDragOver={(e) => e.preventDefault()}
-                        className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-indigo-400 hover:bg-indigo-50/30 transition-all"
+                        className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors"
                     >
                         <IconUpload size={32} className="text-slate-400 mx-auto mb-3" stroke={1.5} />
                         <p className="text-[14px] font-medium text-slate-700 mb-1">

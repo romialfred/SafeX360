@@ -1,5 +1,6 @@
 import { ActionIcon, LoadingOverlay, Modal, Select, TextInput, Tooltip } from "@mantine/core";
 import {
+    IconBook,
     IconCircleCheck,
     IconClock,
     IconEye,
@@ -18,7 +19,8 @@ import { useDisclosure } from "@mantine/hooks";
 import Lesson from "../IncidentManagement/Details/Lesson";
 import { useNavigate } from "react-router-dom";
 import LessonLearnCard from "./LessonLearnCard";
-import { capitalizeFirstLetter } from "../../../utility/OtherUtilities";
+import EmptyState from "../../UtilityComp/EmptyState";
+import { lessonCategoryLabel, lessonStatusLabel, PAGINATOR_FR } from "../IncidentManagement/incidentLabels";
 import { formatDateShort } from "../../../utility/DateFormats";
 
 const defaultFilters: DataTableFilterMeta = {
@@ -92,11 +94,12 @@ const LessonData = () => {
     const actionBodyTemplate = (rowData: any) => {
         return (
             <div className='flex gap-3'>
-                <Tooltip label="View Details">
+                <Tooltip label="Voir le détail">
                     <ActionIcon
                         variant="filled"
                         size="sm"
                         color="primary"
+                        aria-label="Voir le détail"
                         onClick={() => {
                             setSelectedLesson(rowData);
                             open();
@@ -119,28 +122,29 @@ const LessonData = () => {
             other: "bg-gray-100 text-gray-800",
         };
         return (
-            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm capitalize ${catStyles[cat] || "bg-gray-100 text-gray-800"}`}>
-                <IconTag size={16} /> {rowData.category}
+            <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm ${catStyles[cat] || "bg-gray-100 text-gray-800"}`}>
+                <IconTag size={16} /> {lessonCategoryLabel(rowData.category)}
             </span>
         );
     };
 
     const statusBodyTemplate = (rowData: any) => {
         const status = rowData.status?.toLowerCase();
-        let statusStyles = "bg-gray-100 text-gray-800";
+        // Palette charte R7 : emerald = approuvé, violet = en attente
+        let statusStyles = "bg-slate-100 text-slate-700";
         let IconComponent = IconClock;
 
         if (status === "approved") {
-            statusStyles = "bg-green-100 text-green-800";
+            statusStyles = "bg-emerald-50 text-emerald-700 border border-emerald-200";
             IconComponent = IconCircleCheck;
         } else if (status === "pending") {
-            statusStyles = "bg-yellow-100 text-yellow-800";
+            statusStyles = "bg-violet-50 text-violet-700 border border-violet-200";
             IconComponent = IconClock;
         }
 
         return (
             <span className={`flex items-center gap-2 px-3 py-1 rounded-xl text-sm ${statusStyles}`}>
-                <IconComponent size={16} /> {capitalizeFirstLetter(rowData.status)}
+                <IconComponent size={16} /> {lessonStatusLabel(rowData.status)}
             </span>
         );
     };
@@ -170,14 +174,14 @@ const LessonData = () => {
 
 
 
-            <div className="bg-white border border-gray-300 shadow-sm rounded-lg p-6 flex gap-10 items-center ">
-                <div className="grid grid-cols-5 gap-4">
+            <div className="bg-white border border-gray-300 shadow-sm rounded-lg p-4 flex gap-10 items-center ">
+                <div className="grid grow grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
 
                     {/* 🔍 SEARCH */}
                     <TextInput
-                        label="Search"
-                        placeholder="Lessons Search"
+                        label="Recherche"
+                        placeholder="Rechercher une leçon"
                         leftSection={<IconSearch />}
 
                         onChange={(e) =>
@@ -193,9 +197,13 @@ const LessonData = () => {
 
                     {/* ✅ STATUS */}
                     <Select
-                        label="Status"
-                        placeholder="Select Status"
-                        data={["All Status", "Pending", "Approved"]}
+                        label="Statut"
+                        placeholder="Sélectionner un statut"
+                        data={[
+                            { value: "All Status", label: "Tous les statuts" },
+                            { value: "Pending", label: "En attente" },
+                            { value: "Approved", label: "Approuvée" },
+                        ]}
                         defaultValue="All Status"
                         onChange={(val) =>
                             setFilters((prev) => ({
@@ -210,15 +218,15 @@ const LessonData = () => {
 
                     {/* 🏷️ CATEGORY */}
                     <Select
-                        label="Category"
-                        placeholder="Select Categories"
+                        label="Catégorie"
+                        placeholder="Sélectionner une catégorie"
                         data={[
-                            "All Categories",
-                            "Technical",
-                            "Procedural",
-                            "Training",
-                            "Communication",
-                            "Other",
+                            { value: "All Categories", label: "Toutes les catégories" },
+                            { value: "Technical", label: "Technique" },
+                            { value: "Procedural", label: "Procédurale" },
+                            { value: "Training", label: "Formation" },
+                            { value: "Communication", label: "Communication" },
+                            { value: "Other", label: "Autre" },
                         ]}
                         defaultValue="All Categories"
                         onChange={(val) =>
@@ -233,35 +241,24 @@ const LessonData = () => {
                     />
 
 
-                    <Select
-                        label="Severity"
-                        placeholder="Select Severities"
-                        data={["All Severities", "Level 1 - Minor", "Level 2 - Moderate", "Level 3 - Major", "Level 4 - Critical"]}
-                        withAsterisk
-                    />
-                    <Select
-                        label="Date Range"
-                        placeholder="Select Date Range"
-                        data={["All Date Range", "Last 30 days", "Last 3 motnths", "Last 1 month", "Last Week"]}
-                        withAsterisk
-                    />
-
                 </div>
 
                 <div className="flex items-center gap-2 border border-primary rounded-lg p-2 bg-gray-100 mt-4">
-                    <Tooltip label="Table View">
+                    <Tooltip label="Vue tableau">
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
                             color="blue"
+                            aria-label="Vue tableau"
                             onClick={() => setViewType('table')}
                         >
                             <IconLayoutList size={18} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Card View">
+                    <Tooltip label="Vue cartes">
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
                             color="blue"
+                            aria-label="Vue cartes"
                             onClick={() => setViewType('card')}
                         >
                             <IconLayoutGrid size={18} />
@@ -291,16 +288,17 @@ const LessonData = () => {
                             rowsPerPageOptions={[10, 25, 50]}
                             dataKey="id"
                             filters={filters}
-                            globalFilterFields={['incidentTitle', 'category', 'status', 'owner']}
-                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                            globalFilterFields={['incidentTitle', 'category', 'status', 'employeeName', 'description']}
+                            currentPageReportTemplate={PAGINATOR_FR}
+                            emptyMessage="Aucune leçon ne correspond aux filtres."
                             onFilter={(e) => setFilters(e.filters)}
                         >
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Source of Lesson' field='incidentTitle' body={incidentTitleBody} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Employee Name' field='employeeName' />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Date' field='date' body={(rowData) => formatDateShort(rowData.date)} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Description' field='description' body={descriptionBody} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Category' field='category' body={categoryBody} />
-                            <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header='Status' body={statusBodyTemplate} field='status' />
+                            <Column style={{ fontWeight: 'normal' }} header='Incident source' field='incidentTitle' body={incidentTitleBody} />
+                            <Column style={{ fontWeight: 'normal' }} header='Responsable' field='employeeName' />
+                            <Column style={{ fontWeight: 'normal' }} header='Date' field='date' body={(rowData) => formatDateShort(rowData.date)} />
+                            <Column style={{ fontWeight: 'normal' }} header='Description' field='description' body={descriptionBody} />
+                            <Column style={{ fontWeight: 'normal' }} header='Catégorie' field='category' body={categoryBody} />
+                            <Column style={{ fontWeight: 'normal' }} header='Statut' body={statusBodyTemplate} field='status' />
                             <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                         </DataTable>
                     ) : (
@@ -309,8 +307,13 @@ const LessonData = () => {
                                 <LessonLearnCard key={lessonData.id} lessonData={lessonData} />
                             ))}
                             {filteredData.length === 0 &&
-                                <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                    No lessons available
+                                <div className="col-span-full">
+                                    <EmptyState
+                                        icon={<IconBook size={28} />}
+                                        title="Aucune leçon à afficher"
+                                        description="Aucune leçon apprise ne correspond aux filtres sélectionnés."
+                                        iconColor="slate"
+                                    />
                                 </div>}
                         </div>
                     )
@@ -323,7 +326,7 @@ const LessonData = () => {
                     close();
                     setSelectedLesson(null);
                 }}
-                title="Lesson Learned"
+                title="Retour d'expérience"
                 size="xl"
                 centered
             >

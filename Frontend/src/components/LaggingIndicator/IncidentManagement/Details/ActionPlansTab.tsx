@@ -1,12 +1,12 @@
 import { Badge } from "@mantine/core"
-import { statusColors, statusLabels } from "../../../../Data/IncidentsData"
+import { actionStatusColor, actionStatusLabel } from "../incidentLabels"
 import { formatDateWithDay } from "../../../../utility/DateFormats"
 import SafeHtml from "../../../UtilityComp/SafeHtml"
 
 const ActionPlansTab = ({ actions }: any) => {
     return (
         <div>
-            <h4 className="text-lg mb-4 text-gray-800">Action Plans</h4>
+            <h4 className="text-lg mb-4 text-gray-800">Plans d'actions</h4>
 
             {actions?.map((x: any, index: any) => (
                 <div
@@ -16,11 +16,11 @@ const ActionPlansTab = ({ actions }: any) => {
                     <div className="flex justify-between items-start">
                         <div>
                             <p className=" text-gray-800">{x.actionName}</p>
-                            <p className="text-sm text-gray-500">Assigned To: <strong>{x.assignedEmployeeName}</strong></p>
+                            <p className="text-sm text-gray-500">Responsable : <strong>{x.assignedEmployeeName}</strong></p>
                         </div>
 
-                        <Badge variant="light" color={statusColors[x.status]}>
-                            {statusLabels[x.status]}
+                        <Badge variant="light" color={actionStatusColor(x.status)}>
+                            {actionStatusLabel(x.status)}
                         </Badge>
                     </div>
 
@@ -28,7 +28,7 @@ const ActionPlansTab = ({ actions }: any) => {
                     <SafeHtml html={x.description} className="text-gray-600 text-sm" />
 
                     <div className="text-sm text-gray-700">
-                        <b>Deadline:</b>{' '}
+                        <b>Échéance :</b>{' '}
                         <span className="text-blue-700">{formatDateWithDay(x.deadline)}</span>
                     </div>
                 </div>

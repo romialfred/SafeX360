@@ -3,7 +3,8 @@ import Investigationfile from "../../../../components/LaggingIndicator/Investiga
 
 const InvestigationFilePage = () => {
     return (
-        <div className="p-5"><Investigationfile /></div>
+        // Pas de padding ici : Investigationfile applique déjà p-5
+        <div><Investigationfile /></div>
     )
 }
 

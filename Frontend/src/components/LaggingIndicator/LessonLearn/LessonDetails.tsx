@@ -8,7 +8,8 @@ import Lesson from '../IncidentManagement/Details/Lesson';
 
 const LessonDetails = () => {
     const { id } = useParams();
-    const [activeTab, setActiveTab] = useState('expired');
+    // Bug corrigé : l'onglet actif initial ('expired') ne correspondait à aucun onglet déclaré
+    const [activeTab, setActiveTab] = useState('lesson');
     const incidentId = Number(id);
 
 
@@ -17,8 +18,8 @@ const LessonDetails = () => {
     const tabData = {
 
 
-        missing: {
-            label: 'Lessons Learned',
+        lesson: {
+            label: 'Leçon apprise',
             icon: IconBook,
             content: <Lesson
                 incidentId={incidentId}

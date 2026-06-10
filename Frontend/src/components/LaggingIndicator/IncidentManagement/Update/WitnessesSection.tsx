@@ -45,26 +45,26 @@ const WitnessesSection = ({ form, employees }: any) => {
     return (
         <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
 
-            <h2 className="text-lg text-gray-800 mb-4">Witnesses & Involved Persons</h2>
+            <h2 className="text-lg text-gray-800 mb-4">Témoins et personnes impliquées</h2>
             <div className="flex flex-col gap-2 border border-gray-300  rounded-lg p-4">
-                <h1 className="text-lg text-gray-800">Reporter</h1>
-                <Select {...form.getInputProps("reporterId")} label="Select Reporter" placeholder="Choose an employee" withAsterisk data={employees.map((x: any) => ({ label: x.name, value: "" + x.id }))} />
+                <h1 className="text-lg text-gray-800">Déclarant</h1>
+                <Select {...form.getInputProps("reporterId")} label="Déclarant" placeholder="Sélectionner un employé" withAsterisk data={employees.map((x: any) => ({ label: x.name, value: "" + x.id }))} />
             </div>
             <PickList
                 dataKey="id"
                 filter
                 filterBy="name"
-                sourceFilterPlaceholder="Search by name"
+                sourceFilterPlaceholder="Rechercher par nom"
                 showTargetControls={false}
                 showSourceControls={false}
-                targetFilterPlaceholder="Search by name"
+                targetFilterPlaceholder="Rechercher par nom"
                 source={emps}
                 target={form.values.witnesses}
                 onChange={onChange}
                 itemTemplate={itemTemplate}
                 breakpoint="1280px"
-                sourceHeader={`Employees (${emps.length})`}
-                targetHeader={`Witnesses (${form.values.witnesses.length})`}
+                sourceHeader={`Employés (${emps.length})`}
+                targetHeader={`Témoins (${form.values.witnesses.length})`}
                 sourceStyle={{ height: '24rem' }}
                 targetStyle={{ height: '24rem' }}
             />
@@ -74,22 +74,22 @@ const WitnessesSection = ({ form, employees }: any) => {
                 dataKey="id"
                 filter
                 filterBy="name"
-                sourceFilterPlaceholder="Search by name"
+                sourceFilterPlaceholder="Rechercher par nom"
                 showTargetControls={false}
                 showSourceControls={false}
-                targetFilterPlaceholder="Search by name"
+                targetFilterPlaceholder="Rechercher par nom"
                 source={emps1}
                 target={form.values.involvedPersons}
                 onChange={onPersonChange}
                 itemTemplate={itemTemplate}
                 breakpoint="1280px"
-                sourceHeader={`Employees ${emps1.length})`}
-                targetHeader={`Involved Persons (${form.values.involvedPersons.length})`}
+                sourceHeader={`Employés (${emps1.length})`}
+                targetHeader={`Personnes impliquées (${form.values.involvedPersons.length})`}
                 sourceStyle={{ height: '24rem' }}
                 targetStyle={{ height: '24rem' }}
             />
             <div className="p-5 mt-5 border rounded-lg border-gray-300 shadow-md">
-                <h2 className="text-lg text-gray-800 mb-4">Upload Evidence</h2>
+                <h2 className="text-lg text-gray-800 mb-4">Preuves et pièces jointes</h2>
                 {/* <UpdateImageDropzone form={form} id="evidence" /> */}
                 <UpdateFileDropzone form={form} id="evidence" />
             </div >

@@ -23,7 +23,7 @@ import { GetAllBodyParts } from "../../../../services/BodyPartsService";
 import { Carousel } from "@mantine/carousel";
 import { getBase64FileSize } from "../../../../utility/DocumentUtility";
 import { useDisclosure } from "@mantine/hooks";
-import { ppeRecord } from "../../../../Data/IncidentsData";
+import { PPE_LABELS } from "../incidentLabels";
 import { mantineColorToLevel } from "../../../../Data/DropdownData";
 import { getAllActiveWorkArea } from "../../../../services/WorkAreaService";
 import { getAllActiveWorkProcess } from "../../../../services/WorkProcessService";
@@ -112,7 +112,7 @@ const IncidentDetailsTab = ({
                             {incident.incidentDetails.map((detail: any, index: number) => (
                                 <div
                                     key={index}
-                                    className="flex flex-col gap-2 border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-all"
+                                    className="flex flex-col gap-2 border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-[background-color,box-shadow]"
                                 >
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1.5">
@@ -203,7 +203,7 @@ const IncidentDetailsTab = ({
                         <div className="flex flex-wrap gap-2">
                             {incident.ppe.map((x: any, index: any) => (
                                 <span key={index} className="inline-flex items-center px-2.5 py-1 text-xs rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800">
-                                    {ppeRecord[x] || x}
+                                    {PPE_LABELS[x] || x}
                                 </span>
                             ))}
                         </div>
@@ -355,7 +355,7 @@ const IncidentDetailsTab = ({
                             {incident.evidence.map((item: any, index: number) => (
                                 <div
                                     key={index}
-                                    className="flex gap-2 bg-slate-50/40 border border-slate-200 p-2 rounded-md hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer"
+                                    className="flex gap-2 bg-slate-50/40 border border-slate-200 p-2 rounded-md hover:bg-white hover:border-slate-300 hover:shadow-sm transition-[background-color,border-color,box-shadow] cursor-pointer"
                                     onClick={() => handlePreview(index)}
                                 >
                                     {isImage(item.type) ? (

@@ -6,7 +6,7 @@ import { Carousel } from "@mantine/carousel";
 import { getBase64FileSize, handlePreview } from "../../../../utility/DocumentUtility";
 import { investMethodMap } from "../../../../Data/DropdownData";
 import { formatDateWithDay } from "../../../../utility/DateFormats";
-import { statusColors, statusLabels } from "../../../../Data/IncidentsData";
+import { actionStatusColor, actionStatusLabel, causeLabel, INVESTIGATION_ROLE_LABELS } from "../incidentLabels";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
 
 const InvestigationDetailsTab = ({ investigation, processes }: any) => {
@@ -24,52 +24,52 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
             bg: "bg-blue-50",
             border: "border-blue-400",
             icon: <IconUser size={20} className="text-blue-600" />,
-            title: "Human Actions",
+            title: "Actions humaines",
         },
         task: {
             bg: "bg-pink-50",
             border: "border-pink-400",
             icon: <IconPencil size={20} className="text-pink-600" />,
-            title: "Task-related Factors",
+            title: "Facteurs liés à la tâche",
         },
         working: {
             bg: "bg-green-50",
             border: "border-green-400",
             icon: <IconCalculator size={20} className="text-green-600" />,
-            title: "Working Conditions",
+            title: "Conditions de travail",
         },
         organization: {
             bg: "bg-violet-50",
             border: "border-violet-400",
             icon: <IconAlertTriangle size={20} className="text-violet-600" />,
-            title: "Organizational & Latent Failures",
+            title: "Défaillances organisationnelles et latentes",
         },
     };
 
     return (
         <div className="flex flex-col gap-6 ">
-            <h2 className="text-lg text-gray-800">Investigation Details</h2>
+            <h2 className="text-lg text-gray-800">Détails de l'investigation</h2>
 
-            {/* Method and Dates */}
+            {/* Méthode et dates */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm mb-1">Method</h4>
-                    <p className="text-base text-gray-800">{investMethodMap[investigation.method] || "N/A"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">Méthode</h4>
+                    <p className="text-base text-gray-800">{investMethodMap[investigation.method] || "—"}</p>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm mb-1">Start Date</h4>
-                    <p className="text-base text-gray-800">{formatDateWithDay(investigation.startDate) || "N/A"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">Date de début</h4>
+                    <p className="text-base text-gray-800">{formatDateWithDay(investigation.startDate) || "—"}</p>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-                    <h4 className="text-gray-500 text-sm mb-1">End Date</h4>
-                    <p className="text-base text-gray-800">{investigation.endDate ? formatDateWithDay(investigation.endDate) : "Ongoing"}</p>
+                    <h4 className="text-gray-500 text-sm mb-1">Date de fin</h4>
+                    <p className="text-base text-gray-800">{investigation.endDate ? formatDateWithDay(investigation.endDate) : "En cours"}</p>
                 </div>
             </div>
 
-            {/* Team */}
+            {/* Équipe */}
             <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
                 <h4 className="text-lg text-gray-700 mb-4 flex items-center gap-2">
-                    <IconUsersGroup size={20} className="text-blue-500" /> Investigation Team
+                    <IconUsersGroup size={20} className="text-blue-500" /> Équipe d'investigation
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {investigation.team?.map((member: any, index: number) => (
@@ -87,7 +87,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                             </div>
                             <div>
                                 <p className="text-blue-700 text-xs">{member.name}</p>
-                                <p className="text-xs text-gray-600">{member.role} </p>
+                                <p className="text-xs text-gray-600">{INVESTIGATION_ROLE_LABELS[member.role] ?? member.role} </p>
                             </div>
                         </div>
                     ))}
@@ -117,33 +117,33 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                         <div className="flex  items-center gap-5">
                             {investigation[`${type}Causes`]?.length > 0 ? (
                                 investigation[`${type}Causes`].map((cause: string, i: number) => (
-                                    <List.Item mt={0} key={i}>{cause}</List.Item>
+                                    <List.Item mt={0} key={i}>{causeLabel(cause)}</List.Item>
                                 ))
                             ) : (
-                                <List.Item>No causes found</List.Item>
+                                <List.Item>Aucune cause identifiée</List.Item>
                             )}
                         </div>
                     </List>
                     {/* LOT 41 P0 XSS fix */}
                     <SafeHtml
-                        html={investigation[`${type}Analysis`] || "<p>No analysis provided.</p>"}
+                        html={investigation[`${type}Analysis`] || "<p>Analyse non renseignée.</p>"}
                         className="prose max-w-none mt-3 text-gray-800"
                     />
                 </div>
             ))}
 
-            {/* Final Report */}
+            {/* Rapport final */}
             <div className="border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
-                <h4 className="text-lg text-gray-700 mb-2">Investigation Report</h4>
+                <h4 className="text-lg text-gray-700 mb-2">Rapport d'investigation</h4>
                 {/* LOT 41 P0 XSS fix */}
                 <SafeHtml
-                    html={investigation.report || "<p>No report available.</p>"}
+                    html={investigation.report || "<p>Rapport non disponible.</p>"}
                     className="prose max-w-none text-gray-800"
                 />
             </div>
 
             {investigation.evidence?.length > 0 && <div className="">
-                <h4 className="text-2xl mb-4 text-gray-800">Evidence</h4>
+                <h4 className="text-lg mb-4 text-gray-800">Preuves</h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 border border-gray-300 rounded-xl p-6 bg-gray-50">
                     {[...(investigation.evidence ?? [])]?.map((image: any, index: number) => (
@@ -155,7 +155,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                             />
                             <div className="flex flex-col justify-center">
                                 <p className="text-sm text-gray-800">{image.name}</p>
-                                <p className="text-sm text-gray-500">{getBase64FileSize(image.file)} KB</p>
+                                <p className="text-sm text-gray-500">{getBase64FileSize(image.file)} ko</p>
                             </div>
                         </div>
                     ))}
@@ -164,7 +164,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
             {processes?.length > 0 && (
                 <div className="p-4 bg-white border border-gray-300 rounded-lg shadow flex flex-col gap-4">
                     <Title order={4} className="text-primary">
-                        Progress Timeline
+                        Chronologie de l'avancement
                     </Title>
 
                     <Timeline
@@ -187,8 +187,8 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                                     className="bg-gray-50 space-y-3"
                                 >
                                     <Group className="!flex !justify-between">
-                                        <Badge size="sm" color={statusColors[process.status]}>
-                                            {statusLabels[process.status]}
+                                        <Badge size="sm" color={actionStatusColor(process.status)}>
+                                            {actionStatusLabel(process.status)}
                                         </Badge>
                                         <div className="p-1 bg-yellow-100 border border-yellow-600 rounded-full shadow">
                                             <Text className="!text-sm !text-yellow-500">
@@ -243,7 +243,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
                 onClose={close}
                 size="xl"
 
-                title="Evidence Preview"
+                title="Aperçu des preuves"
                 centered
                 overlayProps={{
                     backgroundOpacity: 0.55,

@@ -18,10 +18,10 @@ interface InvestigationData {
 const InvestigationCard = ({ investigation }: { investigation: InvestigationData }) => {
     const navigate = useNavigate();
 
-    const methodLabel = investMethodMap[investigation.method] || "Unknown";
+    const methodLabel = investMethodMap[investigation.method] || investigation.method || "—";
 
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm mt-4 p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
+        <div className="rounded-xl border border-gray-300 shadow-sm mt-4 p-4 bg-white flex flex-col gap-3 transition-[box-shadow,border-color] duration-200 hover:shadow-md cursor-pointer hover:border-primary">
             <div className="flex gap-4">
                 <span className="text-sm bg-indigo-100 text-indigo-800 px-2 py-1 rounded-lg">
                     {methodLabel}
@@ -31,10 +31,10 @@ const InvestigationCard = ({ investigation }: { investigation: InvestigationData
             <div className="text-lg text-gray-900">{investigation.incidentTitle}</div>
 
             <div className="text-gray-500">
-                Start: {formatDateWithDay(investigation.startDate)}
+                Début : {formatDateWithDay(investigation.startDate)}
             </div>
             <div className="text-gray-500">
-                End: {formatDateWithDay(investigation.endDate)}
+                Fin : {formatDateWithDay(investigation.endDate)}
             </div>
 
             <div className="flex  grow gap-2">
@@ -44,17 +44,17 @@ const InvestigationCard = ({ investigation }: { investigation: InvestigationData
                     const canEdit = statusUpper === 'PENDING';
                     const canUpdate = progress < 100 && !['COMPLETED', 'PENDING', 'CANCELLED'].includes(statusUpper);
                     const editTooltip = canEdit
-                        ? 'Edit'
-                        : statusUpper === 'COMPLETED' ? 'Cannot edit a completed investigation'
-                        : statusUpper === 'CANCELLED' ? 'Cannot edit a cancelled investigation'
-                        : 'Editing is only allowed while pending';
+                        ? 'Modifier'
+                        : statusUpper === 'COMPLETED' ? 'Investigation terminée — modification impossible'
+                        : statusUpper === 'CANCELLED' ? 'Investigation annulée — modification impossible'
+                        : 'Modification possible uniquement en attente d\'approbation';
 
                     const updateTooltip = canUpdate
-                        ? 'Update Progress'
-                        : statusUpper === 'PENDING' ? 'Pending approval — cannot update yet'
-                        : statusUpper === 'CANCELLED' ? 'Investigation cancelled — cannot update'
-                        : progress >= 100 || statusUpper === 'COMPLETED' ? 'Already completed'
-                        : 'Update not allowed';
+                        ? 'Mettre à jour l\'avancement'
+                        : statusUpper === 'PENDING' ? 'En attente d\'approbation — mise à jour impossible'
+                        : statusUpper === 'CANCELLED' ? 'Investigation annulée — mise à jour impossible'
+                        : progress >= 100 || statusUpper === 'COMPLETED' ? 'Investigation déjà terminée'
+                        : 'Mise à jour non autorisée';
 
                     return (
                         <>
@@ -68,7 +68,7 @@ const InvestigationCard = ({ investigation }: { investigation: InvestigationData
                                         disabled={!canEdit}
                                         onClick={() => canEdit && navigate(`/incidents/investigation/${investigation.incidentId}`)}
                                     >
-                                        Edit
+                                        Modifier
                                     </Button>
                                 </div>
                             </Tooltip>
@@ -83,7 +83,7 @@ const InvestigationCard = ({ investigation }: { investigation: InvestigationData
                                         disabled={!canUpdate}
                                         onClick={() => canUpdate && navigate(`/investigation/update/${investigation.id}`)}
                                     >
-                                        Update
+                                        Mettre à jour
                                     </Button>
                                 </div>
                             </Tooltip>

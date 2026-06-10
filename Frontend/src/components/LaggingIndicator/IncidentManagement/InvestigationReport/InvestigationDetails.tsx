@@ -3,6 +3,7 @@ import { DateInput } from "@mantine/dates";
 import { PickList } from "primereact/picklist";
 import { useEffect, useState } from "react";
 import { investMethod } from "../../../../Data/DropdownData";
+import { INVESTIGATION_ROLE_LABELS, INVESTIGATION_ROLE_OPTIONS } from "../incidentLabels";
 import { getDateDifferenceInDays } from "../../../../utility/DateFormats";
 
 
@@ -56,8 +57,8 @@ const InvestigationDetails = ({ incident, form, employees }: any) => {
                             <Select
                                 autoFocus
                                 allowDeselect={false}
-                                placeholder="Assign role"
-                                data={['Lead Investigator', 'Scribe', 'Subject Matter Expert', 'Observer', 'Supervisor', "Safety Officer"]}
+                                placeholder="Attribuer un rôle"
+                                data={INVESTIGATION_ROLE_OPTIONS}
                                 value={item.role}
                                 onChange={(val) => handleRoleChange(item.id, val!)}
                                 className="w-full"
@@ -67,7 +68,7 @@ const InvestigationDetails = ({ incident, form, employees }: any) => {
                                 className="cursor-pointer text-sm px-3 py-2 bg-gray-100 rounded hover:bg-gray-200"
                                 onClick={() => setEditingRoleId(item.id)}
                             >
-                                {item.role}
+                                {INVESTIGATION_ROLE_LABELS[item.role] ?? item.role}
                             </div>
                         )}
                     </div>
@@ -80,33 +81,33 @@ const InvestigationDetails = ({ incident, form, employees }: any) => {
         <div className="p-5 mt-3 border rounded-lg border-gray-300 shadow-md flex flex-col gap-5">
 
             <div className="flex flex-col gap-2">
-                <h2 className="text-lg text-gray-800 ">Method</h2>
-                <Select {...form.getInputProps("method")} allowDeselect={false} placeholder="Select Method" data={investMethod} />
+                <h2 className="text-lg text-gray-800 ">Méthode</h2>
+                <Select {...form.getInputProps("method")} allowDeselect={false} placeholder="Sélectionner la méthode" data={investMethod} />
 
             </div>
             <div className="flex flex-col gap-2">
-                <h2 className="text-lg text-gray-800 ">Timeline</h2>
+                <h2 className="text-lg text-gray-800 ">Calendrier</h2>
                 <div className="flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-4 ">
-                        <DateInput minDate={incident.discoveryDate ? new Date(incident.discoveryDate) : undefined} {...form.getInputProps("startDate")} label="Start Date" maxDate={form.values.endDate ?? new Date()} placeholder="Enter Start Date" withAsterisk />
-                        <DateInput {...form.getInputProps("endDate")} minDate={form.values.startDate} maxDate={new Date()} label="End Date" placeholder="Enter End Date" /></div>
+                        <DateInput minDate={incident.discoveryDate ? new Date(incident.discoveryDate) : undefined} {...form.getInputProps("startDate")} label="Date de début" maxDate={form.values.endDate ?? new Date()} placeholder="Sélectionner la date de début" withAsterisk />
+                        <DateInput {...form.getInputProps("endDate")} minDate={form.values.startDate} maxDate={new Date()} label="Date de fin" placeholder="Sélectionner la date de fin" /></div>
 
                     {(form.values.startDate && form.values.endDate) && <div className="bg-green-50 border-green-500 border rounded-xl shadow-sm p-3">
-                        <p className="text-sm text-green-700">Investigation Duration: <span className=" text-green-700"> {getDateDifferenceInDays(form.values.startDate, form.values.endDate)} days</span></p></div>}
+                        <p className="text-sm text-green-700">Durée de l'investigation : <span className=" text-green-700"> {getDateDifferenceInDays(form.values.startDate, form.values.endDate)} jour(s)</span></p></div>}
                 </div>
 
             </div>
 
             <div className="flex flex-col gap-3">
-                <h2 className="text-lg text-gray-800 ">Team</h2>
+                <h2 className="text-lg text-gray-800 ">Équipe</h2>
                 {form.errors.team && <div className="text-red-500 text-sm">{form.errors.team}</div>}
                 <div className=' [&>legend]:w-fit '>
                     <PickList
                         dataKey="id"
                         filter
                         filterBy="name"
-                        sourceFilterPlaceholder="Search by name"
-                        targetFilterPlaceholder="Search by name"
+                        sourceFilterPlaceholder="Rechercher par nom"
+                        targetFilterPlaceholder="Rechercher par nom"
                         showTargetControls={false}
                         showSourceControls={false}
                         source={emps}
@@ -114,8 +115,8 @@ const InvestigationDetails = ({ incident, form, employees }: any) => {
                         onChange={onChange}
                         itemTemplate={itemTemplate}
                         breakpoint="1280px"
-                        sourceHeader={`Select Employee (${emps?.length})`}
-                        targetHeader={`Assign Role  (${form.values.team.length})`}
+                        sourceHeader={`Employés disponibles (${emps?.length})`}
+                        targetHeader={`Équipe d'investigation (${form.values.team.length})`}
                         sourceStyle={{ height: '16rem' }}
                         targetStyle={{ height: '16rem' }}
                     />

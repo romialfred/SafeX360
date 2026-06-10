@@ -733,7 +733,7 @@ const AssemblyPointFormPage = () => {
                                                 type="button"
                                                 onClick={() => setEvacuationPriority(opt.p)}
                                                 title={opt.label}
-                                                className={`flex flex-col items-center justify-center py-2 rounded-md border transition-all ${
+                                                className={`flex flex-col items-center justify-center py-2 rounded-md border transition-colors ${
                                                     isActive
                                                         ? `${opt.bg} ${opt.text} border-transparent font-semibold shadow-sm`
                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'

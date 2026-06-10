@@ -4,7 +4,8 @@ import IncidentManagement from "../../../../components/LaggingIndicator/Incident
 
 const LaggingIndicatorPage = () => {
     return (
-        <div className="p-5"><IncidentManagement /></div>
+        // Pas de padding ici : IncidentManagement applique déjà .safex-page
+        <div><IncidentManagement /></div>
     )
 }
 

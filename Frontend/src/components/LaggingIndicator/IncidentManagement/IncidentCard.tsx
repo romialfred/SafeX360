@@ -1,6 +1,6 @@
 import { Badge, Button, Tooltip } from "@mantine/core";
 import { IconBook, IconEdit, IconSearch } from "@tabler/icons-react";
-import { incidentStatusMap } from "../../../Data/DropdownData";
+import { incidentStatusLabel } from "./incidentLabels";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDateShort } from "../../../utility/DateFormats";
 
@@ -42,7 +42,7 @@ const getSeverityClass = (severity?: string) => {
 const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps: any }) => {
     const navigate = useNavigate();
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
+        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-[box-shadow,border-color] duration-200 hover:shadow-md cursor-pointer hover:border-primary">
             <div className="flex gap-4 ">
                 <span className={`text-sm px-2 py-1 rounded-lg ${getSeverityClass(incidentData.maxSeverityLevel)}`}>
                     {incidentData.severityLevelName}
@@ -56,15 +56,15 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
                     className="!capitalize"
                     variant="outline"
 
-                >{incidentData.status ? incidentStatusMap[incidentData.status] : ""}</Badge>
+                >{incidentStatusLabel(incidentData.status)}</Badge>
             </div>
             <Link to={`${incidentData.id}`} className=" text-gray-900">{incidentData.title}</Link>
             {/* <p className="text-gray-600">{incidentData.description}</p> */}
             <div className=" text-gray-500 text-sm">
-                Incident Date: {formatDateShort(incidentData.incidentDate)}
+                Date de l'incident : {formatDateShort(incidentData.incidentDate)}
             </div>
             <div className=" text-gray-500 text-sm">
-                Reporter: {emps ? emps[incidentData.reporterId]?.name || "Unknown" : "Unknown"}
+                Déclarant : {emps ? emps[incidentData.reporterId]?.name || "—" : "—"}
             </div>
 
 
@@ -72,11 +72,11 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
                 {(() => {
                     const statusUpper = String(incidentData?.status || '').toUpperCase();
                     const canEdit = !['CLOSED', 'REJECTED'].includes(statusUpper);
-                    const tooltip = canEdit ? 'Edit' : (statusUpper === 'CLOSED' ? 'Closed — modification not possible' : 'Rejected — modification not possible');
+                    const tooltip = canEdit ? 'Modifier' : (statusUpper === 'CLOSED' ? 'Incident clôturé — modification impossible' : 'Incident rejeté — modification impossible');
                     return (
                         <Tooltip label={tooltip}>
                             <span className="inline-flex">
-                                <Button onClick={() => { if (canEdit) navigate("edit/" + incidentData.id); }} size="xs" variant="subtle" leftSection={<IconEdit size={15} />} color="primary" disabled={!canEdit}>Edit</Button>
+                                <Button onClick={() => { if (canEdit) navigate("edit/" + incidentData.id); }} size="xs" variant="subtle" leftSection={<IconEdit size={15} />} color="primary" disabled={!canEdit}>Modifier</Button>
                             </span>
                         </Tooltip>
                     );
@@ -84,7 +84,7 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
                 {(() => {
                     const statusUpper = String(incidentData?.status || '').toUpperCase();
                     const canInvestigate = !['CLOSED', 'REJECTED'].includes(statusUpper);
-                    const tooltip = canInvestigate ? 'Investigation' : (statusUpper === 'CLOSED' ? 'Closed — investigation not allowed' : 'Rejected — investigation not allowed');
+                    const tooltip = canInvestigate ? 'Investigation' : (statusUpper === 'CLOSED' ? 'Incident clôturé — investigation impossible' : 'Incident rejeté — investigation impossible');
                     return (
                         <Tooltip label={tooltip}>
                             <span className="inline-flex">
@@ -93,7 +93,7 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData, emps
                         </Tooltip>
                     );
                 })()}
-                <Button size="xs" onClick={() => navigate("" + incidentData.id + "?tab=lessons")} variant="subtle" leftSection={<IconBook size={15} />} color="green" >Lesson</Button>
+                <Button size="xs" onClick={() => navigate("" + incidentData.id + "?tab=lessons")} variant="subtle" leftSection={<IconBook size={15} />} color="green" >Leçon</Button>
             </div>
         </div>
     );

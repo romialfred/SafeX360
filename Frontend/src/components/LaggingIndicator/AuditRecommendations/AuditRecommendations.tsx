@@ -12,15 +12,27 @@ import 'primeicons/primeicons.css';
 import { recommendationTableData } from "../../../Data/IncidentsData";
 import TextEditor from "../../UtilityComp/TextEditor";
 import { useForm } from "@mantine/form";
+import { PAGINATOR_FR } from "../IncidentManagement/incidentLabels";
 
 const defaultFilters: DataTableFilterMeta = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+};
+
+/** Libellés FR des statuts de recommandation (données seed en anglais). */
+const RECO_STATUS_LABELS: Record<string, string> = {
+    'pending': 'En attente',
+    'in progress': 'En cours',
+    'implemented': 'Mise en œuvre',
+    'overdue': 'En retard',
+    'closed': 'Clôturée',
+    'rejected': 'Rejetée',
 };
 
 const AuditRecommendations = () => {
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const [modalOpened, setModalOpened] = useState(false);
     const [selectedRow, setSelectedRow] = useState<any>(null);
+    const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
 
     const form = useForm({
@@ -35,10 +47,10 @@ const AuditRecommendations = () => {
         validate: {
             title: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Title is required";
+                if (trimmed.length === 0) return "Le titre est requis";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "Maximum 50 caractères" : null;
             },
         },
     });
@@ -52,20 +64,20 @@ const AuditRecommendations = () => {
                 'overdue': 'danger',
             };
             const status = rowData.status?.toLowerCase?.() || 'pending';
-            return <Tag value={rowData.status} severity={severityMap[status] || 'info'} />;
+            return <Tag value={RECO_STATUS_LABELS[status] ?? rowData.status} severity={severityMap[status] || 'info'} />;
         }
         return <Tag value={rowData.progress} />;
     };
 
     const recommendationSummaryData = [
-        { label: 'Total Recommendations', value: 3, icon: IconTrendingUp, color: '#173ac9' },
-        { label: 'In Progress', value: 2, icon: IconClock, color: '#f3b121' },
-        { label: 'Implemented', value: 0, icon: IconCircleCheck, color: '#4dca45' },
-        { label: 'Overdue', value: 3, icon: IconAlertTriangle, color: '#f44336' },
+        { label: 'Total recommandations', value: 3, icon: IconTrendingUp, color: '#173ac9' },
+        { label: 'En cours', value: 2, icon: IconClock, color: '#f3b121' },
+        { label: 'Mises en œuvre', value: 0, icon: IconCircleCheck, color: '#4dca45' },
+        { label: 'En retard', value: 3, icon: IconAlertTriangle, color: '#f44336' },
     ];
 
     const actionBodyTemplate = (rowData: any) => (
-        <Tooltip label="Update">
+        <Tooltip label="Mettre à jour la recommandation">
             <Button
                 size="xs"
                 onClick={() => {
@@ -73,44 +85,72 @@ const AuditRecommendations = () => {
                     setModalOpened(true);
                 }}
             >
-                Update
+                Mettre à jour
             </Button>
         </Tooltip>
     );
+
+    const onGlobalFilterChange = (value: string) => {
+        setFilters((prev) => ({
+            ...prev,
+            global: { value, matchMode: FilterMatchMode.CONTAINS },
+        }));
+    };
+
+    const filteredData = recommendationTableData.filter((row: any) =>
+        statusFilter === 'all' || !statusFilter || row.status?.toLowerCase() === statusFilter
+    );
+
     return (
         <div>
             <div>
                 {/* LOT 40 P1: page title color */}
-                <div className="text-2xl text-slate-900 w-fit">Recommendation Followup</div>
+                <div className="text-2xl text-slate-900 w-fit">Suivi des recommandations</div>
                 <Breadcrumbs mt="xs" mb="lg">
-                    <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
+                    <Link className="hover:!underline" to="/"><Text variant="gradient">Accueil</Text></Link>
 
-                    <Text variant="gradient">Recommendation Followup</Text>
+                    <Text variant="gradient">Suivi des recommandations</Text>
                 </Breadcrumbs>
             </div>
             <div className="italic my-3">
-                Track audit recommendations and hazard-related improvements to completion
+                Suivre les recommandations d'audit et les améliorations associées jusqu'à leur clôture
             </div>
             <div className="flex flex-col gap-10">
-                {/* Filter Section */}
+                {/* Filtres */}
                 <Card className="bg-white" shadow="sm" withBorder radius="md">
                     {/* LOT 40 P1: responsive grid breakpoints */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <TextInput label="Search" placeholder="Search recommendations..." leftSection={<IconSearch />} />
-                        <Select label="Status" placeholder="Select Status" data={["All status", "Pending", "In Progress", "Implemented", "Closed", "Rejected"]} />
-                        <Select label="Departments" placeholder="Select Departments" data={["All Departments", "Safety", "IT"]} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <TextInput
+                            label="Recherche"
+                            placeholder="Rechercher une recommandation"
+                            leftSection={<IconSearch />}
+                            onChange={(e) => onGlobalFilterChange(e.currentTarget.value)}
+                        />
+                        <Select
+                            label="Statut"
+                            placeholder="Sélectionner un statut"
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            data={[
+                                { value: 'all', label: 'Tous les statuts' },
+                                { value: 'pending', label: 'En attente' },
+                                { value: 'in progress', label: 'En cours' },
+                                { value: 'implemented', label: 'Mise en œuvre' },
+                                { value: 'overdue', label: 'En retard' },
+                            ]}
+                        />
                     </div>
                 </Card>
 
-                {/* Summary Cards */}
+                {/* Indicateurs */}
                 <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-1 mb-4">
                     {recommendationSummaryData.map((item, index) => {
                         const Icon = item.icon;
                         return (
-                            <div key={index} className="flex justify-between p-6 shadow-lg rounded-xl border border-gray-200">
+                            <div key={index} className="flex justify-between p-4 shadow-sm rounded-xl border border-gray-200">
                                 <div>
-                                    <p className="text-gray-600 text-lg">{item.label}</p>
-                                    <h2 className="text-lg text-gray-400">{item.value}</h2>
+                                    <p className="text-gray-600 text-sm uppercase tracking-wide">{item.label}</p>
+                                    <h2 className="text-lg text-gray-800 tabular-nums">{item.value}</h2>
                                 </div>
                                 <div><Icon size={32} stroke={2} color={item.color} /></div>
                             </div>
@@ -118,7 +158,7 @@ const AuditRecommendations = () => {
                     })}
                 </div>
 
-                {/* Data Table */}
+                {/* Tableau */}
                 <Card className="bg-white" shadow="sm" withBorder radius="md" p={10}>
                     <DataTable selectionMode="single"
                         className='[&_.p-datatable-tbody]:!text-sm'
@@ -126,22 +166,23 @@ const AuditRecommendations = () => {
                         stripedRows
                         removableSort
                         paginator
-                        value={recommendationTableData}
+                        value={filteredData}
                         rows={10}
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                         rowsPerPageOptions={[10, 25, 50]}
-                        dataKey="title"
+                        dataKey="recommendation"
                         filters={filters}
-                        globalFilterFields={['title', 'objective', 'sites', 'ppe']}
-                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                        globalFilterFields={['recommendation', 'audit', 'department', 'status']}
+                        currentPageReportTemplate={PAGINATOR_FR}
+                        emptyMessage="Aucune recommandation ne correspond aux filtres."
                         onFilter={(e) => setFilters(e.filters)}
                     >
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="recommendation" header="Recommendation" sortable />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="audit" header="Audit" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="department" header="Department" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="date" header="Due Date" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => getSeverity(rowData, 'status')} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="progress" header="Progress" body={(rowData) => getSeverity(rowData, 'progress')} />
+                        <Column style={{ fontWeight: 'normal' }} field="recommendation" header="Recommandation" sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="audit" header="Audit" />
+                        <Column style={{ fontWeight: 'normal' }} field="department" header="Département" />
+                        <Column style={{ fontWeight: 'normal' }} field="date" header="Échéance" />
+                        <Column style={{ fontWeight: 'normal' }} field="status" header="Statut" body={(rowData) => getSeverity(rowData, 'status')} />
+                        <Column style={{ fontWeight: 'normal' }} field="progress" header="Avancement" body={(rowData) => getSeverity(rowData, 'progress')} />
                         <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                     </DataTable>
                 </Card>
@@ -151,7 +192,7 @@ const AuditRecommendations = () => {
                 <Modal
                     opened={modalOpened}
                     onClose={() => setModalOpened(false)}
-                    title="Update Recommendation"
+                    title="Mettre à jour la recommandation"
                     size="sm"
                     centered
                     zIndex={1002} yOffset="10dvh"
@@ -160,56 +201,61 @@ const AuditRecommendations = () => {
                         <div className="flex gap-10 ">
                             <div className="flex flex-col gap-5 w-[700px]">
                                 <div>
-                                    <h1 className="text-lg">Enhance Risk Assessment Documentation</h1>
+                                    <h1 className="text-lg">{selectedRow.recommendation}</h1>
                                 </div>
                                 <div>
-                                    <p className="text-lg text-gray-400">Description</p>
+                                    <p className="text-sm text-gray-500 uppercase tracking-wide">Description</p>
                                     <div className="bg-blue-50 rounded-lg shadow-sm p-4 ">
-                                        <p className="text-lg">Implement a standardized digital documentation system for risk assessments to improve traceability and accessibility of records.</p>
+                                        <p className="text-sm">Mettre en place un système documentaire numérique normalisé pour les évaluations des risques, afin d'améliorer la traçabilité et l'accès aux enregistrements.</p>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Select label="Status" placeholder="Select Status" data={["Pending", "In-Progress", "Implemented", "Closed", "Rejected"]} />
-                                    <NumberInput label="Progress" placeholder="Enter Progress" />
+                                    <Select label="Statut" placeholder="Sélectionner un statut" data={[
+                                        { value: 'Pending', label: 'En attente' },
+                                        { value: 'In-Progress', label: 'En cours' },
+                                        { value: 'Implemented', label: 'Mise en œuvre' },
+                                        { value: 'Closed', label: 'Clôturée' },
+                                        { value: 'Rejected', label: 'Rejetée' },
+                                    ]} />
+                                    <NumberInput label="Avancement (%)" placeholder="Saisir l'avancement" min={0} max={100} />
                                 </div>
 
-                                <TextEditor form={form} id="purpose" title="Update Comment" />
+                                <TextEditor form={form} id="purpose" title="Commentaire de mise à jour" />
 
                                 <Divider size="xs" />
 
                                 <div className="flex justify-end gap-2">
-                                    <Button variant="outline">Close</Button>
-                                    <Button variant="gradient">Save Changes</Button>
+                                    <Button variant="outline" onClick={() => setModalOpened(false)}>Fermer</Button>
+                                    <Button variant="gradient" onClick={() => setModalOpened(false)}>Enregistrer</Button>
                                 </div>
                             </div>
                             <Divider size="xs" orientation="vertical" />
                             <div>
                                 <Card shadow="sm" padding="sm" radius="md" withBorder className="w-[250px]">
-                                    <p className="text-lg mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
+                                    <p className="text-lg mb-4 flex gap-1 text-amber-600"><IconClock /> Historique des mises à jour</p>
                                     <div className="flex flex-col gap-4">
                                         <div className=" flex flex-col gap-8">
                                             <div className="flex justify-between items-center">
                                                 <p className="text-lg flex gap-1 text-blue-600"><IconUser />3</p>
                                                 <div className="bg-amber-200 rounded-4xl ">
-                                                    <p className="text-sm text-amber-800 flex gap-1 p-1 items-center"><IconClock />In-Progress</p>
+                                                    <p className="text-sm text-amber-800 flex gap-1 p-1 items-center"><IconClock />En cours</p>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-5">
-                                                <p className="text-gray-800">1/4/2024, 3:30:00 PM</p>
+                                                <p className="text-gray-800">01/04/2024, 15:30</p>
                                                 <div className="flex justify-between">
-                                                    <Text size="md" className="text-gray-600">Status: In Progress</Text>
+                                                    <Text size="md" className="text-gray-600">Statut : En cours</Text>
                                                     <Progress value={4} color="yellow" />
                                                 </div>
 
                                                 <div className="bg-blue-50 shadow-sm rounded-lg p-4">
-                                                    <Text size="sm" className="text-gray-700 mt-1">Comment: Started system evaluation</Text>
+                                                    <Text size="sm" className="text-gray-700 mt-1">Commentaire : évaluation du système engagée</Text>
                                                 </div>
 
                                             </div>
 
                                         </div>
-                                        {/* Add more history entries here if needed */}
                                     </div>
                                 </Card>
                             </div>

@@ -268,7 +268,7 @@ const AssemblyPointsPage = () => {
                     <button
                         type="button"
                         onClick={() => setView('map')}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
                             view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -278,7 +278,7 @@ const AssemblyPointsPage = () => {
                     <button
                         type="button"
                         onClick={() => setView('list')}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
                             view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >

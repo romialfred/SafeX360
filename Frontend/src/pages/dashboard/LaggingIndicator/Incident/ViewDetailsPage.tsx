@@ -3,7 +3,8 @@ import ViewDetails from "../../../../components/LaggingIndicator/IncidentManagem
 
 const ViewDetailsPage = () => {
     return (
-        <div className="p-5"><ViewDetails /></div>
+        // Pas de padding ici : ViewDetails applique déjà p-5
+        <div><ViewDetails /></div>
     )
 }
 

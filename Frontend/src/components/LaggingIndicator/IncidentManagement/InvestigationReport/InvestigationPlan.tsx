@@ -7,6 +7,7 @@ import { getEmployeeDropdown } from "../../../../services/EmployeeService";
 import { modals } from "@mantine/modals";
 import { removeCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
+import { ACTION_STATUS_OPTIONS } from "../incidentLabels";
 
 
 const InvestigationPlan = ({ form, incident }: any) => {
@@ -41,16 +42,16 @@ const InvestigationPlan = ({ form, incident }: any) => {
     const handleRemoveActionPlan = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='text-2xl'>Are you sure?</span>,
+                title: <span className='text-lg'>Supprimer cette action</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
-                        You want to remove this action plan? This action cannot be undone.
+                        L'action corrective sera définitivement retirée du plan. Cette opération est irréversible.
                     </span>
                 ),
-                labels: { confirm: `Yes, Remove`, cancel: 'Cancel' },
-                cancelProps: { color: 'red', variant: "filled" },
-                confirmProps: { color: 'green', variant: "filled" },
+                labels: { confirm: `Supprimer`, cancel: 'Annuler' },
+                cancelProps: { variant: "default" },
+                confirmProps: { color: 'red', variant: "filled" },
 
                 closeOnEscape: false,
                 closeOnClickOutside: false,
@@ -59,10 +60,10 @@ const InvestigationPlan = ({ form, incident }: any) => {
                     form.removeListItem('correctiveActions', index);
                     removeCorrectiveAction(id)
                         .then((_res) => {
-                            successNotification("Action Plan removed successfully");
+                            successNotification("Action corrective supprimée");
                         }
                         ).catch((err) => {
-                            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                         }
                         )
                 },
@@ -77,23 +78,23 @@ const InvestigationPlan = ({ form, incident }: any) => {
         <div className="flex flex-col p-5 gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="text-lg text-gray-800 ">Corrective Actions Plan</h3>
-                    <p>Define actions to prevent incident recurrence</p>
+                    <h3 className="text-lg text-gray-800 ">Plan d'actions correctives</h3>
+                    <p>Définir les actions pour prévenir la récurrence de l'incident</p>
                 </div>
 
 
-                <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">Add Action Plan</Button>
+                <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">Ajouter une action</Button>
             </div>
             {form?.values.correctiveActions && form?.values.correctiveActions.map((x: any, index: any) => <Fieldset className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
                 <div className="text-lg text-blue-500">Action {index + 1}</div>
-                <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Settings">
+                <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Supprimer l'action">
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
             </div>}>
-                <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label="Action Plan Name" placeholder='Enter action plan name' />
-                <Select {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={emps} label="Assign Employee" placeholder="Select assigned employee" />
-                <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} minDate={incident?.discoveryDate ? new Date(incident.discoveryDate) : undefined} label="Deadline" placeholder="Select deadline" />
-                <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={[{ label: "Pending", value: "PENDING" }, { label: "In-Progress", value: "IN_PROGRESS" }, { label: "Canceled", value: "CANCELED" }, { label: "Completed", value: "COMPLETED" }]} label="Status" placeholder="Select status" />
+                <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label="Intitulé de l'action" placeholder="Saisir l'intitulé de l'action" />
+                <Select {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={emps} label="Responsable" placeholder="Sélectionner le responsable" />
+                <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} minDate={incident?.discoveryDate ? new Date(incident.discoveryDate) : undefined} label="Échéance" placeholder="Sélectionner l'échéance" />
+                <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={ACTION_STATUS_OPTIONS} label="Statut" placeholder="Sélectionner le statut" />
                 <div className='col-span-2'>
 
                     <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title="Description" />

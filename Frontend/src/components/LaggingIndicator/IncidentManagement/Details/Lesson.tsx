@@ -8,7 +8,7 @@ import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { createLessonLearn, getDetailsByIncidentId, updateLessonLearn } from "../../../../services/LessonLearnService";
 import { getEmployeeDropdown } from "../../../../services/EmployeeService";
-import { lessondata } from "../../../../Data/IncidentsData";
+import { LESSON_STATUS_OPTIONS, lessonCategoryLabel, lessonStatusLabel, toIsoDateLocal } from "../incidentLabels";
 import { formatDateWithDay } from "../../../../utility/DateFormats";
 
 const Lesson = ({
@@ -94,10 +94,10 @@ const Lesson = ({
     };
 
     const handleSubmit = (values: any) => {
-        console.log(form.values)
         dispatch(showOverlay());
 
-        const formattedDate = new Date(values.date).toISOString().split("T")[0]; // ✅ format for backend
+        // Sérialisation LocalDate en fuseau local (évite le décalage d'un jour via UTC)
+        const formattedDate = toIsoDateLocal(new Date(values.date));
 
         const payload = {
             ...values,
@@ -185,7 +185,7 @@ const Lesson = ({
                                 />
                                 <Select
                                     label="Statut"
-                                    data={lessondata}
+                                    data={LESSON_STATUS_OPTIONS}
                                     placeholder="Sélectionner le statut"
                                     withAsterisk
                                     size="sm"
@@ -211,14 +211,14 @@ const Lesson = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-wider rounded bg-blue-100 text-blue-800 border border-blue-200">
-                                        {form.values.category || '—'}
+                                        {lessonCategoryLabel(form.values.category)}
                                     </span>
                                     <span className="text-[11px] text-slate-500">
                                         {form.values.date ? formatDateWithDay(form.values.date) : '—'}
                                     </span>
                                     <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-green-100 text-green-800 border border-green-200">
                                         <IconCircleCheck size={11} />
-                                        {form.values.status || '—'}
+                                        {lessonStatusLabel(form.values.status)}
                                     </span>
                                 </div>
                                 <Button size="xs" variant="default" onClick={handleEdit}>Modifier</Button>
