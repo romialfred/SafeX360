@@ -88,3 +88,7 @@ Backend/.env
 .LSOverride
 $RECYCLE.BIN/
 *.lnk
+
+# Bytecode Python (peut embarquer des constantes sensibles des scripts)
+__pycache__/
+*.pyc
