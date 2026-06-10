@@ -2,7 +2,7 @@ import RegisterForm from "../../../components/RiskManagement/RiskRegister/Regist
 
 const RegisterFormPage = () => {
     return (
-        <div className="p-5"><RegisterForm /></div>
+        <RegisterForm />
     )
 }
 

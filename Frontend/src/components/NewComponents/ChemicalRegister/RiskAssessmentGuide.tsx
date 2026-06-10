@@ -4,52 +4,56 @@ import {
     IconCircleCheck,
     IconFileText,
     IconShield,
-} from "@tabler/icons-react";
-import GuideSidebar, { GuideSection } from "./GuideSidebar";
+} from '@tabler/icons-react';
+import GuideSidebar, { GuideSection } from './GuideSidebar';
 
+/**
+ * Aide-mémoire affiché à côté du formulaire d'évaluation d'un risque
+ * chimique (LOT 50) — repères de cotation et de documentation des mesures.
+ */
 const guideSections: GuideSection[] = [
     {
-        title: 'Assessment Field Tips',
+        title: 'Renseigner la cotation',
         icon: IconFileText,
-        color: 'text-blue-600',
-        accentClasses: 'bg-blue-50 border-blue-200',
+        color: 'text-sky-700',
+        accentClasses: 'bg-sky-50 border-sky-200',
         tips: [
-            'Explain the trigger in "Reason for Reassessment" (incident, audit finding, change in process, etc.).',
-            'Gravity reflects the severity of harm. Use SDS guidance to justify your choice.',
-            'Probability represents the likelihood of exposure. Base the selection on frequency and controls.',
-            'Severity is calculated automatically from probability and gravity to avoid manual errors.'
+            "En réévaluation, précisez le déclencheur : incident, constat d'audit, changement de procédé.",
+            'La gravité reflète la sévérité des conséquences possibles. Appuyez-vous sur la fiche de données de sécurité.',
+            "La probabilité traduit la vraisemblance d'une exposition, selon la fréquence des tâches et les mesures en place.",
+            'Le niveau de risque est calculé automatiquement à partir de la combinaison probabilité × gravité.',
         ],
     },
     {
-        title: 'Scoring Guidance',
+        title: 'Lire le niveau calculé',
         icon: IconCalculator,
-        color: 'text-orange-600',
-        accentClasses: 'bg-orange-50 border-orange-200',
+        color: 'text-amber-700',
+        accentClasses: 'bg-amber-50 border-amber-200',
         tips: [
-            'Risk Level is generated from the Probability × Gravity combination.',
-            'Capture data or references that support your scoring decisions in the comments.',
-            'Reassess whenever the chemical, process, or exposure frequency changes significantly.'
+            'Faible et faible à modéré : risque acceptable, à surveiller dans le cycle normal.',
+            "Modéré : risque tolérable sous réserve d'un plan d'action suivi.",
+            'Élevé et critique : traitement prioritaire, mesures complémentaires obligatoires.',
         ],
     },
     {
-        title: 'Control Documentation',
+        title: 'Documenter la maîtrise',
         icon: IconShield,
-        color: 'text-green-600',
-        accentClasses: 'bg-green-50 border-green-200',
+        color: 'text-emerald-700',
+        accentClasses: 'bg-emerald-50 border-emerald-200',
         tips: [
-            'List existing controls such as engineering measures, PPE, and monitoring programmes.',
-            'Proposed controls should be specific, actionable, and assigned to an owner with a due date.',
-            'Preventive and improvement measures capture how you will reduce exposure or enhance resilience.'
+            'Listez les mesures existantes : protections collectives, EPI, surveillance des expositions.',
+            'Les mesures proposées doivent être concrètes, avec un responsable et une échéance.',
+            "Pensez à la substitution du produit avant les mesures de protection individuelles.",
         ],
     },
     {
-        title: 'Submission Tips',
+        title: 'Avant de valider',
         icon: IconCircleCheck,
-        color: 'text-indigo-600',
-        accentClasses: 'bg-indigo-50 border-indigo-200',
+        color: 'text-violet-700',
+        accentClasses: 'bg-violet-50 border-violet-200',
         tips: [
-            'Use the comments field to highlight approvals, outstanding actions, or follow-up requirements.',
-            'Select "Save as Draft" if information is incomplete; submit once the assessment is ready for review.'
+            'Notez en commentaire les validations obtenues et les actions restant à suivre.',
+            'Réévaluez le risque dès que le produit, le procédé ou la fréquence d\'exposition change.',
         ],
     },
 ];

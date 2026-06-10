@@ -2,9 +2,8 @@ import EditRegisterForm from "../../../components/RiskManagement/RiskRegister/Ed
 
 const EditRegisterFormPage = () => {
   return (
-    <div className="p-5"><EditRegisterForm /></div>
+    <EditRegisterForm />
   );
 };
 
 export default EditRegisterFormPage;
-

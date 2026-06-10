@@ -1,86 +1,77 @@
-import { Badge, Button } from "@mantine/core";
-import { IconEdit, IconEye } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
-import { formatDateShort } from "../../../utility/DateFormats";
-import { riskMap } from "../../../Data/DropdownData";
+import { Button } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import { formatDateShort } from '../../../utility/DateFormats';
+import { riskLevelFromKey, riskStatusConfig } from '../riskLabels';
 
-
-const RiskCards = ({ risk, department, process, owner, getStatusColor }: any) => {
+/**
+ * Carte de risque du registre (LOT 50) — vue alternative au tableau,
+ * chips de niveau et de statut charte R7.
+ */
+const RiskCards = ({ risk, department, process, owner }: any) => {
     const navigate = useNavigate();
+    const statusCfg = riskStatusConfig(risk?.status);
+    const levelCfg = riskLevelFromKey(risk?.riskLevel);
 
     return (
-
-        <div
-            key={risk.id}
-            className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary"
-        >
-            {/* Badges row */}
+        <div className="rounded-xl border border-slate-200 p-3 bg-white flex flex-col gap-2">
+            {/* Processus + statut */}
             <div className="flex gap-2 items-center justify-between flex-wrap">
-                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
-                    {process}
+                <span className="text-[11px] bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded">
+                    {process || 'Processus non renseigné'}
                 </span>
-
-                <Badge size="xs" color={getStatusColor(risk.status)}>
-                    {risk?.status?.toLowerCase()}
-                </Badge>
+                <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                    {statusCfg.label}
+                </span>
             </div>
 
-            {/* Title */}
-            <div
-                className="text-sm text-gray-900"
-                onClick={() => navigate("")}
-            >
-                {risk.title}
-            </div>
+            {/* Intitulé */}
+            <p className="text-[13px] text-slate-800 leading-snug">{risk.title}</p>
 
             {/* Description */}
-            <div className="text-gray-600 text-xs line-clamp-2">
-                {risk.description}
-            </div>
+            {risk.description && (
+                <p className="text-[11.5px] text-slate-500 line-clamp-2">{risk.description}</p>
+            )}
 
-            {/* Extra Info */}
-            <div className="text-gray-500 text-xs flex justify-between">
-                <span>Owner:</span> <span className="font-medium">{owner}</span>
-            </div>
-            {risk.riskLevel && <div className="text-gray-500 text-xs flex justify-between">
-                <span>Risk Level:</span> <Badge color={riskMap[risk.riskLevel]?.color} variant="filled">{riskMap[risk.riskLevel]?.level}</Badge>
-            </div>}
-            <div className="text-gray-500 text-xs flex justify-between">
-                <span>Process:</span> <span className="font-medium">{process}</span>
-            </div>
-            <div className="text-gray-500 text-xs flex justify-between">
-                <span>Department:</span> <span className="font-medium">{department}</span>
-            </div>
+            {/* Informations */}
+            <dl className="text-[11.5px] text-slate-500 space-y-1 mt-1">
+                <div className="flex justify-between gap-2">
+                    <dt>Responsable</dt>
+                    <dd className="text-slate-700">{owner || '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                    <dt>Département</dt>
+                    <dd className="text-slate-700">{department || '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-2 items-center">
+                    <dt>Niveau de risque</dt>
+                    <dd>
+                        {levelCfg ? (
+                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${levelCfg.chip}`}>
+                                {levelCfg.label}
+                            </span>
+                        ) : (
+                            <span className="text-slate-400">Non évalué</span>
+                        )}
+                    </dd>
+                </div>
+            </dl>
 
-
-
-            {/* Footer Actions */}
-            <div className="flex justify-between items-center mt-2">
+            {/* Pied de carte */}
+            <div className="flex justify-between items-center mt-auto pt-2 border-t border-slate-100">
+                <span className="text-[11px] text-slate-400">
+                    {risk.createdAt ? `Créé le ${formatDateShort(risk.createdAt)}` : ''}
+                </span>
                 <div className="flex gap-2">
-                    <Button
-                        size="compact-xs"
-                        leftSection={<IconEdit size={15} />}
-                        color="primary"
-                        variant="subtle"
-                        onClick={() => navigate(`edit/${risk.id}`)}
-                    >
-                        Edit
+                    <Button size="compact-xs" variant="default" onClick={() => navigate(`register-details/${risk.id}`)}>
+                        Détail
                     </Button>
-                    <Button
-                        size="compact-xs"
-                        leftSection={<IconEye size={15} />}
-                        color="yellow"
-                        variant="subtle"
-                        onClick={() => navigate(`register-details/${risk.id}`)}
-                    >
-                        View
+                    <Button size="compact-xs" variant="light" color="teal" onClick={() => navigate(`edit/${risk.id}`)}>
+                        Modifier
                     </Button>
                 </div>
-                <span className="text-xs text-gray-400">{formatDateShort(risk.createdAt)}</span>
             </div>
         </div>
     );
-
 };
 
 export default RiskCards;

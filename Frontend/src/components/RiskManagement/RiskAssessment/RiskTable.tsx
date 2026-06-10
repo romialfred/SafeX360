@@ -1,332 +1,371 @@
-import { ActionIcon, Badge, Button, Select, Text, TextInput, Tooltip } from "@mantine/core";
-import { IconEye, IconLayoutGrid, IconLayoutList, IconSearch, IconFilter } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { RiskData } from "../../../Data/dummyData/riskData";
-import { Toolbar } from "primereact/toolbar";
-import { Toast } from "primereact/toast";
-import { useNavigate } from "react-router-dom";
-import RiskCards from "./RiskCards";
-import { getRisksWithRiskLevel } from "../../../services/RiskRegisterService";
-import { getAllDepartments } from "../../../services/HrmsService";
-import { errorNotification } from "../../../utility/NotificationUtility";
-import { GetAllWorkProcess } from "../../../services/WorkProcessService";
-import { getEmployeeDropdown } from "../../../services/EmployeeService";
-import { mapIdToName } from "../../../utility/OtherUtilities";
-import { riskMap } from "../../../Data/DropdownData";
-import { formatDateShort } from "../../../utility/DateFormats";
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import { useEffect, useMemo, useState } from 'react';
+import { ActionIcon, Button, Select, TextInput, Tooltip } from '@mantine/core';
+import {
+    IconClipboardCheck,
+    IconDownload,
+    IconEye,
+    IconLayoutGrid,
+    IconLayoutList,
+    IconSearch,
+} from '@tabler/icons-react';
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { useNavigate } from 'react-router-dom';
+import RiskCards from './RiskCards';
+import EmptyState from '../../UtilityComp/EmptyState';
+import { getRisksWithRiskLevel } from '../../../services/RiskRegisterService';
+import { getAllDepartments } from '../../../services/HrmsService';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { GetAllWorkProcess } from '../../../services/WorkProcessService';
+import { getEmployeeDropdown } from '../../../services/EmployeeService';
+import { mapIdToName } from '../../../utility/OtherUtilities';
+import { riskMap } from '../../../Data/DropdownData';
+import { formatDateShort } from '../../../utility/DateFormats';
+import {
+    RISK_LEVEL_OPTIONS,
+    RISK_STATUS_OPTIONS,
+    normalizeRiskStatus,
+    riskLevelFromKey,
+    riskStatusConfig,
+} from '../riskLabels';
 
-interface RiskTableProps {
-    getStatusColor: (status: string) => string;
+/**
+ * Tableau des risques évalués (LOT 50) : risques disposant d'une cotation,
+ * avec la date de dernière évaluation et l'accès à la fiche détaillée.
+ */
 
-    onEdit?: (risk: RiskData) => void;
-}
+const ALL = 'all';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: "", matchMode: FilterMatchMode.CONTAINS },
-    riskLevel: { value: null, matchMode: FilterMatchMode.EQUALS },
-    status: { value: null, matchMode: FilterMatchMode.EQUALS },
-    zone: { value: null, matchMode: FilterMatchMode.EQUALS },
-};
-
-const RiskDataTable: React.FC<RiskTableProps> = ({
-
-    getStatusColor
-}) => {
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [viewType, setViewType] = useState<'table' | 'card'>('table');
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
-    const [riskLevelFilter, setRiskLevelFilter] = useState<string | null>(null);
-    const [statusFilter, setStatusFilter] = useState<string | null>(null);
-    const toast = useRef<Toast>(null);
+const RiskDataTable = () => {
     const navigate = useNavigate();
+    const [viewType, setViewType] = useState<'table' | 'card'>('table');
+    const [loading, setLoading] = useState(true);
     const [risks, setRisks] = useState<any[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
     const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
     const [processMap, setProcessMap] = useState<Record<string, any>>({});
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
-    const [departments, setDepartments] = useState<any[]>([]);
 
-
-
-    useEffect(() => {
-        fetchDepartments();
-        fetchWorkProcesses();
-        fetchEmployees();
-    }, [])
-
-    const fetchDepartments = () => {
-        // Fetch departments from API or service
-        getAllDepartments().then((data) => {
-            setDepartmentMap(mapIdToName(data));
-            setDepartments(data);
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch departments");
-        });
-    };
-    const fetchWorkProcesses = () => {
-        // Fetch work processes from API or service
-        GetAllWorkProcess({}).then((data) => {
-            setProcessMap(mapIdToName(data))
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch work processes");
-        });
-    };
-    const fetchEmployees = () => {
-        // Fetch employees from API or service
-        getEmployeeDropdown().then((data) => {
-            setEmpMap(mapIdToName(data))
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch employees");
-        });
-    };
-
-    // Enrich risks with names so table rerenders when maps update
-    const enrichedRisks = useMemo(() => {
-        return risks.map((r: any) => ({
-            ...r,
-            departmentName: departmentMap[r?.departmentId]?.name ?? 'Unknown',
-            processName: processMap[r?.workProcessId]?.name ?? '-',
-            ownerName: empMap[r?.ownerId]?.name ?? '-',
-            updatedAtFormatted: r?.updatedAt ? formatDateShort(r.updatedAt) : '-',
-        }));
-    }, [risks, departmentMap, processMap, empMap]);
-
-    const getFilteredData = () => {
-        return enrichedRisks.filter((risk: any) => {
-            const term = globalFilterValue.toLowerCase();
-
-            const matchesGlobal =
-                term.length > 0
-                    ? (
-                        String(risk.id).toLowerCase() +
-                        risk.title.toLowerCase() +
-                        (risk.departmentName || '').toLowerCase() +
-                        (risk.processName || '').toLowerCase() +
-                        risk.zone?.toLowerCase() +
-                        (risk.ownerName || '').toLowerCase() +
-                        risk.riskLevel?.toLowerCase() +
-                        risk.status?.toLowerCase() +
-                        risk.riskDescription?.toLowerCase() +
-                        (risk.updatedAtFormatted || '').toLowerCase()
-                    ).includes(term)
-                    : true;
-
-            const matchesDepartment = departmentFilter ? risk.departmentId == departmentFilter : true;
-            const matchesRiskLevel = riskLevelFilter ? riskMap[risk.riskLevel]?.level === riskLevelFilter : true;
-            const matchesStatus = statusFilter ? risk.status === statusFilter : true;
-
-            return matchesGlobal && matchesDepartment && matchesRiskLevel && matchesStatus;
-        });
-    };
-
-    const filteredData = getFilteredData();
-
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
+    const [search, setSearch] = useState('');
+    const [departmentFilter, setDepartmentFilter] = useState<string>(ALL);
+    const [riskLevelFilter, setRiskLevelFilter] = useState<string | null>(null);
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
 
     useEffect(() => {
-        getRisksWithRiskLevel()
-            .then((res) => {
-                setRisks(res);
+        getAllDepartments()
+            .then((data) => {
+                setDepartmentMap(mapIdToName(data));
+                setDepartments(data);
             })
-            .catch((err) => {
-                console.error(err);
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements');
+            });
+        GetAllWorkProcess({})
+            .then((data) => setProcessMap(mapIdToName(data)))
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus');
+            });
+        getEmployeeDropdown()
+            .then((data) => setEmpMap(mapIdToName(data)))
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés');
             });
     }, []);
 
+    useEffect(() => {
+        setLoading(true);
+        getRisksWithRiskLevel()
+            .then((res) => setRisks(res ?? []))
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des risques évalués');
+            })
+            .finally(() => setLoading(false));
+    }, []);
 
+    const enrichedRisks = useMemo(() => {
+        return risks.map((r: any) => ({
+            ...r,
+            departmentName: departmentMap[r?.departmentId]?.name ?? '—',
+            processName: processMap[r?.workProcessId]?.name ?? '—',
+            ownerName: empMap[r?.ownerId]?.name ?? '—',
+            levelRank: riskLevelFromKey(r?.riskLevel)?.rank ?? 0,
+            updatedAtFormatted: r?.updatedAt ? formatDateShort(r.updatedAt) : '—',
+        }));
+    }, [risks, departmentMap, processMap, empMap]);
 
-    const titleBody = (rowData: RiskData) => (
-        <Text size="sm" lineClamp={2}>
-            {rowData.title}
-        </Text>
+    const filteredData = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return enrichedRisks.filter((risk: any) => {
+            if (departmentFilter !== ALL && String(risk.departmentId) !== departmentFilter) return false;
+            if (riskLevelFilter && riskMap[risk.riskLevel]?.level !== riskLevelFilter) return false;
+            if (statusFilter !== ALL && normalizeRiskStatus(risk.status) !== statusFilter) return false;
+            if (!q) return true;
+            const haystack = [
+                risk.title,
+                risk.description,
+                risk.hazardSource,
+                risk.departmentName,
+                risk.processName,
+                risk.ownerName,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
+        });
+    }, [enrichedRisks, search, departmentFilter, riskLevelFilter, statusFilter]);
+
+    const hasActiveFilters =
+        search.trim() !== '' || departmentFilter !== ALL || riskLevelFilter !== null || statusFilter !== ALL;
+
+    const resetFilters = () => {
+        setSearch('');
+        setDepartmentFilter(ALL);
+        setRiskLevelFilter(null);
+        setStatusFilter(ALL);
+    };
+
+    const exportCsv = () => {
+        const headers = ['Risque', 'Département', 'Processus', 'Responsable', 'Dernière évaluation', 'Niveau', 'Statut'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredData.map((row: any) =>
+            [
+                row.title,
+                row.departmentName,
+                row.processName,
+                row.ownerName,
+                row.updatedAtFormatted,
+                riskLevelFromKey(row.riskLevel)?.label ?? '',
+                riskStatusConfig(row.status).label,
+            ].map(escape).join(';')
+        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `risques_evalues_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredData.length} risque${filteredData.length > 1 ? 's' : ''} exporté${filteredData.length > 1 ? 's' : ''}`);
+    };
+
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
+
+    const titleBody = (row: any) => (
+        <div className="min-w-0 max-w-md">
+            <p className="text-[13px] text-slate-800 leading-snug line-clamp-2">{row.title}</p>
+            {row.hazardSource && (
+                <p className="text-[11.5px] text-slate-500 mt-0.5 truncate">{row.hazardSource}</p>
+            )}
+        </div>
     );
 
+    const levelBody = (row: any) => {
+        const cfg = riskLevelFromKey(row.riskLevel);
+        if (!cfg) return <span className="text-[12.5px] text-slate-400">—</span>;
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
 
+    const statusBody = (row: any) => {
+        const cfg = riskStatusConfig(row.status);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
 
-    const statusBody = (rowData: RiskData) => (
-        <Badge size="xs" color={getStatusColor(rowData.status)}>
-            {rowData.status.toLowerCase()}
-        </Badge>
-    );
-
-    const actionBody = (rowData: RiskData) => (
-        <div className="flex gap-3">
-            <Tooltip label="View">
+    const actionBody = (row: any) => (
+        <div className="flex justify-center">
+            <Tooltip label="Consulter le détail" withArrow>
                 <ActionIcon
-                    variant="filled"
+                    variant="light"
                     size="sm"
-                    color="blue"
-                    onClick={() => navigate(`register-details/${rowData.id}`)}
+                    color="violet"
+                    onClick={() => navigate(`register-details/${row.id}`)}
+                    aria-label="Consulter le détail du risque"
                 >
-                    <IconEye size={16} />
+                    <IconEye size={14} stroke={1.5} />
                 </ActionIcon>
             </Tooltip>
         </div>
     );
 
-    const rightToolbarTemplate = () => {
-        return (
-            <div className="flex gap-5 items-center" >
-                <Button
-                    size="xs"
-                    variant='outline'
-                    leftSection={<IconFilter />}
-                    onClick={() => {
-                        setGlobalFilterValue("");
-                        setDepartmentFilter(null);
-                        setRiskLevelFilter(null);
-                        setStatusFilter(null);
-                    }}
-                >
-                    Clear Filters
-                </Button>
-                <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                    <Tooltip label="Table View">
-                        <ActionIcon
-                            variant={viewType === 'table' ? 'filled' : 'light'}
-                            color="blue"
-                            size="sm"
-
-                            onClick={() => setViewType('table')}
+    return (
+        <div className="space-y-3">
+            {/* Barre de filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                        placeholder="Rechercher un risque, une source de danger, un responsable…"
+                        leftSection={<IconSearch size={14} />}
+                        value={search}
+                        onChange={(e) => setSearch(e.currentTarget.value)}
+                        size="xs"
+                        className="flex-1 min-w-[220px]"
+                    />
+                    <Select
+                        data={[
+                            { value: ALL, label: 'Tous départements' },
+                            ...departments.map((dept) => ({ label: dept.name, value: String(dept.id) })),
+                        ]}
+                        value={departmentFilter}
+                        onChange={(v) => setDepartmentFilter(v ?? ALL)}
+                        size="xs"
+                        w={180}
+                        aria-label="Filtrer par département"
+                    />
+                    <Select
+                        data={RISK_LEVEL_OPTIONS}
+                        value={riskLevelFilter}
+                        onChange={setRiskLevelFilter}
+                        placeholder="Niveau de risque"
+                        size="xs"
+                        w={170}
+                        clearable
+                        aria-label="Filtrer par niveau de risque"
+                    />
+                    <Select
+                        data={[{ value: ALL, label: 'Tous statuts' }, ...RISK_STATUS_OPTIONS]}
+                        value={statusFilter}
+                        onChange={(v) => setStatusFilter(v ?? ALL)}
+                        size="xs"
+                        w={150}
+                        aria-label="Filtrer par statut"
+                    />
+                    <div className="flex items-center gap-2 ml-auto">
+                        <Button
+                            variant="default"
+                            size="xs"
+                            leftSection={<IconDownload size={14} />}
+                            onClick={exportCsv}
+                            disabled={!filteredData.length}
                         >
-                            <IconLayoutList size={18} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Card View">
-                        <ActionIcon
-                            size="sm"
-
-                            variant={viewType === 'card' ? 'filled' : 'light'}
-                            color="blue"
-                            onClick={() => setViewType('card')}
-                        >
-                            <IconLayoutGrid size={18} />
-                        </ActionIcon>
-                    </Tooltip>
+                            Exporter CSV
+                        </Button>
+                        <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                            <Tooltip label="Vue tableau" withArrow>
+                                <ActionIcon
+                                    variant={viewType === 'table' ? 'filled' : 'subtle'}
+                                    color="teal"
+                                    size="sm"
+                                    onClick={() => setViewType('table')}
+                                    aria-label="Afficher en tableau"
+                                >
+                                    <IconLayoutList size={15} />
+                                </ActionIcon>
+                            </Tooltip>
+                            <Tooltip label="Vue cartes" withArrow>
+                                <ActionIcon
+                                    variant={viewType === 'card' ? 'filled' : 'subtle'}
+                                    color="teal"
+                                    size="sm"
+                                    onClick={() => setViewType('card')}
+                                    aria-label="Afficher en cartes"
+                                >
+                                    <IconLayoutGrid size={15} />
+                                </ActionIcon>
+                            </Tooltip>
+                        </div>
+                    </div>
                 </div>
-
-                <TextInput
-                    value={globalFilterValue}
-                    onChange={onGlobalFilterChange}
-                    size='sm'
-                    placeholder='Search'
-                    leftSection={<IconSearch />}
-                />
+                <p className="text-[11.5px] text-slate-500 mt-2">
+                    {loading
+                        ? 'Chargement des risques évalués…'
+                        : `${filteredData.length} risque${filteredData.length > 1 ? 's' : ''} affiché${filteredData.length > 1 ? 's' : ''} sur ${risks.length}`}
+                </p>
             </div>
-        );
-    };
 
-
-    const filterToolbarTemplate = () => (
-        <div className="flex w- justify-between items-center gap-2">
-            <Select
-                placeholder="Filter by Department"
-                data={departments.map((dept) => ({ label: dept.name, value: "" + dept.id }))}
-                size="sm"
-                value={departmentFilter}
-                onChange={setDepartmentFilter}
-                clearable
-            />
-            <Select
-                placeholder="Filter by Risk Level"
-                data={[
-                    "Low",
-                    "Low Med",
-                    "Medium",
-                    "Med High",
-                    "High",
-                ]}
-                size="sm"
-                value={riskLevelFilter}
-                onChange={setRiskLevelFilter}
-                clearable
-            />
-            <Select
-                placeholder="Filter by Status"
-                data={["Partially Controlled", "Uncontrolled", "Under Control"]}
-                value={statusFilter}
-                size="sm"
-                onChange={setStatusFilter}
-                clearable
-            />
+            {/* Liste */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loading ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredData.length ? (
+                    <EmptyState
+                        icon={<IconClipboardCheck size={24} />}
+                        title={hasActiveFilters ? 'Aucun risque ne correspond aux filtres' : 'Aucun risque évalué'}
+                        description={
+                            hasActiveFilters
+                                ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver la liste complète.'
+                                : "Les risques apparaissent ici dès qu'une première évaluation probabilité × gravité est enregistrée depuis leur fiche."
+                        }
+                        compact
+                        action={
+                            hasActiveFilters ? (
+                                <Button variant="default" size="xs" onClick={resetFilters}>
+                                    Réinitialiser les filtres
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                ) : viewType === 'table' ? (
+                    <DataTable
+                        value={filteredData}
+                        size="small"
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    >
+                        <Column header="Risque" body={titleBody} sortable sortField="title" />
+                        <Column
+                            header="Département"
+                            body={(row) => <span className="text-[12.5px] text-slate-600">{row.departmentName}</span>}
+                            sortable
+                            sortField="departmentName"
+                            style={{ width: '10rem' }}
+                        />
+                        <Column
+                            header="Responsable"
+                            body={(row) => <span className="text-[12.5px] text-slate-600">{row.ownerName}</span>}
+                            sortable
+                            sortField="ownerName"
+                            style={{ width: '10rem' }}
+                        />
+                        <Column
+                            header="Dernière évaluation"
+                            body={(row) => <span className="text-[12.5px] text-slate-600">{row.updatedAtFormatted}</span>}
+                            sortable
+                            sortField="updatedAt"
+                            style={{ width: '10rem' }}
+                        />
+                        <Column header="Niveau" body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
+                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header="Actions" body={actionBody} headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                    </DataTable>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
+                        {filteredData.map((risk: any) => (
+                            <RiskCards
+                                key={risk.id}
+                                risk={risk}
+                                department={risk?.departmentName}
+                                process={risk?.processName}
+                                owner={risk?.ownerName}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
-
-    return (
-        <div className="card">
-            <Toast ref={toast} />
-
-            <Toolbar className="mb-3 !p-2" left={filterToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
-
-            {viewType === 'table' ? (
-                <DataTable
-                    className="[&_.p-datatable-tbody]:!text-sm"
-                    size="small"
-                    stripedRows
-                    removableSort
-                    paginator
-                    rows={10}
-                    value={filteredData}
-                    rowsPerPageOptions={[10, 25, 50]}
-                    dataKey="id"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} risks"
-                >
-                    {/* <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Risk ID" field="id" body={idBody} /> */}
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Risk" field="title" body={titleBody} />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Department" field="departmentName" />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Process" field="processName" />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Owner" field="ownerName" />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Last Assessment" field="updatedAtFormatted" />
-                    <Column align="center" style={{ fontWeight: 'normal', fontSize: "14px" }} header="Risk Level" field="riskLevel" body={(row) => row.riskLevel ? <Badge color={riskMap[row.riskLevel]?.color} variant="filled">{riskMap[row.riskLevel]?.level}</Badge> : "-"} />
-
-
-
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} header="Status" field="status" body={statusBody} />
-
-                    <Column body={actionBody} style={{ width: "6rem" }} />
-                </DataTable>
-            ) : (
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg">
-                            Risk Catalog ({filteredData.length})
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {
-                            filteredData.map((risk: any) => (
-                                <RiskCards
-                                    key={risk.id}
-                                    risk={risk}
-                                    getStatusColor={getStatusColor}
-                                    department={risk?.departmentName}
-                                    process={risk?.processName}
-                                    owner={risk?.ownerName}
-                                />
-                            ))
-                        }
-                        {filteredData.length === 0 && (
-                            <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                No risk available
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )
-            }
-        </div>
-    )
-}
+};
 
 export default RiskDataTable;

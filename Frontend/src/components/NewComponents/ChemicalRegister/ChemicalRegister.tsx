@@ -1,271 +1,277 @@
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
 import {
-    // Plus
-    // Eye
-    // Edit3
-    // Search
-    // Filter
-    // Building
-    // AlertTriangle
-    IconPlus, // Beaker
-    IconEye, // Clock
-    IconEdit, IconSearch, IconAlertTriangle, IconFlask2, IconClock, IconCircleCheck, IconChartBar
+    IconAlertTriangle,
+    IconCircleCheck,
+    IconClock,
+    IconDownload,
+    IconEdit,
+    IconEye,
+    IconFlask2,
+    IconLayoutGrid,
+    IconLayoutList,
+    IconPlus,
+    IconSearch,
 } from '@tabler/icons-react';
-import { Badge, Button } from '@mantine/core';
-import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Toolbar } from "primereact/toolbar";
-import { ActionIcon, Select, TextInput, Tooltip, SegmentedControl } from "@mantine/core";
+import { ActionIcon, Button, Select, TextInput, Tooltip } from '@mantine/core';
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../UtilityComp/PageHeader';
+import KpiTile from '../../UtilityComp/KpiTile';
+import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
+import EmptyState from '../../UtilityComp/EmptyState';
 import { getAllChemicalRisks } from '../../../services/RiskIdentificationService';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
-import { errorNotification } from '../../../utility/NotificationUtility';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { GetAllWorkProcess } from '../../../services/WorkProcessService';
-import { FilterMatchMode } from 'primereact/api';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
 import { riskMap } from '../../../Data/DropdownData';
-import { IconLayoutList, IconLayoutGrid } from '@tabler/icons-react';
+import {
+    MATRIX_LEVEL_GRID,
+    PROBABILITY_LABELS_FR,
+    RISK_LEVEL_CONFIG,
+    RISK_LEVEL_OPTIONS,
+    RISK_STATUS_OPTIONS,
+    SEVERITY_LABELS_FR,
+    classificationLabel,
+    classificationConfig,
+    hazardSourceLabel,
+    normalizeRiskStatus,
+    riskLevelFromKey,
+    riskStatusConfig,
+} from './chemicalLabels';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: "", matchMode: FilterMatchMode.CONTAINS },
-    riskLevel: { value: null, matchMode: FilterMatchMode.EQUALS },
-    status: { value: null, matchMode: FilterMatchMode.EQUALS },
-    zone: { value: null, matchMode: FilterMatchMode.EQUALS },
-};
+/**
+ * Registre chimique (LOT 50) — inventaire des risques liés aux produits
+ * chimiques : synthèse par matrice probabilité × gravité, registre filtrable
+ * (classification SGH, statut, niveau), export CSV.
+ */
+
+const ALL = 'all';
+
 const ChemicalRegister = () => {
-    const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [departmentFilter, setDepartmentFilter] = useState<string>('all');
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
 
-    const [department, setDepartments] = useState<any[]>([]);
-    const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
     const [risks, setRisks] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
     const [processMap, setProcessMap] = useState<Record<string, any>>({});
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
-    const [riskLevelFilter, setRiskLevelFilter] = useState<string | null>(null);
-    const [viewType, setViewType] = useState<'table' | 'card'>('table');
-    const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'RISKS'>('DASHBOARD');
-    const tabs = [
-        { value: 'DASHBOARD', label: 'Tableau de bord' },
-        { value: 'RISKS', label: `Risques (${risks.length})` },
-    ];
-    const tabColorMap: Record<string, string> = { DASHBOARD: 'violet', RISKS: 'blue' };
 
-    // Enrich risks so table updates when maps load
+    const [activeTab, setActiveTab] = useState<string>('DASHBOARD');
+    const [viewType, setViewType] = useState<'table' | 'card'>('table');
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
+    const [departmentFilter, setDepartmentFilter] = useState<string>(ALL);
+    const [riskLevelFilter, setRiskLevelFilter] = useState<string | null>(null);
+
+    useEffect(() => {
+        getAllDepartments()
+            .then((data) => {
+                setDepartmentMap(mapIdToName(data));
+                setDepartments(data);
+            })
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements');
+            });
+        GetAllWorkProcess({})
+            .then((data) => setProcessMap(mapIdToName(data)))
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus');
+            });
+        getEmployeeDropdown()
+            .then((data) => setEmpMap(mapIdToName(data)))
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés');
+            });
+    }, []);
+
+    useEffect(() => {
+        setLoading(true);
+        getAllChemicalRisks()
+            .then((res) => setRisks(res ?? []))
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement du registre chimique');
+            })
+            .finally(() => setLoading(false));
+    }, []);
+
+    // Enrichit chaque risque avec les libellés (le tableau se met à jour quand les référentiels arrivent)
     const enrichedRisks = useMemo(() => {
         return risks.map((r: any) => ({
             ...r,
-            departmentName: departmentMap[r?.departmentId]?.name ?? 'Unknown',
-            processName: processMap[r?.workProcessId]?.name ?? '-',
-            ownerName: empMap[r?.ownerId]?.name ?? '-',
+            departmentName: departmentMap[r?.departmentId]?.name ?? '—',
+            processName: processMap[r?.workProcessId]?.name ?? '—',
+            ownerName: empMap[r?.ownerId]?.name ?? '—',
+            levelRank: riskLevelFromKey(r?.riskLevel)?.rank ?? 0,
         }));
     }, [risks, departmentMap, processMap, empMap]);
 
     const filteredRisks = useMemo(() => {
-        const term = globalFilterValue.toLowerCase();
+        const q = search.trim().toLowerCase();
         return enrichedRisks.filter((risk: any) => {
-            const matchesSearch =
-                (risk.title || '').toLowerCase().includes(term) ||
-                (risk.chemicalName || '').toLowerCase().includes(term) ||
-                (risk.id || '').toLowerCase().includes(term) ||
-                (risk.departmentName || '').toLowerCase().includes(term) ||
-                (risk.processName || '').toLowerCase().includes(term) ||
-                (risk.ownerName || '').toLowerCase().includes(term);
-
-            const matchesStatus =
-                statusFilter === 'all' || (risk.status && String(risk.status).toLowerCase() === statusFilter.toLowerCase());
-
-            const matchesDepartment =
-                departmentFilter === 'all' || risk.departmentId === departmentFilter;
-
-            const matchesRiskLevel = riskLevelFilter ? riskMap[risk.riskLevel]?.level === riskLevelFilter : true;
-            return matchesSearch && matchesStatus && matchesDepartment && matchesRiskLevel;
+            if (statusFilter !== ALL && normalizeRiskStatus(risk.status) !== statusFilter) return false;
+            if (departmentFilter !== ALL && String(risk.departmentId) !== departmentFilter) return false;
+            if (riskLevelFilter && riskMap[risk.riskLevel]?.level !== riskLevelFilter) return false;
+            if (!q) return true;
+            const haystack = [
+                risk.title,
+                risk.chemicalName,
+                risk.casNumber,
+                risk.departmentName,
+                risk.processName,
+                risk.ownerName,
+                risk.description,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(q);
         });
-    }, [enrichedRisks, globalFilterValue, statusFilter, departmentFilter, riskLevelFilter]);
+    }, [enrichedRisks, search, statusFilter, departmentFilter, riskLevelFilter]);
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-    const fetchWorkProcesses = () => {
+    // ─── KPI ─────────────────────────────────────────────────────────────────
+    const kpis = useMemo(() => {
+        const highCount = enrichedRisks.filter((r: any) => r.levelRank >= 4).length;
+        const inProgress = enrichedRisks.filter((r: any) => normalizeRiskStatus(r.status) === 'IN_PROGRESS').length;
+        const closed = enrichedRisks.filter((r: any) => normalizeRiskStatus(r.status) === 'CLOSED').length;
+        return { total: enrichedRisks.length, highCount, inProgress, closed };
+    }, [enrichedRisks]);
 
-        GetAllWorkProcess({}).then((data) => {
-            setProcessMap(mapIdToName(data))
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch work processes");
-        });
-    };
-    const fetchEmployees = () => {
-
-        getEmployeeDropdown().then((data) => {
-            setEmpMap(mapIdToName(data))
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch employees");
-        });
-    };
-
-    const fetchDepartments = () => {
-
-        getAllDepartments().then((data) => {
-            setDepartmentMap(mapIdToName(data));
-            setDepartments(data);
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch departments");
-        });
-    };
-    useEffect(() => {
-        fetchDepartments();
-        fetchWorkProcesses();
-        fetchEmployees();
-    }, [])
-
-    useEffect(() => {
-        getAllChemicalRisks()
-            .then((res) => {
-                console.log("API Response:", res);
-                setRisks(res);
-            })
-            .catch((err) => {
-                console.error(err);
-            });
-    }, []);
-
-    const riskMatrix = {
-        probabilityLevels: ['Rare', 'Improbable', 'Possible', 'Probable', 'Quasi-certain'],
-        severityLevels: ['Négligeable', 'Mineure', 'Modérée', 'Majeure', 'Catastrophique'],
-    };
-
-    // Build cell meta (level/color) dynamically from `riskMap` using key `${probability}${severity}`
-    // Use the same hex colors as RiskOverview matrix for visual consistency
-    const levelToHex: Record<string, string> = {
-        'Low': '#51CF66',
-        'Low Med': '#94D82D',
-        'Medium': '#FFD43B',
-        'Med High': '#FF922B',
-        'High': '#FF6B6B',
-    };
-
-    const matrixMeta = useMemo(() => (
-        Array.from({ length: 5 }, (_r, pIdx) => (
-            Array.from({ length: 5 }, (_c, sIdx) => {
-                const key = `${pIdx + 1}${sIdx + 1}`;
-                const meta = (riskMap as any)[key];
-                const level: string = meta?.level ?? '';
-                const bg = levelToHex[level] ?? '#E5E7EB'; // fallback to gray-200
-                const text = (level === 'Low' || level === 'Low Med') ? '#000' : '#fff';
-                return { level, bg, text };
-            })
-        ))
-    ), []);
-
-    const calculateMatrixCounts = () => {
-        const counts = Array(5).fill(null).map(() => Array(5).fill(0));
+    // ─── Matrice probabilité × gravité ───────────────────────────────────────
+    const matrixCounts = useMemo(() => {
+        const counts = Array.from({ length: 5 }, () => Array(5).fill(0));
         filteredRisks.forEach((risk: any) => {
-            // Prefer encoded `riskLevel` like '23'; fallback to `likelihood`/`severity` if provided
             const key: string | undefined = typeof risk.riskLevel === 'string' ? risk.riskLevel : undefined;
             if (key && /^[1-5][1-5]$/.test(key)) {
-                const p = parseInt(key[0], 10) - 1;
-                const s = parseInt(key[1], 10) - 1;
-                counts[p][s] += 1;
+                counts[parseInt(key[0], 10) - 1][parseInt(key[1], 10) - 1] += 1;
                 return;
             }
             const pIdx = typeof risk.likelihood === 'number' ? risk.likelihood - 1 : -1;
             const sIdx = typeof risk.severity === 'number' ? risk.severity - 1 : -1;
-            if (pIdx >= 0 && pIdx < 5 && sIdx >= 0 && sIdx < 5) {
-                counts[pIdx][sIdx] += 1;
-            }
+            if (pIdx >= 0 && pIdx < 5 && sIdx >= 0 && sIdx < 5) counts[pIdx][sIdx] += 1;
         });
         return counts;
+    }, [filteredRisks]);
+
+    // ─── Export CSV ──────────────────────────────────────────────────────────
+    const exportCsv = () => {
+        const headers = [
+            'Produit', 'N° CAS', 'Classification SGH', 'Source de danger', 'Département',
+            'Processus', 'Responsable', 'Niveau de risque', 'Statut',
+        ];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredRisks.map((row: any) =>
+            [
+                row.chemicalName ?? row.title ?? '',
+                row.casNumber ?? '',
+                classificationLabel(row.classification),
+                hazardSourceLabel(row.hazardSource),
+                row.departmentName,
+                row.processName,
+                row.ownerName,
+                riskLevelFromKey(row.riskLevel)?.label ?? '',
+                riskStatusConfig(row.status).label,
+            ].map(escape).join(';')
+        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `registre_chimique_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredRisks.length} risque${filteredRisks.length > 1 ? 's' : ''} exporté${filteredRisks.length > 1 ? 's' : ''}`);
     };
-    const matrixCounts = calculateMatrixCounts();
 
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <TextInput
-                size="sm"
-                placeholder="Rechercher..."
-                leftSection={<IconSearch size={14} />}
-                value={globalFilterValue}
-                onChange={onGlobalFilterChange}
-            />
-
-            <Select
-                size="sm"
-                data={[
-                    { value: "all", label: "Tous statuts" },
-                    { value: "OPEN", label: "Ouvert" },
-                    { value: "IN_PROGRESS", label: "En cours" },
-                    { value: "CLOSED", label: "Clôturé" },
-                ]}
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(val || "all")}
-                placeholder="Filtrer par statut"
-            />
-            <Select
-                size="sm"
-                data={department.map((dept) => ({ label: dept.name, value: "" + dept.id }))}
-                value={departmentFilter}
-                onChange={(val) => setDepartmentFilter(val || "all")}
-                placeholder="Filtrer par département"
-            />
-
-            <Select
-                size="sm"
-                data={[
-                    { value: 'Low', label: 'Faible' },
-                    { value: 'Low Med', label: 'Faible-Moyen' },
-                    { value: 'Medium', label: 'Moyen' },
-                    { value: 'Med High', label: 'Moyen-Élevé' },
-                    { value: 'High', label: 'Élevé' },
-                ]}
-                value={riskLevelFilter}
-                onChange={setRiskLevelFilter}
-                placeholder="Niveau de risque"
-                clearable
-            />
-
+    const productBody = (row: any) => (
+        <div className="min-w-0 max-w-md">
+            <p className="text-[13px] text-slate-800 leading-snug">{row.chemicalName || row.title || '—'}</p>
+            <p className="text-[11.5px] text-slate-500 mt-0.5 truncate">
+                {[row.casNumber ? `CAS ${row.casNumber}` : null, hazardSourceLabel(row.hazardSource) !== '—' ? hazardSourceLabel(row.hazardSource) : null]
+                    .filter(Boolean)
+                    .join(' · ') || row.title}
+            </p>
         </div>
     );
 
-    const rightToolbarTemplate = () => (
-        <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                <Tooltip label="Vue tableau">
-                    <ActionIcon
-                        variant={viewType === 'table' ? 'filled' : 'light'}
-                        color="blue"
-                        size="sm"
-                        onClick={() => setViewType('table')}
-                    >
-                        <IconLayoutList size={16} />
-                    </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Vue cartes">
-                    <ActionIcon
-                        variant={viewType === 'card' ? 'filled' : 'light'}
-                        color="blue"
-                        size="sm"
-                        onClick={() => setViewType('card')}
-                    >
-                        <IconLayoutGrid size={16} />
-                    </ActionIcon>
-                </Tooltip>
-            </div>
+    const classificationBody = (row: any) => {
+        const cfg = classificationConfig(row.classification);
+        if (!cfg) return <span className="text-[12.5px] text-slate-400">—</span>;
+        return (
+            <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                <span className="font-medium">{cfg.sgh}</span>
+                {cfg.label}
+            </span>
+        );
+    };
+
+    const levelBody = (row: any) => {
+        const cfg = riskLevelFromKey(row.riskLevel);
+        if (!cfg) return <span className="text-[12.5px] text-slate-400">—</span>;
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
+
+    const statusBody = (row: any) => {
+        const cfg = riskStatusConfig(row.status);
+        return (
+            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                {cfg.label}
+            </span>
+        );
+    };
+
+    const actionsBody = (row: any) => (
+        <div className="flex gap-1.5 justify-center">
+            <Tooltip label="Consulter le détail" withArrow>
+                <ActionIcon
+                    color="violet"
+                    variant="light"
+                    size="sm"
+                    onClick={() => navigate(`chemicalRegister-details/${row.id}`)}
+                    aria-label="Consulter le détail du risque"
+                >
+                    <IconEye size={14} stroke={1.5} />
+                </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Modifier le risque" withArrow>
+                <ActionIcon
+                    color="blue"
+                    variant="light"
+                    size="sm"
+                    onClick={() => navigate(`edit/${row.id}`)}
+                    aria-label="Modifier le risque"
+                >
+                    <IconEdit size={14} stroke={1.5} />
+                </ActionIcon>
+            </Tooltip>
         </div>
     );
 
+    const hasActiveFilters =
+        search.trim() !== '' || statusFilter !== ALL || departmentFilter !== ALL || riskLevelFilter !== null;
+
+    const resetFilters = () => {
+        setSearch('');
+        setStatusFilter(ALL);
+        setDepartmentFilter(ALL);
+        setRiskLevelFilter(null);
+    };
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -275,245 +281,340 @@ const ChemicalRegister = () => {
                 icon={<IconFlask2 size={22} stroke={2} />}
                 iconColor="violet"
                 title="Registre chimique"
-                subtitle="Identification et évaluation des risques chimiques selon le règlement REACH/CLP"
+                subtitle="Inventaire des produits chimiques et évaluation des risques associés, selon la classification SGH"
                 actions={
-                    <Button size="sm" color="violet" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
+                    <Button size="sm" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
                         Nouveau risque chimique
                     </Button>
                 }
             />
 
-            <div className='max-w-md'>
-                <SegmentedControl
-                    autoContrast
-                    color={tabColorMap[activeTab]}
-                    data={tabs}
-                    value={activeTab}
-                    onChange={(v: 'DASHBOARD' | 'RISKS' | string) => setActiveTab(v as 'DASHBOARD' | 'RISKS')}
-                    size="sm"
-                    radius="sm"
-                    transitionDuration={200}
+            {/* KPI */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <KpiTile
+                    label="Produits référencés"
+                    value={loading ? '…' : kpis.total}
+                    tone="violet"
+                    icon={<IconFlask2 size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Risques élevés ou critiques"
+                    value={loading ? '…' : kpis.highCount}
+                    tone="rose"
+                    icon={<IconAlertTriangle size={14} stroke={1.8} />}
+                    referenceValue="Niveaux élevé et critique"
+                />
+                <KpiTile
+                    label="En traitement"
+                    value={loading ? '…' : kpis.inProgress}
+                    tone="amber"
+                    icon={<IconClock size={14} stroke={1.8} />}
+                />
+                <KpiTile
+                    label="Clôturés"
+                    value={loading ? '…' : kpis.closed}
+                    tone="green"
+                    icon={<IconCircleCheck size={14} stroke={1.8} />}
                 />
             </div>
 
-            <div className="">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-blue-100 rounded-lg">
-                                <IconFlask2 className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">Total produits chimiques</p>
-                                <p className="text-2xl text-gray-900">{risks.length}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-red-100 rounded-lg">
-                                <IconAlertTriangle className="w-6 h-6 text-red-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">Risque élevé</p>
-                                <p className="text-2xl text-red-600">
-                                    {risks.filter(r => r.riskCategory === 'High' || r.riskCategory === 'Med Hi').length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            {/* Onglets Synthèse / Registre */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <SegmentedFilter
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    options={[
+                        { value: 'DASHBOARD', label: 'Synthèse', color: 'violet' },
+                        { value: 'RISKS', label: 'Registre', count: risks.length, color: 'violet' },
+                    ]}
+                />
+            </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-yellow-100 rounded-lg">
-                                <IconClock className="w-6 h-6 text-yellow-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">En cours</p>
-                                <p className="text-2xl text-yellow-600">
-                                    {risks.filter(r => r.status === 'In Progress').length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            {activeTab === 'DASHBOARD' && (
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h2
+                        className="text-slate-800 mb-1"
+                        style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
+                    >
+                        Matrice probabilité × gravité
+                    </h2>
+                    <p className="text-[11.5px] text-slate-500 mb-3">
+                        Chaque cellule indique le nombre de risques chimiques positionnés sur la combinaison correspondante.
+                    </p>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-green-100 rounded-lg">
-                                <IconCircleCheck className="w-6 h-6 text-green-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">Clôturés</p>
-                                <p className="text-2xl text-green-600">
-                                    {risks.filter(r => r.status === 'Closed').length}
-                                </p>
-                            </div>
+                    {loading ? (
+                        <div className="flex flex-col gap-2" aria-busy="true">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <div key={i} className="h-10 rounded-lg bg-slate-100 animate-pulse" />
+                            ))}
                         </div>
-                    </div>
-                </div>
-
-                {activeTab === 'DASHBOARD' && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                        <div className="flex items-center mb-3">
-                            <IconChartBar className="w-5 h-5 text-purple-600 mr-2" />
-                            <h2 className="text-lg text-gray-900">Matrice des risques</h2>
-                        </div>
-
+                    ) : (
                         <div className="overflow-x-auto">
-                            <div className="min-w-full">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr>
-                                            <th className="p-2 bg-gray-100 border border-gray-300 text-left text-gray-900 text-sm">
-                                                Probabilité / Gravité
+                            <table className="w-full border-collapse min-w-[640px]">
+                                <thead>
+                                    <tr>
+                                        <th className="p-2 bg-slate-50 border border-slate-200 text-left text-[12px] font-medium text-slate-600">
+                                            Probabilité ↓ / Gravité →
+                                        </th>
+                                        {SEVERITY_LABELS_FR.map((severity) => (
+                                            <th
+                                                key={severity}
+                                                className="p-2 bg-slate-50 border border-slate-200 text-center text-[12px] font-medium text-slate-600 min-w-24"
+                                            >
+                                                {severity}
                                             </th>
-                                            {riskMatrix.severityLevels.map((severity, index) => (
-                                                <th key={index} className="p-2 bg-gray-100 border border-gray-300 text-center text-gray-900 text-sm min-w-24">
-                                                    {severity}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {riskMatrix.probabilityLevels.map((probability, probIndex) => (
-                                            <tr key={probIndex}>
-                                                <td className="p-2 bg-gray-100 border border-gray-300 text-gray-900 text-sm min-w-28">
-                                                    {probability}
-                                                </td>
-                                                {matrixMeta[probIndex].map((cell, sevIndex) => (
-                                                    <td
-                                                        key={sevIndex}
-                                                        className={`p-2 border border-gray-300 text-center relative h-9`}
-                                                        style={{ backgroundColor: (cell as any).bg, color: (cell as any).text }}
-                                                    >
-                                                        <div className="text-xs mb-0.5 leading-none">{(cell as any).level}</div>
-                                                        <div className="text-lg leading-none">
-                                                            {matrixCounts[probIndex][sevIndex]}
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {PROBABILITY_LABELS_FR.map((probability, pIdx) => (
+                                        <tr key={probability}>
+                                            <td className="p-2 bg-slate-50 border border-slate-200 text-[12px] text-slate-600 min-w-28">
+                                                {probability}
+                                            </td>
+                                            {SEVERITY_LABELS_FR.map((_s, gIdx) => {
+                                                const level = MATRIX_LEVEL_GRID[pIdx][gIdx];
+                                                const cfg = RISK_LEVEL_CONFIG[level];
+                                                const count = matrixCounts[pIdx][gIdx];
+                                                return (
+                                                    <td
+                                                        key={gIdx}
+                                                        className={`p-1.5 border border-slate-200 text-center h-11 ${cfg?.cell ?? 'bg-slate-50 text-slate-600'}`}
+                                                    >
+                                                        <div className="text-[10px] uppercase tracking-wider leading-none mb-1 opacity-80">
+                                                            {cfg?.label ?? level}
+                                                        </div>
+                                                        <div className="text-[14px] leading-none font-medium tabular-nums">{count}</div>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {activeTab === 'RISKS' && (
+                <>
+                    {/* Barre de filtres */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <TextInput
+                                placeholder="Rechercher un produit, un n° CAS, un responsable…"
+                                leftSection={<IconSearch size={14} />}
+                                value={search}
+                                onChange={(e) => setSearch(e.currentTarget.value)}
+                                size="xs"
+                                className="flex-1 min-w-[220px]"
+                            />
+                            <Select
+                                data={[{ value: ALL, label: 'Tous statuts' }, ...RISK_STATUS_OPTIONS]}
+                                value={statusFilter}
+                                onChange={(v) => setStatusFilter(v ?? ALL)}
+                                size="xs"
+                                w={150}
+                                aria-label="Filtrer par statut"
+                            />
+                            <Select
+                                data={[
+                                    { value: ALL, label: 'Tous départements' },
+                                    ...departments.map((dept) => ({ label: dept.name, value: String(dept.id) })),
+                                ]}
+                                value={departmentFilter}
+                                onChange={(v) => setDepartmentFilter(v ?? ALL)}
+                                size="xs"
+                                w={180}
+                                aria-label="Filtrer par département"
+                            />
+                            <Select
+                                data={RISK_LEVEL_OPTIONS}
+                                value={riskLevelFilter}
+                                onChange={setRiskLevelFilter}
+                                placeholder="Niveau de risque"
+                                size="xs"
+                                w={170}
+                                clearable
+                                aria-label="Filtrer par niveau de risque"
+                            />
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button
+                                    variant="default"
+                                    size="xs"
+                                    leftSection={<IconDownload size={14} />}
+                                    onClick={exportCsv}
+                                    disabled={!filteredRisks.length}
+                                >
+                                    Exporter CSV
+                                </Button>
+                                <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                                    <Tooltip label="Vue tableau" withArrow>
+                                        <ActionIcon
+                                            variant={viewType === 'table' ? 'filled' : 'subtle'}
+                                            color="violet"
+                                            size="sm"
+                                            onClick={() => setViewType('table')}
+                                            aria-label="Afficher en tableau"
+                                        >
+                                            <IconLayoutList size={15} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                    <Tooltip label="Vue cartes" withArrow>
+                                        <ActionIcon
+                                            variant={viewType === 'card' ? 'filled' : 'subtle'}
+                                            color="violet"
+                                            size="sm"
+                                            onClick={() => setViewType('card')}
+                                            aria-label="Afficher en cartes"
+                                        >
+                                            <IconLayoutGrid size={15} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                </div>
                             </div>
                         </div>
-
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                            Les chiffres représentent le nombre de risques par combinaison probabilité / gravité
+                        <p className="text-[11.5px] text-slate-500 mt-2">
+                            {loading
+                                ? 'Chargement du registre…'
+                                : `${filteredRisks.length} risque${filteredRisks.length > 1 ? 's' : ''} affiché${filteredRisks.length > 1 ? 's' : ''} sur ${risks.length}`}
                         </p>
                     </div>
-                )}
 
-                {activeTab === 'RISKS' && (
-                    <div className="flex flex-col gap-2 p-4 rounded-xl border border-gray-300 shadow-sm">
-                        <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} />
-                        {viewType === 'table' ? (
-                            <DataTable value={filteredRisks} paginator stripedRows removableSort rows={10} rowsPerPageOptions={[10, 25, 50]} emptyMessage="Aucun risque chimique trouvé." className="[&_.p-datatable-tbody]:!text-sm" tableStyle={{ minWidth: "60rem" }} size="small" dataKey="id" >
-
-                                {/* LOT 40 P1: text-blue-500 → text-slate-900 (cohérence visuelle SafeX 360) */}
-                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Titre du risque" body={(row: any) => (<div className="text-slate-900">{row.title}</div>)} sortable />
-
-                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Département" field="departmentName" />
-
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header="Processus" field="processName" />
-
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} header="Responsable" field="ownerName" />
-
-                                <Column align="center" style={{ fontWeight: 'normal', fontSize: "13px" }} header="Niveau" field="riskLevel" body={(row) => row.riskLevel ? <Badge color={riskMap[row.riskLevel]?.color} variant="filled">{riskMap[row.riskLevel]?.level}</Badge> : "-"} />
-
-                                <Column style={{ fontWeight: "normal", fontSize: "13px" }} header="Statut" body={(row: any) => {
-                                    const status = row.status || "";
-                                    return (
-                                        <Badge size="xs" color='gray'>
-                                            {status}
-                                        </Badge>);
-                                }} />
-                                <Column style={{ fontWeight: "normal", fontSize: "13px" }}
-                                    body={(row: any) => (
-                                        <div className="flex items-center gap-2">
-                                            <Tooltip label="Voir le détail">
-                                                <ActionIcon color="blue" variant="subtle" onClick={() => navigate(`chemicalRegister-details/${row.id}`)}>
-                                                    <IconEye size={14} />
-                                                </ActionIcon>
-                                            </Tooltip>
-                                            <Tooltip label="Modifier">
-                                                <ActionIcon color="indigo" variant="subtle" onClick={() => navigate(`edit/${row.id}`)}>
-                                                    <IconEdit size={14} />
-                                                </ActionIcon>
-                                            </Tooltip>
-                                        </div>
-                                    )}
+                    {/* Registre */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-2">
+                        {loading ? (
+                            <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                                {[0, 1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                                ))}
+                            </div>
+                        ) : !filteredRisks.length ? (
+                            <EmptyState
+                                icon={<IconFlask2 size={24} />}
+                                title={hasActiveFilters ? 'Aucun risque ne correspond aux filtres' : 'Aucun risque chimique enregistré'}
+                                description={
+                                    hasActiveFilters
+                                        ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.'
+                                        : 'Identifiez le premier produit chimique à risque manipulé sur le site.'
+                                }
+                                compact
+                                action={
+                                    hasActiveFilters ? (
+                                        <Button variant="default" size="xs" onClick={resetFilters}>
+                                            Réinitialiser les filtres
+                                        </Button>
+                                    ) : (
+                                        <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
+                                            Nouveau risque chimique
+                                        </Button>
+                                    )
+                                }
+                            />
+                        ) : viewType === 'table' ? (
+                            <DataTable
+                                value={filteredRisks}
+                                size="small"
+                                stripedRows
+                                removableSort
+                                paginator
+                                rows={10}
+                                rowsPerPageOptions={[10, 25, 50]}
+                                dataKey="id"
+                                className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                            >
+                                <Column header="Produit / risque" body={productBody} sortable sortField="chemicalName" />
+                                <Column header="Classification" body={classificationBody} sortable sortField="classification" style={{ width: '13rem' }} />
+                                <Column
+                                    header="Département"
+                                    body={(row) => <span className="text-[12.5px] text-slate-600">{row.departmentName}</span>}
+                                    sortable
+                                    sortField="departmentName"
+                                    style={{ width: '10rem' }}
                                 />
+                                <Column
+                                    header="Responsable"
+                                    body={(row) => <span className="text-[12.5px] text-slate-600">{row.ownerName}</span>}
+                                    sortable
+                                    sortField="ownerName"
+                                    style={{ width: '10rem' }}
+                                />
+                                <Column header="Niveau" body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
+                                <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                                <Column header="Actions" body={actionsBody} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                             </DataTable>
                         ) : (
-                            <div>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg">Risques chimiques ({filteredRisks.length})</h3>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {filteredRisks.map((risk: any) => (
-                                        <div key={risk.id} className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
-                                            <div className="flex gap-2 items-center justify-between flex-wrap">
-                                                {risk.processName && (
-                                                    <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
-                                                        {risk.processName}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
+                                {filteredRisks.map((risk: any) => {
+                                    const levelCfg = riskLevelFromKey(risk.riskLevel);
+                                    const statusCfg = riskStatusConfig(risk.status);
+                                    const classCfg = classificationConfig(risk.classification);
+                                    return (
+                                        <div key={risk.id} className="rounded-xl border border-slate-200 p-3 bg-white flex flex-col gap-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                {classCfg ? (
+                                                    <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${classCfg.chip}`}>
+                                                        <span className="font-medium">{classCfg.sgh}</span>
+                                                        {classCfg.label}
                                                     </span>
+                                                ) : (
+                                                    <span className="text-[11px] text-slate-400">Classification non renseignée</span>
                                                 )}
-                                                <Badge size="xs" color="gray">
-                                                    {String(risk?.status || '').toLowerCase() || '-'}
-                                                </Badge>
+                                                <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                                                    {statusCfg.label}
+                                                </span>
                                             </div>
-                                            <div className="text-sm text-gray-900">
-                                                {risk.title || risk.chemicalName}
-                                            </div>
+                                            <p className="text-[13px] text-slate-800 leading-snug">{risk.chemicalName || risk.title}</p>
                                             {risk.description && (
-                                                <div className="text-gray-600 text-xs line-clamp-2">{risk.description}</div>
+                                                <p className="text-[11.5px] text-slate-500 line-clamp-2">{risk.description}</p>
                                             )}
-                                            <div className="text-gray-500 text-xs flex justify-between">
-                                                <span>Responsable :</span> <span className="font-medium">{risk.ownerName || '-'}</span>
-                                            </div>
-                                            {risk.riskLevel && (
-                                                <div className="text-gray-500 text-xs flex justify-between">
-                                                    <span>Niveau de risque :</span>
-                                                    <Badge color={riskMap[risk.riskLevel]?.color} variant="filled">{riskMap[risk.riskLevel]?.level}</Badge>
+                                            <dl className="text-[11.5px] text-slate-500 space-y-1 mt-1">
+                                                {risk.casNumber && (
+                                                    <div className="flex justify-between gap-2">
+                                                        <dt>N° CAS</dt>
+                                                        <dd className="text-slate-700">{risk.casNumber}</dd>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between gap-2">
+                                                    <dt>Responsable</dt>
+                                                    <dd className="text-slate-700">{risk.ownerName}</dd>
                                                 </div>
-                                            )}
-                                            {risk.chemicalName && (
-                                                <div className="text-gray-500 text-xs flex justify-between">
-                                                    <span>Produit :</span> <span className="font-medium">{risk.chemicalName}</span>
+                                                <div className="flex justify-between gap-2">
+                                                    <dt>Département</dt>
+                                                    <dd className="text-slate-700">{risk.departmentName}</dd>
                                                 </div>
-                                            )}
-                                            {risk.casNumber && (
-                                                <div className="text-gray-500 text-xs flex justify-between">
-                                                    <span>N° CAS :</span> <span className="font-medium">{risk.casNumber}</span>
+                                                <div className="flex justify-between gap-2 items-center">
+                                                    <dt>Niveau de risque</dt>
+                                                    <dd>
+                                                        {levelCfg ? (
+                                                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${levelCfg.chip}`}>
+                                                                {levelCfg.label}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-slate-400">Non évalué</span>
+                                                        )}
+                                                    </dd>
                                                 </div>
-                                            )}
-                                            <div className="text-gray-500 text-xs flex justify-between">
-                                                <span>Processus :</span> <span className="font-medium">{risk.processName || '-'}</span>
-                                            </div>
-                                            <div className="text-gray-500 text-xs flex justify-between">
-                                                <span>Département :</span> <span className="font-medium">{risk.departmentName || '-'}</span>
-                                            </div>
-
-                                            <div className="flex justify-center grow gap-4 mt-2">
-                                                <Button size="compact-xs" variant="subtle" color="yellow" onClick={() => navigate(`chemicalRegister-details/${risk.id}`)}>Détails</Button>
-                                                <Button size="compact-xs" variant="subtle" color="primary" onClick={() => navigate(`edit/${risk.id}`)}>Modifier</Button>
+                                            </dl>
+                                            <div className="flex justify-end gap-2 mt-auto pt-2 border-t border-slate-100">
+                                                <Button size="compact-xs" variant="default" onClick={() => navigate(`chemicalRegister-details/${risk.id}`)}>
+                                                    Détail
+                                                </Button>
+                                                <Button size="compact-xs" variant="light" color="violet" onClick={() => navigate(`edit/${risk.id}`)}>
+                                                    Modifier
+                                                </Button>
                                             </div>
                                         </div>
-                                    ))}
-                                    {filteredRisks.length === 0 && (
-                                        <div className='text-sm text-gray-500 italic col-span-3 mx-auto py-8'>
-                                            Aucun risque chimique trouvé
-                                        </div>
-                                    )}
-                                </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
-                )}
-
-            </div>
+                </>
+            )}
         </div>
     );
 };

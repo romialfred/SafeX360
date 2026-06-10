@@ -1,53 +1,27 @@
-import { Text, Breadcrumbs } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { IconClipboardCheck } from '@tabler/icons-react';
 import RiskDataTable from './RiskTable';
+import PageHeader from '../../UtilityComp/PageHeader';
 
+/**
+ * Évaluation des risques (LOT 50) : risques déjà cotés sur la matrice
+ * probabilité × gravité, avec la date de leur dernière évaluation.
+ */
 const RiskAssessment = () => {
-    // const navigate = useNavigate();
-    const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'Uncontrolled': return 'red';
-            case 'Partially Controlled': return 'orange';
-            case 'Under Control': return 'green';
-            default: return 'gray';
-        }
-    };
     return (
-        <div className='flex flex-col gap-5'>
-            <div className='flex justify-between items-center'>
-
-                <div>
-                    <div className="text-2xl text-blue-500 w-fit">Risk Assessment</div>
-                    <Breadcrumbs mt="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-
-                        <Text variant="gradient">Risk Assessment</Text>
-                    </Breadcrumbs>
-                </div>
-                {/* <Button
-                    leftSection={<IconPlus size={16} />}
-                    onClick={() => navigate('register-form')}
-                >
-                    New Risk
-                </Button> */}
-            </div>
-
-            <p className=' italic '>Risk assessment and management process</p>
-
-
-
-
-
-
-            <RiskDataTable
-
-
-                getStatusColor={getStatusColor}
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Risques' },
+                    { label: 'Évaluation des risques' },
+                ]}
+                icon={<IconClipboardCheck size={22} stroke={2} />}
+                iconColor="red"
+                title="Évaluation des risques"
+                subtitle="Risques cotés sur la matrice probabilité × gravité et suivi des réévaluations"
             />
 
-
+            <RiskDataTable />
         </div>
     );
 };

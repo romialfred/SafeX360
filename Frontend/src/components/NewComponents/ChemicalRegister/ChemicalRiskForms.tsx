@@ -1,43 +1,27 @@
-import { Breadcrumbs, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
+import { IconFlask2 } from '@tabler/icons-react';
+import PageHeader from '../../UtilityComp/PageHeader';
 import RiskIdentification from './RiskIdentification';
 
-
-
-
-
+/**
+ * Page de création d'un risque chimique (LOT 50) :
+ * en-tête standard + formulaire d'identification sectionné.
+ */
 const ChemicalRiskForms = () => {
-
-
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center  ">
-                <div>
-                    {/* LOT 40 P1: text-blue-500 → text-slate-900 pour cohérence avec la charte SafeX 360 */}
-                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text ">Chemical Risk Identification</div>
-                    <Breadcrumbs className="" mt="xs">
-                        <Link className="hover:!underline" to="/" ><Text variant="gradient" className="hover:!underline cursor-pointer">Home</Text></Link>
-                        <Link className="hover:!underline" to="/chemical-register" ><Text variant="gradient" className="hover:!underline cursor-pointer">Chemical Register</Text></Link>
-                        <Text variant="gradient">Chemical Risk Identification</Text>
-                    </Breadcrumbs>
-                </div>
-
-            </div>
-            <p className="text-gray-600 italic">ISO 45001 compliant chemical risk identification and assessment</p>
-            <div className=' rounded-xl  flex flex-col gap-5'>
-
-                {/* Form Navigation */}
-                <div className="border border-gray-300 shadow-sm rounded-xl p-4">
-
-                    <RiskIdentification />
-
-
-
-
-
-                </div>
-            </div>
-
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Risques' },
+                    { label: 'Registre chimique', to: '/chemical-register' },
+                    { label: 'Nouveau risque chimique' },
+                ]}
+                icon={<IconFlask2 size={22} stroke={2} />}
+                iconColor="violet"
+                title="Identifier un risque chimique"
+                subtitle="Décrire le produit, sa classe de danger SGH et le scénario d'exposition"
+            />
+            <RiskIdentification />
         </div>
     );
 };

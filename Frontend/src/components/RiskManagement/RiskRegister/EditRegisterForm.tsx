@@ -1,222 +1,280 @@
-import { Box, Breadcrumbs, Button, Card, Grid, Group, Select, Stack, Text, Textarea, TextInput, Title } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import { useForm } from "@mantine/form";
-import { IconDeviceFloppy } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
-import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
-import { toLocalDate } from "../../../utility/dateConversion";
-import { getAllDepartments } from "../../../services/HrmsService";
-import { GetAllWorkProcess } from "../../../services/WorkProcessService";
-import { getEmployeeDropdown } from "../../../services/EmployeeService";
-import { getRiskById, updateRisk } from "../../../services/RiskRegisterService";
+import { useEffect, useState } from 'react';
+import { Button, Select, Textarea, TextInput } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import {
+    IconAlertTriangle,
+    IconBuildingFactory2,
+    IconDeviceFloppy,
+    IconFileText,
+} from '@tabler/icons-react';
+import { useDispatch } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import PageHeader from '../../UtilityComp/PageHeader';
+import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { toLocalDate } from '../../../utility/dateConversion';
+import { getAllDepartments } from '../../../services/HrmsService';
+import { GetAllWorkProcess } from '../../../services/WorkProcessService';
+import { getEmployeeDropdown } from '../../../services/EmployeeService';
+import { getRiskById, updateRisk } from '../../../services/RiskRegisterService';
+import { SectionCard } from './RegisterForm';
+import { RISK_STATUS_OPTIONS, normalizeRiskStatus } from '../riskLabels';
+
+/**
+ * Modification d'un risque du registre (LOT 50) — même structure sectionnée
+ * que la création, avec mise à jour du statut de traitement.
+ */
+
+interface EditRiskFormValues {
+    id: string;
+    description: string;
+    departmentId: string;
+    workProcessId: string;
+    hazardSource: string;
+    potentialConsequences: string;
+    ownerId: string;
+    status: string;
+    reviewDate: Date | null;
+}
 
 const EditRegisterForm = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { id } = useParams();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { id } = useParams();
+    const [submitting, setSubmitting] = useState(false);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [workProcesses, setWorkProcesses] = useState<any[]>([]);
+    const [emps, setEmps] = useState<any[]>([]);
 
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [workProcesses, setWorkProcesses] = useState<any[]>([]);
-  const [emps, setEmps] = useState<any[]>([]);
+    useEffect(() => {
+        getAllDepartments()
+            .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements'));
+        GetAllWorkProcess({})
+            .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus'));
+        getEmployeeDropdown()
+            .then((data) => setEmps(data))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés'));
+    }, []);
 
-  const form = useForm({
-    initialValues: {
-      id: '',
-      title: '',
-      description: '',
-      departmentId: '',
-      workProcessId: '',
-      hazardSource: '',
-      potentialConsequences: '',
-      ownerId: '',
-      status: 'OPEN',
-      reviewDate: null as any,
-    },
-  });
+    const form = useForm<EditRiskFormValues>({
+        initialValues: {
+            id: '',
+            description: '',
+            departmentId: '',
+            workProcessId: '',
+            hazardSource: '',
+            potentialConsequences: '',
+            ownerId: '',
+            status: 'OPEN',
+            reviewDate: null,
+        },
+        validate: {
+            description: (value) => (value.trim() ? null : 'La description du risque est obligatoire'),
+            departmentId: (value) => (value ? null : 'Le département est obligatoire'),
+            workProcessId: (value) => (value ? null : 'Le processus de travail est obligatoire'),
+            hazardSource: (value) => (value.trim() ? null : 'La source de danger est obligatoire'),
+            potentialConsequences: (value) => (value.trim() ? null : 'Les conséquences potentielles sont obligatoires'),
+            ownerId: (value) => (value ? null : 'Le responsable du risque est obligatoire'),
+        },
+        validateInputOnBlur: true,
+    });
 
-  useEffect(() => {
-    fetchDepartments();
-    fetchWorkProcesses();
-    fetchEmployees();
-  }, []);
+    useEffect(() => {
+        if (!id) return;
+        dispatch(showOverlay());
+        getRiskById(id)
+            .then((res) => {
+                form.setValues({
+                    id: String(res.id ?? id),
+                    description: res.description || '',
+                    departmentId: res.departmentId ? String(res.departmentId) : '',
+                    workProcessId: res.workProcessId ? String(res.workProcessId) : '',
+                    hazardSource: res.hazardSource || '',
+                    potentialConsequences: res.potentialConsequences || '',
+                    ownerId: res.ownerId ? String(res.ownerId) : '',
+                    status: normalizeRiskStatus(res.status) || 'OPEN',
+                    reviewDate: res.reviewDate ? new Date(res.reviewDate) : null,
+                });
+            })
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || "Le risque n'a pas pu être chargé");
+                navigate('/risks-register');
+            })
+            .finally(() => dispatch(hideOverlay()));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-  useEffect(() => {
-    if (!id) return;
-    getRiskById(id)
-      .then((res) => {
-        form.setValues({
-          id: res.id,
-          title: res.title || '',
-          description: res.description || '',
-          departmentId: res.departmentId ? String(res.departmentId) : '',
-          workProcessId: res.workProcessId ? String(res.workProcessId) : '',
-          hazardSource: res.hazardSource || '',
-          potentialConsequences: res.potentialConsequences || '',
-          ownerId: res.ownerId ? String(res.ownerId) : '',
-          status: res.status || 'OPEN',
-          reviewDate: res.reviewDate ? new Date(res.reviewDate) : null,
-        });
-      })
-      .catch((error) => {
-        errorNotification(error.response?.data?.errorMessage || 'Failed to load risk');
-        navigate('/risks-register');
-      });
-  }, [id]);
+    const handleSubmit = (values: EditRiskFormValues) => {
+        const hazard = values.hazardSource.trim();
+        const description = values.description.trim();
+        const title = (hazard || description).slice(0, 120);
 
-  const fetchDepartments = () => {
-    getAllDepartments()
-      .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
-      .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Failed to fetch departments'));
-  };
-  const fetchWorkProcesses = () => {
-    GetAllWorkProcess({})
-      .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
-      .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Failed to fetch work processes'));
-  };
-  const fetchEmployees = () => {
-    getEmployeeDropdown()
-      .then((data) => setEmps(data))
-      .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Failed to fetch employees'));
-  };
-
-  useEffect(() => {
-    const hazard = (form.values.hazardSource || '').trim();
-    const description = (form.values.description || '').trim();
-    const derivedTitle = hazard || description ? (hazard || description).slice(0, 120) : '';
-    if (derivedTitle !== form.values.title) {
-      form.setFieldValue('title', derivedTitle);
-    }
-  }, [form.values.hazardSource, form.values.description]);
-
-  const handleSubmit = () => {
-    dispatch(showOverlay());
-    const payload = {
-      ...form.values,
-      id: form.values.id || id,
-      departmentId: form.values.departmentId ? Number(form.values.departmentId) : null,
-      workProcessId: form.values.workProcessId ? Number(form.values.workProcessId) : null,
-      ownerId: form.values.ownerId ? Number(form.values.ownerId) : null,
-      reviewDate: toLocalDate(form.values.reviewDate),
+        setSubmitting(true);
+        dispatch(showOverlay());
+        const payload = {
+            id: values.id || id,
+            title,
+            description,
+            departmentId: values.departmentId ? Number(values.departmentId) : null,
+            workProcessId: values.workProcessId ? Number(values.workProcessId) : null,
+            hazardSource: hazard,
+            potentialConsequences: values.potentialConsequences.trim(),
+            ownerId: values.ownerId ? Number(values.ownerId) : null,
+            status: values.status,
+            reviewDate: toLocalDate(values.reviewDate),
+        };
+        updateRisk(payload)
+            .then(() => {
+                successNotification('Risque mis à jour');
+                navigate('/risks-register');
+            })
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+            })
+            .finally(() => {
+                setSubmitting(false);
+                dispatch(hideOverlay());
+            });
     };
-    updateRisk(payload)
-      .then((_res) => {
-        successNotification('Risk updated successfully');
-        navigate('/risks-register');
-      })
-      .catch((err) => {
-        errorNotification(err.response?.data?.errorMessage || 'Something went wrong');
-      })
-      .finally(() => dispatch(hideOverlay()));
-  };
 
-  return (
-    <div>
-      <div>
-        <div className="text-2xl text-blue-500 w-fit">Edit Risk Identification</div>
-        <Breadcrumbs mt="xs" mb="lg">
-          <Link className="hover:!underline" to="/">
-            <Text variant="gradient">Home</Text>
-          </Link>
-          <Link className="hover:!underline" to="/risks-register">
-            <Text variant="gradient">Risk Catalog & Tracking</Text>
-          </Link>
-          <Text variant="gradient">Edit Risk</Text>
-        </Breadcrumbs>
-      </div>
+    return (
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des Risques' },
+                    { label: 'Registre des risques', to: '/risks-register' },
+                    { label: 'Modifier le risque' },
+                ]}
+                icon={<IconFileText size={22} stroke={2} />}
+                iconColor="red"
+                title="Modifier le risque"
+                subtitle="Mettre à jour le scénario, le contexte et le statut de traitement"
+            />
 
-      <Grid>
-        <Grid.Col span={{ base: 12, lg: 8 }}>
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
             <form onSubmit={form.onSubmit(handleSubmit)}>
-              <Stack gap="md">
-                <Title order={3}>Risk Identification</Title>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start max-w-6xl">
+                    <SectionCard
+                        icon={<IconAlertTriangle size={15} stroke={1.8} />}
+                        title="Identification du risque"
+                        subtitle="Le scénario observé et ses conséquences crédibles"
+                    >
+                        <Textarea
+                            label="Description du risque"
+                            placeholder="Ce qui se produit ou pourrait se produire : conditions déclenchantes, lieux, équipements concernés"
+                            minRows={3}
+                            autosize
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('description')}
+                        />
+                        <TextInput
+                            label="Source de danger"
+                            placeholder="ex. Circulation d'engins à proximité des piétons en zone de chargement"
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('hazardSource')}
+                        />
+                        <Textarea
+                            label="Conséquences potentielles"
+                            placeholder="Effets crédibles : blessure, arrêt d'exploitation, impact environnemental"
+                            minRows={2}
+                            autosize
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('potentialConsequences')}
+                        />
+                    </SectionCard>
 
-                <Textarea
-                  label="Risk Description"
-                  placeholder="Describe the identified risk..."
-                  required
-                  rows={3}
-                  {...form.getInputProps('description')}
-                />
+                    <div className="flex flex-col gap-4">
+                        <SectionCard
+                            icon={<IconBuildingFactory2 size={15} stroke={1.8} />}
+                            title="Contexte et suivi"
+                            subtitle="Affectation, statut de traitement et prochaine revue"
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Select
+                                    label="Département"
+                                    placeholder="Choisir un département"
+                                    data={departments}
+                                    withAsterisk
+                                    size="sm"
+                                    searchable
+                                    {...form.getInputProps('departmentId')}
+                                />
+                                <Select
+                                    label="Processus de travail"
+                                    placeholder="Choisir un processus"
+                                    data={workProcesses}
+                                    withAsterisk
+                                    size="sm"
+                                    searchable
+                                    {...form.getInputProps('workProcessId')}
+                                />
+                                <Select
+                                    label="Responsable du risque"
+                                    placeholder="Choisir un responsable"
+                                    data={emps.map((emp: any) => ({ value: String(emp.id), label: emp.name }))}
+                                    withAsterisk
+                                    size="sm"
+                                    searchable
+                                    {...form.getInputProps('ownerId')}
+                                />
+                                <Select
+                                    label="Statut de traitement"
+                                    data={RISK_STATUS_OPTIONS}
+                                    withAsterisk
+                                    size="sm"
+                                    allowDeselect={false}
+                                    {...form.getInputProps('status')}
+                                />
+                            </div>
+                            <DateInput
+                                label="Date de revue"
+                                placeholder="Prochaine revue du risque"
+                                minDate={new Date()}
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                clearable
+                                {...form.getInputProps('reviewDate')}
+                            />
+                        </SectionCard>
 
-                <Grid>
-                  <Grid.Col span={6}>
-                    <Select label="Department" placeholder="Select department" data={departments} required {...form.getInputProps('departmentId')} />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <Select label="Work Process" placeholder="Select process" data={workProcesses} required {...form.getInputProps('workProcessId')} />
-                  </Grid.Col>
-                </Grid>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                            <p className="text-[11.5px] text-slate-600 leading-relaxed">
+                                Les modifications sont visibles immédiatement sur le registre et la
+                                vue d'ensemble. L'historique des évaluations du risque est conservé.
+                            </p>
+                        </div>
 
-                <TextInput label="Hazard Source" placeholder="Identify the source of the hazard" required {...form.getInputProps('hazardSource')} />
-
-                <Textarea label="Potential Consequences" placeholder="Describe what could happen if this risk materializes..." required rows={2} {...form.getInputProps('potentialConsequences')} />
-
-                <Grid>
-                  <Grid.Col span={6}>
-                    <Select label="Risk Owner" placeholder="Who is responsible for this risk?" data={emps.map(emp => ({ value: String(emp.id), label: emp.name }))} required {...form.getInputProps('ownerId')} />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <DateInput label="Review Date" placeholder="When should this risk be reviewed?" minDate={new Date()} {...form.getInputProps('reviewDate')} />
-                  </Grid.Col>
-                </Grid>
-
-                <Group justify="flex-end" mt="xl">
-                  <Button variant="outline" onClick={() => navigate('/risks-register')} size="md">Cancel</Button>
-                  <Button type="submit" leftSection={<IconDeviceFloppy size={16} />} color="green" size="md">Update Risk</Button>
-                </Group>
-              </Stack>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="default"
+                                size="sm"
+                                type="button"
+                                disabled={submitting}
+                                onClick={() => navigate('/risks-register')}
+                            >
+                                Annuler
+                            </Button>
+                            <Button
+                                type="submit"
+                                color="teal"
+                                size="sm"
+                                loading={submitting}
+                                leftSection={<IconDeviceFloppy size={15} />}
+                            >
+                                Enregistrer les modifications
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </form>
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, lg: 4 }}>
-          <Card shadow="sm" padding="lg" radius="md" withBorder mb="md">
-            <Title order={4} mb="md" c="blue">Risk Identification Guide</Title>
-
-            <Box p="md" mb="md" style={{ backgroundColor: '#e7f5ff', borderRadius: '8px', border: '1px solid #339af0' }}>
-              <Text size="sm" mb="xs" c="blue">Document the Scenario</Text>
-              <Text size="xs" c="dimmed">
-                • Use the description to explain what is happening or could happen.<br />
-                • Include triggering conditions, locations, or equipment involved.<br />
-                • Mention any existing preventive measures already in place.
-              </Text>
-            </Box>
-
-            <Box p="md" mb="md" style={{ backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
-              <Text size="sm" mb="xs" c="orange">Department & Process Context</Text>
-              <Text size="xs" c="dimmed">
-                • Select the department accountable for monitoring the risk.<br />
-                • Choose the work process where the hazard originates.<br />
-                • Accurate selections improve reporting and escalation paths.
-              </Text>
-            </Box>
-
-            <Box p="md" mb="md" style={{ backgroundColor: '#f8d7da', borderRadius: '8px', border: '1px solid #f5c6cb' }}>
-              <Text size="sm" mb="xs" c="red">Hazard & Consequence Tips</Text>
-              <Text size="xs" c="dimmed">
-                • Hazard source: identify the condition, task, or substance causing concern.<br />
-                • Potential consequences: focus on credible outcomes (injury, downtime, environmental impact).<br />
-                • Keep statements concise so they can be reused in assessments.
-              </Text>
-            </Box>
-
-            <Box p="md" style={{ backgroundColor: '#d1ecf1', borderRadius: '8px', border: '1px solid #bee5eb' }}>
-              <Text size="sm" mb="xs" c="teal">Assign Ownership & Reviews</Text>
-              <Text size="xs" c="dimmed">
-                • Nominate an owner empowered to coordinate mitigations.<br />
-                • Set a review date aligned with inspections or audits.<br />
-                • Review earlier if major process or personnel changes occur.
-              </Text>
-            </Box>
-          </Card>
-        </Grid.Col>
-      </Grid>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default EditRegisterForm;

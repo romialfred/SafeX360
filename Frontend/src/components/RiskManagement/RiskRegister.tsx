@@ -1,21 +1,18 @@
 import { Button } from '@mantine/core';
-import RiskTable from './RiskRegister/RiskTable';
 import { useNavigate } from 'react-router-dom';
-import { IconPlus, IconFileText } from '@tabler/icons-react';
+import { IconFileText, IconPlus } from '@tabler/icons-react';
+import RiskTable from './RiskRegister/RiskTable';
 import PageHeader from '../UtilityComp/PageHeader';
 
+/**
+ * Registre des risques (LOT 50) : catalogue des risques HSE identifiés,
+ * avec filtres, export CSV et accès aux fiches détaillées.
+ */
 const RiskRegister = () => {
     const navigate = useNavigate();
-    const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'uncontrolled': return 'red';
-            case 'partially controlled': return 'orange';
-            case 'under control': return 'green';
-            default: return 'gray';
-        }
-    };
+
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -25,11 +22,11 @@ const RiskRegister = () => {
                 icon={<IconFileText size={22} stroke={2} />}
                 iconColor="red"
                 title="Registre des risques"
-                subtitle="Catalogue complet et suivi des risques HSE — analyse, contrôles et plans d'action"
+                subtitle="Catalogue des risques HSE identifiés : contexte, responsables et suivi du traitement"
                 actions={
                     <Button
                         size="sm"
-                        color="red"
+                        color="teal"
                         leftSection={<IconPlus size={14} />}
                         onClick={() => navigate('register-form')}
                     >
@@ -38,7 +35,7 @@ const RiskRegister = () => {
                 }
             />
 
-            <RiskTable getStatusColor={getStatusColor} />
+            <RiskTable />
         </div>
     );
 };

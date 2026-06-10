@@ -1,83 +1,121 @@
-import { Card, Group, Title, Text, Timeline, Grid, Badge } from '@mantine/core';
-import { IconHistory } from '@tabler/icons-react';
+import { Timeline } from '@mantine/core';
+import { IconClipboardCheck } from '@tabler/icons-react';
+import EmptyState from '../../../UtilityComp/EmptyState';
 import { formatDateShort } from '../../../../utility/DateFormats';
-import { gravitiesMap, mantineColorToLevel, probabilitiesMap, riskMap, severitiesMap } from '../../../../Data/DropdownData';
+import {
+    GRAVITY_LABELS_FR,
+    PROBABILITY_VALUE_LABELS_FR,
+    riskLevelFromKey,
+    scoreChip,
+} from '../../riskLabels';
 
+/**
+ * Historique des évaluations d'un risque (LOT 50) — chronologie des
+ * cotations successives avec les mesures documentées à chaque revue.
+ */
 
-const RiskHistoryTab = ({ revisionHistory }: any) => (
-    < Card shadow="sm" padding="xl" radius="md" withBorder>
-        <Group justify="space-between" mb="md">
-            <Title order={3}>Assessment History</Title>
-            <IconHistory size={20} />
-        </Group>
-        {(!revisionHistory || revisionHistory.length === 0) && (
-            <Card withBorder p="md" mb="md" className="text-center bg-gray-50">
-                <Text size="sm" c="dimmed">No assessments recorded yet.</Text>
-            </Card>
+const ScoreChip = ({ label, score, scoreLabel }: { label: string; score?: string | number | null; scoreLabel?: string }) => (
+    <div>
+        <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">{label}</p>
+        {score ? (
+            <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${scoreChip(score)}`}>
+                <span className="font-medium">{score}</span>
+                {scoreLabel}
+            </span>
+        ) : (
+            <span className="text-[12.5px] text-slate-400">—</span>
         )}
-        {revisionHistory && revisionHistory.length > 0 && (
-            <Timeline active={revisionHistory.length} bulletSize={20} lineWidth={2}>
-                {revisionHistory.slice().reverse().map((revision: any, index: any) => (
-                    <Timeline.Item key={index}>
-                        <Card withBorder p="md" mb="md">
-                            <Group justify="space-between" mb="xs">
-                                <Text size="sm">
-                                    Assessment on {formatDateShort(revision.createdAt)}
-                                </Text>
-                            </Group>
+    </div>
+);
 
-                            <Grid mb="sm">
-                                <Grid.Col span={3}>
-                                    <Text size="sm" c="dimmed">Gravity:</Text>
-                                    <Badge color={mantineColorToLevel[revision.gravity]} variant="light" mb="md">{gravitiesMap[revision.gravity]}</Badge>
-                                </Grid.Col>
-                                <Grid.Col span={3}>
-                                    <Text size="sm" c="dimmed">Probability:</Text>
-                                    <Badge color={mantineColorToLevel[revision.probability]} variant="light" mb="md">{probabilitiesMap[revision.probability]}</Badge>
-                                </Grid.Col>
-                                <Grid.Col span={3}>
-                                    <Text size="sm" c="dimmed">Severity:</Text>
-                                    <Badge color={mantineColorToLevel[revision.severity]} variant="light" mb="md">{severitiesMap[revision.severity]}</Badge>
-                                </Grid.Col>
-                                <Grid.Col span={3}>
-                                    <Text size="xs" c="dimmed">Risk Level:</Text>
-                                    <Badge color={riskMap[revision.riskLevel]?.color} variant="filled">{riskMap[revision.riskLevel]?.level}</Badge>
-                                </Grid.Col>
-                            </Grid>
+const RiskHistoryTab = ({ revisionHistory }: any) => {
+    if (!revisionHistory || revisionHistory.length === 0) {
+        return (
+            <EmptyState
+                icon={<IconClipboardCheck size={24} />}
+                title="Aucune évaluation enregistrée"
+                description="Les cotations successives du risque apparaîtront ici, de la plus récente à la plus ancienne."
+                compact
+            />
+        );
+    }
 
-                            <Grid>
+    return (
+        <Timeline active={revisionHistory.length} bulletSize={18} lineWidth={2} color="teal">
+            {revisionHistory.slice().reverse().map((revision: any, index: number) => {
+                const levelCfg = riskLevelFromKey(revision.riskLevel);
+                return (
+                    <Timeline.Item key={revision.id ?? index}>
+                        <div className="bg-white rounded-xl border border-slate-200 p-4 mb-2">
+                            <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                                <p className="text-[12.5px] text-slate-700">
+                                    Évaluation du {formatDateShort(revision.createdAt) || '—'}
+                                </p>
+                                {levelCfg && (
+                                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${levelCfg.chip}`}>
+                                        {levelCfg.label}
+                                    </span>
+                                )}
+                            </div>
+
+                            {revision.reason && (
+                                <p className="text-[12px] text-slate-600 mb-3">
+                                    <span className="text-slate-500">Motif : </span>
+                                    {revision.reason}
+                                </p>
+                            )}
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                                <ScoreChip
+                                    label="Gravité"
+                                    score={revision.gravity}
+                                    scoreLabel={GRAVITY_LABELS_FR[String(revision.gravity)]}
+                                />
+                                <ScoreChip
+                                    label="Probabilité"
+                                    score={revision.probability}
+                                    scoreLabel={PROBABILITY_VALUE_LABELS_FR[String(revision.probability)]}
+                                />
+                            </div>
+
+                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {revision.currentControls && (
-                                    <Grid.Col span={6}>
-                                        <Text size="sm" c="dimmed" mb="xs">Current Controls:</Text>
-                                        <Text size="sm">{revision.currentControls}</Text>
-                                    </Grid.Col>
+                                    <div>
+                                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Mesures actuelles</dt>
+                                        <dd className="text-[12.5px] text-slate-700 mt-0.5 leading-relaxed">{revision.currentControls}</dd>
+                                    </div>
                                 )}
                                 {revision.additionalControl && (
-                                    <Grid.Col span={6}>
-                                        <Text size="sm" c="dimmed" mb="xs">Additional Controls:</Text>
-                                        <Text size="sm">{revision.additionalControl}</Text>
-                                    </Grid.Col>
+                                    <div>
+                                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Mesures complémentaires</dt>
+                                        <dd className="text-[12.5px] text-slate-700 mt-0.5 leading-relaxed">{revision.additionalControl}</dd>
+                                    </div>
                                 )}
                                 {revision.preventiveMeasures && (
-                                    <Grid.Col span={6}>
-                                        <Text size="sm" c="dimmed" mb="xs">Preventive Measures:</Text>
-                                        <Text size="sm">{revision.preventiveMeasures}</Text>
-                                    </Grid.Col>
+                                    <div>
+                                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Mesures préventives</dt>
+                                        <dd className="text-[12.5px] text-slate-700 mt-0.5 leading-relaxed">{revision.preventiveMeasures}</dd>
+                                    </div>
                                 )}
                                 {revision.improvementsMeasures && (
-                                    <Grid.Col span={6}>
-                                        <Text size="sm" c="dimmed" mb="xs">Improvement Measures:</Text>
-                                        <Text size="sm">{revision.improvementsMeasures}</Text>
-                                    </Grid.Col>
+                                    <div>
+                                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Mesures d'amélioration</dt>
+                                        <dd className="text-[12.5px] text-slate-700 mt-0.5 leading-relaxed">{revision.improvementsMeasures}</dd>
+                                    </div>
                                 )}
-                            </Grid>
-                        </Card>
+                                {revision.comments && (
+                                    <div className="sm:col-span-2">
+                                        <dt className="text-[11px] uppercase tracking-wider text-slate-500">Commentaires</dt>
+                                        <dd className="text-[12.5px] text-slate-700 mt-0.5 leading-relaxed">{revision.comments}</dd>
+                                    </div>
+                                )}
+                            </dl>
+                        </div>
                     </Timeline.Item>
-                ))}
-                <Timeline.Item />
-            </Timeline>
-        )}
-    </Card >
-);
+                );
+            })}
+        </Timeline>
+    );
+};
 
 export default RiskHistoryTab;

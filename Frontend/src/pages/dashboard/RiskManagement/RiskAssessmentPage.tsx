@@ -2,7 +2,7 @@ import RiskAssessment from '../../../components/RiskManagement/RiskAssessment/Ri
 
 const RiskAssessmentPage = () => {
     return (
-        <div className='p-5'><RiskAssessment /></div>
+        <RiskAssessment />
     )
 }
 

@@ -2,6 +2,10 @@ import React from 'react';
 import RiskAssessmentForm from "./RiskAssessmentForm";
 import RiskAssessmentGuide from "./RiskAssessmentGuide";
 
+/**
+ * Onglet « Nouvelle évaluation » d'un risque chimique (LOT 50) :
+ * formulaire de cotation à gauche, aide-mémoire à droite.
+ */
 interface RiskAssessmentTabProps {
     onCancel: () => void;
     assessments: any[];

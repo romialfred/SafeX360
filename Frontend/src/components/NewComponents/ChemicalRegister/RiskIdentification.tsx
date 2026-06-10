@@ -1,424 +1,416 @@
-import { IconAlertTriangle, IconBuilding, IconCircleCheck, IconFlask2, IconLink } from "@tabler/icons-react";
-import { TextInput, Textarea, Select, Button } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import { useForm } from "@mantine/form";
-import { useDispatch } from "react-redux";
-import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
-import { createChemicalRisk } from "../../../services/RiskIdentificationService";
-import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getAllDepartments } from "../../../services/HrmsService";
-import { GetAllWorkProcess } from "../../../services/WorkProcessService";
-import { getEmployeeDropdown } from "../../../services/EmployeeService";
+import { useEffect, useState } from 'react';
+import { Button, Select, Textarea, TextInput } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import {
+    IconAlertTriangle,
+    IconBuildingFactory2,
+    IconDeviceFloppy,
+    IconFlask2,
+} from '@tabler/icons-react';
+import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
+import { createChemicalRisk } from '../../../services/RiskIdentificationService';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { getAllDepartments } from '../../../services/HrmsService';
+import { GetAllWorkProcess } from '../../../services/WorkProcessService';
+import { getEmployeeDropdown } from '../../../services/EmployeeService';
+import { toLocalDate } from '../../../utility/dateConversion';
+import {
+    CLASSIFICATION_OPTIONS,
+    HAZARD_SOURCE_OPTIONS,
+    classificationConfig,
+    formatDateFr,
+    hazardSourceLabel,
+} from './chemicalLabels';
+
+/**
+ * Identification d'un risque chimique (LOT 50) — formulaire sectionné avec,
+ * à droite, la « fiche risque chimique » qui se construit pendant la saisie :
+ * produit, n° CAS, classe SGH, contexte d'exposition.
+ */
+
+interface ChemicalRiskFormValues {
+    reviewDate: Date | null;
+    departmentId: string;
+    workProcessId: string;
+    ownerId: string;
+    chemicalName: string;
+    casNumber: string;
+    classification: string;
+    hazardSource: string;
+    methodOfUse: string;
+    description: string;
+    potentialConsequences: string;
+}
+
+export const SectionCard = ({
+    icon,
+    title,
+    subtitle,
+    children,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    children: React.ReactNode;
+}) => (
+    <section className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-slate-100">
+            <span className="inline-flex p-1.5 rounded-md bg-violet-50 text-violet-700">{icon}</span>
+            <div>
+                <h3
+                    className="text-slate-800"
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    {title}
+                </h3>
+                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+            </div>
+        </div>
+        <div className="flex flex-col gap-3">{children}</div>
+    </section>
+);
+
+const CAS_REGEX = /^\d{2,7}-\d{2}-\d$/;
 
 const RiskIdentification = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [submitting, setSubmitting] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
     const [emps, setEmps] = useState<any[]>([]);
+
     useEffect(() => {
-        fetchDepartments();
-        fetchWorkProcesses();
-        fetchEmployees();
-    }, [])
+        getAllDepartments()
+            .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements'));
+        GetAllWorkProcess({})
+            .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus'));
+        getEmployeeDropdown()
+            .then((data) => setEmps(data))
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés'));
+    }, []);
 
-
-    const fetchEmployees = () => {
-        // Fetch employees from API or service
-        getEmployeeDropdown().then((data) => {
-            setEmps(data);
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch employees");
-        });
-    };
-
-    const fetchDepartments = () => {
-
-        getAllDepartments().then((data) => {
-            setDepartments(data.map((department: any) => ({ value: "" + department.id, label: department.name })));
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch departments");
-        });
-    };
-
-    const fetchWorkProcesses = () => {
-        // Fetch work processes from API or service
-        GetAllWorkProcess({}).then((data) => {
-
-            setWorkProcesses(data.map((workProcess: any) => ({ value: "" + workProcess.id, label: workProcess.name })));
-        }).catch((error) => {
-            errorNotification(error.response?.data?.errorMessage || "Failed to fetch work processes");
-        });
-    };
-    const classifications = [
-        "Flammable",
-        "Toxic",
-        "Corrosive",
-        "Oxidizing",
-        "Explosive",
-        "Irritant",
-        "Carcinogenic",
-        "Mutagenic",
-        "Reproductive Toxin",
-    ];
-
-    const hazardSources = [
-        "Storage",
-        "Handling",
-        "Transport",
-        "Mixing",
-        "Heating",
-        "Disposal",
-        "Maintenance",
-        "Emergency Response",
-    ];
-
-    // const FormField = ({
-    //     label,
-    //     children,
-    //     required = false,
-    //     className = "",
-    // }: {
-    //     label: string;
-    //     children: React.ReactNode;
-    //     helpKey: string;
-    //     required?: boolean;
-    //     sectionKey?: string;
-    //     className?: string;
-    // }) => (
-    //     <div className={`${className}`}>
-    //         <div className="w-full">
-    //             <label className="block text-sm text-gray-700 mb-2">
-    //                 {label}
-    //                 {required && <span className="text-red-500 ml-1">*</span>}
-    //             </label>
-    //             {children}
-    //         </div>
-    //     </div>
-    // );
-
-    const sectionFields = {
-        "general-info": {
-            title: "General Information",
-            icon: IconBuilding,
-            color: "text-blue-600",
-            bgColor: "bg-blue-50 border-blue-200",
-            tips: [
-                "Capture the date you identified the chemical risk for traceability.",
-                "Select the department and process where this chemical is handled.",
-                "Assign a responsible owner and note who reported the risk for follow-up.",
-            ],
-        },
-        "hazard-info": {
-            title: "Hazard Information",
-            icon: IconFlask2,
-            color: "text-orange-600",
-            bgColor: "bg-orange-50 border-orange-200",
-            tips: [
-                "Use the chemical name and CAS number as listed on the SDS.",
-                "Choose the best fitting GHS classification for the substance.",
-                "Describe where the hazard comes from and how the chemical is used day-to-day.",
-            ],
-        },
-        "risk-description": {
-            title: "Risk Description",
-            icon: IconAlertTriangle,
-            color: "text-red-600",
-            bgColor: "bg-red-50 border-red-200",
-            tips: [
-                "Explain the scenario: who is exposed, during which task, and under what conditions.",
-                "Highlight existing controls or gaps that make the risk credible.",
-                "List the most likely consequences for people, assets, or the environment.",
-            ],
-        },
-        "link-assessments": {
-            title: "Link to Assessments",
-            icon: IconLink,
-            color: "text-purple-600",
-            bgColor: "bg-purple-50 border-purple-200",
-            tips: [
-                "Once the risk is saved, create assessments to evaluate severity and controls.",
-                "Use revisions to document improvement actions and track progress over time.",
-            ],
-        },
-    } as const;
-
-    const SectionHelpPanel = ({ sectionKey }: { sectionKey: string }) => {
-        const section = sectionFields[sectionKey as keyof typeof sectionFields];
-        if (!section) return null;
-
-        return (
-            <div className="bg-white border border-gray-200 rounded-lg p-6 w-80 flex-shrink-0">
-                <div className="flex items-center mb-6">
-                    <div className={`p-2 rounded-lg ${section.bgColor} mr-3`}>
-                        <section.icon className={`w-6 h-6 ${section.color}`} />
-                    </div>
-                    <h3 className="text-lg text-gray-900">{section.title}</h3>
-                </div>
-
-                <div className={`rounded-lg p-4 ${section.bgColor}`}>
-                    <div className="space-y-3 text-sm text-gray-700">
-                        {section.tips.map((tip, index) => (
-                            <div key={index} className="flex items-start">
-                                <div className={`w-2 h-2 rounded-full ${section.color.replace('text-', 'bg-')} mr-3 mt-2 flex-shrink-0`} />
-                                <div>{tip}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const form = useForm({
+    const form = useForm<ChemicalRiskFormValues>({
         initialValues: {
-            riskId: "CHR-2024-001",
-            dateOfIdentification: new Date(),
-            departmentId: "",
-            workProcessId: "",
-            personReporting: "",
-            chemicalName: "",
-            casNumber: "",
-            classification: "",
-            hazardSource: "",
-            methodOfUse: "",
-            title: "",
-            riskDescription: "",
-            potentialConsequences: "",
-            status: 'OPEN',
+            reviewDate: new Date(),
+            departmentId: '',
+            workProcessId: '',
+            ownerId: '',
+            chemicalName: '',
+            casNumber: '',
+            classification: '',
+            hazardSource: '',
+            methodOfUse: '',
+            description: '',
+            potentialConsequences: '',
         },
         validate: {
-            riskId: (value) => (value?.trim().length > 0 ? null : 'Risk ID is required'),
-            departmentId: (value) => (value ? null : 'Department is required'),
-            dateOfIdentification: (value) => (value ? null : 'Date is required')
-        }
+            reviewDate: (value) => (value ? null : "La date d'identification est obligatoire"),
+            departmentId: (value) => (value ? null : 'Le département est obligatoire'),
+            workProcessId: (value) => (value ? null : 'Le processus de travail est obligatoire'),
+            ownerId: (value) => (value ? null : 'Le responsable du risque est obligatoire'),
+            chemicalName: (value) => (value.trim() ? null : 'Le nom du produit est obligatoire'),
+            casNumber: (value) => {
+                const trimmed = value.trim();
+                if (!trimmed) return 'Le n° CAS est obligatoire';
+                return CAS_REGEX.test(trimmed) ? null : 'Format attendu : 7664-93-9';
+            },
+            classification: (value) => (value ? null : 'La classification SGH est obligatoire'),
+            hazardSource: (value) => (value ? null : 'La source de danger est obligatoire'),
+            methodOfUse: (value) => (value.trim() ? null : "Le mode d'utilisation est obligatoire"),
+            description: (value) => (value.trim() ? null : 'La description du risque est obligatoire'),
+            potentialConsequences: (value) => (value.trim() ? null : 'Les conséquences potentielles sont obligatoires'),
+        },
+        validateInputOnBlur: true,
     });
-    useEffect(() => {
-        const chemical = (form.values.chemicalName || '').trim();
-        const hazard = (form.values.hazardSource || '').trim();
-        const method = (form.values.methodOfUse || '').trim();
-        const derivedTitle = [chemical, hazard || method].filter(Boolean).join(' - ').slice(0, 120);
-        if (derivedTitle && derivedTitle !== form.values.title) {
-            form.setFieldValue('title', derivedTitle);
-        } else if (!derivedTitle && form.values.title) {
-            form.setFieldValue('title', '');
-        }
-    }, [form.values.chemicalName, form.values.hazardSource, form.values.methodOfUse]);
 
-    const handleSubmit = () => {
+    const handleSubmit = (values: ChemicalRiskFormValues) => {
+        const chemical = values.chemicalName.trim();
+        const sourceFr = hazardSourceLabel(values.hazardSource);
+        const title = [chemical, sourceFr !== '—' ? sourceFr : null].filter(Boolean).join(' — ').slice(0, 120);
+
+        setSubmitting(true);
         dispatch(showOverlay());
-
         const payload = {
-            ...form.values,
-            dateOfIdentification: form.values.dateOfIdentification
-                ? form.values.dateOfIdentification.toISOString().split("T")[0]
-                : null,
-
-            departmentId: form.values.departmentId ? Number(form.values.departmentId) : null,
-            workProcessId: form.values.workProcessId ? Number(form.values.workProcessId) : null,
+            title,
+            description: values.description.trim(),
+            departmentId: Number(values.departmentId),
+            workProcessId: Number(values.workProcessId),
+            ownerId: Number(values.ownerId),
+            hazardSource: values.hazardSource,
+            potentialConsequences: values.potentialConsequences.trim(),
+            reviewDate: toLocalDate(values.reviewDate),
+            status: 'OPEN',
+            chemicalName: chemical,
+            casNumber: values.casNumber.trim(),
+            classification: values.classification,
+            methodOfUse: values.methodOfUse.trim(),
         };
 
-
         createChemicalRisk(payload)
-            .then((_res) => {
-                successNotification("Requirement created successfully");
-                navigate("/chemical-register"); // 👈 navigate after success
+            .then(() => {
+                successNotification('Risque chimique enregistré au registre');
+                navigate('/chemical-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
             })
-            .finally(() => dispatch(hideOverlay()));
+            .finally(() => {
+                setSubmitting(false);
+                dispatch(hideOverlay());
+            });
     };
 
+    const classCfg = classificationConfig(form.values.classification);
+
     return (
-        <div>
-            <div className="space-y-8">
-                <form onSubmit={form.onSubmit(handleSubmit)}>
-                    {/* ---- General Info Section ---- */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex gap-8">
-                            <div className="flex-1">
-                                <div className="flex items-center mb-6">
-                                    <IconBuilding className="w-6 h-6 text-blue-600 mr-3" />
-                                    <h3 className="text-lg text-gray-900">
-                                        General Information
-                                    </h3>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-                                    <TextInput label="Risk ID" disabled {...form.getInputProps('riskId')} />
-
-
-                                    <DateInput required label="Date of Identification" {...form.getInputProps('dateOfIdentification')} placeholder="When was this risk identified?"
-                                        minDate={new Date()} />
-
-
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-                                    <Select
-                                        required
-                                        label="Department"
-                                        placeholder="Select department"
-                                        data={departments}
-
-                                        {...form.getInputProps('departmentId')}
-                                    />
-
-
-                                    <Select
-                                        required
-                                        label="Work Process"
-                                        placeholder="Select work process"
-                                        data={workProcesses}
-
-                                        {...form.getInputProps('workProcessId')}
-                                    />
-
-
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <Select
-                                        label="Risk Owner"
-                                        placeholder="Who is responsible for this risk?"
-                                        data={emps.map(emp => ({ value: "" + emp.id, label: emp.name }))}
-                                        required
-                                        {...form.getInputProps('ownerId')}
-                                    />
-                                    <TextInput required label="Person Reporting" placeholder="Name and position" {...form.getInputProps('personReporting')} />
-                                </div>
-
-
-                            </div>
-                            <div className="w-80 flex-shrink-0">
-                                <SectionHelpPanel sectionKey="general-info" />
-                            </div>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
+                {/* ─── Colonne saisie ─────────────────────────────────────── */}
+                <div className="xl:col-span-3 flex flex-col gap-4">
+                    <SectionCard
+                        icon={<IconBuildingFactory2 size={15} stroke={1.8} />}
+                        title="Contexte d'identification"
+                        subtitle="Où le produit est manipulé et qui répond du risque"
+                    >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <DateInput
+                                label="Date d'identification"
+                                placeholder="Choisir une date"
+                                withAsterisk
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                {...form.getInputProps('reviewDate')}
+                            />
+                            <Select
+                                label="Département"
+                                placeholder="Choisir un département"
+                                data={departments}
+                                withAsterisk
+                                size="sm"
+                                searchable
+                                {...form.getInputProps('departmentId')}
+                            />
+                            <Select
+                                label="Processus de travail"
+                                placeholder="Choisir un processus"
+                                data={workProcesses}
+                                withAsterisk
+                                size="sm"
+                                searchable
+                                {...form.getInputProps('workProcessId')}
+                            />
+                            <Select
+                                label="Responsable du risque"
+                                placeholder="Choisir un responsable"
+                                data={emps.map((emp) => ({ value: String(emp.id), label: emp.name }))}
+                                withAsterisk
+                                size="sm"
+                                searchable
+                                {...form.getInputProps('ownerId')}
+                            />
                         </div>
+                    </SectionCard>
+
+                    <SectionCard
+                        icon={<IconFlask2 size={15} stroke={1.8} />}
+                        title="Produit chimique et danger"
+                        subtitle="Identification du produit telle qu'elle figure sur la fiche de données de sécurité"
+                    >
+                        <TextInput
+                            label="Nom du produit"
+                            placeholder="ex. Acide sulfurique 98 %"
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('chemicalName')}
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <TextInput
+                                label="N° CAS"
+                                placeholder="ex. 7664-93-9"
+                                withAsterisk
+                                size="sm"
+                                {...form.getInputProps('casNumber')}
+                            />
+                            <Select
+                                label="Classification SGH"
+                                placeholder="Choisir une classe de danger"
+                                data={CLASSIFICATION_OPTIONS}
+                                withAsterisk
+                                size="sm"
+                                searchable
+                                {...form.getInputProps('classification')}
+                            />
+                        </div>
+                        <Select
+                            label="Source de danger"
+                            placeholder="Choisir la situation exposante"
+                            data={HAZARD_SOURCE_OPTIONS}
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('hazardSource')}
+                        />
+                        <Textarea
+                            label="Mode d'utilisation"
+                            placeholder="ex. Dilution en cuve fermée pour le traitement du minerai, deux fois par poste"
+                            minRows={3}
+                            autosize
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('methodOfUse')}
+                        />
+                    </SectionCard>
+
+                    <SectionCard
+                        icon={<IconAlertTriangle size={15} stroke={1.8} />}
+                        title="Description du risque"
+                        subtitle="Le scénario d'exposition et ses conséquences crédibles"
+                    >
+                        <Textarea
+                            label="Description"
+                            placeholder="Qui est exposé, pendant quelle tâche et dans quelles conditions"
+                            minRows={3}
+                            autosize
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('description')}
+                        />
+                        <Textarea
+                            label="Conséquences potentielles"
+                            placeholder="Effets possibles sur la santé, la sécurité ou l'environnement"
+                            minRows={3}
+                            autosize
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('potentialConsequences')}
+                        />
+                    </SectionCard>
+
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => navigate('/chemical-register')}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            color="teal"
+                            size="sm"
+                            loading={submitting}
+                            leftSection={<IconDeviceFloppy size={15} />}
+                        >
+                            Enregistrer le risque
+                        </Button>
                     </div>
+                </div>
 
-                    {/* ---- Hazard Info Section ---- */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex gap-8">
-                            <div className="flex-1">
-                                <div className="flex items-center mb-6">
-                                    <IconFlask2 className="w-6 h-6 text-orange-600 mr-3" />
-                                    <h3 className="text-lg text-gray-900">
-                                        Hazard Information
-                                    </h3>
-                                </div>
-                                <div className="flex flex-col gap-5">
+                {/* ─── Fiche risque chimique en direct ─────────────────────── */}
+                <aside className="xl:col-span-2">
+                    <div className="sticky top-4 flex flex-col gap-3">
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <div className="px-4 py-2.5 bg-gradient-to-r from-violet-800 to-violet-600 flex items-center justify-between gap-2">
+                                <span className="text-[10px] uppercase tracking-[0.18em] text-violet-50">
+                                    Fiche risque chimique
+                                </span>
+                                <span className="text-[11px] font-mono bg-white/15 text-white rounded px-1.5 py-0.5">
+                                    {form.values.casNumber.trim() || 'CAS ···'}
+                                </span>
+                            </div>
 
-                                    <TextInput required label="Chemical Name" placeholder="Official product name from SDS" {...form.getInputProps('chemicalName')} />
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                                        <TextInput required label="CAS Number" placeholder="e.g., 7664-93-9" {...form.getInputProps('casNumber')} />
-
-
-                                        <Select required label="Classification" placeholder="Select Classification" data={classifications} {...form.getInputProps('classification')} />
-
+                            <div className="relative p-4 pb-3">
+                                {classCfg && (
+                                    <div
+                                        className={`absolute top-3 right-3 rotate-[-6deg] border-2 rounded px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] ${classCfg.chip}`}
+                                        role="img"
+                                        aria-label={`Classification : ${classCfg.sgh} ${classCfg.label}`}
+                                    >
+                                        {classCfg.sgh}
                                     </div>
+                                )}
 
-                                    <Select required label="Hazard Source" placeholder="Select Hazard Source" data={hazardSources} {...form.getInputProps('hazardSource')} />
+                                <h4
+                                    className={`pr-16 leading-snug ${form.values.chemicalName ? 'text-slate-800' : 'text-slate-400 italic'}`}
+                                    style={{
+                                        fontFamily: "'Source Serif 4', Georgia, serif",
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        letterSpacing: '-0.01em',
+                                    }}
+                                >
+                                    {form.values.chemicalName || 'Nom du produit chimique'}
+                                </h4>
+                                <p className={`text-[12px] mt-1.5 leading-relaxed ${form.values.description ? 'text-slate-600' : 'text-slate-400 italic'}`}>
+                                    {form.values.description || "La description du risque apparaîtra ici, telle que les équipes HSE la liront."}
+                                </p>
 
-
-                                    <Textarea required label="Method of Use" rows={3} placeholder="Describe how the chemical is applied or processed" {...form.getInputProps('methodOfUse')} />
-
-                                </div>
-                            </div>
-                            <div className="w-80 flex-shrink-0">
-                                <SectionHelpPanel sectionKey="hazard-info" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ---- Risk Description Section ---- */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex gap-8">
-                            <div className="flex-1">
-                                <div className="flex items-center mb-6">
-                                    <IconAlertTriangle className="w-6 h-6 text-red-600 mr-3" />
-                                    <h3 className="text-lg text-gray-900">
-                                        Risk Description
-                                    </h3>
-                                </div>
-                                <div className="flex flex-col gap-5">
-
-                                    <TextInput
-                                        required
-                                        label="Risk Title"
-                                        placeholder="Enter a short title for this risk"
-
-                                        {...form.getInputProps('title')}
-                                    />
-
-
-
-
-                                    <Textarea
-                                        label="Risk Description"
-                                        placeholder="Describe the identified risk..."
-                                        required
-                                        rows={3}
-                                        {...form.getInputProps('description')}
-                                    />
-
-
-
-                                    <Textarea required label="Potential Consequences" rows={4} placeholder="List possible effects on health, safety, or environment" {...form.getInputProps('potentialConsequences')} />
-
-                                </div>
-                            </div>
-                            <div className="w-80 flex-shrink-0">
-                                <SectionHelpPanel sectionKey="risk-description" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ---- Link Assessments Section ---- */}
-                    {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex gap-8">
-                            <div className="flex-1">
-                                <div className="flex items-center mb-6">
-                                    <IconLink className="w-6 h-6 text-purple-600 mr-3" />
-                                    <h3 className="text-lg text-gray-900">
-                                        Link to Assessments
-                                    </h3>
-                                </div>
-                                <FormField label="Related Assessments" helpKey="relatedAssessments">
-                                    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                                        <p className="text-gray-600 text-sm mb-2">
-                                            Assessments linked to this risk will appear here once created.
-                                        </p>
-                                        <div className="flex items-center text-blue-600">
-                                            <IconPlus className="w-4 h-4 mr-2" />
-                                            <span className="text-sm">Create New Assessment</span>
-                                        </div>
+                                <dl className="mt-4 grid grid-cols-1 gap-2 text-[12px]">
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Classification</dt>
+                                        <dd className="text-slate-800">
+                                            {classCfg ? `${classCfg.sgh} · ${classCfg.label}` : '—'}
+                                        </dd>
                                     </div>
-                                </FormField>
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Source de danger</dt>
+                                        <dd className="text-slate-800">{hazardSourceLabel(form.values.hazardSource)}</dd>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Département</dt>
+                                        <dd className="text-slate-800">
+                                            {departments.find((d) => d.value === form.values.departmentId)?.label ?? '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Processus</dt>
+                                        <dd className="text-slate-800">
+                                            {workProcesses.find((p) => p.value === form.values.workProcessId)?.label ?? '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Responsable</dt>
+                                        <dd className="text-slate-800">
+                                            {emps.find((e) => String(e.id) === form.values.ownerId)?.name ?? '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
+                                        <dt className="text-slate-500">Identifié le</dt>
+                                        <dd className="text-slate-800">{formatDateFr(form.values.reviewDate)}</dd>
+                                    </div>
+                                </dl>
                             </div>
-                            <div className="w-80 flex-shrink-0">
-                                <SectionHelpPanel sectionKey="link-assessments" />
-                            </div>
-                        </div>
-                    </div> */}
 
-                    {/* ---- Footer ---- */}
-                    <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                        <div className="flex items-center text-sm text-gray-500">
-                            <IconCircleCheck className="w-4 h-4 mr-2" />
-                            Form auto-saves as you type
+                            <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
+                                <p className="text-[10.5px] text-slate-500">
+                                    ISO 45001 · 6.1.2 — Identification des dangers · Règlement CLP (SGH)
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex space-x-4">
-                            <Button color="gray">Save as Draft</Button>
-                            <Button type="submit">Submit for Review</Button>
+
+                        <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                            <p className="text-[11.5px] text-slate-600 leading-relaxed">
+                                Une fois le risque enregistré, réalisez une première évaluation
+                                (probabilité × gravité) depuis sa fiche détaillée pour le positionner
+                                sur la matrice.
+                            </p>
                         </div>
                     </div>
-                </form>
+                </aside>
             </div>
-        </div>
+        </form>
     );
 };
 

@@ -1,16 +1,24 @@
-import React, { useEffect } from 'react';
-import { Select, Textarea, Box, Button } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import React, { useEffect, useState } from 'react';
+import { Button, Select, Textarea } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { IconClipboardCheck, IconDeviceFloppy, IconShield } from '@tabler/icons-react';
+import { riskKeyToSeverity } from '../../../Data/DropdownData';
+import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
+import { addChemicalRiskAnalysis } from '../../../services/ChemicalRiskAnalysisService';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { SectionCard } from './RiskIdentification';
 import {
-    IconFileText,
-    IconShield,
-} from "@tabler/icons-react";
-import { gravities, probabilities, severities, riskKeyToSeverity } from "../../../Data/DropdownData";
-import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
-import { addChemicalRiskAnalysis } from "../../../services/ChemicalRiskAnalysisService";
-import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+    GRAVITY_OPTIONS_FR,
+    LEVEL_SCORE_OPTIONS_FR,
+    PROBABILITY_OPTIONS_FR,
+} from './chemicalLabels';
+
+/**
+ * Évaluation d'un risque chimique (LOT 50) : cotation probabilité × gravité
+ * (niveau calculé automatiquement) puis plan de maîtrise.
+ */
 
 type RiskAssessmentFormValues = {
     reason: string;
@@ -34,6 +42,8 @@ interface RiskAssessmentFormProps {
 const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, assessments, fetchAssessments }) => {
     const { id } = useParams();
     const dispatch = useDispatch();
+    const [submitting, setSubmitting] = useState(false);
+    const isReassessment = (assessments?.length ?? 0) > 0;
 
     const form = useForm<RiskAssessmentFormValues>({
         initialValues: {
@@ -46,8 +56,16 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
             preventiveMeasures: '',
             improvementsMeasures: '',
             comments: '',
-            riskId: id
-        }
+            riskId: id,
+        },
+        validate: {
+            reason: (value) =>
+                isReassessment && !value.trim() ? 'Le motif de la réévaluation est obligatoire' : null,
+            gravity: (value) => (value ? null : 'La gravité est obligatoire'),
+            probability: (value) => (value ? null : 'La probabilité est obligatoire'),
+            currentControls: (value) => (value.trim() ? null : 'Les mesures de maîtrise actuelles sont obligatoires'),
+        },
+        validateInputOnBlur: true,
     });
 
     useEffect(() => {
@@ -59,128 +77,134 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
         } else {
             form.setFieldValue('severity', null);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.values.gravity, form.values.probability]);
 
     const handleSubmit = (values: RiskAssessmentFormValues) => {
+        setSubmitting(true);
         dispatch(showOverlay());
-        addChemicalRiskAnalysis({ ...values, riskLevel: ("" + (values?.probability ?? "") + (values?.severity ?? "")) })
+        addChemicalRiskAnalysis({ ...values, riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')) })
             .then(() => {
-                successNotification("Assessment added successfully");
+                successNotification('Évaluation enregistrée');
                 fetchAssessments();
                 onCancel();
             })
-            .catch((_error) => {
-                errorNotification("Error adding assessment:");
-            }).finally(() => {
-                dispatch(hideOverlay());
+            .catch((error) => {
+                errorNotification(error.response?.data?.errorMessage || "L'évaluation n'a pas pu être enregistrée");
             })
+            .finally(() => {
+                setSubmitting(false);
+                dispatch(hideOverlay());
+            });
     };
 
     return (
-        <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-5">
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <div className="flex items-center mb-6">
-                    <IconFileText className="w-6 h-6 text-blue-600 mr-3" />
-                    <h3 className="text-lg text-gray-900">
-                        Assessment Information
-                    </h3>
-                </div>
-
-                {assessments?.length > 0 && (
-                    <Box>
-                        <Textarea
-                            label="Reason for Reassessment"
-                            placeholder="Why are you reassessing this risk? (incident, process change, audit, etc.)"
-                            withAsterisk
-                            rows={3}
-                            {...form.getInputProps('reason')}
-                        />
-                    </Box>
+        <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4">
+            <SectionCard
+                icon={<IconClipboardCheck size={15} stroke={1.8} />}
+                title="Cotation du risque"
+                subtitle="Le niveau de risque est calculé automatiquement à partir de la probabilité et de la gravité"
+            >
+                {isReassessment && (
+                    <Textarea
+                        label="Motif de la réévaluation"
+                        placeholder="ex. Incident du 12 mai, changement de procédé, constat d'audit"
+                        withAsterisk
+                        minRows={2}
+                        autosize
+                        size="sm"
+                        {...form.getInputProps('reason')}
+                    />
                 )}
-
-                <div className="mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <Select
-                            label="Gravity"
-                            placeholder="Select gravity level"
-                            data={gravities}
-                            required
-                            {...form.getInputProps('gravity')}
-                        />
-
-                        <Select
-                            label="Probability"
-                            placeholder="Select probability"
-                            data={probabilities}
-                            required
-                            {...form.getInputProps('probability')}
-                        />
-                        <Select
-                            label="Severity"
-                            placeholder="Select severity"
-                            data={severities}
-                            required
-                            disabled
-                            {...form.getInputProps('severity')}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <div className="flex items-center mb-6">
-                    <IconShield className="w-6 h-6 text-blue-600 mr-3" />
-                    <h3 className="text-lg text-gray-900">
-                        Risk Controls
-                    </h3>
-                </div>
-
-                <div className="flex flex-col gap-6 mb-6">
-                    <Textarea
-                        label="Current Controls"
-                        placeholder="Describe existing risk controls..."
-                        required
-                        rows={3}
-                        {...form.getInputProps('currentControls')}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Select
+                        label="Gravité"
+                        placeholder="Choisir la gravité"
+                        data={GRAVITY_OPTIONS_FR}
+                        withAsterisk
+                        size="sm"
+                        {...form.getInputProps('gravity')}
                     />
-
-                    <Textarea
-                        label="Additional Controls Needed"
-                        placeholder="Describe additional controls required..."
-                        rows={3}
-                        {...form.getInputProps('additionalControl')}
+                    <Select
+                        label="Probabilité"
+                        placeholder="Choisir la probabilité"
+                        data={PROBABILITY_OPTIONS_FR}
+                        withAsterisk
+                        size="sm"
+                        {...form.getInputProps('probability')}
                     />
-
-                    <Textarea
-                        label="Preventive Measures"
-                        placeholder="Describe preventive measures to implement..."
-                        rows={3}
-                        {...form.getInputProps('preventiveMeasures')}
+                    <Select
+                        label="Niveau de risque (calculé)"
+                        placeholder="Calculé automatiquement"
+                        data={LEVEL_SCORE_OPTIONS_FR}
+                        disabled
+                        size="sm"
+                        {...form.getInputProps('severity')}
                     />
-
-                    <Textarea
-                        label="Improvement Measures"
-                        placeholder="Describe improvement measures to enhance risk control..."
-                        rows={3}
-                        {...form.getInputProps('improvementsMeasures')}
-                    />
-
-                    <Box>
-                        <Textarea
-                            label="Comments"
-                            placeholder="Additional comments..."
-                            rows={2}
-                            {...form.getInputProps('comments')}
-                        />
-                    </Box>
                 </div>
-            </div>
+            </SectionCard>
 
-            <div className="flex justify-end items-center mt-8 pt-6 border-t border-gray-200">
-                <div className="flex space-x-4">
-                    <Button color='gray' type="button" onClick={onCancel}>Cancel</Button>
-                    <Button type="submit">Submit for Review</Button>
-                </div>
+            <SectionCard
+                icon={<IconShield size={15} stroke={1.8} />}
+                title="Maîtrise du risque"
+                subtitle="Mesures en place et plan d'amélioration"
+            >
+                <Textarea
+                    label="Mesures de maîtrise actuelles"
+                    placeholder="ex. Stockage en rétention ventilée, port du masque ABEK et de gants nitrile"
+                    withAsterisk
+                    minRows={3}
+                    autosize
+                    size="sm"
+                    {...form.getInputProps('currentControls')}
+                />
+                <Textarea
+                    label="Mesures complémentaires nécessaires"
+                    placeholder="Mesures à mettre en place pour réduire le risque résiduel"
+                    minRows={3}
+                    autosize
+                    size="sm"
+                    {...form.getInputProps('additionalControl')}
+                />
+                <Textarea
+                    label="Mesures préventives"
+                    placeholder="Actions de prévention à engager (formation, signalisation, substitution…)"
+                    minRows={3}
+                    autosize
+                    size="sm"
+                    {...form.getInputProps('preventiveMeasures')}
+                />
+                <Textarea
+                    label="Mesures d'amélioration"
+                    placeholder="Améliorations du dispositif de maîtrise existant"
+                    minRows={3}
+                    autosize
+                    size="sm"
+                    {...form.getInputProps('improvementsMeasures')}
+                />
+                <Textarea
+                    label="Commentaires"
+                    placeholder="Validations, points de vigilance, suites à donner"
+                    minRows={2}
+                    autosize
+                    size="sm"
+                    {...form.getInputProps('comments')}
+                />
+            </SectionCard>
+
+            <div className="flex justify-end gap-2">
+                <Button variant="default" size="sm" type="button" disabled={submitting} onClick={onCancel}>
+                    Annuler
+                </Button>
+                <Button
+                    type="submit"
+                    color="teal"
+                    size="sm"
+                    loading={submitting}
+                    leftSection={<IconDeviceFloppy size={15} />}
+                >
+                    Enregistrer l'évaluation
+                </Button>
             </div>
         </form>
     );
