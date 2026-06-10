@@ -132,6 +132,11 @@
     },
     "execute": {
         "breadcrumbCurrent": "Execution",
+        "backToRegistry": "Back to registry",
+        "progressHeading": "Progress",
+        "remaining": "Remaining",
+        "quickNav": "Quick access",
+        "photoAttach": "Attach a photo",
         "progress": "{{done}} / {{total}} checkpoints recorded",
         "criticalChip": "Critical",
         "headerSavedAt": "Local save {{time}}",

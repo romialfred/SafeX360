@@ -132,6 +132,11 @@
     },
     "execute": {
         "breadcrumbCurrent": "Realisation",
+        "backToRegistry": "Retour au registre",
+        "progressHeading": "Avancement",
+        "remaining": "Restants",
+        "quickNav": "Accès rapide",
+        "photoAttach": "Joindre une photo",
         "progress": "{{done}} / {{total}} points renseignes",
         "criticalChip": "Critique",
         "headerSavedAt": "Sauvegarde locale {{time}}",

@@ -1,27 +1,24 @@
 /**
- * InspectionExecutePage — Saisie terrain d'une inspection (mobile-first).
+ * InspectionExecutePage — Saisie terrain d'une inspection.
  *
- * Page tactile concue pour smartphone et tablette : cards verticales empilees,
- * boutons gros (min-h 56px), pas d'animation gratuite. Aucune section EPI.
+ * Mise en page pleine largeur (convention plateforme R1) en deux colonnes :
+ *   - Colonne principale : méthode d'exécution (humaine / assistée IA),
+ *     panneau IA, cards de points de contrôle avec sélecteurs segmentés.
+ *   - Rail droit collant (desktop) : avancement, accès rapide aux points,
+ *     synthèse du rapport et actions toujours visibles.
+ *   Sur mobile, le rail bascule en fin de colonne + barre d'actions fixe.
  *
- * Chaque point de controle s'affiche selon son {@code responseType} :
- *   - BOOLEAN        : 2 tuiles Conforme / Non conforme
- *   - VISUAL_GRADE   : 3 tuiles Bon / A surveiller / Mauvais
- *   - NUMERIC_RANGE  : input numerique + indicateur de plage + auto-couleur
- *   - PHOTO_REQUIRED : nom de la photo + futur upload (Phase ulterieure)
- *   - FREE_TEXT      : textarea
+ * Chaque point de contrôle s'affiche selon son {@code responseType} :
+ *   BOOLEAN, VISUAL_GRADE (segmentés icônes), NUMERIC_RANGE (saisie + plage),
+ *   PHOTO_REQUIRED, FREE_TEXT.
  *
- * La conformite est recalculee cote backend a chaque sauvegarde, donc on
- * envoie simplement {@code rawValue} et on n'essaie pas de la prejuger
- * lourdement cote front (mais on affiche un retour visuel apres save).
+ * La conformité est recalculée côté backend à chaque sauvegarde.
  *
  * Workflow :
- *   IN_PROGRESS / SCHEDULED : edition libre + sauvegarde brouillon + submit
- *   SUBMITTED  : edition autorisee jusqu'au retour de l'equipe (les saisies
- *                ne se perdent pas avant le verdict, mais la submit est
- *                bloquee tant qu'on n'a pas eu de rejet ou d'approbation)
- *   REJECTED   : banner "a corriger" + permission de re-soumettre
- *   APPROVED / ARCHIVED : lecture seule (banner + readonly)
+ *   SCHEDULED / IN_PROGRESS : édition + brouillon + soumission
+ *   SUBMITTED  : édition conservée jusqu'au verdict de l'équipe
+ *   REJECTED   : bannière « à corriger » + re-soumission possible
+ *   APPROVED / ARCHIVED : lecture seule
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -31,8 +28,10 @@ import {
     IconChevronRight,
     IconArrowLeft,
     IconAlertOctagon,
+    IconAlertTriangle,
     IconCheck,
     IconX,
+    IconEye,
     IconCamera,
     IconDeviceFloppy,
     IconSend,
@@ -40,6 +39,7 @@ import {
     IconClipboardList,
     IconSparkles,
     IconUser,
+    IconListCheck,
 } from '@tabler/icons-react';
 
 import {
@@ -63,6 +63,9 @@ type ExecutionMethod = 'HUMAN' | 'AI';
 interface LocalFinding extends FindingDTO {
     dirty?: boolean;
 }
+
+const isAnswered = (f: LocalFinding) =>
+    f.rawValue !== undefined && f.rawValue !== null && String(f.rawValue).trim() !== '';
 
 export default function InspectionExecutePage() {
     const { t, i18n } = useTranslation('inspection');
@@ -101,18 +104,26 @@ export default function InspectionExecutePage() {
     }, [detail]);
 
     const progress = useMemo(() => {
-        const done = findings.filter(
-            (f) => f.rawValue !== undefined && f.rawValue !== null && String(f.rawValue).trim() !== '',
-        ).length;
+        const done = findings.filter(isAnswered).length;
         return { done, total: findings.length };
+    }, [findings]);
+
+    const conformityStats = useMemo(() => {
+        const answered = findings.filter(isAnswered);
+        return {
+            conform: answered.filter((f) => f.conformity === 'CONFORM').length,
+            watch: answered.filter((f) => f.conformity === 'WATCH').length,
+            nonConform: answered.filter((f) => f.conformity === 'NON_CONFORM').length,
+            remaining: findings.length - answered.length,
+        };
     }, [findings]);
 
     const allRequiredFilled = useMemo(() => {
         return findings.every((f) => {
             if (f.responseType === 'PHOTO_REQUIRED' || f.responseType === 'FREE_TEXT') {
-                return true; // optionnel cote front, c'est le backend qui tranche
+                return true; // optionnel côté front, c'est le backend qui tranche
             }
-            return f.rawValue !== undefined && f.rawValue !== null && String(f.rawValue).trim() !== '';
+            return isAnswered(f);
         });
     }, [findings]);
 
@@ -228,18 +239,25 @@ export default function InspectionExecutePage() {
         }
     };
 
+    const scrollToCheckpoint = (checkpointId?: number) => {
+        if (checkpointId === undefined) return;
+        document
+            .getElementById(`checkpoint-${checkpointId}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     // ── Rendu ────────────────────────────────────────────────────────
     if (error && !detail) {
         return (
-            <div className="min-h-full bg-[#FAF8F3] px-4 py-6">
-                <div className="w-full max-w-5xl mx-auto">
+            <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
+                <div className="w-full">
                     <button
                         type="button"
                         onClick={() => navigate('/inspections')}
                         className="inline-flex items-center gap-1.5 px-3 py-2 mb-3 text-[12.5px] rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition"
                     >
                         <IconArrowLeft size={14} stroke={1.8} />
-                        {t('registry.breadcrumbCurrent')}
+                        {t('execute.backToRegistry')}
                     </button>
                     <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[12.5px]">
                         <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
@@ -257,115 +275,207 @@ export default function InspectionExecutePage() {
         );
     }
 
+    const progressPct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+
+    /** Carte synthèse — réutilisée dans le rail desktop et la colonne mobile. */
+    const summaryCard = (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+            <h3 className="text-[13px] font-semibold text-slate-800 mb-1">
+                {t('execute.summaryHeading')}
+            </h3>
+            <p className="text-[11.5px] text-slate-500 mb-2 leading-snug">
+                {t('execute.summaryHint')}
+            </p>
+            <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                disabled={isReadOnly}
+                placeholder={t('execute.summaryPlaceholder')}
+                rows={5}
+                className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 disabled:bg-slate-50 disabled:text-slate-500"
+            />
+        </div>
+    );
+
+    /** Boutons d'action — rail desktop. */
+    const actionButtons = !isReadOnly && (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 space-y-2">
+            <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !allRequiredFilled}
+                title={!allRequiredFilled ? (t('execute.footerSubmitDisabled') as string) : undefined}
+                className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-[13px] rounded-md bg-emerald-700 text-white hover:bg-emerald-800 transition font-medium shadow-sm disabled:opacity-50"
+                style={{ minHeight: 44 }}
+            >
+                <IconSend size={15} stroke={1.8} />
+                {t('execute.footerSubmit')}
+            </button>
+            <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving || !dirty}
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-[12.5px] rounded-md border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition disabled:opacity-50"
+                style={{ minHeight: 40 }}
+            >
+                <IconDeviceFloppy size={14} stroke={1.8} />
+                {t('execute.footerSavedDraft')}
+            </button>
+            <div className="text-[11px] text-slate-500 flex items-center justify-center gap-1.5 pt-1">
+                <IconClock size={11} stroke={1.8} />
+                {savedAt
+                    ? t('execute.headerSavedAt', {
+                        time: savedAt.toLocaleTimeString(
+                            i18n.language === 'fr' ? 'fr-FR' : 'en-GB',
+                            { hour: '2-digit', minute: '2-digit' },
+                        ),
+                    })
+                    : '—'}
+                {dirty && <span className="text-amber-600 font-semibold">·</span>}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="min-h-full bg-[#FAF8F3] pb-28">
-            {/* Header sticky */}
-            <div className="sticky top-0 z-20 bg-[#FAF8F3]/95 backdrop-blur border-b border-slate-200 px-4 sm:px-5 py-3">
-                <div className="w-full max-w-5xl mx-auto">
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
-                        <span className="uppercase tracking-[0.16em] font-medium">
-                            {t('registry.breadcrumbRoot')}
-                        </span>
-                        <IconChevronRight size={10} className="text-slate-400" />
-                        <span className="uppercase tracking-[0.16em] text-slate-700 font-medium truncate">
-                            {t('execute.breadcrumbCurrent')}
-                        </span>
+        <div className="min-h-full bg-[#FAF8F3] pb-24 xl:pb-8">
+            {/* ── En-tête de page ─────────────────────────────────────── */}
+            <div className="bg-white border-b border-slate-200 px-4 sm:px-5 lg:px-6 py-4">
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/inspections')}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-300 text-slate-600 bg-white hover:bg-slate-50 transition flex-shrink-0"
+                        aria-label={t('execute.backToRegistry') as string}
+                        title={t('execute.backToRegistry') as string}
+                    >
+                        <IconArrowLeft size={14} stroke={1.8} />
+                    </button>
+                    <span className="uppercase tracking-[0.16em] font-medium">
+                        {t('registry.breadcrumbRoot')}
+                    </span>
+                    <IconChevronRight size={10} className="text-slate-400" />
+                    <span className="uppercase tracking-[0.16em] text-slate-700 font-medium truncate">
+                        {t('execute.breadcrumbCurrent')}
+                    </span>
+                </div>
+                <div className="flex items-end justify-between gap-4 flex-wrap">
+                    <div className="min-w-0">
+                        <h1
+                            className="text-slate-900 leading-tight"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 600,
+                                fontSize: 'clamp(18px, 1.8vw, 22px)',
+                                letterSpacing: '-0.015em',
+                            }}
+                        >
+                            {detail.templateName || `#${detail.id}`}
+                        </h1>
+                        <p className="text-[12.5px] text-slate-500 mt-0.5">
+                            {detail.targetLabel}
+                            {detail.siteName && <> · {detail.siteName}</>}
+                        </p>
                     </div>
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                            <h1
-                                className="text-slate-900 leading-tight truncate"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(17px, 1.6vw, 20px)',
-                                    letterSpacing: '-0.015em',
-                                }}
-                            >
-                                {detail.templateName || `#${detail.id}`}
-                            </h1>
-                            <p className="text-[12px] text-slate-500 truncate">
-                                {detail.targetLabel}
-                            </p>
-                            <p className="text-[11px] text-slate-500 mt-1">
-                                {t('execute.progress', {
-                                    done: progress.done,
-                                    total: progress.total,
-                                })}
-                            </p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <div className="min-w-[180px]">
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                                <span>
+                                    {t('execute.progress', { done: progress.done, total: progress.total })}
+                                </span>
+                                <span className="font-semibold text-slate-700 tabular-nums">{progressPct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                <div
+                                    className="h-full rounded-full bg-emerald-600 transition-all"
+                                    style={{ width: `${progressPct}%` }}
+                                />
+                            </div>
                         </div>
                         <InspectionStatusBadge status={detail.status} size="md" />
                     </div>
                 </div>
             </div>
 
-            {/* Bannieres etat */}
+            {/* ── Bannières d'état ────────────────────────────────────── */}
             {(detail.status === 'REJECTED' || isReadOnly) && (
-                <div className="px-4 sm:px-5 pt-3">
-                    <div className="w-full max-w-5xl mx-auto">
-                        {detail.status === 'REJECTED' && (
-                            <div className="px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[12.5px] flex items-start gap-2">
-                                <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                                <span>{t('execute.rejectedBanner')}</span>
-                            </div>
-                        )}
-                        {isReadOnly && (
-                            <div className="px-3 py-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-[12.5px] flex items-start gap-2">
-                                <IconClipboardList size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                                <span>{t('execute.readonlyBanner')}</span>
-                            </div>
-                        )}
-                    </div>
+                <div className="px-4 sm:px-5 lg:px-6 pt-3">
+                    {detail.status === 'REJECTED' && (
+                        <div className="px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[12.5px] flex items-start gap-2">
+                            <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                            <span>{t('execute.rejectedBanner')}</span>
+                        </div>
+                    )}
+                    {isReadOnly && (
+                        <div className="px-3 py-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-[12.5px] flex items-start gap-2">
+                            <IconClipboardList size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                            <span>{t('execute.readonlyBanner')}</span>
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* Liste des findings */}
-            <div className="px-4 sm:px-5 py-4">
-                <div className="w-full max-w-5xl mx-auto space-y-3">
+            {/* ── Corps : deux colonnes ───────────────────────────────── */}
+            <div className="px-4 sm:px-5 lg:px-6 py-4 flex items-start gap-4">
+                {/* Colonne principale */}
+                <div className="flex-1 min-w-0 space-y-3">
                     {/* LOT 50 — Choix de la méthode d'exécution */}
                     {!isReadOnly && (
                         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
-                            <h3 className="text-[13.5px] font-semibold text-slate-800 mb-1">
-                                {t('ai.methodHeading')}
-                            </h3>
-                            <p className="text-[11.5px] text-slate-500 mb-3">
-                                {t('ai.methodHint')}
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center justify-between gap-3 flex-wrap mb-2.5">
+                                <div>
+                                    <h3 className="text-[13px] font-semibold text-slate-800">
+                                        {t('ai.methodHeading')}
+                                    </h3>
+                                    <p className="text-[11.5px] text-slate-500 leading-snug">
+                                        {t('ai.methodHint')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="grid sm:grid-cols-2 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setMethod('HUMAN')}
-                                    className={`inline-flex flex-col items-start gap-1 rounded-lg border-2 px-3 py-3 text-left transition ${
+                                    className={`inline-flex items-center gap-3 rounded-lg border-2 px-3 py-2.5 text-left transition ${
                                         method === 'HUMAN'
                                             ? 'bg-slate-50 border-slate-700'
                                             : 'bg-white border-slate-200 hover:border-slate-300'
                                     }`}
-                                    style={{ minHeight: 64 }}
                                 >
-                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-800">
-                                        <IconUser size={15} stroke={1.8} />
-                                        {t('ai.methodHuman')}
+                                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-md flex-shrink-0 ${
+                                        method === 'HUMAN' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                        <IconUser size={16} stroke={1.8} />
                                     </span>
-                                    <span className="text-[11.5px] text-slate-500 leading-snug">
-                                        {t('ai.methodHumanDesc')}
+                                    <span className="min-w-0">
+                                        <span className="block text-[13px] font-semibold text-slate-800">
+                                            {t('ai.methodHuman')}
+                                        </span>
+                                        <span className="block text-[11.5px] text-slate-500 leading-snug truncate">
+                                            {t('ai.methodHumanDesc')}
+                                        </span>
                                     </span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setMethod('AI')}
-                                    className={`inline-flex flex-col items-start gap-1 rounded-lg border-2 px-3 py-3 text-left transition ${
+                                    className={`inline-flex items-center gap-3 rounded-lg border-2 px-3 py-2.5 text-left transition ${
                                         method === 'AI'
                                             ? 'bg-indigo-50/60 border-indigo-600'
                                             : 'bg-white border-slate-200 hover:border-indigo-300'
                                     }`}
-                                    style={{ minHeight: 64 }}
                                 >
-                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-indigo-800">
-                                        <IconSparkles size={15} stroke={1.8} />
-                                        {t('ai.methodAi')}
+                                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-md flex-shrink-0 ${
+                                        method === 'AI' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-500'
+                                    }`}>
+                                        <IconSparkles size={16} stroke={1.8} />
                                     </span>
-                                    <span className="text-[11.5px] text-slate-500 leading-snug">
-                                        {t('ai.methodAiDesc')}
+                                    <span className="min-w-0">
+                                        <span className="block text-[13px] font-semibold text-indigo-800">
+                                            {t('ai.methodAi')}
+                                        </span>
+                                        <span className="block text-[11.5px] text-slate-500 leading-snug truncate">
+                                            {t('ai.methodAiDesc')}
+                                        </span>
                                     </span>
                                 </button>
                             </div>
@@ -383,6 +493,7 @@ export default function InspectionExecutePage() {
                         />
                     )}
 
+                    {/* Points de contrôle */}
                     {findings.map((f, idx) => (
                         <CheckpointCard
                             key={f.id ?? f.checkpointId ?? idx}
@@ -396,30 +507,74 @@ export default function InspectionExecutePage() {
                         />
                     ))}
 
-                    {/* Synthese */}
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
-                        <h3 className="text-[13.5px] font-semibold text-slate-800 mb-1">
-                            {t('execute.summaryHeading')}
-                        </h3>
-                        <p className="text-[11.5px] text-slate-500 mb-2">
-                            {t('execute.summaryHint')}
-                        </p>
-                        <textarea
-                            value={summary}
-                            onChange={(e) => setSummary(e.target.value)}
-                            disabled={isReadOnly}
-                            placeholder={t('execute.summaryPlaceholder')}
-                            rows={4}
-                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 disabled:bg-slate-50 disabled:text-slate-500"
-                        />
-                    </div>
+                    {/* Synthèse — visible ici uniquement sous le breakpoint xl */}
+                    <div className="xl:hidden">{summaryCard}</div>
                 </div>
+
+                {/* Rail droit collant (desktop) */}
+                <aside className="hidden xl:flex w-80 flex-shrink-0 flex-col gap-3 sticky top-[140px]">
+                    {/* Avancement */}
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                        <h3 className="text-[13px] font-semibold text-slate-800 mb-2.5">
+                            {t('execute.progressHeading')}
+                        </h3>
+                        <div className="flex items-center justify-between text-[12px] text-slate-600 mb-1.5">
+                            <span>{t('execute.progress', { done: progress.done, total: progress.total })}</span>
+                            <span className="font-semibold tabular-nums">{progressPct}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-200 overflow-hidden mb-3">
+                            <div
+                                className="h-full rounded-full bg-emerald-600 transition-all"
+                                style={{ width: `${progressPct}%` }}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 text-[11.5px]">
+                            <StatChip color="emerald" label={t('conformity.CONFORM')} value={conformityStats.conform} />
+                            <StatChip color="amber" label={t('conformity.WATCH')} value={conformityStats.watch} />
+                            <StatChip color="rose" label={t('conformity.NON_CONFORM')} value={conformityStats.nonConform} />
+                            <StatChip color="slate" label={t('execute.remaining')} value={conformityStats.remaining} />
+                        </div>
+
+                        {/* Accès rapide */}
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">
+                                <IconListCheck size={12} stroke={1.8} />
+                                {t('execute.quickNav')}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {findings.map((f, idx) => {
+                                    const answered = isAnswered(f);
+                                    return (
+                                        <button
+                                            key={f.checkpointId ?? idx}
+                                            type="button"
+                                            onClick={() => scrollToCheckpoint(f.checkpointId)}
+                                            title={f.checkpointLabel}
+                                            className={`w-8 h-8 rounded-md text-[11.5px] font-semibold tabular-nums border transition ${
+                                                answered
+                                                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                                                    : f.critical
+                                                    ? 'bg-white border-rose-300 text-rose-700 hover:bg-rose-50'
+                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {idx + 1}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {summaryCard}
+                    {actionButtons}
+                </aside>
             </div>
 
-            {/* Footer fixe */}
+            {/* ── Barre d'actions fixe (mobile / tablette uniquement) ── */}
             {!isReadOnly && (
-                <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-200 px-4 sm:px-5 py-3">
-                    <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 flex-wrap">
+                <div className="xl:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-200 px-4 sm:px-5 py-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                             <IconClock size={12} stroke={1.8} />
                             {savedAt
@@ -430,9 +585,7 @@ export default function InspectionExecutePage() {
                                     ),
                                 })
                                 : '—'}
-                            {dirty && (
-                                <span className="text-amber-600 font-medium">·</span>
-                            )}
+                            {dirty && <span className="text-amber-600 font-medium">·</span>}
                         </div>
                         <div className="flex items-center gap-2">
                             <button
@@ -469,7 +622,34 @@ export default function InspectionExecutePage() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- *  Card d'un point de controle
+ *  Chip de statistique (rail Avancement)
+ * ────────────────────────────────────────────────────────────────────────*/
+
+function StatChip({
+    color,
+    label,
+    value,
+}: {
+    color: 'emerald' | 'amber' | 'rose' | 'slate';
+    label: string;
+    value: number;
+}) {
+    const palette = {
+        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        amber: 'bg-amber-50 border-amber-200 text-amber-800',
+        rose: 'bg-rose-50 border-rose-200 text-rose-800',
+        slate: 'bg-slate-50 border-slate-200 text-slate-600',
+    }[color];
+    return (
+        <div className={`flex items-center justify-between px-2 py-1.5 rounded-md border ${palette}`}>
+            <span className="truncate">{label}</span>
+            <span className="font-semibold tabular-nums ml-1.5">{value}</span>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ *  Card d'un point de contrôle
  * ────────────────────────────────────────────────────────────────────────*/
 
 interface CheckpointCardProps {
@@ -482,13 +662,23 @@ interface CheckpointCardProps {
 function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardProps) {
     const { t } = useTranslation('inspection');
     const rt: CheckpointResponseType = (finding.responseType as CheckpointResponseType) ?? 'FREE_TEXT';
+    const answered = isAnswered(finding);
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
+        <div
+            id={finding.checkpointId !== undefined ? `checkpoint-${finding.checkpointId}` : undefined}
+            className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden scroll-mt-36"
+        >
+            <div className="px-4 py-3 border-b border-slate-100">
                 <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[12.5px] font-semibold flex-shrink-0">
-                        {index}
+                    <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[12.5px] font-semibold flex-shrink-0 mt-0.5 ${
+                            answered
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-100 text-slate-600'
+                        }`}
+                    >
+                        {answered ? <IconCheck size={14} stroke={2.6} /> : index}
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -505,7 +695,7 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
                             )}
                         </div>
                         {finding.helpText && (
-                            <p className="text-[12px] text-slate-500 mt-1 leading-snug">
+                            <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
                                 {finding.helpText}
                             </p>
                         )}
@@ -513,20 +703,54 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
                 </div>
             </div>
 
-            <div className="p-4 space-y-3">
-                {/* Editeur principal selon le type */}
+            <div className="px-4 py-3.5 space-y-3">
+                {/* Éditeur principal selon le type */}
                 {rt === 'BOOLEAN' && (
-                    <BooleanInput
+                    <SegmentedChoice
                         value={finding.rawValue}
                         disabled={disabled}
                         onChange={(v) => onPatch({ rawValue: v })}
+                        options={[
+                            {
+                                value: 'true',
+                                label: t('execute.booleanYes'),
+                                icon: <IconCheck size={15} stroke={2.2} />,
+                                activeClasses: 'bg-emerald-600 border-emerald-600 text-white',
+                            },
+                            {
+                                value: 'false',
+                                label: t('execute.booleanNo'),
+                                icon: <IconX size={15} stroke={2.2} />,
+                                activeClasses: 'bg-rose-600 border-rose-600 text-white',
+                            },
+                        ]}
                     />
                 )}
                 {rt === 'VISUAL_GRADE' && (
-                    <VisualGradeInput
+                    <SegmentedChoice
                         value={finding.rawValue}
                         disabled={disabled}
                         onChange={(v) => onPatch({ rawValue: v })}
+                        options={[
+                            {
+                                value: 'GOOD',
+                                label: t('execute.visualGood'),
+                                icon: <IconCheck size={15} stroke={2.2} />,
+                                activeClasses: 'bg-emerald-600 border-emerald-600 text-white',
+                            },
+                            {
+                                value: 'WATCH',
+                                label: t('execute.visualWatch'),
+                                icon: <IconEye size={15} stroke={2} />,
+                                activeClasses: 'bg-amber-500 border-amber-500 text-white',
+                            },
+                            {
+                                value: 'POOR',
+                                label: t('execute.visualPoor'),
+                                icon: <IconAlertTriangle size={15} stroke={2} />,
+                                activeClasses: 'bg-rose-600 border-rose-600 text-white',
+                            },
+                        ]}
                     />
                 )}
                 {rt === 'NUMERIC_RANGE' && (
@@ -555,7 +779,7 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
                     />
                 )}
 
-                {/* Note libre commune a tous les types */}
+                {/* Note libre commune à tous les types */}
                 <div>
                     <label className="block text-[11.5px] text-slate-500 mb-1">
                         {t('execute.noteLabel')}
@@ -575,79 +799,57 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- *  Editeurs par type
+ *  Sélecteur segmenté (BOOLEAN / VISUAL_GRADE)
  * ────────────────────────────────────────────────────────────────────────*/
 
-function BooleanInput({
+interface SegmentedOption {
+    value: string;
+    label: string;
+    icon: React.ReactNode;
+    activeClasses: string;
+}
+
+function SegmentedChoice({
     value,
+    options,
     disabled,
     onChange,
 }: {
     value?: string;
+    options: SegmentedOption[];
     disabled: boolean;
     onChange: (v: string) => void;
 }) {
-    const { t } = useTranslation('inspection');
-    const isTrue = value === 'true';
-    const isFalse = value === 'false';
     return (
-        <div className="grid grid-cols-2 gap-2">
-            <TouchTile
-                active={isTrue}
-                activeClasses="bg-emerald-50 border-emerald-600 text-emerald-800"
-                disabled={disabled}
-                onClick={() => onChange('true')}
-                icon={<IconCheck size={20} stroke={2.4} />}
-                label={t('execute.booleanYes')}
-            />
-            <TouchTile
-                active={isFalse}
-                activeClasses="bg-rose-50 border-rose-600 text-rose-800"
-                disabled={disabled}
-                onClick={() => onChange('false')}
-                icon={<IconX size={20} stroke={2.4} />}
-                label={t('execute.booleanNo')}
-            />
+        <div className="flex rounded-lg border border-slate-200 overflow-hidden divide-x divide-slate-200 max-w-xl">
+            {options.map((opt) => {
+                const active = value === opt.value;
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onChange(opt.value)}
+                        className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 text-[13px] font-medium transition border-y-0 ${
+                            active
+                                ? opt.activeClasses
+                                : 'bg-white text-slate-600 hover:bg-slate-50'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        style={{ minHeight: 44 }}
+                        aria-pressed={active}
+                    >
+                        {opt.icon}
+                        <span>{opt.label}</span>
+                    </button>
+                );
+            })}
         </div>
     );
 }
 
-function VisualGradeInput({
-    value,
-    disabled,
-    onChange,
-}: {
-    value?: string;
-    disabled: boolean;
-    onChange: (v: string) => void;
-}) {
-    const { t } = useTranslation('inspection');
-    return (
-        <div className="grid grid-cols-3 gap-2">
-            <TouchTile
-                active={value === 'GOOD'}
-                activeClasses="bg-emerald-50 border-emerald-600 text-emerald-800"
-                disabled={disabled}
-                onClick={() => onChange('GOOD')}
-                label={t('execute.visualGood')}
-            />
-            <TouchTile
-                active={value === 'WATCH'}
-                activeClasses="bg-amber-50 border-amber-600 text-amber-800"
-                disabled={disabled}
-                onClick={() => onChange('WATCH')}
-                label={t('execute.visualWatch')}
-            />
-            <TouchTile
-                active={value === 'POOR'}
-                activeClasses="bg-rose-50 border-rose-600 text-rose-800"
-                disabled={disabled}
-                onClick={() => onChange('POOR')}
-                label={t('execute.visualPoor')}
-            />
-        </div>
-    );
-}
+/* ─────────────────────────────────────────────────────────────────────────
+ *  Éditeurs par type
+ * ────────────────────────────────────────────────────────────────────────*/
 
 function NumericRangeInput({
     value,
@@ -693,22 +895,31 @@ function NumericRangeInput({
                 {t('execute.rangeLabel')}
                 {unit && <span className="ml-1 text-slate-400">({unit})</span>}
             </label>
-            <input
-                type="number"
-                inputMode="decimal"
-                value={value ?? ''}
-                onChange={(e) => onChange(e.target.value)}
-                disabled={disabled}
-                className={`w-full px-3 text-[16px] bg-white border-2 rounded-md focus:outline-none transition ${borderClass} disabled:bg-slate-50 disabled:text-slate-500`}
-                style={{ minHeight: 52 }}
-            />
-            <p className="text-[11px] text-slate-500 mt-1">
-                {t('execute.rangeHint', {
-                    min: min ?? '—',
-                    max: max ?? '—',
-                    unit: unit ?? '',
-                })}
-            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative">
+                    <input
+                        type="number"
+                        inputMode="decimal"
+                        value={value ?? ''}
+                        onChange={(e) => onChange(e.target.value)}
+                        disabled={disabled}
+                        className={`w-44 pl-3 ${unit ? 'pr-12' : 'pr-3'} text-[15px] bg-white border-2 rounded-md focus:outline-none transition tabular-nums ${borderClass} disabled:bg-slate-50 disabled:text-slate-500`}
+                        style={{ minHeight: 44 }}
+                    />
+                    {unit && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-slate-400 pointer-events-none">
+                            {unit}
+                        </span>
+                    )}
+                </div>
+                <p className="text-[11.5px] text-slate-500">
+                    {t('execute.rangeHint', {
+                        min: min ?? '—',
+                        max: max ?? '—',
+                        unit: unit ?? '',
+                    })}
+                </p>
+            </div>
             {status === 'bad' && (
                 <p className="text-[11.5px] text-rose-700 mt-1 font-medium">
                     {t('execute.rangeOutOfRange')}
@@ -736,7 +947,7 @@ function PhotoInput({
 }) {
     const { t } = useTranslation('inspection');
     return (
-        <div className="space-y-2">
+        <div className="space-y-1.5 max-w-xl">
             <label className="block text-[11.5px] text-slate-500">
                 {t('execute.photoLabel')}
             </label>
@@ -744,7 +955,7 @@ function PhotoInput({
                 type="button"
                 disabled={disabled}
                 onClick={() => {
-                    // Ouvre le selecteur natif (camera arriere sur mobile)
+                    // Ouvre le sélecteur natif (caméra arrière sur mobile)
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = 'image/*';
@@ -752,18 +963,16 @@ function PhotoInput({
                     input.onchange = () => {
                         const f = input.files?.[0];
                         if (f) {
-                            onChange(f.name, f.name); // upload reel en Phase 5
+                            onChange(f.name, f.name); // upload réel en Phase 5
                         }
                     };
                     input.click();
                 }}
                 className="w-full inline-flex items-center justify-center gap-2 px-3 text-[13px] rounded-md border-2 border-dashed border-slate-300 text-slate-600 bg-slate-50 hover:bg-slate-100 transition disabled:opacity-50"
-                style={{ minHeight: 56 }}
+                style={{ minHeight: 48 }}
             >
-                <IconCamera size={18} stroke={1.8} />
-                {value || rawValue
-                    ? value || rawValue
-                    : 'Joindre une photo'}
+                <IconCamera size={17} stroke={1.8} />
+                {value || rawValue ? value || rawValue : t('execute.photoAttach')}
             </button>
             <p className="text-[11px] text-slate-500">{t('execute.photoHint')}</p>
         </div>
@@ -794,39 +1003,6 @@ function FreeTextInput({
                 className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 disabled:bg-slate-50 disabled:text-slate-500"
             />
         </div>
-    );
-}
-
-function TouchTile({
-    active,
-    activeClasses,
-    disabled,
-    onClick,
-    icon,
-    label,
-}: {
-    active: boolean;
-    activeClasses: string;
-    disabled: boolean;
-    onClick: () => void;
-    icon?: React.ReactNode;
-    label: string;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onClick}
-            className={`inline-flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 text-[13px] font-medium transition px-3 py-3 ${
-                active
-                    ? activeClasses
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-            style={{ minHeight: 56 }}
-        >
-            {icon}
-            <span>{label}</span>
-        </button>
     );
 }
 
