@@ -1,124 +1,121 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Box, Title, Grid, Card, Text, Group, Button } from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@mantine/core';
 import { BarChart } from '@mantine/charts';
 import {
-    IconShield,
-    IconPackage,
-    IconAlertTriangle,
-    IconPlus,
     IconClipboardList,
-    IconClock,
-    IconShieldCheck,
     IconDownload,
+    IconHourglassHigh,
+    IconPackage,
+    IconPlus,
+    IconShieldCheck,
+    IconTriangleSquareCircle,
 } from '@tabler/icons-react';
-import { employeesData, eppAssignments, eppRequests } from '../../Data/dummyData/eppData';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../UtilityComp/PageHeader';
+import KpiTile from '../UtilityComp/KpiTile';
 import { getAllPPE } from '../../services/PPEService';
 import { getAllAssignmentCounts } from '../../services/PpeEmpService';
+import { getAllPpeRequests } from '../../services/PpeRequestService';
 import { getEmployeesWithPosition } from '../../services/HrmsService';
 import { mapIdToName } from '../../utility/OtherUtilities';
+import { successNotification } from '../../utility/NotificationUtility';
+import { ppeCategoryLabel, stockBucket, STOCK_STATUS_CONFIG, ppeStatusConfig } from './ppeLabels';
 
+/**
+ * Vue d'ensemble du parc d'EPI : stocks par catégorie, dotations par
+ * département, alertes de seuil et demandes en attente.
+ * ISO 45001 §8.1.2 — Dotation et suivi des équipements de protection.
+ */
 const PPEManagementDashboard = () => {
-
     const navigate = useNavigate();
     const [ppe, setPpe] = useState<any[]>([]);
     const [ppeEmp, setPpeEmp] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
-
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getAllPPE().then((res) => {
-            setPpe(res);
-        }).catch((err) => {
-            console.error(err);
-        });
+        Promise.allSettled([
+            getAllPPE().then(setPpe),
+            getAllAssignmentCounts().then(setPpeEmp),
+            getAllPpeRequests().then(setRequests),
+            getEmployeesWithPosition().then((data) => setEmpMap(mapIdToName(data))),
+        ]).finally(() => setLoading(false));
+    }, []);
 
-        getAllAssignmentCounts().then((res) => {
-            setPpeEmp(res);
-        }).catch((err) => {
-            console.error(err);
-        });
-        getEmployeesWithPosition().then((data) => {
-            setEmpMap(mapIdToName(data));
-        }).catch((err) => {
-            console.error(err);
-        });
-    }, [])
-
-
-    // Calculate dashboard metrics
-    const dashboardMetrics = useMemo(() => {
-        const eppByCategory = ppe.reduce((acc, epp) => {
-            acc[epp.category] = (acc[epp.category] || 0) + epp.stock;
+    const metrics = useMemo(() => {
+        const byCategory = ppe.reduce((acc, item) => {
+            acc[item.category] = (acc[item.category] || 0) + (item.stock ?? 0);
             return acc;
         }, {} as Record<string, number>);
 
-        const assignmentsByDept = eppAssignments
-            .filter(assignment => assignment.status === 'Active')
-            .reduce((acc, assignment) => {
-                const employee = employeesData.find(emp => emp.id === assignment.employeeId);
-                if (employee) {
-                    acc[employee.department] = (acc[employee.department] || 0) + 1;
+        return {
+            totalStock: ppe.reduce((sum, item) => sum + (item.stock ?? 0), 0),
+            availableStock: ppe
+                .filter((item) => String(item.status).toUpperCase() === 'ACTIVE')
+                .reduce((sum, item) => sum + (item.stock ?? 0), 0),
+            lowStockCount: ppe.filter((item) => stockBucket(item.stock, item.minStock) !== 'AVAILABLE').length,
+            pendingRequests: requests.filter((req) => String(req.status).toUpperCase() === 'PENDING').length,
+            byCategory,
+        };
+    }, [ppe, requests]);
+
+    const categoryChartData = useMemo(
+        () =>
+            Object.keys(metrics.byCategory).map((cat, idx) => ({
+                category: ppeCategoryLabel(cat),
+                quantity: metrics.byCategory[cat],
+                color: ['#0F766E', '#0284C7', '#D97706', '#7C3AED', '#059669', '#E11D48', '#475569', '#4F46E5'][idx % 8],
+            })),
+        [metrics.byCategory]
+    );
+
+    const departmentChartData = useMemo(
+        () =>
+            ppeEmp.reduce((acc: any[], emp: any) => {
+                const department = empMap[emp?.empId]?.department || 'Non renseigné';
+                const assignments = emp.count || 0;
+                const existing = acc.find((item) => item.department === department);
+                if (existing) {
+                    existing.assignments += assignments;
+                } else {
+                    acc.push({
+                        department,
+                        assignments,
+                        color: ['#0F766E', '#0284C7', '#D97706', '#7C3AED', '#059669', '#E11D48', '#475569'][acc.length % 7],
+                    });
                 }
                 return acc;
-            }, {} as Record<string, number>);
+            }, []),
+        [ppeEmp, empMap]
+    );
 
-        const lowStockItems = ppe.filter(epp => epp.stock <= epp.minStock);
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-        const expiringItems = ppe.filter(epp => new Date(epp.expiryDate) <= sixMonthsFromNow);
-        const availableEPP = ppe.filter(epp => epp.status === 'ACTIVE').reduce((sum, epp) => sum + epp.stock, 0);
-        const pendingRequests = eppRequests.filter(req => req.status === 'Pending').length;
-
-        return {
-            totalEPP: ppe.reduce((sum, epp) => sum + epp.stock, 0),
-            availableEPP,
-            totalCategories: Object.keys(eppByCategory).length,
-            activeAssignments: eppAssignments.filter(a => a.status === 'Active').length,
-            lowStockCount: lowStockItems.length,
-            expiringCount: expiringItems.length,
-            pendingRequests,
-            eppByCategory,
-            assignmentsByDept,
-            lowStockItems,
-            expiringItems
-        };
-    }, [ppe]);
-
-    const categoryChartData = Object.keys(dashboardMetrics.eppByCategory).map((cat, idx) => ({
-        category: cat,
-        quantity: dashboardMetrics.eppByCategory[cat],
-        color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#3B82F6'][idx % 8]
-    }));
-    const departmentChartData = ppeEmp.reduce((acc, emp, _idx) => {
-        const department = empMap[emp?.empId]?.department || "Unknown";
-        const assignments = emp.count || 0;
-
-        // Check if department already exists in acc
-        const existing = acc.find((item: any) => item.department === department);
-
-        if (existing) {
-            // Add to existing count
-            existing.assignments += assignments;
-        } else {
-            // Add new department
-            acc.push({
-                department,
-                assignments,
-                color: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#06B6D4', '#EF4444', '#A16207'][acc.length % 7]
-            });
-        }
-
-        return acc;
-    }, []);
-
-
-
-
+    const exportCsv = () => {
+        const headers = ['EPI', 'Catégorie', 'Stock actuel', 'Stock minimum', 'Statut de stock', 'Statut catalogue'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = ppe.map((item) =>
+            [
+                item.name,
+                ppeCategoryLabel(item.category),
+                item.stock ?? 0,
+                item.minStock ?? 0,
+                STOCK_STATUS_CONFIG[stockBucket(item.stock, item.minStock)].label,
+                ppeStatusConfig(item.status).label,
+            ].map(escape).join(';')
+        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `stock_epi_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${ppe.length} référence${ppe.length > 1 ? 's' : ''} EPI exportée${ppe.length > 1 ? 's' : ''}`);
+    };
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -126,94 +123,129 @@ const PPEManagementDashboard = () => {
                     { label: "Vue d'ensemble" },
                 ]}
                 icon={<IconShieldCheck size={22} stroke={2} />}
-                iconColor="yellow"
-                title="Vue d'ensemble — Équipements de protection individuelle"
-                subtitle="ISO 45001 §8.1.2 — Dotation, suivi de cycle de vie, conformité et disponibilité des EPI"
+                iconColor="amber"
+                title="Équipements de protection individuelle"
+                subtitle="Stocks, dotations et demandes d'EPI du site — ISO 45001 §8.1.2"
                 actions={
                     <>
-                        <Button variant="default" size="sm" leftSection={<IconDownload size={14} />}>
-                            Exporter
+                        <Button
+                            variant="default"
+                            size="sm"
+                            leftSection={<IconDownload size={14} />}
+                            onClick={exportCsv}
+                            disabled={!ppe.length}
+                        >
+                            Exporter CSV
                         </Button>
-                        <Button size="sm" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-ppe')} color="blue">
-                            Nouveau EPI
+                        <Button size="sm" variant="default" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-ppe')}>
+                            Nouvel EPI
                         </Button>
-                        <Button size="sm" leftSection={<IconPackage size={14} />} onClick={() => navigate('stock-form')} color="teal">
-                            Entrée stock
+                        <Button size="sm" color="teal" leftSection={<IconPackage size={14} />} onClick={() => navigate('stock-form')}>
+                            Entrée de stock
                         </Button>
-                        <Button size="sm" leftSection={<IconClipboardList size={14} />} onClick={() => navigate('request-table')} color="amber">
+                        <Button size="sm" variant="default" leftSection={<IconClipboardList size={14} />} onClick={() => navigate('request-table')}>
                             Demandes
                         </Button>
                     </>
                 }
             />
 
-            {/* KPIs raffinés */}
+            {/* Indicateurs clés */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiTile color="blue" label="Total EPI en stock" value={dashboardMetrics.totalEPP} icon={IconPackage} />
-                <KpiTile color="green" label="EPI disponibles" value={dashboardMetrics.availableEPP} icon={IconShield} />
-                <KpiTile color="orange" label="Stock faible" value={dashboardMetrics.lowStockCount} icon={IconAlertTriangle} />
-                <KpiTile color="amber" label="Demandes en attente" value={dashboardMetrics.pendingRequests} icon={IconClock} />
+                <KpiTile
+                    label="Stock total"
+                    value={loading ? '…' : metrics.totalStock}
+                    unit="unités"
+                    tone="teal"
+                    icon={<IconPackage size={14} stroke={1.8} />}
+                    referenceValue={`${ppe.length} référence${ppe.length > 1 ? 's' : ''} au catalogue`}
+                />
+                <KpiTile
+                    label="EPI disponibles"
+                    value={loading ? '…' : metrics.availableStock}
+                    unit="unités"
+                    tone="green"
+                    icon={<IconShieldCheck size={14} stroke={1.8} />}
+                    referenceValue="Références actives uniquement"
+                />
+                <KpiTile
+                    label="Sous le seuil"
+                    value={loading ? '…' : metrics.lowStockCount}
+                    tone="amber"
+                    icon={<IconTriangleSquareCircle size={14} stroke={1.8} />}
+                    referenceValue="Réapprovisionnement à planifier"
+                />
+                <KpiTile
+                    label="Demandes en attente"
+                    value={loading ? '…' : metrics.pendingRequests}
+                    tone="violet"
+                    icon={<IconHourglassHigh size={14} stroke={1.8} />}
+                    referenceValue="File de validation EPI"
+                />
             </div>
 
-            <Grid mb="xl">
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Card shadow="sm" padding="md" radius="md" withBorder>
-                        <Title order={5} mb="sm" className="text-slate-800">EPI par catégorie</Title>
-                        <Box h={330} style={{ position: 'relative' }}>
+            {/* Répartitions */}
+            {loading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3" aria-busy="true">
+                    {[0, 1].map((i) => (
+                        <div key={i} className="bg-white rounded-xl border border-slate-200 p-4">
+                            <div className="h-4 w-48 rounded bg-slate-100 animate-pulse mb-4" />
+                            <div className="h-64 rounded-lg bg-slate-100 animate-pulse" />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="bg-white rounded-xl border border-slate-200 p-4">
+                        <h2
+                            className="text-slate-800 mb-3"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
+                        >
+                            Stock par catégorie d'EPI
+                        </h2>
+                        {categoryChartData.length ? (
                             <BarChart
-                                gridAxis='none'
-                                h={300}
+                                gridAxis="none"
+                                h={280}
                                 maxBarWidth={40}
                                 data={categoryChartData}
                                 dataKey="category"
-                                series={[{ name: 'quantity', color: 'color', label: 'Quantité' }]}
+                                series={[{ name: 'quantity', color: 'color', label: 'Quantité en stock' }]}
                                 withLegend={false}
-                                withTooltip={false}
+                                withTooltip
                             />
-                        </Box>
-                    </Card>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Card shadow="sm" padding="md" radius="md" withBorder>
-                        <Title order={5} mb="sm" className="text-slate-800">Affectations par département</Title>
-                        <Box h={330} style={{ position: 'relative' }}>
+                        ) : (
+                            <p className="text-[12.5px] text-slate-500 py-10 text-center">
+                                Aucun EPI au catalogue pour le moment.
+                            </p>
+                        )}
+                    </div>
+                    <div className="bg-white rounded-xl border border-slate-200 p-4">
+                        <h2
+                            className="text-slate-800 mb-3"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
+                        >
+                            Dotations par département
+                        </h2>
+                        {departmentChartData.length ? (
                             <BarChart
-                                h={300}
-                                gridAxis='none'
-                                withTooltip={false}
+                                gridAxis="none"
+                                h={280}
                                 maxBarWidth={40}
                                 data={departmentChartData}
                                 dataKey="department"
-                                series={[{ name: 'assignments', color: 'color', label: 'Affectations actives' }]}
+                                series={[{ name: 'assignments', color: 'color', label: 'Dotations actives' }]}
                                 withLegend={false}
+                                withTooltip
                             />
-                        </Box>
-                    </Card>
-                </Grid.Col>
-            </Grid>
-        </div>
-    );
-};
-
-// === KPI tile compact ===
-const KpiTile = ({ color, label, value, icon: Icon }: any) => {
-    const colors: Record<string, any> = {
-        blue: { bg: 'bg-blue-50/60', border: 'border-blue-200', text: 'text-blue-700', accent: 'bg-blue-500' },
-        green: { bg: 'bg-green-50/60', border: 'border-green-200', text: 'text-green-700', accent: 'bg-green-500' },
-        orange: { bg: 'bg-orange-50/60', border: 'border-orange-200', text: 'text-orange-700', accent: 'bg-orange-500' },
-        amber: { bg: 'bg-amber-50/60', border: 'border-amber-200', text: 'text-amber-700', accent: 'bg-amber-500' },
-    };
-    const c = colors[color];
-    return (
-        <div className={`bg-white rounded-lg border ${c.border} overflow-hidden hover:shadow-md transition-all`}>
-            <div className={`h-1 ${c.accent}`}></div>
-            <div className="p-3">
-                <div className={`p-1.5 rounded-md ${c.bg} ${c.border} border inline-block mb-2`}>
-                    <Icon size={14} className={c.text} />
+                        ) : (
+                            <p className="text-[12.5px] text-slate-500 py-10 text-center">
+                                Aucune dotation enregistrée pour le moment.
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <p className={`text-2xl ${c.text} tabular-nums`}>{value}</p>
-                <p className="text-[11px] text-slate-700 mt-0.5">{label}</p>
-            </div>
+            )}
         </div>
     );
 };

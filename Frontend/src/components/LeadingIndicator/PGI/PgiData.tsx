@@ -1,212 +1,278 @@
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { ActionIcon, Button, Tabs, TextInput, Tooltip } from '@mantine/core';
-import { IconEdit, IconLayoutGrid, IconLayoutList, IconSearch, IconUpload } from '@tabler/icons-react';
-import { FilterMatchMode } from 'primereact/api';
+import { useEffect, useMemo, useState } from 'react';
+import { ActionIcon, Button, TextInput, Tooltip } from '@mantine/core';
+import { IconDownload, IconEdit, IconLayoutGrid, IconLayoutList, IconSearch } from '@tabler/icons-react';
 import { Column } from 'primereact/column';
-import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
-import { Toast } from 'primereact/toast';
-import { Toolbar } from 'primereact/toolbar';
-import { useEffect, useRef, useState } from 'react';
+import { DataTable } from 'primereact/datatable';
 import { Link, useNavigate } from 'react-router-dom';
-import { Tag } from 'primereact/tag';
 import { getAllPgi } from '../../../services/PgiService';
-import { errorNotification } from '../../../utility/NotificationUtility';
+import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { formatDateWithDay, formatTo12Hour } from '../../../utility/DateFormats';
-import { getSeverityForInspection } from '../../../utility/OtherUtilities';
-import { actionStatusesMap } from '../../../Data/DropdownData';
+import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
+import EmptyState from '../../UtilityComp/EmptyState';
 import PgiCard from './PgiCard';
+import { CHIP_BASE, formatDateFr, inspectionStatusConfig } from './pgiLabels';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-}
+const ALL = 'ALL';
+
+/**
+ * Registre des inspections : recherche, filtre par statut, bascule
+ * tableau / cartes et export CSV.
+ */
 const PgiData = () => {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const toast = useRef<Toast>(null);
     const [data, setData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
     const [viewType, setViewType] = useState<'table' | 'card'>('table');
-    const [selectedStatusTab, setSelectedStatusTab] = useState<string>('All');
-
-
-    const statusTabOptions = ['All', ...Array.from(new Set(data.map(item => item.status)))];
-
-
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
 
     useEffect(() => {
-
+        setLoading(true);
         getAllPgi({})
-            .then((res) => {
-                setData(res);
-            })
+            .then((res) => setData(res ?? []))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch Inspection");
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des inspections');
             })
-            .finally();
+            .finally(() => setLoading(false));
     }, []);
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
+    const statusCounts = useMemo(
+        () =>
+            data.reduce(
+                (acc, item) => {
+                    const status = String(item.status ?? '').toUpperCase();
+                    if (acc[status] !== undefined) acc[status] += 1;
+                    return acc;
+                },
+                { PENDING: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 } as Record<string, number>
+            ),
+        [data]
+    );
 
-    const rightToolbarTemplate = () => {
-        return (
-            <div className="flex gap-4 items-center">
-                <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                    <Tooltip label="Table View">
-                        {/* LOT 40 P1: aria-label ajouté pour accessibilité */}
-                        <ActionIcon
-                            variant={viewType === 'table' ? 'filled' : 'light'}
-                            color="blue"
-                            onClick={() => setViewType('table')}
-                            aria-label="Vue tableau"
-                        >
-                            <IconLayoutList size={18} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Card View">
-                        {/* LOT 40 P1: aria-label ajouté pour accessibilité */}
-                        <ActionIcon
-                            variant={viewType === 'card' ? 'filled' : 'light'}
-                            color="blue"
-                            onClick={() => setViewType('card')}
-                            aria-label="Vue cartes"
-                        >
-                            <IconLayoutGrid size={18} />
-                        </ActionIcon>
-                    </Tooltip>
-                </div>
-                <div className='flex gap-5'>
-                    <Button size="sm" variant='outline' leftSection={<IconUpload />}  >Export</Button>
-                    <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-                </div>
-            </div>
+    const filteredData = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return data.filter((item) => {
+            if (statusFilter !== ALL && String(item.status ?? '').toUpperCase() !== statusFilter) return false;
+            if (!q) return true;
+            return [item.title, item.siteName].filter(Boolean).join(' ').toLowerCase().includes(q);
+        });
+    }, [data, search, statusFilter]);
 
+    const exportCsv = () => {
+        const headers = ['Inspection', 'Site', 'Date planifiée', 'Début', 'Fin', 'Statut'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredData.map((row) =>
+            [
+                row.title,
+                row.siteName,
+                formatDateFr(row.plannedDate),
+                row.startTime ?? '',
+                row.endTime ?? '',
+                inspectionStatusConfig(row.status).label,
+            ].map(escape).join(';')
         );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `inspections_hse_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredData.length} inspection${filteredData.length > 1 ? 's' : ''} exportée${filteredData.length > 1 ? 's' : ''}`);
     };
 
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
-    function getStatusSeverity(rowData: any) {
-        return <Tag severity={getSeverityForInspection(rowData.status)} value={actionStatusesMap[rowData.status]} />;
-    }
+    const nameBodyTemplate = (rowData: any) => (
+        <Link to={`details-pgi/${rowData.id}`} className="text-[13px] text-teal-700 hover:!underline leading-snug">
+            {rowData.title}
+        </Link>
+    );
+
+    const statusBodyTemplate = (rowData: any) => {
+        const cfg = inspectionStatusConfig(rowData.status);
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+    };
 
     const actionBodyTemplate = (rowData: any) => {
-        const id = rowData.id;
         const statusUpper = String(rowData?.status || '').toUpperCase();
         const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
-        const tooltip = canEdit ? 'Edit' : (statusUpper === 'COMPLETED' ? 'Completed — modification not possible' : 'Cancelled — modification not possible');
+        const tooltip = canEdit
+            ? "Modifier l'inspection"
+            : statusUpper === 'COMPLETED'
+            ? 'Inspection terminée : modification impossible'
+            : 'Inspection annulée : modification impossible';
         return (
-            <div className='flex gap-3 '>
-                <Tooltip label={tooltip}>
+            <div className="flex gap-1.5 justify-center">
+                <Tooltip label={tooltip} withArrow>
                     <span className="inline-flex">
                         <ActionIcon
-                            onClick={() => { if (canEdit) navigate(`edit/${id}`); }}
-                            variant="filled"
+                            onClick={() => { if (canEdit) navigate(`edit/${rowData.id}`); }}
+                            variant="light"
                             size="sm"
-                            color="primary"
-                            aria-label="Edit"
+                            color="blue"
+                            aria-label="Modifier l'inspection"
                             disabled={!canEdit}
                         >
-                            <IconEdit style={{ width: '90%', height: '90%' }} stroke={1.5} />
+                            <IconEdit size={14} stroke={1.5} />
                         </ActionIcon>
                     </span>
                 </Tooltip>
             </div>
-        )
-    }
-
-    const nameBodyTemplate = (rowData: any) => {
-        return <Link to={`details-pgi/${rowData.id}`} className='text-blue-500 hover:!underline'>{rowData.title}</Link>
-    }
-
-    // const SiteTabs = () => (
-    //     <Tabs value={selectedSiteTab} onChange={(val) => val && setSelectedSiteTab(val)} keepMounted={false}>
-    //         <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
-    //             {siteTabOptions.map(site => (
-    //                 <Tabs.Tab
-    //                     key={site}
-    //                     value={site}
-    //                     className="!rounded-lg px-3 py-1.5 text-sm transition-all duration-200 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500"
-    //                 >
-    //                     {site} ({data.filter(d => site === 'All' || d.siteName === site).length})
-    //                 </Tabs.Tab>
-    //             ))}
-    //         </Tabs.List>
-    //     </Tabs>
-    // );
-
-
-    const StatusTabs = () => (
-        <Tabs value={selectedStatusTab} onChange={(val) => val && setSelectedStatusTab(val)} keepMounted={false}>
-            <Tabs.List className="border-b border-slate-200 bg-white !rounded-lg p-1">
-                {statusTabOptions.map(status => (
-                    <Tabs.Tab
-                        key={status}
-                        value={status}
-                        className=" !rounded-lg px-3 py-1.5 text-sm transition-all duration-200 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500"
-                    >
-                        {status === 'All' ? 'All' : actionStatusesMap[status]} ({data.filter(d => status === 'All' || d.status === status).length})
-                    </Tabs.Tab>
-                ))}
-            </Tabs.List>
-        </Tabs>
-    );
-
-    const filteredData = data.filter((item) => {
-        const matchesSearch = globalFilterValue.trim() === '' ||
-            item.title?.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
-            item.siteName?.toLowerCase().includes(globalFilterValue.toLowerCase());
-
-
-        const statusMatch = selectedStatusTab === 'All' || item.status === selectedStatusTab;
-
-        return matchesSearch && statusMatch;
-    });
-
+        );
+    };
 
     return (
-        <div className="card ">
-            <Toast ref={toast} />
+        <div className="space-y-3">
+            {/* Barre de filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <SegmentedFilter
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                        { value: ALL, label: 'Toutes', count: data.length, color: 'slate' },
+                        { value: 'PENDING', label: 'En attente', count: statusCounts.PENDING, color: 'violet' },
+                        { value: 'IN_PROGRESS', label: 'En cours', count: statusCounts.IN_PROGRESS, color: 'amber' },
+                        { value: 'COMPLETED', label: 'Terminées', count: statusCounts.COMPLETED, color: 'green' },
+                        { value: 'CANCELLED', label: 'Annulées', count: statusCounts.CANCELLED, color: 'rose' },
+                    ]}
+                    rightElement={
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <TextInput
+                                placeholder="Rechercher une inspection, un site…"
+                                leftSection={<IconSearch size={14} />}
+                                value={search}
+                                onChange={(e) => setSearch(e.currentTarget.value)}
+                                size="xs"
+                                w={240}
+                                aria-label="Rechercher une inspection"
+                            />
+                            <Button
+                                variant="default"
+                                size="xs"
+                                leftSection={<IconDownload size={14} />}
+                                onClick={exportCsv}
+                                disabled={!filteredData.length}
+                            >
+                                Exporter CSV
+                            </Button>
+                            <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                                <Tooltip label="Vue tableau" withArrow>
+                                    <ActionIcon
+                                        variant={viewType === 'table' ? 'filled' : 'subtle'}
+                                        color="teal"
+                                        size="sm"
+                                        onClick={() => setViewType('table')}
+                                        aria-label="Vue tableau"
+                                    >
+                                        <IconLayoutList size={14} />
+                                    </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label="Vue cartes" withArrow>
+                                    <ActionIcon
+                                        variant={viewType === 'card' ? 'filled' : 'subtle'}
+                                        color="teal"
+                                        size="sm"
+                                        onClick={() => setViewType('card')}
+                                        aria-label="Vue cartes"
+                                    >
+                                        <IconLayoutGrid size={14} />
+                                    </ActionIcon>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    }
+                />
+            </div>
 
-            <Toolbar className="mb-2 !p-2" left={StatusTabs} right={rightToolbarTemplate} />
-
-            {
-                viewType === 'table' ? (
-                    <DataTable selectionMode="single" size='small' stripedRows removableSort paginator value={filteredData} rows={10} className='[&_.p-datatable-tbody]:!text-sm'
+            {/* Registre */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loading ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredData.length ? (
+                    <EmptyState
+                        icon={<IconSearch size={24} />}
+                        title={
+                            statusFilter === ALL && !search.trim()
+                                ? 'Aucune inspection planifiée'
+                                : 'Aucune inspection ne correspond aux critères'
+                        }
+                        description={
+                            statusFilter === ALL && !search.trim()
+                                ? 'Planifiez la première inspection HSE depuis le bouton « Nouvelle inspection ».'
+                                : 'Élargissez la recherche ou changez de filtre pour retrouver le registre complet.'
+                        }
+                        compact
+                    />
+                ) : viewType === 'table' ? (
+                    <DataTable
+                        value={filteredData}
+                        size="small"
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        rowsPerPageOptions={[10, 25, 50]} dataKey="name" filters={filters} globalFilterFields={['name', 'shortName', 'sector', 'company']}
-                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" onFilter={(e) => setFilters(e.filters)}
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
                     >
-
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" header="Inspections Name" sortable body={nameBodyTemplate} />
-                        {/* <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="frequency" header="Frequency" body={(rowData: any) => capitalizeFirstLetter(rowData.frequency)} /> */}
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="plannedDate" header="Date" body={(rowData: any) => formatDateWithDay(rowData.plannedDate)} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="startTime" header="Start Time" body={(rowData: any) => formatTo12Hour(rowData.startTime)} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="endTime" header="End Time" body={(rowData: any) => formatTo12Hour(rowData.endTime)} />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="siteName" header="Site Name" />
-                        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={getStatusSeverity} />
-                        <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
+                        <Column field="title" header="Inspection" sortable body={nameBodyTemplate} />
+                        <Column
+                            field="plannedDate"
+                            header="Date planifiée"
+                            sortable
+                            body={(rowData: any) => (
+                                <span className="text-[12.5px] text-slate-600">{formatDateWithDay(rowData.plannedDate)}</span>
+                            )}
+                        />
+                        <Column
+                            field="startTime"
+                            header="Début"
+                            style={{ width: '6.5rem' }}
+                            body={(rowData: any) => (
+                                <span className="text-[12.5px] text-slate-600 tabular-nums">{formatTo12Hour(rowData.startTime)}</span>
+                            )}
+                        />
+                        <Column
+                            field="endTime"
+                            header="Fin"
+                            style={{ width: '6.5rem' }}
+                            body={(rowData: any) => (
+                                <span className="text-[12.5px] text-slate-600 tabular-nums">{formatTo12Hour(rowData.endTime)}</span>
+                            )}
+                        />
+                        <Column
+                            field="siteName"
+                            header="Site"
+                            sortable
+                            body={(rowData: any) => <span className="text-[12.5px] text-slate-600">{rowData.siteName}</span>}
+                        />
+                        <Column field="status" header="Statut" sortable body={statusBodyTemplate} style={{ width: '8rem' }} />
+                        <Column
+                            header="Actions"
+                            headerStyle={{ width: '5.5rem', textAlign: 'center' }}
+                            bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
+                            body={actionBodyTemplate}
+                        />
                     </DataTable>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-2">
                         {filteredData.map((pgi) => (
                             <PgiCard key={pgi.id} pgiData={pgi} />
                         ))}
-                        {filteredData.length === 0 &&
-                            <div className='text-xl text-gray-600 col-span-3 mx-auto'>
-                                No PGI available
-                            </div>}
                     </div>
-                )
-            }
-
+                )}
+            </div>
         </div>
     )
 }

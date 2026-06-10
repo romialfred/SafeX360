@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Modal, NumberInput, Select, Text, Textarea, Tooltip } from "@mantine/core";
+import { Alert, Button, Modal, Select, Text, Textarea, Tooltip } from "@mantine/core";
 import { IconCalendarEvent, IconCheckbox, IconClock, IconFileAnalytics, IconFileCheck, IconFileText, IconHistory, IconLock, IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -6,7 +6,6 @@ import PageHeader from "../../../UtilityComp/PageHeader";
 
 import { useDisclosure } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
-import { actionStatusesMap, inspectionStatuses } from "../../../../Data/DropdownData";
 import { useForm } from "@mantine/form";
 import { getEmployeesWithDepartment } from "../../../../services/EmployeeService";
 
@@ -23,6 +22,7 @@ import { addInspectionHistory, getInspectionHistoryByInspectionId } from "../../
 import ViewDetailsPgi from "./ViewDetailsPgi";
 import { getPgiById } from "../../../../services/PgiService";
 import { formatDateShort, formatTimeToAmPm } from "../../../../utility/DateFormats";
+import { CHIP_BASE, INSPECTION_STATUS_OPTIONS, inspectionStatusConfig } from "../pgiLabels";
 
 const PgiDeatailsTab = () => {
     const [activeTab, setActiveTab] = useState('details');
@@ -47,9 +47,9 @@ const PgiDeatailsTab = () => {
 
         },
         validate: {
-            ownerId: (value) => value ? null : "Owner is required",
-            date: (value) => value ? null : "Date is required",
-            status: (value) => value ? null : "Status is required",
+            ownerId: (value) => value ? null : "Le responsable est obligatoire",
+            date: (value) => value ? null : "La date est obligatoire",
+            status: (value) => value ? null : "Le statut est obligatoire",
         }
     });
     useEffect(() => {
@@ -67,7 +67,7 @@ const PgiDeatailsTab = () => {
             .then((res) => {
                 const mappedEmployees = res.map((emp: any) => ({
                     label: emp.name,
-                    value: String(emp.id), // ensure value is string if form field is string
+                    value: String(emp.id), // valeur en chaîne pour rester aligné avec le champ du formulaire
                 }));
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
@@ -107,15 +107,13 @@ const PgiDeatailsTab = () => {
         allowedStatusSet.add('CANCELLED');
     }
 
-    const statusSelectOptions = inspectionStatuses.filter((option) => allowedStatusSet.has(option.value));
+    const statusSelectOptions = INSPECTION_STATUS_OPTIONS.filter((option) => allowedStatusSet.has(option.value));
 
 
     const fetchHistory = () => {
         getInspectionHistoryByInspectionId(id).then((res) => {
             setHistory(res);
-        }).catch((err) => {
-            console.log(err);
-        });
+        }).catch((_err) => { });
     }
 
     const handleSubmit = async (values: any) => {
@@ -123,13 +121,12 @@ const PgiDeatailsTab = () => {
 
         const payload = {
             ...values,
-            inspectionId: parseInt(id || ""), // ✅ Correct key
+            inspectionId: parseInt(id || ""),
         };
 
         addInspectionHistory(payload)
             .then((_res) => {
-
-                successNotification("Status changed successfully");
+                successNotification("Statut de l'inspection mis à jour");
                 close();
                 setInspection((prev: any) => ({
                     ...prev,
@@ -143,7 +140,7 @@ const PgiDeatailsTab = () => {
                 fetchHistory();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "Le changement de statut a échoué");
             })
             .finally(() => {
                 dispatch(hideOverlay());
@@ -173,7 +170,7 @@ const PgiDeatailsTab = () => {
         report: {
             label: 'Rapport',
             icon: IconFileCheck,
-            content: <InspectionReport />,
+            content: <InspectionReport employee={emps} empMap={empMap} />,
             hide: false
         },
         history: {
@@ -203,7 +200,7 @@ const PgiDeatailsTab = () => {
         open();
     }
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto" >
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -236,14 +233,14 @@ const PgiDeatailsTab = () => {
                                     disabled={locked.locked || isFinalStatus}
                                     className="!bg-white !text-green-700 hover:!bg-green-50"
                                 >
-                                    {actionStatusesMap[inspection?.status] || "Statut"}
+                                    {inspectionStatusConfig(inspection?.status).label}
                                 </Button>
                             </span>
                         </Tooltip>
                         {inspection?.status && (
-                            <Badge color={inspection.status === 'COMPLETED' ? 'green.2' : inspection.status === 'CANCELLED' ? 'red.4' : 'yellow.4'} variant="filled" radius="sm" size="sm" className="!text-slate-900">
-                                {actionStatusesMap[inspection?.status]}
-                            </Badge>
+                            <span className={`${CHIP_BASE} ${inspectionStatusConfig(inspection.status).chip} !bg-white/90`}>
+                                {inspectionStatusConfig(inspection.status).label}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -266,7 +263,7 @@ const PgiDeatailsTab = () => {
                                     key={key}
                                     type="button"
                                     onClick={() => setActiveTab(key)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === key
                                         ? 'bg-green-600 text-white shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}
@@ -330,40 +327,13 @@ const PgiDeatailsTab = () => {
                         withAsterisk
                     />
 
-                    {form.values.status === 'CLOSED' ? (
-                        <>
-                            <NumberInput
-                                label="Évaluation qualité (1-10)"
-                                placeholder="Note de l'inspection"
-                                withAsterisk
-                                {...form.getInputProps("evaluation")}
-                            />
-
-                            <Textarea
-                                label="Rapport de clôture"
-                                placeholder="Synthèse, validation des actions, commentaires finaux..."
-                                withAsterisk
-                                minRows={3}
-                                {...form.getInputProps("closingReport")}
-                            />
-
-                            <Textarea
-                                label="Leçons apprises"
-                                withAsterisk
-                                placeholder="Points d'amélioration, bonnes pratiques identifiées, recommandations"
-                                minRows={6}
-                                {...form.getInputProps("comment")}
-                            />
-                        </>
-                    ) : (
-                        <Textarea
-                            label="Commentaire"
-                            withAsterisk
-                            placeholder="Saisir votre commentaire"
-                            minRows={6}
-                            {...form.getInputProps("comment")}
-                        />
-                    )}
+                    <Textarea
+                        label="Commentaire"
+                        withAsterisk
+                        placeholder="ex. Passage en exécution après confirmation de l'équipe d'inspection"
+                        minRows={6}
+                        {...form.getInputProps("comment")}
+                    />
 
                     <div className="flex justify-end gap-3 mt-4">
                         <Button variant="default" onClick={close}>

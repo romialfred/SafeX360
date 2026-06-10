@@ -1,8 +1,8 @@
-import { Badge, Button, Tooltip } from "@mantine/core";
-import { IconEdit, IconSearch } from "@tabler/icons-react";
+import { Button, Tooltip } from "@mantine/core";
+import { IconCalendarEvent, IconClock, IconEdit, IconEye, IconMapPin } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
 import { formatDateWithDay, formatTo12Hour } from "../../../utility/DateFormats";
-import { actionStatusesMap } from "../../../Data/DropdownData";
+import { CHIP_BASE, inspectionStatusConfig } from "./pgiLabels";
 
 interface PgiData {
     id: number;
@@ -14,84 +14,68 @@ interface PgiData {
     status: string;
 }
 
-const getSeverityClass = (status: string) => {
-    switch (status) {
-        case 'REPORTED':
-            return 'text-orange-600 border-orange-300';
-        case 'IN_PROGRESS':
-            return 'text-yellow-700 border-yellow-300';
-        case 'RESOLVED':
-            return 'text-green-700 border-green-300';
-        case 'CLOSED':
-            return 'text-blue-700 border-blue-300';
-        default:
-            return 'text-gray-700 border-gray-300';
-    }
-};
-
-
+/** Carte d'inspection pour la vue grille du registre PGI. */
 const PgiCard = ({ pgiData }: { pgiData: PgiData }) => {
-    return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.0] mt-4 cursor-pointer hover:border-primary">
-            <div className="flex gap-4 items-center flex-wrap">
-                <span className="text-sm bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
-                    {pgiData.siteName}
-                </span>
-                <Badge
-                    radius="xl"
-                    size="lg"
+    const statusCfg = inspectionStatusConfig(pgiData.status);
+    const statusUpper = String(pgiData?.status || '').toUpperCase();
+    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
+    const editTooltip = canEdit
+        ? "Modifier l'inspection"
+        : statusUpper === 'COMPLETED'
+        ? 'Inspection terminée : modification impossible'
+        : 'Inspection annulée : modification impossible';
 
-                    className={`!capitalize ${getSeverityClass(pgiData.status)}`}
-                    variant="outline"
-                >
-                    {actionStatusesMap[pgiData.status]}
-                </Badge>
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+                <span className="inline-flex items-center gap-1 text-[11.5px] text-slate-600">
+                    <IconMapPin size={12} className="text-slate-400" aria-hidden="true" />
+                    {pgiData.siteName || 'Site non renseigné'}
+                </span>
+                <span className={`${CHIP_BASE} ${statusCfg.chip} flex-shrink-0`}>{statusCfg.label}</span>
             </div>
 
-            <Link to={`details-pgi/${pgiData.id}`} className="text-gray-900">
+            <Link to={`details-pgi/${pgiData.id}`} className="text-[13px] text-slate-800 leading-snug hover:!underline">
                 {pgiData.title}
             </Link>
 
-            <div className="text-gray-500 text-sm">
-                Inspection Date: {formatDateWithDay(pgiData.plannedDate)}
-            </div>
-            <div className="text-gray-500 text-sm">
-                Time: {formatTo12Hour(pgiData.startTime)} - {formatTo12Hour(pgiData.endTime)}
+            <div className="space-y-1 text-[11.5px] text-slate-500">
+                <p className="flex items-center gap-1.5">
+                    <IconCalendarEvent size={12} className="text-slate-400" aria-hidden="true" />
+                    {formatDateWithDay(pgiData.plannedDate)}
+                </p>
+                <p className="flex items-center gap-1.5">
+                    <IconClock size={12} className="text-slate-400" aria-hidden="true" />
+                    {formatTo12Hour(pgiData.startTime)} – {formatTo12Hour(pgiData.endTime)}
+                </p>
             </div>
 
-            <div className="flex   gap-4">
-                {(() => {
-                    const statusUpper = String(pgiData?.status || '').toUpperCase();
-                    const canEdit = !['COMPLETED', 'CANCELLED'].includes(statusUpper);
-                    const tooltip = canEdit ? 'Edit' : (statusUpper === 'COMPLETED' ? 'Completed — modification not possible' : 'Cancelled — modification not possible');
-                    return (
-                        <Tooltip label={tooltip}>
-                            <span className="inline-flex">
-                                <Button
-                                    size="xs"
-                                    variant="subtle"
-                                    leftSection={<IconEdit size={15} />}
-                                    color="primary"
-                                    component={Link}
-                                    to={canEdit ? `edit/${pgiData.id}` : '#'}
-                                    onClick={(e) => { if (!canEdit) e.preventDefault(); }}
-                                    disabled={!canEdit}
-                                >
-                                    Edit
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    );
-                })()}
+            <div className="flex gap-2 pt-1 border-t border-slate-100">
+                <Tooltip label={editTooltip} withArrow>
+                    <span className="inline-flex">
+                        <Button
+                            size="xs"
+                            variant="subtle"
+                            leftSection={<IconEdit size={14} />}
+                            color="blue"
+                            component={Link}
+                            to={canEdit ? `edit/${pgiData.id}` : '#'}
+                            onClick={(e) => { if (!canEdit) e.preventDefault(); }}
+                            disabled={!canEdit}
+                        >
+                            Modifier
+                        </Button>
+                    </span>
+                </Tooltip>
                 <Button
                     size="xs"
                     variant="subtle"
-                    leftSection={<IconSearch size={15} />}
-                    color="blue"
+                    leftSection={<IconEye size={14} />}
+                    color="teal"
                     component={Link}
                     to={`details-pgi/${pgiData.id}`}
                 >
-                    View
+                    Consulter
                 </Button>
             </div>
         </div>

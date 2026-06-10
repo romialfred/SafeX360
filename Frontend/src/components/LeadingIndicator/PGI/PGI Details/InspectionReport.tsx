@@ -1,28 +1,38 @@
 import { useEffect, useState } from "react";
-import { Button, Card, TextInput, Group, Stack, Grid, Badge } from "@mantine/core";
+import { Button, Select } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconCalendar, IconEdit, IconPhoto, IconFilePencil } from "@tabler/icons-react";
+import { IconCalendar, IconEdit, IconFilePencil, IconPaperclip } from "@tabler/icons-react";
 import { DateInput } from "@mantine/dates";
-import TextEditor from "../../../UtilityComp/TextEditor";
-import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import { useParams } from "react-router-dom";
 import { modals } from "@mantine/modals";
-import { convertFilesToBase64New, handlePreview } from "../../../../utility/DocumentUtility";
 import { useDispatch } from "react-redux";
+import dayjs from "dayjs";
+import TextEditor from "../../../UtilityComp/TextEditor";
+import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
+import { convertFilesToBase64New, handlePreview } from "../../../../utility/DocumentUtility";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
-
 import { formatDateShort } from "../../../../utility/DateFormats";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { addInspectionReport, getInspectionReportByInspectionId } from "../../../../services/PgiReportService";
-import dayjs from "dayjs";
+import { SECTION_TITLE_STYLE } from "../pgiLabels";
 
-const InspectionReportTabs = () => {
+interface InspectionReportProps {
+    /** Options de Select { value, label } des employés (rédacteur du rapport). */
+    employee?: any[];
+    /** Correspondance id → employé pour afficher le nom du rédacteur. */
+    empMap?: Record<string, any>;
+}
+
+/**
+ * Rapport de synthèse de l'inspection : rédacteur, date, compte rendu et
+ * pièces justificatives.
+ */
+const InspectionReport = ({ employee = [], empMap = {} }: InspectionReportProps) => {
     const dispatch = useDispatch();
-    const { id } = useParams(); // generalInspectionId
+    const { id } = useParams(); // identifiant de l'inspection
     const [isEditing, setIsEditing] = useState(true);
     const [report, setReport] = useState<any>(null);
-
 
     const form = useForm({
         initialValues: {
@@ -30,8 +40,11 @@ const InspectionReportTabs = () => {
             reportDate: "",
             description: "",
             docs: [],
-            generalInspectionId: ''
-
+            generalInspectionId: '',
+        },
+        validate: {
+            reportedId: (value) => (value ? null : 'Sélectionnez le rédacteur du rapport'),
+            reportDate: (value) => (value ? null : 'La date du rapport est obligatoire'),
         },
     });
 
@@ -57,12 +70,12 @@ const InspectionReportTabs = () => {
         const values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Soumettre le rapport</span>,
             centered: true,
-            children: <span className="text-md">Do you want to submit this inspection report?</span>,
-            labels: { confirm: `Yes, Submit`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            children: <span className="text-sm">Confirmer la soumission du rapport d'inspection ?</span>,
+            labels: { confirm: 'Oui, soumettre', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: 'default' },
+            confirmProps: { color: 'teal', variant: 'filled' },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
@@ -70,27 +83,22 @@ const InspectionReportTabs = () => {
                 dispatch(showOverlay());
                 try {
                     const evidence = await convertFilesToBase64New(values.docs);
-                    console.log("Evidence:", evidence);
-
                     const payload = {
                         generalInspectionId: parseInt(id || ""),
-                        reportDate: dayjs(values.reportDate).format("YYYY-MM-DD"), // ✅ fixed
+                        reportDate: dayjs(values.reportDate).format("YYYY-MM-DD"),
                         reportedId: Number(values.reportedId),
                         description: values.description,
                         docs: evidence,
                     };
 
-                    console.log("✅ Payload being sent:", payload);
-
                     await addInspectionReport(payload);
-                    successNotification("Inspection report created successfully");
+                    successNotification("Rapport d'inspection enregistré");
 
                     form.reset();
                     setIsEditing(false);
                     getInspectionReportByInspectionId(id).then(setReport);
                 } catch (err: any) {
-                    console.error("❌ API Error:", err);
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "L'enregistrement du rapport a échoué");
                 } finally {
                     dispatch(hideOverlay());
                 }
@@ -98,89 +106,112 @@ const InspectionReportTabs = () => {
         });
     };
 
+    const reporterName = (reporterId: any) => empMap[reporterId]?.name || (reporterId ? `Employé #${reporterId}` : '—');
+
     return (
         <form onSubmit={handleSubmit}>
             {isEditing ? (
-                <Stack>
-                    <Card shadow="md" withBorder>
-                        <p className="flex items-center text-lg mb-2 text-gray-600">
-                            <IconFilePencil stroke={1.5} size={20} /> Inspection Report Details
-                        </p>
-                        <Grid>
-                            <Grid.Col span={6}>
-                                <TextInput size="md" {...form.getInputProps("reportedId")} label=" select reporter" placeholder="Enter reported ID" withAsterisk />
-                            </Grid.Col>
-                            <Grid.Col span={6}>
-                                <DateInput
-                                    leftSection={<IconCalendar />}
-                                    label="Report Date"
-                                    placeholder="dd-mm-yyyy"
-                                    {...form.getInputProps("reportDate")}
-                                    withAsterisk
-                                />
-                            </Grid.Col>
-                        </Grid>
-                    </Card>
-
-                    <Card shadow="md" withBorder>
-                        <TextEditor form={form} id="description" title="Description" />
-                    </Card>
-
-                    <Card shadow="md" withBorder>
-                        <p className="text-lg text-gray-600">Supporting Documents</p>
-                        <FileUpdateDropzone name="Supporting Documents" id="docs" form={form} />
-                    </Card>
-
-                    <Group justify="end">
-                        <Button onClick={handleSubmit} color="blue">Submit</Button>
-                    </Group>
-                </Stack>
-            ) : (
-                <Stack>
-                    <Card shadow="md" withBorder className="!rounded-lg !p-6">
-                        <Group justify="space-between" className="mb-2">
-                            <h1 className="text-lg text-blue-700">Inspection Report Summary</h1>
-                            <Button onClick={() => setIsEditing(true)} radius="xl" leftSection={<IconEdit size={16} />}>Edit</Button>
-                        </Group>
-
-                        <div className="flex flex-col gap-4 p-5 rounded-xl shadow-sm">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                <p><strong>Reported By:</strong> {report?.reportedId}</p>
-                                <p><strong>Date:</strong> {formatDateShort(report?.reportDate)}</p>
-                                <p><strong>Inspection ID:</strong> {report?.generalInspectionId}</p>
-                            </div>
-
-                            <div className="border-blue-200 border rounded-md px-4 py-3 text-sm">
-                                {/* LOT 41 P0 XSS fix */}
-                                <SafeHtml html={report?.description || ""} />
-                            </div>
-
-                            {report?.docs?.length > 0 && (
-                                <div>
-                                    <p className="block text-sm mb-2">Attachments:</p>
-                                    <Stack className="flex flex-wrap flex-col !gap-1">
-                                        {report.docs.map((doc: any) => (
-                                            <Badge
-                                                key={doc.name}
-                                                size="lg"
-                                                className="!cursor-pointer !capitalize hover:!underline"
-                                                onClick={() => handlePreview(doc)}
-                                                leftSection={<IconPhoto size={14} />}
-                                                color="orange"
-                                                variant="transparent"
-                                            >
-                                                {doc.name}
-                                            </Badge>
-                                        ))}
-                                    </Stack>
-                                </div>
-                            )}
+                <div className="space-y-4">
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <header className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
+                            <IconFilePencil stroke={1.5} size={16} className="text-slate-600" aria-hidden="true" />
+                            <h3 className="text-slate-800" style={SECTION_TITLE_STYLE}>
+                                Rapport d'inspection
+                            </h3>
+                        </header>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                size="sm"
+                                {...form.getInputProps("reportedId")}
+                                label="Rédacteur du rapport"
+                                placeholder="Sélectionner le rédacteur"
+                                data={employee}
+                                searchable
+                                withAsterisk
+                            />
+                            <DateInput
+                                size="sm"
+                                leftSection={<IconCalendar size={14} />}
+                                label="Date du rapport"
+                                placeholder="JJ/MM/AAAA"
+                                valueFormat="DD/MM/YYYY"
+                                {...form.getInputProps("reportDate")}
+                                withAsterisk
+                            />
                         </div>
-                    </Card>
-                </Stack>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-200 p-4">
+                        <TextEditor form={form} id="description" title="Compte rendu" />
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-200 p-4">
+                        <p className="text-slate-800 mb-2" style={SECTION_TITLE_STYLE}>Pièces justificatives</p>
+                        <FileUpdateDropzone name="Pièces justificatives" id="docs" form={form} />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button onClick={handleSubmit} color="teal" size="sm">
+                            Soumettre le rapport
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <header className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+                        <h3 className="text-slate-800" style={SECTION_TITLE_STYLE}>
+                            Synthèse du rapport d'inspection
+                        </h3>
+                        <Button onClick={() => setIsEditing(true)} size="xs" variant="default" leftSection={<IconEdit size={14} />}>
+                            Modifier
+                        </Button>
+                    </header>
+
+                    <div className="p-4 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="bg-slate-50/40 border border-slate-200 rounded-md p-3">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Rédigé par</p>
+                                <p className="text-[13px] text-slate-800">{reporterName(report?.reportedId)}</p>
+                            </div>
+                            <div className="bg-slate-50/40 border border-slate-200 rounded-md p-3">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Date du rapport</p>
+                                <p className="text-[13px] text-slate-800">{formatDateShort(report?.reportDate) || '—'}</p>
+                            </div>
+                            <div className="bg-slate-50/40 border border-slate-200 rounded-md p-3">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Inspection</p>
+                                <p className="text-[13px] text-slate-800 tabular-nums">N° {report?.generalInspectionId ?? '—'}</p>
+                            </div>
+                        </div>
+
+                        <div className="border border-slate-200 rounded-md px-4 py-3">
+                            {/* LOT 41 P0 XSS fix */}
+                            <SafeHtml html={report?.description || ""} className="text-[13px] text-slate-700 leading-relaxed" />
+                        </div>
+
+                        {report?.docs?.length > 0 && (
+                            <div>
+                                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1.5">Pièces justificatives</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {report.docs.map((doc: any) => (
+                                        <button
+                                            key={doc.name}
+                                            type="button"
+                                            onClick={() => handlePreview(doc)}
+                                            className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11.5px] text-slate-700 hover:bg-slate-100"
+                                            aria-label={`Prévisualiser la pièce jointe ${doc.name}`}
+                                        >
+                                            <IconPaperclip size={12} aria-hidden="true" />
+                                            {doc.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </form>
     );
 };
 
-export default InspectionReportTabs;
+export default InspectionReport;

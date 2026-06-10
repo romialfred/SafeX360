@@ -1,75 +1,59 @@
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import { useEffect, useMemo, useState } from 'react';
 import {
-    Badge,
+    ActionIcon,
     Button,
-    Text,
-    Modal,
-    Textarea,
-    Select,
-    MultiSelect,
     LoadingOverlay,
+    Modal,
+    MultiSelect,
+    Select,
+    Textarea,
+    TextInput,
+    Tooltip,
 } from '@mantine/core';
-import { IconCheck, IconX, IconEye, IconClipboardList, IconHelmet } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { DateInput } from '@mantine/dates';
-import { getActivePPE, getAllPPE } from '../../services/PPEService';
-import { getEmployeesWithDepartment } from '../../services/EmployeeService';
-import { createPpeRequest, getAllPpeRequests, approvePpeRequest, rejectPpeRequest } from '../../services/PpeRequestService';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
-import { toLocalDate } from '../../utility/dateConversion';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { getActivePPE, getAllPPE } from '../../services/PPEService';
+import { getEmployeesWithDepartment } from '../../services/EmployeeService';
+import {
+    approvePpeRequest,
+    createPpeRequest,
+    getAllPpeRequests,
+    rejectPpeRequest,
+} from '../../services/PpeRequestService';
+import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { toLocalDate } from '../../utility/dateConversion';
 import { mapIdToName } from '../../utility/OtherUtilities';
 import PageHeader from '../UtilityComp/PageHeader';
+import SegmentedFilter from '../UtilityComp/SegmentedFilter';
+import EmptyState from '../UtilityComp/EmptyState';
+import {
+    CHIP_BASE,
+    formatDateFr,
+    ppeCategoryLabel,
+    PRIORITY_OPTIONS,
+    priorityConfig,
+    requestStatusConfig,
+} from './ppeLabels';
 
-const getPriorityColor = (priority: string) => {
-    switch ((priority || '').toLowerCase()) {
-        case 'high': return 'red';
-        case 'medium': return 'orange';
-        case 'low': return 'green';
-        default: return 'gray';
-    }
-};
+const ALL = 'ALL';
 
-const getStatusColor = (status: string) => {
-    switch ((status || '').toLowerCase()) {
-        case 'pending': return 'yellow';
-        case 'approved': return 'green';
-        case 'rejected': return 'red';
-        default: return 'gray';
-    }
-};
-
-const priorityLabels: Record<string, string> = {
-    HIGH: 'Élevée',
-    MEDIUM: 'Moyenne',
-    LOW: 'Faible',
-    High: 'Élevée',
-    Medium: 'Moyenne',
-    Low: 'Faible',
-    high: 'Élevée',
-    medium: 'Moyenne',
-    low: 'Faible',
-    NORMAL: 'Normale',
-    Normal: 'Normale',
-    normal: 'Normale',
-};
-
-const statusLabels: Record<string, string> = {
-    PENDING: 'En attente',
-    APPROVED: 'Approuvée',
-    REJECTED: 'Rejetée',
-    Pending: 'En attente',
-    Approved: 'Approuvée',
-    Rejected: 'Rejetée',
-};
-
+/**
+ * Demandes d'EPI : création, validation (approbation / rejet motivé) et
+ * consultation des demandes de dotation.
+ */
 const PPERequestsTable = () => {
     const [showRequestForm, setShowRequestForm] = useState(false);
-    const [employees, setEmployees] = useState<any>([]);
-    // PPE actifs : pour le formulaire de demande (on ne demande que des EPI encore en catalogue)
+    const [employees, setEmployees] = useState<any[]>([]);
+    // EPI actifs : pour le formulaire de demande (on ne demande que des EPI encore au catalogue)
     const [activePpe, setActivePpe] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingList, setLoadingList] = useState(true);
     const [requests, setRequests] = useState<any[]>([]);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -78,9 +62,11 @@ const PPERequestsTable = () => {
     const [viewData, setViewData] = useState<any>(null);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
     // ppeMap est construit à partir de TOUS les EPI (actifs + inactifs) pour résoudre
-    // les références historiques. Sans ça, les demandes liées à un EPI désactivé
-    // affichaient "N/A" dans la colonne EPI demandés.
+    // les références historiques liées à un EPI désactivé.
     const [ppeMap, setPpeMap] = useState<Record<string, any>>({});
+
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
+    const [search, setSearch] = useState('');
 
     const requestForm = useForm({
         initialValues: {
@@ -91,18 +77,18 @@ const PPERequestsTable = () => {
             reason: '',
         },
         validate: {
-            empIds: (value) => (value.length > 0 ? null : 'Veuillez sélectionner au moins un employé'),
-            ppeIds: (value) => (value.length > 0 ? null : 'Veuillez sélectionner au moins un EPI'),
-            desiredDate: (value) => (value ? null : 'Veuillez choisir une date souhaitée'),
-            priority: (value) => (value ? null : 'Veuillez sélectionner une priorité'),
-            reason: (value) => (value ? null : 'Veuillez préciser un motif'),
+            empIds: (value) => (value.length > 0 ? null : 'Sélectionnez au moins un employé'),
+            ppeIds: (value) => (value.length > 0 ? null : 'Sélectionnez au moins un EPI'),
+            desiredDate: (value) => (value ? null : 'Choisissez une date souhaitée'),
+            priority: (value) => (value ? null : 'Sélectionnez une priorité'),
+            reason: (value) => (value ? null : 'Précisez le motif de la demande'),
         },
     });
 
     const approveForm = useForm({ initialValues: { comment: '' } });
     const rejectForm = useForm({
         initialValues: { comment: '' },
-        validate: { comment: (val) => (val.trim() ? null : 'Le commentaire est requis') },
+        validate: { comment: (val) => (val.trim() ? null : 'Le motif du rejet est obligatoire') },
     });
 
     useEffect(() => {
@@ -115,28 +101,52 @@ const PPERequestsTable = () => {
 
         // Catalogue complet (actifs + inactifs) → table de correspondance ID → nom
         getAllPPE()
-            .then((data) => {
-                setPpeMap(mapIdToName(data));
-            })
+            .then((data) => setPpeMap(mapIdToName(data)))
             .catch(() => { });
 
-        // EPI actifs uniquement → utilisés dans le formulaire de demande
+        // EPI actifs uniquement → formulaire de demande
         getActivePPE()
-            .then((data) => {
-                setActivePpe(data);
-            })
+            .then(setActivePpe)
             .catch(() => { });
 
         fetchRequests();
     }, []);
 
     const fetchRequests = () => {
+        setLoadingList(true);
         getAllPpeRequests()
-            .then((data) => setRequests(data))
+            .then(setRequests)
             .catch((error) => {
                 errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des demandes EPI');
-            });
+            })
+            .finally(() => setLoadingList(false));
     };
+
+    const statusCounts = useMemo(
+        () =>
+            requests.reduce(
+                (acc, req) => {
+                    const status = String(req.status ?? '').toUpperCase();
+                    if (status === 'PENDING') acc.PENDING += 1;
+                    else if (status === 'APPROVED') acc.APPROVED += 1;
+                    else if (status === 'REJECTED') acc.REJECTED += 1;
+                    return acc;
+                },
+                { PENDING: 0, APPROVED: 0, REJECTED: 0 }
+            ),
+        [requests]
+    );
+
+    const filteredRequests = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return requests.filter((req) => {
+            if (statusFilter !== ALL && String(req.status ?? '').toUpperCase() !== statusFilter) return false;
+            if (!q) return true;
+            const names = (req.empIds || []).map((id: any) => empMap[id]?.name).filter(Boolean);
+            const ppeNames = (req.ppeIds || []).map((id: any) => ppeMap[id]?.name).filter(Boolean);
+            return [...names, ...ppeNames, req.reason].filter(Boolean).join(' ').toLowerCase().includes(q);
+        });
+    }, [requests, statusFilter, search, empMap, ppeMap]);
 
     const openApproveModal = (row: any) => { setSelectedRequest(row); approveForm.reset(); setShowApproveModal(true); };
     const openRejectModal = (row: any) => { setSelectedRequest(row); rejectForm.reset(); setShowRejectModal(true); };
@@ -150,7 +160,7 @@ const PPERequestsTable = () => {
             setShowApproveModal(false);
             fetchRequests();
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || "Échec de l'approbation");
+            errorNotification(err.response?.data?.errorMessage || "L'approbation a échoué");
         } finally {
             setLoading(false);
         }
@@ -164,7 +174,7 @@ const PPERequestsTable = () => {
             setShowRejectModal(false);
             fetchRequests();
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || 'Échec du rejet');
+            errorNotification(err.response?.data?.errorMessage || 'Le rejet a échoué');
         } finally {
             setLoading(false);
         }
@@ -194,67 +204,50 @@ const PPERequestsTable = () => {
         };
         createPpeRequest(payload)
             .then(() => {
-                successNotification('Demande EPI créée avec succès');
+                successNotification('Demande EPI enregistrée');
                 setShowRequestForm(false);
                 requestForm.reset();
                 fetchRequests();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Échec de la création de la demande EPI');
+                errorNotification(err.response?.data?.errorMessage || 'La création de la demande a échoué');
             })
             .finally(() => setLoading(false));
     };
 
-    // === Templates DataTable ===
-    const priorityTemplate = (rowData: any) => (
-        <Badge color={getPriorityColor(rowData.priority)} variant="light" size="sm" radius="sm">
-            {priorityLabels[rowData.priority] || rowData.priority || '—'}
-        </Badge>
-    );
-
-    const statusTemplate = (rowData: any) => (
-        <Badge color={getStatusColor(rowData.status)} variant="filled" size="sm" radius="sm">
-            {statusLabels[rowData.status] || rowData.status || '—'}
-        </Badge>
-    );
+    // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
     const employeeTemplate = (rowData: any) => {
         const ids: any[] = rowData.empIds || [];
-        if (!ids.length) return <Text size="xs" c="dimmed">—</Text>;
+        if (!ids.length) return <span className="text-[12.5px] text-slate-400">—</span>;
         return (
             <div className="flex flex-col gap-0.5">
-                {ids.map((id: any) => {
-                    const employee = empMap[id];
-                    return (
-                        <span key={id} className="text-xs text-slate-700">
-                            {employee ? employee.name : `Employé #${id}`}
-                        </span>
-                    );
-                })}
+                {ids.map((id: any) => (
+                    <span key={id} className="text-[13px] text-slate-800">
+                        {empMap[id]?.name || `Employé #${id}`}
+                    </span>
+                ))}
             </div>
         );
     };
 
-    const requestedEppTemplate = (rowData: any) => {
+    const requestedPpeTemplate = (rowData: any) => {
         const ids: any[] = rowData.ppeIds || [];
-        if (!ids.length) return <Text size="xs" c="dimmed">—</Text>;
+        if (!ids.length) return <span className="text-[12.5px] text-slate-400">—</span>;
         return (
             <div className="flex flex-col gap-0.5">
-                {ids.map((eppId: any) => {
-                    const epp = ppeMap[eppId];
-                    return (
-                        <span key={eppId} className="text-xs text-slate-700">
-                            {epp ? epp.name : `EPI #${eppId}`}
-                        </span>
-                    );
-                })}
+                {ids.map((ppeId: any) => (
+                    <span key={ppeId} className="text-[13px] text-slate-800">
+                        {ppeMap[ppeId]?.name || `EPI #${ppeId}`}
+                    </span>
+                ))}
             </div>
         );
     };
 
     const reasonTemplate = (rowData: any) => (
         <span
-            className="block max-w-[240px] text-xs text-slate-700"
+            className="block max-w-[240px] text-[12.5px] text-slate-600"
             style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
             title={rowData.reason}
         >
@@ -262,54 +255,64 @@ const PPERequestsTable = () => {
         </span>
     );
 
-    const dateTemplate = (rowData: any) => {
-        if (!rowData.desiredDate) return <Text size="xs" c="dimmed">—</Text>;
-        try {
-            const d = new Date(rowData.desiredDate);
-            return <span className="text-xs text-slate-700 tabular-nums">{d.toLocaleDateString('fr-FR')}</span>;
-        } catch {
-            return <span className="text-xs text-slate-700">{rowData.desiredDate}</span>;
-        }
+    const priorityTemplate = (rowData: any) => {
+        const cfg = priorityConfig(rowData.priority);
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
     };
 
+    const statusTemplate = (rowData: any) => {
+        const cfg = requestStatusConfig(rowData.status);
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+    };
+
+    const dateTemplate = (rowData: any) => (
+        <span className="text-[12.5px] text-slate-600 tabular-nums">{formatDateFr(rowData.desiredDate)}</span>
+    );
+
     const actionTemplate = (rowData: any) => (
-        <div className="flex flex-wrap gap-1">
-            {rowData.status === 'PENDING' && (
+        <div className="flex gap-1.5 justify-center">
+            {String(rowData.status).toUpperCase() === 'PENDING' && (
                 <>
-                    <Button
-                        variant="light"
-                        color="green"
-                        size="compact-xs"
-                        leftSection={<IconCheck size={14} />}
-                        onClick={() => openApproveModal(rowData)}
-                    >
-                        Approuver
-                    </Button>
-                    <Button
-                        variant="light"
-                        color="red"
-                        size="compact-xs"
-                        leftSection={<IconX size={14} />}
-                        onClick={() => openRejectModal(rowData)}
-                    >
-                        Rejeter
-                    </Button>
+                    <Tooltip label="Approuver la demande" withArrow>
+                        <ActionIcon
+                            variant="light"
+                            color="teal"
+                            size="sm"
+                            onClick={() => openApproveModal(rowData)}
+                            aria-label="Approuver la demande"
+                        >
+                            <IconCheck size={14} stroke={1.5} />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Rejeter avec motif" withArrow>
+                        <ActionIcon
+                            variant="light"
+                            color="red"
+                            size="sm"
+                            onClick={() => openRejectModal(rowData)}
+                            aria-label="Rejeter la demande"
+                        >
+                            <IconX size={14} stroke={1.5} />
+                        </ActionIcon>
+                    </Tooltip>
                 </>
             )}
-            <Button
-                variant="light"
-                color="blue"
-                size="compact-xs"
-                leftSection={<IconEye size={14} />}
-                onClick={() => openViewModal(rowData)}
-            >
-                Détails
-            </Button>
+            <Tooltip label="Consulter le détail" withArrow>
+                <ActionIcon
+                    variant="light"
+                    color="blue"
+                    size="sm"
+                    onClick={() => openViewModal(rowData)}
+                    aria-label="Consulter le détail de la demande"
+                >
+                    <IconEye size={14} stroke={1.5} />
+                </ActionIcon>
+            </Tooltip>
         </div>
     );
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -319,13 +322,12 @@ const PPERequestsTable = () => {
                 icon={<IconClipboardList size={22} stroke={2} />}
                 iconColor="amber"
                 title="Demandes d'EPI"
-                subtitle="Workflow de demande, validation et délivrance des équipements de protection individuelle"
+                subtitle="Demander, approuver ou rejeter les dotations d'équipements de protection"
                 actions={
                     <Button
-                        leftSection={<IconClipboardList size={15} />}
+                        leftSection={<IconPlus size={14} />}
                         color="teal"
                         size="sm"
-                        radius="md"
                         onClick={() => setShowRequestForm(true)}
                     >
                         Nouvelle demande
@@ -333,45 +335,87 @@ const PPERequestsTable = () => {
                 }
             />
 
-            {/* === Tableau des demandes === */}
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                <header className="px-4 py-2.5 bg-amber-50/60 border-b border-amber-200/70 flex items-center gap-2">
-                    <div className="p-1 rounded bg-amber-100">
-                        <IconHelmet size={14} className="text-amber-700" />
-                    </div>
-                    <h2 className="text-xs text-slate-800 uppercase tracking-wider">
-                        Liste des demandes EPI
-                    </h2>
-                    <span className="ml-auto text-[11px] text-slate-500">
-                        {requests.length} {requests.length > 1 ? 'demandes' : 'demande'}
-                    </span>
-                </header>
-                <div className="p-3">
-                    <DataTable
-                        value={requests}
-                        stripedRows
-                        paginator
-                        rows={10}
-                        responsiveLayout="scroll"
-                        size="small"
-                        emptyMessage="Aucune demande EPI enregistrée"
-                    >
-                        <Column header="Employé(s)" body={employeeTemplate} />
-                        <Column header="EPI demandé(s)" body={requestedEppTemplate} />
-                        <Column header="Motif" body={reasonTemplate} />
-                        <Column header="Priorité" body={priorityTemplate} />
-                        <Column header="Date souhaitée" body={dateTemplate} />
-                        <Column header="Statut" body={statusTemplate} />
-                        <Column header="Actions" body={actionTemplate} />
-                    </DataTable>
-                </div>
+            {/* Filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <SegmentedFilter
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                        { value: ALL, label: 'Toutes', count: requests.length, color: 'slate' },
+                        { value: 'PENDING', label: 'En attente', count: statusCounts.PENDING, color: 'violet' },
+                        { value: 'APPROVED', label: 'Approuvées', count: statusCounts.APPROVED, color: 'green' },
+                        { value: 'REJECTED', label: 'Rejetées', count: statusCounts.REJECTED, color: 'rose' },
+                    ]}
+                    rightElement={
+                        <TextInput
+                            placeholder="Rechercher un employé, un EPI, un motif…"
+                            leftSection={<IconSearch size={14} />}
+                            value={search}
+                            onChange={(e) => setSearch(e.currentTarget.value)}
+                            size="xs"
+                            w={280}
+                            aria-label="Rechercher une demande"
+                        />
+                    }
+                />
             </div>
 
-            {/* === Modal Nouvelle demande === */}
+            {/* Registre des demandes */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2">
+                {loadingList ? (
+                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
+                        {[0, 1, 2, 3].map((i) => (
+                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
+                        ))}
+                    </div>
+                ) : !filteredRequests.length ? (
+                    <EmptyState
+                        icon={<IconClipboardList size={24} />}
+                        title={statusFilter === ALL ? 'Aucune demande enregistrée' : 'Aucune demande dans cette catégorie'}
+                        description={
+                            statusFilter === ALL
+                                ? 'Créez la première demande de dotation EPI pour vos équipes.'
+                                : 'Changez de filtre pour consulter les autres demandes.'
+                        }
+                        compact
+                        action={
+                            statusFilter === ALL ? (
+                                <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setShowRequestForm(true)}>
+                                    Nouvelle demande
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                ) : (
+                    <DataTable
+                        value={filteredRequests}
+                        stripedRows
+                        removableSort
+                        paginator
+                        rows={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        size="small"
+                        dataKey="id"
+                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                    >
+                        <Column header="Employés" body={employeeTemplate} />
+                        <Column header="EPI demandés" body={requestedPpeTemplate} />
+                        <Column header="Motif" body={reasonTemplate} />
+                        <Column header="Priorité" body={priorityTemplate} sortable sortField="priority" style={{ width: '7.5rem' }} />
+                        <Column header="Date souhaitée" body={dateTemplate} sortable sortField="desiredDate" style={{ width: '9.5rem' }} />
+                        <Column header="Statut" body={statusTemplate} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header="Actions" body={actionTemplate} headerStyle={{ width: '7rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                    </DataTable>
+                )}
+            </div>
+
+            {/* Modale : nouvelle demande */}
             <Modal
                 opened={showRequestForm}
                 onClose={() => setShowRequestForm(false)}
-                title={<span className="text-slate-900">Nouvelle demande d'EPI</span>}
+                title={<span className="text-base text-slate-900">Nouvelle demande d'EPI</span>}
                 size="xl"
                 centered
                 radius="md"
@@ -382,36 +426,31 @@ const PPERequestsTable = () => {
                         label="Employés concernés"
                         placeholder="Sélectionner les employés"
                         data={employees.map((emp: any) => ({ value: '' + emp.id, label: emp.name }))}
-                        multiple
                         searchable
                         hidePickedOptions
                         withAsterisk
                         size="sm"
-                        radius="md"
                         {...requestForm.getInputProps('empIds')}
                     />
                     <MultiSelect
                         label="EPI demandés"
                         placeholder="Sélectionner les EPI"
-                        data={activePpe.map((epp: any) => ({
-                            value: '' + epp.id,
-                            label: `${epp.name} • ${epp.category} (Stock : ${epp.stock})`,
+                        data={activePpe.map((item: any) => ({
+                            value: '' + item.id,
+                            label: `${item.name} — ${ppeCategoryLabel(item.category)} (stock : ${item.stock})`,
                         }))}
-                        multiple
                         hidePickedOptions
                         searchable
                         withAsterisk
                         size="sm"
-                        radius="md"
                         {...requestForm.getInputProps('ppeIds')}
                     />
                     <div className="grid grid-cols-2 gap-3">
                         <DateInput
                             label="Date souhaitée"
-                            placeholder="Quand les EPI sont-ils requis ?"
+                            placeholder="JJ/MM/AAAA"
                             withAsterisk
                             size="sm"
-                            radius="md"
                             valueFormat="DD/MM/YYYY"
                             {...requestForm.getInputProps('desiredDate')}
                             minDate={new Date()}
@@ -419,24 +458,18 @@ const PPERequestsTable = () => {
                         <Select
                             label="Priorité"
                             placeholder="Sélectionner une priorité"
-                            data={[
-                                { value: 'Low', label: 'Faible' },
-                                { value: 'Medium', label: 'Moyenne' },
-                                { value: 'High', label: 'Élevée' },
-                            ]}
+                            data={PRIORITY_OPTIONS}
                             withAsterisk
                             size="sm"
-                            radius="md"
                             {...requestForm.getInputProps('priority')}
                         />
                     </div>
                     <Textarea
                         label="Motif"
-                        placeholder="Expliquez pourquoi ces EPI sont nécessaires"
+                        placeholder="ex. Renouvellement des gants anti-coupure de l'équipe forage après usure"
                         rows={3}
                         withAsterisk
                         size="sm"
-                        radius="md"
                         {...requestForm.getInputProps('reason')}
                     />
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
@@ -450,11 +483,11 @@ const PPERequestsTable = () => {
                 </form>
             </Modal>
 
-            {/* === Modal Approuver === */}
+            {/* Modale : approbation */}
             <Modal
                 opened={showApproveModal}
                 onClose={() => setShowApproveModal(false)}
-                title={<span className="text-slate-900">Approuver la demande EPI</span>}
+                title={<span className="text-base text-slate-900">Approuver la demande</span>}
                 centered
                 radius="md"
             >
@@ -462,38 +495,36 @@ const PPERequestsTable = () => {
                 <form onSubmit={approveForm.onSubmit(handleApprove)}>
                     <Textarea
                         label="Commentaire (facultatif)"
-                        placeholder="Ajouter un commentaire"
+                        placeholder="ex. Retrait au magasin EPI dès réception"
                         size="sm"
-                        radius="md"
                         {...approveForm.getInputProps('comment')}
                     />
                     <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
                         <Button variant="default" size="sm" onClick={() => setShowApproveModal(false)}>
                             Annuler
                         </Button>
-                        <Button type="submit" size="sm" color="green" leftSection={<IconCheck size={14} />}>
+                        <Button type="submit" size="sm" color="teal" leftSection={<IconCheck size={14} />}>
                             Approuver
                         </Button>
                     </div>
                 </form>
             </Modal>
 
-            {/* === Modal Rejeter === */}
+            {/* Modale : rejet */}
             <Modal
                 opened={showRejectModal}
                 onClose={() => setShowRejectModal(false)}
-                title={<span className="text-slate-900">Rejeter la demande EPI</span>}
+                title={<span className="text-base text-slate-900">Rejeter la demande</span>}
                 centered
                 radius="md"
             >
                 <LoadingOverlay visible={loading} />
                 <form onSubmit={rejectForm.onSubmit(handleReject)}>
                     <Textarea
-                        label="Commentaire (requis)"
-                        placeholder="Précisez le motif du rejet"
+                        label="Motif du rejet"
+                        placeholder="ex. Référence indisponible, demande à reformuler avec la taille exacte"
                         withAsterisk
                         size="sm"
-                        radius="md"
                         {...rejectForm.getInputProps('comment')}
                     />
                     <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
@@ -507,55 +538,60 @@ const PPERequestsTable = () => {
                 </form>
             </Modal>
 
-            {/* === Modal Détails === */}
+            {/* Modale : détail */}
             <Modal
                 opened={showViewModal}
                 onClose={() => setShowViewModal(false)}
-                title={<span className="text-slate-900">Détails de la demande</span>}
+                title={<span className="text-base text-slate-900">Détail de la demande</span>}
                 size="lg"
                 centered
                 radius="md"
             >
-                <LoadingOverlay visible={loading} />
-                {viewData ? (
-                    <div className="flex flex-col gap-2 text-sm">
+                {viewData && (
+                    <div className="flex flex-col gap-2 text-[12.5px]">
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">Employés</span>
+                            <span className="text-slate-500">Employés</span>
                             <span className="text-slate-800">
                                 {(viewData.empIds || []).map((id: any) => empMap[id]?.name || `#${id}`).join(', ') || '—'}
                             </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">EPI demandés</span>
+                            <span className="text-slate-500">EPI demandés</span>
                             <span className="text-slate-800">
                                 {(viewData.ppeIds || []).map((id: any) => ppeMap[id]?.name || `#${id}`).join(', ') || '—'}
                             </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">Motif</span>
+                            <span className="text-slate-500">Motif</span>
                             <span className="text-slate-800">{viewData.reason || '—'}</span>
                         </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">Priorité</span>
-                            <span className="text-slate-800">{priorityLabels[viewData.priority] || viewData.priority || '—'}</span>
+                        <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                            <span className="text-slate-500">Priorité</span>
+                            <span>
+                                <span className={`${CHIP_BASE} ${priorityConfig(viewData.priority).chip}`}>
+                                    {priorityConfig(viewData.priority).label}
+                                </span>
+                            </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">Date souhaitée</span>
-                            <span className="text-slate-800">{viewData.desiredDate ? new Date(viewData.desiredDate).toLocaleDateString('fr-FR') : '—'}</span>
+                            <span className="text-slate-500">Date souhaitée</span>
+                            <span className="text-slate-800">{formatDateFr(viewData.desiredDate)}</span>
                         </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-600">Statut</span>
-                            <span className="text-slate-800">{statusLabels[viewData.status] || viewData.status || '—'}</span>
+                        <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                            <span className="text-slate-500">Statut</span>
+                            <span>
+                                <span className={`${CHIP_BASE} ${requestStatusConfig(viewData.status).chip}`}>
+                                    {requestStatusConfig(viewData.status).label}
+                                </span>
+                            </span>
                         </div>
                         {viewData.comment && (
                             <div className="grid grid-cols-[140px_1fr] gap-2">
-                                <span className="text-slate-600">Commentaire</span>
+                                <span className="text-slate-500">Commentaire</span>
                                 <span className="text-slate-800">{viewData.comment}</span>
                             </div>
                         )}
                     </div>
-                ) : (
-                    <LoadingOverlay visible />
                 )}
                 <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
                     <Button variant="default" size="sm" onClick={() => setShowViewModal(false)}>

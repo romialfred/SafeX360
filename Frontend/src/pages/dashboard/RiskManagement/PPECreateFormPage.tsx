@@ -1,10 +1,8 @@
 import PPECreateForm from "../../../components/PPEManagement/PPECreateForm"
 
-
+// Le composant racine porte déjà le padding (p-5 space-y-4 w-full) : le wrapper reste neutre.
 const PPECreateFormPage = () => {
-    return (
-        <div className="p-5"><PPECreateForm /></div>
-    )
+    return <PPECreateForm />
 }
 
 export default PPECreateFormPage

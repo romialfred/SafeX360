@@ -1,9 +1,8 @@
 import PgiDeatailsTab from "../../../../components/LeadingIndicator/PGI/PGI Details/PgiDeatailsTab"
 
+// Le composant racine porte déjà le padding (p-5 space-y-4 w-full) : le wrapper reste neutre.
 const PgiDetailsTabPage = () => {
-    return (
-        <div className="p-5"><PgiDeatailsTab /></div>
-    )
+    return <PgiDeatailsTab />
 }
 
 export default PgiDetailsTabPage

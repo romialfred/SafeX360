@@ -36,10 +36,7 @@ import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { getActivitiesByYearStatusAndCategory } from "../../../services/HSEActivityService";
 import PageHeader from "../../UtilityComp/PageHeader";
 import FormWithHelp from "../../UtilityComp/FormWithHelp";
-
-
-
-
+import { PPE_ITEM_OPTIONS, TEAM_ROLES } from "./pgiLabels";
 
 
 const AddPgi = () => {
@@ -53,15 +50,8 @@ const AddPgi = () => {
     const [activities, setActivities] = useState<any[]>([]);
 
 
-    const [ppe, _setPPE] = useState([
-        { id: 'helmet', name: 'Safety Helmet', required: false, worn: false },
-        { id: 'goggles', name: 'Safety Goggles', required: false, worn: false },
-        { id: 'gloves', name: 'Safety Gloves', required: false, worn: false },
-        { id: 'boots', name: 'Safety Boots', required: false, worn: false },
-        { id: 'vest', name: 'High-Visibility Vest', required: false, worn: false },
-        { id: 'mask', name: 'Respiratory Mask', required: false, worn: false },
-        { id: 'harness', name: 'Safety Harness', required: false, worn: false }
-    ]);
+    // Référentiel EPI : codes backend (helmet, goggles…) + libellés FR centralisés
+    const ppe = PPE_ITEM_OPTIONS;
 
 
 
@@ -80,23 +70,16 @@ const AddPgi = () => {
 
         },
         validate: {
-
-            activityId: (value) => (value ? null : 'Activity is Required'),
-
-            siteId: (value) => (value?.trim().length > 0 ? null : 'Inspections Site is Required'),
-            plannedDate: (value) => (value ? null : 'Planned Date is Required'),
+            activityId: (value) => (value ? null : "L'activité de référence est obligatoire"),
+            siteId: (value) => (value?.trim().length > 0 ? null : "Le lieu d'inspection est obligatoire"),
+            plannedDate: (value) => (value ? null : 'La date planifiée est obligatoire'),
             objectives: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Objectives is required";
-
-                const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                if (trimmed.length === 0) return "L'objectif est obligatoire";
+                return trimmed.length > 50 ? '50 caractères maximum' : null;
             },
-            startTime: (value) => (value ? null : 'Start Time is Required'),
-            endTime: (value) => (value ? null : 'End Time is Required'),
-
-
-
+            startTime: (value) => (value ? null : "L'heure de début est obligatoire"),
+            endTime: (value) => (value ? null : "L'heure de fin est obligatoire"),
         },
     });
 
@@ -115,7 +98,6 @@ const AddPgi = () => {
 
             })
         getActivitiesByYearStatusAndCategory(new Date().getFullYear(), "PENDING", "IGP").then((res) => {
-            console.log(res);
             setActivities(res.map((x: any) => ({ label: x.title, value: String(x.id) })));
         }).catch(() => { })
     }, []);
@@ -151,7 +133,7 @@ const AddPgi = () => {
                                 autoFocus
                                 label="Rôle"
                                 placeholder="Sélectionner le rôle"
-                                data={['Inspecteur principal', 'Inspecteur', 'Responsable de zone', 'Responsable HSE', 'Auditeur externe']}
+                                data={TEAM_ROLES}
                                 value={item.role}
                                 onChange={(val) => handleRoleChange(item.id, val!)}
                                 className="w-full"
@@ -172,11 +154,11 @@ const AddPgi = () => {
     const handleSubmit = (values: any) => {
         dispatch(showOverlay())
         createPgi(values).then((_res) => {
-            successNotification("Inspection scheduled successfully");
+            successNotification("Inspection planifiée");
             navigate("/PGI")
         })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "La planification de l'inspection a échoué");
             })
             .finally(() => {
                 dispatch(hideOverlay())
@@ -202,7 +184,7 @@ const AddPgi = () => {
 
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -299,7 +281,7 @@ const AddPgi = () => {
                                     <IconSearch size={16} className="text-green-700" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm text-slate-900">Informations sur l'inspection</h2>
+                                    <h2 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>Informations sur l'inspection</h2>
                                     <p className="text-xs text-slate-500">Lieu, date, créneau et activité de référence</p>
                                 </div>
                             </div>
@@ -324,7 +306,7 @@ const AddPgi = () => {
                                     <IconFileText size={16} className="text-green-700" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm text-slate-900">Description et contexte</h2>
+                                    <h2 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>Description et contexte</h2>
                                     <p className="text-xs text-slate-500">Motif et points d'attention de l'inspection</p>
                                 </div>
                             </div>
@@ -342,7 +324,7 @@ const AddPgi = () => {
                                     <IconTarget size={16} className="text-green-700" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm text-slate-900">Objectif et types de risques</h2>
+                                    <h2 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>Objectif et types de risques</h2>
                                     <p className="text-xs text-slate-500">Résultat attendu et grille de risques à évaluer</p>
                                 </div>
                             </div>
@@ -369,7 +351,7 @@ const AddPgi = () => {
                                     <IconShield size={16} className="text-green-700" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm text-slate-900">Équipements de protection individuelle (EPI)</h2>
+                                    <h2 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>Équipements de protection individuelle (EPI)</h2>
                                     <p className="text-xs text-slate-500">EPI obligatoires sur la zone inspectée</p>
                                 </div>
                             </div>
@@ -411,7 +393,7 @@ const AddPgi = () => {
                                     <IconUsers size={16} className="text-green-700" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm text-slate-900">Équipe d'inspection</h2>
+                                    <h2 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>Équipe d'inspection</h2>
                                     <p className="text-xs text-slate-500">Inspecteurs et observateurs avec attribution des rôles</p>
                                 </div>
                             </div>

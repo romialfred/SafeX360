@@ -1,20 +1,26 @@
-import { Badge, Button, Card, Group, NumberInput, Select, Stack, Text, Tooltip, Modal, LoadingOverlay, TextInput } from "@mantine/core";
-import { IconAlertCircle, IconTrash } from "@tabler/icons-react";
+import { Button, Group, LoadingOverlay, Modal, NumberInput, Select, TextInput, Tooltip } from "@mantine/core";
+import { IconAlertCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { getAllActiveMeasurement } from "../../../../services/TechMeasurementService";
-import { mapIdToName } from "../../../../utility/OtherUtilities";
 import { useParams } from "react-router-dom";
 import { modals } from "@mantine/modals";
-import { successNotification, errorNotification } from "../../../../utility/NotificationUtility";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { DateInput } from "@mantine/dates";
-import TextEditor from "../../../UtilityComp/TextEditor";
-import { createCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { useDispatch, useSelector } from "react-redux";
+import TextEditor from "../../../UtilityComp/TextEditor";
+import EmptyState from "../../../UtilityComp/EmptyState";
+import { getAllActiveMeasurement } from "../../../../services/TechMeasurementService";
+import { mapIdToName } from "../../../../utility/OtherUtilities";
+import { successNotification, errorNotification } from "../../../../utility/NotificationUtility";
+import { createCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { addInspectionMeasurement, getMeasurementsByInspectionId, removeInsMeasurement } from "../../../../services/InspectionProcessService";
+import { ACTION_STATUS_OPTIONS, SECTION_TITLE_STYLE } from "../pgiLabels";
 
+/**
+ * Mesures techniques rattachées au dossier d'inspection : valeur relevée,
+ * comparaison au seuil et plan d'action correctif en cas de dépassement.
+ */
 const Measurements = ({ employee, empMap }: any) => {
     const { id } = useParams();
     const dispatch = useDispatch();
@@ -27,8 +33,6 @@ const Measurements = ({ employee, empMap }: any) => {
     const [loading, setLoading] = useState(false);
     const [_actionIndex, setActionIndex] = useState<number | null>(null);
     const user = useSelector((state: any) => state.user)
-    // const [opened, { open, close }] = useDisclosure(false);
-    // const [loading, setLoading] = useState(false);
 
     const form = useForm({
         initialValues: {
@@ -49,13 +53,12 @@ const Measurements = ({ employee, empMap }: any) => {
         validate: {
             actionName: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Action Plan Name required";
-                const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                if (trimmed.length === 0) return "Le nom du plan d'action est obligatoire";
+                return trimmed.length > 50 ? '50 caractères maximum' : null;
             },
-            assignedEmployeeId: (value) => (!value ? "Please select an employee" : null),
-            deadline: (value) => (!value ? "Please select a deadline" : null),
-            status: (value) => (!value ? "Please select a status" : null),
+            assignedEmployeeId: (value) => (!value ? 'Sélectionnez un responsable' : null),
+            deadline: (value) => (!value ? 'Sélectionnez une échéance' : null),
+            status: (value) => (!value ? 'Sélectionnez un statut' : null),
         }
     });
 
@@ -70,9 +73,7 @@ const Measurements = ({ employee, empMap }: any) => {
     const fetchData = () => {
         getMeasurementsByInspectionId(id).then((res) => {
             setMeasurementsData(res);
-        }).catch((_error) => {
-
-        })
+        }).catch((_error) => { })
     };
 
     useEffect(() => {
@@ -85,55 +86,43 @@ const Measurements = ({ employee, empMap }: any) => {
     }, [measurementsData]);
 
     const handleAddMeasurement = (values: any) => {
-
         dispatch(showOverlay());
         addInspectionMeasurement(values).then((_res) => {
-            successNotification("Measurement added successfully");
+            successNotification("Mesure ajoutée");
             form.reset();
             setShowAddForm(false);
             fetchData();
-
         }).catch((error) => {
-            errorNotification(error?.response?.data?.errorMessage)
-
+            errorNotification(error?.response?.data?.errorMessage || "L'ajout de la mesure a échoué")
         }).finally(() => {
             dispatch(hideOverlay());
         })
     };
 
-    const handleShowAddForm = () => {
-        setShowAddForm(true);
-    };
-
-    const handleCancelAddForm = () => {
-        setShowAddForm(false);
-    };
-
-    const handleRemove = (id: any) => {
+    const handleRemove = (rowId: any) => {
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Retirer la mesure</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to remove this measurement? This action cannot be undone.
+                <span className="text-sm">
+                    Souhaitez-vous retirer cette mesure de l'inspection ? Cette action est définitive.
                 </span>
             ),
-            labels: { confirm: `Yes, Remove`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: 'Oui, retirer', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: 'default' },
+            confirmProps: { color: 'red', variant: 'filled' },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
             onConfirm: () => {
-                removeInsMeasurement(id)
+                removeInsMeasurement(rowId)
                     .then(() => {
-                        setMeasurementsData([...measurementsData.filter((x) => x.id !== id)]);
-                        successNotification("Measurement removed successfully");
+                        setMeasurementsData([...measurementsData.filter((x) => x.id !== rowId)]);
+                        successNotification("Mesure retirée");
                     })
                     .catch((err) => {
-                        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err.response?.data?.errorMessage || "Le retrait de la mesure a échoué");
                     });
-
             },
         });
     };
@@ -150,32 +139,36 @@ const Measurements = ({ employee, empMap }: any) => {
     };
 
     const handleSubmit = (values: any) => {
-
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Créer le plan d'action</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to add this action plan? This action cannot be undone.
+                <span className="text-sm">
+                    Confirmer la création de ce plan d'action correctif ?
                 </span>
             ),
-            labels: { confirm: `Yes, Add `, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: 'Oui, créer', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: 'default' },
+            confirmProps: { color: 'teal', variant: 'filled' },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
             onConfirm: () => {
-                const data = { ...values, departmentId: values.assignedEmployeeId ? empMap[values.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: values.assignedEmployeeId ?? user.id, assignedEmployeeId: values.assignedEmployeeId ?? user.id };
+                const data = {
+                    ...values,
+                    departmentId: values.assignedEmployeeId ? empMap[values.assignedEmployeeId]?.departmentId : user.departmentId,
+                    ownerId: values.assignedEmployeeId ?? user.id,
+                    assignedEmployeeId: values.assignedEmployeeId ?? user.id,
+                };
                 setLoading(true);
                 createCorrectiveAction(data)
                     .then(() => {
-                        successNotification("Action plan added successfully");
+                        successNotification("Plan d'action créé");
                         close();
                         actionForm.reset();
                     })
                     .catch((err) => {
-                        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err.response?.data?.errorMessage || "La création du plan d'action a échoué");
                     })
                     .finally(() => {
                         setLoading(false);
@@ -183,98 +176,120 @@ const Measurements = ({ employee, empMap }: any) => {
             },
         });
     };
+
     const isExceeded = typeof form.values.value === 'number' && (form.values.value > record[form.values.measurementId]?.threshold);
+
     return (
-        <div className="flex flex-col gap-5">
-            <Group justify="space-between">
-                <div className="text-lg">Measurements</div>
-                {!showAddForm && <Button color="green" onClick={handleShowAddForm}>
-                    Add Measurement
-                </Button>}
-            </Group>
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-2">
+                <h3 className="text-slate-800" style={SECTION_TITLE_STYLE}>
+                    Mesures techniques
+                </h3>
+                {!showAddForm && (
+                    <Button color="teal" size="xs" leftSection={<IconPlus size={14} />} onClick={() => setShowAddForm(true)}>
+                        Ajouter une mesure
+                    </Button>
+                )}
+            </div>
             {showAddForm && (
-                <form className="bg-white p-6 rounded-lg shadow space-y-4" onSubmit={form.onSubmit(handleAddMeasurement)}>
-                    <Group grow>
+                <form className="bg-white rounded-xl border border-slate-200 p-4 space-y-4" onSubmit={form.onSubmit(handleAddMeasurement)}>
+                    <Group grow align="start">
                         <Select
-                            label="Measurement"
-                            placeholder="Select measurement"
+                            label="Mesure"
+                            placeholder="Sélectionner la mesure à relever"
                             data={measurement.filter((x: any) => !selectedMeasurement.includes(x.id)).map((x: any) => ({ value: "" + x.id, label: x.name }))}
                             {...form.getInputProps("measurementId")}
                             withAsterisk
+                            size="sm"
+                            searchable
                         />
-                        <div className="relative">
-
-                            <Badge className="!absolute right-0 !" size="md" color={isExceeded ? 'red' : 'green'} variant="light">
-                                Threshold: {record[form.values.measurementId]?.threshold}{record[form.values.measurementId]?.unit}
-                            </Badge>
-                            <NumberInput
-                                label="Value"
-                                {...form.getInputProps("value")}
-                                withAsterisk
-                            />
-                        </div>
+                        <NumberInput
+                            label={
+                                form.values.measurementId
+                                    ? `Valeur relevée (seuil : ${record[form.values.measurementId]?.threshold ?? '—'}${record[form.values.measurementId]?.unit ?? ''})`
+                                    : 'Valeur relevée'
+                            }
+                            {...form.getInputProps("value")}
+                            withAsterisk
+                            size="sm"
+                            error={isExceeded ? 'Valeur supérieure au seuil autorisé' : undefined}
+                        />
                     </Group>
-                    <Group justify="end">
-                        <Button type="button" color="gray" variant="light" onClick={handleCancelAddForm}>
-                            Cancel
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                        <Button type="button" variant="default" size="sm" onClick={() => setShowAddForm(false)}>
+                            Annuler
                         </Button>
-                        <Button type="submit" color="green" disabled={!form.values.measurementId}>
-                            Add Measurement
+                        <Button type="submit" color="teal" size="sm" disabled={!form.values.measurementId}>
+                            Ajouter la mesure
                         </Button>
-                    </Group>
+                    </div>
                 </form>
             )}
             {!showAddForm && measurementsData?.length === 0 && (
-                <Text color="dimmed" ta="center">No measurements added yet.</Text>
+                <EmptyState
+                    title="Aucune mesure relevée"
+                    description="Ajoutez les mesures techniques relevées sur le terrain (bruit, poussières, gaz…)."
+                    compact
+                />
             )}
             {!showAddForm && measurementsData?.map((x: any, index: number) => {
                 const value = x.value;
                 const threshold = record[x.measurementId]?.threshold;
                 const unit = record[x.measurementId]?.unit;
-                const isExceeded = typeof value === 'number' && (value > threshold);
+                const exceeded = typeof value === 'number' && (value > threshold);
                 return (
-                    <Card key={x.id} shadow="sm" radius="md" withBorder className="bg-white p-4">
-                        <Card.Section withBorder inheritPadding py="xs">
-                            <Group justify="space-between" align="center">
-                                <Text size="lg">
-                                    {record[x.measurementId]?.name}
-                                </Text>
-                                <Group gap="xs">
-                                    <Badge size="lg" color={isExceeded ? 'red' : 'green'} variant="light">
-                                        Threshold: {threshold}{unit}
-                                    </Badge>
-                                    <Tooltip label="Remove" withArrow>
-                                        <Button
-                                            size="xs"
-                                            color="red"
-                                            variant="light"
-                                            leftSection={<IconTrash size={14} />}
-                                            onClick={() => handleRemove(x.id)}
-                                        >
-                                            Remove
-                                        </Button>
-                                    </Tooltip>
-                                </Group>
-                            </Group>
-                        </Card.Section>
-                        <Stack gap="sm" mt="sm">
-                            <Text size="sm"><b>Value:</b> {value}{unit}</Text>
-                            {isExceeded && (
-                                <div className=" flex space-x-2 items-center">
+                    <div key={x.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <header className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-2 flex-wrap">
+                            <h4 className="text-slate-800" style={SECTION_TITLE_STYLE}>
+                                {record[x.measurementId]?.name}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${
+                                        exceeded
+                                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    }`}
+                                >
+                                    Seuil : {threshold}{unit}
+                                </span>
+                                <Tooltip label="Retirer la mesure" withArrow>
                                     <Button
-                                        leftSection={<IconAlertCircle size={16} />}
+                                        size="xs"
                                         color="red"
+                                        variant="light"
+                                        leftSection={<IconTrash size={14} />}
+                                        onClick={() => handleRemove(x.id)}
+                                    >
+                                        Retirer
+                                    </Button>
+                                </Tooltip>
+                            </div>
+                        </header>
+                        <div className="p-4 space-y-2">
+                            <p className="text-[13px] text-slate-700">
+                                Valeur relevée :{' '}
+                                <span className={`tabular-nums ${exceeded ? 'text-rose-700' : 'text-slate-900'}`}>
+                                    {value}{unit}
+                                </span>
+                            </p>
+                            {exceeded && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        leftSection={<IconAlertCircle size={14} />}
+                                        color="red"
+                                        size="xs"
                                         onClick={() => onAddActionPlan(index)}
                                     >
-                                        Add Action Plan
+                                        Créer un plan d'action
                                     </Button>
-                                    <Text size="sm" c="dimmed" className="pl-1">
-                                        * If not added already
-                                    </Text>
+                                    <p className="text-[11.5px] text-slate-500">
+                                        Seuil dépassé : un plan d'action correctif est attendu.
+                                    </p>
                                 </div>
                             )}
-                        </Stack>
-                    </Card>
+                        </div>
+                    </div>
                 );
             })}
 
@@ -285,31 +300,59 @@ const Measurements = ({ employee, empMap }: any) => {
                 centered
                 closeOnClickOutside={false}
                 closeOnEscape={false}
-                title={
-                    <h1 className="text-lg text-blue-500">
-                        Add Action Plan
-                    </h1>
-                }
+                title={<span className="text-base text-slate-900">Nouveau plan d'action</span>}
             >
                 <LoadingOverlay
                     visible={loading}
                     zIndex={1000}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
-                <form className="grid grid-col-2 gap-4" onSubmit={actionForm.onSubmit(handleSubmit)}>
-                    <TextInput withAsterisk {...actionForm.getInputProps(`actionName`)} label="Action Plan Name" placeholder='Enter action plan name' />
-                    <Select withAsterisk {...actionForm.getInputProps(`assignedEmployeeId`)} data={employee} label="Assign Employee" placeholder="Select assigned employee" />
-                    <DateInput withAsterisk {...actionForm.getInputProps(`deadline`)} label="Deadline" placeholder="Select deadline" />
-                    <Select withAsterisk {...actionForm.getInputProps(`status`)} data={[{ label: "Pending", value: "PENDING" }, { label: "In-Progress", value: "IN_PROGRESS" }, { label: "Canceled", value: "CANCELED" }, { label: "Completed", value: "COMPLETED" }]} label="Status" placeholder="Select status" />
-                    <div className='col-span-2'>
+                <form className="grid grid-cols-2 gap-4" onSubmit={actionForm.onSubmit(handleSubmit)}>
+                    <TextInput
+                        withAsterisk
+                        size="sm"
+                        {...actionForm.getInputProps(`actionName`)}
+                        label="Nom du plan d'action"
+                        placeholder="ex. Réviser le système d'aspiration de l'atelier de concassage"
+                        className="col-span-2"
+                    />
+                    <Select
+                        withAsterisk
+                        size="sm"
+                        {...actionForm.getInputProps(`assignedEmployeeId`)}
+                        data={employee}
+                        label="Responsable"
+                        placeholder="Sélectionner le responsable"
+                        searchable
+                    />
+                    <DateInput
+                        withAsterisk
+                        size="sm"
+                        {...actionForm.getInputProps(`deadline`)}
+                        label="Échéance"
+                        placeholder="JJ/MM/AAAA"
+                        valueFormat="DD/MM/YYYY"
+                    />
+                    <Select
+                        withAsterisk
+                        size="sm"
+                        {...actionForm.getInputProps(`status`)}
+                        data={ACTION_STATUS_OPTIONS}
+                        label="Statut"
+                        placeholder="Sélectionner le statut"
+                        className="col-span-2"
+                    />
+                    <div className="col-span-2">
                         <TextEditor withAsterisk form={actionForm} id={`description`} title="Description" />
                     </div>
-                    <Button type="submit" variant="gradient" className="w-full">
-                        Submit
-                    </Button>
-                    <Button type="button" onClick={close} color="red" className="w-full">
-                        Cancel
-                    </Button>
+                    <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
+                        <Button type="button" variant="default" size="sm" onClick={close}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" color="teal" size="sm">
+                            Créer le plan d'action
+                        </Button>
+                    </div>
                 </form>
             </Modal>
         </div>
