@@ -56,6 +56,7 @@ import { type AICheckpointProposal } from '../../services/AIInspectionService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
 import AIInspectAssistPanel from './AIInspectAssistPanel';
+import CheckpointIllustration from './CheckpointIllustration';
 
 /** Méthode d'exécution choisie par l'inspecteur (LOT 50). */
 type ExecutionMethod = 'HUMAN' | 'AI';
@@ -667,8 +668,9 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
     return (
         <div
             id={finding.checkpointId !== undefined ? `checkpoint-${finding.checkpointId}` : undefined}
-            className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden scroll-mt-36"
+            className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden scroll-mt-36 md:flex md:items-stretch"
         >
+            <div className="flex-1 min-w-0">
             <div className="px-4 py-3 border-b border-slate-100">
                 <div className="flex items-start gap-3">
                     <div
@@ -793,6 +795,15 @@ function CheckpointCard({ index, finding, disabled, onPatch }: CheckpointCardPro
                         className="w-full px-3 py-2 text-[13px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 disabled:bg-slate-100 disabled:text-slate-500"
                     />
                 </div>
+            </div>
+            </div>
+
+            {/* Illustration contextuelle de la partie inspectée */}
+            <div className="hidden md:flex w-44 flex-shrink-0 flex-col items-center justify-center gap-1 border-l border-slate-100 bg-gradient-to-br from-slate-50/80 to-white p-4">
+                <CheckpointIllustration
+                    label={finding.checkpointLabel}
+                    className="w-28 h-28"
+                />
             </div>
         </div>
     );
