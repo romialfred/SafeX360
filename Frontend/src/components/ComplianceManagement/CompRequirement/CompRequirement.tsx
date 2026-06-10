@@ -4,7 +4,7 @@ import CompData from "./CompData"
 
 const CompRequirement = () => {
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },

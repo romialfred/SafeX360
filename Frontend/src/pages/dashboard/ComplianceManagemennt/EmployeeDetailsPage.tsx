@@ -3,7 +3,7 @@ import EmployeeDetails from "../../../components/ComplianceManagement/EmployeeAs
 
 const EmployeeDetailsPage = () => {
     return (
-        <div className="p-5"><EmployeeDetails /></div>
+        <EmployeeDetails />
     )
 }
 

@@ -264,7 +264,7 @@ export default function KpiTile({
 
     return (
         <div
-            className={`relative rounded-xl border ${cfg.border} ${cfg.bg} overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:${cfg.glow} group`}
+            className={`relative rounded-xl border ${cfg.border} ${cfg.bg} overflow-hidden transition-[box-shadow] duration-200 hover:shadow-md group`}
         >
             <div className="px-4 pt-3 pb-2">
                 {/* Ligne 1 : icône + label à gauche · delta à droite */}

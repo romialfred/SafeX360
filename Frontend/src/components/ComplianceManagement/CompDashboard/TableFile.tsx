@@ -41,9 +41,14 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
     );
 
     const lastReviewBodyTemplate = (rowData: CompliantEmployee) => (
-        <span className="text-[12.5px] text-slate-600">
-            {formatDateFr(rowData.lastReview?.completedOn)}
-        </span>
+        <div>
+            <span className="text-[12.5px] text-slate-600">
+                {formatDateFr(rowData.lastReview?.completedOn)}
+            </span>
+            {rowData.lastReview?.validatedBy && (
+                <p className="text-[11px] text-slate-400">par {rowData.lastReview.validatedBy}</p>
+            )}
+        </div>
     );
 
     const nextReviewBodyTemplate = (rowData: CompliantEmployee) => {
@@ -58,11 +63,10 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
         );
     };
 
+    // Pagination en base 0, alignée sur le backend (page * pageSize).
     const handlePage = (event: DataTablePageEvent) => {
         if (!onPageChange) return;
-        const nextPage = (event.page ?? 0) + 1;
-        const nextRows = event.rows ?? pageSize;
-        onPageChange(nextPage, nextRows);
+        onPageChange(event.page ?? 0, event.rows ?? pageSize);
     };
 
     const totalRecords = typeof total === "number" && total > 0 ? total : employees.length;
@@ -96,7 +100,7 @@ const TableFile = ({ employees, total, page, pageSize, onPageChange, loading = f
                 paginator={Boolean(onPageChange)}
                 rows={pageSize}
                 totalRecords={totalRecords}
-                first={(page - 1) * pageSize}
+                first={page * pageSize}
                 size="small"
                 stripedRows
                 className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"

@@ -191,6 +191,8 @@ const ActionItemList = ({ items, tone, seeAllHref, seeAllLabel = 'Tout traiter' 
                                         size="compact-xs"
                                         leftSection={<IconMail size={12} />}
                                         loading={sendingIds.has(sendKey)}
+                                        disabled={!item.employee?.id || !extractRequirementId(item)}
+                                        title={!item.employee?.id || !extractRequirementId(item) ? 'Identifiants indisponibles pour ce rappel' : undefined}
                                         onClick={() => handleNotify(item)}
                                     >
                                         Rappel

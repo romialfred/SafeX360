@@ -3,7 +3,7 @@ import CompDashboard from "../../../components/ComplianceManagement/CompDashboar
 
 const CompDashboardPage = () => {
     return (
-        <div className="p-5"><CompDashboard /></div>
+        <CompDashboard />
     )
 }
 

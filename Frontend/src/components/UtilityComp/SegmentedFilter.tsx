@@ -11,7 +11,7 @@ export interface SegmentedFilterOption {
     value: string;
     label: string;
     count?: number;
-    color?: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'slate' | 'teal' | 'indigo' | 'gray';
+    color?: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'slate' | 'teal' | 'indigo' | 'gray' | 'violet' | 'rose' | 'amber';
 }
 
 interface SegmentedFilterProps {
@@ -33,6 +33,9 @@ const colorActiveMap: Record<string, string> = {
     teal: 'bg-teal-600 text-white',
     indigo: 'bg-indigo-600 text-white',
     gray: 'bg-slate-600 text-white',
+    violet: 'bg-violet-600 text-white',
+    rose: 'bg-rose-600 text-white',
+    amber: 'bg-amber-600 text-white',
 };
 
 const colorCountActiveMap: Record<string, string> = {
@@ -45,6 +48,9 @@ const colorCountActiveMap: Record<string, string> = {
     teal: 'bg-white/20',
     indigo: 'bg-white/20',
     gray: 'bg-white/20',
+    violet: 'bg-white/20',
+    rose: 'bg-white/20',
+    amber: 'bg-white/20',
 };
 
 const SegmentedFilter = ({ value, onChange, options, leftElement, rightElement, size = 'sm' }: SegmentedFilterProps) => {
@@ -64,7 +70,7 @@ const SegmentedFilter = ({ value, onChange, options, leftElement, rightElement, 
                                 key={opt.value}
                                 type="button"
                                 onClick={() => onChange(opt.value)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md ${size === 'sm' ? 'text-xs' : 'text-sm'} transition-all ${activeClass}`}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md ${size === 'sm' ? 'text-xs' : 'text-sm'} transition-colors ${activeClass}`}
                             >
                                 {opt.label}
                                 {opt.count !== undefined && (

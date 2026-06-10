@@ -3,7 +3,7 @@ import EditRequirement from "../../../components/ComplianceManagement/CompRequir
 
 const EditRequirementPage = () => {
   return (
-    <div className="p-5"><EditRequirement /></div>
+    <EditRequirement />
   )
 }
 

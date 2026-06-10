@@ -356,6 +356,7 @@ const RequirementForm = ({ mode }: RequirementFormProps) => {
                                     {/* Sceau de criticité, façon tampon */}
                                     <div
                                         className={`absolute top-3 right-3 rotate-[-6deg] border-2 rounded px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] ${SEAL_CLASSES[criticality] ?? SEAL_CLASSES.STANDARD}`}
+                                        role="img"
                                         aria-label={`Criticité : ${criticalityCfg.label}`}
                                     >
                                         {criticalityCfg.label}

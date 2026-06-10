@@ -15,13 +15,14 @@ import { docStatusConfig, formatDateFr } from "../complianceLabels";
 const DetailDocument = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
-    const [document, setDocument] = useState<any>({});
+    // Nommé docInfo pour ne pas masquer le global DOM `document`.
+    const [docInfo, setDocInfo] = useState<any>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         dispatch(showOverlay());
         getDocumentById(id)
-            .then((res) => setDocument(res))
+            .then((res) => setDocInfo(res))
             .catch((err) => {
                 errorNotification(err.response?.data?.errorMessage || "Le document n'a pas pu être chargé");
             })
@@ -34,7 +35,7 @@ const DetailDocument = () => {
 
     const handleOpenDocument = () => {
         dispatch(showOverlay());
-        getMedia(document.docId)
+        getMedia(docInfo.docId)
             .then((res) => openPDF(res.file))
             .catch((err) => {
                 errorNotification(err.response?.data?.errorMessage || "Le document n'a pas pu être ouvert");
@@ -42,17 +43,17 @@ const DetailDocument = () => {
             .finally(() => dispatch(hideOverlay()));
     };
 
-    const rawStatus = (document.status ?? '').toString().toUpperCase();
-    const expiry = document.expiryDate ? new Date(document.expiryDate) : null;
+    const rawStatus = (docInfo.status ?? '').toString().toUpperCase();
+    const expiry = docInfo.expiryDate ? new Date(docInfo.expiryDate) : null;
     const isExpired = rawStatus === 'VALID' && expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now();
     const statusCfg = docStatusConfig(isExpired ? 'EXPIRED' : rawStatus);
 
     const rows: Array<{ label: string; value: React.ReactNode }> = [
-        { label: 'Fichier', value: document.docName || '—' },
-        { label: 'Exigence couverte', value: document.requirement || '—' },
-        { label: 'Déposé par', value: document.uploadedBy || '—' },
-        { label: 'Déposé le', value: formatDateFr(document.uploadDate) },
-        { label: "Date d'expiration", value: formatDateFr(document.expiryDate) },
+        { label: 'Fichier', value: docInfo.docName || '—' },
+        { label: 'Exigence couverte', value: docInfo.requirement || '—' },
+        { label: 'Déposé par', value: docInfo.uploadedBy || '—' },
+        { label: 'Déposé le', value: formatDateFr(docInfo.uploadDate) },
+        { label: "Date d'expiration", value: formatDateFr(docInfo.expiryDate) },
         {
             label: 'Statut',
             value: (
@@ -74,7 +75,7 @@ const DetailDocument = () => {
                 ]}
                 icon={<IconFileDescription size={22} stroke={2} />}
                 iconColor="teal"
-                title={loading ? 'Détail du document' : document.docName || 'Détail du document'}
+                title={loading ? 'Détail du document' : docInfo.docName || 'Détail du document'}
                 subtitle="Justificatif de conformité déposé par un employé"
                 actions={
                     <Button
@@ -83,7 +84,7 @@ const DetailDocument = () => {
                         color="teal"
                         leftSection={<IconFileSearch size={14} />}
                         onClick={handleOpenDocument}
-                        disabled={!document.docId}
+                        disabled={!docInfo.docId}
                     >
                         Ouvrir le document
                     </Button>
@@ -112,7 +113,7 @@ const DetailDocument = () => {
                     </dl>
                 </div>
 
-                {document.comment && (
+                {docInfo.comment && (
                     <div className="bg-white rounded-xl border border-rose-200 p-4">
                         <h3
                             className="text-rose-700 mb-2"
@@ -124,7 +125,7 @@ const DetailDocument = () => {
                         >
                             Motif du rejet
                         </h3>
-                        <p className="text-[12.5px] text-slate-700 leading-relaxed">{document.comment}</p>
+                        <p className="text-[12.5px] text-slate-700 leading-relaxed">{docInfo.comment}</p>
                     </div>
                 )}
             </div>

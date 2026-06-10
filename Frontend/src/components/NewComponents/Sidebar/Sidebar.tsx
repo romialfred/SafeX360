@@ -251,12 +251,12 @@ const menuItems: MenuItem[] = [
         icon: IconSquareCheck,
         color: 'text-green-600',
         subItems: [
-            { id: 'compliance-dashboard', label: 'Tableau de Bord', icon: IconChartBar },
-            { id: 'requirements', label: 'Exigences Légales', icon: IconFileCheck },
-            { id: 'position-assignments', label: 'Affectations par Poste', icon: IconUserCheck },
-            { id: 'employee-assignments', label: 'Affectations Employés', icon: IconUsers },
+            { id: 'compliance-dashboard', label: 'Tableau de bord', icon: IconChartBar },
+            { id: 'requirements', label: 'Exigences légales', icon: IconFileCheck },
+            { id: 'position-assignments', label: 'Affectations par poste', icon: IconUserCheck },
+            { id: 'employee-assignments', label: 'Affectations employés', icon: IconUsers },
             { id: 'documents', label: 'Documents', icon: IconFolderOpen },
-            { id: 'document-validation', label: 'Validation Documents', icon: IconSquareCheck }
+            { id: 'document-validation', label: 'Validation des documents', icon: IconSquareCheck }
         ]
     },
     {

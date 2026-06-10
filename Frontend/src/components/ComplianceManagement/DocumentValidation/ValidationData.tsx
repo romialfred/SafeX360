@@ -146,7 +146,7 @@ const ValidationData = () => {
                 dispatch(showOverlay());
                 rejectComplianceDocument(rowData.id, value)
                     .then(() => {
-                        successNotification('Document rejeté. L’employé devra déposer un nouveau justificatif.');
+                        successNotification("Document rejeté. L'employé devra déposer un nouveau justificatif.");
                         setData((prev) => prev.map((doc) => (doc.id === rowData.id ? { ...doc, status: 'REJECTED' } : doc)));
                         modals.closeAll();
                     })
@@ -280,7 +280,7 @@ const ValidationData = () => {
                 <KpiTile
                     label="Expirés"
                     value={loading ? '…' : statusCounts.EXPIRED}
-                    tone="amber"
+                    tone="rose"
                     icon={<IconAlertTriangle size={14} stroke={1.8} />}
                 />
                 <KpiTile
@@ -297,10 +297,10 @@ const ValidationData = () => {
                     value={statusFilter}
                     onChange={setStatusFilter}
                     options={[
-                        { value: 'PENDING', label: 'À valider', count: statusCounts.PENDING, color: 'indigo' },
+                        { value: 'PENDING', label: 'À valider', count: statusCounts.PENDING, color: 'violet' },
                         { value: 'VALID', label: 'Validés', count: statusCounts.VALID, color: 'green' },
-                        { value: 'REJECTED', label: 'Rejetés', count: statusCounts.REJECTED, color: 'red' },
-                        { value: 'EXPIRED', label: 'Expirés', count: statusCounts.EXPIRED, color: 'orange' },
+                        { value: 'REJECTED', label: 'Rejetés', count: statusCounts.REJECTED, color: 'rose' },
+                        { value: 'EXPIRED', label: 'Expirés', count: statusCounts.EXPIRED, color: 'rose' },
                     ]}
                     rightElement={
                         <TextInput

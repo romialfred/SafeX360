@@ -34,11 +34,11 @@ import { ACTION_TAB_LABELS, bucketFromBackendStatus } from "../complianceLabels"
 const TAB_ORDER: ActionTone[] = ["expired", "upcoming", "missing", "pending"];
 const DEFAULT_EMPLOYEE_PAGE_SIZE = 5;
 
-const TAB_FILTER_COLORS: Record<string, 'red' | 'orange' | 'slate' | 'indigo'> = {
-    expired: 'red',
-    upcoming: 'orange',
+const TAB_FILTER_COLORS: Record<string, 'rose' | 'amber' | 'slate' | 'violet'> = {
+    expired: 'rose',
+    upcoming: 'amber',
     missing: 'slate',
-    pending: 'indigo',
+    pending: 'violet',
 };
 
 const CompDashboard = () => {
@@ -49,7 +49,7 @@ const CompDashboard = () => {
     const [compliantEmployees, setCompliantEmployeesState] = useState<CompliantEmployeesResponse | null>(null);
     const [dashboardLoading, setDashboardLoading] = useState(true);
     const [employeesLoading, setEmployeesLoading] = useState(true);
-    const [employeePage, setEmployeePage] = useState(1);
+    const [employeePage, setEmployeePage] = useState(0);
     const [employeePageSize, setEmployeePageSize] = useState(DEFAULT_EMPLOYEE_PAGE_SIZE);
 
     const fetchDashboardData = useCallback(async () => {

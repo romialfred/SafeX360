@@ -3,7 +3,7 @@ import DetailDocument from "../../../components/ComplianceManagement/CompDocumen
 
 const DetailDocumentPage = () => {
     return (
-        <div className="p-5"><DetailDocument /></div>
+        <DetailDocument />
     )
 }
 

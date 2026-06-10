@@ -13,6 +13,7 @@ import {
     getRequirementsByEmpId,
 } from "../../../services/ComplianceDocumentService";
 import { getBase64 } from "../../../utility/DocumentUtility";
+import { toIsoDateLocal } from "../complianceLabels";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 
@@ -90,7 +91,8 @@ const UploadDocument = () => {
             const base64: any = await getBase64(values.file[0].file);
             const payload = {
                 requirementId: values.requirementId,
-                expiryDate: values.expiryDate,
+                // Sérialisation en date locale : évite le recul d'un jour via l'ISO UTC.
+                expiryDate: values.expiryDate ? toIsoDateLocal(values.expiryDate) : null,
                 employeeId: Number(values.employeeId),
                 media: {
                     name: values.file[0].file?.name,

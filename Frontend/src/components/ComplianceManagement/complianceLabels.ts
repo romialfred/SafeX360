@@ -54,8 +54,6 @@ export const DOCTYPE_OPTIONS = Object.entries(DOCTYPE_LABELS).map(([value, label
 
 export interface CriticalityConfig {
     label: string;
-    /** Couleur Mantine pour les badges. */
-    badgeColor: string;
     /** Classes Tailwind pour les sceaux / chips custom. */
     chip: string;
     description: string;
@@ -64,19 +62,16 @@ export interface CriticalityConfig {
 export const CRITICALITY_CONFIG: Record<string, CriticalityConfig> = {
     CRITIQUE: {
         label: 'Critique',
-        badgeColor: 'red',
         chip: 'bg-rose-50 text-rose-700 border-rose-200',
         description: 'Bloquant pour le poste : sans justificatif valide, le salarié ne doit pas être affecté.',
     },
     MAJEURE: {
         label: 'Majeure',
-        badgeColor: 'orange',
         chip: 'bg-amber-50 text-amber-700 border-amber-200',
         description: 'Écart majeur : régularisation prioritaire sous 30 jours.',
     },
     STANDARD: {
         label: 'Standard',
-        badgeColor: 'gray',
         chip: 'bg-slate-50 text-slate-600 border-slate-200',
         description: 'Suivi normal dans le cycle de renouvellement.',
     },
@@ -119,18 +114,19 @@ export const ACTION_TAB_LABELS: Record<string, string> = {
 
 // ─── Statuts des documents de conformité ───────────────────────────────────
 
-export const DOC_STATUS_CONFIG: Record<string, { label: string; badgeColor: string; chip: string }> = {
-    VALID: { label: 'Validé', badgeColor: 'teal', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    PENDING: { label: 'En attente', badgeColor: 'violet', chip: 'bg-violet-50 text-violet-700 border-violet-200' },
-    INVALID: { label: 'Rejeté', badgeColor: 'red', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
-    REJECTED: { label: 'Rejeté', badgeColor: 'red', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
-    EXPIRED: { label: 'Expiré', badgeColor: 'orange', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+// Canon : REJECTED (le backend stocke INVALID, normalisé côté client).
+// Expiré = rose partout (charte R7) ; amber est réservé aux échéances proches.
+export const DOC_STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
+    VALID: { label: 'Validé', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    PENDING: { label: 'En attente', chip: 'bg-violet-50 text-violet-700 border-violet-200' },
+    INVALID: { label: 'Rejeté', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
+    REJECTED: { label: 'Rejeté', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
+    EXPIRED: { label: 'Expiré', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
 
 export const docStatusConfig = (status?: string | null) =>
     DOC_STATUS_CONFIG[(status ?? '').toUpperCase()] ?? {
         label: status ?? '—',
-        badgeColor: 'gray',
         chip: 'bg-slate-50 text-slate-600 border-slate-200',
     };
 
@@ -158,14 +154,15 @@ export const empStatusConfig = (status?: string | null) =>
 export const translateStatusDetail = (detail?: string | null): string => {
     if (!detail) return '';
     const d = detail.trim();
+    const jours = (n: string) => `${n} jour${Number(n) > 1 ? 's' : ''}`;
     if (d === 'Expired') return 'Expiré';
     if (d === 'Expired < 30 Days') return 'Expiré depuis moins de 30 jours';
     let m = d.match(/^Expired (\d+) days ago$/);
-    if (m) return `Expiré depuis ${m[1]} jours`;
+    if (m) return `Expiré depuis ${jours(m[1])}`;
     if (d === 'Expires today') return "Expire aujourd'hui";
     if (d === 'Expires soon') return 'Expire bientôt';
     m = d.match(/^Expires in (\d+) days$/);
-    if (m) return `Expire dans ${m[1]} jours`;
+    if (m) return `Expire dans ${jours(m[1])}`;
     if (d === 'Document missing') return 'Document manquant';
     if (d === 'Pending review') return 'En attente de validation';
     if (d === 'Compliant') return 'Conforme';
@@ -173,6 +170,18 @@ export const translateStatusDetail = (detail?: string | null): string => {
 };
 
 // ─── Formatage ─────────────────────────────────────────────────────────────
+
+/**
+ * Sérialise une Date en 'yyyy-MM-dd' en fuseau LOCAL (jamais UTC) : évite le
+ * recul d'un jour quand axios convertit minuit local en ISO UTC pour un
+ * LocalDate backend.
+ */
+export const toIsoDateLocal = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
 
 export const formatDateFr = (value?: string | null): string => {
     if (!value) return '—';

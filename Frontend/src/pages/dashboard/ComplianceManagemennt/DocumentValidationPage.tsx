@@ -3,7 +3,7 @@ import DocumentValidation from "../../../components/ComplianceManagement/Documen
 
 const DocumentValidationPage = () => {
     return (
-        <div className="p-5"><DocumentValidation /></div>
+        <DocumentValidation />
     )
 }
 

@@ -2,22 +2,22 @@ import axiosInstance from "../interceptors/AxiosInterceptor";
 const url = "/hns/compliance-requirement";
 
 
-const createRequirement = async (incidentData: any) => {
-    return axiosInstance.post(`${url}/create`, incidentData)
+const createRequirement = async (payload: any) => {
+    return axiosInstance.post(`${url}/create`, payload)
         .then((response) => {
             return response.data;
         })
         .catch((error) => { throw error; });
 }
 
-const updateRequirement = async (incidentData: any) => {
-    return axiosInstance.put(`${url}/update`, incidentData)
+const updateRequirement = async (payload: any) => {
+    return axiosInstance.put(`${url}/update`, payload)
         .then((response) => {
             return response.data;
         })
         .catch((error) => { throw error; });
 }
-const getAllRequirement = async (_incidentData: any) => {
+const getAllRequirement = async (_payload: any) => {
     try {
         const response = await axiosInstance.get(`${url}/getAll`);
         return response.data;

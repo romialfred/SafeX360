@@ -3,7 +3,7 @@ import AssignDetails from "../../../components/ComplianceManagement/CompAssignme
 
 const AssignDetailsPage = () => {
     return (
-        <div className="p-5"><AssignDetails /></div>
+        <AssignDetails />
     )
 }
 

@@ -3,7 +3,7 @@ import CompAssignment from "../../../components/ComplianceManagement/CompAssignm
 
 const CompAssignmentPage = () => {
     return (
-        <div className="p-5"><CompAssignment /></div>
+        <CompAssignment />
     )
 }
 

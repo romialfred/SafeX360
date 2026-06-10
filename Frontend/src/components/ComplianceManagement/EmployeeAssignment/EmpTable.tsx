@@ -21,6 +21,7 @@ import {
     categoryLabel,
     empStatusConfig,
     formatDateFr,
+    toIsoDateLocal,
 } from '../complianceLabels';
 
 type EmpTableProps = {
@@ -61,8 +62,11 @@ const EmpTable = ({ requirements, fetchData, docMap }: EmpTableProps) => {
         dispatch(showOverlay());
         try {
             const base64: any = await getBase64(values.file[0].file);
+            // Payload explicite : pas de File non sérialisable dans le JSON,
+            // date en fuseau local pour le LocalDate backend.
             await createComplianceDocument({
-                ...values,
+                requirementId: values.requirementId,
+                expiryDate: values.expiryDate ? toIsoDateLocal(values.expiryDate) : null,
                 media: {
                     name: values.file[0].file?.name,
                     file: base64.split(',')[1],

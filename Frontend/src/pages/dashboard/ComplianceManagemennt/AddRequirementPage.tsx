@@ -2,7 +2,7 @@ import AddRequirement from "../../../components/ComplianceManagement/CompRequire
 
 const AddRequirementPage = () => {
     return (
-        <div className="p-5"><AddRequirement /></div>
+        <AddRequirement />
     )
 }
 

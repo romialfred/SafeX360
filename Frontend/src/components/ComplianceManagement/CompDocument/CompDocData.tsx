@@ -35,10 +35,11 @@ const CompDocData = () => {
                     const expiryDate = item.expiryDate ? new Date(item.expiryDate) : null;
                     const hasValidExpiry = expiryDate instanceof Date && !Number.isNaN(expiryDate.getTime());
                     const isExpired = rawStatus === 'VALID' && hasValidExpiry && expiryDate!.getTime() < Date.now();
+                    // Canon REJECTED (le backend stocke INVALID).
                     const computedStatus = isExpired
                         ? 'EXPIRED'
-                        : rawStatus === 'REJECTED'
-                            ? 'INVALID'
+                        : rawStatus === 'INVALID'
+                            ? 'REJECTED'
                             : rawStatus;
                     return { ...item, computedStatus };
                 });
@@ -57,7 +58,7 @@ const CompDocData = () => {
                 if (status === 'VALID') acc.valid += 1;
                 else if (status === 'PENDING') acc.pending += 1;
                 else if (status === 'EXPIRED') acc.expired += 1;
-                else if (status === 'INVALID') acc.invalid += 1;
+                else if (status === 'REJECTED') acc.invalid += 1;
                 return acc;
             },
             { pending: 0, valid: 0, invalid: 0, expired: 0 }
@@ -67,7 +68,7 @@ const CompDocData = () => {
     const filteredDocuments = useMemo(() => {
         const q = search.trim().toLowerCase();
         return documents.filter((doc) => {
-            if ((doc.computedStatus ?? '') !== tab) return false;
+            if (tab !== 'ALL' && (doc.computedStatus ?? '') !== tab) return false;
             if (!q) return true;
             const haystack = [doc.docName, doc.requirement, doc.uploadedBy]
                 .filter(Boolean)
@@ -118,10 +119,11 @@ const CompDocData = () => {
                     value={tab}
                     onChange={setTab}
                     options={[
-                        { value: 'PENDING', label: 'En attente', count: statusCounts.pending, color: 'indigo' },
+                        { value: 'PENDING', label: 'En attente', count: statusCounts.pending, color: 'violet' },
                         { value: 'VALID', label: 'Validés', count: statusCounts.valid, color: 'green' },
-                        { value: 'INVALID', label: 'Rejetés', count: statusCounts.invalid, color: 'red' },
-                        { value: 'EXPIRED', label: 'Expirés', count: statusCounts.expired, color: 'orange' },
+                        { value: 'REJECTED', label: 'Rejetés', count: statusCounts.invalid, color: 'rose' },
+                        { value: 'EXPIRED', label: 'Expirés', count: statusCounts.expired, color: 'rose' },
+                        { value: 'ALL', label: 'Tous', count: documents.length, color: 'slate' },
                     ]}
                     rightElement={
                         <TextInput

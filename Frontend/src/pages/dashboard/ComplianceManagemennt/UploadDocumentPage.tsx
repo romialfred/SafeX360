@@ -3,7 +3,7 @@ import UploadDocument from "../../../components/ComplianceManagement/CompDocumen
 
 const UploadDocumentPage = () => {
     return (
-        <div className="p-5"><UploadDocument /></div>
+        <UploadDocument />
     )
 }
 

@@ -126,7 +126,7 @@ const EmployeeDetails = () => {
                     onChange={setActiveTab}
                     options={[
                         { value: 'requirements', label: 'Exigences du poste', count: requirements.length, color: 'teal' },
-                        { value: 'documents', label: 'Documents déposés', count: documents.length, color: 'indigo' },
+                        { value: 'documents', label: 'Documents déposés', count: documents.length, color: 'violet' },
                     ]}
                 />
                 <div className="mt-3">
