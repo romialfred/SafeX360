@@ -15,7 +15,7 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOrigins("https://health-safety-eight.vercel.app", "https://safex360.data-univers.com",
                                 "http://localhost:3000",
-                                "http://localhost:5173", "http://app1.localtest.me:3000",
+                                "http://localhost:5173", "http://localhost:5174", "http://app1.localtest.me:3000",
                                 "http://app2.localtest.me:5173", "https://mine-xpert.data-univers.com",
                                 "https://dev.safex360.data-univers.com")
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
