@@ -38,6 +38,7 @@ import {
 } from '../../services/InspectionService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
+import AIReportReviewPanel from './AIReportReviewPanel';
 import axiosInstance from '../../interceptors/AxiosInterceptor';
 
 const CONFORMITY_CLASS: Record<FindingConformity, string> = {
@@ -325,6 +326,11 @@ export default function InspectionDetailPage() {
                             {detail.summaryReport}
                         </p>
                     </div>
+                )}
+
+                {/* LOT 50 — Relecture critique du rapport par l'IA (consultatif) */}
+                {detail.findingsRecorded > 0 && (
+                    <AIReportReviewPanel inspectionId={detail.id} />
                 )}
 
                 {/* Liste des findings */}

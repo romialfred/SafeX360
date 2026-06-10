@@ -38,6 +38,8 @@ import {
     IconSend,
     IconClock,
     IconClipboardList,
+    IconSparkles,
+    IconUser,
 } from '@tabler/icons-react';
 
 import {
@@ -50,8 +52,13 @@ import {
     type FindingConformity,
     type CheckpointResponseType,
 } from '../../services/InspectionService';
+import { type AICheckpointProposal } from '../../services/AIInspectionService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
+import AIInspectAssistPanel from './AIInspectAssistPanel';
+
+/** Méthode d'exécution choisie par l'inspecteur (LOT 50). */
+type ExecutionMethod = 'HUMAN' | 'AI';
 
 interface LocalFinding extends FindingDTO {
     dirty?: boolean;
@@ -69,6 +76,8 @@ export default function InspectionExecutePage() {
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
+    // LOT 50 — méthode d'exécution : humaine (défaut) ou assistée par IA
+    const [method, setMethod] = useState<ExecutionMethod>('HUMAN');
 
     // ── Chargement initial ────────────────────────────────────────────
     useEffect(() => {
@@ -118,6 +127,46 @@ export default function InspectionExecutePage() {
         );
     };
 
+    /**
+     * LOT 50 — Applique une proposition IA dans le formulaire (pré-remplissage).
+     * Pour les types calculables (BOOLEAN, VISUAL_GRADE, NUMERIC_RANGE), seule
+     * la valeur est posée : la conformité est recalculée par le backend avec le
+     * même algorithme que la saisie humaine. Pour FREE_TEXT et PHOTO_REQUIRED,
+     * la conformité IA est posée en surcharge tracée (overrideReason).
+     */
+    const applyAiProposal = (p: AICheckpointProposal) => {
+        const f = findings.find((x) => x.checkpointId === p.checkpointId);
+        if (!f) return;
+        const computable =
+            f.responseType === 'BOOLEAN' ||
+            f.responseType === 'VISUAL_GRADE' ||
+            f.responseType === 'NUMERIC_RANGE';
+
+        const patch: Partial<FindingDTO> = {};
+        if (p.proposedRawValue) {
+            patch.rawValue = p.proposedRawValue;
+        }
+        if (computable) {
+            patch.conformity = undefined;
+            patch.overrideReason = undefined;
+        } else if (
+            p.proposedConformity &&
+            p.proposedConformity !== 'CONFORM'
+        ) {
+            patch.conformity = p.proposedConformity as FindingConformity;
+            patch.overrideReason = t('ai.overrideReason') as string;
+        }
+        if (p.observation && !(f.note && f.note.trim())) {
+            patch.note = t('ai.notePrefix', { observation: p.observation }) as string;
+        }
+        updateFinding(p.checkpointId, patch);
+    };
+
+    /** LOT 50 — Insère la synthèse IA avec mention de traçabilité. */
+    const useAiSummary = (text: string) => {
+        setSummary(`${text.trim()}\n\n${t('ai.summaryAttribution')}`);
+    };
+
     const handleSaveDraft = async () => {
         if (!detail || saving) return;
         setSaving(true);
@@ -134,6 +183,7 @@ export default function InspectionExecutePage() {
                         note: f.note,
                         photoIds: f.photoIds,
                         conformity: f.conformity,
+                        overrideReason: f.overrideReason,
                     })),
                 );
             }
@@ -272,6 +322,67 @@ export default function InspectionExecutePage() {
             {/* Liste des findings */}
             <div className="px-4 sm:px-5 py-4">
                 <div className="w-full max-w-5xl mx-auto space-y-3">
+                    {/* LOT 50 — Choix de la méthode d'exécution */}
+                    {!isReadOnly && (
+                        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                            <h3 className="text-[13.5px] font-semibold text-slate-800 mb-1">
+                                {t('ai.methodHeading')}
+                            </h3>
+                            <p className="text-[11.5px] text-slate-500 mb-3">
+                                {t('ai.methodHint')}
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setMethod('HUMAN')}
+                                    className={`inline-flex flex-col items-start gap-1 rounded-lg border-2 px-3 py-3 text-left transition ${
+                                        method === 'HUMAN'
+                                            ? 'bg-slate-50 border-slate-700'
+                                            : 'bg-white border-slate-200 hover:border-slate-300'
+                                    }`}
+                                    style={{ minHeight: 64 }}
+                                >
+                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-800">
+                                        <IconUser size={15} stroke={1.8} />
+                                        {t('ai.methodHuman')}
+                                    </span>
+                                    <span className="text-[11.5px] text-slate-500 leading-snug">
+                                        {t('ai.methodHumanDesc')}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMethod('AI')}
+                                    className={`inline-flex flex-col items-start gap-1 rounded-lg border-2 px-3 py-3 text-left transition ${
+                                        method === 'AI'
+                                            ? 'bg-indigo-50/60 border-indigo-600'
+                                            : 'bg-white border-slate-200 hover:border-indigo-300'
+                                    }`}
+                                    style={{ minHeight: 64 }}
+                                >
+                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-indigo-800">
+                                        <IconSparkles size={15} stroke={1.8} />
+                                        {t('ai.methodAi')}
+                                    </span>
+                                    <span className="text-[11.5px] text-slate-500 leading-snug">
+                                        {t('ai.methodAiDesc')}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* LOT 50 — Panneau d'assistance IA */}
+                    {!isReadOnly && method === 'AI' && (
+                        <AIInspectAssistPanel
+                            inspectionId={detail.id}
+                            targetLabel={detail.targetLabel}
+                            disabled={isReadOnly}
+                            onApplyProposal={applyAiProposal}
+                            onUseSummary={useAiSummary}
+                        />
+                    )}
+
                     {findings.map((f, idx) => (
                         <CheckpointCard
                             key={f.id ?? f.checkpointId ?? idx}

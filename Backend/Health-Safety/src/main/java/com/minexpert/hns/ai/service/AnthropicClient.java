@@ -52,7 +52,7 @@ public class AnthropicClient {
     @Value("${anthropic.max-tokens:2400}")
     private int maxTokens;
 
-    @Value("${anthropic.timeout-seconds:45}")
+    @Value("${anthropic.timeout-seconds:90}")
     private int timeoutSeconds;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -78,7 +78,7 @@ public class AnthropicClient {
     }
 
     /**
-     * Analyse une image avec Claude Vision.
+     * Analyse une image avec Claude Vision (modèle et max_tokens par défaut).
      *
      * @param systemPrompt prompt système (rôle expert HSE)
      * @param userPrompt prompt utilisateur (contexte spécifique)
@@ -87,32 +87,65 @@ public class AnthropicClient {
      * @return Texte de la réponse (attendu : JSON strict) ou null si erreur
      */
     public String analyzeImage(String systemPrompt, String userPrompt, String imageBase64, String mediaType) {
+        return analyzeImage(systemPrompt, userPrompt, imageBase64, mediaType, null, null);
+    }
+
+    /**
+     * Analyse une image avec Claude Vision, avec surcharge optionnelle du
+     * modèle et du plafond de tokens (utilisé par le module Inspections qui
+     * cible un modèle plus capable et des réponses plus longues).
+     */
+    public String analyzeImage(String systemPrompt, String userPrompt, String imageBase64, String mediaType,
+                               String modelOverride, Integer maxTokensOverride) {
+        Map<String, Object> imageBlock = Map.of(
+                "type", "image",
+                "source", Map.of(
+                        "type", "base64",
+                        "media_type", mediaType,
+                        "data", imageBase64
+                )
+        );
+        Map<String, Object> textBlock = Map.of(
+                "type", "text",
+                "text", userPrompt
+        );
+        return call(systemPrompt, List.of(imageBlock, textBlock), modelOverride, maxTokensOverride,
+                "image=" + imageBase64.length() + " bytes (b64)");
+    }
+
+    /**
+     * Complétion texte seule (sans image) — relecture de rapports, synthèses.
+     */
+    public String completeText(String systemPrompt, String userPrompt,
+                               String modelOverride, Integer maxTokensOverride) {
+        Map<String, Object> textBlock = Map.of(
+                "type", "text",
+                "text", userPrompt
+        );
+        return call(systemPrompt, List.of(textBlock), modelOverride, maxTokensOverride,
+                "texte=" + userPrompt.length() + " chars");
+    }
+
+    /** Appel générique POST /v1/messages avec extraction du premier bloc texte. */
+    private String call(String systemPrompt, List<Map<String, Object>> contentBlocks,
+                        String modelOverride, Integer maxTokensOverride, String logDetail) {
         if (!isConfigured()) {
             log.warn("[AnthropicClient] ANTHROPIC_API_KEY non configurée — appel API refusé.");
             return null;
         }
 
+        String effectiveModel = modelOverride != null && !modelOverride.isBlank() ? modelOverride : model;
+        int effectiveMaxTokens = maxTokensOverride != null && maxTokensOverride > 0 ? maxTokensOverride : maxTokens;
+
         try {
-            Map<String, Object> imageBlock = Map.of(
-                    "type", "image",
-                    "source", Map.of(
-                            "type", "base64",
-                            "media_type", mediaType,
-                            "data", imageBase64
-                    )
-            );
-            Map<String, Object> textBlock = Map.of(
-                    "type", "text",
-                    "text", userPrompt
-            );
             Map<String, Object> message = Map.of(
                     "role", "user",
-                    "content", List.of(imageBlock, textBlock)
+                    "content", contentBlocks
             );
 
             Map<String, Object> body = Map.of(
-                    "model", model,
-                    "max_tokens", maxTokens,
+                    "model", effectiveModel,
+                    "max_tokens", effectiveMaxTokens,
                     "system", systemPrompt,
                     "messages", List.of(message)
             );
@@ -122,7 +155,7 @@ public class AnthropicClient {
             headers.set("x-api-key", apiKey);
             headers.set("anthropic-version", ANTHROPIC_VERSION);
 
-            log.info("[AnthropicClient] Appel API : model={}, image={} bytes (b64)", model, imageBase64.length());
+            log.info("[AnthropicClient] Appel API : model={}, {}", effectiveModel, logDetail);
             long start = System.currentTimeMillis();
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
