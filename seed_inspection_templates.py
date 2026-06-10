@@ -25,24 +25,14 @@ Reference normative :
 Lancement : python seed_inspection_templates.py
 Idempotent : DELETE des codes cibles avant INSERT.
 """
-import pymysql
-import ssl
 from datetime import datetime
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+from db_env import connect
 
-conn = pymysql.connect(
-    host='datauniversmysql01-minex-360.g.aivencloud.com',
-    port=23891,
-    user='avnadmin',
-    password='AVNS_J2VSkRIZfCanFADRGaK',
-    database='defaultdb',
-    ssl=ctx,
-    connect_timeout=15,
-    autocommit=False,
-)
+# ATTENTION : le service Health-Safety utilise le schema 'healthsafety'
+# (cf. DB_URL_HNS dans Backend/.env). 'defaultdb' = MineXpert HRMS.
+# Le seed du 08/06/2026 avait cible 'defaultdb' par erreur (corrige LOT 50).
+conn = connect('healthsafety')
 cur = conn.cursor()
 
 USER_ID = 14

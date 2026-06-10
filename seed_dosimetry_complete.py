@@ -4,12 +4,12 @@ Complete seed Dosimetry — tables qui restaient vides.
 import pymysql, ssl, random
 from datetime import datetime, timedelta, date
 
-ctx = ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
-conn = pymysql.connect(
-    host='datauniversmysql01-minex-360.g.aivencloud.com', port=23891,
-    user='avnadmin', password='AVNS_J2VSkRIZfCanFADRGaK',
-    database='defaultdb', ssl=ctx, connect_timeout=10, autocommit=False
-)
+from db_env import connect
+
+# ATTENTION : le service Health-Safety (module Dosimetrie) utilise le schema
+# 'healthsafety'. Les seeds des 06-08/06/2026 avaient cible 'defaultdb' par
+# erreur : ces donnees orphelines n'ont jamais ete visibles en production.
+conn = connect('healthsafety', connect_timeout=10)
 cur = conn.cursor()
 random.seed(42)
 

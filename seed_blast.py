@@ -17,24 +17,14 @@ Pre-requis :
 Lancement :
   python seed_blast.py
 """
-import pymysql
-import ssl
 from datetime import datetime, timedelta
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+from db_env import connect
 
-conn = pymysql.connect(
-    host='datauniversmysql01-minex-360.g.aivencloud.com',
-    port=23891,
-    user='avnadmin',
-    password='AVNS_J2VSkRIZfCanFADRGaK',
-    database='defaultdb',
-    ssl=ctx,
-    connect_timeout=15,
-    autocommit=False,
-)
+# ATTENTION : le service Health-Safety (module Blast) utilise le schema
+# 'healthsafety'. Les seeds des 07-08/06/2026 avaient cible 'defaultdb' par
+# erreur : ces donnees orphelines n'ont jamais ete visibles en production.
+conn = connect('healthsafety')
 cur = conn.cursor()
 
 USER_ID = 14  # createdBy / updatedBy / actor par defaut

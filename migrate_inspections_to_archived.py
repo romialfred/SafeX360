@@ -7,24 +7,13 @@ archivees, preservant l'historique sans permettre de modification future.
 
 Idempotent : peut etre rejoue sans effet de bord.
 """
-import pymysql
-import ssl
 from datetime import datetime
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+from db_env import connect
 
-conn = pymysql.connect(
-    host='datauniversmysql01-minex-360.g.aivencloud.com',
-    port=23891,
-    user='avnadmin',
-    password='AVNS_J2VSkRIZfCanFADRGaK',
-    database='defaultdb',
-    ssl=ctx,
-    connect_timeout=10,
-    autocommit=False,
-)
+# ATTENTION : les tables inspections vivent dans le schema 'healthsafety'
+# (cf. DB_URL_HNS dans Backend/.env), pas dans 'defaultdb' (MineXpert HRMS).
+conn = connect('healthsafety', connect_timeout=10)
 cur = conn.cursor()
 
 print("=" * 60)
