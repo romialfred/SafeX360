@@ -9,7 +9,8 @@ import SafeHtml from "../../../UtilityComp/SafeHtml";
 import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { GetAllAuditArea } from "../../../../services/AuditAreaService";
-import { mantineColorToLevel, observationTypes, severities, severitiesMap } from "../../../../Data/DropdownData";
+import { mantineColorToLevel } from "../../../../Data/DropdownData";
+import { OBS_SEVERITY_LABELS, OBS_SEVERITY_OPTIONS, OBSERVATION_TYPE_LABELS, OBSERVATION_TYPE_OPTIONS } from "../auditLabels";
 import { modals } from "@mantine/modals";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
@@ -60,8 +61,8 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             date: new Date(),
         },
         validate: {
-            id: (value) => (value ? null : 'Employee  is required'),
-            date: (value) => (value ? null : 'Date is required'),
+            id: (value) => (value ? null : "L'employé est requis"),
+            date: (value) => (value ? null : 'La date est requise'),
         }
     });
 
@@ -104,13 +105,13 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
 
         },
         validate: {
-            date: (value) => (value ? null : 'Date is required'),
-            type: (value) => (value ? null : 'Owner is required'),
-            observedFact: (value) => (value?.trim()?.length > 0 ? null : 'Owner is required'),
-            reference: (value) => (value?.trim()?.length > 0 ? null : 'Category is required'),
-            severity: (value) => (value ? null : 'Severity is required'),
-            zoneId: (value) => (value ? null : 'Zone is required'),
-            description: (value) => (isValidRichText(value) ? null : 'Description is required'),
+            date: (value) => (value ? null : 'La date est requise'),
+            type: (value) => (value ? null : 'Le type est requis'),
+            observedFact: (value) => (value?.trim()?.length > 0 ? null : 'Le fait observé est requis'),
+            reference: (value) => (value?.trim()?.length > 0 ? null : 'La référence au critère est requise'),
+            severity: (value) => (value ? null : 'La gravité est requise'),
+            zoneId: (value) => (value ? null : 'La zone est requise'),
+            description: (value) => (isValidRichText(value) ? null : 'La description est requise'),
 
 
         }
@@ -126,16 +127,16 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
         let values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Confirmer le constat</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to create this observation?
+                <span className="text-sm">
+                    Enregistrer ce constat d'audit ?
                 </span>
             ),
-            labels: { confirm: `Yes, Create`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: "Oui, enregistrer", cancel: "Annuler" },
+            cancelProps: { color: "gray", variant: "default" },
+            confirmProps: { color: "indigo", variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
@@ -144,7 +145,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                 dispatch(showOverlay());
                 createObservation({ ...values, evidence, auditId: id })
                     .then(() => {
-                        successNotification("Observation created successfully");
+                        successNotification("Constat enregistré");
                         form.reset();
                         empForm.reset();
                         setShowForm(false);
@@ -152,7 +153,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                         onObservationAdded?.();
                     }
                     ).catch((err) => {
-                        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
                     }
                     ).finally(() => {
                         dispatch(hideOverlay());
@@ -170,26 +171,26 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             {!showForm ? (
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center">
-                        <p className="text-lg text-gray-700">Execution of Audit </p>
-                        {audit.status !== "CLOSED" && audit.status != "CANCELLED" && <Button onClick={() => setShowForm(true)} leftSection={<IconPlus />}>New Observation</Button>}
+                        <p className="text-lg text-gray-700">Constats d'exécution</p>
+                        {audit.status !== "CLOSED" && audit.status != "CANCELLED" && <Button onClick={() => setShowForm(true)} leftSection={<IconPlus />}>Nouveau constat</Button>}
                     </div>
 
                     {observations.length === 0 ? (
-                        <p className="text-gray-500 italic">No observations found.</p>
+                        <p className="text-gray-500 italic">Aucun constat enregistré pour cet audit.</p>
                     ) : (
                         observations.map((obs: any) => (
                             <div
                                 key={obs.id}
-                                className="p-6 rounded-2xl border border-gray-200 shadow-md bg-white space-y-2 transition hover:shadow-lg"
+                                className="p-6 rounded-2xl border border-gray-200 shadow-md bg-white space-y-2 transition-shadow hover:shadow-lg"
                             >
                                 {/* Top Info Row */}
                                 <div className="flex flex-wrap justify-between items-center">
                                     <div className="flex gap-3 flex-wrap items-center">
                                         <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full uppercase">
-                                            {obs.type}
+                                            {OBSERVATION_TYPE_LABELS[obs.type] ?? obs.type}
                                         </span>
                                         <Badge variant="outline" color={mantineColorToLevel[obs.severity]} >
-                                            {severitiesMap[obs.severity]}
+                                            {OBS_SEVERITY_LABELS[obs.severity] ?? obs.severity}
                                         </Badge>
                                     </div>
                                     <p className="text-xs text-gray-500">{formatDateShort(obs.date)}</p>
@@ -201,23 +202,23 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                     <h3 className="text-lg text-gray-800 leading-snug">
                                         {obs.observedFact?.replace(/<\/?[^>]+(>|$)/g, "")}
                                     </h3>
-                                    <p className="text-sm text-gray-600">Ref: {obs.reference}</p>
+                                    <p className="text-sm text-gray-600">Réf. : {obs.reference}</p>
                                 </div>
 
                                 {/* Metadata Section */}
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-700">
                                     <div>
-                                        <strong className="block text-gray-500 mb-1">Evidence Description:</strong>
+                                        <strong className="block text-gray-500 mb-1">Description des preuves :</strong>
                                         {/* LOT 41 P0 XSS fix */}
                                         <SafeHtml html={obs.description} />
                                     </div>
                                     <div>
-                                        <strong className="block text-gray-500 mb-1">Zone:</strong>
-                                        {auditAreas.find(area => area.value == obs.zoneId)?.label || "Unknown"}
+                                        <strong className="block text-gray-500 mb-1">Zone :</strong>
+                                        {auditAreas.find(area => area.value == obs.zoneId)?.label || "—"}
                                     </div>
                                     {obs.interviews?.length > 0 && (
                                         <div className="md:col-span-2">
-                                            <strong className="block text-gray-500 mb-1">Interviews:</strong>
+                                            <strong className="block text-gray-500 mb-1">Entretiens :</strong>
                                             <div className="flex flex-wrap gap-2">
                                                 {obs.interviews.map((emp: any, i: number) => (
                                                     <span key={i} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-md text-xs">
@@ -229,7 +230,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                     )}
                                     {obs.evidence?.length > 0 && (
                                         <div className="md:col-span-2">
-                                            <strong className="block text-gray-500 mb-1">Attachments:</strong>
+                                            <strong className="block text-gray-500 mb-1">Pièces jointes :</strong>
                                             <Group className="flex flex-wrap gap-2">
                                                 {obs.evidence.map((doc: any) => (
                                                     <Badge
@@ -257,57 +258,57 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                     {/* New Observation Form */}
                     <div className="flex justify-between items-center">
 
-                        <h2 className="text-lg text-gray-700 ">New Observation</h2>
-                        <Button color="red" onClick={handleCancel}>
-                            Cancel
+                        <h2 className="text-lg text-gray-700 ">Nouveau constat</h2>
+                        <Button color="red" variant="light" onClick={handleCancel}>
+                            Annuler
                         </Button>
                     </div>
                     <div className="flex flex-col gap-5">
 
 
                         <div className="grid grid-cols-2 gap-4">
-                            <TextInput label="Title" placeholder="Enter observation Title" withAsterisk {...form.getInputProps('title')} />
-                            <DateInput label="Valuation date" placeholder="Select Date" minDate={audit?.startDate ? new Date(audit?.startDate) : undefined} withAsterisk {...form.getInputProps('date')} />
+                            <TextInput label="Titre" placeholder="Titre du constat" withAsterisk {...form.getInputProps('title')} />
+                            <DateInput label="Date du constat" placeholder="Sélectionner la date" minDate={audit?.startDate ? new Date(audit?.startDate) : undefined} withAsterisk {...form.getInputProps('date')} />
                             <div className="col-span-2">
 
-                                <TextEditor title="Observed fact" form={form} withAsterisk id='observedFact' />
+                                <TextEditor title="Fait observé" form={form} withAsterisk id='observedFact' />
                             </div>
-                            <TextInput label="Reference to criterion" placeholder="ISO 45001:2018 - 8.1.1" withAsterisk {...form.getInputProps('reference')} />
-                            <Select label="Type" placeholder=" Select type" data={observationTypes} withAsterisk  {...form.getInputProps('type')} />
+                            <TextInput label="Référence au critère" placeholder="ISO 45001:2018 — 8.1.1" withAsterisk {...form.getInputProps('reference')} />
+                            <Select label="Type" placeholder="Sélectionner le type" data={OBSERVATION_TYPE_OPTIONS} withAsterisk  {...form.getInputProps('type')} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Select label="Severity" placeholder="Select Severity" withAsterisk data={severities}  {...form.getInputProps('severity')} />
-                            <Select label="Location / Area " placeholder=" Select Location / Area " data={auditAreas} withAsterisk {...form.getInputProps('zoneId')} />
+                            <Select label="Gravité" placeholder="Sélectionner la gravité" withAsterisk data={OBS_SEVERITY_OPTIONS}  {...form.getInputProps('severity')} />
+                            <Select label="Lieu / zone" placeholder="Sélectionner le lieu" data={auditAreas} withAsterisk {...form.getInputProps('zoneId')} />
                         </div>
 
                         <div>
 
-                            <TextEditor title="Description of evidence" form={form} withAsterisk id="description" />
+                            <TextEditor title="Description des preuves" form={form} withAsterisk id="description" />
                         </div>
 
                         <div className="flex flex-col ">
-                            <p className="font-medium">Evidence files (PDF, Images)</p>
+                            <p className="font-medium">Fichiers de preuve (PDF, images)</p>
                             <FileUpdateDropzone form={form} id="evidence" />
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <p className="">Employees interviewed</p>
+                            <p className="">Employés interrogés</p>
                             <div className=" bg-blue-50 p-4 rounded-lg flex flex-col gap-5">
                                 <div className="grid grid-cols-2 gap-4">
                                     <Select
-                                        placeholder="Choose an employee"
-                                        label="Select an employee"
+                                        placeholder="Choisir un employé"
+                                        label="Employé"
                                         data={employees.filter((emp: any) => !(form.values.interviews.some((entry: any) => entry.id === emp.value) && emp.value !== empForm.values.id))}
 
                                         {...empForm.getInputProps('id')}
                                     />
-                                    <DateInput label="Interview Date" placeholder="Enter Date" {...empForm.getInputProps('date')} maxDate={new Date()} />
+                                    <DateInput label="Date de l'entretien" placeholder="Sélectionner la date" {...empForm.getInputProps('date')} maxDate={new Date()} />
                                 </div>
 
                                 <div className="">
                                     <Button leftSection={<IconPlus />} onClick={handleAddInterviewee}>
-                                        Add to List
+                                        Ajouter à la liste
                                     </Button>
                                 </div>
                             </div>
@@ -321,16 +322,17 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                     >
                                         <div className="flex flex-col gap-2">
                                             <div className="text-green-600">
-                                                <strong className="text-green-600 ">Employee:</strong> {empMap[entry.id] ? empMap[entry.id].name : 'Unknown Employee'}
+                                                <strong className="text-green-600 ">Employé :</strong> {empMap[entry.id] ? empMap[entry.id].name : '—'}
                                             </div>
                                             <div className="text-green-600">
-                                                <strong className="text-green-600 ">Interview date:</strong> {formatDateShort(entry.date)}
+                                                <strong className="text-green-600 ">Date de l'entretien :</strong> {formatDateShort(entry.date)}
                                             </div>
                                         </div>
                                         <ActionIcon
                                             type="button"
                                             onClick={() => handleRemoveInterviewee(entry.id)}
                                             color="red"
+                                            aria-label="Retirer l'employé interrogé"
                                         >
                                             <IconTrash size={18} />
                                         </ActionIcon>
@@ -344,7 +346,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                     {/* Action buttons */}
                     <div className="flex justify-end gap-3 mt-6">
 
-                        <Button onClick={handleSubmit}>Save</Button>
+                        <Button color="indigo" onClick={handleSubmit}>Enregistrer</Button>
                     </div>
                 </div>
             )}

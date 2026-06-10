@@ -3,14 +3,9 @@ import {
     Badge,
     Button,
     Card,
-    Divider,
-    LoadingOverlay,
-    Modal,
-    NumberInput,
     Progress,
     SegmentedControl,
     Select,
-    Text,
     Tooltip,
 } from "@mantine/core";
 import {
@@ -23,27 +18,21 @@ import {
     IconTrendingUp,
 } from "@tabler/icons-react";
 import PageHeader from "../../UtilityComp/PageHeader";
-import SafeHtml from "../../UtilityComp/SafeHtml";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import { Tag } from "primereact/tag";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import TextEditor from "../../UtilityComp/TextEditor";
-import { useForm } from "@mantine/form";
-import { createFollowup, getAllRecommendations, getRecommendationById, getRecommendationFollowups } from "../../../services/AuditService";
+import { getAllRecommendations } from "../../../services/AuditService";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { formatDateShort } from "../../../utility/DateFormats";
-import { recMap, recommendationStatus } from "../../../Data/DropdownData";
-import { modals } from "@mantine/modals";
-import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import RecommendationCard from "./RecommendationCard";
 import { Toolbar } from "primereact/toolbar";
+import { recStatusColor, recStatusLabel } from "./auditLabels";
 
 const defaultFilters: DataTableFilterMeta = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -51,18 +40,13 @@ const defaultFilters: DataTableFilterMeta = {
 
 const Recommendation = () => {
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [modalOpened, setModalOpened] = useState(false);
-    const [selectedRow, setSelectedRow] = useState<any>(null);
     const [recommendations, setRecommendations] = useState<any>([]);
     const [countMap, setCountMap] = useState<any>({});
-    const [loading, setLoading] = useState(false);
-    const [recommendationFollowups, setRecommendationFollowups] = useState<any>([]);
-    const [recommendation, setRecommendation] = useState<any>(null);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [viewType, setViewType] = useState<'table' | 'card'>('table');
     const [selectedStatus, setSelectedStatus] = useState<string>('All');
-    const [selectedDepartment, _setSelectedDepartment] = useState<string>('All');
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
     const [selectedProgress, setSelectedProgress] = useState<string>('All');
 
 
@@ -70,7 +54,6 @@ const Recommendation = () => {
         dispatch(showOverlay())
         getAllRecommendations()
             .then((res) => {
-                console.log(res);
                 setRecommendations(res);
                 countStatus(res);
             }
@@ -109,38 +92,25 @@ const Recommendation = () => {
         setCountMap({ ...counts, execRate: executionRate });
 
     }
-    const form = useForm({
-        initialValues: {
-            progress: 0,
-            status: '',
-            comment: '',
-            recommendationId: ''
-        },
-        validate: {
-
-            status: (value) => (value.length === 0 ? 'Status is required' : null),
-
-        }
-    });
 
     const getUpdateRestriction = (status: string, progress: number) => {
         const normalizedStatus = String(status ?? '').toUpperCase();
         const normalizedProgress = Number(progress ?? 0);
 
         if (normalizedProgress >= 100) {
-            return 'Progress is already at 100%.';
+            return 'Avancement déjà à 100 %.';
         }
 
         if (normalizedStatus === 'PENDING') {
-            return 'Pending recommendations cannot be updated.';
+            return 'Une recommandation en attente ne peut pas être mise à jour.';
         }
 
         if (normalizedStatus === 'COMPLETED') {
-            return 'Recommendation is already completed.';
+            return 'Recommandation déjà terminée.';
         }
 
         if (normalizedStatus === 'CANCELLED') {
-            return 'Cancelled recommendations cannot be updated.';
+            return 'Une recommandation annulée ne peut pas être mise à jour.';
         }
 
         return null;
@@ -148,14 +118,7 @@ const Recommendation = () => {
 
     const getSeverity = (rowData: any, field: 'status' | 'progress') => {
         if (field === 'status') {
-            const severityMap: Record<string, string> = {
-                'PENDING': 'orange',
-                'IN_PROGRESS': 'blue',
-                'COMPLETED': 'green',
-                'DELAYED': 'red',
-                'CANCELLED': 'gray',
-            };
-            return <Badge size="md" variant="light" className="!capitalize" color={severityMap[rowData.status] || 'info'} >{recMap[rowData.status]}</Badge>
+            return <Badge size="md" variant="light" color={recStatusColor(rowData.status)} >{recStatusLabel(rowData.status)}</Badge>
         }
         return <Progress.Root size={15}>
             <Tooltip label={`${rowData.progress}%`} withArrow>
@@ -174,44 +137,9 @@ const Recommendation = () => {
         { id: 'execRate', label: 'Taux de réalisation', icon: IconTrendingUp, color: '#8b5cf6' },
     ];
 
-    const handleModalOpen = (rowData: any) => {
-
-        setSelectedRow(rowData);
-        setModalOpened(true);
-        form.setValues({
-            progress: rowData.progress,
-            recommendationId: rowData.id,
-            status: rowData.status,
-            comment: '',
-        })
-        setLoading(true);
-        getRecommendationFollowups(rowData.id)
-            .then((res) => {
-                setRecommendationFollowups(res);
-
-            }
-            ).catch((_err) => { })
-            .finally(() => {
-                setLoading(false);
-            }
-            );
-        getRecommendationById(rowData.id)
-            .then((res) => {
-                setRecommendation(res);
-            }
-            ).catch((_err) => { })
-            .finally(() => {
-                setLoading(false);
-            }
-            );
-    }
-    // Prevent unused function warning after switching to route-based update
-    if (false) { console.log(handleModalOpen); }
-
-
     const actionBodyTemplate = (rowData: any) => {
         const restriction = getUpdateRestriction(rowData?.status, rowData?.progress);
-        const tooltipLabel = restriction ?? 'Update';
+        const tooltipLabel = restriction ?? 'Mettre à jour';
 
         return (
             <div className="flex items-center gap-4">
@@ -223,55 +151,15 @@ const Recommendation = () => {
                             disabled={Boolean(restriction)}
                             onClick={() => navigate(`update/${rowData.id}`)}
                         >
-                            Update
+                            Mettre à jour
                         </Button>
                     </span>
                 </Tooltip>
-
-                {/* <Tooltip label="View Details ">
-                    <ActionIcon onClick={() => navigate(`details/${rowData.id}`)} color='yellow' size="sm">
-                        <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip> */}
 
 
             </div>
 
         );
-    }
-
-    const handleSubmit = async (values: any) => {
-        modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
-            centered: true,
-            children: (
-                <span className="text-md">
-                    You want to update the recommendation.
-                </span>
-            ),
-            labels: { confirm: `Yes, Update`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
-            closeOnEscape: false,
-            closeOnClickOutside: false,
-            withCloseButton: false,
-            onConfirm: async () => {
-                setLoading(true);
-                createFollowup(values).then((_res) => {
-                    setModalOpened(false);
-                    setRecommendations((prev: any) => {
-                        const newData = [...prev];
-                        return newData.map((item) => item.id === selectedRow.id ? ({ ...item, status: values.status, progress: values.progress }) : item);
-                    })
-                    successNotification("Recommendation updated successfully");
-                }).catch((_err) => {
-                    errorNotification(_err.response?.data?.errorMessage || "Something went wrong");
-                }).finally(() => {
-                    setLoading(false);
-                })
-
-            },
-        });
     }
 
 
@@ -304,11 +192,27 @@ const Recommendation = () => {
         />
     );
 
+    const departmentOptions = (() => {
+        const set = new Set<string>();
+        recommendations.forEach((r: any) => {
+            const d = String(r.department || '').trim();
+            if (d) set.add(d);
+        });
+        return [{ value: 'All', label: 'Tous départements' }, ...Array.from(set).sort().map((d) => ({ value: d, label: d }))];
+    })();
+
     const departmentFilter = () => {
-
-
         return (
-            <Select className="col-span-2" placeholder="Sélectionner les départements" data={["Tous départements", "HSE", "Production", "Maintenance", "Logistique"]} withAsterisk />
+            <Select
+                className="col-span-2"
+                placeholder="Filtrer par département"
+                data={departmentOptions}
+                value={selectedDepartment}
+                onChange={(v) => setSelectedDepartment(v ?? 'All')}
+                allowDeselect={false}
+                size="sm"
+                aria-label="Filtrer par département"
+            />
         );
     };
     const nameBodyTemplate = (rowData: any) => {
@@ -378,7 +282,7 @@ const Recommendation = () => {
                         return (
                             <div
                                 key={index}
-                                className="relative overflow-hidden rounded-xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm transition-transform hover:-translate-y-1"
+                                className="relative overflow-hidden rounded-xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm transition-[box-shadow] hover:shadow-md"
                             >
                                 <div
                                     className="absolute inset-0 opacity-10"
@@ -411,7 +315,7 @@ const Recommendation = () => {
                     {
                         viewType === 'table' ? (
                             <DataTable selectionMode="single"
-                                className='[&_.p-datatable-tbody]:!text-sm'
+                                className='[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]'
                                 size='small'
                                 stripedRows
                                 removableSort
@@ -420,18 +324,19 @@ const Recommendation = () => {
                                 rows={10}
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                                 rowsPerPageOptions={[10, 25, 50]}
-                                dataKey="title"
+                                dataKey="id"
                                 filters={filters}
-                                globalFilterFields={['title', 'objective', 'sites', 'ppe']}
-                                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                                globalFilterFields={['title', 'auditTitle', 'department']}
+                                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                                emptyMessage="Aucune recommandation ne correspond aux filtres"
                                 onFilter={(e) => setFilters(e.filters)}
                             >
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="title" header="Recommandation" body={nameBodyTemplate} sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="auditTitle" header="Audit lié" />
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="endDate" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="status" header="Statut" body={(rowData) => getSeverity(rowData, 'status')} sortable />
-                                <Column style={{ fontWeight: 'normal', fontSize: "13px" }} field="progress" header="Progression" body={(rowData) => getSeverity(rowData, 'progress')} sortable />
-                                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
+                                <Column field="title" header="Recommandation" body={nameBodyTemplate} sortable />
+                                <Column field="auditTitle" header="Audit lié" />
+                                <Column field="endDate" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} sortable />
+                                <Column field="status" header="Statut" body={(rowData) => getSeverity(rowData, 'status')} sortable />
+                                <Column field="progress" header="Progression" body={(rowData) => getSeverity(rowData, 'progress')} sortable />
+                                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
                             </DataTable>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -439,112 +344,13 @@ const Recommendation = () => {
                                     <RecommendationCard key={rec.id} data={rec} onView={() => navigate(`details/${rec.id}`)} onUpdate={() => navigate(`update/${rec.id}`)} />
                                 ))}
                                 {filteredRecommendations.length === 0 && (
-                                    <div className="col-span-3 text-gray-500 text-center">No Recommendations Found</div>
+                                    <div className="col-span-3 text-gray-500 text-center">Aucune recommandation ne correspond aux filtres</div>
                                 )}
                             </div>
                         )
                     }
                 </Card>
             </div>
-            <div>
-                {/* Modal */}
-                <Modal
-                    opened={modalOpened}
-                    onClose={() => setModalOpened(false)}
-                    title={<div className="text-lg">{recommendation?.title}</div>}
-                    size="auto"
-                    centered yOffset="10dvh"
-                >
-                    <LoadingOverlay
-                        visible={loading}
-                        zIndex={1000}
-                        overlayProps={{ radius: "sm", blur: 2 }}
-                    />
-                    {selectedRow && (
-                        <div className="flex gap-5 ">
-                            <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-5 w-[500px]">
-
-                                <div>
-                                    <p className="text-lg text-gray-400">Description</p>
-                                    <div className="bg-blue-50 rounded-lg shadow-sm p-4 ">
-                                        {/* LOT 41 P0 XSS fix */}
-                                        <SafeHtml html={recommendation?.description} />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-
-                                    <NumberInput {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
-                                    <Select size="sm" {...form.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={recommendationStatus.slice(recommendationStatus.findIndex((item) => item.value === (recommendationFollowups?.length > 0 ? recommendationFollowups[recommendationFollowups.length - 1]?.status : selectedRow?.status)))} />
-                                </div>
-                                <TextEditor form={form} id="comment" title="Update Comment" />
-                                <Divider size="xs" />
-                                <div className="flex justify-center gap-2">
-                                    <Button type="button" onClick={() => setModalOpened(false)} variant="outline">Close</Button>
-                                    <Button type="submit" variant="gradient">Save Changes</Button>
-                                </div>
-                            </form>
-                            {recommendationFollowups && recommendationFollowups.length > 0 && (
-                                <>
-                                    <Divider size="xs" orientation="vertical" />
-                                    <div className="space-y-5 h-[530px] overflow-y-auto">
-                                        <p className="text-lg items-center mb-4 flex gap-1 text-amber-600">
-                                            <IconClock /> Update History
-                                        </p>
-
-                                        {recommendationFollowups
-                                            .slice() // create a shallow copy
-                                            .reverse() // reverse the copy
-                                            .map((x: any, index: number, arr: any) => {
-                                                const previousProgress =
-                                                    index < arr.length - 1 ? arr[index + 1].progress : 0;
-                                                const progressMade = x.progress - previousProgress;
-
-                                                return (
-                                                    <Card key={index} shadow="sm" padding="sm" radius="md" withBorder className="w-[300px]">
-                                                        <div className="flex flex-col gap-4">
-                                                            {/* Header */}
-                                                            <div className="flex justify-between items-center">
-                                                                <div className="rounded-4xl">
-                                                                    <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
-                                                                        <IconClock />
-                                                                        {formatDateShort(x.followupDate)}
-                                                                    </p>
-                                                                </div>
-                                                                <Tag severity={x.progress <= 20 ? "danger" : x.progress <= 70 ? "warning" : "success"}>{x.progress}%</Tag>
-
-                                                                <Badge radius="sm" variant="outline" color="purple" className="!capitalize">{recMap[x.status]}</Badge>
-                                                            </div>
-
-                                                            {/* Progress Section */}
-                                                            <Progress.Root size={20}>
-                                                                <Progress.Section value={previousProgress} color="blue">
-                                                                    <Progress.Label>{previousProgress}</Progress.Label>
-                                                                </Progress.Section>
-                                                                {progressMade > 0 && (
-                                                                    <Progress.Section value={progressMade} color="teal">
-                                                                        <Progress.Label className="text-xs">{progressMade}</Progress.Label>
-                                                                    </Progress.Section>
-                                                                )}
-                                                            </Progress.Root>
-
-                                                            <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                                                                <p className="text-blue-400">Update Details</p>
-                                                                {/* LOT 41 P0 XSS fix */}
-                                                                <SafeHtml html={x.comment || "-"} className="text-gray-700 mt-1 text-sm" />
-                                                            </div>
-                                                        </div>
-                                                    </Card>
-                                                );
-                                            })}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-                </Modal>
-            </div >
-
         </div >
     );
 };

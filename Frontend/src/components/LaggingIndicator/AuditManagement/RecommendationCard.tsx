@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@mantine/core";
-import { IconBook, IconCalendar, IconEye, IconEdit } from "@tabler/icons-react";
+import { IconCalendar, IconEye, IconEdit } from "@tabler/icons-react";
 import { formatDateShort } from "../../../utility/DateFormats";
-import { recMap } from "../../../Data/DropdownData";
+import { REC_STATUS_CHIPS, recPriorityLabel, recStatusLabel } from "./auditLabels";
 
 interface RecommendationData {
     id: number;
@@ -13,34 +13,27 @@ interface RecommendationData {
     progress: number;
     observation: string;
     actionManagerId: string;
+    priority?: string;
 }
-
-const statusColorMap: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-800",
-    IN_PROGRESS: "bg-blue-100 text-blue-800",
-    COMPLETED: "bg-green-100 text-green-800",
-    DELAYED: "bg-red-100 text-red-800",
-    CANCELLED: "bg-gray-200 text-gray-700",
-};
 
 const getUpdateRestriction = (status: string, progress: number) => {
     const normalizedStatus = String(status ?? '').toUpperCase();
     const normalizedProgress = Number(progress ?? 0);
 
     if (normalizedProgress >= 100) {
-        return 'Progress is already at 100%.';
+        return 'Avancement déjà à 100 %.';
     }
 
     if (normalizedStatus === 'PENDING') {
-        return 'Pending recommendations cannot be updated.';
+        return 'Une recommandation en attente ne peut pas être mise à jour.';
     }
 
     if (normalizedStatus === 'COMPLETED') {
-        return 'Recommendation is already completed.';
+        return 'Recommandation déjà terminée.';
     }
 
     if (normalizedStatus === 'CANCELLED') {
-        return 'Cancelled recommendations cannot be updated.';
+        return 'Une recommandation annulée ne peut pas être mise à jour.';
     }
 
     return null;
@@ -51,59 +44,57 @@ const RecommendationCard = ({ data, onView, onUpdate }: {
     onView: () => void;
     onUpdate: () => void;
 }) => {
-    const statusStyle = statusColorMap[data.status?.toUpperCase()] || "bg-gray-100 text-gray-800";
+    const statusChip = REC_STATUS_CHIPS[data.status?.toUpperCase()] || "bg-slate-50 text-slate-600 border-slate-200";
     const updateRestriction = getUpdateRestriction(data?.status, data?.progress);
-    const updateTooltip = updateRestriction ?? 'Update';
+    const updateTooltip = updateRestriction ?? 'Mettre à jour';
 
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
-            {/* Top badges */}
-            <div className="flex flex-wrap gap-3">
-                <span className={`text-sm px-2 py-1 rounded-lg ${statusStyle}`}>
-                    {recMap[data.status]}
+        <div className="rounded-xl border border-slate-200 shadow-sm p-4 bg-white flex flex-col gap-3 transition-[box-shadow,border-color] duration-200 hover:shadow-md hover:border-slate-300">
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+                <span className={`text-xs px-2 py-1 rounded-lg border ${statusChip}`}>
+                    {recStatusLabel(data.status)}
                 </span>
-                <span className="text-sm px-2 py-1 rounded-lg bg-orange-100 text-orange-800">
+                <span className="text-xs px-2 py-1 rounded-lg bg-orange-50 text-orange-800 border border-orange-200">
                     {data.progress}%
                 </span>
-                <span className="text-sm px-2 py-1 rounded-lg bg-sky-100 text-sky-800">
-                    Department: {data.department}
-                </span>
+                {data.priority && (
+                    <span className="text-xs px-2 py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200">
+                        Priorité : {recPriorityLabel(data.priority)}
+                    </span>
+                )}
             </div>
 
-            {/* Title */}
-            <p className=" text-gray-700">{data.title}</p>
+            {/* Titre */}
+            <p className="text-[13px] text-slate-800">{data.title}</p>
 
-            {/* Audit Title */}
-            <p className="text-gray-700">Observation: {data.observation}</p>
-            <p className="text-gray-700">Responsible: {data.actionManagerId}</p>
+            {data.observation && <p className="text-[12.5px] text-slate-600">Constat : {data.observation}</p>}
+            {data.department && <p className="text-[12.5px] text-slate-600">Département : {data.department}</p>}
 
-            {/* Date */}
-            <div className="text-gray-700 font-normal flex items-center gap-1">
-                <IconCalendar size={16} /> Due: {formatDateShort(data.deadline)}
+            {/* Échéance */}
+            <div className="text-slate-600 text-[12.5px] flex items-center gap-1">
+                <IconCalendar size={15} /> Échéance : {formatDateShort(data.deadline)}
             </div>
 
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="flex justify-center grow gap-4">
-                <Button size="xs" leftSection={<IconEye />} color="gray" variant="subtle" onClick={onView}>
-                    View
+                <Button size="xs" leftSection={<IconEye size={15} />} color="gray" variant="subtle" onClick={onView}>
+                    Consulter
                 </Button>
                 <Tooltip label={updateTooltip}>
                     <span className="inline-flex">
                         <Button
                             size="xs"
-                            leftSection={<IconEdit />}
+                            leftSection={<IconEdit size={15} />}
                             color="blue"
                             variant="subtle"
                             disabled={Boolean(updateRestriction)}
                             onClick={onUpdate}
                         >
-                            Update
+                            Mettre à jour
                         </Button>
                     </span>
                 </Tooltip>
-                <Button size="xs" leftSection={<IconBook />} color="green" variant="subtle">
-                    Learn
-                </Button>
             </div>
         </div>
     );

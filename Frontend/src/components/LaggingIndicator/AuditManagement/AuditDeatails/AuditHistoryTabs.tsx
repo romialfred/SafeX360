@@ -2,6 +2,7 @@ import { Timeline, Text, Card, Badge, Group } from '@mantine/core';
 import { IconUser, IconCalendar, IconClock } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { auditStatusMap } from '../../../../Data/DropdownData';
+import { auditStatusColor } from '../auditLabels';
 
 type AuditStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -44,10 +45,10 @@ const AuditHistoryTabs = ({ history, audit: _audit, empMap }: AuditHistoryProps)
                                     <Text size="sm" className="text-gray-500 flex items-center gap-1">
                                         <IconUser size={14} /> {empMap ? empMap[entry.ownerId]?.name : ""}
                                     </Text>
-                                    <Badge color="gray" variant="light">{entry.status}</Badge>
+                                    <Badge color={auditStatusColor(entry.status)} variant="light">{auditStatusMap[entry.status] ?? entry.status}</Badge>
                                 </Group>
 
-                                <Text size="sm" className="text-gray-700">{entry.comment || 'No comment provided.'}</Text>
+                                <Text size="sm" className="text-gray-700">{entry.comment || 'Aucun commentaire renseigné.'}</Text>
 
                                 <Group justify="space-between" className="mt-2 text-xs text-gray-400">
                                     <div className="flex items-center gap-1">
@@ -56,7 +57,7 @@ const AuditHistoryTabs = ({ history, audit: _audit, empMap }: AuditHistoryProps)
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <IconClock size={14} />
-                                        In this status for {daysInStatus} day{daysInStatus !== 1 ? 's' : ''}
+                                        {daysInStatus} jour{daysInStatus > 1 ? 's' : ''} dans ce statut
                                     </div>
                                 </Group>
                             </Card>
@@ -67,7 +68,7 @@ const AuditHistoryTabs = ({ history, audit: _audit, empMap }: AuditHistoryProps)
             {
                 sortedHistory.length === 0 && (
                     <Text size="sm" className="text-gray-500 mt-4">
-                        No audit history available.
+                        Aucun changement de statut enregistré pour cet audit.
                     </Text>
                 )
             }

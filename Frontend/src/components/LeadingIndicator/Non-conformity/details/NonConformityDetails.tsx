@@ -10,7 +10,6 @@ import {
 import { DateInput } from '@mantine/dates';
 import {
     IconEdit,
-    IconDownload,
     IconTool,
     IconClock,
     IconFileText,
@@ -229,7 +228,7 @@ const NonConformityDetails = () => {
     const fetchHistory = () => {
         getNCHistorybyNonConformityID(id)
             .then((res) => setHistory(res))
-            .catch((err) => console.log(err));
+            .catch(() => {});
     };
 
     const handleSubmit = async (values: any) => {
@@ -299,15 +298,6 @@ const NonConformityDetails = () => {
 
                 {/* Actions compactes — en haut à droite, sortie du hero */}
                 <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={() => {/* TODO: PDF export */}}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11.5px] font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-                        title={t('nonConformity:details.actions.exportPdf')}
-                    >
-                        <IconDownload size={12} stroke={1.7} />
-                        PDF
-                    </button>
                     <button
                         type="button"
                         onClick={() => navigate('/non-conformity/edit/' + nonConformity.id)}
@@ -440,7 +430,7 @@ const NonConformityDetails = () => {
                 defaultValue="overview"
                 classNames={{
                     list: '!inline-flex !flex-nowrap !gap-0.5 !p-1 !rounded-lg !bg-white !border !border-slate-200 !shadow-sm overflow-x-auto',
-                    tab: 'data-[active]:!bg-slate-900 data-[active]:!text-white data-[active]:!shadow-sm data-[active]:!border-0 !text-slate-600 hover:!text-slate-900 hover:!bg-slate-100 !border-0 !rounded-md !px-3.5 !py-1.5 !text-[12px] !font-medium !transition-all',
+                    tab: 'data-[active]:!bg-slate-900 data-[active]:!text-white data-[active]:!shadow-sm data-[active]:!border-0 !text-slate-600 hover:!text-slate-900 hover:!bg-slate-100 !border-0 !rounded-md !px-3.5 !py-1.5 !text-[12px] !font-medium !transition-colors',
                 }}
             >
                 <Tabs.List>

@@ -441,6 +441,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                         color="red"
                                         size="sm"
                                         onClick={() => handleDelete(index)}
+                                        aria-label="Retirer le membre de l'équipe"
                                     >
                                         <IconPlus size={14} style={{ transform: 'rotate(45deg)' }} />
                                     </ActionIcon>
@@ -608,7 +609,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                     {selectedMethod && (
                         <Grid.Col span={12}>
                             <Text size="xs" className="text-slate-500 italic leading-relaxed">
-                                ℹ️ {methodDescriptions[selectedMethod as keyof typeof methodDescriptions]}
+                                {methodDescriptions[selectedMethod as keyof typeof methodDescriptions]}
                             </Text>
                         </Grid.Col>
                     )}
@@ -627,10 +628,10 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                 </div>
                                 <div>
                                     <Text size="md" className="text-yellow-800">
-                                        Summary of the causes identified
+                                        Synthèse des causes identifiées
                                     </Text>
                                     <Text size="xs" className="text-yellow-600">
-                                        Structured summary of the main root causes discovered during the analysis
+                                        Résumé structuré des principales causes racines mises en évidence par l'analyse
                                     </Text>
                                 </div>
                             </Group>
@@ -650,10 +651,10 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                 </div>
                                 <div>
                                     <Text size="md" className="text-emerald-800">
-                                        Conclusions of the analysis
+                                        Conclusions de l'analyse
                                     </Text>
                                     <Text size="xs" className="text-emerald-600">
-                                        Final summary with recommendations for action and preventive measures
+                                        Synthèse finale avec recommandations d'action et mesures préventives
                                     </Text>
                                 </div>
                             </Group>

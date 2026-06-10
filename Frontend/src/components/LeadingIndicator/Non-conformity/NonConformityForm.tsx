@@ -556,7 +556,7 @@ const NonConformityForm = () => {
                     <button
                         type="button"
                         onClick={() => setHelpPanelVisible(true)}
-                        className="fixed right-0 top-1/3 z-40 bg-red-600 hover:bg-red-700 text-white px-3 py-3 rounded-l-lg shadow-xl flex flex-col items-center gap-1 transition-all"
+                        className="fixed right-0 top-1/3 z-40 bg-red-600 hover:bg-red-700 text-white px-3 py-3 rounded-l-lg shadow-xl flex flex-col items-center gap-1 transition-colors"
                         aria-label="Afficher le volet d'aide"
                     >
                         <IconLayoutSidebarRightExpand size={18} />

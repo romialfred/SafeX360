@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@mantine/form';
-import { Button, Group, Stepper, Text, Badge, Paper, Breadcrumbs, Alert } from '@mantine/core';
+import { Button, Group, Stepper, Text, Badge, Paper, Alert } from '@mantine/core';
 import { IconCheck, IconClipboardList, IconSearch, IconTool, IconArchive, IconSend } from '@tabler/icons-react';
 import AnalysisStep from './steps/AnalysisStep';
 import TreatmentStep from './steps/TreatmentStep';
 import ClosureStep from './steps/ClosureStep';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DeclarationStep from './steps/DeclarationStep';
+import PageHeader from '../../UtilityComp/PageHeader';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllActiveLocations } from '../../../services/LocationService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
@@ -115,39 +116,38 @@ const NonConformityEdit = () => {
         },
         validate: {
             nonConformity: {
-                //first page
-                type: (value) => value ? null : 'Type is required',
-                title: (value) => value ? null : 'Title is required',
-                date: (value) => value ? null : 'Date is required',
-                detectionDate: (value) => value ? null : 'Detection date is required',
-                reportedBy: (value) => value ? null : 'Reported by is required',
-                workProcessId: (value) => value ? null : 'Work process is required',
-                locationId: (value) => value ? null : 'Location is required',
-                categoryId: (value) => value ? null : 'Category is required',
-                description: (value) => isValidRichText(value) ? null : 'Description is required',
-                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Requirement is required',
-                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Detection source is required',
-                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Action taken is required',
-                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Severity level is required',
-                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? 'Near miss type is required' : null,
-                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? 'At least one factor is required' : null,
-                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? 'Preventive action is required' : null,
-                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? 'Improvement is required' : null,
-                events: (value) => value.length === 0 ? 'At least one event is required' : null,
+                //première page
+                type: (value) => value ? null : "Le type d'événement est requis",
+                title: (value) => value ? null : 'Le titre est requis',
+                date: (value) => value ? null : "La date de l'événement est requise",
+                detectionDate: (value) => value ? null : 'La date de détection est requise',
+                reportedBy: (value) => value ? null : 'Le déclarant est requis',
+                workProcessId: (value) => value ? null : 'Le processus de travail est requis',
+                locationId: (value) => value ? null : 'Le lieu est requis',
+                categoryId: (value) => value ? null : 'La catégorie est requise',
+                description: (value) => isValidRichText(value) ? null : 'La description est requise',
+                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'exigence non respectée est requise",
+                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'La source de détection est requise',
+                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'action immédiate est requise",
+                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Le niveau de gravité est requis',
+                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? 'Le type de quasi-accident est requis' : null,
+                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? 'Au moins un facteur contributif est requis' : null,
+                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'action préventive est requise" : null,
+                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'opportunité d'amélioration est requise" : null,
+                events: (value) => value.length === 0 ? "Au moins une nature d'événement est requise" : null,
 
-                //third page
+                //troisième page
 
-                details: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Details are required',
-                comments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Comments are required',
-                // supportComments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Support comments are required',
+                details: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Les détails sont requis',
+                comments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Les commentaires sont requis',
 
-                //fourth page
-                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Lessons learned are required',
-                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Knowledge sharing plan is required',
-                closingDate: (value) => value || activeStep < 3 ? null : 'Closing date is required',
-                finalStatus: (value) => value || activeStep < 3 ? null : 'Final status is required',
-                validator: (value) => value || activeStep < 3 ? null : 'Validator is required',
-                validationDate: (value) => value || activeStep < 3 ? null : 'Validation date is required',
+                //quatrième page
+                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Les leçons apprises sont requises',
+                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Le plan de diffusion est requis',
+                closingDate: (value) => value || activeStep < 3 ? null : 'La date de clôture est requise',
+                finalStatus: (value) => value || activeStep < 3 ? null : 'Le statut final est requis',
+                validator: (value) => value || activeStep < 3 ? null : 'Le validateur est requis',
+                validationDate: (value) => value || activeStep < 3 ? null : 'La date de validation est requise',
                 // validationComment: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Validation comment is required',
                 // effectiveness: (value) => value || activeStep < 3 ? null : 'Effectiveness is required',
                 // rating: (value) => value || activeStep < 3 ? null : 'Rating is required',
@@ -165,28 +165,28 @@ const NonConformityEdit = () => {
 
             },
             analysis: {
-                method: (value) => value || activeStep < 1 ? null : 'Analysis method is required',
-                origin: (value) => value || activeStep < 1 ? null : 'Origin is required',
-                description: (value) => value || activeStep < 1 ? null : 'Description is required',
-                individualFactors: (value) => value || activeStep < 1 ? null : 'Individual factors are required',
-                technicalFactors: (value) => value || activeStep < 1 ? null : 'Technical factors are required',
-                organizationalFactors: (value) => value || activeStep < 1 ? null : 'Organizational factors are required',
-                rootCauses: (value) => value || activeStep < 1 ? null : 'Root causes are required',
-                startDate: (value) => value || activeStep < 1 ? null : 'Start date is required',
-                deadline: (value) => value || activeStep < 1 ? null : 'Deadline is required',
-                priority: (value) => value || activeStep < 1 ? null : 'Priority is required',
-                severityLevel: (value) => value || activeStep < 1 ? null : 'Severity level is required',
-                status: (value) => value || activeStep < 1 ? null : 'Status is required',
-                summary: (value) => isValidRichText(value) || activeStep < 1 ? null : 'Summary is required',
-                conclusion: (value) => isValidRichText(value) || activeStep < 1 ? null : 'Conclusion is required',
+                method: (value) => value || activeStep < 1 ? null : "La méthode d'analyse est requise",
+                origin: (value) => value || activeStep < 1 ? null : "L'origine est requise",
+                description: (value) => value || activeStep < 1 ? null : 'La description est requise',
+                individualFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs individuels sont requis',
+                technicalFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs techniques sont requis',
+                organizationalFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs organisationnels sont requis',
+                rootCauses: (value) => value || activeStep < 1 ? null : 'Les causes profondes sont requises',
+                startDate: (value) => value || activeStep < 1 ? null : 'La date de début est requise',
+                deadline: (value) => value || activeStep < 1 ? null : "L'échéance est requise",
+                priority: (value) => value || activeStep < 1 ? null : 'La priorité est requise',
+                severityLevel: (value) => value || activeStep < 1 ? null : 'Le niveau de gravité est requis',
+                status: (value) => value || activeStep < 1 ? null : 'Le statut est requis',
+                summary: (value) => isValidRichText(value) || activeStep < 1 ? null : 'Le résumé est requis',
+                conclusion: (value) => isValidRichText(value) || activeStep < 1 ? null : 'La conclusion est requise',
 
             },
             correctiveActions: {
-                actionName: (value) => value || activeStep < 2 ? null : 'Action name is required',
-                deadline: (value) => value || activeStep < 2 ? null : 'Deadline is required',
-                assignedEmployeeId: (value) => value || activeStep < 2 ? null : 'Assigned employee is required',
-                status: (value) => value || activeStep < 2 ? null : 'Status is required',
-                description: (value) => value || activeStep < 2 ? null : 'Description is required',
+                actionName: (value) => value || activeStep < 2 ? null : "Le nom de l'action est requis",
+                deadline: (value) => value || activeStep < 2 ? null : "L'échéance est requise",
+                assignedEmployeeId: (value) => value || activeStep < 2 ? null : "L'employé assigné est requis",
+                status: (value) => value || activeStep < 2 ? null : 'Le statut est requis',
+                description: (value) => value || activeStep < 2 ? null : 'La description est requise',
             }
 
         }, // No validation yet
@@ -285,26 +285,26 @@ const NonConformityEdit = () => {
     // };
     const steps = [
         {
-            label: 'Declaration',
-            description: 'General Information',
+            label: 'Déclaration',
+            description: 'Informations générales',
             icon: IconClipboardList,
             color: getEventTypeColor(form.values.nonConformity.type || 'Non-Conformity')
         },
         {
-            label: 'Analysis',
-            description: 'Root Cause Analysis',
+            label: 'Analyse',
+            description: 'Analyse causale',
             icon: IconSearch,
             color: 'yellow'
         },
         {
-            label: 'Treatment',
-            description: 'Corrective Actions',
+            label: 'Traitement',
+            description: 'Actions correctives',
             icon: IconTool,
             color: 'orange'
         },
         {
-            label: 'Closure & Distribution',
-            description: 'Validation & Distribution',
+            label: 'Clôture & Diffusion',
+            description: 'Validation & partage',
             icon: IconArchive,
             color: 'green'
         }
@@ -312,10 +312,10 @@ const NonConformityEdit = () => {
 
     const isLocked = lockedInfo.locked;
     const lockedMessage = lockedInfo.status === 'CLOSED'
-        ? 'This event is closed. Modifications are not allowed.'
+        ? 'Cet événement est clôturé. Les modifications ne sont plus autorisées.'
         : lockedInfo.status === 'CANCELLED'
-            ? 'This event is cancelled. Modifications are not allowed.'
-            : 'This event is rejected. Modifications are not allowed.';
+            ? 'Cet événement est annulé. Les modifications ne sont plus autorisées.'
+            : 'Cet événement est rejeté. Les modifications ne sont plus autorisées.';
     const lockedAlertColor = lockedInfo.status === 'CLOSED'
         ? 'green'
         : lockedInfo.status === 'CANCELLED'
@@ -330,7 +330,7 @@ const NonConformityEdit = () => {
 
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before proceeding.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de continuer.");
             return;
         }
         if (activeStep < steps.length - 1) {
@@ -351,20 +351,20 @@ const NonConformityEdit = () => {
         }
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before submitting.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
             return;
         }
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-base'>Confirmer la soumission</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to submit the form without filling next steps?
+                <span className="text-sm">
+                    Souhaitez-vous soumettre la mise à jour sans renseigner les étapes suivantes ?
                 </span>
             ),
-            labels: { confirm: `Yes`, cancel: 'Cancel' },
-            cancelProps: { color: 'red', variant: "filled" },
+            labels: { confirm: 'Oui, soumettre', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: "default" },
             confirmProps: { color: 'green', variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
@@ -384,7 +384,7 @@ const NonConformityEdit = () => {
 
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Please fill all required fields before submitting.");
+            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
             return;
         }
         const values = form.values;
@@ -420,12 +420,12 @@ const NonConformityEdit = () => {
             analysis: values.analysis,
             correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id }))
         }).then((_response) => {
-            successNotification("Non-conformity updated successfully!");
+            successNotification("Constat central mis à jour");
             navigate("/non-conformity");
 
         }).catch((error) => {
 
-            errorNotification(error?.response?.data?.errorMessage || "Failed to update non-conformity. Please try again.");
+            errorNotification(error?.response?.data?.errorMessage || "La mise à jour a échoué. Veuillez réessayer.");
         }).finally(() => {
             dispatch(hideOverlay());
         })
@@ -453,27 +453,30 @@ const NonConformityEdit = () => {
     // };
 
     return (
-        <div className="p-5 flex flex-col" >
-            <div className='flex items-center justify-between'>
-                <div>
-                    <div className="text-2xl text-blue-500 w-fit">Update Central Finding Declaration</div>
-                    <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-                        <Link className="hover:!underline" to="/non-conformity"><Text variant="gradient">Central Findings Dashboard</Text></Link>
-                        <Link className="hover:!underline" to=""><Text variant="gradient">Update Central Finding Declaration</Text></Link>
-
-                    </Breadcrumbs>
-                </div>
-
-                <Button
-                    leftSection={<IconCheck size={16} />}
-                    onClick={handleFirstSubmit}
-                    disabled={isLocked}
-                    title={isLocked ? lockedMessage : undefined}
-                    className="!bg-gradient-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-white shadow-lg shadow-green-500/25 rounded-lg"
-                >
-                    Submit
-                </Button>
+        <div className="p-5 flex flex-col w-full" >
+            <div className='mb-4'>
+                <PageHeader
+                    breadcrumbs={[
+                        { label: 'Accueil', to: '/' },
+                        { label: 'Constats centraux', to: '/non-conformity' },
+                        { label: 'Mettre à jour la déclaration' },
+                    ]}
+                    icon={<IconClipboardList size={22} stroke={2} />}
+                    iconColor="red"
+                    title="Mettre à jour le constat central"
+                    subtitle="Modification de la déclaration, de l'analyse, du traitement et de la clôture"
+                    actions={
+                        <Button
+                            leftSection={<IconCheck size={16} />}
+                            onClick={handleFirstSubmit}
+                            disabled={isLocked}
+                            title={isLocked ? lockedMessage : undefined}
+                            color="green"
+                        >
+                            Soumettre
+                        </Button>
+                    }
+                />
             </div>
             {/* <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 mb-6">
                 <Group justify="space-between" className="mb-4">
@@ -534,14 +537,14 @@ const NonConformityEdit = () => {
                 )}
                 <div className="flex flex-wrap items-center gap-3 mb-3">
                     <Text size="lg" className="text-slate-800">
-                        {form.values.nonConformity.title?.trim() || 'Untitled Central Finding'}
+                        {form.values.nonConformity.title?.trim() || 'Constat sans titre'}
                     </Text>
                     <Badge
                         color="blue"
                         variant="filled"
                         className="rounded-full px-3 py-1 text-sm"
                     >
-                        {form.values.nonConformity.number || 'Auto-generated number pending'}
+                        {form.values.nonConformity.number || 'Numéro en attente de génération'}
                     </Badge>
                 </div>
                 <Paper className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 mb-4">
@@ -590,7 +593,7 @@ const NonConformityEdit = () => {
                                         disabled={activeStep === 0}
                                         className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg disabled:opacity-50"
                                     >
-                                        Previous Step
+                                        Étape précédente
                                     </Button>
 
                                     <Group gap="md">
@@ -598,7 +601,7 @@ const NonConformityEdit = () => {
                                             variant="light"
                                             className="bg-slate-100 text-slate-700"
                                         >
-                                            Step {activeStep + 1} of {steps.length}
+                                            Étape {activeStep + 1} sur {steps.length}
                                         </Badge>
 
                                         {activeStep === steps.length - 1 ? (
@@ -606,17 +609,17 @@ const NonConformityEdit = () => {
                                                 leftSection={<IconSend size={16} />}
                                                 onClick={handleSubmit}
                                                 disabled={isLocked}
-                                                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-lg shadow-emerald-500/25 rounded-lg"
+                                                color="green"
                                             >
-                                                Submit & Close
+                                                Soumettre et clôturer
                                             </Button>
                                         ) : (
                                             <Button
                                                 onClick={handleNext}
                                                 disabled={isLocked}
-                                                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 rounded-lg"
+                                                color="blue"
                                             >
-                                                Next Step
+                                                Étape suivante
                                             </Button>
                                         )}
                                         {activeStep < 3 && (
@@ -624,9 +627,10 @@ const NonConformityEdit = () => {
                                                 leftSection={<IconCheck size={16} />}
                                                 onClick={handleFirstSubmit}
                                                 disabled={isLocked}
-                                                className="!bg-gradient-to-r !from-green-500 !to-green-600 hover:!from-green-600 hover:!to-green-700 text-white shadow-lg shadow-green-500/25 rounded-lg"
+                                                variant="light"
+                                                color="green"
                                             >
-                                                Submit
+                                                Soumettre maintenant
                                             </Button>)}
                                     </Group>
                                 </Group>

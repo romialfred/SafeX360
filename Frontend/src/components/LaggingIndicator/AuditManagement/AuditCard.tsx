@@ -1,52 +1,44 @@
-import { Button } from "@mantine/core";
+import { Badge, Button } from "@mantine/core";
 import { formatDateShort } from "../../../utility/DateFormats";
-import { capitalizeFirstLetter } from "../../../utility/OtherUtilities";
 import { useNavigate } from "react-router-dom";
 import { auditStatusMap } from "../../../Data/DropdownData";
 import { IconEdit, IconEye } from "@tabler/icons-react";
+import { auditCategoryLabel, auditStatusColor, translateAuditTerm } from "./auditLabels";
 
 
 const AuditCard = ({ incidentData, auditAreaMap }: any) => {
     const navigate = useNavigate();
 
     return (
-        <div className="rounded-xl border border-gray-300 shadow-sm p-4 bg-white flex flex-col gap-3 transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-primary">
+        <div className="rounded-xl border border-slate-200 shadow-sm p-4 bg-white flex flex-col gap-3 transition-[box-shadow,border-color] duration-200 hover:shadow-md hover:border-slate-300">
             <div className="flex gap-4 items-center justify-between">
 
-                <span className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded-lg">
-                    {capitalizeFirstLetter(incidentData.category)}
+                <span className="text-xs bg-indigo-50 text-indigo-800 px-2 py-1 rounded-lg">
+                    {auditCategoryLabel(incidentData.category)}
                 </span>
-                <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-lg">
+                <span className="text-xs bg-violet-50 text-violet-800 px-2 py-1 rounded-lg">
                     {auditAreaMap[incidentData.scopeId]?.name}
                 </span>
-                <Button
-                    color="orange"
-                    size="compact-xs"
-                    variant="outline"
-                >{auditStatusMap[incidentData.status ?? ""]}</Button>
+                <Badge
+                    color={auditStatusColor(incidentData.status)}
+                    size="sm"
+                    variant="light"
+                    className="rounded-full whitespace-nowrap"
+                >
+                    {auditStatusMap[incidentData.status ?? ""] ?? incidentData.status}
+                </Badge>
             </div>
 
-            <div className="text-sm text-gray-900">{incidentData.title}</div>
+            <div className="text-[13px] text-slate-800">{incidentData.title}</div>
 
-            <div className="text-gray-500 text-xs">
-                Audit Date: {formatDateShort(incidentData.startDate)}
+            <div className="text-slate-500 text-xs">
+                Début : {formatDateShort(incidentData.startDate)}
             </div>
-            <div className="text-gray-500 text-xs">
-                Type: {Object.keys(incidentData.auditTypes).join(", ")}
-            </div>
-            <div className="text-gray-500 text-xs">
-                Lead Auditor:
+            <div className="text-slate-500 text-xs">
+                Types : {Object.keys(incidentData.auditTypes ?? {}).map((t) => translateAuditTerm(t)).join(", ") || '—'}
             </div>
 
             <div className="flex justify-center grow gap-4">
-                {/* <Button
-                    size="compact-xs"
-                    // leftSection={<IconPlayerPlay />}
-                    color="indigo"
-                    onClick={() => navigate(`execute/${incidentData.id}`)}
-                >
-                    Execute
-                </Button> */}
                 <Button
                     size="compact-xs"
                     leftSection={<IconEdit size={15} />}
@@ -54,16 +46,16 @@ const AuditCard = ({ incidentData, auditAreaMap }: any) => {
                     variant="subtle"
                     onClick={() => navigate(`edit-schedule/${incidentData.id}`)}
                 >
-                    Edit
+                    Modifier
                 </Button>
                 <Button
                     size="compact-xs"
                     leftSection={<IconEye size={15} />}
-                    color="yellow"
+                    color="indigo"
                     variant="subtle"
                     onClick={() => navigate(`details/${incidentData.id}`)}
                 >
-                    View
+                    Consulter
                 </Button>
             </div>
         </div>

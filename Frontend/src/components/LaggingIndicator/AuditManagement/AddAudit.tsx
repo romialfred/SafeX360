@@ -16,7 +16,6 @@ import {
     IconUsers,
     IconCertificate,
     IconFileText,
-    IconDeviceFloppy,
     IconX,
 } from "@tabler/icons-react";
 
@@ -28,10 +27,11 @@ const AddAudit = () => {
     const [auditPlanFile, setAuditPlanFile] = useState<File | null>(null);
 
     useEffect(() => {
+        // Données de démonstration humanisées (R3) en attendant le branchement service.
         const dummyEmployees = [
-            { id: 1, name: 'John Doe', empNumber: 'EMP001', role: '' },
-            { id: 2, name: 'Jane Smith', empNumber: 'EMP002', role: '' },
-            { id: 3, name: 'Robert Johnson', empNumber: 'EMP003', role: '' },
+            { id: 1, name: 'K. Ouédraogo', empNumber: 'EMP-0114', role: '' },
+            { id: 2, name: 'A. Traoré', empNumber: 'EMP-0287', role: '' },
+            { id: 3, name: 'M. Kaboré', empNumber: 'EMP-0342', role: '' },
         ];
         setMember(dummyEmployees.map(emp => ({ ...emp, pos: "Source" })));
     }, []);
@@ -114,14 +114,9 @@ const AddAudit = () => {
                 title="Programmer un audit"
                 subtitle="Définition du périmètre, des objectifs et de l'équipe conformément à ISO 19011"
                 actions={
-                    <>
-                        <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
-                            Annuler
-                        </Button>
-                        <Button color="indigo" size="sm" leftSection={<IconDeviceFloppy size={15} />}>
-                            Enregistrer
-                        </Button>
-                    </>
+                    <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate(-1)}>
+                        Annuler
+                    </Button>
                 }
             />
 

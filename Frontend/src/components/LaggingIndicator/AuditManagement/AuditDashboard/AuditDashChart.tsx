@@ -12,7 +12,7 @@ const AuditDashChart = ({ audits = [], auditAreaMap = {} as Record<string, any> 
         });
         // Build chart data with area names
         const base = Object.entries(counts).map(([scopeId, value]) => ({
-            name: auditAreaMap[String(scopeId)]?.name || `Area ${scopeId}`,
+            name: auditAreaMap[String(scopeId)]?.name || `Domaine ${scopeId}`,
             value,
         }));
         // Sort by value desc
@@ -28,7 +28,7 @@ const AuditDashChart = ({ audits = [], auditAreaMap = {} as Record<string, any> 
         <Card shadow="xs" radius="md" withBorder p="lg" className="w-full">
             <div className="flex justify-between items-center">
                 <div className="mb-4">
-                    <h1 className="text-lg text-gray-600">Process Audits by Area</h1>
+                    <h2 className="text-sm text-slate-700" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>Audits par domaine</h2>
                 </div>
             </div>
             <BarChart
@@ -39,12 +39,12 @@ const AuditDashChart = ({ audits = [], auditAreaMap = {} as Record<string, any> 
                 gridAxis="none"
                 series={[{ name: 'value' }]}
                 maxBarWidth={28}
-                yAxisLabel="Number of audits"
+                yAxisLabel="Nombre d'audits"
                 legendProps={{ verticalAlign: 'top' }}
                 withYAxis
                 withTooltip={false}
                 withXAxis
-                xAxisLabel="Audit Area"
+                xAxisLabel="Domaine d'audit"
             />
         </Card>
     )

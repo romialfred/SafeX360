@@ -1,15 +1,17 @@
-import { Breadcrumbs, Button, Fieldset, FileInput, MultiSelect, Select, Text, TextInput } from "@mantine/core";
+import { Button, Fieldset, FileInput, MultiSelect, Select, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { modals } from "@mantine/modals";
+import { IconClipboardCheck } from "@tabler/icons-react";
 import { PickList } from "primereact/picklist";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { auditType, PPE } from "../../../Data/IncidentsData";
 import { getEmployeeDropdownWithEmail } from "../../../services/EmployeeService";
 import { updateAudit } from "../../../services/AuditService";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import PageHeader from "../../UtilityComp/PageHeader";
 
 
 
@@ -63,13 +65,12 @@ const EditAudit = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Incident Title is required";
+                if (trimmed.length === 0) return "Le titre de l'audit est requis";
 
-                const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return trimmed.length > 50 ? "Maximum 50 caractères" : null;
             },
-            type: (value) => (value?.trim().length > 0 ? null : 'Incident Type is Required'),
-            ppe: (value) => (value?.trim().length > 0 ? null : 'PPE(Personal Protective Equipment) is Required'),
+            type: (value) => (value?.trim().length > 0 ? null : "Le type d'audit est requis"),
+            ppe: (value) => (value?.trim().length > 0 ? null : "Les EPI requis doivent être renseignés"),
         },
     });
 
@@ -98,7 +99,7 @@ const EditAudit = () => {
         if (!form.isValid()) return;
 
         if (!auditId) {
-            errorNotification("Missing audit id - open this page from the audit list to edit an existing audit.");
+            errorNotification("Identifiant d'audit manquant — ouvrez cette page depuis le registre des audits.");
             return;
         }
 
@@ -119,16 +120,16 @@ const EditAudit = () => {
         };
 
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Confirmer la mise à jour</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to save changes to this audit?
+                <span className="text-sm">
+                    Enregistrer les modifications de cet audit ?
                 </span>
             ),
-            labels: { confirm: "Yes, Save", cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: "Oui, enregistrer", cancel: "Annuler" },
+            cancelProps: { color: "gray", variant: "default" },
+            confirmProps: { color: "indigo", variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
@@ -136,11 +137,11 @@ const EditAudit = () => {
                 dispatch(showOverlay());
                 updateAudit(payload)
                     .then(() => {
-                        successNotification("Audit updated successfully");
+                        successNotification("Audit mis à jour");
                         navigate("/audit-management");
                     })
                     .catch((err: any) => {
-                        errorNotification(err?.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err?.response?.data?.errorMessage || "L'enregistrement a échoué");
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -162,9 +163,14 @@ const EditAudit = () => {
                         {editingRoleId === item.id || !item.role ? (
                             <Select
                                 autoFocus
-                                label="role"
-                                placeholder="Select role"
-                                data={['Auditor', 'Data Analyst', 'Process Owner', 'Counter Party']}
+                                label="Rôle"
+                                placeholder="Sélectionner le rôle"
+                                data={[
+                                    { value: 'Auditor', label: 'Auditeur' },
+                                    { value: 'Data Analyst', label: 'Analyste données' },
+                                    { value: 'Process Owner', label: 'Pilote processus' },
+                                    { value: 'Counter Party', label: 'Partie auditée' },
+                                ]}
                                 value={item.role}
                                 onChange={(val) => handleRoleChange(item.id, val!)}
                                 className="w-full"
@@ -183,60 +189,57 @@ const EditAudit = () => {
         );
     };
     return (
-        <div className="p-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-2xl text-blue-500 w-fit">Edit Audit</div>
-                    <Breadcrumbs mt="xs" mb="lg">
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/teams">
-                            <Text variant="gradient">Audit Management</Text>
-                        </Link>
-                        <Text variant="gradient">Edit Audit</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
+        <div className="p-5 space-y-5 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des audits', to: '/audit-management' },
+                    { label: "Modifier l'audit" },
+                ]}
+                icon={<IconClipboardCheck size={22} stroke={2} />}
+                iconColor="indigo"
+                title="Modifier l'audit"
+                subtitle="Mise à jour des informations générales et des participants"
+            />
 
             <div className="flex flex-col gap-5">
                 <Fieldset
                     className="grid grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
-                    legend={<div className="text-lg text-blue-500">Audit Info</div>}
+                    legend={<div className="text-base text-indigo-700">Informations de l'audit</div>}
                 >
-                    <TextInput withAsterisk label="Audit Title" placeholder="Enter Audit Title" {...form.getInputProps('name')} />
+                    <TextInput withAsterisk label="Titre de l'audit" placeholder="Saisir le titre de l'audit" {...form.getInputProps('name')} />
 
-                    <Select withAsterisk label="Audit Type" placeholder="Select Audit Type" data={auditType} {...form.getInputProps('type')} />
+                    <Select withAsterisk label="Type d'audit" placeholder="Sélectionner le type" data={auditType} {...form.getInputProps('type')} />
 
-                    <MultiSelect withAsterisk label="Objective" placeholder="Select Objective" data={['Conformity assessment', 'Continuous improvement', 'ISO certification']} />
+                    <MultiSelect withAsterisk label="Objectifs" placeholder="Sélectionner les objectifs" data={['Évaluation de conformité', 'Amélioration continue', 'Certification ISO']} />
 
-                    <MultiSelect withAsterisk label="Concerned Sites" placeholder="Select Concerned Sites" data={['Mining areas', 'Equipment', 'Specific facilities']} />
+                    <MultiSelect withAsterisk label="Sites concernés" placeholder="Sélectionner les sites" data={["Zone d'exploitation", 'Équipements', 'Installations spécifiques']} />
 
-                    <MultiSelect withAsterisk label="Assessment Indicators" placeholder="Select Assessment Indicators" data={['A', 'B', 'C']} />
+                    <MultiSelect withAsterisk label="Indicateurs d'évaluation" placeholder="Sélectionner les indicateurs" data={['TRIFR', 'LTIFR', 'Taux de fermeture CAPA']} />
 
-                    <FileInput label="Audit Plan" placeholder="Upload file" value={auditPlanFile} onChange={setAuditPlanFile} accept="application/pdf,image/*" withAsterisk rightSectionWidth={80}
+                    <FileInput label="Plan d'audit" placeholder="Téléverser un document" value={auditPlanFile} onChange={setAuditPlanFile} accept="application/pdf,image/*" withAsterisk rightSectionWidth={80}
                         rightSection={auditPlanFile ? (
                             <Button size="xs" variant="light" onClick={(e) => {
                                 e.stopPropagation();
                                 const fileUrl = URL.createObjectURL(auditPlanFile);
                                 window.open(fileUrl, "_blank");
-                            }} >Preview</Button>
+                            }} >Aperçu</Button>
                         ) : null
                         }
                     />
 
 
-                    <Select withAsterisk label="PPE(Personal Protective Equipment)" placeholder="Select Personal Protective Equipment " data={PPE} {...form.getInputProps('ppe')} />
+                    <Select withAsterisk label="EPI requis" placeholder="Sélectionner les EPI" data={PPE} {...form.getInputProps('ppe')} />
                 </Fieldset>
 
-                <Fieldset className="[&>legend]:w-fit" legend={<div className="text-lg text-blue-500">Participants</div>}>
+                <Fieldset className="[&>legend]:w-fit" legend={<div className="text-base text-indigo-700">Participants</div>}>
                     <div className='flex gap-5 flex-wrap'>
                         <PickList
                             dataKey="id"
                             filter
                             filterBy="name"
-                            sourceFilterPlaceholder="Search by name"
-                            targetFilterPlaceholder="Search by name"
+                            sourceFilterPlaceholder="Rechercher par nom"
+                            targetFilterPlaceholder="Rechercher par nom"
                             showTargetControls={false}
                             showSourceControls={false}
                             source={member}
@@ -244,8 +247,8 @@ const EditAudit = () => {
                             onChange={onChange}
                             itemTemplate={itemTemplate}
                             breakpoint="1280px"
-                            sourceHeader={`Available Participants (${member.length})`}
-                            targetHeader={`Participants Role (${target.length})`}
+                            sourceHeader={`Participants disponibles (${member.length})`}
+                            targetHeader={`Rôles des participants (${target.length})`}
                             sourceStyle={{ height: '24rem' }}
                             targetStyle={{ height: '24rem' }}
                         />
@@ -254,10 +257,10 @@ const EditAudit = () => {
 
                 <div className="flex gap-4 justify-end mt-2">
                     <Button variant="default" onClick={() => navigate("/audit-management")}>
-                        Cancel
+                        Annuler
                     </Button>
-                    <Button type="button" variant="gradient" onClick={handleSubmit}>
-                        Save
+                    <Button type="button" color="indigo" onClick={handleSubmit}>
+                        Enregistrer
                     </Button>
                 </div>
             </div>

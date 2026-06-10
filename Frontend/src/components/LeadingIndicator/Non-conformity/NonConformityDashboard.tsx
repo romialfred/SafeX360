@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
     Button,
-    Group,
-    Card,
     Badge,
-    Text,
-    Grid,
     ActionIcon,
     Paper,
     Tooltip,
@@ -21,7 +17,6 @@ import {
     IconCircleCheck,
     IconClock,
     IconCalendar,
-    IconTarget,
     IconLayoutGrid,
     IconList,
     IconPlus,
@@ -33,29 +28,22 @@ import { useNavigate } from 'react-router-dom';
 import { getAllNonConformities } from '../../../services/NonConformityService';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { useTranslation } from 'react-i18next';
-import StatCard from '../../UtilityComp/StatCard';
 import KpiTile from '../../UtilityComp/KpiTile';
-import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { formatDateShort } from '../../../utility/DateFormats';
-import { eventStatuses, eventStatusMap } from '../../../Data/DropdownData';
+import { successNotification } from '../../../utility/NotificationUtility';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+import { NC_STATUS_OPTIONS, ncPriorityChip, ncPriorityColor, ncStatusChip, ncStatusColor, ncStatusLabel } from './nonConformityLabels';
 
 const severityOptions = [
-    { value: 'all', label: 'All', tabClass: "!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400" },
-    { value: 'Insignifiante', label: 'Insignifiante', tabClass: "!text-slate-600 hover:!text-green-600 data-[active]:!bg-green-100 data-[active]:!text-green-800 data-[active]:!border-green-500" },
-    { value: 'Mineure', label: 'Mineure', tabClass: "!text-slate-600 hover:!text-lime-600 data-[active]:!bg-lime-100 data-[active]:!text-lime-800 data-[active]:!border-lime-500" },
-    { value: 'Modérée', label: 'Modérée', tabClass: "!text-slate-600 hover:!text-yellow-600 data-[active]:!bg-yellow-100 data-[active]:!text-yellow-800 data-[active]:!border-yellow-500" },
-    { value: 'Majeure', label: 'Majeure', tabClass: "!text-slate-600 hover:!text-orange-600 data-[active]:!bg-orange-100 data-[active]:!text-orange-800 data-[active]:!border-orange-500" },
-    { value: 'Catastrophique', label: 'Catastrophique', tabClass: "!text-slate-600 hover:!text-red-700 data-[active]:!bg-red-100 data-[active]:!text-red-800 data-[active]:!border-red-600" },
-];
-
-const typeOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'NON_CONFORMITY', label: 'Non-Conformity' },
-    { value: 'NEAR_MISS', label: 'Near Miss' },
+    { value: 'all', label: 'Toutes' },
+    { value: 'Insignifiante', label: 'Insignifiante' },
+    { value: 'Mineure', label: 'Mineure' },
+    { value: 'Modérée', label: 'Modérée' },
+    { value: 'Majeure', label: 'Majeure' },
+    { value: 'Catastrophique', label: 'Catastrophique' },
 ];
 
 const NonConformityDashboard = () => {
@@ -85,36 +73,6 @@ const NonConformityDashboard = () => {
     const onView = (nc: NonConformity) => {
         navigate(`/non-conformity/${nc.id}`);
     }
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'REPORTED': return 'blue';
-            case 'ANALYSIS': return 'yellow';
-            case 'AC_IMPLEMENTATION': return 'orange';
-            case 'CLOSED': return 'green';
-            case 'REJECTED': return 'red';
-            default: return 'gray';
-        }
-    };
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'Urgente': return 'red';
-            case 'Élevée': return 'orange';
-            case 'Normale': return 'yellow';
-            case 'Faible': return 'green';
-            default: return 'gray';
-        }
-    };
-    const getSeverityColor = (severity: string) => {
-        switch (severity) {
-            case 'Insignifiante': return 'green';
-            case 'Mineure': return 'lime';
-            case 'Modérée': return 'yellow';
-            case 'Majeure': return 'orange';
-            case 'Catastrophique': return 'red';
-            default: return 'gray';
-        }
-    };
 
     // === FILTER DATA BASED ON ALL SELECTED FILTERS ===
     const filteredData = nonConformities.filter(nc => {
@@ -193,72 +151,32 @@ const NonConformityDashboard = () => {
     const ncClosed = nonConformities.filter(nc => nc.status === 'CLOSED').length;
     const rate = totalNC > 0 ? ((ncClosed / totalNC) * 100).toFixed(1) + '%' : '0%';
 
-    const stats = [
-        { label: 'Total Events', value: totalNC.toString(), icon: IconAlertTriangle, color: 'blue' },
-        { label: 'Overdue', value: ncOverdue.toString(), icon: IconClock, color: 'orange' },
-        { label: 'Investigation', value: ncUnderInvestigation.toString(), icon: IconSearch, color: 'yellow' },
-        { label: 'Closed', value: ncClosed.toString(), icon: IconCircleCheck, color: 'green' },
-        { label: 'Rate %', value: rate, icon: IconTarget, color: 'purple' }
-    ];
-    // const getTailwindColor = (color: string) => {
-    //     const colorMap: Record<string, string> = {
-    //         blue: '#3b82f6', orange: '#f97316', yellow: '#eab308',
-    //         green: '#10b981', purple: '#8b5cf6'
-    //     };
-    //     return colorMap[color] || '#000';
-    // };
-    const renderStats = () => (
-        <Grid className="mb-6">
-            {stats.map((stat, index) => (
-                <Grid.Col key={index} span={{ base: 12, sm: 6, lg: 2.4 }}>
-                    <Card
-                        className={`relative transition-all duration-300 ease-out !rounded-2xl p-4 group cursor-pointer shadow-lg hover:shadow-xl hover:scale-[1.02] hover:brightness-105 border border-transparent`}
-                        style={{ background: getStatBackgroundGradient(index) }}
-                    >
-                        <div className="relative z-10">
-                            <div className='flex justify-between gap-5'>
-                                <Text size="sm" className={`transition-opacity duration-300 ${getStatTextColor(index)}`}>
-                                    {stat.label}
-                                </Text>
-                                <div className={` mt-1 rounded-xl ${getStatIconBackground(index)} transition-all duration-300 p-1 group-hover:scale-110`}>
-                                    <stat.icon size={16} className={`${getStatIconColor(index)} transition-colors duration-300`} />
-                                </div>
-                            </div>
-                            <Text size="2xl" className={`${getStatValueColor(index)} transition-colors duration-300 font-mono`}>
-                                {stat.value}
-                            </Text>
-                        </div>
-                    </Card>
-                </Grid.Col>
-            ))}
-        </Grid>
-    );
-    const statGradients = [
-        'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-        'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-        'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
-        'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-        'linear-gradient(135deg, #ede9fe 0%, #e0f2fe 100%)'
-    ];
-    const getStatBackgroundGradient = (index: number) => statGradients[index] || 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
-    const getStatTextColor = (_index: number) => 'text-slate-700 group-hover:text-slate-800';
-    const getStatIconBackground = (index: number) => {
-        const backgrounds = [
-            'bg-blue-100/80 group-hover:bg-blue-200/90',
-            'bg-orange-100/80 group-hover:bg-orange-200/90',
-            'bg-amber-100/80 group-hover:bg-amber-200/90',
-            'bg-emerald-100/80 group-hover:bg-emerald-200/90',
-            'bg-indigo-100/80 group-hover:bg-indigo-200/90'
-        ];
-        return backgrounds[index] || 'bg-slate-100';
+    // Export CSV de la liste filtrée (même pattern que le module Conformité).
+    const exportCsv = () => {
+        const headers = ['Référence', 'Titre', 'Type', 'Déclaré par', 'Sévérité', 'Priorité', 'Statut', 'Date'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredData.map((nc: any) =>
+            [
+                nc.number ?? '',
+                nc.title ?? '',
+                nc.type === 'NEAR_MISS' ? 'Quasi-accident' : 'Non-conformité',
+                nc.reporterName ?? '',
+                nc.severityLevel ?? '',
+                nc.priority ?? '',
+                ncStatusLabel(nc.status),
+                formatDateShort(nc.date),
+            ].map(escape).join(';')
+        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `constats_centraux_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredData.length} événement${filteredData.length > 1 ? 's' : ''} exporté${filteredData.length > 1 ? 's' : ''}`);
     };
-    const getStatIconColor = (index: number) => {
-        const colors = [
-            'text-slate-600', 'text-amber-600', 'text-blue-600', 'text-emerald-600', 'text-indigo-600'
-        ];
-        return colors[index] || 'text-slate-600';
-    };
-    const getStatValueColor = (_index: number) => 'text-slate-800 group-hover:text-slate-900';
 
     // --- DataTable & Card renderers ---
     // LOT 43 v6 : single-line everywhere (whitespace-nowrap), pas de onClick local
@@ -287,14 +205,14 @@ const NonConformityDashboard = () => {
 
     const priorityBodyTemplate = (rowData: any) =>
         rowData.priority ? (
-            <Badge color={getPriorityColor(rowData.priority)} variant="outline" className="rounded-full whitespace-nowrap">
+            <Badge color={ncPriorityColor(rowData.priority)} variant="outline" className="rounded-full whitespace-nowrap">
                 {rowData.priority}
             </Badge>
         ) : null;
 
     const statusBodyTemplate = (rowData: any) => (
-        <Badge color={getStatusColor(rowData.status)} size='sm' variant="light" className="rounded-full whitespace-nowrap">
-            {eventStatusMap[rowData.status]}
+        <Badge color={ncStatusColor(rowData.status)} size='sm' variant="light" className="rounded-full whitespace-nowrap">
+            {ncStatusLabel(rowData.status)}
         </Badge>
     );
 
@@ -361,15 +279,6 @@ const NonConformityDashboard = () => {
             Majeure:        'bg-orange-50 text-orange-700 border-orange-200',
             Catastrophique: 'bg-red-50 text-red-700 border-red-200',
         };
-        const statusChip: Record<string, string> = {
-            REPORTED:           'bg-sky-50 text-sky-700 border-sky-200',
-            ANALYSIS:           'bg-amber-50 text-amber-700 border-amber-200',
-            AC_IMPLEMENTATION:  'bg-orange-50 text-orange-700 border-orange-200',
-            CLOSED:             'bg-emerald-50 text-emerald-700 border-emerald-200',
-            REJECTED:           'bg-red-50 text-red-700 border-red-200',
-            CANCELLED:          'bg-slate-100 text-slate-600 border-slate-200',
-        };
-
         if (data.length === 0) {
             return (
                 <div className="bg-white border border-dashed border-slate-300 rounded-xl py-12 text-center">
@@ -387,7 +296,7 @@ const NonConformityDashboard = () => {
                     const barColor = severityBar[sev] || 'bg-slate-300';
                     const sevChipColor = severityChip[sev] || 'bg-slate-50 text-slate-700 border-slate-200';
                     const statusUpper = String(nc.status || '').toUpperCase();
-                    const statChipColor = statusChip[statusUpper] || 'bg-slate-50 text-slate-700 border-slate-200';
+                    const statChipColor = ncStatusChip(statusUpper);
                     const canEdit = !['CLOSED', 'REJECTED', 'CANCELLED'].includes(statusUpper);
 
                     // LOT 43 hotfix : background hover doux pour mettre en valeur la tuile
@@ -408,7 +317,7 @@ const NonConformityDashboard = () => {
                             onKeyDown={(e) => { if (e.key === 'Enter') onView(nc); }}
                             role="button"
                             tabIndex={0}
-                            className={`group relative bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ease-out hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 hover:border-slate-300 ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2`}
+                            className={`group relative bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer transition-[box-shadow,border-color,background-color] duration-200 ease-out hover:shadow-md hover:border-slate-300 ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2`}
                         >
                             {/* Ruban gauche couleur sévérité */}
                             <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`} aria-hidden="true" />
@@ -420,7 +329,7 @@ const NonConformityDashboard = () => {
                                         {nc.number}
                                     </span>
                                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${statChipColor} flex-shrink-0`}>
-                                        {eventStatusMap[nc.status] || nc.status}
+                                        {ncStatusLabel(nc.status)}
                                     </span>
                                 </div>
 
@@ -446,7 +355,7 @@ const NonConformityDashboard = () => {
                                         </span>
                                     )}
                                     {nc.priority && (
-                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border bg-white text-${getPriorityColor(nc.priority)}-700 border-${getPriorityColor(nc.priority)}-200`}>
+                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${ncPriorityChip(nc.priority)}`}>
                                             {nc.priority}
                                         </span>
                                     )}
@@ -584,7 +493,7 @@ const NonConformityDashboard = () => {
     const viewOptions = [
         {
             label: (
-                <Tooltip label="Card View" withArrow>
+                <Tooltip label="Vue cartes" withArrow>
                     <div>
                         <IconLayoutGrid size={16} />
                     </div>
@@ -594,7 +503,7 @@ const NonConformityDashboard = () => {
         },
         {
             label: (
-                <Tooltip label="Table View" withArrow>
+                <Tooltip label="Vue tableau" withArrow>
                     <div>
                         <IconList size={16} />
                     </div>
@@ -603,21 +512,6 @@ const NonConformityDashboard = () => {
             value: 'table',
         },
     ];
-
-    // Mapping pour SegmentedFilter
-    const typeFilterOptions = typeOptions.map(opt => ({
-        value: opt.value,
-        label: opt.value === 'NON_CONFORMITY' ? 'Non-conformités' : opt.value === 'NEAR_MISS' ? 'Quasi-accidents' : 'Tous',
-        count: getTypeCount(opt.value),
-        color: (opt.value === 'NON_CONFORMITY' ? 'orange' : opt.value === 'NEAR_MISS' ? 'blue' : 'slate') as any,
-    }));
-
-    const severityFilterOptions = severityOptions.map(opt => ({
-        value: opt.value,
-        label: opt.value === 'all' ? 'Toutes' : opt.label,
-        count: getSeverityCount(opt.value),
-        color: (opt.value === 'Catastrophique' ? 'red' : opt.value === 'Majeure' ? 'orange' : opt.value === 'Modérée' ? 'yellow' : opt.value === 'Mineure' ? 'green' : opt.value === 'Insignifiante' ? 'slate' : 'slate') as any,
-    }));
 
     // LOT 43 — Sévérités dynamiques : ne montrer que celles avec au moins 1 élément (+ "Toutes")
     const visibleSeverityFilters = severityOptions.filter(opt => {
@@ -640,7 +534,7 @@ const NonConformityDashboard = () => {
                 subtitle={t('nonConformity:dashboard.pageSubtitle')}
                 actions={
                     <>
-                        <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />}>
+                        <Button variant="default" size="sm" leftSection={<IconFileExport size={15} />} onClick={exportCsv} disabled={!filteredData.length}>
                             {t('nonConformity:dashboard.actions.export')}
                         </Button>
                         <Button color="teal" size="sm" leftSection={<IconPlus size={15} />} onClick={() => navigate('/non-conformity/create')}>
@@ -751,7 +645,7 @@ const NonConformityDashboard = () => {
                                     key={sev.value}
                                     type="button"
                                     onClick={() => setSelectedSeverity(sev.value)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md text-[12px] font-medium transition-all border cursor-pointer ${
+                                    className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md text-[12px] font-medium transition-colors border cursor-pointer ${
                                         isActive
                                             ? `${colors.active} border-transparent shadow-sm hover:brightness-110`
                                             : `bg-white text-slate-700 border-slate-200 ${colors.hover} hover:border-slate-300 hover:shadow-sm`
@@ -843,11 +737,12 @@ const NonConformityDashboard = () => {
                     <Select
                         size="xs"
                         allowDeselect={false}
-                        data={[{ label: 'Tous statuts', value: 'All' }, ...eventStatuses]}
+                        data={[{ label: 'Tous statuts', value: 'All' }, ...NC_STATUS_OPTIONS]}
                         value={selectedStatus}
                         onChange={setSelectedStatus}
                         w={170}
                         radius="md"
+                        aria-label="Filtrer par statut"
                     />
 
                     {/* Reset */}

@@ -132,7 +132,7 @@ export default function LifecycleTimeline({
                         {/* Dot + meta (ultra compact — label + date sur 2 lignes max) */}
                         <div className="relative flex flex-col items-center text-center px-1">
                             <div
-                                className={`relative z-10 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                                className={`relative z-10 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
                                     isReached
                                         ? `${tone.dotActive} text-white`
                                         : 'bg-white border-2 border-slate-300 text-slate-400'

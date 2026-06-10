@@ -3,7 +3,7 @@ import AuditDetailsTabs from "../../../../components/LaggingIndicator/AuditManag
 
 const AuditDetailsTabsPage = () => {
     return (
-        <div className="p-5"><AuditDetailsTabs /></div>
+        <div><AuditDetailsTabs /></div>
     )
 }
 

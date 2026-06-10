@@ -45,16 +45,16 @@ const TreatmentStep = ({ form, employees }: any) => {
     const handleRemoveActionPlan = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='text-2xl'>Are you sure?</span>,
+                title: <span className='text-base'>Retirer le plan d'action</span>,
                 centered: true,
                 children: (
-                    <span className="text-md">
-                        You want to remove this action plan? This action cannot be undone.
+                    <span className="text-sm">
+                        Retirer ce plan d'action ? Cette action est définitive.
                     </span>
                 ),
-                labels: { confirm: `Yes, Remove`, cancel: 'Cancel' },
-                cancelProps: { color: 'red', variant: "filled" },
-                confirmProps: { color: 'green', variant: "filled" },
+                labels: { confirm: 'Oui, retirer', cancel: 'Annuler' },
+                cancelProps: { color: 'gray', variant: "default" },
+                confirmProps: { color: 'red', variant: "filled" },
 
                 closeOnEscape: false,
                 closeOnClickOutside: false,
@@ -63,10 +63,10 @@ const TreatmentStep = ({ form, employees }: any) => {
                     form.removeListItem('correctiveActions', index);
                     removeCorrectiveAction(id)
                         .then((_res) => {
-                            successNotification("Action Plan removed successfully");
+                            successNotification("Plan d'action retiré");
                         }
                         ).catch((err) => {
-                            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                            errorNotification(err.response?.data?.errorMessage || "L'opération a échoué");
                         }
                         )
                 },
@@ -81,7 +81,7 @@ const TreatmentStep = ({ form, employees }: any) => {
         const isNearMiss = form.values.nonConformity.type === 'NEAR_MISS';
 
         return {
-            treatmentTitle: isNearMiss ? 'Traitement du NEAR_MISS' : 'Traitement de la non conformité',
+            treatmentTitle: isNearMiss ? 'Traitement du quasi-accident' : 'Traitement de la non-conformité',
             decisionLabel: isNearMiss ? 'Action préventive' : 'Décision',
             decisionPlaceholder: isNearMiss ? 'Sélectionner une action préventive' : 'Sélectionner une décision',
             decisionOptions: isNearMiss ? [
@@ -296,8 +296,8 @@ const TreatmentStep = ({ form, employees }: any) => {
                 <Card className={`${form.values.nonConformity.type === 'NEAR_MISS' ? 'bg-green-50/30 border border-green-200' : 'bg-orange-50/30 border border-orange-200'} p-4`}>
                     <Text size="sm" className="!mb-3 text-slate-700">
                         {form.values.nonConformity.type === 'NEAR_MISS'
-                            ? 'Select applicable preventive benefits:'
-                            : 'Select applicable indirect impacts:'}
+                            ? 'Sélectionner les bénéfices préventifs applicables :'
+                            : 'Sélectionner les impacts indirects applicables :'}
                     </Text>
                     <Checkbox.Group {...form.getInputProps('nonConformity.indirectImpacts')}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -315,8 +315,8 @@ const TreatmentStep = ({ form, employees }: any) => {
                         id="nonConformity.comments"
                         title={
                             form.values.nonConformity.type === 'NEAR_MISS'
-                                ? 'Comment on preventive benefits'
-                                : 'Comment on indirect impacts'
+                                ? 'Commentaire sur les bénéfices préventifs'
+                                : 'Commentaire sur les impacts indirects'
                         }
                         withAsterisk
                     />
@@ -325,8 +325,8 @@ const TreatmentStep = ({ form, employees }: any) => {
             <Card shadow="sm" padding="md">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h3 className="text-lg text-gray-800 ">{form.values.nonConformity.type == "NEAR_MISS" ? "Preventive Actions" : "Corrective Actions"}</h3>
-                        <p>Define actions to prevent occurence of similar incidents</p>
+                        <h3 className="text-lg text-gray-800 ">{labels.actionsTitle}</h3>
+                        <p className="text-sm text-slate-600">{labels.actionsDescription}</p>
                     </div>
 
 

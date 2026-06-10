@@ -39,12 +39,14 @@ const AuditDashPlanned = () => {
     const itemsPerPage = 2;
     const [totalAudits, setTotalAudits] = useState<number>(0);
     const [pendingRecs, setPendingRecs] = useState<any[]>([]);
+    // Palette charte R7 : cyan=planifié, violet=préparation, amber=exécution,
+    // emerald=clôturé, slate=annulé.
     const [complianceData, setComplianceData] = useState<DonutItem[]>([
-        { name: 'Planification', value: 0, color: '#3b82f6' },
-        { name: 'Préparation', value: 0, color: '#8b5cf6' },
-        { name: 'Exécution', value: 0, color: '#f59e0b' },
-        { name: 'Clôturés', value: 0, color: '#22c55e' },
-        { name: 'Annulés', value: 0, color: '#ef4444' },
+        { name: 'Planification', value: 0, color: '#0891B2' },
+        { name: 'Préparation', value: 0, color: '#7C3AED' },
+        { name: 'Exécution', value: 0, color: '#D97706' },
+        { name: 'Clôturés', value: 0, color: '#059669' },
+        { name: 'Annulés', value: 0, color: '#64748B' },
     ]);
 
     useEffect(() => {
@@ -58,11 +60,11 @@ const AuditDashPlanned = () => {
                 });
                 setTotalAudits(total);
                 setComplianceData([
-                    { name: 'Planification', value: counts.PLANNING, color: '#3b82f6' },
-                    { name: 'Préparation', value: counts.PREPARATION, color: '#8b5cf6' },
-                    { name: 'Exécution', value: counts.EXECUTION, color: '#f59e0b' },
-                    { name: 'Clôturés', value: counts.CLOSED, color: '#22c55e' },
-                    { name: 'Annulés', value: counts.CANCELLED, color: '#ef4444' },
+                    { name: 'Planification', value: counts.PLANNING, color: '#0891B2' },
+                    { name: 'Préparation', value: counts.PREPARATION, color: '#7C3AED' },
+                    { name: 'Exécution', value: counts.EXECUTION, color: '#D97706' },
+                    { name: 'Clôturés', value: counts.CLOSED, color: '#059669' },
+                    { name: 'Annulés', value: counts.CANCELLED, color: '#64748B' },
                 ]);
             })
             .catch(() => { /* noop */ });
@@ -178,7 +180,7 @@ const AuditDashPlanned = () => {
                         return (
                             <div
                                 key={index}
-                                className="border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-all"
+                                className="border border-slate-200 rounded-md p-3 bg-slate-50/40 hover:bg-white hover:shadow-sm transition-[background-color,box-shadow]"
                             >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                     <h3 className="text-sm text-slate-900 leading-tight flex-1 line-clamp-2">

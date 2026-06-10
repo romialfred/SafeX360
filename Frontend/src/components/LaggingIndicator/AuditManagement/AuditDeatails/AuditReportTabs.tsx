@@ -35,6 +35,7 @@ import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { addAuditReport, getAuditReportByAuditId } from "../../../../services/AuditReportService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
+import { VALIDATOR_STATUS_LABELS, VALIDATOR_STATUS_OPTIONS } from "../auditLabels";
 
 const AuditReportTabs = () => {
     const dispatch = useDispatch();
@@ -97,32 +98,31 @@ const AuditReportTabs = () => {
         let values = form.values;
 
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Confirmer le rapport</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to add this report?
+                <span className="text-sm">
+                    Enregistrer ce rapport d'audit ?
                 </span>
             ),
-            labels: { confirm: `Yes, Create`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: "Oui, enregistrer", cancel: "Annuler" },
+            cancelProps: { color: "gray", variant: "default" },
+            confirmProps: { color: "indigo", variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
             onConfirm: async () => {
                 const evidence = await convertFilesToBase64New(values.report.docs);
-                console.log({ report: { ...values.report, docs: evidence }, contributors: values.contributors })
                 dispatch(showOverlay());
                 addAuditReport({ report: { ...values.report, docs: evidence }, contributors: values.contributors })
                     .then(() => {
-                        successNotification("Report created successfully");
+                        successNotification("Rapport enregistré");
                         form.reset();
                         setIsEditing(false);
                         fetchReport();
                     }
                     ).catch((err) => {
-                        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
                     }
                     ).finally(() => {
                         dispatch(hideOverlay());
@@ -137,22 +137,19 @@ const AuditReportTabs = () => {
 
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
             {isEditing ? (
                 <Stack>
                     <Card shadow="md" withBorder>
                         <p className="flex items-center text-lg mb-2 text-gray-600">
-                            <IconFilePencil stroke={1.5} size={20} /> Report Preparer
+                            <IconFilePencil stroke={1.5} size={20} /> Rédacteur du rapport
                         </p>
                         <Grid>
                             <Grid.Col span={6}>
-                                <TextInput size="md"{...form.getInputProps("report.preparerName")} label="Name" placeholder="Enter preparer's name" />
+                                <TextInput size="md"{...form.getInputProps("report.preparerName")} label="Nom" placeholder="Nom du rédacteur" />
                             </Grid.Col>
-                            {/* <Grid.Col span={4}> */}
-                            {/* <TextInput label="Role" placeholder="Enter preparer's role" {...form.getInputProps("report.preparerRole")} /> */}
-                            {/* </Grid.Col> */}
                             <Grid.Col span={6}>
-                                <DateInput leftSection={<IconCalendar />} label="Date" placeholder="dd-mm-yyyy" {...form.getInputProps("report.preDate")} />
+                                <DateInput leftSection={<IconCalendar />} label="Date" placeholder="jj-mm-aaaa" {...form.getInputProps("report.preDate")} />
                             </Grid.Col>
                         </Grid>
                     </Card>
@@ -160,57 +157,53 @@ const AuditReportTabs = () => {
                     <Card shadow="md" withBorder>
                         <Group justify="space-between" mb="xs">
                             <p className="flex text-lg items-center text-gray-600">
-                                <IconUsers stroke={1.5} size={20} /> Contributors
+                                <IconUsers stroke={1.5} size={20} /> Contributeurs
                             </p>
-                            <Button size="xs" leftSection={<IconPlus />} onClick={addContributor}>Add Contributor</Button>
+                            <Button size="xs" leftSection={<IconPlus />} onClick={addContributor}>Ajouter un contributeur</Button>
                         </Group>
                         {form.values.contributors.map((_item, index) => (
                             <Fieldset key={index} className="grid grid-cols-2 gap-5 mb-5" legend={
                                 <div className="flex gap-5">
-                                    <div className="text-lg text-blue-500">Contributor {index + 1}</div>
-                                    <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red">
+                                    <div className="text-base text-teal-700">Contributeur {index + 1}</div>
+                                    <ActionIcon onClick={() => removeContributor(index)} variant="filled" color="red" aria-label={`Retirer le contributeur ${index + 1}`}>
                                         <IconTrash style={{ width: "70%", height: "70%" }} stroke={1.5} />
                                     </ActionIcon>
                                 </div>
                             }>
-                                <TextInput label="Name" placeholder="Enter Contributor Name" {...form.getInputProps(`contributors.${index}.name`)} />
-                                {/* <TextInput label="Role" placeholder="Enter Contributor Role" {...form.getInputProps(`contributors.${index}.role`)} /> */}
-                                <TextInput label="Section" placeholder="Enter Contributor Section" {...form.getInputProps(`contributors.${index}.section`)} />
+                                <TextInput label="Nom" placeholder="Nom du contributeur" {...form.getInputProps(`contributors.${index}.name`)} />
+                                <TextInput label="Section" placeholder="Section concernée" {...form.getInputProps(`contributors.${index}.section`)} />
                             </Fieldset>
                         ))}
                     </Card>
 
                     <Card shadow="md" withBorder>
                         <p className="flex items-center mb-2 text-lg text-gray-600">
-                            <IconUserCheck stroke={1.5} size={20} /> Report Validator
+                            <IconUserCheck stroke={1.5} size={20} /> Validateur du rapport
                         </p>
                         <Grid mb={10}>
                             <Grid.Col span={6}>
-                                <TextInput {...form.getInputProps("report.validatorName")} label="Name" placeholder="Enter preparer's name" />
+                                <TextInput {...form.getInputProps("report.validatorName")} label="Nom" placeholder="Nom du validateur" />
                             </Grid.Col>
-                            {/* <Grid.Col span={4}>
-                                <TextInput label="Role" placeholder="Enter preparer's role" {...form.getInputProps("report.validatorRole")} />
-                            </Grid.Col> */}
                             <Grid.Col span={6}>
-                                <Select {...form.getInputProps("report.validatorStatus")} placeholder="Select Status" data={["Pending Review", "Approved", "Rejected"]} label="Status" />
+                                <Select {...form.getInputProps("report.validatorStatus")} placeholder="Sélectionner le statut" data={VALIDATOR_STATUS_OPTIONS} label="Statut" />
                             </Grid.Col>
                         </Grid>
                         {form.values.report?.validatorStatus == "Rejected" && (
-                            <TextInput label="Rejection Comment" placeholder="Enter comments" {...form.getInputProps("report.rejectionComment")} />
+                            <TextInput label="Motif du rejet" placeholder="Saisir le motif" {...form.getInputProps("report.rejectionComment")} />
                         )}
                     </Card>
 
                     <Card shadow="md" withBorder>
-                        <p className="text-lg text-gray-600">Supporting Documents</p>
-                        <FileUpdateDropzone name="Supporting Documents" id="report.docs" form={form} />
+                        <p className="text-lg text-gray-600">Documents justificatifs</p>
+                        <FileUpdateDropzone name="Documents justificatifs" id="report.docs" form={form} />
                     </Card>
 
                     <Card shadow="md" withBorder>
-                        <TextEditor form={form} id="report.description" title="Report Content" />
+                        <TextEditor form={form} id="report.description" title="Contenu du rapport" />
                     </Card>
 
                     <Group justify="end">
-                        <Button onClick={handleSubmit} color="blue">Submit</Button>
+                        <Button onClick={handleSubmit} color="indigo">Soumettre</Button>
                     </Group>
                 </Stack>
             ) : (
@@ -218,13 +211,13 @@ const AuditReportTabs = () => {
                     <Card shadow="md" withBorder className="!rounded-lg !p-6">
                         {/* Header */}
                         <Group justify="space-between" className="mb-2">
-                            <h1 className="text-lg text-blue-700">Report Summary</h1>
+                            <h2 className="text-lg text-slate-800">Synthèse du rapport</h2>
                             <Button
                                 onClick={() => setIsEditing(true)}
                                 radius="xl"
                                 leftSection={<IconEdit size={16} />}
                             >
-                                Edit
+                                Modifier
                             </Button>
                         </Group>
 
@@ -232,20 +225,20 @@ const AuditReportTabs = () => {
                         <div className="flex flex-col gap-5  p-5 rounded-xl shadow-sm">
                             {/* Top Section: Status + Description */}
                             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                                <Badge variant="light" className="!capitalize"
-                                    color={report?.validatorStatus === "Approved" ? "green" : report?.validatorStatus === "Rejected" ? "red" : "blue"}
+                                <Badge variant="light"
+                                    color={report?.validatorStatus === "Approved" ? "green" : report?.validatorStatus === "Rejected" ? "red" : "violet"}
                                     size="lg"
                                 >
-                                    {report?.validatorStatus}
+                                    {VALIDATOR_STATUS_LABELS[report?.validatorStatus] ?? report?.validatorStatus}
                                 </Badge>
 
                                 {report?.validatorStatus === "Rejected" && (
                                     <Text className="text-red-600 text-sm">
-                                        <strong>Rejection Comment:</strong> {report?.rejectionComment}
+                                        <strong>Motif du rejet :</strong> {report?.rejectionComment}
                                     </Text>
                                 )}
                                 <div className="flex text-sm items-center gap-2">
-                                    <span >Preparation Date :</span>
+                                    <span >Date de rédaction :</span>
                                     <Badge variant="light" color="orange"
                                         className="!capitalize"
 
@@ -256,10 +249,10 @@ const AuditReportTabs = () => {
                             {/* Preparer & Validator Info */}
                             <div className="grid grid-cols-1 text-sm sm:grid-cols-3 gap-4">
                                 <p className="">
-                                    Preparer: {report?.preparerName}
+                                    Rédacteur : {report?.preparerName}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-1">
-                                    <Text size="sm" className="">Contributors:</Text>
+                                    <Text size="sm" className="">Contributeurs :</Text>
                                     {contributors.map((c, i) => (
                                         <span key={i} className="text-sm" >
                                             {c.name} {i < contributors.length - 1 ? "," : ""}
@@ -267,7 +260,7 @@ const AuditReportTabs = () => {
                                     ))}
                                 </div>
                                 <p className="">
-                                    Validator: {report?.validatorName}
+                                    Validateur : {report?.validatorName}
                                 </p>
 
                             </div>
@@ -283,7 +276,7 @@ const AuditReportTabs = () => {
                             {/* Files Section */}
                             {report.docs?.length > 0 && (
                                 <div className="md:col-span-2">
-                                    <p className="block text-sm mb-2">Attachments:</p>
+                                    <p className="block text-sm mb-2">Pièces jointes :</p>
                                     <Stack className="flex flex-wrap flex-col !gap-1">
                                         {report?.docs?.map((doc: any) => (
                                             <Badge

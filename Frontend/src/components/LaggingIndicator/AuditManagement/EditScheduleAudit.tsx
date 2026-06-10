@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-    Breadcrumbs,
     Text,
     Card,
     TextInput,
@@ -18,8 +17,9 @@ import {
     Radio,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { IconCalendar, IconFileText, IconInfoCircle, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { IconCalendar, IconClipboardCheck, IconFileText, IconInfoCircle, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
+import { useNavigate, useParams } from "react-router-dom";
+import PageHeader from "../../UtilityComp/PageHeader";
 import TextEditor from "../../UtilityComp/TextEditor";
 import { useForm } from "@mantine/form";
 import { useDispatch } from "react-redux";
@@ -28,27 +28,19 @@ import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { getAllActiveAuditArea } from "../../../services/AuditAreaService";
 import { isValidRichText, mapIdToName } from "../../../utility/OtherUtilities";
-import { auditorRoles, auditTypesLabels, criteriaByLabel } from "../../../Data/DropdownData";
+import { auditTypesLabels, criteriaByLabel } from "../../../Data/DropdownData";
 import { getAllAuditors } from "../../../services/AuditorsService";
 import { getDateDifferenceInDays } from "../../../utility/DateFormats";
 import { getAllActiveWorkProcess } from "../../../services/WorkProcessService";
 import { deleteAuditor, getAuditDetails, getAuditorsByAuditId, updateAudit } from "../../../services/AuditService";
+import {
+    AUDIT_METHOD_OPTIONS,
+    AUDIT_OBJECTIVE_OPTIONS,
+    AUDIT_REFERENCE_OPTIONS,
+    AUDITOR_ROLE_OPTIONS,
+} from "./auditLabels";
 
 interface ListItem { id: number; name: string; }
-
-const auditMethods = ["Individual interviews", "Group interviews", "Field observations", "Document verification", "Equipment Inspection", "Tests and measurements", "Sample analysis", "Emergency simulation"
-];
-
-const documents = [
-    "Integrated Management Manual",
-    "HSE Policy",
-    "Operational procedures",
-    "Work Instructions",
-    "Prevention plans",
-    "Risk analyses",
-    "Compliance Records",
-    "HSE Dashboards"
-];
 
 
 const EditScheduleAudit: React.FC = () => {
@@ -129,7 +121,6 @@ const EditScheduleAudit: React.FC = () => {
     };
 
 
-    const AuditObjectives = ["Verify regulatory compliance", "Evaluate the effectiveness of the management system", "Identify areas for improvement"]
     const form = useForm({
         initialValues: {
             audit: {
@@ -154,26 +145,25 @@ const EditScheduleAudit: React.FC = () => {
         validate: {
             audit: {
 
-                title: (value) => (value ? null : "Title is required"),
-                // refNumber: (value) => (value ? null : "Reference number is required"),
-                objectives: (value) => (value.length > 0 ? null : "At least one objective is required"),
-                processes: (value) => (value.length > 0 ? null : "At least one process is required"),
-                scopeId: (value) => (value ? null : "Scope is required"),
-                methods: (value) => (value.length > 0 ? null : "At least one method is required"),
-                description: (value) => (isValidRichText(value) ? null : "Description is required"),
-                startDate: (value) => (value ? null : "Start date is required"),
-                endDate: (value) => (value ? null : "End date is required"),
-                references: (value) => (value.length > 0 || activeStep == 0 ? null : "At least one reference is required"),
+                title: (value) => (value ? null : "Le titre est requis"),
+                objectives: (value) => (value.length > 0 ? null : "Au moins un objectif est requis"),
+                processes: (value) => (value.length > 0 ? null : "Au moins un processus est requis"),
+                scopeId: (value) => (value ? null : "Le périmètre est requis"),
+                methods: (value) => (value.length > 0 ? null : "Au moins une méthode est requise"),
+                description: (value) => (isValidRichText(value) ? null : "La description est requise"),
+                startDate: (value) => (value ? null : "La date de début est requise"),
+                endDate: (value) => (value ? null : "La date de fin est requise"),
+                references: (value) => (value.length > 0 || activeStep == 0 ? null : "Au moins une référence est requise"),
 
-                types: (value) => (value?.length > 0 || activeStep == 0 ? null : "At least one type is required"),
+                types: (value) => (value?.length > 0 || activeStep == 0 ? null : "Au moins un type est requis"),
             },
             auditors: {
-                name: (value) => (value ? null : "Auditor is required"),
-                role: (value) => (value ? null : "Role is required"),
-                email: (value) => (value ? null : "Email is required"),
+                name: (value) => (value ? null : "L'auditeur est requis"),
+                role: (value) => (value ? null : "Le rôle est requis"),
+                email: (value) => (value ? null : "L'adresse e-mail est requise"),
             },
-            company: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "Company is required"),
-            companyEmail: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "Company email is required"),
+            company: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "La société est requise"),
+            companyEmail: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "L'e-mail de la société est requis"),
 
 
 
@@ -222,7 +212,7 @@ const EditScheduleAudit: React.FC = () => {
         form.validate();
         if (!form.isValid()) return;
         if (form.values.auditors.length === 0) {
-            errorNotification("Please add at least one auditor");
+            errorNotification("Ajoutez au moins un auditeur avant d'enregistrer");
             return;
         }
 
@@ -236,16 +226,16 @@ const EditScheduleAudit: React.FC = () => {
             values = { ...values, auditors: auditors };
         }
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-base">Confirmer la mise à jour</span>,
             centered: true,
             children: (
-                <span className="text-md">
-                    You want to update this audit?
+                <span className="text-sm">
+                    Enregistrer les modifications de la planification de cet audit ?
                 </span>
             ),
-            labels: { confirm: `Yes, Create`, cancel: "Cancel" },
-            cancelProps: { color: "red", variant: "filled" },
-            confirmProps: { color: "green", variant: "filled" },
+            labels: { confirm: "Oui, enregistrer", cancel: "Annuler" },
+            cancelProps: { color: "gray", variant: "default" },
+            confirmProps: { color: "indigo", variant: "filled" },
             closeOnEscape: false,
             closeOnClickOutside: false,
             withCloseButton: false,
@@ -253,11 +243,11 @@ const EditScheduleAudit: React.FC = () => {
                 dispatch(showOverlay());
                 updateAudit(values)
                     .then(() => {
-                        successNotification("Audit updated successfully");
+                        successNotification("Planification mise à jour");
                         navigate("/audit-management");
                     }
                     ).catch((err) => {
-                        errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                        errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
                     }
                     ).finally(() => {
                         dispatch(hideOverlay());
@@ -281,16 +271,16 @@ const EditScheduleAudit: React.FC = () => {
 
 
             modals.openConfirmModal({
-                title: <span className="text-2xl">Are you sure?</span>,
+                title: <span className="text-base">Retirer l'auditeur</span>,
                 centered: true,
                 children: (
-                    <span className="text-md">
-                        You want to remove this auditor? This action cannot be undone.
+                    <span className="text-sm">
+                        Retirer cet auditeur de l'équipe ? Cette action est définitive.
                     </span>
                 ),
-                labels: { confirm: `Yes, remove `, cancel: "Cancel" },
-                cancelProps: { color: "red", variant: "filled" },
-                confirmProps: { color: "green", variant: "filled" },
+                labels: { confirm: "Oui, retirer", cancel: "Annuler" },
+                cancelProps: { color: "gray", variant: "default" },
+                confirmProps: { color: "red", variant: "filled" },
                 closeOnEscape: false,
                 closeOnClickOutside: false,
                 withCloseButton: false,
@@ -298,10 +288,10 @@ const EditScheduleAudit: React.FC = () => {
                     dispatch(showOverlay());
                     deleteAuditor(item.id)
                         .then(() => {
-                            successNotification("Auditor removed successfully");
+                            successNotification("Auditeur retiré de l'équipe");
                             form.removeListItem("auditors", index);
                         }).catch((err) => {
-                            errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                            errorNotification(err.response?.data?.errorMessage || "L'opération a échoué");
                         }).finally(() => {
                             dispatch(hideOverlay());
                         })
@@ -318,25 +308,25 @@ const EditScheduleAudit: React.FC = () => {
     const renderAuditInfo = () => (
         <div className="p-2 flex flex-col gap-8">
             <div className="grid grid-cols-3 gap-4">
-                <DateInput label="Start Date" {...form.getInputProps("audit.startDate")} leftSection={<IconCalendar />} maxDate={form.values.audit.endDate ? new Date(form.values.audit.endDate) : undefined} placeholder="Enter Start Date" withAsterisk />
-                <DateInput label="End Date" {...form.getInputProps("audit.endDate")} leftSection={<IconCalendar />} minDate={form.values.audit.startDate ? new Date(form.values.audit.startDate) : undefined} placeholder="Enter End Date" withAsterisk />
-                <NumberInput value={getDateDifferenceInDays(form.values.audit.startDate, form.values.audit.endDate)} disabled label="Estimated time (days)" placeholder="Enter Time" withAsterisk />
+                <DateInput label="Date de début" {...form.getInputProps("audit.startDate")} leftSection={<IconCalendar />} maxDate={form.values.audit.endDate ? new Date(form.values.audit.endDate) : undefined} placeholder="Sélectionner la date de début" withAsterisk />
+                <DateInput label="Date de fin" {...form.getInputProps("audit.endDate")} leftSection={<IconCalendar />} minDate={form.values.audit.startDate ? new Date(form.values.audit.startDate) : undefined} placeholder="Sélectionner la date de fin" withAsterisk />
+                <NumberInput value={getDateDifferenceInDays(form.values.audit.startDate, form.values.audit.endDate)} disabled label="Durée estimée (jours)" placeholder="Calcul automatique" withAsterisk />
             </div>
             <div className="grid grid-cols-2 gap-4 ">
-                <TextInput disabled {...form.getInputProps("audit.refNumber")} label="Audit Reference" placeholder="Enter reference number" withAsterisk />
-                <TextInput label="Audit Title" placeholder="Enter audit title" {...form.getInputProps("audit.title")} withAsterisk />
+                <TextInput disabled {...form.getInputProps("audit.refNumber")} label="Référence de l'audit" placeholder="Générée automatiquement" withAsterisk />
+                <TextInput label="Titre de l'audit" placeholder="Ex. Audit SST atelier maintenance Q2" {...form.getInputProps("audit.title")} withAsterisk />
 
             </div>
             <Checkbox.Group size="md"
                 {...form.getInputProps('audit.objectives')}
-                label="Audit Objectives"
+                label="Objectifs de l'audit"
                 withAsterisk
             >
                 <div className="flex flex-wrap mt-5 gap-2">
-                    {AuditObjectives.map((type) => (
-                        <div key={type}>
+                    {AUDIT_OBJECTIVE_OPTIONS.map((objective) => (
+                        <div key={objective.value}>
                             <Checkbox.Card
-                                value={type}
+                                value={objective.value}
                                 radius="md"
                                 className="group border border-gray-300 transition duration-150 cursor-pointer  hover:!border-primary hover:!bg-primary/10  data-[checked]:!border-primary data-[checked]:!bg-primary/20 data-[checked]:shadow-sm"
                                 p="xs"
@@ -347,7 +337,7 @@ const EditScheduleAudit: React.FC = () => {
                                         size="sm"
                                         className="text-gray-800 group-data-[checked]:text-blue-900 group-data-[checked]:font-medium"
                                     >
-                                        {type}
+                                        {objective.label}
                                     </Text>
                                 </Group>
                             </Checkbox.Card>
@@ -357,27 +347,27 @@ const EditScheduleAudit: React.FC = () => {
             </Checkbox.Group>
 
             <div>
-                <MultiSelect hidePickedOptions {...form.getInputProps("audit.processes")} label="Audited Processes " placeholder="Select Audited Processes " withAsterisk data={processes} />
+                <MultiSelect hidePickedOptions {...form.getInputProps("audit.processes")} label="Processus audités" placeholder="Sélectionner les processus audités" withAsterisk data={processes} />
             </div>
 
-            <Select {...form.getInputProps("audit.scopeId")} label="Audit Scope " placeholder="Select Audit Scope " data={auditAreas} withAsterisk />
+            <Select {...form.getInputProps("audit.scopeId")} label="Périmètre de l'audit" placeholder="Sélectionner le périmètre" data={auditAreas} withAsterisk />
             <div className="flex flex-col gap-2">
-                <h1 className="">Planned Method <span className="text-red-500">*</span></h1>
+                <h2 className="text-sm text-slate-800">Méthodes prévues <span className="text-red-500">*</span></h2>
                 <Checkbox.Group {...form.getInputProps("audit.methods")} className="p-4 border border-gray-300 rounded-lg ">
                     <Group className="!grid !grid-cols-4 gap-2">
 
-                        {auditMethods.map((method) => (
+                        {AUDIT_METHOD_OPTIONS.map((method) => (
                             <Checkbox
-                                key={method}
-                                value={method}
-                                label={method}
+                                key={method.value}
+                                value={method.value}
+                                label={method.label}
                                 className="!text-gray-700 !font-medium"
                             />))
                         }
                     </Group>
                 </Checkbox.Group>
             </div>
-            <TextEditor form={form} id="audit.description" title="Description of the methodology" />
+            <TextEditor form={form} id="audit.description" title="Description de la méthodologie" />
 
 
 
@@ -387,8 +377,8 @@ const EditScheduleAudit: React.FC = () => {
     const renderAuditorItem = (item: ListItem, index: number) => (
         <div key={index} className="flex flex-col gap-6" >
             <Fieldset key={index} className="grid grid-cols-3 gap-6" legend={<div className="flex gap-5">
-                <div className="text-lg text-blue-500">Auditor {index + 1}</div>
-                <ActionIcon onClick={() => handleRemoveAuditor(item, index)} variant="filled" color="red" aria-label="Settings">
+                <div className="text-base text-teal-700">Auditeur {index + 1}</div>
+                <ActionIcon onClick={() => handleRemoveAuditor(item, index)} variant="filled" color="red" aria-label={`Retirer l'auditeur ${index + 1}`}>
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
             </div>}>
@@ -396,7 +386,7 @@ const EditScheduleAudit: React.FC = () => {
                 {form.values.audit.category === "EXTERNAL" ? (
                     <TextInput
                         {...form.getInputProps(`auditors.${index}.name`)}
-                        placeholder="Auditor Name"
+                        placeholder="Nom de l'auditeur"
                         withAsterisk
                     />
                 ) : (
@@ -408,7 +398,7 @@ const EditScheduleAudit: React.FC = () => {
                             form.setFieldValue(`auditors.${index}.email`, emp.email || "");
                             form.setFieldValue(`auditors.${index}.role`, emp.role || "");
                         }}
-                        placeholder="Select Auditor"
+                        placeholder="Sélectionner l'auditeur"
                         withAsterisk
                         searchable
                         data={auditors.filter((x: any) =>
@@ -416,8 +406,8 @@ const EditScheduleAudit: React.FC = () => {
                         )}
                     />
                 )}
-                <Select disabled={form.values.audit.category === "INTERNAL"} placeholder="Role"  {...form.getInputProps(`auditors.${index}.role`)} data={auditorRoles} withAsterisk />
-                <TextInput disabled={form.values.audit.category === "INTERNAL"} {...form.getInputProps(`auditors.${index}.email`)} placeholder="Email" withAsterisk />
+                <Select disabled={form.values.audit.category === "INTERNAL"} placeholder="Rôle"  {...form.getInputProps(`auditors.${index}.role`)} data={AUDITOR_ROLE_OPTIONS} withAsterisk />
+                <TextInput disabled={form.values.audit.category === "INTERNAL"} {...form.getInputProps(`auditors.${index}.email`)} placeholder="Adresse e-mail" withAsterisk />
             </Fieldset>
 
         </div>
@@ -440,13 +430,13 @@ const EditScheduleAudit: React.FC = () => {
                     <Stack my={10}>
 
 
-                        {/* HSE Audit Type Section */}
+                        {/* Types d'audit HSE */}
                         <div className="grid grid-cols-1 gap-4">
                             <MultiSelect maxValues={2}
                                 {...form.getInputProps("audit.types")}
-                                label="Type of HSE Audit"
-                                description="Select the type of HSE audit you want to perform. You can select up to 2 types."
-                                placeholder="Select the type to view the recommended criteria"
+                                label="Type d'audit HSE"
+                                description="Sélectionner le type d'audit HSE à réaliser (2 types maximum)."
+                                placeholder="Sélectionner le type pour afficher les critères recommandés"
 
                                 data={auditTypesLabels}
 
@@ -472,23 +462,20 @@ const EditScheduleAudit: React.FC = () => {
                                     <div className="mt-4 flex items-start gap-2 p-3 rounded-xl  bg-green-100">
                                         <IconInfoCircle size={18} className="mt-1 text-green-700" />
                                         <Text size="sm" color="dimmed" className="!text-green-700">
-                                            You can check/uncheck according to the reality of your site.
+                                            Ajustez les critères cochés selon la réalité de votre site.
                                         </Text>
                                     </div>
                                 </Card>)
                             )}
                         </div>
-                        {/* <div>
-                            <Select label="Audit modality " placeholder="Select Audit modality " data={["INTERNAL", "External"]} withAsterisk />
-                        </div> */}
                         <Radio.Group size="md" {...form.getInputProps("audit.category")}
-                            label="Audit Method"
+                            label="Modalité d'audit"
                             withAsterisk
                             readOnly
                         >
                             <Group mt="xs">
-                                <Radio value="INTERNAL" label="Internal Audit" />
-                                <Radio value="EXTERNAL" label="External Audit" />
+                                <Radio value="INTERNAL" label="Audit interne" />
+                                <Radio value="EXTERNAL" label="Audit externe" />
 
                             </Group>
                         </Radio.Group>
@@ -496,14 +483,14 @@ const EditScheduleAudit: React.FC = () => {
                         <Divider />
 
                         <div className="flex justify-between">
-                            <Text size="lg">Audit Auditor</Text>
+                            <Text size="lg">Équipe d'audit</Text>
                             <Button leftSection={<IconPlus />} onClick={insertAuditor}>
-                                Add Auditor
+                                Ajouter un auditeur
                             </Button>
                         </div>
                         {form.values.audit.category === "EXTERNAL" && <div className="grid grid-cols-2 gap-5">
-                            <TextInput withAsterisk {...form.getInputProps(`company`)} placeholder="Company" label="Auditors Company" />
-                            <TextInput withAsterisk {...form.getInputProps(`companyEmail`)} placeholder="Email" label="Company Email" />
+                            <TextInput withAsterisk {...form.getInputProps(`company`)} placeholder="Nom de la société" label="Société des auditeurs" />
+                            <TextInput withAsterisk {...form.getInputProps(`companyEmail`)} placeholder="Adresse e-mail" label="E-mail de la société" />
                         </div>
                         }
 
@@ -511,25 +498,25 @@ const EditScheduleAudit: React.FC = () => {
                         <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-4">
                             <h2 className="flex items-center gap-2 text-base text-yellow-800 mb-2">
                                 <IconInfoCircle size={18} className="text-yellow-600" />
-                                Validation rules:
+                                Règles de validation
                             </h2>
                             <ul className="list-disc pl-6 text-sm grid grid-cols-2  text-yellow-700 space-y-1">
-                                <li>Only one head of audit per audit team</li>
-                                <li>Can't add the same employee multiple times</li>
-                                <li>All fields are required</li>
-                                <li>Only users with the "listener" role can be selected</li>
+                                <li>Un seul auditeur principal par équipe d'audit</li>
+                                <li>Un même employé ne peut pas être ajouté deux fois</li>
+                                <li>Tous les champs sont obligatoires</li>
+                                <li>Seuls les employés déclarés auditeurs sont sélectionnables</li>
                             </ul>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <h1 className="">Applicable internal literature references</h1>
+                            <h2 className="text-sm text-slate-800">Références documentaires internes applicables</h2>
                             <Checkbox.Group {...form.getInputProps("audit.references")} className="p-4 border border-gray-300 rounded-lg ">
                                 <Group className="!grid !grid-cols-4 gap-2">
-                                    {documents.map((doc) => (
+                                    {AUDIT_REFERENCE_OPTIONS.map((doc) => (
                                         <Checkbox size="sm"
-                                            key={doc}
-                                            value={doc}
-                                            label={doc}
+                                            key={doc.value}
+                                            value={doc.value}
+                                            label={doc.label}
                                             className="!text-gray-700 !font-medium"
                                         />
                                     ))}
@@ -548,24 +535,23 @@ const EditScheduleAudit: React.FC = () => {
         }
     };
     return (
-        <div>
-            <div>
-                <div className="text-2xl text-blue-500 w-fit">Update Audit</div>
-                <Breadcrumbs mt="xs" mb="lg">
-                    <Link className="hover:!underline" to="/">
-                        <Text variant="gradient">Home</Text>
-                    </Link>
-                    <Link className="hover:!underline" to="/audit-management">
-                        <Text variant="gradient">Audit Management</Text>
-                    </Link>
-                    <Text variant="gradient">Update Audit</Text>
-                </Breadcrumbs>
-            </div>
+        <div className="space-y-5 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Gestion des audits', to: '/audit-management' },
+                    { label: 'Modifier la planification' },
+                ]}
+                icon={<IconClipboardCheck size={22} stroke={2} />}
+                iconColor="indigo"
+                title="Modifier la planification de l'audit"
+                subtitle="Mise à jour du cadrage, du périmètre et de l'équipe d'audit"
+            />
 
-            <Card className="bg-white" shadow="xl" withBorder radius="md">
-                <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect>
-                    <Stepper.Step icon={<IconFileText size={18} />} label="Audit Details" />
-                    <Stepper.Step icon={<IconUsers size={18} />} label="Process & Team" />
+            <Card className="bg-white" shadow="sm" withBorder radius="md">
+                <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect color="indigo" size="sm">
+                    <Stepper.Step icon={<IconFileText size={16} />} label={<Text size="sm">Informations</Text>} description={<Text size="xs" c="dimmed">Cadrage et planning</Text>} />
+                    <Stepper.Step icon={<IconUsers size={16} />} label={<Text size="sm">Processus & équipe</Text>} description={<Text size="xs" c="dimmed">Périmètre et auditeurs</Text>} />
 
                 </Stepper>
 
@@ -574,17 +560,17 @@ const EditScheduleAudit: React.FC = () => {
                 <div className="flex gap-4 justify-center mt-6">
                     {activeStep > 0 && (
                         <Button variant="default" onClick={handlePrev}>
-                            Previous
+                            Étape précédente
                         </Button>
                     )}
                     {activeStep < 1 ? (
-                        <Button onClick={handleNext} variant="gradient">
-                            Next
+                        <Button onClick={handleNext} color="indigo">
+                            Étape suivante
                         </Button>
                     ) : (
                         <>
-                            <Button type="button" onClick={handleSubmit} variant="gradient">
-                                Update Audit
+                            <Button type="button" onClick={handleSubmit} color="indigo">
+                                Enregistrer les modifications
                             </Button>
                         </>
                     )}

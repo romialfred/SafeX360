@@ -2,7 +2,7 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { ActionIcon, Button, TextInput, Tooltip, Tabs } from '@mantine/core';
-import { IconEdit, IconLayoutGrid, IconLayoutList, IconPlayerPlay, IconSearch, IconTrash, IconUpload } from '@tabler/icons-react';
+import { IconEdit, IconLayoutGrid, IconLayoutList, IconPlayerPlay, IconSearch, IconUpload } from '@tabler/icons-react';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
@@ -20,21 +20,8 @@ import { auditStatuses, auditStatusMap } from '../../../Data/DropdownData';
 import { formatDateShort } from '../../../utility/DateFormats';
 import { GetAllAuditArea } from '../../../services/AuditAreaService';
 import { Badge } from '@mantine/core';
-
-/**
- * Refonte ISO Phase 2 : mapping couleur par statut d'audit.
- * Aligné sur le pattern Non-conformité (getStatusColor) avec une
- * traduction vers les enum AuditStatus du backend ISO 19011.
- */
-const AUDIT_STATUS_COLOR: Record<string, string> = {
-    PLANNING: 'blue',
-    PREPARATION: 'cyan',
-    EXECUTION: 'amber',
-    CLOSED: 'green',
-    CANCELLED: 'gray',
-};
-const getAuditStatusColor = (s?: string | null): string =>
-    AUDIT_STATUS_COLOR[String(s ?? '').toUpperCase()] ?? 'gray';
+import { successNotification } from '../../../utility/NotificationUtility';
+import { auditCategoryLabel, auditStatusColor } from './auditLabels';
 
 
 
@@ -97,35 +84,45 @@ const AuditData = () => {
             <div className="flex gap-2">
 
                 {activeTab == "EXECUTION" && <Tooltip label="Exécuter l'audit">
-                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" variant="light" size="sm">
+                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" variant="light" size="sm" aria-label="Exécuter l'audit">
                         <IconPlayerPlay className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
                 }
                 <Tooltip label="Modifier la planification">
-                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} color="teal" variant="light" size="sm">
+                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} color="teal" variant="light" size="sm" aria-label="Modifier la planification">
                         <IconEdit className="!w-4/5 !h-4/5" stroke={1.75} />
-                    </ActionIcon>
-                </Tooltip>
-                {/* <Tooltip label="View Details Audit">
-                    <ActionIcon onClick={() => navigate(`details/${rowData.id}`)} color='yellow' size="sm">
-                        <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-
-                <Tooltip label="View Details Audit Tabs">
-                    <ActionIcon onClick={() => navigate(`details-tabs/${rowData.id}`)} color='green' size="sm">
-                        <IconTable className="!w-4/5 !h-4/5" stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip> */}
-
-                <Tooltip label="Supprimer la planification">
-                    <ActionIcon onClick={() => (rowData)} color="red" variant="light" size="sm">
-                        <IconTrash className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
             </div>
         );
+    };
+
+    // Export CSV de la liste filtrée (même pattern que le module Conformité).
+    const exportCsv = () => {
+        const headers = ['Référence', 'Titre', 'Domaine', 'Auditeur principal', 'Catégorie', 'Début', 'Fin', 'Statut'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = filteredData.map((row: any) =>
+            [
+                row.refNumber ?? '',
+                row.title ?? '',
+                auditAreaMap[row.scopeId]?.name ?? '',
+                leadAuditors[row.id]?.name ?? '',
+                auditCategoryLabel(row.category),
+                formatDateShort(row.startDate),
+                formatDateShort(row.endDate),
+                auditStatusMap[row.status] ?? row.status ?? '',
+            ].map(escape).join(';')
+        );
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audits_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${filteredData.length} audit${filteredData.length > 1 ? 's' : ''} exporté${filteredData.length > 1 ? 's' : ''}`);
     };
 
     const rightToolbarTemplate = () => {
@@ -153,7 +150,7 @@ const AuditData = () => {
                         </ActionIcon>
                     </Tooltip>
                 </div>
-                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />}>Exporter</Button>
+                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />} onClick={exportCsv} disabled={!filteredData.length}>Exporter</Button>
                 <TextInput
                     value={globalFilterValue}
                     onChange={onGlobalFilterChange}
@@ -166,16 +163,18 @@ const AuditData = () => {
         );
     };
 
-    // Onglets statut audit — couleurs cohérentes avec la palette HSE
+    // Onglets statut audit — palette charte R7 (cyan=planifié, violet=en attente,
+    // amber=en cours, emerald=clôturé, slate=annulé)
     const planningTabOptions = [
         { value: 'dashboard', label: 'Tableau de bord', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
         ...auditStatuses.map((status) => {
             let colorClass = '!text-slate-600';
             switch (status.value) {
-                case 'PLANNING': colorClass = 'hover:!text-green-600 data-[active]:!bg-green-100 data-[active]:!text-green-800 data-[active]:!border-green-500'; break;
-                case 'EXECUTION': colorClass = 'hover:!text-yellow-600 data-[active]:!bg-yellow-100 data-[active]:!text-yellow-800 data-[active]:!border-yellow-500'; break;
-                case 'CLOSED': colorClass = 'hover:!text-red-700 data-[active]:!bg-red-100 data-[active]:!text-red-800 data-[active]:!border-red-600'; break;
-                default: colorClass = 'hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500'; break;
+                case 'PLANNING': colorClass = 'hover:!text-cyan-700 data-[active]:!bg-cyan-50 data-[active]:!text-cyan-800 data-[active]:!border-cyan-500'; break;
+                case 'PREPARATION': colorClass = 'hover:!text-violet-700 data-[active]:!bg-violet-50 data-[active]:!text-violet-800 data-[active]:!border-violet-500'; break;
+                case 'EXECUTION': colorClass = 'hover:!text-amber-700 data-[active]:!bg-amber-50 data-[active]:!text-amber-800 data-[active]:!border-amber-500'; break;
+                case 'CLOSED': colorClass = 'hover:!text-emerald-700 data-[active]:!bg-emerald-50 data-[active]:!text-emerald-800 data-[active]:!border-emerald-500'; break;
+                default: colorClass = 'hover:!text-slate-700 data-[active]:!bg-slate-100 data-[active]:!text-slate-700 data-[active]:!border-slate-400'; break;
             }
             return {
                 value: status.value,
@@ -193,7 +192,7 @@ const AuditData = () => {
                         <Tabs.Tab
                             key={opt.value}
                             value={opt.value}
-                            className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-all duration-200`}
+                            className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
                         >
                             {opt.label}
                         </Tabs.Tab>
@@ -219,17 +218,17 @@ const AuditData = () => {
     //     );
     // };
 
-    // Blue tabs for internal/external
+    // Onglets catégorie (Interne / Externe) — libellés FR, valeurs inchangées
     const categoryTabOptions = (() => {
         const categories = ['All', ...new Set(auditData.map(a => capitalizeFirstLetter(a.category)))];
         return categories.map(cat => {
             let colorClass = '!text-slate-600';
             if (cat !== 'All') {
-                colorClass = 'hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500';
+                colorClass = 'hover:!text-indigo-600 data-[active]:!bg-indigo-50 data-[active]:!text-indigo-800 data-[active]:!border-indigo-500';
             }
             return {
                 value: cat,
-                label: `${cat} (${auditData.filter((x) => x.status == activeTab).filter(x => capitalizeFirstLetter(x.category) === cat || cat === 'All').length})`,
+                label: `${cat === 'All' ? 'Toutes' : auditCategoryLabel(cat)} (${auditData.filter((x) => x.status == activeTab).filter(x => capitalizeFirstLetter(x.category) === cat || cat === 'All').length})`,
                 tabClass: `!text-slate-600 ${colorClass}`
             };
         });
@@ -242,7 +241,7 @@ const AuditData = () => {
                     <Tabs.Tab
                         key={opt.value}
                         value={opt.value}
-                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-all duration-200`}
+                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
                     >
                         {opt.label}
                     </Tabs.Tab>
@@ -278,33 +277,33 @@ const AuditData = () => {
                         viewType === 'table' ? (
                             <DataTable selectionMode="single"
                                 size='small'
-                                className='[&_.p-datatable-tbody]:!text-sm'
+                                className='[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]'
                                 stripedRows
                                 removableSort
                                 paginator
                                 value={filteredData} rows={10}
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                                 rowsPerPageOptions={[10, 25, 50]}
-                                dataKey="title"
+                                dataKey="id"
                                 filters={filters}
-                                globalFilterFields={['title', 'refNumber', 'objective', 'sites']}
-                                currentPageReportTemplate="{first} à {last} sur {totalRecords} audits"
+                                globalFilterFields={['title', 'refNumber', 'category']}
+                                currentPageReportTemplate="{first}–{last} sur {totalRecords} audits"
                                 emptyMessage="Aucun audit dans ce statut"
                                 onFilter={(e) => setFilters(e.filters)}
                             >
 
-                                <Column style={{ fontSize: "13px" }} field="refNumber" header="Référence" sortable />
-                                <Column style={{ fontSize: "13px" }} field="title" body={nameBodyTemplate} header="Titre de l'audit" sortable />
-                                <Column style={{ fontSize: "13px" }} field="scopeId" header="Domaine d'audit" body={(rowData) => auditAreaMap[rowData.scopeId]?.name ?? '—'} />
-                                <Column align="center" style={{ fontSize: "13px" }} field="leadAuditor" header="Auditeur principal" body={leadAuditorBodyTemplate} />
-                                <Column style={{ fontSize: "13px" }} field="category" header="Catégorie" body={(rowData) => capitalizeFirstLetter(rowData.category)} />
+                                <Column field="refNumber" header="Référence" sortable />
+                                <Column field="title" body={nameBodyTemplate} header="Titre de l'audit" sortable />
+                                <Column field="scopeId" header="Domaine d'audit" body={(rowData) => auditAreaMap[rowData.scopeId]?.name ?? '—'} />
+                                <Column align="center" field="leadAuditor" header="Auditeur principal" body={leadAuditorBodyTemplate} />
+                                <Column field="category" header="Catégorie" body={(rowData) => auditCategoryLabel(rowData.category)} />
 
-                                <Column style={{ fontSize: "13px" }} field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} sortable />
-                                <Column style={{ fontSize: "13px" }} field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
+                                <Column field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} sortable />
+                                <Column field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
 
-                                <Column style={{ fontSize: "13px" }} field="status" header="Statut" body={(rowData) => (
+                                <Column field="status" header="Statut" body={(rowData) => (
                                     <Badge
-                                        color={getAuditStatusColor(rowData.status)}
+                                        color={auditStatusColor(rowData.status)}
                                         size="sm"
                                         variant="light"
                                         className="rounded-full whitespace-nowrap"
@@ -313,7 +312,7 @@ const AuditData = () => {
                                     </Badge>
                                 )} />
 
-                                <Column style={{ fontSize: "13px" }} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
+                                <Column headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
                             </DataTable>
 
                         ) : (
@@ -332,7 +331,7 @@ const AuditData = () => {
             )}
 
             {activeTab === 'dashboard' && (
-                <div className="text-center text-xl text-gray-600 py-10">
+                <div className="py-2">
                     <AuditDashboard audits={auditData} auditAreaMap={auditAreaMap} />
                 </div>
             )}

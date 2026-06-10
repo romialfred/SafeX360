@@ -21,8 +21,8 @@ const AuditDashClosed = () => {
   return (
     <Card shadow="xs" radius="md" withBorder p="lg" className="w-full">
       <div className="flex items-center justify-between mb-3">
-        <Text size="xl">Closed Recommendations</Text>
-        <Badge color="green" variant="light" leftSection={<IconCircleCheck size={14} />}>{items.length} closed</Badge>
+        <Text size="lg">Recommandations clôturées</Text>
+        <Badge color="green" variant="light" leftSection={<IconCircleCheck size={14} />}>{items.length} clôturée{items.length > 1 ? 's' : ''}</Badge>
       </div>
 
       <Divider my="sm" />
@@ -38,7 +38,7 @@ const AuditDashClosed = () => {
           </Card>
         ))}
         {items.length === 0 && (
-          <Text size="sm" c="dimmed">No closed recommendations yet.</Text>
+          <Text size="sm" c="dimmed">Aucune recommandation clôturée pour le moment.</Text>
         )}
       </div>
     </Card>

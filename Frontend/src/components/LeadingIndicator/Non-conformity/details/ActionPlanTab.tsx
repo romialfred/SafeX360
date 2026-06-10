@@ -102,7 +102,7 @@ const ActionPlansTab = ({ actions }: ActionPlansTabProps) => {
                     return (
                         <article
                             key={idx}
-                            className={`bg-white border border-slate-200 border-l-[3px] ${tone.border} rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-all`}
+                            className={`bg-white border border-slate-200 border-l-[3px] ${tone.border} rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-[border-color,box-shadow]`}
                         >
                             <header className="flex items-start justify-between gap-3 mb-2 flex-wrap">
                                 <div className="flex items-start gap-2.5 min-w-0 flex-1">

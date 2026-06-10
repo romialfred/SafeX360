@@ -3,10 +3,10 @@ import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
 import { useEffect, useState } from "react";
 import { getInProgressRecommendations, getPendingRecommendations } from "../../../../services/AuditService";
-import { actionStatusesMap } from "../../../../Data/DropdownData";
 import { formatDateShort } from "../../../../utility/DateFormats";
+import { recPriorityLabel, recStatusLabel } from "../auditLabels";
 
-// Priority color map
+// Priorité — couleurs alignées sur la palette du module
 const getPriorityTag = (priority: string) => {
     const map = {
         High: { color: "#fff", bg: "#e03131" },
@@ -21,7 +21,7 @@ const getPriorityTag = (priority: string) => {
 
     return (
         <Tag
-            value={priority}
+            value={recPriorityLabel(priority)}
             style={{
                 backgroundColor: style.bg,
                 color: style.color,
@@ -32,12 +32,12 @@ const getPriorityTag = (priority: string) => {
     );
 };
 
-// Status color map
+// Statut — palette charte R7 (violet=en attente, amber=en cours, emerald=terminée)
 const getStatusTag = (status: string) => {
     const map = {
-        IN_PROGRESS: { color: "#fff", bg: "#228be6" },
-        PENDING: { color: "#fff", bg: "#ffd666" },
-        COMPLETED: { color: "#fff", bg: "#40c057" },
+        IN_PROGRESS: { color: "#fff", bg: "#D97706" },
+        PENDING: { color: "#fff", bg: "#7C3AED" },
+        COMPLETED: { color: "#fff", bg: "#059669" },
     };
 
     const style = map[status as keyof typeof map] || map[status?.toUpperCase() as keyof typeof map] || {
@@ -47,7 +47,7 @@ const getStatusTag = (status: string) => {
 
     return (
         <Tag
-            value={actionStatusesMap[status]}
+            value={recStatusLabel(status)}
             style={{
                 backgroundColor: style.bg,
                 color: style.color,
@@ -69,7 +69,7 @@ const AuditDashTable = () => {
     return (
         <div className="card">
             <div className="flex items-start mb-3">
-                <h1 className="text-lg text-gray-600">Active Recommendations</h1>
+                <h2 className="text-sm text-slate-700" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>Recommandations actives</h2>
             </div>
             <DataTable
                 value={active}
@@ -80,15 +80,17 @@ const AuditDashTable = () => {
                 removableSort
                 rowsPerPageOptions={[10, 25, 50]}
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                className='[&_.p-datatable-tbody]:!text-sm'
+                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                emptyMessage="Aucune recommandation en cours"
+                dataKey="id"
+                className='[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]'
             >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="title" header="Recommendation" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="auditTitle" header="Audit" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="priority" header="Priority" body={(rowData) => getPriorityTag(rowData.priority)} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="actionManagerId" header="Owner" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="deadline" header="Due Date" body={(rowData) => formatDateShort(rowData.deadline)} />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => getStatusTag(rowData.status)} />
+                <Column field="title" header="Recommandation" sortable />
+                <Column field="auditTitle" header="Audit" />
+                <Column field="priority" header="Priorité" body={(rowData) => getPriorityTag(rowData.priority)} />
+                <Column field="actionManagerId" header="Responsable" />
+                <Column field="deadline" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} />
+                <Column field="status" header="Statut" body={(rowData) => getStatusTag(rowData.status)} />
             </DataTable>
         </div>
     )

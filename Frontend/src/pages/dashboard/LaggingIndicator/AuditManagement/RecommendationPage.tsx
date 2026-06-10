@@ -3,7 +3,7 @@ import Recommendation from "../../../../components/LaggingIndicator/AuditManagem
 
 const RecommendationPage = () => {
     return (
-        <div className="p-5"><Recommendation /></div>
+        <div><Recommendation /></div>
     )
 }
 

@@ -1,15 +1,16 @@
-import { Breadcrumbs, Button, Card, NumberInput, Select, Text, Progress, Badge, Group } from "@mantine/core";
+import { Button, Card, NumberInput, Select, Text, Progress, Badge, Group } from "@mantine/core";
 import { IconClock, IconFileText, IconCalendar, IconBulb } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import { createFollowup, getRecommendationById, getRecommendationFollowups } from "../../../services/AuditService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { formatDateShort } from "../../../utility/DateFormats";
-import { recMap, recommendationStatus } from "../../../Data/DropdownData";
 import TextEditor from "../../UtilityComp/TextEditor";
 import SafeHtml from "../../UtilityComp/SafeHtml";
+import PageHeader from "../../UtilityComp/PageHeader";
 import { isValidRichText } from "../../../utility/OtherUtilities";
+import { REC_STATUS_OPTIONS, recStatusColor, recStatusLabel } from "./auditLabels";
 
 const UpdateRecommendation = () => {
   const { id } = useParams();
@@ -29,8 +30,8 @@ const UpdateRecommendation = () => {
       comment: '',
     },
     validate: {
-      status: (v) => (v?.trim()?.length ? null : 'Status is required'),
-      comment: (v) => (isValidRichText(v) ? null : 'Comment is required'),
+      status: (v) => (v?.trim()?.length ? null : 'Le statut est requis'),
+      comment: (v) => (isValidRichText(v) ? null : 'Le commentaire est requis'),
     }
   });
 
@@ -47,11 +48,11 @@ const UpdateRecommendation = () => {
         prevProgressRef.current = p;
         prevStatusRef.current = String(s || '').toUpperCase();
       })
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Failed to load recommendation'));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Échec du chargement de la recommandation'));
 
     getRecommendationFollowups(id)
       .then(setFollowups)
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Failed to load history'));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || "Échec du chargement de l'historique"));
   }, [id]);
 
   // Keep status/progress in sync like UpdateAdhocAction
@@ -99,25 +100,25 @@ const UpdateRecommendation = () => {
     const payload = { ...sanitized, recommendationId: id };
     createFollowup(payload)
       .then(() => {
-        successNotification('Recommendation updated successfully');
+        successNotification('Recommandation mise à jour');
         navigate('/audit-recommendations');
       })
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Something went wrong'));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'La mise à jour a échoué'));
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex justify-between items-center">
-        <div>
-          {/* LOT 40 P1: page title color */}
-          <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Recommendation</div>
-          <Breadcrumbs mt="xs">
-            <Link className="hover:!underline" to="/"><Text variant="gradient">Home</Text></Link>
-            <Link className="hover:!underline" to="/audit-recommendations"><Text variant="gradient">Recommendations</Text></Link>
-            <Text variant="gradient">Update</Text>
-          </Breadcrumbs>
-        </div>
-      </div>
+    <div className="flex flex-col gap-5 w-full">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Accueil', to: '/' },
+          { label: 'Suivi des recommandations', to: '/audit-recommendations' },
+          { label: 'Mettre à jour' },
+        ]}
+        icon={<IconBulb size={22} stroke={2} />}
+        iconColor="indigo"
+        title="Mettre à jour la recommandation"
+        subtitle="Avancement, statut et commentaire de suivi"
+      />
 
       {/* LOT 40 P1: responsive grid breakpoints */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -130,8 +131,8 @@ const UpdateRecommendation = () => {
                 <div className="flex items-center gap-2">
                   <IconFileText className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-sm text-blue-900">Recommendation Details</p>
-                    <p className="text-xs text-blue-700">Review the audit recommendation context before updating.</p>
+                    <p className="text-sm text-blue-900">Détail de la recommandation</p>
+                    <p className="text-xs text-blue-700">Relisez le contexte de la recommandation avant la mise à jour.</p>
                   </div>
                 </div>
               </div>
@@ -142,8 +143,8 @@ const UpdateRecommendation = () => {
                 <div className="flex items-start gap-2">
                   <span className="p-1.5 rounded-md bg-cyan-50 text-cyan-600"><IconFileText size={16} /></span>
                   <div>
-                    <p className="text-xs capitalize tracking-wide text-gray-500">Title</p>
-                    <p className="text-sm text-gray-900">{rec?.title || '-'}</p>
+                    <p className="text-xs tracking-wide text-gray-500">Titre</p>
+                    <p className="text-sm text-gray-900">{rec?.title || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -151,11 +152,11 @@ const UpdateRecommendation = () => {
               {/* Stats row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> Deadline</p>
-                  <p className="text-sm text-gray-900">{rec?.deadline ? formatDateShort(rec.deadline) : '-'}</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> Échéance</p>
+                  <p className="text-sm text-gray-900">{rec?.deadline ? formatDateShort(rec.deadline) : '—'}</p>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Progress</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">Avancement actuel</p>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-900">{rec?.progress ?? 0}%</p>
                   </div>
@@ -164,16 +165,16 @@ const UpdateRecommendation = () => {
                   </div>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Status</p>
-                  <Badge size="sm" radius="sm" variant="light" color="yellow" className="!capitalize">
-                    <Group gap={4}><IconClock size={14} /> {recMap[rec?.status] || '-'}</Group>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">Statut actuel</p>
+                  <Badge size="sm" radius="sm" variant="light" color={recStatusColor(rec?.status)}>
+                    <Group gap={4}><IconClock size={14} /> {recStatusLabel(rec?.status)}</Group>
                   </Badge>
                 </div>
               </div>
 
               {rec?.description && (
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">Description</p>
                   {/* LOT 41 P0 XSS fix */}
                   <SafeHtml html={rec?.description} className="text-gray-700 text-sm" />
                 </div>
@@ -190,8 +191,8 @@ const UpdateRecommendation = () => {
               <div className="flex items-center gap-2">
                 <IconClock className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm text-blue-900">Status Update</p>
-                  <p className="text-xs text-blue-700">Update progress and share follow-up details.</p>
+                  <p className="text-sm text-blue-900">Mise à jour du statut</p>
+                  <p className="text-xs text-blue-700">Actualisez l'avancement et documentez le suivi.</p>
                 </div>
               </div>
             </div>
@@ -201,22 +202,22 @@ const UpdateRecommendation = () => {
           {cannotUpdate ? (
             <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
               {isCompleted && (
-                <Text c="green">This recommendation is already completed (100% or status Completed). Further updates are not allowed.</Text>
+                <Text c="green">Cette recommandation est déjà terminée (100 % ou statut Terminée). Aucune mise à jour supplémentaire n'est possible.</Text>
               )}
               {isPending && (
-                <Text c="yellow">This recommendation is pending. Updates are not allowed until it is started.</Text>
+                <Text c="yellow">Cette recommandation est en attente. La mise à jour sera possible une fois le traitement démarré.</Text>
               )}
             </Card>
           ) : (
             <form className="space-y-3" onSubmit={form.onSubmit(handleSubmit)}>
               <div className="grid grid-cols-2 gap-3">
-                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={rec?.progress ?? 0} />
-                <Select size="sm" disabled={cannotUpdate} {...form.getInputProps('status')} label="Status" placeholder="Select status" data={recommendationStatus.slice(recommendationStatus.findIndex((x) => x.value === (followups?.length > 0 ? followups[followups.length - 1]?.status : rec?.status)))} />
+                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Avancement (%)" max={100} clampBehavior="blur" min={rec?.progress ?? 0} />
+                <Select size="sm" disabled={cannotUpdate} {...form.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={REC_STATUS_OPTIONS.slice(REC_STATUS_OPTIONS.findIndex((x) => x.value === (followups?.length > 0 ? followups[followups.length - 1]?.status : rec?.status)))} />
               </div>
-              <TextEditor form={form} id="comment" title="Comment" withAsterisk />
+              <TextEditor form={form} id="comment" title="Commentaire" withAsterisk />
               <div className="flex gap-2 mt-2">
-                <Button variant="default" onClick={() => navigate('/audit-recommendations')}>Cancel</Button>
-                <Button type="submit" variant="gradient">Save</Button>
+                <Button variant="default" onClick={() => navigate('/audit-recommendations')}>Annuler</Button>
+                <Button type="submit" color="indigo">Enregistrer</Button>
               </div>
             </form>
           )}
@@ -224,14 +225,14 @@ const UpdateRecommendation = () => {
 
         {/* Right Side: History */}
         <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200">
-          <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
+          <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Historique des suivis</p>
           {followups.length === 0 && (
             <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-              <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Tips</h4>
+              <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Conseils</h4>
               <ul className="text-xs text-blue-700 space-y-1">
-                <li>• Update progress regularly</li>
-                <li>• Add details about obstacles encountered</li>
-                <li>• Notify the assignee of important changes</li>
+                <li>• Actualisez l'avancement régulièrement</li>
+                <li>• Décrivez les obstacles rencontrés</li>
+                <li>• Informez le responsable des changements importants</li>
               </ul>
             </div>
           )}
@@ -247,7 +248,7 @@ const UpdateRecommendation = () => {
                         <IconClock /> {formatDateShort(x.followupDate)}
                       </p>
                     </div>
-                    <Badge radius="sm" variant="outline" color="purple" className="!capitalize">{recMap[x.status]}</Badge>
+                    <Badge radius="sm" variant="outline" color={recStatusColor(x.status)}>{recStatusLabel(x.status)}</Badge>
                   </div>
                   <Progress.Root size={20}>
                     <Progress.Section value={previous} color="blue">
@@ -260,7 +261,7 @@ const UpdateRecommendation = () => {
                     )}
                   </Progress.Root>
                   <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                    <p className="text-blue-400">Update Details</p>
+                    <p className="text-blue-400">Détail du suivi</p>
                     {/* LOT 41 P0 XSS fix */}
                     <SafeHtml html={x.comment || '-'} className="text-gray-700 mt-1 text-sm" />
                   </div>

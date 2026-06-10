@@ -21,7 +21,8 @@ import { getEmployeeDropdown } from "../../../../services/EmployeeService";
 import AuditHistoryTabs from "./AuditHistoryTabs";
 import { getAuditDetails, getAuditorsByAuditId } from "../../../../services/AuditService";
 import { formatDateShort } from "../../../../utility/DateFormats";
-import { capitalizeFirstLetter, mapIdToName } from "../../../../utility/OtherUtilities";
+import { mapIdToName } from "../../../../utility/OtherUtilities";
+import { auditCategoryLabel } from "../auditLabels";
 import AuditInfoTabs from "./AuditInfoTabs";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -56,9 +57,9 @@ const AuditDetailsTabs = () => {
 
         },
         validate: {
-            ownerId: (value) => value ? null : "Owner is required",
-            date: (value) => value ? null : "Date is required",
-            status: (value) => value ? null : "Status is required",
+            ownerId: (value) => value ? null : "Le responsable est requis",
+            date: (value) => value ? null : "La date est requise",
+            status: (value) => value ? null : "Le statut est requis",
         }
     });
     useEffect(() => {
@@ -107,7 +108,7 @@ const AuditDetailsTabs = () => {
 
         addAuditHistory(payload)
             .then((_res) => {
-                successNotification("Status changed successfully");
+                successNotification("Statut de l'audit mis à jour");
                 close();
                 setAudit((prev: any) => ({
                     ...prev,
@@ -116,7 +117,7 @@ const AuditDetailsTabs = () => {
                 fetchHistory();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "La mise à jour a échoué");
             })
             .finally(() => {
                 dispatch(hideOverlay());
@@ -264,13 +265,12 @@ const AuditDetailsTabs = () => {
                             {auditStatusMap[audit.status] || "Statut"}
                         </Button>
                         <Badge
-                            color={audit.category === "INTERNAL" ? "orange" : "red"}
+                            color={audit.category === "INTERNAL" ? "teal" : "orange"}
                             variant="filled"
                             radius="sm"
                             size="sm"
-                            className="!capitalize"
                         >
-                            {capitalizeFirstLetter(audit.category)}
+                            {auditCategoryLabel(audit.category)}
                         </Badge>
                     </div>
                 </div>
@@ -286,7 +286,7 @@ const AuditDetailsTabs = () => {
                                     key={key}
                                     type="button"
                                     onClick={() => handleTabChange(key)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === key
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === key
                                         ? 'bg-indigo-600 text-white shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}

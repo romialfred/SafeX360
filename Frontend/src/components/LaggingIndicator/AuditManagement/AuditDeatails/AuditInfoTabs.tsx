@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { getAllActiveWorkProcess } from '../../../../services/WorkProcessService';
 import { mapIdToName } from '../../../../utility/OtherUtilities';
 import SafeHtml from '../../../UtilityComp/SafeHtml';
+import { translateAuditTerm } from '../auditLabels';
 
 /**
  * Onglet "Détails de l'audit" — refonte raffinée FR avec sections délimitées
@@ -64,7 +65,7 @@ const FieldList = ({ data }: { data: any }) => {
             {items.map((item, index) => (
                 <div key={index} className="flex items-center gap-2 text-xs text-slate-700">
                     <IconChecks size={13} className="text-green-600 flex-shrink-0" />
-                    <span className="capitalize">{item}</span>
+                    <span>{translateAuditTerm(item)}</span>
                 </div>
             ))}
         </div>
@@ -105,7 +106,7 @@ const AuditInfoTabs = ({ audit, auditors }: any) => {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-xs text-slate-800 truncate">{item.name}</p>
-                                        <p className="text-[10px] text-slate-500 truncate">{item.role}</p>
+                                        <p className="text-[10px] text-slate-500 truncate">{translateAuditTerm(item.role)}</p>
                                     </div>
                                 </div>
                             ))}
