@@ -13,7 +13,7 @@ import {
  * répartition, matrice probabilité × gravité et fréquence par probabilité.
  */
 
-type DonutDatum = { name: string; value: number; color?: string };
+type DonutDatum = { name: string; value: number; color: string };
 
 interface ChartsProps {
     leftDonutTitle: string;

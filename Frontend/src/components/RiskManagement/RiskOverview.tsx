@@ -43,16 +43,17 @@ const RiskOverview: React.FC = () => {
     const probabilityLabels = overview?.matrix?.probabilityLabels || PROBABILITY_LABELS_FR;
     const severityLabels = overview?.matrix?.severityLabels || SEVERITY_LABELS_FR;
 
-    // Donuts
-    const departmentDonut = (overview?.distributions?.byDepartment || []).map((d) => ({
+    // Donuts — palette cyclique sobre (les segments étaient sans couleur)
+    const DONUT_PALETTE = ['#0F766E', '#D97706', '#7C3AED', '#0284C7', '#E11D48', '#475569', '#059669', '#C2410C'];
+    const departmentDonut = (overview?.distributions?.byDepartment || []).map((d, i) => ({
         name: d.label || departmentMap[d.key]?.name || String(d.key),
         value: d.count,
-        color: '',
+        color: DONUT_PALETTE[i % DONUT_PALETTE.length],
     }));
-    const hazardDonut = (overview?.distributions?.byHazardSource || []).map((d) => ({
+    const hazardDonut = (overview?.distributions?.byHazardSource || []).map((d, i) => ({
         name: d.label || String(d.key),
         value: d.count,
-        color: '',
+        color: DONUT_PALETTE[i % DONUT_PALETTE.length],
     }));
 
     // Fréquence par probabilité (somme par premier chiffre de la clé de niveau)

@@ -160,6 +160,10 @@ const CreateDocument = () => {
     }, []);
 
     const handleSubmit = async (values: CreateDocumentValues) => {
+        if (!values.file) {
+            errorNotification('La pièce jointe est obligatoire');
+            return;
+        }
         setSubmitting(true);
         dispatch(showOverlay());
         try {
