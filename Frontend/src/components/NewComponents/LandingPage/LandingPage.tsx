@@ -213,10 +213,26 @@ const ISO_BADGES = [
     { code: '31000', title: 'Gestion des risques', year: '2018', color: '#C2410C', colorDeep: '#9A3412', bg: '#FFF7ED' },   // Orange risques
 ];
 
-const CLIENTS = [
-    'Mine d\'or · Sénégal', 'Exploitation · Mali', 'Site · RDC',
-    'Mining · Burkina', 'Industries · Côte d\'Ivoire',
-    'Société · Guinée', 'Compagnie · Niger', 'Holding · Mauritanie',
+// Identités visuelles des clients du ruban : chaque marque a son monogramme,
+// sa forme d'emblème et son dégradé propre — comme de vrais logos d'entreprise.
+interface ClientLogo {
+    name: string;
+    sub: string;
+    initials: string;
+    from: string;
+    to: string;
+    shape: 'circle' | 'squircle' | 'hexagon' | 'diamond' | 'shield';
+}
+
+const CLIENTS: ClientLogo[] = [
+    { name: 'Sahelor', sub: "Mine d'or · Sénégal", initials: 'S', from: '#F59E0B', to: '#B45309', shape: 'hexagon' },
+    { name: 'Kéniéba Mining', sub: 'Exploitation · Mali', initials: 'KM', from: '#38BDF8', to: '#0369A1', shape: 'circle' },
+    { name: 'Katanga Ressources', sub: 'Site · RDC', initials: 'KR', from: '#34D399', to: '#047857', shape: 'squircle' },
+    { name: 'Faso Minerals', sub: 'Mining · Burkina', initials: 'FM', from: '#FB7185', to: '#BE123C', shape: 'diamond' },
+    { name: 'Ébrié Industries', sub: "Côte d'Ivoire", initials: 'ÉI', from: '#A78BFA', to: '#6D28D9', shape: 'squircle' },
+    { name: 'Nimba Société Minière', sub: 'Guinée', initials: 'N', from: '#FB923C', to: '#C2410C', shape: 'circle' },
+    { name: 'Ténéré Compagnie', sub: 'Niger', initials: 'TC', from: '#22D3EE', to: '#0E7490', shape: 'hexagon' },
+    { name: 'Tasiast Holding', sub: 'Mauritanie', initials: 'TH', from: '#818CF8', to: '#4338CA', shape: 'shield' },
 ];
 
 // ───────────────────────────────────────────────────────────────────────
@@ -1702,11 +1718,11 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
             id="hero"
             className="relative overflow-hidden w-full"
             style={{
-                // LOT — Hero fixe a 2/3 de l'ecran (66.67vh) en hauteur dynamique
-                // selon le viewport, et 100% en largeur. Sur tres petite hauteur (< 520px),
-                // on garde une hauteur min absolue de 520px pour preserver la lisibilite.
-                height: '66vh',
-                minHeight: '520px',
+                // LOT — Hero a 2/3 de l'ecran + 75px : la marge supplementaire
+                // garantit que les CTA et le badge restent au-dessus du bandeau
+                // de statistiques sans jamais etre rognes.
+                height: 'calc(66vh + 75px)',
+                minHeight: '600px',
                 background: '#0F172A',
             }}
             onMouseEnter={() => setPaused(true)}
@@ -1783,7 +1799,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
             />
 
             {/* ─── COUCHE 5 : Contenu principal ─── */}
-            <div className="relative z-30 max-w-7xl mx-auto px-6 pt-20 pb-16 flex flex-col justify-center h-full">
+            <div className="relative z-30 max-w-7xl mx-auto px-6 pt-20 pb-32 flex flex-col justify-center h-full">
                 {/* Eyebrow dynamique */}
                 <div
                     key={`eb-${active}`}
@@ -1867,12 +1883,11 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 >
                     <button
                         onClick={onLogin}
-                        className="cursor-pointer group inline-flex items-center gap-2.5 px-8 py-4 rounded-full transition-all text-[15px] font-semibold hover:scale-[1.03]"
+                        className="cursor-pointer group inline-flex items-center justify-center gap-2.5 h-[52px] px-8 rounded-full transition-[box-shadow,filter] text-[15px] font-semibold hover:brightness-110"
                         style={{
                             background: `linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)`,
                             color: 'white',
-                            boxShadow: `0 18px 44px -10px rgba(15, 118, 110, 0.65), 0 0 0 1px rgba(255,255,255,0.1) inset`,
-                            animation: 'hero-glow-pulse 3.5s ease-in-out infinite',
+                            boxShadow: `0 14px 36px -10px rgba(15, 118, 110, 0.6), 0 0 0 1px rgba(255,255,255,0.12) inset`,
                         }}
                     >
                         J'accède à la plateforme
@@ -1880,26 +1895,31 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                     </button>
                     <a
                         href="#features"
-                        className="cursor-pointer group inline-flex items-center gap-2 px-7 py-4 rounded-full transition-all text-[14.5px] font-semibold"
+                        className="cursor-pointer group inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-full transition-[background-color,border-color] text-[14.5px] font-semibold hover:bg-white/15"
                         style={{
                             background: 'rgba(255,255,255,0.08)',
                             backdropFilter: 'blur(12px)',
                             WebkitBackdropFilter: 'blur(12px)',
-                            border: '1.5px solid rgba(255,255,255,0.45)',
+                            border: '1px solid rgba(255,255,255,0.4)',
                             color: 'white',
                         }}
                     >
-                        <IconPlayerPlayFilled size={13} />
+                        <span
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0"
+                            style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)' }}
+                        >
+                            <IconPlayerPlayFilled size={11} />
+                        </span>
                         Voir comment ça marche
                     </a>
 
                     {/* Badge keyword dynamique */}
                     <div
                         key={`kw-${active}`}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full ml-2"
+                        className="inline-flex items-center justify-center gap-1.5 h-[40px] px-4 rounded-full"
                         style={{
-                            background: `${slide.accent}30`,
-                            border: `1.5px solid ${slide.accent}80`,
+                            background: `${slide.accent}28`,
+                            border: `1px solid ${slide.accent}70`,
                             color: 'white',
                             backdropFilter: 'blur(10px)',
                             WebkitBackdropFilter: 'blur(10px)',
@@ -1907,7 +1927,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                         }}
                     >
                         <IconSparkles size={13} style={{ color: slide.accent }} />
-                        <span className="text-[12px] font-bold uppercase tracking-wider">
+                        <span className="text-[11.5px] font-bold uppercase tracking-wider">
                             {slide.keyword}
                         </span>
                     </div>
@@ -2007,10 +2027,11 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 </div>
             </div>
 
-            {/* Scroll indicator en bas centre (au-dessus du marquee) */}
+            {/* Scroll indicator en bas centre (au-dessus du marquee, masque sur mobile
+                pour ne jamais chevaucher les CTA) */}
             <a
                 href="#features"
-                className="cursor-pointer absolute bottom-14 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors"
+                className="cursor-pointer absolute bottom-16 left-1/2 -translate-x-1/2 z-30 hidden md:flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors"
                 style={{ animation: 'float-y 2.5s ease-in-out infinite' }}
             >
                 <span className="text-[9.5px] uppercase tracking-[0.28em] font-bold">Explorer</span>
@@ -2169,6 +2190,40 @@ function Sparkline() {
 // CLIENTS MARQUEE
 // ═══════════════════════════════════════════════════════════════════════
 
+/** Emblème de marque : forme + dégradé + monogramme, façon vrai logo. */
+function ClientEmblem({ client }: { client: ClientLogo }) {
+    const shapeStyle: React.CSSProperties =
+        client.shape === 'circle' ? { borderRadius: '9999px' }
+        : client.shape === 'squircle' ? { borderRadius: '13px' }
+        : client.shape === 'hexagon' ? { clipPath: 'polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%)' }
+        : client.shape === 'shield' ? { borderRadius: '10px 10px 50% 50% / 12px 12px 46% 46%' }
+        : { borderRadius: '10px', transform: 'rotate(45deg)' }; // diamond
+
+    return (
+        <div
+            className="w-11 h-11 flex items-center justify-center flex-shrink-0"
+            style={{
+                ...shapeStyle,
+                background: `linear-gradient(140deg, ${client.from} 0%, ${client.to} 100%)`,
+                boxShadow: `0 6px 14px -6px ${client.to}66, inset 0 1px 0 rgba(255,255,255,0.35)`,
+            }}
+            aria-hidden="true"
+        >
+            <span
+                className="text-white text-[15px] font-bold select-none"
+                style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    letterSpacing: '-0.02em',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                    transform: client.shape === 'diamond' ? 'rotate(-45deg)' : undefined,
+                }}
+            >
+                {client.initials}
+            </span>
+        </div>
+    );
+}
+
 function ClientsMarquee() {
     const items = [...CLIENTS, ...CLIENTS];
     return (
@@ -2177,18 +2232,21 @@ function ClientsMarquee() {
                 style={{ background: 'linear-gradient(to right, #FAF9F5, transparent)' }} />
             <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
                 style={{ background: 'linear-gradient(to left, #FAF9F5, transparent)' }} />
-            <div className="flex gap-12" style={{ animation: 'marquee 35s linear infinite', width: 'max-content' }}>
-                {items.map((name, i) => (
-                    <div key={i} className="flex items-center gap-2.5 whitespace-nowrap">
-                        <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center"
-                            style={{
-                                background: `linear-gradient(135deg, hsl(${(i * 60) % 360}, 35%, 35%) 0%, hsl(${(i * 60 + 30) % 360}, 35%, 25%) 100%)`,
-                            }}
-                        >
-                            <IconBuildingFactory size={15} className="text-white" />
+            <div className="flex gap-14 items-center" style={{ animation: 'marquee 35s linear infinite', width: 'max-content' }}>
+                {items.map((client, i) => (
+                    <div key={i} className="flex items-center gap-3 whitespace-nowrap">
+                        <ClientEmblem client={client} />
+                        <div className="leading-tight">
+                            <p
+                                className="text-[14.5px] font-bold tracking-tight text-slate-800"
+                                style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                            >
+                                {client.name}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 font-semibold">
+                                {client.sub}
+                            </p>
                         </div>
-                        <span className="text-[14px] font-semibold tracking-tight text-slate-700">{name}</span>
                     </div>
                 ))}
             </div>
