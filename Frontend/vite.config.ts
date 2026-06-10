@@ -1,8 +1,78 @@
 import { defineConfig } from 'vitest/config';
+import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
+
+/**
+ * Service worker « kill-switch » : se désenregistre lui-même, purge tous les
+ * caches CacheStorage de l'origine puis recharge les onglets contrôlés.
+ * Servi UNIQUEMENT par le dev server (voir devServiceWorkerKillSwitch).
+ */
+const SW_KILL_SWITCH = `self.addEventListener('install', function () { self.skipWaiting(); });
+self.addEventListener('activate', function (event) {
+  event.waitUntil((async function () {
+    var keys = await caches.keys();
+    await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    await self.registration.unregister();
+    var clients = await self.clients.matchAll({ type: 'window' });
+    clients.forEach(function (c) { c.navigate(c.url); });
+  })());
+});`;
+
+/**
+ * Dev uniquement — neutralise un service worker résiduel sur localhost:517x
+ * (ancien build preview SafeX, ou autre projet Vite ayant occupé le port).
+ * Sans ça, le SW Workbox sert les scripts en CacheFirst (30 j) et mélange
+ * des chunks périmés avec les modules HMR → page blanche, erreurs
+ * « /@react-refresh does not provide an export » et « ws://localhost:undefined ».
+ *
+ *   1. Toute requête vers un nom de SW connu reçoit le kill-switch :
+ *      le navigateur met à jour le SW enregistré, qui s'auto-détruit.
+ *   2. index.html reçoit un script inline qui désenregistre les SW et purge
+ *      les caches dès le parse, avant l'exécution des modules.
+ */
+function devServiceWorkerKillSwitch(): Plugin {
+  return {
+    name: 'safex-dev-sw-kill-switch',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0];
+        if (['/sw.js', '/dev-sw.js', '/service-worker.js', '/registerSW.js'].includes(url)) {
+          res.setHeader('Content-Type', 'text/javascript');
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(url === '/registerSW.js' ? '' : SW_KILL_SWITCH);
+          return;
+        }
+        next();
+      });
+    },
+    transformIndexHtml() {
+      return [
+        {
+          tag: 'script',
+          injectTo: 'head-prepend',
+          children: `if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    var hadSw = regs.length > 0;
+    Promise.all(regs.map(function (r) { return r.unregister(); }))
+      .then(function () { return window.caches ? caches.keys() : []; })
+      .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+      .then(function () {
+        if (hadSw && !sessionStorage.getItem('safex-sw-purged')) {
+          sessionStorage.setItem('safex-sw-purged', '1');
+          location.reload();
+        }
+      });
+  });
+}`,
+        },
+      ];
+    },
+  };
+}
 
 /**
  * SafeX 360 — Vite configuration.
@@ -22,6 +92,7 @@ import path from 'path';
  */
 export default defineConfig({
   plugins: [
+    devServiceWorkerKillSwitch(),
     react(),
     tailwindcss(),
     // SafeX 360 Field — Service Worker pour la version mobile (PWA + APK
