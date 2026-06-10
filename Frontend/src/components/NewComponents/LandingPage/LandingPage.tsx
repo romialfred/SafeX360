@@ -427,18 +427,9 @@ export default function LandingPage() {
                 <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center">
                     <div className="lg:col-span-7">
                         <Reveal>
-                            <div
-                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-7"
-                                style={{
-                                    background: C.greenBg,
-                                    border: `1.5px solid ${C.greenSoft}`,
-                                }}
-                            >
-                                <span className="relative flex w-2 h-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
-                                </span>
-                                <span className="text-[11.5px] tracking-[0.18em] uppercase font-bold" style={{ color: C.green }}>
+                            <div className="inline-flex items-center gap-3 mb-7">
+                                <span aria-hidden="true" className="block h-px w-10" style={{ background: C.green, opacity: 0.55 }} />
+                                <span className="text-[11.5px] tracking-[0.24em] uppercase font-semibold" style={{ color: C.green }}>
                                     Fait pour les mines d'Afrique de l'Ouest
                                 </span>
                             </div>
@@ -914,16 +905,18 @@ export default function LandingPage() {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════
 
+/**
+ * Kicker de section éditorial : filet fin + petites capitales espacées,
+ * sans pastille ni puce — façon revue imprimée.
+ */
 function SectionEyebrow({ children, color }: { children: React.ReactNode; color: string }) {
     return (
-        <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-            style={{ background: color + '12', border: `1.5px solid ${color}40` }}
-        >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            <span className="text-[11px] uppercase tracking-[0.18em] font-bold" style={{ color }}>
+        <div className="inline-flex items-center gap-3">
+            <span aria-hidden="true" className="block h-px w-8" style={{ background: color, opacity: 0.5 }} />
+            <span className="text-[11.5px] uppercase tracking-[0.26em] font-semibold" style={{ color }}>
                 {children}
             </span>
+            <span aria-hidden="true" className="block h-px w-8" style={{ background: color, opacity: 0.5 }} />
         </div>
     );
 }
@@ -957,36 +950,36 @@ function StatCard({ value, label, icon: Icon, color, bg, ring }: {
 }) {
     return (
         <div
-            className="bg-white rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-2xl"
+            className="bg-white rounded-2xl px-6 py-5 transition-[box-shadow] hover:shadow-lg"
             style={{
-                border: `2px solid ${ring}`,
-                boxShadow: `0 8px 30px -10px ${color}25`,
+                border: `1.5px solid ${ring}`,
+                boxShadow: `0 6px 22px -12px ${color}25`,
             }}
         >
-            {/* Icône en pastille de couleur */}
-            <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
-                style={{ background: bg, border: `1.5px solid ${ring}` }}
-            >
-                <Icon size={26} stroke={1.8} style={{ color }} />
-            </div>
-
-            {/* Valeur XXL */}
-            <div
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    fontWeight: 600,
-                    fontSize: 'clamp(44px, 4.5vw, 60px)',
-                    letterSpacing: '-0.025em',
-                    lineHeight: 1,
-                    color,
-                }}
-            >
-                {value}
+            {/* Icône et valeur sur la même ligne : tuile compacte */}
+            <div className="flex items-center gap-4">
+                <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: bg, border: `1px solid ${ring}` }}
+                >
+                    <Icon size={21} stroke={1.8} style={{ color }} />
+                </div>
+                <div
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontWeight: 600,
+                        fontSize: 'clamp(30px, 2.8vw, 40px)',
+                        letterSpacing: '-0.025em',
+                        lineHeight: 1,
+                        color,
+                    }}
+                >
+                    {value}
+                </div>
             </div>
 
             {/* Label */}
-            <div className="mt-3 text-[13.5px] uppercase tracking-[0.14em] font-bold" style={{ color: '#475569' }}>
+            <div className="mt-3 text-[11.5px] uppercase tracking-[0.16em] font-semibold" style={{ color: '#475569' }}>
                 {label}
             </div>
         </div>
@@ -1366,23 +1359,14 @@ function AIShowcase() {
                 {/* Header */}
                 <Reveal>
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        {/* Eyebrow IA */}
-                        <div
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-7"
-                            style={{
-                                background: 'rgba(139, 92, 246, 0.15)',
-                                border: '1.5px solid rgba(139, 92, 246, 0.5)',
-                                backdropFilter: 'blur(10px)',
-                            }}
-                        >
-                            <span className="relative flex w-2 h-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-400" />
-                            </span>
-                            <IconSparkles size={13} className="text-violet-300" />
-                            <span className="text-[11.5px] uppercase tracking-[0.20em] font-bold text-white">
+                        {/* Eyebrow IA — filet éditorial violet */}
+                        <div className="inline-flex items-center gap-3 mb-7">
+                            <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
+                            <IconSparkles size={14} className="text-violet-300" />
+                            <span className="text-[11.5px] uppercase tracking-[0.24em] font-bold text-white">
                                 Innovation 2026 · Première mondiale HSE
                             </span>
+                            <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
                         </div>
 
                         <h2
@@ -1468,13 +1452,10 @@ function AIShowcase() {
                                             {pillar.icon}
                                         </div>
                                         <span
-                                            className="text-[10.5px] uppercase tracking-[0.16em] font-bold px-2.5 py-1 rounded-full"
-                                            style={{
-                                                color: pillar.accent,
-                                                background: `${pillar.accent}20`,
-                                                border: `1px solid ${pillar.accent}40`,
-                                            }}
+                                            className="inline-flex items-center gap-2 text-[10.5px] uppercase tracking-[0.2em] font-bold"
+                                            style={{ color: pillar.accent }}
                                         >
+                                            <span aria-hidden="true" className="block h-px w-6" style={{ background: pillar.accent, opacity: 0.6 }} />
                                             {pillar.eyebrow}
                                         </span>
                                     </div>
@@ -1800,23 +1781,14 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
 
             {/* ─── COUCHE 5 : Contenu principal ─── */}
             <div className="relative z-30 max-w-7xl mx-auto px-6 pt-20 pb-32 flex flex-col justify-center h-full">
-                {/* Eyebrow dynamique */}
+                {/* Eyebrow dynamique — filet éditorial à l'accent du slide */}
                 <div
                     key={`eb-${active}`}
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-7 self-start"
-                    style={{
-                        background: 'rgba(255,255,255,0.10)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255,255,255,0.25)',
-                        animation: 'hero-caption-slide 700ms ease-out',
-                    }}
+                    className="inline-flex items-center gap-3 mb-7 self-start"
+                    style={{ animation: 'hero-caption-slide 700ms ease-out' }}
                 >
-                    <span className="relative flex w-2 h-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: slide.accent }} />
-                        <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: slide.accent }} />
-                    </span>
-                    <span className="text-[11px] tracking-[0.20em] uppercase font-bold text-white">
+                    <span aria-hidden="true" className="block h-px w-10" style={{ background: slide.accent }} />
+                    <span className="text-[11px] tracking-[0.24em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.92)' }}>
                         {slide.eyebrow}
                     </span>
                 </div>
@@ -2942,15 +2914,13 @@ function BenefitsDynamic() {
             <div className="relative max-w-7xl mx-auto">
                 <Reveal>
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 bg-white/15 backdrop-blur-md border border-white/30">
-                            <span className="relative flex w-2 h-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-300" />
-                            </span>
+                        <div className="inline-flex items-center gap-3 mb-6">
+                            <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
                             <IconTrendingUp size={14} className="text-emerald-200" />
-                            <span className="text-[11.5px] uppercase tracking-[0.18em] text-white font-bold">
+                            <span className="text-[11.5px] uppercase tracking-[0.24em] text-white font-semibold">
                                 Mesuré sur 6 sites · 18 mois
                             </span>
+                            <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
                         </div>
                         <h2
                             style={{
