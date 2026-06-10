@@ -1,45 +1,46 @@
 /**
- * IsoBadge — badge officiel d'une norme ISO (LOT 49).
+ * IsoBadge — médaillon officiel d'une norme ISO (LOT 49).
  *
  * Règle plateforme : toute mention autonome d'une norme ISO s'affiche avec
- * son badge couleur, jamais en texte nu. Le verrou bicolore [ISO][45001]
- * reprend les codes visuels des marques de certification : bloc « ISO »
- * plein dans la couleur du domaine, numéro sur fond teinté, liseré assorti.
+ * son badge couleur, jamais en texte nu. Le design reprend les médaillons
+ * de certification de la section Conformité (sceau circulaire : anneau,
+ * sphère-globe colorée, ISO / numéro / édition en blanc), en version compacte.
  *
- *   <IsoBadge norm="ISO 45001" />                       → chip clair compact
- *   <IsoBadge norm="ISO 14001" size="md" withLabel />   → + domaine en clair
- *   <IsoBadge norm="ISO 9001" theme="dark" />           → sur fond sombre/photo
+ *   <IsoBadge norm="ISO 45001" />                       → médaillon seul (30px)
+ *   <IsoBadge norm="ISO 14001" size="md" withLabel />   → 42px + norme et domaine
+ *   <IsoBadge norm="ISO 9001" theme="dark" withLabel /> → libellés blancs (photo)
  */
 
 export type IsoNorm = 'ISO 45001' | 'ISO 14001' | 'ISO 9001' | 'ISO 19011' | 'ISO 31000' | 'ISO 22301';
 
 interface IsoIdentity {
-    /** Couleur profonde (bloc ISO, texte du numéro). */
+    /** Couleur principale de la sphère. */
+    color: string;
+    /** Couleur profonde (anneau, dégradé). */
     deep: string;
-    /** Couleur claire (dégradé du bloc ISO). */
-    light: string;
-    /** Fond teinté du bloc numéro (thème clair). */
-    tint: string;
+    /** Édition en vigueur. */
+    year: string;
     /** Domaine couvert, pour le libellé optionnel. */
     domain: string;
 }
 
+// Palette alignée sur les médaillons de la landing (section Conformité).
 export const ISO_IDENTITIES: Record<IsoNorm, IsoIdentity> = {
-    'ISO 45001': { deep: '#0F766E', light: '#14B8A6', tint: '#F0FDFA', domain: 'Santé & sécurité au travail' },
-    'ISO 14001': { deep: '#15803D', light: '#22C55E', tint: '#F0FDF4', domain: 'Management environnemental' },
-    'ISO 9001':  { deep: '#1D4ED8', light: '#3B82F6', tint: '#EFF6FF', domain: 'Management de la qualité' },
-    'ISO 19011': { deep: '#B45309', light: '#F59E0B', tint: '#FFFBEB', domain: 'Audit des systèmes de management' },
-    'ISO 31000': { deep: '#6D28D9', light: '#8B5CF6', tint: '#F5F3FF', domain: 'Management du risque' },
-    'ISO 22301': { deep: '#BE123C', light: '#F43F5E', tint: '#FFF1F2', domain: "Continuité d'activité" },
+    'ISO 9001':  { color: '#1D4ED8', deep: '#1E40AF', year: '2015', domain: 'Management qualité' },
+    'ISO 14001': { color: '#15803D', deep: '#166534', year: '2015', domain: 'Environnement' },
+    'ISO 19011': { color: '#6D28D9', deep: '#5B21B6', year: '2018', domain: 'Audits qualité' },
+    'ISO 45001': { color: '#0F766E', deep: '#115E59', year: '2018', domain: 'Santé & Sécurité' },
+    'ISO 31000': { color: '#C2410C', deep: '#9A3412', year: '2018', domain: 'Gestion des risques' },
+    'ISO 22301': { color: '#BE123C', deep: '#9F1239', year: '2019', domain: "Continuité d'activité" },
 };
 
 interface IsoBadgeProps {
     /** Norme, avec ou sans préfixe (« ISO 45001 » ou « 45001 »). */
     norm: string;
     size?: 'sm' | 'md';
-    /** dark : à poser sur photo ou fond sombre. */
+    /** dark : libellés blancs, liseré clair — à poser sur photo ou fond sombre. */
     theme?: 'light' | 'dark';
-    /** Affiche le domaine couvert à droite du verrou. */
+    /** Affiche « ISO XXXXX » + domaine à droite du médaillon. */
     withLabel?: boolean;
     className?: string;
 }
@@ -47,53 +48,89 @@ interface IsoBadgeProps {
 const IsoBadge = ({ norm, size = 'sm', theme = 'light', withLabel = false, className = '' }: IsoBadgeProps) => {
     const normalized = (norm.startsWith('ISO') ? norm : `ISO ${norm}`).trim() as IsoNorm;
     const id = ISO_IDENTITIES[normalized];
-    const number = normalized.replace('ISO', '').trim();
+    const code = normalized.replace('ISO', '').trim();
 
     // Norme inconnue : repli texte sobre, jamais de crash d'affichage.
     if (!id) {
         return <span className={`text-[11px] uppercase tracking-wider ${className}`}>{norm}</span>;
     }
 
-    const isMd = size === 'md';
-    const isoFont = isMd ? 'text-[10px]' : 'text-[9px]';
-    const numFont = isMd ? 'text-[13px]' : 'text-[11.5px]';
-    const blockPadX = isMd ? 'px-2' : 'px-1.5';
-    const blockPadY = isMd ? 'py-[5px]' : 'py-[3px]';
+    const px = size === 'md' ? 42 : 30;
+    const uid = `isob-${code}`;
 
     return (
-        <span className={`inline-flex items-center gap-2 ${className}`} title={`${normalized} — ${id.domain}`}>
-            <span
-                className="inline-flex items-stretch rounded-[6px] overflow-hidden flex-shrink-0"
-                style={{
-                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.35)' : `1px solid ${id.deep}40`,
-                    boxShadow: theme === 'dark'
-                        ? '0 2px 8px rgba(0,0,0,0.35)'
-                        : `0 1px 4px ${id.deep}20`,
-                }}
-            >
-                <span
-                    className={`${isoFont} ${blockPadX} ${blockPadY} font-bold tracking-[0.08em] text-white flex items-center`}
-                    style={{ background: `linear-gradient(150deg, ${id.light} 0%, ${id.deep} 90%)` }}
-                >
+        <span className={`inline-flex items-center gap-2 ${className}`} title={`${normalized}:${id.year} — ${id.domain}`}>
+            <svg width={px} height={px} viewBox="0 0 64 64" aria-hidden="true" className="flex-shrink-0">
+                <defs>
+                    <radialGradient id={`${uid}-globe`} cx="35%" cy="30%" r="75%">
+                        <stop offset="0%" stopColor={id.color} />
+                        <stop offset="55%" stopColor={id.color} stopOpacity="0.95" />
+                        <stop offset="100%" stopColor={id.deep} />
+                    </radialGradient>
+                    <linearGradient id={`${uid}-ring`} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={id.deep} />
+                        <stop offset="50%" stopColor={id.color} />
+                        <stop offset="100%" stopColor={id.deep} />
+                    </linearGradient>
+                    <linearGradient id={`${uid}-shine`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
+                        <stop offset="60%" stopColor="rgba(255,255,255,0)" />
+                    </linearGradient>
+                </defs>
+
+                {/* Liseré de détourage sur fond sombre */}
+                {theme === 'dark' && (
+                    <circle cx="32" cy="32" r="31" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+                )}
+
+                {/* Anneau extérieur du sceau */}
+                <circle cx="32" cy="32" r="29" fill="none" stroke={`url(#${uid}-ring)`} strokeWidth="2.5" />
+
+                {/* Sphère-globe colorée */}
+                <circle cx="32" cy="32" r="24.5" fill={`url(#${uid}-globe)`} />
+
+                {/* Maillage longitudes/latitudes */}
+                <g opacity="0.2" stroke="white" strokeWidth="0.5" fill="none">
+                    <ellipse cx="32" cy="32" rx="24.5" ry="9" />
+                    <ellipse cx="32" cy="32" rx="24.5" ry="17" />
+                    <ellipse cx="32" cy="32" rx="9" ry="24.5" />
+                    <ellipse cx="32" cy="32" rx="17" ry="24.5" />
+                </g>
+
+                {/* Bordure blanche interne + brillance sphère */}
+                <circle cx="32" cy="32" r="24.5" fill="none" stroke="white" strokeWidth="1.5" />
+                <ellipse cx="32" cy="22" rx="18" ry="9" fill={`url(#${uid}-shine)`} />
+
+                {/* ISO / séparateur / numéro / édition */}
+                <text x="32" y="26" textAnchor="middle" fontSize="9" fontWeight="700" fill="white" letterSpacing="2.5">
                     ISO
-                </span>
-                <span
-                    className={`${numFont} ${blockPadX} ${blockPadY} font-bold tabular-nums flex items-center`}
-                    style={
-                        theme === 'dark'
-                            ? { background: 'rgba(255,255,255,0.92)', color: id.deep }
-                            : { background: id.tint, color: id.deep }
-                    }
+                </text>
+                <line x1="20" y1="29.5" x2="44" y2="29.5" stroke="white" strokeWidth="0.8" opacity="0.6" />
+                <text
+                    x="32" y="42" textAnchor="middle" fontSize="13" fontWeight="700" fill="white"
+                    fontFamily="'Source Serif 4', Georgia, serif" letterSpacing="-0.5"
                 >
-                    {number}
-                </span>
-            </span>
+                    {code}
+                </text>
+                <text x="32" y="50.5" textAnchor="middle" fontSize="6" fontWeight="600" fill="white" opacity="0.9">
+                    :{id.year}
+                </text>
+            </svg>
+
             {withLabel && (
-                <span
-                    className={`${isMd ? 'text-[11px]' : 'text-[10px]'} uppercase tracking-[0.14em] font-semibold`}
-                    style={{ color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : id.deep }}
-                >
-                    {id.domain}
+                <span className="leading-tight">
+                    <span
+                        className="block text-[11.5px] font-bold tracking-tight"
+                        style={{ color: theme === 'dark' ? 'white' : id.deep }}
+                    >
+                        {normalized}
+                    </span>
+                    <span
+                        className="block text-[9.5px] uppercase tracking-[0.12em] font-semibold"
+                        style={{ color: theme === 'dark' ? 'rgba(255,255,255,0.75)' : id.color }}
+                    >
+                        {id.domain}
+                    </span>
                 </span>
             )}
         </span>

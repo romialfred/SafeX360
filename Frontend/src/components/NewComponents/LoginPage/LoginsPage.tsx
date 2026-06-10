@@ -7,6 +7,7 @@ import {
     IconAlertTriangle,
     IconWorld,
     IconArrowRight,
+    IconArrowLeft,
 } from '@tabler/icons-react';
 import { Button, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
@@ -150,6 +151,16 @@ const LoginsPage = () => {
                     background: 'radial-gradient(circle at 50% 38%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 50%)',
                 }}
             />
+
+            {/* ═══ Retour au site vitrine (haut gauche) ═══ */}
+            <button
+                onClick={() => navigate('/')}
+                className="absolute top-5 left-5 z-30 flex items-center gap-2 px-3 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-[12.5px] text-white"
+                aria-label={language === 'fr' ? 'Retourner sur le site SafeX 360' : 'Back to the SafeX 360 website'}
+            >
+                <IconArrowLeft size={14} aria-hidden="true" />
+                <span className="tracking-wide">{language === 'fr' ? 'Retour au site' : 'Back to site'}</span>
+            </button>
 
             {/* ═══ Toggle langue (haut droit) ═══ */}
             <button
