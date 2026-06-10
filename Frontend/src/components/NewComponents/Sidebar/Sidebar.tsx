@@ -113,6 +113,7 @@ import { collapse, expand } from '../../../slices/CollapseSlice';
 import { closeMobileSidebar } from '../../../slices/MobileSidebarSlice';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 /**
  * Logo SafeX360 — utilise le composant unifié SafeXLogoColor (LOT 41).
@@ -544,11 +545,60 @@ export const menuIdToUrl: Record<string, string> = {
 
 
 
+/**
+ * LOT 52 A3 — vocabulaire des modules du profil de permissions (CSV
+ * allowedModules). Un item de menu dont la clé résolue appartient à ce
+ * vocabulaire N'EST AFFICHÉ que si l'utilisateur possède le module.
+ * Les items hors vocabulaire (urgences, dosimétrie, dynamitage, aide…)
+ * restent régis par l'activation de module globale uniquement.
+ */
+const PERMISSION_VOCABULARY = new Set([
+    'home', 'nonConformity', 'inspections', 'meetings', 'managementTour',
+    'ppeOverview', 'ppeMonitoring', 'ppeRequest',
+    'incidentManagement', 'investigations', 'actionPlansInc',
+    'pendingActions', 'actionPlan', 'recommendations', 'adhocActions',
+    'auditPlan', 'audits', 'auditRecommendations',
+    'complianceDashboard', 'requirements', 'positionAssignments',
+    'employeeAssignments', 'documents', 'documentValidation',
+    'riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister',
+    'lessonsLearned', 'documentManager',
+    'commDashboard', 'employeeComm', 'notifications',
+    'usersManagement', 'settings',
+]);
+
+/** Surcharges explicites menu-id → module de permission. */
+const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
+    'dashboard': 'home',
+    'users-management-hub': 'usersManagement',
+    'users-list': 'usersManagement',
+    'roles-permissions': 'usersManagement',
+    'modules-management': 'usersManagement',
+    'parameters': 'settings',
+    'system-settings': 'settings',
+    'operational-references': 'settings',
+    'annual-audit-plan': 'auditPlan',
+};
+
+/** Convertit un id de menu kebab-case en clé de module camelCase. */
+const kebabToCamel = (id: string): string =>
+    id.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+
+/** Clé de permission d'un item de menu, ou null si aucune permission requise. */
+const permissionKeyFor = (menuId: string): string | null => {
+    const explicit = MENU_PERMISSION_OVERRIDES[menuId];
+    if (explicit) return explicit;
+    const camel = kebabToCamel(menuId);
+    return PERMISSION_VOCABULARY.has(camel) ? camel : null;
+};
+
 const Sidebar = () => {
     const [activeItem, setActiveItem] = useState<string>('home');
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [showModal, setShowModal] = useState(false);
     const [selectedModuleName, setSelectedModuleName] = useState('');
+    // LOT 52 A3 — permissions de l'utilisateur connecté : un module sans droit
+    // de lecture DISPARAÎT du menu (rigueur stricte, pas de simple grisage).
+    const perms = usePermissions();
     const collapsed = useAppSelector((state) => state.collapse);
     const navigate = useNavigate();
     const location = useLocation();
@@ -593,7 +643,40 @@ const Sidebar = () => {
         'blast', 'blast-dashboard', 'blast-registry',
     ]);
 
+    /**
+     * LOT 52 A3 — visibilité d'un item selon les permissions utilisateur.
+     * Pendant le chargement du profil on n'affiche que le strict minimum
+     * pour éviter le flash d'items interdits.
+     */
+    const isItemVisible = (menuId: string): boolean => {
+        if (perms.isAdmin) return true;
+        const key = permissionKeyFor(menuId);
+        if (key === null) return true; // hors vocabulaire : régi par l'activation module
+        if (perms.loading) return key === 'home';
+        return perms.canSee(key);
+    };
+
+    /** Items de menu filtrés : un parent sans aucun sous-item visible disparaît. */
+    const visibleMenuItems = menuItems
+        .map((item) => {
+            if (!item.subItems) {
+                return isItemVisible(item.id) ? item : null;
+            }
+            const subItems = item.subItems.filter((sub) => isItemVisible(sub.id));
+            if (subItems.length === 0) return null;
+            // Le parent reste visible dès qu'au moins un enfant l'est
+            return { ...item, subItems };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
     const handleItemClick = (itemId: string) => {
+        // LOT 52 A3 — défense en profondeur : même via un état périmé, aucun
+        // accès à un module non autorisé.
+        if (!isItemVisible(itemId)) {
+            setSelectedModuleName(getModuleName(itemId));
+            setShowModal(true);
+            return;
+        }
         // Check if module is enabled
         if (!isModuleEnabled(itemId) && !ALWAYS_ACCESSIBLE.has(itemId)) {
             setSelectedModuleName(getModuleName(itemId));
@@ -606,6 +689,11 @@ const Sidebar = () => {
     };
 
     const handleSubItemClick = (subItemId: string) => {
+        if (!isItemVisible(subItemId)) {
+            setSelectedModuleName(getModuleName(subItemId));
+            setShowModal(true);
+            return;
+        }
         // Check if module is enabled
         if (!isModuleEnabled(subItemId) && !ALWAYS_ACCESSIBLE.has(subItemId)) {
             setSelectedModuleName(getModuleName(subItemId));
@@ -770,7 +858,7 @@ const Sidebar = () => {
                         </div>
                     )}
                     <div className="space-y-1">
-                        {menuItems.map(item => {
+                        {visibleMenuItems.map(item => {
                             const isActive = activeItem === item.id;
                             const isExpanded = expandedItems.has(item.id);
                             const hasSubItems = item.subItems && item.subItems.length > 0;
