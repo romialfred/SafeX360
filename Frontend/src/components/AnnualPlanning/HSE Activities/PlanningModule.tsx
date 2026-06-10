@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
-import { IconCalendar, IconChartBar, IconDownload } from '@tabler/icons-react';
+import { IconCalendar, IconChartBar, IconCalendarStats, IconDownload } from '@tabler/icons-react';
 import Dashboard from './Dashboard';
 import AnnualPlanningGrid from './AnnualPlanningGrid';
 import { Button, Select } from '@mantine/core';
 import PageHeader from '../../UtilityComp/PageHeader';
 import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
-import { IconCalendarStats } from '@tabler/icons-react';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
 import { getActivitiesByYear } from '../../../services/HSEActivityService';
+import { successNotification } from '../../../utility/NotificationUtility';
+import { MONTHS_FR, formatDateFr } from '../planningLabels';
 
+/**
+ * Planification annuelle des activités HSE : tableau de bord de synthèse
+ * et planning mensuel des inspections (IGP), réunions sécurité (RSS)
+ * et tournées Leadership (TDM).
+ */
+
+const CATEGORY_LABELS: Record<string, string> = {
+    IGP: 'IGP — Inspection HSE',
+    HSE: 'RSS — Réunion sécurité',
+    TDM: 'TDM — Tournée Leadership',
+};
 
 export default function PlanningModule() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -23,6 +35,7 @@ export default function PlanningModule() {
     const [emps, setEmps] = useState<any[]>([]);
     const [empMap, setEmpMap] = useState<any>({});
     const [activities, setActivities] = useState<any[]>([]);
+
     const categories = [
         { id: 'all', label: 'Toutes activités', color: 'slate' as const },
         { id: 'IGP', label: 'IGP — Inspections HSE', color: 'blue' as const },
@@ -36,37 +49,61 @@ export default function PlanningModule() {
         { value: 'Maintenance', label: 'Maintenance' },
         { value: 'Quality', label: 'Qualité' },
         { value: 'HSE', label: 'HSE' },
-        { value: 'Management', label: 'Direction' }
+        { value: 'Management', label: 'Direction' },
     ];
 
     useEffect(() => {
-
         getEmployeesWithDepartment()
             .then((res) => {
                 const mappedEmployees = res.map((emp: any) => ({
                     label: emp.name,
-                    value: String(emp.id), // ensure value is string if form field is string
+                    value: String(emp.id),
                 }));
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
-
             })
-            .catch((_err) => { });
-    }, [])
+            .catch(() => { });
+    }, []);
+
     useEffect(() => {
         if (!currentYear) return;
-        getActivitiesByYear(currentYear).
-            then((res) => {
-                console.log(res);
-                setActivities(res);
-            }).catch(() => { })
+        getActivitiesByYear(currentYear)
+            .then((res) => {
+                setActivities(res ?? []);
+            })
+            .catch(() => { });
     }, [currentYear]);
 
-
-
+    const exportCsv = () => {
+        const headers = ['Titre', 'Catégorie', 'Mois', 'Date', 'Responsable', 'Département', 'Thème'];
+        const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const lines = activities.map((act: any) => {
+            const monthIdx = act.month && String(act.month).includes('-')
+                ? parseInt(String(act.month).split('-')[1], 10) - 1
+                : -1;
+            return [
+                act.title ?? '',
+                CATEGORY_LABELS[act.category] ?? act.category ?? '',
+                monthIdx >= 0 && monthIdx < 12 ? MONTHS_FR[monthIdx] : '',
+                act.dateTime ? formatDateFr(act.dateTime) : '',
+                empMap[act.responsibleId]?.name ?? '',
+                empMap[act.responsibleId]?.department ?? '',
+                act.theme ?? '',
+            ].map(escape).join(';');
+        });
+        const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `planning_hse_${currentYear}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        successNotification(`${activities.length} activité${activities.length > 1 ? 's' : ''} exportée${activities.length > 1 ? 's' : ''}`);
+    };
 
     return (
-        <div className="p-5 space-y-5 max-w-[1600px] mx-auto">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -76,17 +113,26 @@ export default function PlanningModule() {
                 icon={<IconCalendarStats size={22} stroke={2} />}
                 iconColor="amber"
                 title="Planification annuelle des activités HSE"
-                subtitle="ISO 45001 §6.1.4 — Programmation des causeries, formations, tournées et campagnes de sensibilisation"
-                actions={<Button size="sm" leftSection={<IconDownload size={15} />} variant="default">Exporter</Button>}
+                subtitle="Programmation des causeries, inspections, tournées et campagnes de sensibilisation — ISO 45001 §6.1.4"
+                actions={
+                    <Button
+                        size="sm"
+                        leftSection={<IconDownload size={15} />}
+                        variant="default"
+                        onClick={exportCsv}
+                        disabled={!activities.length}
+                    >
+                        Exporter CSV
+                    </Button>
+                }
             />
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4">
-
+            <div className="bg-white border border-slate-200 rounded-xl p-3">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
                     <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === 'dashboard'
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === 'dashboard'
                                 ? 'bg-teal-600 text-white'
                                 : 'text-slate-600 hover:bg-white hover:text-slate-900'
                                 }`}
@@ -96,7 +142,7 @@ export default function PlanningModule() {
                         </button>
                         <button
                             onClick={() => setActiveTab('planning')}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all ${activeTab === 'planning'
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === 'planning'
                                 ? 'bg-teal-600 text-white'
                                 : 'text-slate-600 hover:bg-white hover:text-slate-900'
                                 }`}
@@ -105,8 +151,6 @@ export default function PlanningModule() {
                             Planning
                         </button>
                     </div>
-
-                    <div className="flex items-center space-x-3">
 
                     <div className="flex items-center gap-2 flex-wrap">
                         <Select
@@ -119,28 +163,19 @@ export default function PlanningModule() {
                             w={90}
                             size="xs"
                             placeholder="Année"
+                            aria-label="Filtrer par année"
                         />
                         <Select
                             value={selectedMonth}
                             onChange={(val) => val && setSelectedMonth(val)}
                             data={[
                                 { value: 'all', label: 'Tous mois' },
-                                { value: '1', label: 'Janvier' },
-                                { value: '2', label: 'Février' },
-                                { value: '3', label: 'Mars' },
-                                { value: '4', label: 'Avril' },
-                                { value: '5', label: 'Mai' },
-                                { value: '6', label: 'Juin' },
-                                { value: '7', label: 'Juillet' },
-                                { value: '8', label: 'Août' },
-                                { value: '9', label: 'Septembre' },
-                                { value: '10', label: 'Octobre' },
-                                { value: '11', label: 'Novembre' },
-                                { value: '12', label: 'Décembre' },
+                                ...MONTHS_FR.map((month, idx) => ({ value: String(idx + 1), label: month })),
                             ]}
                             w={130}
                             size="xs"
                             placeholder="Mois"
+                            aria-label="Filtrer par mois"
                         />
                         <Select
                             value={selectedDepartment}
@@ -149,66 +184,62 @@ export default function PlanningModule() {
                             w={150}
                             size="xs"
                             placeholder="Département"
+                            aria-label="Filtrer par département"
                         />
                         <Select
                             value={selectedEmployee}
                             onChange={(val) => val && setSelectedEmployee(val)}
                             data={[
                                 { value: 'all', label: 'Tous employés' },
-                                ...emps
+                                ...emps,
                             ]}
                             w={170}
                             size="xs"
                             placeholder="Employé"
                             searchable
+                            aria-label="Filtrer par employé"
                         />
-                    </div>
                     </div>
                 </div>
             </div>
 
-            <div className="">
-                {activeTab === 'dashboard' ? (
-                    <Dashboard
-                        selectedMonth="Full Year"
-                        selectedDepartment={selectedDepartment}
-                        activities={activities}
+            {activeTab === 'dashboard' ? (
+                <Dashboard
+                    year={currentYear}
+                    selectedDepartment={selectedDepartment}
+                    activities={activities}
+                />
+            ) : (
+                <div className="space-y-4">
+                    <SegmentedFilter
+                        value={selectedCategory}
+                        onChange={setSelectedCategory}
+                        options={categories.map(cat => ({
+                            value: cat.id,
+                            label: cat.label,
+                            color: cat.color,
+                            count: cat.id === 'all'
+                                ? activities.length
+                                : activities.filter(a => a.category === cat.id).length,
+                        }))}
                     />
-                ) : (
-                    <div className="space-y-4">
-                        {/* Filtre catégories pill-style pro */}
-                        <SegmentedFilter
-                            value={selectedCategory}
-                            onChange={setSelectedCategory}
-                            options={categories.map(cat => ({
-                                value: cat.id,
-                                label: cat.label,
-                                color: cat.color,
-                                count: cat.id === 'all'
-                                    ? activities.length
-                                    : activities.filter(a => a.category === cat.id).length,
-                            }))}
-                        />
 
-                        {/* Annual Planning Grid */}
-                        <AnnualPlanningGrid
-                            year={currentYear}
-                            selectedMonth={selectedMonth}
-                            selectedCategory={selectedCategory}
-                            selectedDepartment={selectedDepartment}
-                            selectedEmployee={selectedEmployee}
-                            onStatsUpdate={setPlanningStats}
-                            onEmployeesUpdate={setAllEmployees}
-                            planningStats={planningStats}
-                            emps={emps}
-                            empMap={empMap}
-                            allActivities={activities}
-                            setAllActivities={setActivities}
-
-                        />
-                    </div>
-                )}
-            </div>
+                    <AnnualPlanningGrid
+                        year={currentYear}
+                        selectedMonth={selectedMonth}
+                        selectedCategory={selectedCategory}
+                        selectedDepartment={selectedDepartment}
+                        selectedEmployee={selectedEmployee}
+                        onStatsUpdate={setPlanningStats}
+                        onEmployeesUpdate={setAllEmployees}
+                        planningStats={planningStats}
+                        emps={emps}
+                        empMap={empMap}
+                        allActivities={activities}
+                        setAllActivities={setActivities}
+                    />
+                </div>
+            )}
         </div>
     );
 }

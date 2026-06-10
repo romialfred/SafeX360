@@ -1,159 +1,202 @@
-import { Breadcrumbs, Text, Card, Badge, Group, Progress as MantineProgress } from "@mantine/core";
-import { IconClock, IconUser, IconCalendar, IconPhoto } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import {
+    IconBolt,
+    IconCalendarDue,
+    IconClock,
+    IconHistory,
+    IconPaperclip,
+    IconUser,
+} from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import SafeHtml from "../../UtilityComp/SafeHtml";
 import { getActionById } from "../../../services/CorrectiveActionService";
 import { getAllActionProcessByActionId } from "../../../services/ActionProcessService";
-import { actionStatusesMap } from "../../../Data/DropdownData";
-import { formatDateShort } from "../../../utility/DateFormats";
 import { handlePreview, getFriendlyFileType } from "../../../utility/DocumentUtility";
-import SafeHtml from "../../UtilityComp/SafeHtml";
+import { adhocStatusConfig, formatDateFr, progressBarClass } from "./adhocLabels";
+
+/**
+ * Fiche de consultation d'une suggestion d'amélioration : description,
+ * pièces jointes et historique complet des mises à jour.
+ */
 
 const AdhocActionDetails = () => {
-  const { id } = useParams();
-  const [action, setAction] = useState<any>({});
-  const [history, setHistory] = useState<any[]>([]);
+    const { id } = useParams();
+    const [action, setAction] = useState<any>({});
+    const [history, setHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    getActionById(id)
-      .then((res) => setAction(res))
-      .catch((_err) => {});
+    useEffect(() => {
+        getActionById(id)
+            .then((res) => setAction(res))
+            .catch(() => { });
 
-    getAllActionProcessByActionId(id)
-      .then((res) => setHistory(res))
-      .catch((_err) => {});
-  }, [id]);
+        getAllActionProcessByActionId(id)
+            .then((res) => setHistory(res))
+            .catch(() => { });
+    }, [id]);
 
-  return (
-    <div className="flex flex-col gap-5 p-5">
-      <div className="flex justify-between items-center">
-        <div>
-          {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
-          <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Improvement Idea Details</div>
-          <Breadcrumbs mt="xs">
-            <Link className="hover:!underline" to="/">
-              <Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text>
-            </Link>
-            <Link className="hover:!underline" to="/adhoc-actions">
-              <Text c="dimmed" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
-            </Link>
-            <Text c="teal" fw={500}>Details</Text>
-          </Breadcrumbs>
-        </div>
-      </div>
+    const cfg = adhocStatusConfig(action?.status);
+    const progress = Number(action?.progress ?? 0);
 
-      {/* LOT 40 P1: responsive grid for details layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {/* Left: Full details, no inputs */}
-        <div className="col-span-2 self-start p-5 space-y-4 rounded-md border shadow-sm border-gray-200 bg-white">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-col">
-              <h2 className="text-lg text-gray-900">{action?.actionName || '-'}</h2>
-              <div className="mt-2 flex flex-wrap gap-2 items-center text-sm">
-                <div className="inline-flex items-center gap-1 text-blue-700 bg-blue-100 px-2 py-1 rounded-full border border-blue-200">
-                  <IconUser size={16} />
-                  <span>{action?.assignedEmployeeName || '-'}</span>
-                </div>
-                <div className="inline-flex items-center gap-1 text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full border border-yellow-200">
-                  <IconCalendar size={16} />
-                  <span>Due: {action?.deadline ? formatDateShort(action.deadline) : '-'}</span>
-                </div>
-                <Badge radius="xs" color="violet" variant="light" className="!capitalize">
-                  {action?.status ? actionStatusesMap[action.status] : '-'}
-                </Badge>
-              </div>
-            </div>
-            <div className="w-[90px]">
-              <div className="text-sm text-gray-700 mb-1">Progress</div>
-              <MantineProgress.Root size={14} className="!rounded-full" style={{ width: 90 }}>
-                <MantineProgress.Section value={Number(action?.progress || 0)} color="teal">
-                  <MantineProgress.Label>{action?.progress ?? 0}%</MantineProgress.Label>
-                </MantineProgress.Section>
-              </MantineProgress.Root>
-            </div>
-          </div>
+    return (
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: "Suggestions d'amélioration", to: '/adhoc-actions' },
+                    { label: 'Détail de la suggestion' },
+                ]}
+                icon={<IconBolt size={22} stroke={2} />}
+                iconColor="orange"
+                title="Détail de la suggestion"
+                subtitle="Fiche complète, pièces jointes et historique des mises à jour"
+            />
 
-          {action?.description && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-              <p className="text-blue-600 text-sm mb-1">Description</p>
-              {/* LOT 41 P0 XSS fix */}
-              <SafeHtml html={action.description} className="text-gray-700 text-sm" />
-            </div>
-          )}
-
-          {Array.isArray(action?.docs) && action.docs.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-3">
-              <p className="text-gray-700 text-sm mb-2">Attachments</p>
-              <div className="flex flex-wrap gap-2">
-                {action.docs.map((doc: any, idx: number) => (
-                  <Badge key={idx} className="!cursor-pointer" color="orange" variant="light" leftSection={<IconPhoto size={12} />} onClick={() => handlePreview(doc)}>
-                    {doc?.name} ({getFriendlyFileType(doc?.type)})
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Update history */}
-        <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200 bg-white">
-          <p className="text-lg items-center mb-2 flex gap-1 text-amber-600">
-            <IconClock /> Update History
-          </p>
-          {history.length === 0 && (<div className="text-gray-600">No updates available</div>)}
-
-          {history.slice().reverse().map((x: any, index: number, arr: any[]) => {
-            const previousProgress = index < arr.length - 1 ? arr[index + 1].progress : 0;
-            const progressMade = (x.progress ?? 0) - (previousProgress ?? 0);
-
-            return (
-              <Card key={index} shadow="sm" padding="sm" radius="md" withBorder>
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center">
-                    <div className="rounded-4xl">
-                      <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
-                        <IconClock /> {x?.createdAt ? formatDateShort(x.createdAt) : '-'}
-                      </p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                {/* ─── Fiche de la suggestion ─────────────────────────────── */}
+                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <h2
+                                className="text-slate-800 leading-snug"
+                                style={{
+                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    letterSpacing: '-0.01em',
+                                }}
+                            >
+                                {action?.actionName || '—'}
+                            </h2>
+                            <div className="mt-2 flex flex-wrap gap-2 items-center">
+                                <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
+                                    {cfg.label}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[12px] text-slate-600">
+                                    <IconUser size={13} className="text-slate-400" aria-hidden="true" />
+                                    {action?.assignedEmployeeName || '—'}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[12px] text-slate-600">
+                                    <IconCalendarDue size={13} className="text-slate-400" aria-hidden="true" />
+                                    Échéance : {action?.deadline ? formatDateFr(action.deadline) : '—'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-28 flex-shrink-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] text-slate-500">Progression</span>
+                                <span className="text-[11px] text-slate-800 tabular-nums">{progress}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+                                <div className={`h-full rounded-full ${progressBarClass(progress)}`} style={{ width: `${progress}%` }} />
+                            </div>
+                        </div>
                     </div>
-                    <Badge radius="sm" variant="outline" color="purple" className="!capitalize">
-                      {x?.status ? actionStatusesMap[x.status] : '-'}
-                    </Badge>
-                  </div>
 
-                  <MantineProgress.Root size={20}>
-                    <MantineProgress.Section value={previousProgress} color="blue">
-                      <MantineProgress.Label>{previousProgress}</MantineProgress.Label>
-                    </MantineProgress.Section>
-                    {progressMade > 0 && (
-                      <MantineProgress.Section value={progressMade} color="teal">
-                        <MantineProgress.Label className="text-xs">{progressMade}</MantineProgress.Label>
-                      </MantineProgress.Section>
+                    {action?.description && (
+                        <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
+                            <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Description</p>
+                            <SafeHtml html={action.description} className="text-slate-700 text-[12.5px]" />
+                        </div>
                     )}
-                  </MantineProgress.Root>
 
-                  <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                    <p className="text-blue-400">Update Details</p>
-                    {/* LOT 41 P0 XSS fix */}
-                    <SafeHtml html={x?.description || '-'} className="text-gray-700 mt-1 text-sm" />
-                  </div>
-
-                  {Array.isArray(x?.docs) && x.docs.length > 0 && (
-                    <Group>
-                      {x.docs.map((doc: any, i: number) => (
-                        <Badge key={i} size='sm' className='!cursor-pointer' onClick={() => handlePreview(doc)} leftSection={<IconPhoto size={12} />} color="orange" variant="light">
-                          {doc.name}
-                        </Badge>
-                      ))}
-                    </Group>
-                  )}
+                    {Array.isArray(action?.docs) && action.docs.length > 0 && (
+                        <div className="rounded-md border border-slate-200 p-3">
+                            <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-2">Pièces jointes</p>
+                            <div className="flex flex-wrap gap-2">
+                                {action.docs.map((doc: any, idx: number) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => handlePreview(doc)}
+                                        className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-[11.5px] text-slate-700 hover:border-teal-300 hover:text-teal-700"
+                                        aria-label={`Ouvrir la pièce jointe ${doc?.name}`}
+                                    >
+                                        <IconPaperclip size={12} aria-hidden="true" />
+                                        {doc?.name} ({getFriendlyFileType(doc?.type)})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </Card>
-            );
-          })}
+
+                {/* ─── Historique des mises à jour ─────────────────────────── */}
+                <aside className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                    <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                        <span className="inline-flex p-1.5 rounded-md bg-orange-50 text-orange-700">
+                            <IconHistory size={15} stroke={1.8} />
+                        </span>
+                        <h3
+                            className="text-slate-800"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                letterSpacing: '-0.01em',
+                            }}
+                        >
+                            Historique des mises à jour
+                        </h3>
+                    </div>
+
+                    {history.length === 0 && (
+                        <p className="text-[12.5px] text-slate-500">Aucune mise à jour enregistrée pour le moment.</p>
+                    )}
+
+                    {history.slice().reverse().map((x: any, index: number, arr: any[]) => {
+                        const previousProgress = index < arr.length - 1 ? arr[index + 1].progress : 0;
+                        const progressMade = (x.progress ?? 0) - (previousProgress ?? 0);
+                        const stepCfg = adhocStatusConfig(x?.status);
+
+                        return (
+                            <div key={index} className="rounded-lg border border-slate-200 p-3">
+                                <div className="flex justify-between items-center gap-2">
+                                    <p className="text-[11.5px] text-slate-500 flex gap-1 items-center">
+                                        <IconClock size={12} aria-hidden="true" /> {x?.createdAt ? formatDateFr(x.createdAt) : '—'}
+                                    </p>
+                                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${stepCfg.chip}`}>
+                                        {stepCfg.label}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={x.progress ?? 0} aria-valuemin={0} aria-valuemax={100}>
+                                        <div className={`h-full rounded-full ${progressBarClass(x.progress ?? 0)}`} style={{ width: `${x.progress ?? 0}%` }} />
+                                    </div>
+                                    <span className="text-[11.5px] text-slate-600 tabular-nums">
+                                        {previousProgress}% {progressMade > 0 ? `→ ${x.progress}%` : ''}
+                                    </span>
+                                </div>
+
+                                <div className="mt-2">
+                                    <SafeHtml html={x?.description || '—'} className="text-slate-600 text-[12px]" />
+                                </div>
+
+                                {Array.isArray(x?.docs) && x.docs.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {x.docs.map((doc: any, i: number) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => handlePreview(doc)}
+                                                className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-700 hover:border-teal-300 hover:text-teal-700"
+                                                aria-label={`Ouvrir la pièce jointe ${doc?.name}`}
+                                            >
+                                                <IconPaperclip size={11} aria-hidden="true" />
+                                                {doc.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </aside>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default AdhocActionDetails;

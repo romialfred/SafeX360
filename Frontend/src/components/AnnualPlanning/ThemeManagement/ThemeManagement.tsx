@@ -1,240 +1,172 @@
 import { useEffect, useState } from 'react';
 import ThemeCard from './ThemeCard';
-import {
-    IconPlus,
-    IconBook,
-    IconUsers,
-    IconRoute,
-    IconShield,
-    IconLeaf,
-    IconHeart,
-    IconAlertTriangle,
-    IconFlag,
-} from '@tabler/icons-react';
+import { IconBook, IconBookmark, IconPlus } from '@tabler/icons-react';
 import { Button, Modal, Select, Textarea, TextInput } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import PageHeader from '../../UtilityComp/PageHeader';
-import { IconBookmark } from '@tabler/icons-react';
-import { themeData } from '../../../Data/DummyData';
+import EmptyState from '../../UtilityComp/EmptyState';
 import { useForm } from '@mantine/form';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
-import { createTheme, getThemesByYear, updateTheme } from '../../../services/HSEThemeService';
+import { createTheme, deleteTheme, getThemesByYear, updateTheme } from '../../../services/HSEThemeService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import {
+    MONTHS_FR,
+    THEME_CATEGORY_OPTIONS,
+    THEME_TYPE_CONFIG,
+    THEME_TYPE_OPTIONS,
+    themeTypeConfig,
+} from '../planningLabels';
 
+/**
+ * Thèmes mensuels des causeries et tournées : répartition par type,
+ * calendrier annuel par mois, création / modification / suppression.
+ */
 
-const types = [
-    { id: 'securite', label: 'Security', color: 'bg-red-500', icon: IconShield },
-    { id: 'environnement', label: 'Environment', color: 'bg-green-600', icon: IconLeaf },
-    { id: 'sante-securite', label: 'Health Safety', color: 'bg-blue-500', icon: IconHeart },
-    { id: 'sensibilisation', label: 'Awareness', color: 'bg-orange-500', icon: IconAlertTriangle },
-    { id: 'programme-national', label: 'National Program', color: 'bg-purple-600', icon: IconFlag }
-];
+/** Convertit un thème renvoyé par l'API vers le format interne d'affichage. */
+const mapTheme = (item: any) => {
+    const currentYear = new Date().getFullYear();
+    let monthIdx = 0;
+    let monthStr = '';
+    if (item.month) {
+        if (typeof item.month === 'string' && item.month.includes('-')) {
+            monthIdx = parseInt(item.month.split('-')[1], 10) - 1;
+            monthStr = item.month;
+        } else if (typeof item.month === 'number') {
+            monthIdx = item.month - 1;
+            monthStr = `${currentYear}-${String(item.month).padStart(2, '0')}-01`;
+        }
+    }
+    return {
+        ...item,
+        month: monthStr,
+        _monthIdx: monthIdx,
+    };
+};
 
-const categories = [
-    { id: 'health-safety-meeting', label: 'RSS', color: 'bg-green-500', icon: IconUsers },
-    { id: 'management-tour', label: 'TDM', color: 'bg-purple-500', icon: IconRoute }
-];
-
-const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const typeOptions = [
-    { label: "Security", value: "securite" },
-    { label: "Environment", value: "environnement" },
-    { label: "Health Safety", value: "sante-securite" },
-    { label: "Awareness", value: "sensibilisation" },
-    { label: "National Program", value: "programme-national" },
-];
-const categoryOptions = [
-    { label: "Health & Safety Meeting", value: "RSS" },
-    { label: "Leadership Walk", value: "TDM" },
-];
 export default function ThemeManagement() {
-    const [themes, setThemes] = useState<any[]>(themeData);
+    const [themes, setThemes] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const dispatch = useDispatch();
     const [opened, setOpened] = useState(false);
-    const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
-
+    const [selectedTheme, setSelectedTheme] = useState<any | null>(null);
+    const currentYear = new Date().getFullYear();
 
     useEffect(() => {
-        dispatch(showOverlay());
-        getThemesByYear(new Date().getFullYear()).then((data) => {
-            const currentYear = new Date().getFullYear();
-            // Map API data to expected format for UI, but keep original category/month for display
-            const mapped = data.map((item: any) => {
-                let monthIdx = 0;
-                let monthStr = '';
-                if (item.month) {
-                    if (typeof item.month === 'string' && item.month.includes('-')) {
-                        monthIdx = parseInt(item.month.split('-')[1], 10) - 1;
-                        monthStr = item.month;
-                    } else if (typeof item.month === 'number') {
-                        monthIdx = item.month - 1;
-                        monthStr = `${currentYear}-${String(item.month).padStart(2, '0')}-01`;
-                    }
-                }
-                // Keep original category for display, but add internalCategory for grouping
-                let internalCategory = item.category;
-                if (internalCategory === 'TDM') internalCategory = 'management-tour';
-                if (internalCategory === 'RSS') internalCategory = 'health-safety-meeting';
-                return {
-                    ...item,
-                    month: monthStr, // keep original string for display
-                    _monthIdx: monthIdx, // for grouping
-                    _internalCategory: internalCategory, // for grouping
-                };
-            });
-            setThemes(mapped);
-            console.log(mapped);
-        }).catch(() => { }).finally(() => {
-            dispatch(hideOverlay());
-        })
+        setLoading(true);
+        getThemesByYear(currentYear)
+            .then((data) => {
+                setThemes((data ?? []).map(mapTheme));
+            })
+            .catch((err) => {
+                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des thèmes');
+            })
+            .finally(() => setLoading(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const form = useForm({
         initialValues: {
-            title: "",
+            title: '',
             description: '',
-            category: undefined,
+            category: undefined as any,
             type: '',
             month: undefined as any,
-
         },
         validate: {
-            title: (value) => (value ? null : "Title is required"),
-            description: (value) => (value ? null : "Description is required"),
-            // category: (value) => (value ? null : "Category is required"),
-            type: (value) => (value ? null : "Type is required"),
-            month: (value) => (value ? null : "Month is required")
+            title: (value) => (value?.trim() ? null : "L'intitulé du thème est obligatoire"),
+            description: (value) => (value?.trim() ? null : 'La description est obligatoire'),
+            type: (value) => (value ? null : 'Le type est obligatoire'),
+            month: (value) => (value ? null : 'Le mois est obligatoire'),
         },
-
     });
 
     const handleSaveTheme = async (values: any) => {
         dispatch(showOverlay());
 
-        const currentYear = new Date().getFullYear();
         const payload = {
-            title: values.title,
-            description: values.description,
+            title: values.title.trim(),
+            description: values.description.trim(),
             category: values.category,
             type: values.type,
-            month: `${currentYear}-${String(months.indexOf(values.month) + 1).padStart(2, '0')}-01`
-        };
-
-        // Helper to map API theme to UI format
-        const mapTheme = (item: any) => {
-            let monthIdx = 0;
-            let monthStr = '';
-            const year = new Date().getFullYear();
-            if (item.month) {
-                if (typeof item.month === 'string' && item.month.includes('-')) {
-                    monthIdx = parseInt(item.month.split('-')[1], 10) - 1;
-                    monthStr = item.month;
-                } else if (typeof item.month === 'number') {
-                    monthIdx = item.month - 1;
-                    monthStr = `${year}-${String(item.month).padStart(2, '0')}-01`;
-                }
-            }
-            let internalCategory = item.category;
-            if (internalCategory === 'TDM') internalCategory = 'management-tour';
-            if (internalCategory === 'RSS') internalCategory = 'health-safety-meeting';
-            return {
-                ...item,
-                month: monthStr,
-                _monthIdx: monthIdx,
-                _internalCategory: internalCategory,
-            };
+            month: `${currentYear}-${String(MONTHS_FR.indexOf(values.month) + 1).padStart(2, '0')}-01`,
         };
 
         try {
-            if (selectedActivity && selectedActivity.id) {
-                const updatedTheme = await updateTheme({ ...payload, id: selectedActivity.id });
-                const mappedTheme = mapTheme({ ...updatedTheme, id: selectedActivity.id });
-                setThemes(themes =>
-                    themes.map(theme =>
-                        theme.id == selectedActivity.id ? mappedTheme : theme
-                    )
-                );
-                successNotification('Theme updated successfully');
+            if (selectedTheme && selectedTheme.id) {
+                const updatedTheme = await updateTheme({ ...payload, id: selectedTheme.id });
+                const mapped = mapTheme({ ...updatedTheme, id: selectedTheme.id });
+                setThemes((prev) => prev.map((theme) => (theme.id == selectedTheme.id ? mapped : theme)));
+                successNotification('Thème mis à jour');
             } else {
                 const newTheme = await createTheme(payload);
-                const mappedTheme = mapTheme(newTheme);
-                setThemes(themes => [...themes, mappedTheme]);
-                successNotification('Theme added successfully');
+                setThemes((prev) => [...prev, mapTheme(newTheme)]);
+                successNotification('Thème ajouté au calendrier');
             }
 
             form.reset();
             setOpened(false);
-            setSelectedActivity(null);
-
+            setSelectedTheme(null);
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || 'Something went wrong');
+            errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
         } finally {
             dispatch(hideOverlay());
         }
     };
 
-
     useEffect(() => {
-        if (selectedActivity) {
-            // Convert month string (e.g., '2025-02-01') to month name for Select
+        if (selectedTheme) {
             let monthName = '';
-            if (selectedActivity.month && typeof selectedActivity.month === 'string' && selectedActivity.month.includes('-')) {
-                const monthIdx = parseInt(selectedActivity.month.split('-')[1], 10) - 1;
-                if (monthIdx >= 0 && monthIdx < months.length) {
-                    monthName = months[monthIdx];
+            if (selectedTheme.month && typeof selectedTheme.month === 'string' && selectedTheme.month.includes('-')) {
+                const monthIdx = parseInt(selectedTheme.month.split('-')[1], 10) - 1;
+                if (monthIdx >= 0 && monthIdx < MONTHS_FR.length) {
+                    monthName = MONTHS_FR[monthIdx];
                 }
             }
             form.setValues({
-                title: selectedActivity.title || '',
-                description: selectedActivity.description || '',
-                category: selectedActivity.category || '',
-                type: selectedActivity.type || '',
+                title: selectedTheme.title || '',
+                description: selectedTheme.description || '',
+                category: selectedTheme.category || '',
+                type: selectedTheme.type || '',
                 month: monthName || '',
             });
         } else {
             form.reset();
         }
-    }, [selectedActivity]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTheme]);
 
-
-
-    const handleDeleteTheme = (id: string) => {
-        if (confirm('Are you sure you want to delete this theme?')) {
-            setThemes(themes.filter(theme => theme.id !== id));
-        }
+    const handleDeleteTheme = (theme: any) => {
+        modals.openConfirmModal({
+            title: <span className="text-base">Supprimer le thème</span>,
+            centered: true,
+            children: (
+                <span className="text-sm">
+                    Souhaitez-vous supprimer le thème : <strong>{theme.title}</strong> ? Cette action est irréversible.
+                </span>
+            ),
+            labels: { confirm: 'Oui, supprimer', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: 'default' },
+            confirmProps: { color: 'red', variant: 'filled' },
+            onConfirm: () => {
+                dispatch(showOverlay());
+                deleteTheme(theme.id)
+                    .then(() => {
+                        successNotification('Thème supprimé du calendrier');
+                        setThemes((prev) => prev.filter((t) => t.id !== theme.id));
+                    })
+                    .catch((err) => {
+                        errorNotification(err.response?.data?.errorMessage || 'La suppression a échoué');
+                    })
+                    .finally(() => dispatch(hideOverlay()));
+            },
+        });
     };
 
-    // Use internal category for grouping, but show original category in card
-    const getCategoryInfo = (categoryId: string) => {
-        // Accept both internal and API category
-        if (categoryId === 'TDM') return categories.find(cat => cat.label === 'TDM') || categories[1];
-        if (categoryId === 'RSS') return categories.find(cat => cat.label === 'RSS') || categories[0];
-        return categories.find(cat => cat.id === categoryId) || categories[0];
-    };
-
-    const getTypeInfo = (typeId: string) => {
-        return types.find(type => type.id === typeId) || types[0];
-    };
-
-    // Group by month index, but keep original month string for display
-    const getThemesByMonth = (monthIndex: number) => {
-        return themes.filter(theme => theme._monthIdx === monthIndex);
-    };
-
-    // const getTotalParticipants = () => {
-    //     return themes.reduce((total, theme) => total + (theme.participants || 0), 0);
-    // };
-
-    // const getTotalThemes = () => {
-    //     return themes.length;
-    // };
+    const getThemesByMonth = (monthIndex: number) => themes.filter((theme) => theme._monthIdx === monthIndex);
 
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -244,240 +176,217 @@ export default function ThemeManagement() {
                 icon={<IconBookmark size={22} stroke={2} />}
                 iconColor="amber"
                 title="Thèmes mensuels"
-                subtitle="Organisation et standardisation des sujets de causeries pour s'aligner avec les objectifs sécurité"
+                subtitle="Calendrier des sujets de causeries sécurité et de tournées Leadership"
                 actions={
                     <Button color="amber" size="sm" leftSection={<IconPlus size={15} />} onClick={() => setOpened(true)}>
                         Nouveau thème
                     </Button>
                 }
             />
-            <div className='border p-4 rounded-lg border-gray-300 shadow-sm flex flex-col gap-6'>
 
-                <div className="flex flex-col gap-5">
-                    {/* Types Overview - En haut */}
-                    <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-300">
-                        {/* <h3 className="text-lg text-slate-800 mb-4">Distribution by Type</h3> */}
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            {types.map((type) => {
-                                const typeThemes = themes.filter(theme => theme.type === type.id);
-                                const TypeIcon = type.icon;
+            {/* Répartition par type */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex items-center justify-between mb-2.5">
+                    <h2
+                        className="text-slate-800"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        Répartition par type
+                    </h2>
+                    <span className="text-[11.5px] text-slate-500">
+                        {loading ? 'Chargement…' : `${themes.length} thème${themes.length > 1 ? 's' : ''} en ${currentYear}`}
+                    </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {Object.entries(THEME_TYPE_CONFIG).map(([typeId, cfg]) => {
+                        const count = themes.filter((theme) => theme.type === typeId).length;
+                        return (
+                            <div key={typeId} className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} aria-hidden="true" />
+                                <div className="min-w-0">
+                                    <p className="text-[15px] text-slate-800 tabular-nums leading-tight">{loading ? '…' : count}</p>
+                                    <p className="text-[10.5px] uppercase tracking-wider text-slate-500 truncate">{cfg.label}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Calendrier annuel */}
+            <div className="bg-white rounded-xl border border-slate-200">
+                <div className="px-4 py-3 border-b border-slate-200">
+                    <h2
+                        className="text-slate-800"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        Thèmes par mois
+                    </h2>
+                    <p className="text-[11.5px] text-slate-500 mt-0.5">
+                        Sujets retenus pour les réunions sécurité (RSS) et les tournées Leadership (TDM)
+                    </p>
+                </div>
+
+                <div className="p-4">
+                    {loading ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3" aria-busy="true">
+                            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                                <div key={i} className="h-40 rounded-lg bg-slate-100 animate-pulse" />
+                            ))}
+                        </div>
+                    ) : !themes.length ? (
+                        <EmptyState
+                            icon={<IconBook size={24} />}
+                            title="Aucun thème défini pour l'année"
+                            description="Planifiez les premiers sujets de causeries pour cadrer les réunions sécurité et tournées Leadership."
+                            compact
+                            action={
+                                <Button size="xs" color="amber" leftSection={<IconPlus size={14} />} onClick={() => setOpened(true)}>
+                                    Nouveau thème
+                                </Button>
+                            }
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                            {MONTHS_FR.map((month, index) => {
+                                const monthThemes = getThemesByMonth(index);
                                 return (
-                                    <div key={type.id} className="text-center">
-                                        <div className={`w-12 h-12 ${type.color} rounded-lg flex items-center justify-center mx-auto mb-2`}>
-                                            <TypeIcon className="w-6 h-6 text-white" />
+                                    <div key={month} className="border border-slate-200 rounded-lg overflow-hidden">
+                                        <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                                            <h3 className="text-[13px] text-slate-800">{month}</h3>
+                                            <span className="text-[10.5px] text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded tabular-nums">
+                                                {monthThemes.length} thème{monthThemes.length > 1 ? 's' : ''}
+                                            </span>
                                         </div>
-                                        <div className="text-lg text-slate-800">{typeThemes.length}</div>
-                                        <div className="text-xs text-slate-600">{type.label}</div>
+
+                                        <div className="p-3 min-h-[120px]">
+                                            {monthThemes.length === 0 ? (
+                                                <div className="text-center text-slate-400 py-5">
+                                                    <IconBook className="w-6 h-6 mx-auto mb-1.5 opacity-50" aria-hidden="true" />
+                                                    <p className="text-[11.5px]">Aucun thème défini</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {monthThemes.map((theme) => (
+                                                        <ThemeCard
+                                                            key={theme.id}
+                                                            theme={theme}
+                                                            typeInfo={themeTypeConfig(theme.type)}
+                                                            onEdit={(t) => {
+                                                                setSelectedTheme(t);
+                                                                setOpened(true);
+                                                            }}
+                                                            onDelete={handleDeleteTheme}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
                         </div>
-                    </div>
-
-                    {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
-                        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
-                            <h3 className="text-lg text-slate-800 mb-4">Passed Themes</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div className="text-2xl text-teal-600">{getTotalThemes()}</div>
-                                    <div className="text-sm text-slate-600">Total Themes</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl text-blue-600">{getTotalParticipants()}</div>
-                                    <div className="text-sm text-slate-600">Total Participants</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {categories.map((category) => {
-                            const categoryThemes = themes.filter(theme => theme.category === category.id);
-                            const categoryParticipants = categoryThemes.reduce((total, theme) => total + (theme.participants || 0), 0);
-                            const CategoryIcon = category.icon;
-                            return (
-                                <div key={category.id} className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
-                                    <div className="flex items-center mb-4">
-                                        <div className={`w-10 h-10 ${category.color} rounded-lg flex items-center justify-center mr-3`}>
-                                            <CategoryIcon className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-slate-800">{category.label}</h3>
-                                            <p className="text-sm text-slate-600">{categoryThemes.length} thème(s) défini(s)</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <div className="text-2xl text-slate-800">{categoryThemes.length}</div>
-                                            <div className="text-sm text-slate-600">Thèmes</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-2xl text-blue-600">{categoryParticipants}</div>
-                                            <div className="text-sm text-slate-600">Participants</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div> */}
-
-                    <div className="bg-white rounded-lg shadow-md border border-gray-300">
-                        <div className="p-6 border-b border-slate-200">
-                            <h3 className="text-lg text-slate-800">Themes by Month</h3>
-                            <p className="text-sm text-slate-600 mt-1">
-                                Theme management for health safety meetings and management tours
-                            </p>
-                        </div>
-
-                        <div className="p-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                                {months.map((month, index) => {
-                                    const monthThemes = getThemesByMonth(index);
-                                    // const monthParticipants = monthThemes.reduce((total, theme) => total + (theme.participants || 0), 0);
-                                    return (
-                                        <div key={month} className="border border-slate-200 rounded-lg">
-                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                                                <h4 className="text-slate-800">{month}</h4>
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                                                        {monthThemes.length} theme(s)
-                                                    </span>
-                                                    {/* <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                                                        {monthParticipants} participants
-                                                    </span> */}
-                                                </div>
-                                            </div>
-
-                                            <div className="p-4 min-h-[200px]">
-                                                {monthThemes.length === 0 ? (
-                                                    <div className="text-center text-slate-400 py-8">
-                                                        <IconBook className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                                        <p className="text-sm">No theme defined</p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        {monthThemes.map(theme => (
-                                                            <ThemeCard
-                                                                key={theme.id}
-                                                                theme={{
-                                                                    ...theme,
-                                                                    // Show original category and month string in card
-                                                                    category: theme.category,
-                                                                    month: theme.month,
-                                                                }}
-                                                                categoryInfo={getCategoryInfo(theme.category)}
-                                                                typeInfo={getTypeInfo(theme.type)}
-                                                                onEdit={(theme) => {
-                                                                    setSelectedActivity(theme);
-                                                                    setOpened(true);
-                                                                }}
-                                                                onDelete={handleDeleteTheme}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
-            {/* Modal d'ajout/modification de thème */}
+
+            {/* Modal d'ajout / modification de thème */}
             <Modal
                 opened={opened}
                 onClose={() => {
                     setOpened(false);
-                    setSelectedActivity(null); // ✅ Reset edit mode
+                    setSelectedTheme(null);
                 }}
-                title={<h1 className="text-lg text-blue-500">
-                    {selectedActivity ? 'Edit Theme' : 'New Theme'}
-                </h1>
+                title={
+                    <span
+                        className="text-slate-800"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontSize: '15px',
+                            fontWeight: 600,
+                            letterSpacing: '-0.01em',
+                        }}
+                    >
+                        {selectedTheme ? 'Modifier le thème' : 'Nouveau thème mensuel'}
+                    </span>
                 }
                 centered
-                size="xl"
+                size="lg"
                 overlayProps={{
                     backgroundOpacity: 0.55,
                     blur: 3,
-                }}>
-                <div className="">
-                    <div className="">
-
-                        <form onSubmit={form.onSubmit(handleSaveTheme)} className="space-y-4">     <div>
-
-                            <TextInput
-                                label="Theme"
-                                type="text"
-                                {...form.getInputProps("title")}
-                                placeholder="Theme title"
-                                withAsterisk
-                            />
-                        </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-
-                                    <Select
-                                        data={months}
-                                        label="Month"
-                                        placeholder='Select Month'
-                                        withAsterisk
-                                        {...form.getInputProps("month")}
-                                    />
-                                </div>
-
-                                <div>
-
-                                    <Select
-                                        label="Category"
-                                        data={categoryOptions}
-                                        placeholder='Select Category'
-
-                                        {...form.getInputProps("category")}
-                                    />
-
-
-                                </div>
-                            </div>
-
-                            <div>
-
-                                <Select
-                                    label="Type"
-                                    data={typeOptions}
-                                    placeholder='Select Type'
-                                    withAsterisk
-                                    {...form.getInputProps("type")}
-                                >
-
-                                </Select>
-                            </div>
-
-
-
-                            <div>
-
-                                <Textarea
-                                    label="Description"
-                                    withAsterisk
-                                    placeholder="Detailed theme description"
-                                    {...form.getInputProps("description")}
-
-                                />
-                            </div>
-
-                            <div className="flex justify-end space-x-3 pt-4">
-
-                                <Button
-                                    type="submit"
-
-                                >
-                                    {selectedActivity ? 'Update' : 'Add'}
-                                </Button>
-                            </div>
-                        </form>
+                }}
+            >
+                <form onSubmit={form.onSubmit(handleSaveTheme)} className="space-y-3">
+                    <TextInput
+                        label="Intitulé du thème"
+                        placeholder="ex. Prévention des chutes de hauteur en zone de concassage"
+                        withAsterisk
+                        size="sm"
+                        {...form.getInputProps('title')}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Select
+                            data={MONTHS_FR}
+                            label="Mois"
+                            placeholder="Choisir le mois"
+                            withAsterisk
+                            size="sm"
+                            {...form.getInputProps('month')}
+                        />
+                        <Select
+                            label="Catégorie d'activité"
+                            data={THEME_CATEGORY_OPTIONS}
+                            placeholder="Choisir la catégorie"
+                            size="sm"
+                            {...form.getInputProps('category')}
+                        />
                     </div>
-                </div >
-            </Modal >
-        </div >
+                    <Select
+                        label="Type"
+                        data={THEME_TYPE_OPTIONS}
+                        placeholder="Choisir le type"
+                        withAsterisk
+                        size="sm"
+                        {...form.getInputProps('type')}
+                    />
+                    <Textarea
+                        label="Description"
+                        withAsterisk
+                        placeholder="Objectif du thème, messages clés à faire passer aux équipes"
+                        minRows={3}
+                        autosize
+                        size="sm"
+                        {...form.getInputProps('description')}
+                    />
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                                setOpened(false);
+                                setSelectedTheme(null);
+                            }}
+                        >
+                            Annuler
+                        </Button>
+                        <Button type="submit" color="teal" size="sm">
+                            {selectedTheme ? 'Enregistrer les modifications' : 'Ajouter le thème'}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+        </div>
     );
 }

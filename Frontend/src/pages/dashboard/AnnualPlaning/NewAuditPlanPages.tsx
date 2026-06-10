@@ -2,7 +2,7 @@ import NewAuditPlan from "../../../components/AnnualPlanning/AnnualAuditPlan/New
 
 const NewAuditPlanPages = () => {
   return (
-    <div className="p-5"><NewAuditPlan /></div>
+    <div><NewAuditPlan /></div>
   )
 }
 

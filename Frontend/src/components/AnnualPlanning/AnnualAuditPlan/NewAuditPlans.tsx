@@ -198,7 +198,7 @@ const NewAuditPlans: React.FC = () => {
         form.validate();
         if (!form.isValid()) return;
         if (form.values.auditors.length === 0) {
-            errorNotification("Please add at least one auditor");
+            errorNotification("Ajoutez au moins un auditeur à l'équipe");
             return;
         }
 

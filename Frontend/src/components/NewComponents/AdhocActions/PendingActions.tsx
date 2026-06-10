@@ -1,22 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-    // AlertTriangle
-    // CheckCircle
-    IconClock, // Eye
-    IconAlertTriangle, // FileText
-    IconCircleCheck, // Shield
-    IconFileText, // Search
-    IconHelmet, // Filter
-    IconShield, // Calendar
-    IconSearch, // User
-    IconFilter, // Building
-    IconCalendar, // Target
-    IconUser, // Zap
-    IconBuilding, IconTarget, IconBolt, IconBook, IconChevronRight, IconChevronDown
+    IconAlertTriangle,
+    IconBook,
+    IconBuilding,
+    IconCalendar,
+    IconCalendarDue,
+    IconChevronDown,
+    IconChevronRight,
+    IconCircleCheck,
+    IconClock,
+    IconFileText,
+    IconHelmet,
+    IconSearch,
+    IconShield,
+    IconTarget,
+    IconUser,
+    IconX,
 } from '@tabler/icons-react';
-import { Badge } from '@mantine/core';
+import { Button, Select, TextInput } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import PageHeader from '../../UtilityComp/PageHeader';
+import KpiTile from '../../UtilityComp/KpiTile';
 import SafeHtml from '../../UtilityComp/SafeHtml';
 import EmptyState from '../../UtilityComp/EmptyState';
 import {
@@ -28,68 +32,68 @@ import {
 } from '../../../services/CorrectiveActionService';
 import { getTeamMemberByEmployeeId } from '../../../services/TeamMemberService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
-import { formatDateShort } from '../../../utility/DateFormats';
 import { useDispatch, useSelector } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
 import { mapIdToName } from '../../../utility/OtherUtilities';
-import { actionTypesMap } from '../../../Data/DropdownData';
+import { formatDateFr, pendingStateConfig, sourceTypeLabel } from './adhocLabels';
+
+/**
+ * File des actions en attente d'approbation : synthèse, filtres et revue
+ * action par action (approbation ou annulation motivée par le responsable).
+ */
+
 interface PendingAction {
     id: string;
     title: string;
     description: string;
-    type: 'ppe-approval' | 'risk-assessment' | 'document-approval' | 'incident-investigation' | 'action-assignment' | 'audit-review' | 'training-approval' | 'GENERAL_INSPECTION';
-    priority: 'low' | 'medium' | 'high' | 'critical';
+    type: string;
     status: 'pending' | 'overdue' | 'urgent';
     assignedBy: string;
-    department: string;
     ownerId?: number | null;
     departmentId?: number | null;
     ownerName?: string;
     departmentName?: string;
-    dueDate: string;
-    createdDate: string;
+    /** Date brute ISO renvoyée par le backend (sert aux calculs d'échéance). */
+    dueDateRaw: string;
+    createdDateRaw: string;
     relatedId: string;
-    estimatedTime: string;
     details: {
-        requestor?: string;
-        location?: string;
-        amount?: string;
-        riskLevel?: string;
-        documentType?: string;
-        incidentDate?: string;
         actionProgress?: number;
     };
 }
 
+const ALL = 'all';
+
+const typeIconMap: Record<string, { icon: typeof IconHelmet; iconColor: string }> = {
+    PPE_APPROVAL: { icon: IconHelmet, iconColor: 'text-blue-600' },
+    RISK_ASSESSMENT: { icon: IconShield, iconColor: 'text-orange-600' },
+    DOCUMENT_APPROVAL: { icon: IconFileText, iconColor: 'text-green-600' },
+    INCIDENT_INVESTIGATION: { icon: IconAlertTriangle, iconColor: 'text-red-600' },
+    ACTION_ASSIGNMENT: { icon: IconTarget, iconColor: 'text-purple-600' },
+    AUDIT_REVIEW: { icon: IconCircleCheck, iconColor: 'text-indigo-600' },
+    TRAINING_APPROVAL: { icon: IconBook, iconColor: 'text-cyan-600' },
+    GENERAL_INSPECTION: { icon: IconSearch, iconColor: 'text-teal-600' },
+};
+
+/** Résumé texte d'une description potentiellement riche (HTML). */
+const stripHtml = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const PendingActions = () => {
     const [actions, setActions] = useState<PendingAction[]>([]);
     const [deptMap, setDeptMap] = useState<Record<number, any>>({});
     const [empMap, setEmpMap] = useState<Record<number, any>>({});
     const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState<string>('all');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [typeFilter, setTypeFilter] = useState<string>(ALL);
+    const [statusFilter, setStatusFilter] = useState<string>(ALL);
     const dispatch = useDispatch();
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [descMap, setDescMap] = useState<Record<string, { loading: boolean; value?: string; error?: string }>>({});
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
+
     const normalizeType = (value: string) => value?.toString?.().trim().toUpperCase().replace(/[\s-]+/g, '_') ?? '';
-
-    const typeConfigMap: Record<string, { label: string; icon: typeof IconHelmet; iconColor: string; badgeColor: string }> = {
-        PPE_APPROVAL: { label: 'Validation EPI', icon: IconHelmet, iconColor: 'text-blue-600', badgeColor: 'blue' },
-        RISK_ASSESSMENT: { label: 'Évaluation de risque', icon: IconShield, iconColor: 'text-orange-600', badgeColor: 'orange' },
-        DOCUMENT_APPROVAL: { label: 'Validation document', icon: IconFileText, iconColor: 'text-green-600', badgeColor: 'green' },
-        INCIDENT_INVESTIGATION: { label: "Investigation d'incident", icon: IconAlertTriangle, iconColor: 'text-red-600', badgeColor: 'red' },
-        ACTION_ASSIGNMENT: { label: "Affectation d'action", icon: IconTarget, iconColor: 'text-purple-600', badgeColor: 'grape' },
-        AUDIT_REVIEW: { label: "Revue d'audit", icon: IconCircleCheck, iconColor: 'text-indigo-600', badgeColor: 'indigo' },
-        TRAINING_APPROVAL: { label: 'Validation formation', icon: IconBook, iconColor: 'text-cyan-600', badgeColor: 'cyan' },
-        GENERAL_INSPECTION: { label: 'Inspection générale', icon: IconSearch, iconColor: 'text-teal-600', badgeColor: 'teal' },
-    };
-
-    const statuses = ['pending', 'urgent', 'overdue'];
 
     const availableTypes = useMemo(() => {
         const set = new Set<string>();
@@ -99,7 +103,7 @@ const PendingActions = () => {
                 set.add(normalized);
             }
         });
-        if (typeFilter !== 'all') {
+        if (typeFilter !== ALL) {
             set.add(typeFilter);
         }
         return Array.from(set).sort();
@@ -107,47 +111,28 @@ const PendingActions = () => {
 
     const getTypeConfig = (type: string) => {
         const normalized = normalizeType(type);
-        const config = typeConfigMap[normalized];
+        const iconCfg = typeIconMap[normalized];
         return {
             normalized,
-            icon: config?.icon ?? IconFileText,
-            iconColor: config?.iconColor ?? 'text-gray-500',
-            badgeColor: config?.badgeColor ?? 'gray',
-            label: config?.label ?? (normalized || 'Unknown Type'),
+            icon: iconCfg?.icon ?? IconFileText,
+            iconColor: iconCfg?.iconColor ?? 'text-slate-500',
+            label: sourceTypeLabel(type),
         };
     };
 
-    // priority visuals removed; keep placeholder if needed
-    // const getPriorityColor = (_: string) => 'bg-gray-100 text-gray-800 border-gray-200';
-
-    const getStatusColor = (status: string) => {
-        switch (normalizeType(status)) {
-            case 'OVERDUE': return 'bg-red-100 text-red-800 border-red-200';
-            case 'URGENT': return 'bg-orange-100 text-orange-800 border-orange-200';
-            case 'PENDING': return 'bg-blue-100 text-blue-800 border-blue-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
+    const isOverdue = (dueDateRaw: string) => {
+        if (!dueDateRaw) return false;
+        const due = new Date(dueDateRaw);
+        if (Number.isNaN(due.getTime())) return false;
+        return due.getTime() < Date.now();
     };
 
-    const getStatusIcon = (status: string) => {
-        switch (normalizeType(status)) {
-            case 'OVERDUE': return <IconAlertTriangle className="w-4 h-4" />;
-            case 'URGENT': return <IconBolt className="w-4 h-4" />;
-            case 'PENDING': return <IconClock className="w-4 h-4" />;
-            default: return <IconClock className="w-4 h-4" />;
-        }
-    };
-
-    const isOverdue = (dueDate: string) => {
-        return new Date(dueDate) < new Date();
-    };
-
-    const getDaysUntilDue = (dueDate: string) => {
+    const getDaysUntilDue = (dueDateRaw: string) => {
         const today = new Date();
-        const due = new Date(dueDate);
+        const due = new Date(dueDateRaw);
+        if (Number.isNaN(due.getTime())) return 0;
         const diffTime = due.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
     const executeApprove = async (action: PendingAction) => {
@@ -155,11 +140,11 @@ const PendingActions = () => {
         dispatch(showOverlay());
         try {
             await approveCorrectiveAction(action.id);
-            successNotification(`${action.title || 'Corrective Action'} approved`);
+            successNotification(`Action « ${action.title || 'sans titre'} » approuvée`);
             setActions(prev => prev.filter(a => a.id !== action.id));
             setHighlightedId(null);
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || 'Failed to approve');
+            errorNotification(e?.response?.data?.errorMessage || "L'approbation a échoué");
         }
         dispatch(hideOverlay());
     };
@@ -169,29 +154,28 @@ const PendingActions = () => {
         dispatch(showOverlay());
         try {
             await cancelCorrectiveAction(action.id);
-            successNotification(`${action.title || 'Corrective Action'} cancelled`);
+            successNotification(`Action « ${action.title || 'sans titre'} » annulée`);
             setActions(prev => prev.filter(a => a.id !== action.id));
             setHighlightedId(null);
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || 'Failed to cancel');
+            errorNotification(e?.response?.data?.errorMessage || "L'annulation a échoué");
         }
-
         dispatch(hideOverlay());
     };
 
     const handleApprove = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="text-lg">Approve this action?</span>,
+            title: <span className="text-base">Approuver cette action ?</span>,
             centered: true,
             children: (
-                <span className="text-sm text-gray-700">
-                    Are you sure you want to approve <strong>{action.title}</strong>?
+                <span className="text-sm text-slate-700">
+                    Confirmer l'approbation de <strong>{action.title}</strong> ? Elle passera en cours de réalisation.
                 </span>
             ),
-            labels: { confirm: 'Approve', cancel: 'Cancel' },
-            confirmProps: { color: 'green' },
-            cancelProps: { color: 'gray', variant: 'outline' },
+            labels: { confirm: 'Approuver', cancel: 'Annuler' },
+            confirmProps: { color: 'teal' },
+            cancelProps: { color: 'gray', variant: 'default' },
             withCloseButton: false,
             closeOnClickOutside: false,
             onCancel: () => setHighlightedId(null),
@@ -202,16 +186,16 @@ const PendingActions = () => {
     const handleCancel = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="text-lg">Annuler cette action ?</span>,
+            title: <span className="text-base">Annuler cette action ?</span>,
             centered: true,
             children: (
-                <span className="text-sm text-gray-700">
-                    Are you sure you want to cancel <strong>{action.title}</strong>?
+                <span className="text-sm text-slate-700">
+                    Confirmer l'annulation de <strong>{action.title}</strong> ? Elle sera retirée de la file d'approbation.
                 </span>
             ),
-            labels: { confirm: 'Cancel Action', cancel: 'Keep Pending' },
+            labels: { confirm: "Annuler l'action", cancel: 'Garder en attente' },
             confirmProps: { color: 'red' },
-            cancelProps: { color: 'gray', variant: 'outline' },
+            cancelProps: { color: 'gray', variant: 'default' },
             withCloseButton: false,
             closeOnClickOutside: false,
             onCancel: () => setHighlightedId(null),
@@ -238,42 +222,46 @@ const PendingActions = () => {
             const desc = await getCorrectiveActionDescription(id);
             setDescMap(prev => ({ ...prev, [id]: { loading: false, value: desc } }));
         } catch (e: any) {
-            setDescMap(prev => ({ ...prev, [id]: { loading: false, error: e?.response?.data?.errorMessage || 'Failed to load description' } }));
+            setDescMap(prev => ({ ...prev, [id]: { loading: false, error: e?.response?.data?.errorMessage || 'Le chargement de la description a échoué' } }));
         }
     };
 
-    // Enrich actions with owner/department names before filtering
+    // Enrichissement avec les noms de responsable / département avant filtrage
     const enrichedActions = useMemo(() => actions.map(a => ({
         ...a,
-        ownerName: a.ownerId ? (empMap[a.ownerId]?.name ?? '-') : (a.ownerName ?? '-'),
-        departmentName: a.departmentId ? (deptMap[a.departmentId]?.name ?? '-') : (a.departmentName ?? '-')
+        ownerName: a.ownerId ? (empMap[a.ownerId]?.name ?? '—') : (a.ownerName ?? '—'),
+        departmentName: a.departmentId ? (deptMap[a.departmentId]?.name ?? '—') : (a.departmentName ?? '—')
     })), [actions, empMap, deptMap]);
 
     const filteredActions = enrichedActions.filter(action => {
-        const matchesSearch = action.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            action.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            action.assignedBy.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesType = typeFilter === 'all' || normalizeType(action.type) === typeFilter;
+        const q = searchTerm.toLowerCase();
+        const matchesSearch = action.title.toLowerCase().includes(q) ||
+            action.description.toLowerCase().includes(q) ||
+            action.assignedBy.toLowerCase().includes(q);
+        const matchesType = typeFilter === ALL || normalizeType(action.type) === typeFilter;
         const normalizedStatusFilter = normalizeType(statusFilter);
         const matchesStatus =
-            statusFilter === 'all'
-            || (normalizedStatusFilter === 'OVERDUE' ? isOverdue(action.dueDate) : normalizeType(action.status) === normalizedStatusFilter);
+            statusFilter === ALL
+            || (normalizedStatusFilter === 'OVERDUE' ? isOverdue(action.dueDateRaw) : normalizeType(action.status) === normalizedStatusFilter);
         return matchesSearch && matchesType && matchesStatus;
     });
 
-    // Statistics
+    // Synthèse
     const totalActions = actions.length;
-    const overdueActions = actions.filter(a => isOverdue(a.dueDate)).length;
-    const criticalActions = actions.filter(a => a.priority === 'critical').length;
+    const overdueActions = actions.filter(a => isOverdue(a.dueDateRaw)).length;
+    const dueSoonActions = actions.filter(a => {
+        if (isOverdue(a.dueDateRaw)) return false;
+        const days = getDaysUntilDue(a.dueDateRaw);
+        return days >= 0 && days <= 7;
+    }).length;
 
-    // Load department and employee maps for owner/department names
     useEffect(() => {
         getAllDepartments()
             .then((res) => setDeptMap(mapIdToName(res)))
-            .catch((_err) => { });
+            .catch(() => { });
         getEmployeeDropdown()
             .then((res) => setEmpMap(mapIdToName(res)))
-            .catch((_err) => { });
+            .catch(() => { });
     }, []);
 
     const mapActions = (items: any[] | undefined, fallbackDepartmentId?: number | string | null): PendingAction[] => {
@@ -290,21 +278,18 @@ const PendingActions = () => {
             })();
             return {
                 id: String(x.id),
-                title: x.actionName ?? 'Corrective Action',
-                description: x.description || '',
+                title: x.actionName ?? 'Action corrective',
+                description: stripHtml(x.description || ''),
                 type: x.type,
-                priority: 'medium',
                 status: ['pending', 'urgent', 'overdue'].includes(normalizedStatus) ? normalizedStatus as PendingAction['status'] : 'pending',
-                assignedBy: x.assignedEmployeeName || '-',
-                department: '',
+                assignedBy: x.assignedEmployeeName || '—',
                 ownerId: x.ownerId ?? null,
                 departmentId: normalizedDepartmentId,
-                ownerName: '-',
-                departmentName: '-',
-                dueDate: x.deadline ? formatDateShort(x.deadline) : '',
-                createdDate: x.createdAt ? formatDateShort(x.createdAt) : '',
+                ownerName: '—',
+                departmentName: '—',
+                dueDateRaw: x.deadline ?? '',
+                createdDateRaw: x.createdAt ?? '',
                 relatedId: x.incidentTitle || 'ADHOC',
-                estimatedTime: '',
                 details: { actionProgress: typeof x.progress === 'number' ? x.progress : undefined }
             } as PendingAction;
         });
@@ -330,7 +315,7 @@ const PendingActions = () => {
                     } catch (error: any) {
                         const errorCode = error?.response?.data?.errorCode;
                         if (errorCode && errorCode !== 'TEAM_MEMBER_NOT_FOUND') {
-                            console.error('Failed to load team member data', error);
+                            console.error("Échec du chargement du membre d'équipe", error);
                         }
                     }
                 }
@@ -344,7 +329,7 @@ const PendingActions = () => {
                     setActions(mapped);
                 }
             } catch (error) {
-                console.error('Failed to load actions', error);
+                console.error('Échec du chargement des actions', error);
                 if (isMounted) {
                     setActions([]);
                 }
@@ -358,12 +343,11 @@ const PendingActions = () => {
         return () => {
             isMounted = false;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch, user]);
 
-
-
     return (
-        <div className="p-5 space-y-5 w-full">
+        <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
@@ -373,322 +357,258 @@ const PendingActions = () => {
                 icon={<IconClock size={22} stroke={2} />}
                 iconColor="orange"
                 title="Actions en attente"
-                subtitle="Revue et résolution des actions en retard, urgentes ou critiques liées aux dangers HSE"
+                subtitle="Revue et approbation des actions correctives soumises par les équipes"
             />
-            {/* Content */}
-            <div className="">
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-blue-100 rounded-lg">
-                                <IconClock className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">Total en attente</p>
-                                <p className="text-2xl text-gray-900">{totalActions}</p>
-                            </div>
-                        </div>
-                    </div>
+            {/* Synthèse */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <KpiTile
+                    label="Total en attente"
+                    value={totalActions}
+                    tone="violet"
+                    icon={<IconClock size={14} stroke={1.8} />}
+                    referenceValue="File d'approbation"
+                />
+                <KpiTile
+                    label="En retard"
+                    value={overdueActions}
+                    tone="rose"
+                    icon={<IconAlertTriangle size={14} stroke={1.8} />}
+                    referenceValue="Échéance dépassée"
+                />
+                <KpiTile
+                    label="Échéance sous 7 jours"
+                    value={dueSoonActions}
+                    tone="amber"
+                    icon={<IconCalendarDue size={14} stroke={1.8} />}
+                    referenceValue="À traiter en priorité"
+                />
+            </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-red-100 rounded-lg">
-                                <IconAlertTriangle className="w-6 h-6 text-red-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">En retard</p>
-                                <p className="text-2xl text-red-600">{overdueActions}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-purple-100 rounded-lg">
-                                <IconTarget className="w-6 h-6 text-purple-600" />
-                            </div>
-                            <div className="ml-4">
-                                <p className="text-sm text-gray-500">Priorité critique</p>
-                                <p className="text-2xl text-purple-600">{criticalActions}</p>
-                            </div>
-                        </div>
-                    </div>
+            {/* Barre de filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                        placeholder="Rechercher par intitulé, description ou assigné…"
+                        leftSection={<IconSearch size={14} />}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.currentTarget.value)}
+                        size="xs"
+                        className="flex-1 min-w-[220px]"
+                    />
+                    <Select
+                        data={[
+                            { value: ALL, label: 'Tous les types' },
+                            ...availableTypes.map((type) => ({ value: type, label: getTypeConfig(type).label })),
+                        ]}
+                        value={typeFilter}
+                        onChange={(v) => setTypeFilter(v ?? ALL)}
+                        size="xs"
+                        w={200}
+                        aria-label="Filtrer par type"
+                    />
+                    <Select
+                        data={[
+                            { value: ALL, label: 'Tous les statuts' },
+                            { value: 'pending', label: 'En attente' },
+                            { value: 'urgent', label: 'Urgentes' },
+                            { value: 'overdue', label: 'En retard' },
+                        ]}
+                        value={statusFilter}
+                        onChange={(v) => setStatusFilter(v ?? ALL)}
+                        size="xs"
+                        w={150}
+                        aria-label="Filtrer par statut"
+                    />
                 </div>
+                <p className="text-[11.5px] text-slate-500 mt-2">
+                    {filteredActions.length} action{filteredActions.length > 1 ? 's' : ''} affichée{filteredActions.length > 1 ? 's' : ''} sur {totalActions}
+                </p>
+            </div>
 
-                {/* Filters */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="relative">
-                            <IconSearch className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher des actions..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+            {/* Liste des actions */}
+            <div className="space-y-3">
+                {filteredActions.map((action) => {
+                    const typeConfig: any = getTypeConfig(action.type);
+                    const daysUntilDue = getDaysUntilDue(action.dueDateRaw);
+                    const overdue = isOverdue(action.dueDateRaw);
+                    const stateCfg = pendingStateConfig(overdue ? 'OVERDUE' : action.status);
 
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    const isHighlighted = highlightedId === action.id || expandedId === action.id;
+
+                    return (
+                        <div
+                            key={action.id}
+                            className={`rounded-xl border bg-white ${isHighlighted ? 'border-teal-300 shadow-sm' : 'border-slate-200'}`}
                         >
-                            <option value="all">Tous les types</option>
-                            {availableTypes.map((type) => {
-                                const config = getTypeConfig(type);
-                                return (
-                                    <option key={type} value={type}>
-                                        {`Type : ${config.label}`}
-                                    </option>
-                                );
-                            })}
-                        </select>
-
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="all">Tous les statuts</option>
-                            {statuses.map(status => {
-                                const label = status === 'pending' ? 'En attente' : status === 'overdue' ? 'En retard' : 'Urgent';
-                                return (
-                                    <option key={status} value={status}>{label}</option>
-                                );
-                            })}
-                        </select>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                            <IconFilter className="w-4 h-4 mr-2" />
-                            {filteredActions.length} / {totalActions} actions
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions List */}
-                <div className="space-y-4">
-                    {filteredActions.map((action) => {
-                        const typeConfig: any = getTypeConfig(action.type);
-                        const daysUntilDue = getDaysUntilDue(action.dueDate);
-                        const overdue = isOverdue(action.dueDate);
-
-                        const isHighlighted = highlightedId === action.id || expandedId === action.id;
-
-                        return (
-                            <div
-                                key={action.id}
-                                className={`rounded-xl border transition-all duration-200 ${isHighlighted ? 'bg-blue-50 border-blue-400 shadow-lg ring-2 ring-blue-200' : 'bg-white border-gray-200 shadow-sm hover:shadow-md'}`}
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center mb-3">
-                                                <div className={`p-2 rounded-lg bg-gray-50 mr-3`}>
-                                                    <typeConfig.icon className={`w-5 h-5 ${typeConfig.iconColor}`} />
-                                                </div>
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="text-lg text-gray-900">{action.title}</h3>
-                                                    <Badge
-                                                        color={typeConfig.badgeColor}
-                                                        variant="light"
-                                                        className="uppercase"
-                                                    >
-                                                        {actionTypesMap[action.type] || action.type}
-                                                    </Badge>
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        {/* <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                                            {action.id}
-                                                        </span> */}
-                                                        {/* <span className="text-sm text-gray-500">•</span>
-                                                        <span className="text-sm text-gray-500">{action.relatedId}</span> */}
-                                                    </div>
-                                                </div>
+                            <div className="p-4">
+                                <div className="flex items-start justify-between gap-4 flex-wrap">
+                                    <div className="flex-1 min-w-[260px]">
+                                        <div className="flex items-center gap-2.5 mb-2 flex-wrap">
+                                            <div className="p-1.5 rounded-md bg-slate-50 border border-slate-200">
+                                                <typeConfig.icon className={`w-4 h-4 ${typeConfig.iconColor}`} aria-hidden="true" />
                                             </div>
-
-                                            <p className="text-gray-600 mb-4">{action.description}</p>
-
-                                            {/* Details moved to bottom-of-card */}
-
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4">
-                                                {action.assignedBy && (
-                                                    <div className="flex items-center">
-                                                        <IconUser className="w-4 h-4 text-gray-400 mr-2" />
-                                                        <span className="text-gray-600">From:</span>
-                                                        <span className="ml-1">{action.assignedBy}</span>
-                                                    </div>
-                                                )}
-                                                {action.ownerName && action.ownerName !== '-' && (
-                                                    <div className="flex items-center">
-                                                        <IconUser className="w-4 h-4 text-green-600 mr-2" />
-                                                        <span className="text-gray-600">Owner:</span>
-                                                        <span className="ml-1">{action.ownerName}</span>
-                                                    </div>
-                                                )}
-                                                {action.departmentName && action.departmentName !== '-' && (
-                                                    <div className="flex items-center">
-                                                        <IconBuilding className="w-4 h-4 text-purple-600 mr-2" />
-                                                        <span className="text-gray-600">Dept:</span>
-                                                        <span className="ml-1">{action.departmentName}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center">
-                                                    <IconCalendar className="w-4 h-4 text-gray-400 mr-2" />
-                                                    <span className="text-gray-600">Due:</span>
-                                                    <span className={`ml-1 ${overdue ? 'text-red-600' : ''}`}>
-                                                        {action.dueDate}
-                                                    </span>
-                                                </div>
-                                                {/* removed estimated time */}
-                                            </div>
-
-                                            {/* Additional Details */}
-                                            {action.details.requestor && <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                                                    {action.details.requestor && (
-                                                        <div>
-                                                            <span className="text-gray-500">Requestor:</span>
-                                                            <span className="ml-1">{action.details.requestor}</span>
-                                                        </div>
-                                                    )}
-                                                    {action.details.location && (
-                                                        <div>
-                                                            <span className="text-gray-500">Location:</span>
-                                                            <span className="ml-1">{action.details.location}</span>
-                                                        </div>
-                                                    )}
-                                                    {action.details.amount && (
-                                                        <div>
-                                                            <span className="text-gray-500">Amount:</span>
-                                                            <span className="ml-1">{action.details.amount}</span>
-                                                        </div>
-                                                    )}
-                                                    {action.details.riskLevel && (
-                                                        <div>
-                                                            <span className="text-gray-500">Risk Level:</span>
-                                                            <span className="ml-1 text-orange-600">{action.details.riskLevel}</span>
-                                                        </div>
-                                                    )}
-                                                    {action.details.documentType && (
-                                                        <div>
-                                                            <span className="text-gray-500">Type de document :</span>
-                                                            <span className="ml-1">{action.details.documentType}</span>
-                                                        </div>
-                                                    )}
-                                                    {action.details.incidentDate && (
-                                                        <div>
-                                                            <span className="text-gray-500">Incident Date:</span>
-                                                            <span className="ml-1">{action.details.incidentDate}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {action.details.actionProgress !== undefined && (
-                                                    <div className="mt-3">
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <span className="text-sm text-gray-500">Current Progress</span>
-                                                            <span className="text-sm">{action.details.actionProgress}%</span>
-                                                        </div>
-                                                        <div className="w-full bg-gray-200 rounded-full h-2">
-                                                            <div
-                                                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                                                                style={{ width: `${action.details.actionProgress}%` }}
-                                                            ></div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            }
+                                            <h3
+                                                className="text-slate-800 leading-snug"
+                                                style={{
+                                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                                    fontSize: '14.5px',
+                                                    fontWeight: 600,
+                                                    letterSpacing: '-0.01em',
+                                                }}
+                                            >
+                                                {action.title}
+                                            </h3>
+                                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-600">
+                                                {typeConfig.label}
+                                            </span>
                                         </div>
 
-                                        <div className="flex flex-col items-end space-y-3 ml-6">
-                                            <div className="flex flex-col space-y-2">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(action.status)}`}>
-                                                    {getStatusIcon(action.status)}
-                                                    <span className="ml-1">{action.status.charAt(0).toUpperCase() + action.status.slice(1)}</span>
+                                        {action.description && (
+                                            <p className="text-[12.5px] text-slate-600 mb-3 line-clamp-2">{action.description}</p>
+                                        )}
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
+                                            {action.assignedBy && action.assignedBy !== '—' && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <IconUser className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                                                    <span className="text-slate-500">Assignée à</span>
+                                                    <span className="text-slate-800">{action.assignedBy}</span>
+                                                </div>
+                                            )}
+                                            {action.ownerName && action.ownerName !== '—' && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <IconUser className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                                                    <span className="text-slate-500">Responsable</span>
+                                                    <span className="text-slate-800">{action.ownerName}</span>
+                                                </div>
+                                            )}
+                                            {action.departmentName && action.departmentName !== '—' && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <IconBuilding className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                                                    <span className="text-slate-500">Département</span>
+                                                    <span className="text-slate-800">{action.departmentName}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1.5">
+                                                <IconCalendar className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                                                <span className="text-slate-500">Échéance</span>
+                                                <span className={overdue ? 'text-rose-600' : 'text-slate-800'}>
+                                                    {formatDateFr(action.dueDateRaw)}
                                                 </span>
                                             </div>
+                                        </div>
 
-                                            <div className="text-right text-sm">
-                                                {overdue ? (
-                                                    <span className="text-red-600">
-                                                        {Math.abs(daysUntilDue)} days overdue
-                                                    </span>
-                                                ) : daysUntilDue === 0 ? (
-                                                    <span className="text-orange-600">Due today</span>
-                                                ) : daysUntilDue === 1 ? (
-                                                    <span className="text-orange-600">Due tomorrow</span>
-                                                ) : (
-                                                    <span className="text-gray-600">
-                                                        {daysUntilDue} days remaining
-                                                    </span>
-                                                )}
+                                        {action.details.actionProgress !== undefined && (
+                                            <div className="mt-3 max-w-sm">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[11.5px] text-slate-500">Progression actuelle</span>
+                                                    <span className="text-[11.5px] text-slate-800 tabular-nums">{action.details.actionProgress}%</span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={action.details.actionProgress} aria-valuemin={0} aria-valuemax={100}>
+                                                    <div
+                                                        className="bg-sky-500 h-full rounded-full"
+                                                        style={{ width: `${action.details.actionProgress}%` }}
+                                                    ></div>
+                                                </div>
                                             </div>
+                                        )}
+                                    </div>
 
-                                            <div className="flex space-x-2">
-                                                <button onClick={() => handleToggleDetails(action.id)} className="flex items-center px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                    {expandedId === action.id ? (
-                                                        <IconChevronDown className="w-4 h-4 mr-1" />
-                                                    ) : (
-                                                        <IconChevronRight className="w-4 h-4 mr-1" />
-                                                    )}
-                                                    Details
-                                                </button>
-                                                <button onClick={() => handleApprove(action)} className="flex items-center px-3 py-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                                                    <IconCircleCheck className="w-4 h-4 mr-1" />
-                                                    Approve
-                                                </button>
-                                                <button onClick={() => handleCancel(action)} className="flex items-center px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                                    Cancel
-                                                </button>
-                                            </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                        <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${stateCfg.chip}`}>
+                                            {stateCfg.label}
+                                        </span>
+
+                                        <div className="text-right text-[12px]">
+                                            {overdue ? (
+                                                <span className="text-rose-600">
+                                                    {Math.abs(daysUntilDue)} jour{Math.abs(daysUntilDue) > 1 ? 's' : ''} de retard
+                                                </span>
+                                            ) : daysUntilDue === 0 ? (
+                                                <span className="text-amber-700">Échéance aujourd'hui</span>
+                                            ) : daysUntilDue === 1 ? (
+                                                <span className="text-amber-700">Échéance demain</span>
+                                            ) : (
+                                                <span className="text-slate-600">
+                                                    {daysUntilDue} jour{daysUntilDue > 1 ? 's' : ''} restant{daysUntilDue > 1 ? 's' : ''}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-1.5 flex-wrap justify-end">
+                                            <Button
+                                                variant="default"
+                                                size="xs"
+                                                onClick={() => handleToggleDetails(action.id)}
+                                                leftSection={expandedId === action.id
+                                                    ? <IconChevronDown size={13} aria-hidden="true" />
+                                                    : <IconChevronRight size={13} aria-hidden="true" />}
+                                                aria-expanded={expandedId === action.id}
+                                            >
+                                                Détails
+                                            </Button>
+                                            <Button
+                                                color="teal"
+                                                size="xs"
+                                                onClick={() => handleApprove(action)}
+                                                leftSection={<IconCircleCheck size={13} aria-hidden="true" />}
+                                            >
+                                                Approuver
+                                            </Button>
+                                            <Button
+                                                color="red"
+                                                variant="light"
+                                                size="xs"
+                                                onClick={() => handleCancel(action)}
+                                                leftSection={<IconX size={13} aria-hidden="true" />}
+                                            >
+                                                Annuler
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
-                                {/* Bottom-of-card expanded details */}
-                                {expandedId === action.id && (
-                                    <div className="px-6 pb-6 border-t border-gray-100">
-                                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mt-4">
-                                            <p className="text-blue-600 text-sm mb-1">Action Details</p>
-                                            {descMap[action.id]?.loading && (
-                                                <p className="text-sm text-gray-600">Loading description...</p>
-                                            )}
-                                            {descMap[action.id]?.error && (
-                                                <p className="text-sm text-red-600">{descMap[action.id]?.error}</p>
-                                            )}
-                                            {descMap[action.id]?.value && (
-                                                /* LOT 41 P0 XSS fix */
-                                                <SafeHtml html={descMap[action.id]?.value || ''} className="text-gray-700 text-sm" />
-                                            )}
-                                            {!isNumericId(action.id) && !descMap[action.id] && (
-                                                <p className="text-sm text-gray-600">Details not available for mock items.</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
-                        );
-                    })}
-                </div>
 
-                {/* LOT 41 E: EmptyState unifié pour la liste des actions en attente */}
-                {filteredActions.length === 0 && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <EmptyState
-                            icon={<IconCircleCheck size={28} />}
-                            title="Aucune action en attente"
-                            description={
-                                searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
-                                    ? 'Aucune action ne correspond aux filtres sélectionnés.'
-                                    : 'Toutes les actions correctives sont à jour.'
-                            }
-                            iconColor="emerald"
-                        />
-                    </div>
-                )}
+                            {/* Détails dépliés */}
+                            {expandedId === action.id && (
+                                <div className="px-4 pb-4 border-t border-slate-100">
+                                    <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3 mt-3">
+                                        <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Description complète</p>
+                                        {descMap[action.id]?.loading && (
+                                            <p className="text-[12.5px] text-slate-600">Chargement de la description…</p>
+                                        )}
+                                        {descMap[action.id]?.error && (
+                                            <p className="text-[12.5px] text-rose-600">{descMap[action.id]?.error}</p>
+                                        )}
+                                        {descMap[action.id]?.value && (
+                                            <SafeHtml html={descMap[action.id]?.value || ''} className="text-slate-700 text-[12.5px]" />
+                                        )}
+                                        {!isNumericId(action.id) && !descMap[action.id] && (
+                                            <p className="text-[12.5px] text-slate-600">Description indisponible pour cet élément.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
+
+            {filteredActions.length === 0 && (
+                <div className="bg-white rounded-xl border border-slate-200">
+                    <EmptyState
+                        icon={<IconCircleCheck size={28} />}
+                        title="Aucune action en attente"
+                        description={
+                            searchTerm || typeFilter !== ALL || statusFilter !== ALL
+                                ? 'Aucune action ne correspond aux filtres sélectionnés.'
+                                : 'Toutes les actions correctives sont à jour.'
+                        }
+                        iconColor="emerald"
+                    />
+                </div>
+            )}
         </div>
     );
 };

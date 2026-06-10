@@ -29,7 +29,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         <div
             className={`p-3 rounded-lg border ${getStatusColor(activity.status)} group relative bg-white/80 backdrop-blur-sm`}
         >
-            {/* Category badge at the top */}
+            {/* Badge de catégorie en tête de carte */}
             <div className="flex items-start justify-between mb-2">
                 <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs border  ${getCategoryColor(activity.category)}`}>
                     <CategoryIcon className="w-3 h-3 mr-1" />

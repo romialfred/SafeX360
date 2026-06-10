@@ -4,7 +4,7 @@ import EditNewAuditPlans from "../../../components/AnnualPlanning/AnnualAuditPla
 
 const EditNewAuditPlanPage = () => {
     return (
-        <div className="p-5"><EditNewAuditPlans /></div>
+        <div><EditNewAuditPlans /></div>
     )
 }
 

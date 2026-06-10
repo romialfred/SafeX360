@@ -1,11 +1,19 @@
-import { Breadcrumbs, Text, Button, Card, Progress, Select, NumberInput, Badge, Group } from "@mantine/core";
-import { IconClock, IconFileText, IconAlertCircle, IconUser, IconCalendar, IconBulb } from "@tabler/icons-react";
+import { Button, NumberInput, Select } from "@mantine/core";
+import {
+    IconBolt,
+    IconCalendarDue,
+    IconClock,
+    IconClipboardText,
+    IconDeviceFloppy,
+    IconHistory,
+    IconPaperclip,
+    IconUser,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom"; // 👈 useLocation import
+import { useNavigate, useParams } from "react-router-dom";
+import PageHeader from "../../UtilityComp/PageHeader";
 import FileDropzone from "../../UtilityComp/FileDropzone";
 import { useForm } from "@mantine/form";
-import { actionStatuses, actionStatusesMap } from "../../../Data/DropdownData";
-import { formatDateShort } from "../../../utility/DateFormats";
 import { addActionProcess, getAllActionProcessByActionId } from "../../../services/ActionProcessService";
 import { convertFileToBase64DTO } from "../../../utility/DocumentUtility";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
@@ -15,6 +23,51 @@ import { getActionById } from "../../../services/CorrectiveActionService";
 import TextEditor from "../../UtilityComp/TextEditor";
 import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
+import {
+    ADHOC_STATUS_OPTIONS,
+    adhocStatusConfig,
+    formatDateFr,
+    progressBarClass,
+} from "./adhocLabels";
+
+/**
+ * Mise à jour de la progression d'une suggestion d'amélioration : rappel du
+ * contexte, saisie de l'avancement avec pièces jointes, et historique des
+ * mises à jour précédentes.
+ */
+
+const SectionCard = ({
+    icon,
+    title,
+    subtitle,
+    children,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    children: React.ReactNode;
+}) => (
+    <section className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-slate-100">
+            <span className="inline-flex p-1.5 rounded-md bg-orange-50 text-orange-700">{icon}</span>
+            <div>
+                <h3
+                    className="text-slate-800"
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    {title}
+                </h3>
+                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+            </div>
+        </div>
+        <div className="flex flex-col gap-3">{children}</div>
+    </section>
+);
 
 const UpdateAdhocAction = () => {
     const { id } = useParams();
@@ -30,21 +83,21 @@ const UpdateAdhocAction = () => {
             docs: []
         },
         validate: {
-            status: (value) => (value?.trim().length > 0 ? null : 'Status is Required'),
-            progress: (value) => (value === null || value === undefined ? 'Progress is Required' : null),
-            description: (value) => (isValidRichText(value) ? null : 'Description is Required')
+            status: (value) => (value?.trim().length > 0 ? null : 'Le statut est obligatoire'),
+            progress: (value) => (value === null || value === undefined ? 'La progression est obligatoire' : null),
+            description: (value) => (isValidRichText(value) ? null : 'La description est obligatoire')
         }
     });
 
-    // Track initial values for revert logic
+    // Valeurs initiales pour la logique de retour en arrière
     const [initialStatus, setInitialStatus] = useState<string>('');
     const [initialProgress, setInitialProgress] = useState<number>(0);
 
-    // Track previous values to detect direction of change
+    // Valeurs précédentes pour détecter le sens du changement
     const prevProgressRef = useRef<number>(0);
     const prevStatusRef = useRef<string>('');
 
-    // Keep status/progress in sync in the UI with revert support
+    // Synchronisation statut / progression dans l'interface
     useEffect(() => {
         const progress = Number(form.values.progress ?? 0);
         const status = String(form.values.status || '').toUpperCase();
@@ -58,6 +111,7 @@ const UpdateAdhocAction = () => {
         }
 
         prevProgressRef.current = progress;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.values.progress, initialStatus]);
 
     useEffect(() => {
@@ -73,6 +127,7 @@ const UpdateAdhocAction = () => {
         }
 
         prevStatusRef.current = status;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.values.status, initialProgress]);
 
     const statusUpper = String(selectedRow?.status || '').toUpperCase();
@@ -96,16 +151,15 @@ const UpdateAdhocAction = () => {
                 prevStatusRef.current = String(res.status || '').toUpperCase();
                 prevProgressRef.current = Number(res.progress ?? 0);
             }).catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
-            })
+                errorNotification(err.response?.data?.errorMessage || "La suggestion n'a pas pu être chargée");
+            });
 
-        // Fetch action history
         getAllActionProcessByActionId(id)
             .then((res) => setActionHistory(res))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "L'historique n'a pas pu être chargé");
             });
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const handleSubmit = async (values: any) => {
@@ -113,7 +167,7 @@ const UpdateAdhocAction = () => {
         const docsInput = Array.isArray(values.docs) ? values.docs : [];
         const docs = await Promise.all(docsInput.map(convertFileToBase64DTO));
 
-        // Enforce consistency server-side as well
+        // Cohérence statut / progression avant envoi
         const sanitizedValues = { ...values } as any;
         const numericProgress = Number(sanitizedValues.progress ?? 0);
 
@@ -132,214 +186,226 @@ const UpdateAdhocAction = () => {
             docs: docs,
         };
 
-
         addActionProcess(payload)
-            .then((_res) => {
-                successNotification("Improvement idea progress updated.");
+            .then(() => {
+                successNotification('Progression de la suggestion mise à jour');
                 navigate("/adhoc-actions");
             })
             .catch((err) => {
-
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
             })
             .finally(() => {
                 dispatch(hideOverlay());
             });
     };
 
+    const lastStatus = actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status;
+    const statusOptions = ADHOC_STATUS_OPTIONS.slice(
+        Math.max(ADHOC_STATUS_OPTIONS.findIndex((item) => item.value === lastStatus), 0)
+    );
+
+    const currentCfg = adhocStatusConfig(selectedRow?.status);
+    const currentProgress = Number(selectedRow?.progress ?? 0);
+
     return (
-        <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
-                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">Update Improvement Idea</div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text c="dimmed" className="hover:!underline cursor-pointer">Home</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/adhoc-actions">
-                            <Text c="dimmed" className="hover:!underline cursor-pointer">Improvement Ideas</Text>
-                        </Link>
-                        <Text c="teal" fw={500}>Update Improvement Idea</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: "Suggestions d'amélioration", to: '/adhoc-actions' },
+                    { label: 'Mettre à jour la progression' },
+                ]}
+                icon={<IconBolt size={22} stroke={2} />}
+                iconColor="orange"
+                title="Mettre à jour la progression"
+                subtitle="Consigner l'avancement de la suggestion et joindre les justificatifs utiles"
+            />
 
-            {/* LOT 40 P1: responsive grid for update layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* Left Side: Form column with details box above */}
-                <div className='flex self-start flex-col col-span-2 gap-3 shadow-sm p-5 rounded-md border border-gray-200'>
-                    {/* Idea Details box */}
-                    <div className="bg-white rounded-md">
-                        <div className="mb-5">
-                            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                    <IconFileText className="w-5 h-5 text-blue-600" />
-                                    <div>
-                                        <p className="text-sm text-blue-900">Idea Details</p>
-                                        <p className="text-xs text-blue-700">Review the current improvement idea context.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className=" space-y-4">
-                            {/* Top meta: Incident and Assignee */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex items-start gap-2">
-                                    <span className="p-1.5 rounded-md bg-blue-50 text-blue-600"><IconAlertCircle size={16} /></span>
-                                    <div>
-                                        <p className="text-xs capitalize tracking-wide text-gray-500">Incident / Source</p>
-                                        <p className="text-sm text-gray-900">{selectedRow?.incidentTitle || '-'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="p-1.5 rounded-md bg-violet-50 text-violet-600"><IconUser size={16} /></span>
-                                    <div>
-                                        <p className="text-xs capitalize tracking-wide text-gray-500">Assigned To</p>
-                                        <p className="text-sm text-gray-900">{selectedRow?.assignedEmployeeName || '-'}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Action name */}
-                            <div className="flex items-start gap-2">
-                                <span className="p-1.5 rounded-md bg-cyan-50 text-cyan-600"><IconFileText size={16} /></span>
-                                <div className="w-full">
-                                    <p className="text-xs capitalize tracking-wide text-gray-500">Idea Title</p>
-                                    <p className="text-sm text-gray-900">{selectedRow?.actionName || '-'}</p>
-                                </div>
-                            </div>
-
-                            {/* Stats row */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="rounded-md border border-gray-200 p-3">
-                                    <p className="text-xs capitalize tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> Deadline</p>
-                                    <p className="text-sm text-gray-900">{selectedRow?.deadline ? formatDateShort(selectedRow.deadline) : '-'}</p>
-                                </div>
-                                <div className="rounded-md border border-gray-200 p-3">
-                                    <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Progress</p>
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm text-gray-900">{selectedRow?.progress ?? 0}%</p>
-                                    </div>
-                                    <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                                        <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${selectedRow?.progress ?? 0}%` }} />
-                                    </div>
-                                </div>
-                                <div className="rounded-md border border-gray-200 p-3">
-                                    <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Current Status</p>
-                                    <Badge size="sm" radius="sm" variant="light" color="yellow" className="!capitalize">
-                                        <Group gap={4}><IconClock size={14} /> {actionStatusesMap[selectedRow?.status] || '-'}</Group>
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            {selectedRow?.description && (
-                                <div className="rounded-md border border-gray-200 p-3">
-                                    <p className="text-xs capitalize tracking-wide text-gray-500 mb-1">Description</p>
-                                    {/* LOT 41 P0 XSS fix */}
-                                    <SafeHtml html={selectedRow?.description} className="text-gray-700 text-sm" />
-                                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                {/* ─── Colonne principale : contexte + saisie ─────────────── */}
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                    <SectionCard
+                        icon={<IconClipboardText size={15} stroke={1.8} />}
+                        title="Rappel de la suggestion"
+                        subtitle="Contexte actuel avant la mise à jour"
+                    >
+                        <div>
+                            <p className="text-[13px] text-slate-800 leading-snug">{selectedRow?.actionName || '—'}</p>
+                            {selectedRow?.incidentTitle && (
+                                <p className="text-[11.5px] text-slate-500 mt-0.5">Source : {selectedRow.incidentTitle}</p>
                             )}
                         </div>
-                    </div>
 
-                    {/* Separator between Details and Update */}
-                    <hr className="my-2 border-t border-gray-200" />
-
-                    {/* Update heading */}
-                    <div className="px-1">
-                        <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                            <div className="flex items-center gap-2">
-                                <IconClock className="w-5 h-5 text-blue-600" />
-                                <div>
-                                    <p className="text-sm text-blue-900">Status Update</p>
-                                    <p className="text-xs text-blue-700">Update progress and add supporting details.</p>
-                                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="rounded-md border border-slate-200 p-3">
+                                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
+                                    <IconUser size={12} aria-hidden="true" /> Assignée à
+                                </p>
+                                <p className="text-[12.5px] text-slate-800">{selectedRow?.assignedEmployeeName || '—'}</p>
+                            </div>
+                            <div className="rounded-md border border-slate-200 p-3">
+                                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
+                                    <IconCalendarDue size={12} aria-hidden="true" /> Échéance
+                                </p>
+                                <p className="text-[12.5px] text-slate-800">{selectedRow?.deadline ? formatDateFr(selectedRow.deadline) : '—'}</p>
+                            </div>
+                            <div className="rounded-md border border-slate-200 p-3">
+                                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Statut actuel</p>
+                                <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${currentCfg.chip}`}>
+                                    {currentCfg.label}
+                                </span>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Existing update UI (unchanged) */}
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11.5px] text-slate-500">Progression actuelle</span>
+                                <span className="text-[11.5px] text-slate-800 tabular-nums">{currentProgress}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={currentProgress} aria-valuemin={0} aria-valuemax={100}>
+                                <div className={`h-full rounded-full ${progressBarClass(currentProgress)}`} style={{ width: `${currentProgress}%` }} />
+                            </div>
+                        </div>
+
+                        {selectedRow?.description && (
+                            <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
+                                <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mb-1">Description</p>
+                                <SafeHtml html={selectedRow?.description} className="text-slate-700 text-[12.5px]" />
+                            </div>
+                        )}
+                    </SectionCard>
+
                     {cannotUpdate ? (
-                        <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-green-50 border-green-200' : isCancelled ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                            {isCompleted && (<Text c="green">This idea is already completed (100% or status Completed). Further updates are not allowed.</Text>)}
-                            {isPending && (<Text c="yellow">This idea is pending approval. Updates are not allowed until it is approved.</Text>)}
-                            {isCancelled && (<Text c="red">This idea has been cancelled. Further updates are not allowed.</Text>)}
-                        </Card>
+                        <div
+                            className={`rounded-xl border p-4 text-[12.5px] ${isCompleted
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : isCancelled
+                                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                    : 'bg-violet-50 border-violet-200 text-violet-800'
+                                }`}
+                            role="status"
+                        >
+                            {isCompleted && 'Cette suggestion est déjà clôturée (100 % ou statut Terminée). Aucune mise à jour supplémentaire n\'est possible.'}
+                            {isPending && "Cette suggestion est en attente d'approbation. Les mises à jour seront possibles après validation."}
+                            {isCancelled && "Cette suggestion a été annulée. Aucune mise à jour supplémentaire n'est possible."}
+                        </div>
                     ) : (
-                        <form className='space-y-3' onSubmit={form.onSubmit(handleSubmit)}>
-                            {/* LOT 40 P1: responsive 2-col grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progress (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
-                                <Select size="sm" disabled={cannotUpdate} label="Status" data={actionStatuses.slice(actionStatuses.findIndex((item) => item.value === (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status)))}  {...form.getInputProps('status')} />
-                            </div>
-                            <TextEditor form={form} id="description" title="Description" withAsterisk />
-                            {!cannotUpdate && <FileDropzone form={form} id="docs" />}
-                            <div className="flex gap-2 mt-2">
-                                {/* LOT 40 P1: explicit type for non-submit cancel button */}
-                                <Button type="button" variant='default' onClick={() => navigate('/adhoc-actions')}>Cancel</Button>
-                                <Button disabled={cannotUpdate} variant='gradient' type='submit'>Save</Button>
-                            </div>
+                        <form onSubmit={form.onSubmit(handleSubmit)}>
+                            <SectionCard
+                                icon={<IconClock size={15} stroke={1.8} />}
+                                title="Nouvelle mise à jour"
+                                subtitle="Avancement, statut et détails de ce qui a été réalisé"
+                            >
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <NumberInput
+                                        size="sm"
+                                        disabled={cannotUpdate}
+                                        {...form.getInputProps('progress')}
+                                        label="Progression (%)"
+                                        max={100}
+                                        clampBehavior="blur"
+                                        min={selectedRow.progress}
+                                    />
+                                    <Select
+                                        size="sm"
+                                        disabled={cannotUpdate}
+                                        label="Statut"
+                                        data={statusOptions}
+                                        {...form.getInputProps('status')}
+                                    />
+                                </div>
+                                <TextEditor form={form} id="description" title="Détail de la mise à jour" withAsterisk />
+                                {!cannotUpdate && (
+                                    <div>
+                                        <p className="text-[12.5px] text-slate-700 mb-1.5 flex items-center gap-1">
+                                            <IconPaperclip size={13} aria-hidden="true" /> Pièces jointes (photos, rapports)
+                                        </p>
+                                        <FileDropzone form={form} id="docs" />
+                                    </div>
+                                )}
+                                <div className="flex justify-end gap-2 pt-1">
+                                    <Button type="button" variant="default" size="sm" onClick={() => navigate('/adhoc-actions')}>
+                                        Annuler
+                                    </Button>
+                                    <Button
+                                        disabled={cannotUpdate}
+                                        color="teal"
+                                        size="sm"
+                                        type="submit"
+                                        leftSection={<IconDeviceFloppy size={15} />}
+                                    >
+                                        Enregistrer la mise à jour
+                                    </Button>
+                                </div>
+                            </SectionCard>
                         </form>
                     )}
                 </div>
 
-                {/* Right Side: History */}
-                {selectedRow.progress >= 0 && (
-                    <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200 ">
-                        <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Update History</p>
-                        {actionHistory.length === 0 && (
-                            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-                                <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Tips</h4>
-                                <ul className="text-xs text-blue-700 space-y-1">
-                                    <li>• Update progress regularly</li>
-                                    <li>• Add details about obstacles encountered</li>
-                                    <li>• Attach photos or documents if necessary</li>
-                                    <li>• Notify the assignee of important changes</li>
-                                </ul>
-                            </div>
-                        )}
-                        {actionHistory.slice().reverse().map((x: any, index: number, arr: any[]) => {
-                            const previousProgress = index < arr.length - 1 ? arr[index + 1].progress : 0;
-                            const progressMade = x.progress - previousProgress;
-                            return (
-                                <Card key={index} shadow="sm" padding="sm" radius="md" withBorder className="">
-                                    <div className="flex flex-col gap-4">
-                                        {/* Header */}
-                                        <div className="flex justify-between items-center">
-                                            <div className="rounded-4xl">
-                                                <p className="text-sm text-amber-800 flex gap-1 p-1 items-center">
-                                                    <IconClock /> {formatDateShort(x.createdAt)}
-                                                </p>
-                                            </div>
-                                            <Badge radius="sm" variant="outline" color="purple" className="!capitalize">{actionStatusesMap[x.status]}</Badge>
-                                        </div>
-                                        {/* Progress Section */}
-                                        <Progress.Root size={20}>
-                                            <Progress.Section value={previousProgress} color="blue">
-                                                <Progress.Label>{previousProgress}</Progress.Label>
-                                            </Progress.Section>
-                                            {progressMade > 0 && (
-                                                <Progress.Section value={progressMade} color="teal">
-                                                    <Progress.Label className="text-xs">{progressMade}</Progress.Label>
-                                                </Progress.Section>
-                                            )}
-                                        </Progress.Root>
-                                        <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                                            <p className="text-blue-400">Update Details</p>
-                                            {/* LOT 41 P0 XSS fix */}
-                                            <SafeHtml html={x.description || "-"} className="text-gray-700 mt-1 text-sm" />
-                                        </div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
-                        {actionHistory.length > 0 && null}
+                {/* ─── Historique des mises à jour ─────────────────────────── */}
+                <aside className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                    <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                        <span className="inline-flex p-1.5 rounded-md bg-orange-50 text-orange-700">
+                            <IconHistory size={15} stroke={1.8} />
+                        </span>
+                        <h3
+                            className="text-slate-800"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                letterSpacing: '-0.01em',
+                            }}
+                        >
+                            Historique des mises à jour
+                        </h3>
                     </div>
-                )}
+
+                    {actionHistory.length === 0 && (
+                        <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                            <h4 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Bonnes pratiques</h4>
+                            <ul className="text-[11.5px] text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Mettre à jour la progression régulièrement</li>
+                                <li>Mentionner les obstacles rencontrés</li>
+                                <li>Joindre photos ou documents si nécessaire</li>
+                                <li>Informer l'assigné des changements importants</li>
+                            </ul>
+                        </div>
+                    )}
+
+                    {actionHistory.slice().reverse().map((x: any, index: number, arr: any[]) => {
+                        const previousProgress = index < arr.length - 1 ? arr[index + 1].progress : 0;
+                        const progressMade = x.progress - previousProgress;
+                        const cfg = adhocStatusConfig(x.status);
+                        return (
+                            <div key={index} className="rounded-lg border border-slate-200 p-3">
+                                <div className="flex justify-between items-center gap-2">
+                                    <p className="text-[11.5px] text-slate-500 flex gap-1 items-center">
+                                        <IconClock size={12} aria-hidden="true" /> {formatDateFr(x.createdAt)}
+                                    </p>
+                                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${cfg.chip}`}>
+                                        {cfg.label}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={x.progress} aria-valuemin={0} aria-valuemax={100}>
+                                        <div className={`h-full rounded-full ${progressBarClass(x.progress)}`} style={{ width: `${x.progress}%` }} />
+                                    </div>
+                                    <span className="text-[11.5px] text-slate-600 tabular-nums">
+                                        {previousProgress}% {progressMade > 0 ? `→ ${x.progress}%` : ''}
+                                    </span>
+                                </div>
+                                <div className="mt-2">
+                                    <SafeHtml html={x.description || '—'} className="text-slate-600 text-[12px]" />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </aside>
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default UpdateAdhocAction;

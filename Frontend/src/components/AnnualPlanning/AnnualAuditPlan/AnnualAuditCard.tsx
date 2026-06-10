@@ -1,20 +1,26 @@
-import { Button, Tooltip } from "@mantine/core";
-import { IconDots, IconEdit, IconEye } from "@tabler/icons-react";
-import { capitalizeFirstLetter } from "../../../utility/OtherUtilities";
+import { ActionIcon, Tooltip } from '@mantine/core';
+import { IconCheck, IconEdit, IconEye, IconX } from '@tabler/icons-react';
+import { auditCategoryConfig, formatDateFr, planStatusConfig } from '../planningLabels';
+
+/**
+ * Carte d'un plan d'audit (vue cartes du plan annuel) : référence, périmètre,
+ * auditeur principal, fenêtre d'exécution et actions selon le statut.
+ */
 
 type AuditPlan = {
     id: string;
     refNumber: string;
     title: string;
     scopeId?: string;
-    auditArea?: string; // fallback if needed
-    leadAuditor: string;
-    category: 'Internal' | 'External';
+    auditArea?: string;
+    leadAuditor?: string;
+    category: string;
     startDate: string;
     endDate: string;
-    planningStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PLANNED' | 'IN PROGRESS' | 'COMPLETED' | 'CANCELLED';
-    type: string;
+    planningStatus: string;
+    type?: string;
 };
+
 interface AnnualAuditCardProps {
     audit: AuditPlan;
     onEdit: (audit: AuditPlan) => void;
@@ -22,145 +28,88 @@ interface AnnualAuditCardProps {
     onApprove: (audit: AuditPlan) => void;
     onReject: (audit: AuditPlan) => void;
     auditAreaMap: Record<string, any>;
-    leadAuditor?: any; // Optional, if leadAuditor is not part of audit object
-
+    leadAuditor?: any;
 }
 
 const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditAreaMap, leadAuditor }: AnnualAuditCardProps) => {
-
-    // Category chip color
-    const getCategoryStyles = (category: string) => {
-        switch (category) {
-            case 'Internal':
-                return 'bg-blue-100 text-blue-700';
-            case 'External':
-                return 'bg-purple-100 text-purple-700';
-            default:
-                return 'bg-gray-100 text-gray-700';
-        }
-    };
-    // Status chip color
-    const getStatusStyles = (status: string) => {
-        switch (status) {
-            case 'APPROVED':
-                return 'bg-green-100 text-green-700';
-            case 'PENDING':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'REJECTED':
-                return 'bg-red-100 text-red-700';
-            case 'PLANNED':
-            case 'IN PROGRESS':
-                return 'bg-blue-100 text-blue-800';
-            case 'COMPLETED':
-                return 'bg-green-100 text-green-800';
-            case 'CANCELLED':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-700';
-        }
-    };
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
-    };
+    const statusCfg = planStatusConfig(audit.planningStatus);
+    const categoryCfg = auditCategoryConfig(audit.category);
+    const isPending = String(audit.planningStatus ?? '').toUpperCase() === 'PENDING';
+    const scope = auditAreaMap[audit?.scopeId || '']?.name || audit.auditArea || '—';
 
     return (
-        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 flex flex-col h-full">
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs ${getCategoryStyles(capitalizeFirstLetter(audit.category))}`}>{capitalizeFirstLetter(audit.category)}</span>
-                    <span className="text-gray-600 text-sm">{auditAreaMap[audit?.scopeId || ""]?.name}</span>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm ${getStatusStyles(audit.planningStatus)}`}>{capitalizeFirstLetter(audit.planningStatus)}</span>
-            </div>
-            <h3 className="text-lg !line-clamp-1 text-slate-800 mb-3 ">{audit.title}</h3>
-            <div className="space-y-2 text-sm text-slate-600 mb-4">
-                <div>
-                    <span className="font-medium">Audit Date:</span> {formatDate(audit.startDate)}
-                </div>
-                {leadAuditor && <div>
-                    <span className="font-medium">Lead Auditor:</span> {leadAuditor?.name ?? "-"}
-                </div>}
-                <div>
-                    <span className="font-medium">Reference:</span> {audit.refNumber}
-                </div>
-                <div>
-                    <span className="font-medium">End Date:</span> {formatDate(audit.endDate)}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col h-full">
+            <div className="flex items-start justify-between gap-2 mb-2.5">
+                <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] font-mono text-slate-600">
+                    {audit.refNumber || '—'}
+                </span>
+                <div className="flex items-center gap-1.5">
+                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${categoryCfg.chip}`}>
+                        {categoryCfg.label}
+                    </span>
+                    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
+                        {statusCfg.label}
+                    </span>
                 </div>
             </div>
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-auto">
-                <div className="flex items-center gap-3">
-                    {audit.planningStatus === 'PENDING' && (
-                        <>
-                            <Tooltip label="Approve">
-                                <Button
-                                    variant="light"
-                                    color="green"
-                                    size="xs"
-                                    leftSection={<IconDots size={16} />}
-                                    onClick={() => onApprove(audit)}
-                                >
-                                    Approve
-                                </Button>
-                            </Tooltip>
-                            <Tooltip label="Reject">
-                                <Button
-                                    variant="light"
-                                    color="red"
-                                    size="xs"
-                                    leftSection={<IconDots size={16} />}
-                                    onClick={() => onReject(audit)}
-                                >
-                                    Reject
-                                </Button>
-                            </Tooltip>
-                            <Tooltip label="Edit">
-                                <Button
-                                    variant="subtle"
-                                    color="teal"
-                                    size="xs"
-                                    leftSection={<IconEdit size={16} />}
-                                    onClick={() => onEdit(audit)}
-                                >
-                                    Edit
-                                </Button>
-                            </Tooltip>
-                        </>
-                    )}
-                    {audit.planningStatus === 'APPROVED' && (
-                        <Tooltip label="Approved — editing disabled">
-                            <Button
-                                variant="subtle"
-                                color="gray"
-                                size="xs"
-                                leftSection={<IconEdit size={16} />}
-                                disabled
-                            >
-                                Edit
-                            </Button>
+
+            <h3
+                className="text-slate-800 leading-snug line-clamp-2"
+                style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    letterSpacing: '-0.01em',
+                }}
+            >
+                {audit.title}
+            </h3>
+
+            <dl className="mt-3 space-y-1.5 text-[12.5px]">
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-slate-500">Périmètre</dt>
+                    <dd className="text-slate-800 text-right truncate">{scope}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-slate-500">Auditeur principal</dt>
+                    <dd className="text-slate-800 text-right">{leadAuditor?.name ?? '—'}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <dt className="text-slate-500">Période</dt>
+                    <dd className="text-slate-800 text-right">
+                        {formatDateFr(audit.startDate)} → {formatDateFr(audit.endDate)}
+                    </dd>
+                </div>
+            </dl>
+
+            <div className="flex items-center justify-end gap-1.5 pt-3 mt-auto border-t border-slate-100">
+                <Tooltip label="Consulter le plan" withArrow>
+                    <ActionIcon variant="light" size="sm" color="teal" onClick={() => onView(audit)} aria-label="Consulter le plan">
+                        <IconEye size={14} stroke={1.5} />
+                    </ActionIcon>
+                </Tooltip>
+                {isPending && (
+                    <>
+                        <Tooltip label="Modifier le plan" withArrow>
+                            <ActionIcon variant="light" size="sm" color="blue" onClick={() => onEdit(audit)} aria-label="Modifier le plan">
+                                <IconEdit size={14} stroke={1.5} />
+                            </ActionIcon>
                         </Tooltip>
-                    )}
-                    <Tooltip label="View">
-                        <Button
-                            variant="subtle"
-                            color="orange"
-                            size="xs"
-                            leftSection={<IconEye size={16} />}
-                            onClick={() => onView(audit)}
-                        >
-                            View
-                        </Button>
-                    </Tooltip>
-                </div>
+                        <Tooltip label="Approuver le plan" withArrow>
+                            <ActionIcon variant="light" size="sm" color="teal" onClick={() => onApprove(audit)} aria-label="Approuver le plan">
+                                <IconCheck size={14} stroke={1.5} />
+                            </ActionIcon>
+                        </Tooltip>
+                        <Tooltip label="Rejeter le plan" withArrow>
+                            <ActionIcon variant="light" size="sm" color="red" onClick={() => onReject(audit)} aria-label="Rejeter le plan">
+                                <IconX size={14} stroke={1.5} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </>
+                )}
             </div>
         </div>
     );
-}
+};
 
-export default AnnualAuditCard
+export default AnnualAuditCard;

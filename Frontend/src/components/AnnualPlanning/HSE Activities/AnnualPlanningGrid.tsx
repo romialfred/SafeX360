@@ -11,7 +11,8 @@ import ActivityCard from './ActivityCard';
 import { Button, Group, Modal, Select, SelectProps, Text, TextInput } from '@mantine/core';
 import { DateTimePicker, MonthPickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { createActivity, updateActivity } from '../../../services/HSEActivityService';
+import { createActivity, deleteActivity, updateActivity } from '../../../services/HSEActivityService';
+import { modals } from '@mantine/modals';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { useDispatch } from 'react-redux';
@@ -41,8 +42,6 @@ export default function AnnualPlanningGrid({
     const [opened, setOpened] = useState(false);
     const dispatch = useDispatch();
     const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
-
-    useEffect(() => { }, []);
 
     const filteredActivities = allActivities.filter(activity => {
         const matchesMonth = selectedMonth === 'all' || (activity.month && (activity.month.endsWith(`-${String(selectedMonth).padStart(2, '0')}-01`) || activity.month === selectedMonth));
@@ -250,7 +249,32 @@ export default function AnnualPlanningGrid({
     );
 
     const handleDeleteActivity = (id: string) => {
-        setAllActivities(allActivities.filter(activity => activity.id !== id));
+        const activity = allActivities.find((a) => a.id === id);
+        modals.openConfirmModal({
+            title: <span className="text-base">Supprimer l'activité</span>,
+            centered: true,
+            children: (
+                <span className="text-sm">
+                    Souhaitez-vous supprimer l'activité : <strong>{activity?.title ?? 'sans titre'}</strong> ?
+                    Cette action est irréversible.
+                </span>
+            ),
+            labels: { confirm: 'Oui, supprimer', cancel: 'Annuler' },
+            cancelProps: { color: 'gray', variant: 'default' },
+            confirmProps: { color: 'red', variant: 'filled' },
+            onConfirm: () => {
+                dispatch(showOverlay());
+                deleteActivity(id)
+                    .then(() => {
+                        successNotification('Activité supprimée du planning');
+                        setAllActivities(allActivities.filter((a) => a.id !== id));
+                    })
+                    .catch((err: any) => {
+                        errorNotification(err.response?.data?.errorMessage || 'La suppression a échoué');
+                    })
+                    .finally(() => dispatch(hideOverlay()));
+            },
+        });
     };
 
     React.useEffect(() => {
@@ -311,7 +335,7 @@ export default function AnnualPlanningGrid({
                         return (
                             <div
                                 key={month}
-                                className={`group border border-slate-200 ${accent.ring} border-l-4 rounded-lg overflow-hidden transition-all hover:shadow-md ${isCurrentMonth ? 'ring-2 ring-amber-300 ring-offset-1' : ''}`}
+                                className={`group border border-slate-200 ${accent.ring} border-l-4 rounded-lg overflow-hidden transition-[box-shadow] hover:shadow-md ${isCurrentMonth ? 'ring-2 ring-amber-300 ring-offset-1' : ''}`}
                             >
                                 <div className={`px-4 py-2.5 border-b border-slate-200 flex items-center justify-between ${accent.bg}`}>
                                     <div className="flex items-center gap-2">

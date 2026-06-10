@@ -1,82 +1,64 @@
 import React from 'react';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Tooltip } from '@mantine/core';
+import { themeCategoryLabel } from '../planningLabels';
+
+/**
+ * Carte d'un thème mensuel : intitulé, description, type et catégorie
+ * d'activité, avec actions de modification et suppression.
+ */
 
 interface ThemeCardProps {
     theme: any;
-    categoryInfo: any;
-    typeInfo: any;
+    typeInfo: { label: string; chip: string; dot: string };
     onEdit: (theme: any) => void;
-    onDelete: (id: string) => void;
+    onDelete: (theme: any) => void;
 }
 
-const ThemeCard: React.FC<ThemeCardProps> = ({ theme, categoryInfo, typeInfo, onEdit, onDelete }) => {
+const ThemeCard: React.FC<ThemeCardProps> = ({ theme, typeInfo, onEdit, onDelete }) => {
     return (
-        <div
-            key={theme.id}
-            className="p-3 rounded-lg border border-slate-200 hover:border-slate-300 group relative bg-white"
-        >
-            {/* < div className="flex items-start justify-between mb-2">
-                <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
-                    <ActionIcon
-                        size="sm"
-                        variant="light"
-                        color="blue"
-                        onClick={() => onEdit(theme)}
-                    >
-                        <IconEdit size={12} />
-                    </ActionIcon>
-
-                    <ActionIcon
-                        size="sm"
-                        variant="light"
-                        color="red"
-                        onClick={() => onDelete(theme.id)}
-                    >
-                        <IconTrash size={12} />
-                    </ActionIcon>
+        <div className="p-3 rounded-lg border border-slate-200 bg-white">
+            <div className="flex items-start justify-between gap-2">
+                <h4 className="text-[13px] text-slate-800 leading-snug">{theme.title}</h4>
+                <div className="flex gap-1 flex-shrink-0">
+                    <Tooltip label="Modifier le thème" withArrow>
+                        <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="blue"
+                            onClick={() => onEdit(theme)}
+                            aria-label="Modifier le thème"
+                        >
+                            <IconEdit size={12} />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Supprimer le thème" withArrow>
+                        <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="red"
+                            onClick={() => onDelete(theme)}
+                            aria-label="Supprimer le thème"
+                        >
+                            <IconTrash size={12} />
+                        </ActionIcon>
+                    </Tooltip>
                 </div>
-            </div> */}
+            </div>
 
-            <h5 className="text-sm mb-2 leading-tight">{theme.title}</h5>
+            {theme.description && (
+                <p className="text-[11.5px] text-slate-500 mt-1 line-clamp-3">{theme.description}</p>
+            )}
 
-            <p className="text-xs text-slate-600 mb-2 line-clamp-3">
-                {theme.description}
-            </p>
-
-            <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2">
-                    <span className={`${categoryInfo.color.replace('bg-', 'text-')} text-xs`}>
-                        {categoryInfo.label}
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${typeInfo.chip}`}>
+                    {typeInfo.label}
+                </span>
+                {theme.category && (
+                    <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-slate-600">
+                        {themeCategoryLabel(theme.category)}
                     </span>
-                    <span className={`${typeInfo.color.replace('bg-', 'text-')} text-xs`}>
-                        {typeInfo.label}
-                    </span>
-                </div>
-                {/* {theme.participants && (
-                    <span className="text-blue-600">
-                        {theme.participants} participants
-                    </span>
-                )} */}
-                <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
-                    <ActionIcon
-                        size="sm"
-                        variant="light"
-                        color="blue"
-                        onClick={() => onEdit(theme)}
-                    >
-                        <IconEdit size={12} />
-                    </ActionIcon>
-
-                    <ActionIcon
-                        size="sm"
-                        variant="light"
-                        color="red"
-                        onClick={() => onDelete(theme.id)}
-                    >
-                        <IconTrash size={12} />
-                    </ActionIcon>
-                </div>
+                )}
             </div>
         </div>
     );

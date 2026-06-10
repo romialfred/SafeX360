@@ -1,22 +1,69 @@
-import { Breadcrumbs, Text, TextInput, Button, Select, Alert, Badge, Group } from "@mantine/core";
+import { Button, Select, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+    IconBolt,
+    IconCalendarDue,
+    IconClipboardText,
+    IconDeviceFloppy,
+    IconUserCheck,
+} from "@tabler/icons-react";
+import PageHeader from "../../UtilityComp/PageHeader";
+import TextEditor from "../../UtilityComp/TextEditor";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { createCorrectiveAction } from "../../../services/CorrectiveActionService";
-import { useEffect, useState } from "react";
 import { getEmployeeDropdown } from "../../../services/EmployeeService";
-import CaHelp from "../../LaggingIndicator/CorrectiveAction/CaHelp";
-import { IconInfoCircle, IconClockHour3, IconUserCheck } from "@tabler/icons-react";
-import TextEditor from "../../UtilityComp/TextEditor";
 import { isValidRichText } from "../../../utility/OtherUtilities";
+import { adhocStatusConfig, toIsoDateLocal } from "./adhocLabels";
+
+/**
+ * Création d'une suggestion d'amélioration : saisie sectionnée à gauche,
+ * rappel du circuit d'approbation à droite. La suggestion est créée en
+ * attente puis transmise au responsable pour validation.
+ */
+
+const SectionCard = ({
+    icon,
+    title,
+    subtitle,
+    children,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    children: React.ReactNode;
+}) => (
+    <section className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-slate-100">
+            <span className="inline-flex p-1.5 rounded-md bg-orange-50 text-orange-700">{icon}</span>
+            <div>
+                <h3
+                    className="text-slate-800"
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    {title}
+                </h3>
+                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+            </div>
+        </div>
+        <div className="flex flex-col gap-3">{children}</div>
+    </section>
+);
 
 const AdhocActionsForm = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [employees, setEmployees] = useState<any[]>([]);
+    const [submitting, setSubmitting] = useState(false);
     const user = useSelector((state: any) => state.user);
 
     const form = useForm({
@@ -30,125 +77,168 @@ const AdhocActionsForm = () => {
             departmentId: user?.departmentId || null,
         },
         validate: {
-            actionName: (value) => (value.trim().length < 5 ? 'Title must be at least 5 characters' : null),
-
-            description: (value) => (isValidRichText(value) ? null : 'Description must be at least 10 characters'),
+            actionName: (value) => (value.trim().length < 5 ? "L'intitulé doit compter au moins 5 caractères" : null),
+            description: (value) => (isValidRichText(value) ? null : 'La description est obligatoire'),
+            deadline: (value) => (value ? null : "L'échéance est obligatoire"),
         },
     });
 
     useEffect(() => {
-        getEmployeeDropdown().then((res) => {
-            setEmployees(res);
-        }).catch((err) => {
-            console.error("Failed to fetch employees", err);
-        });
+        getEmployeeDropdown()
+            .then((res) => setEmployees(res))
+            .catch(() => { });
     }, []);
 
     const handleSubmit = () => {
+        setSubmitting(true);
         dispatch(showOverlay());
 
         const payload = {
             ...form.values,
+            actionName: form.values.actionName.trim(),
             deadline: form.values.deadline instanceof Date
-                ? form.values.deadline.toISOString().split("T")[0] // yyyy-MM-dd format
+                ? toIsoDateLocal(form.values.deadline)
                 : null,
         };
 
         createCorrectiveAction(payload)
-            .then((_res) => {
-                successNotification("Improvement idea created successfully");
+            .then(() => {
+                successNotification("Suggestion d'amélioration créée. Elle sera soumise à approbation.");
                 navigate("/adhoc-actions");
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
             })
             .finally(() => {
+                setSubmitting(false);
                 dispatch(hideOverlay());
             });
     };
 
+    const pendingCfg = adhocStatusConfig('PENDING');
+
     return (
-        <div className="p-5 flex flex-col gap-5">
-            <div className="flex justify-between items-center">
-                <div>
-                    {/* LOT 40 P1: page title slate-900, breadcrumbs dimmed/teal */}
-                    <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">
-                        New Improvement Idea
-                    </div>
-                    <Breadcrumbs mt="xs">
-                        <Link className="hover:!underline" to="/">
-                            <Text c="dimmed" className="hover:!underline cursor-pointer">
-                                Home
-                            </Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/adhoc-actions">
-                            <Text c="dimmed" className="hover:!underline cursor-pointer">
-                                Improvement Ideas
-                            </Text>
-                        </Link>
-                        <Text c="teal" fw={500}>New Improvement Idea</Text>
-                    </Breadcrumbs>
-                </div>
-            </div>
+        <div className="p-5 space-y-4 w-full">
+            <PageHeader
+                breadcrumbs={[
+                    { label: 'Accueil', to: '/' },
+                    { label: 'Actions Correctives' },
+                    { label: "Suggestions d'amélioration", to: '/adhoc-actions' },
+                    { label: 'Nouvelle suggestion' },
+                ]}
+                icon={<IconBolt size={22} stroke={2} />}
+                iconColor="orange"
+                title="Nouvelle suggestion d'amélioration"
+                subtitle="Décrire l'idée, désigner un responsable et fixer une échéance réaliste"
+            />
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-5 ">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <TextInput
-                                    withAsterisk
-                                    label="Idea Title "
-                                    placeholder="Enter Idea title"
-                                    {...form.getInputProps('actionName')}
-                                />
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+                <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
+                    {/* ─── Colonne saisie ─────────────────────────────────── */}
+                    <div className="xl:col-span-3 flex flex-col gap-4">
+                        <SectionCard
+                            icon={<IconClipboardText size={15} stroke={1.8} />}
+                            title="Description de la suggestion"
+                            subtitle="Ce que l'idée doit améliorer, en termes concrets pour les équipes"
+                        >
+                            <TextInput
+                                withAsterisk
+                                label="Intitulé"
+                                placeholder="ex. Installer un miroir convexe à la sortie de l'atelier maintenance Nord"
+                                size="sm"
+                                {...form.getInputProps('actionName')}
+                            />
+                            <TextEditor form={form} id="description" title="Description détaillée" withAsterisk />
+                        </SectionCard>
 
+                        <SectionCard
+                            icon={<IconUserCheck size={15} stroke={1.8} />}
+                            title="Responsabilité et échéance"
+                            subtitle="Qui portera l'action et sous quel délai"
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Select
                                     data={employees.map(emp => ({ value: "" + emp.id, label: emp.name }))}
-
-                                    label="Assigned To "
-                                    placeholder="Person responsible"
+                                    label="Assignée à"
+                                    placeholder="Choisir un employé"
+                                    size="sm"
+                                    searchable
                                     {...form.getInputProps('assignedEmployeeId')}
                                 />
+                                <DateInput
+                                    label="Échéance"
+                                    placeholder="Choisir une date"
+                                    minDate={new Date()}
+                                    size="sm"
+                                    withAsterisk
+                                    leftSection={<IconCalendarDue size={14} />}
+                                    {...form.getInputProps('deadline')}
+                                />
                             </div>
-                            <TextEditor form={form} id="description" title="Idea Description" withAsterisk />
-                            <DateInput
-                                label="Due Date "
-                                placeholder="Pick a date"
-                                minDate={new Date()}
-                                {...form.getInputProps('deadline')}
-                            />
+                        </SectionCard>
 
-                            <Alert
-                                color="indigo"
-                                variant="light"
-                                radius="md"
-                                icon={<IconInfoCircle size={18} />}
-                                className="border border-indigo-200"
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="default"
+                                size="sm"
+                                disabled={submitting}
+                                onClick={() => navigate('/adhoc-actions')}
                             >
-                                <div className="flex flex-col gap-1">
-                                    <Text size="sm" c="indigo.9">Submission Notice</Text>
-                                    <Text size="sm" c="dimmed">This idea will be created as pending and routed for manager approval.</Text>
-                                    <Group gap="xs" mt={4}>
-                                        <Badge leftSection={<IconClockHour3 size={12} />} color="yellow" variant="light">Status: Pending</Badge>
-                                        <Badge leftSection={<IconUserCheck size={12} />} color="blue" variant="light">Approval Required</Badge>
-                                    </Group>
-                                </div>
-                            </Alert>
-                            <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
-                                {/* LOT 40 P1: explicit type for non-submit cancel button */}
-                                <Button type="button" variant="default">Cancel</Button>
-                                <Button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">Create Idea</Button>
-                            </div>
-                        </form>
+                                Annuler
+                            </Button>
+                            <Button
+                                type="submit"
+                                color="teal"
+                                size="sm"
+                                loading={submitting}
+                                leftSection={<IconDeviceFloppy size={15} />}
+                            >
+                                Créer la suggestion
+                            </Button>
+                        </div>
                     </div>
-                    <div className="">
-                        <CaHelp />
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
 
-export default AdhocActionsForm
+                    {/* ─── Volet circuit d'approbation ─────────────────────── */}
+                    <aside className="xl:col-span-2">
+                        <div className="sticky top-4 flex flex-col gap-3">
+                            <div className="bg-white rounded-xl border border-slate-200 p-4">
+                                <h4
+                                    className="text-slate-800 mb-2"
+                                    style={{
+                                        fontFamily: "'Source Serif 4', Georgia, serif",
+                                        fontSize: '14px',
+                                        fontWeight: 600,
+                                        letterSpacing: '-0.01em',
+                                    }}
+                                >
+                                    Circuit d'approbation
+                                </h4>
+                                <p className="text-[12.5px] text-slate-600 leading-relaxed">
+                                    La suggestion est créée avec le statut{' '}
+                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider align-middle ${pendingCfg.chip}`}>
+                                        {pendingCfg.label}
+                                    </span>{' '}
+                                    puis transmise au responsable de département pour approbation. Une fois approuvée,
+                                    elle passe en cours et sa progression peut être mise à jour jusqu'à clôture.
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                                <h5 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Conseils de rédaction</h5>
+                                <ul className="text-[11.5px] text-slate-600 space-y-1 list-disc list-inside">
+                                    <li>Commencer l'intitulé par un verbe d'action</li>
+                                    <li>Préciser le lieu et l'équipement concernés</li>
+                                    <li>Décrire le gain attendu en sécurité ou en efficacité</li>
+                                    <li>Choisir une échéance réaliste compte tenu des dépendances</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default AdhocActionsForm;
