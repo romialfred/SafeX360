@@ -20,6 +20,7 @@ import {
     IconFilePencil,
     IconPhoto,
     IconPlus,
+    IconSparkles,
     IconTrash,
     IconUserCheck,
     IconUsers,
@@ -35,7 +36,11 @@ import { convertFilesToBase64New, handlePreview } from "../../../../utility/Docu
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { addAuditReport, getAuditReportByAuditId } from "../../../../services/AuditReportService";
-import { downloadAuditReportPdf } from "../../../../services/AuditIsoService";
+import {
+    downloadAuditReportPdf,
+    reviewAuditReportAi,
+    AiAuditReview,
+} from "../../../../services/AuditIsoService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { VALIDATOR_STATUS_LABELS, VALIDATOR_STATUS_OPTIONS } from "../auditLabels";
 
@@ -45,6 +50,9 @@ const AuditReportTabs = () => {
     const [isEditing, setIsEditing] = useState(true);
     const [report, setReport] = useState<any>(null);
     const [contributors, setContributors] = useState<any[]>([]);
+    // LOT 53 — revue IA du rapport (complétude ISO §6.5, cohérence, manques)
+    const [aiReview, setAiReview] = useState<AiAuditReview | null>(null);
+    const [aiReviewLoading, setAiReviewLoading] = useState(false);
     useEffect(() => {
         dispatch(showOverlay());
         fetchReport();
@@ -215,6 +223,23 @@ const AuditReportTabs = () => {
                         <Group justify="space-between" className="mb-2">
                             <h2 className="text-lg text-slate-800">Synthèse du rapport</h2>
                             <Group gap="xs">
+                                {/* LOT 53 — revue IA du rapport avant diffusion (optionnelle) */}
+                                <Button
+                                    variant="light"
+                                    color="indigo"
+                                    radius="xl"
+                                    loading={aiReviewLoading}
+                                    leftSection={<IconSparkles size={16} />}
+                                    onClick={() => {
+                                        setAiReviewLoading(true);
+                                        reviewAuditReportAi(id as string)
+                                            .then(setAiReview)
+                                            .catch(() => errorNotification("La revue IA est indisponible pour le moment"))
+                                            .finally(() => setAiReviewLoading(false));
+                                    }}
+                                >
+                                    Revue IA
+                                </Button>
                                 {/* LOT 52 — rapport d'audit PDF structuré ISO 19011 §6.5 */}
                                 <Button
                                     variant="light"
@@ -240,6 +265,34 @@ const AuditReportTabs = () => {
                                 </Button>
                             </Group>
                         </Group>
+
+                        {/* LOT 53 — résultat de la revue IA (score + manques + suggestions) */}
+                        {aiReview && (
+                            <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 mb-4">
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                    <span className="flex items-center gap-2 text-[13px] text-indigo-900">
+                                        <IconSparkles size={15} />
+                                        Revue IA du rapport — qualité estimée {Number(aiReview.qualityScore).toFixed(1)}/10
+                                    </span>
+                                    {aiReview.demo && <Badge color="gray" variant="light" radius="sm">Démo</Badge>}
+                                </div>
+                                {aiReview.strengths.length > 0 && (
+                                    <ul className="text-[12.5px] text-emerald-800 list-disc ml-5 mb-1">
+                                        {aiReview.strengths.map((item, index) => <li key={`s-${index}`}>{item}</li>)}
+                                    </ul>
+                                )}
+                                {aiReview.gaps.length > 0 && (
+                                    <ul className="text-[12.5px] text-rose-800 list-disc ml-5 mb-1">
+                                        {aiReview.gaps.map((item, index) => <li key={`g-${index}`}>{item}</li>)}
+                                    </ul>
+                                )}
+                                {aiReview.suggestions.length > 0 && (
+                                    <ul className="text-[12.5px] text-slate-700 list-disc ml-5">
+                                        {aiReview.suggestions.map((item, index) => <li key={`p-${index}`}>{item}</li>)}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
 
                         {/* Content Container */}
                         <div className="flex flex-col gap-5  p-5 rounded-xl shadow-sm">

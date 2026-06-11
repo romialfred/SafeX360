@@ -247,7 +247,7 @@ CLAUSE_REQUIRED_FOR_NC: La clause du referentiel est obligatoire pour une non-co
 EVIDENCE_REQUIRED_FOR_NC: Au moins une preuve est obligatoire pour une non-conformite.
 ONLY_NC_CAN_BE_ESCALATED: Seul un constat classe non-conformite peut etre escalade.
 REFERENTIALS_REQUIRED: Au moins un referentiel est requis pour initialiser la checklist.
-REFERENTIAL_INVALID: Referentiel invalide (ISO_45001, ISO_14001, ISO_9001).
+REFERENTIAL_INVALID: Referentiel invalide (ISO_45001, ISO_14001, ISO_9001, MINIER).
 CHECKLIST_ITEM_NOT_FOUND: La question de checklist n existe pas.
 CHECKLIST_RESULT_INVALID: Resultat de checklist invalide.
 COMMENT_REQUIRED_FOR_NON_CONFORME: Un commentaire factuel est obligatoire pour une question non conforme.
@@ -257,3 +257,10 @@ EFFECTIVENESS_CHECK_NOT_FOUND: La verification d efficacite n existe pas.
 EFFECTIVENESS_ALREADY_CONCLUDED: Cette verification a deja recu un verdict.
 VERDICT_INVALID: Verdict invalide (EFFICACE, PARTIELLEMENT_EFFICACE, INEFFICACE).
 DUE_DATE_REQUIRED: L echeance de verification est obligatoire.
+
+# LOT 53 — verrouillage de cloture ISO 19011 (6.6) : conditions de fin d audit
+CLOSURE_REQUIRES_APPROVED_REPORT: Cloture impossible, le rapport d audit doit etre redige et APPROUVE (ISO 19011 6.5).
+CLOSURE_REQUIRES_COMPLETED_CHECKLIST: Cloture impossible, des questions de checklist restent A EVALUER (ISO 19011 6.4.7).
+CLOSURE_REQUIRES_CLASSIFIED_FINDINGS: Cloture impossible, tous les constats doivent etre classes (NC majeure/mineure, observation ou opportunite — ISO 19011 6.4.8).
+CLOSURE_REQUIRES_ESCALATED_NC: Cloture impossible, toute non-conformite doit etre escaladee vers les Constats centraux pour suivi des actions (ISO 19011 6.7).
+CLOSURE_REQUIRES_OPENING_AND_CLOSING_MEETINGS: Cloture impossible, les reunions d ouverture ET de cloture doivent etre enregistrees (ISO 19011 6.4.2 / 6.4.9).

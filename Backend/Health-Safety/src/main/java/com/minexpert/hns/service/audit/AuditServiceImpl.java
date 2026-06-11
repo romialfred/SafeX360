@@ -35,6 +35,12 @@ public class AuditServiceImpl implements AuditService {
 
     private final ContributorService contributorService;
 
+    // LOT 53 — dépendances du verrouillage de clôture ISO 19011 §6.6
+    private final com.minexpert.hns.repository.audit.ReportRepository reportRepository;
+    private final com.minexpert.hns.repository.audit.AuditChecklistItemRepository checklistItemRepository;
+    private final com.minexpert.hns.repository.audit.ObservationRepository observationRepository;
+    private final com.minexpert.hns.repository.audit.MeetingRepository meetingRepository;
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = AuditCacheNames.AUDIT_LIST, allEntries = true),
@@ -147,9 +153,53 @@ public class AuditServiceImpl implements AuditService {
     public void updateAuditStatus(Long id, AuditStatus status) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
+        if (status == AuditStatus.CLOSED) {
+            assertReadyForClosure(id);
+        }
         audit.setStatus(status);
         audit.setUpdatedAt(LocalDateTime.now());
         auditRepository.save(audit);
+    }
+
+    /**
+     * LOT 53 — verrouillage de clôture ISO 19011 §6.6 : un audit n'est terminé
+     * que lorsque les activités du plan sont achevées et le rapport approuvé.
+     * Chaque condition violée est signalée par un code d'erreur dédié :
+     *   1. rapport d'audit existant et APPROUVÉ (§6.5) ;
+     *   2. checklist entièrement évaluée — aucun item A_EVALUER (§6.4.7) ;
+     *   3. tous les constats classés selon ISO (§6.4.8 — plus de constat « non classé ») ;
+     *   4. toute non-conformité (majeure/mineure) escaladée vers les Constats
+     *      centraux pour garantir le suivi des actions (§6.7) ;
+     *   5. réunions d'ouverture ET de clôture enregistrées (§6.4.2 / §6.4.9).
+     */
+    private void assertReadyForClosure(Long auditId) throws HSException {
+        var report = reportRepository.findByAudit_Id(auditId).orElse(null);
+        if (report == null || report.getStatus() != com.minexpert.hns.enums.AuditReportStatus.APPROVED) {
+            throw new HSException("CLOSURE_REQUIRES_APPROVED_REPORT");
+        }
+
+        boolean checklistIncomplete = checklistItemRepository
+                .findByAuditIdOrderByReferentialAscIdAsc(auditId).stream()
+                .anyMatch(item -> "A_EVALUER".equals(item.getResult()));
+        if (checklistIncomplete) {
+            throw new HSException("CLOSURE_REQUIRES_COMPLETED_CHECKLIST");
+        }
+
+        var observations = observationRepository.findByAudit_Id(auditId);
+        if (observations.stream().anyMatch(o -> o.getClassification() == null || o.getClassification().isBlank())) {
+            throw new HSException("CLOSURE_REQUIRES_CLASSIFIED_FINDINGS");
+        }
+        if (observations.stream().anyMatch(o -> o.getClassification() != null
+                && o.getClassification().startsWith("NC_") && o.getNonConformityId() == null)) {
+            throw new HSException("CLOSURE_REQUIRES_ESCALATED_NC");
+        }
+
+        var meetings = meetingRepository.findByAudit_Id(auditId);
+        boolean hasOpening = meetings.stream().anyMatch(m -> "OPENING".equals(m.getType()));
+        boolean hasClosing = meetings.stream().anyMatch(m -> "CLOSING".equals(m.getType()));
+        if (!hasOpening || !hasClosing) {
+            throw new HSException("CLOSURE_REQUIRES_OPENING_AND_CLOSING_MEETINGS");
+        }
     }
 
     @Override

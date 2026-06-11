@@ -338,6 +338,41 @@ const downloadAuditReportPdf = async (auditId: number | string): Promise<void> =
     window.URL.revokeObjectURL(objectUrl);
 };
 
+// ─── Assistance IA audit (LOT 53 — optionnelle, l'IA propose, l'auditeur dispose) ───
+
+const aiAuditUrl = "/hns/ai-audits";
+
+export interface AiClassificationSuggestion {
+    classification: string;
+    clause: string;
+    justification: string;
+    demo: boolean;
+}
+
+export interface AiAuditReview {
+    qualityScore: number;
+    strengths: string[];
+    gaps: string[];
+    suggestions: string[];
+    demo: boolean;
+}
+
+/** Suggère une classification ISO + clause à partir du fait observé. */
+const suggestObservationClassification = async (payload: {
+    title?: string;
+    observedFact: string;
+    referential?: string | null;
+}): Promise<AiClassificationSuggestion> => {
+    const response = await axiosInstance.post(`${aiAuditUrl}/observations/suggest-classification`, payload);
+    return response.data;
+};
+
+/** Relecture IA du rapport d'audit (complétude ISO §6.5, cohérence, manques). */
+const reviewAuditReportAi = async (auditId: number | string): Promise<AiAuditReview> => {
+    const response = await axiosInstance.post(`${aiAuditUrl}/${auditId}/review-report`, {});
+    return response.data;
+};
+
 export {
     // Programme d'audit annuel
     getAllAuditPrograms,
@@ -364,4 +399,7 @@ export {
     getEffectivenessChecksByRecommendation,
     // Rapport PDF
     downloadAuditReportPdf,
+    // Assistance IA (LOT 53)
+    suggestObservationClassification,
+    reviewAuditReportAi,
 };

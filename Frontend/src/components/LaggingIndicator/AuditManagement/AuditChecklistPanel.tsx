@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Progress, Textarea, Tooltip } from "@mantine/core";
-import { IconChecklist, IconRefresh } from "@tabler/icons-react";
+import { IconChecklist, IconPick, IconRefresh } from "@tabler/icons-react";
 import IsoBadge from "../../UtilityComp/IsoBadge";
 import EmptyState from "../../UtilityComp/EmptyState";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
@@ -17,8 +17,25 @@ import {
     CHECKLIST_REFERENTIALS,
     CHECKLIST_RESULT_ACTIVE_CHIPS,
     CHECKLIST_RESULT_LABELS,
+    isIsoReferential,
     referentialToNorm,
 } from "./auditLabels";
+
+/**
+ * LOT 53 — badge de référentiel : IsoBadge pour les normes ISO (règle
+ * plateforme), badge sectoriel ambre dédié pour le référentiel MINIER.
+ */
+const ReferentialBadge = ({ referential }: { referential: string }) => {
+    if (isIsoReferential(referential)) {
+        return <IsoBadge norm={referentialToNorm(referential)} size="md" withLabel />;
+    }
+    return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-[12px] tracking-wide">
+            <IconPick size={14} />
+            Référentiel minier
+        </span>
+    );
+};
 
 /**
  * AuditChecklistPanel — LOT 52 Module B : étape « Checklist ISO » de
@@ -188,7 +205,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                                         : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                                 }`}
                             >
-                                <IsoBadge norm={referentialToNorm(referential)} size="md" withLabel />
+                                <ReferentialBadge referential={referential} />
                             </button>
                         );
                     })}
@@ -231,7 +248,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                     <div key={referential} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         {/* En-tête référentiel + progression */}
                         <div className="flex items-center justify-between gap-4 flex-wrap px-5 py-3 bg-slate-50 border-b border-slate-200">
-                            <IsoBadge norm={referentialToNorm(referential)} size="md" withLabel />
+                            <ReferentialBadge referential={referential} />
                             <div className="flex items-center gap-3 min-w-[220px] flex-1 max-w-xs">
                                 <Progress
                                     value={progress.percent}

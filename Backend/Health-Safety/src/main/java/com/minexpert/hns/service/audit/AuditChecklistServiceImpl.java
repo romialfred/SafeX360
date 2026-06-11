@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class AuditChecklistServiceImpl implements AuditChecklistService {
 
-    private static final Set<String> REFERENTIALS = Set.of("ISO_45001", "ISO_14001", "ISO_9001");
+    private static final Set<String> REFERENTIALS = Set.of("ISO_45001", "ISO_14001", "ISO_9001", "MINIER");
     private static final Set<String> RESULTS = Set.of("CONFORME", "NON_CONFORME", "NON_APPLICABLE", "A_EVALUER");
 
     private final AuditChecklistTemplateRepository templateRepository;

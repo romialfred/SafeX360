@@ -14,4 +14,7 @@ public interface AuditChecklistTemplateRepository extends CrudRepository<AuditCh
     List<AuditChecklistTemplate> findByActiveTrueOrderByReferentialAscOrderIndexAsc();
 
     List<AuditChecklistTemplate> findByReferentialAndActiveTrueOrderByOrderIndexAsc(String referential);
+
+    /** LOT 53 — garde-fou de seed par référentiel (jamais d'écrasement). */
+    long countByReferential(String referential);
 }

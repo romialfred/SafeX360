@@ -341,11 +341,17 @@ export const checklistResultLabel = (result?: string | null): string =>
 // ─── Référentiels de checklist (valeurs backend ISO_45001...) ───────────────
 // Affichage : TOUJOURS via IsoBadge (règle plateforme — jamais de texte ISO nu).
 
-export const CHECKLIST_REFERENTIALS = ['ISO_45001', 'ISO_14001', 'ISO_9001'] as const;
+// LOT 53 — MINIER : référentiel sectoriel (exigences propres à l'exploitation
+// minière, chaque question rattachée à sa clause ISO 45001/14001 fondatrice).
+export const CHECKLIST_REFERENTIALS = ['ISO_45001', 'ISO_14001', 'ISO_9001', 'MINIER'] as const;
 
 /** 'ISO_45001' (backend) → 'ISO 45001' (norme pour IsoBadge). */
 export const referentialToNorm = (referential?: string | null): string =>
     String(referential ?? '').replace('_', ' ').trim();
+
+/** Vrai pour les référentiels ISO (badge IsoBadge) — MINIER a son propre badge. */
+export const isIsoReferential = (referential?: string | null): boolean =>
+    String(referential ?? '').startsWith('ISO_');
 
 // ─── Verdicts de vérification d'efficacité (ISO 19011 §6.6) ─────────────────
 // green = efficace · amber = partiellement efficace · red = inefficace

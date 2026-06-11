@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActionIcon, Badge, Button, Group, Select, TextInput } from "@mantine/core";
-import { IconArrowUpRight, IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
+import { ActionIcon, Alert, Badge, Button, Group, Select, TextInput } from "@mantine/core";
+import { IconArrowUpRight, IconPhoto, IconPlus, IconSparkles, IconTrash } from "@tabler/icons-react";
 import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { isValidRichText } from "../../../../utility/OtherUtilities";
@@ -25,7 +25,12 @@ import { modals } from "@mantine/modals";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { createObservation, getObservationByAuditId } from "../../../../services/ObservationService";
-import { escalateObservation, getAuditChecklist } from "../../../../services/AuditIsoService";
+import {
+    escalateObservation,
+    getAuditChecklist,
+    suggestObservationClassification,
+    AiClassificationSuggestion,
+} from "../../../../services/AuditIsoService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { convertFilesToBase64New, handlePreview } from "../../../../utility/DocumentUtility";
 import { useParams } from "react-router-dom";
@@ -42,6 +47,11 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
     const [observations, setObservations] = useState<any[]>([]);
     // LOT 52 — clauses du/des référentiels initialisés pour le datalist Clause.
     const [checklistClauses, setChecklistClauses] = useState<string[]>([]);
+    // LOT 53 — assistance IA optionnelle : référentiel dominant de la checklist
+    // (pour ancrer la clause proposée) + dernière suggestion reçue.
+    const [checklistReferential, setChecklistReferential] = useState<string | null>(null);
+    const [aiSuggestion, setAiSuggestion] = useState<AiClassificationSuggestion | null>(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
 
     useEffect(() => {
@@ -64,6 +74,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             const clauses = Array.from(new Set(res.map((item) => item.clause).filter(Boolean)));
             clauses.sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
             setChecklistClauses(clauses);
+            setChecklistReferential(res[0]?.referential ?? null);
         }).catch((_err) => {
             setChecklistClauses([]);
         });
@@ -385,7 +396,39 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                             <Select label="Lieu / zone" placeholder="Sélectionner le lieu" data={auditAreas} withAsterisk {...form.getInputProps('zoneId')} />
                         </div>
 
-                        {/* LOT 52 — classification ISO 19011 du constat + clause du référentiel */}
+                        {/* LOT 52 — classification ISO 19011 du constat + clause du référentiel.
+                            LOT 53 — suggestion IA optionnelle (l'IA propose, l'auditeur dispose). */}
+                        <div className="flex justify-end -mb-2">
+                            <Button
+                                variant="light"
+                                color="indigo"
+                                size="xs"
+                                leftSection={<IconSparkles size={14} />}
+                                loading={aiLoading}
+                                disabled={!form.values.observedFact?.trim()}
+                                onClick={() => {
+                                    setAiLoading(true);
+                                    setAiSuggestion(null);
+                                    suggestObservationClassification({
+                                        title: form.values.title,
+                                        observedFact: form.values.observedFact,
+                                        referential: checklistReferential,
+                                    }).then((suggestion) => {
+                                        setAiSuggestion(suggestion);
+                                        if (suggestion.classification) {
+                                            form.setFieldValue('classification', suggestion.classification);
+                                        }
+                                        if (suggestion.clause) {
+                                            form.setFieldValue('clause', suggestion.clause);
+                                        }
+                                    }).catch(() => {
+                                        errorNotification("La suggestion IA est indisponible pour le moment");
+                                    }).finally(() => setAiLoading(false));
+                                }}
+                            >
+                                Suggérer la classification avec l'IA
+                            </Button>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <Select
                                 label="Classification ISO"
@@ -413,6 +456,18 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                 </datalist>
                             </div>
                         </div>
+
+                        {/* LOT 53 — justification de la suggestion IA (jamais appliquée sans relecture) */}
+                        {aiSuggestion && (
+                            <Alert color="indigo" variant="light" icon={<IconSparkles size={16} />} className="mt-1">
+                                <div className="flex items-start justify-between gap-3">
+                                    <span className="text-[13px] text-slate-700">{aiSuggestion.justification}</span>
+                                    {aiSuggestion.demo && (
+                                        <Badge color="gray" variant="light" radius="sm">Démo</Badge>
+                                    )}
+                                </div>
+                            </Alert>
+                        )}
 
                         <div>
 

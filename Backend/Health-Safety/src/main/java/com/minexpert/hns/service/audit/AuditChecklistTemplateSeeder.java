@@ -29,9 +29,9 @@ public class AuditChecklistTemplateSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (templateRepository.count() > 0) {
-            return; // bibliothèques déjà présentes — ne jamais écraser
-        }
+        // LOT 53 : le garde-fou est désormais PAR RÉFÉRENTIEL (voir fin de
+        // méthode) — une bibliothèque existante n'est jamais écrasée, mais une
+        // bibliothèque absente (ex. MINIER ajoutée après coup) est installée.
         List<AuditChecklistTemplate> templates = new ArrayList<>();
         int[] order = {0};
 
@@ -110,8 +110,44 @@ public class AuditChecklistTemplateSeeder implements CommandLineRunner {
         add(templates, order, r, "10.2", "Les non-conformités et réclamations donnent-elles lieu à des actions correctives appropriées ?", null);
         add(templates, order, r, "10.3", "L'amélioration continue de la pertinence, l'adéquation et l'efficacité du SMQ est-elle démontrée ?", null);
 
-        templateRepository.saveAll(templates);
-        LOG.info("Checklists d'audit ISO seedees : {} questions (45001/14001/9001)", templates.size());
+        // ── MINIER — référentiel sectoriel (LOT 53) ─────────────────────────
+        // Exigences propres à l'exploitation minière, chacune rattachée à la
+        // clause ISO 45001/14001 qui la fonde (traçabilité normative conservée).
+        r = "MINIER";
+        add(templates, order, r, "45001 §8.1.2", "La gestion des explosifs est-elle maîtrisée (stockage agréé, transport, comptabilité matière, habilitations boutefeux, périmètres de tir) ?", "Registre des explosifs, certificats boutefeux, procédures de tir, gestion des ratés.");
+        add(templates, order, r, "45001 §6.1.2", "La stabilité des terrains est-elle surveillée (fronts de taille, gradins, talus, soutènement souterrain) avec des seuils d'alerte définis ?", "Rapports géotechniques, instrumentation (extensomètres, radars de pente), plans de soutènement.");
+        add(templates, order, r, "14001 §8.1", "Les installations de gestion des résidus (digues TSF, bassins) sont-elles inspectées selon un programme défini avec revue par un ingénieur désigné ?", "Conformité GISTM le cas échéant : inspections, niveaux piézométriques, revue annuelle indépendante, plan de rupture.");
+        add(templates, order, r, "45001 §8.1", "La ventilation des travaux souterrains garantit-elle des atmosphères saines (débits, gaz, contrôles avant reprise de poste) ?", "Plans de ventilation, mesures CO/NO2/CH4, procédures d'atmosphères appauvries.");
+        add(templates, order, r, "45001 §8.1.2", "L'interaction engins-piétons est-elle maîtrisée (plans de circulation, séparation des flux, détection de proximité, angles morts) ?", "Plan de circulation mine, systèmes anticollision, règles de priorité, zones d'exclusion.");
+        add(templates, order, r, "45001 §6.1.2", "La fatigue des opérateurs est-elle gérée (rotations postées, durées de conduite, dépistage en début de poste) ?", "Politique fatigue, planification des postes, dispositifs de détection de somnolence.");
+        add(templates, order, r, "45001 §8.1.2", "L'exposition aux poussières (dont silice cristalline) est-elle évaluée et maîtrisée aux postes critiques (foration, concassage, chargement) ?", "Mesures d'empoussiérage, abattage par voie humide, captage, suivi médical silicose.");
+        add(templates, order, r, "45001 §8.1.2", "L'exposition au bruit et aux vibrations (corps entier, main-bras) est-elle évaluée avec moyens de maîtrise hiérarchisés ?", "Cartographie bruit, cabines insonorisées, maintenance des sièges, EPI auditifs adaptés.");
+        add(templates, order, r, "45001 §8.1.2", "Les énergies dangereuses sont-elles consignées lors des interventions (LOTO électrique, hydraulique, gravitaire) sur les installations fixes et mobiles ?", "Procédures de consignation, cadenas personnels, essais de démarrage impossible.");
+        add(templates, order, r, "45001 §8.1.2", "Les travaux en espaces confinés (trémies, silos, broyeurs, galeries) suivent-ils un permis avec contrôle d'atmosphère et surveillant ?", "Permis espace confiné, détecteurs multigaz étalonnés, moyens de sauvetage.");
+        add(templates, order, r, "14001 §8.1", "Les produits de traitement dangereux (cyanure, acides, réactifs) sont-ils gérés selon les codes applicables (réception, stockage, neutralisation, antidotes) ?", "Code international du cyanure le cas échéant : rétentions, douches, kits HCN, formation.");
+        add(templates, order, r, "14001 §8.1", "Les eaux minières (exhaure, drainage acide, eaux de procédé) sont-elles caractérisées, traitées et surveillées avant rejet ?", "Bilans hydriques, points de rejet autorisés, analyses périodiques, drainage acide DMA.");
+        add(templates, order, r, "45001 §8.2", "Le sauvetage minier est-il organisé (équipe formée et équipée, chambres de refuge, exercices souterrains périodiques) ?", "Convention d'assistance, ARI, chambres de refuge contrôlées, comptes rendus d'exercices.");
+        add(templates, order, r, "45001 §7.2", "Les conducteurs d'engins et opérateurs d'installations détiennent-ils les autorisations de conduite et habilitations à jour ?", "Matrice d'habilitations, CACES/équivalents, autorisations site, recyclages.");
+        add(templates, order, r, "45001 §8.1.4", "Les entreprises extérieures intervenant sur site minier sont-elles intégrées au système (induction, plans de prévention, supervision terrain) ?", "Inductions tracées, audits sous-traitants, exigences contractuelles HSE.");
+        add(templates, order, r, "14001 §6.1.2", "Les impacts sur les communautés riveraines (bruit de tir, vibrations, poussières, trafic) sont-ils évalués, surveillés et les griefs traités ?", "Mesures de vibrations de tir (PPV), registre des plaintes, mécanisme de règlement des griefs.");
+        add(templates, order, r, "14001 §8.1", "Le plan de réhabilitation progressive et de fermeture est-il défini, provisionné et mis en œuvre au rythme de l'exploitation ?", "Garanties financières, surfaces réhabilitées vs plan, revégétalisation, suivi post-fermeture.");
+        add(templates, order, r, "45001 §6.1.2", "Les tirs de mine font-ils l'objet d'une analyse de risques spécifique (projections, vibrations, gaz de tir, reprise après tir) ?", "Plans de tir validés, périmètres d'évacuation, délais de réintégration, mesures de gaz post-tir.");
+        add(templates, order, r, "45001 §9.1", "La surveillance de la santé au travail couvre-t-elle les expositions minières (silice, bruit, vibrations, radiations le cas échéant) ?", "Visites médicales renforcées, suivi dosimétrique, aptitudes aux postes de sécurité.");
+        add(templates, order, r, "45001 §8.1.3", "Les modifications d'infrastructures minières (nouvelles galeries, extensions de fosse, rehausses de digue) suivent-elles un processus de gestion du changement ?", "Études préalables, validations géotechniques, mises à jour des plans et consignes.");
+
+        // Seed PAR RÉFÉRENTIEL : seules les bibliothèques absentes sont insérées
+        // (les bases existantes reçoivent ainsi MINIER sans toucher aux autres,
+        // et rien n'écrase jamais une bibliothèque modifiée par un admin).
+        java.util.Map<String, List<AuditChecklistTemplate>> byReferential = new java.util.LinkedHashMap<>();
+        for (AuditChecklistTemplate t : templates) {
+            byReferential.computeIfAbsent(t.getReferential(), k -> new ArrayList<>()).add(t);
+        }
+        byReferential.forEach((referential, group) -> {
+            if (templateRepository.countByReferential(referential) == 0) {
+                templateRepository.saveAll(group);
+                LOG.info("Checklist d'audit seedee : {} — {} questions", referential, group.size());
+            }
+        });
     }
 
     private void add(List<AuditChecklistTemplate> list, int[] order, String referential,
