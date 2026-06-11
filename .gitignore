@@ -63,7 +63,7 @@ desktop.ini
 # === Documents et assets lourds non versionnés ===
 Documents/
 imgs/
-audit/
+/audit/
 *.bak
 *.tmp
 *.swp

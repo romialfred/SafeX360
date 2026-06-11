@@ -92,7 +92,7 @@ LEAVE_ALREADY_EXISTS: Leave already exists.
 
 # Company
 COMPANY_ALREADY_EXISTS: Company already exists.
-COMPANY_NOT_FOUND: Company does not exist.
+COMPANY_NOT_FOUND: La mine indiquee n existe pas.
 
 # Department
 DEPARTMENT_ALREADY_EXISTS: Department already exists.
@@ -182,3 +182,16 @@ FLAG_ALREADY_INACTIVE: Flag already inactive.
 
 TEAM_MEMBER_CREATION_NOT_ALLOWED_MID_WEEK: Team member addition is not allowed mid-week.
 TEAM_MEMBER_ACTIVATION_NOT_ALLOWED_MID_WEEK: Team member activation is not allowed mid-week.
+
+# LOT 52 — Gestion des utilisateurs (remediation GATE CODE-02)
+COMPANY_REQUIRED: La mine de rattachement est obligatoire.
+MODULES_REQUIRED: Au moins un module d acces est obligatoire.
+DIRECTORY_DISABLED: Le connecteur d annuaire est desactive.
+PERMISSIONS_INIT_FAILED: L initialisation des permissions HSE a echoue — creation annulee.
+AD_ACCOUNT_NO_LOCAL_PASSWORD: Ce compte Active Directory n a pas de mot de passe local a reinitialiser.
+LOGIN_TOO_SHORT: Le login doit contenir au moins 3 caracteres.
+LOGIN_INVALID_FORMAT: Le login ne doit contenir que lettres, chiffres, points, tirets.
+EMAIL_INVALID: L adresse email est invalide.
+NAME_REQUIRED: Le nom est obligatoire.
+ROLE_REQUIRED: Le role est obligatoire.
+INVITATION_EXPIRED: L invitation a expire — demandez a un administrateur de la renouveler.

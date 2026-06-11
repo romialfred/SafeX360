@@ -237,3 +237,23 @@ hrms:
 
 # LOT 42 hotfix : la config management a été fusionnée dans le bloc plus haut
 # pour éviter "found duplicate key management" qui crashait Spring au démarrage.
+
+# LOT 52 — Audits ISO 19011 (remediation GATE CODE-02)
+AUDIT_NOT_FOUND: L audit indique n existe pas.
+PROGRAM_NOT_FOUND: Le programme d audit n existe pas.
+OBSERVATION_NOT_FOUND: Le constat indique n existe pas.
+CLASSIFICATION_INVALID: Classification de constat invalide (NC_MAJEURE, NC_MINEURE, OBSERVATION, OPPORTUNITE).
+CLAUSE_REQUIRED_FOR_NC: La clause du referentiel est obligatoire pour une non-conformite.
+EVIDENCE_REQUIRED_FOR_NC: Au moins une preuve est obligatoire pour une non-conformite.
+ONLY_NC_CAN_BE_ESCALATED: Seul un constat classe non-conformite peut etre escalade.
+REFERENTIALS_REQUIRED: Au moins un referentiel est requis pour initialiser la checklist.
+REFERENTIAL_INVALID: Referentiel invalide (ISO_45001, ISO_14001, ISO_9001).
+CHECKLIST_ITEM_NOT_FOUND: La question de checklist n existe pas.
+CHECKLIST_RESULT_INVALID: Resultat de checklist invalide.
+COMMENT_REQUIRED_FOR_NON_CONFORME: Un commentaire factuel est obligatoire pour une question non conforme.
+RECOMMENDATION_NOT_FOUND: La recommandation indiquee n existe pas.
+EFFECTIVENESS_REQUIRES_COMPLETED_RECOMMENDATION: La verification d efficacite ne se planifie que sur une recommandation terminee.
+EFFECTIVENESS_CHECK_NOT_FOUND: La verification d efficacite n existe pas.
+EFFECTIVENESS_ALREADY_CONCLUDED: Cette verification a deja recu un verdict.
+VERDICT_INVALID: Verdict invalide (EFFICACE, PARTIELLEMENT_EFFICACE, INEFFICACE).
+DUE_DATE_REQUIRED: L echeance de verification est obligatoire.

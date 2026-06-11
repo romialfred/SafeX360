@@ -256,17 +256,18 @@ public class AdminUserController {
     }
 
     /**
-     * LOT 52 — contrôle d'accès des endpoints admin.
-     * Autorise : (1) un JWT cookie valide dont le compte a le rôle SYSTEM_ADMINISTRATOR,
-     * ou (2) l'en-tête interne X-Secret-Key (appels de service / outillage).
-     * Retourne l'identité de l'auteur pour le journal.
+     * LOT 52 — contrôle d'accès des endpoints admin (remédiation GATE IAM-01).
+     *
+     * RÈGLE STRICTE : si un cookie JWT est présent, la décision se prend
+     * EXCLUSIVEMENT sur le rôle du compte — le gateway injectant X-Secret-Key
+     * sur tout trafic utilisateur authentifié, ce secret ne doit JAMAIS servir
+     * de preuve d'administration pour une requête porteuse d'identité.
+     * Le secret n'authentifie que les appels service-à-service SANS cookie
+     * (seeders, intégrations internes), qui n'existent que sur le réseau privé.
      */
     private String requireAdmin(String token, HttpServletRequest request) {
-        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
-        if (secret != null && secret.equals(internalSecret)) {
-            return "system-internal";
-        }
         if (token != null && !token.isBlank()) {
+            // Identité utilisateur présente : seul le rôle décide.
             try {
                 String login = jwtHelper.getUsernameFromToken(token);
                 Account admin = accountRepository.findByLogin(login).orElse(null);
@@ -277,6 +278,13 @@ public class AdminUserController {
             } catch (Exception e) {
                 LOG.warn("JWT admin invalide: {}", e.getMessage());
             }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
+        }
+        // Aucune identité utilisateur : appel interne service-à-service uniquement.
+        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
+        if (secret != null && secret.equals(internalSecret)) {
+            return "system-internal";
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
@@ -404,7 +412,10 @@ public class AdminUserController {
 
     /**
      * Initialise le PermissionProfile cote Health-Safety via REST.
-     * Best-effort : retourne false si echec, mais ne fait pas echouer la creation Account.
+     * LOT 52 — STRICT (remédiation GATE CODE-05) : retourne false si échec et
+     * l'appelant lève alors PERMISSIONS_INIT_FAILED, ce qui annule TOUTE la
+     * création par rollback transactionnel. Aucun compte sans profil de
+     * permissions ne peut exister.
      */
     private boolean initPermissionsHSE(Long accountId, String role, String allowedModules) {
         try {

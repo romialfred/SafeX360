@@ -66,7 +66,11 @@ public class AuthAPI {
 
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
-    private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
+    // LOT 52 (remédiation GATE SEC-03) : clé JWT externalisée — repli sur la
+    // valeur historique pour ne pas casser l'existant ; ROTATION via env
+    // JWT_SECRET requise sur tous les services (ancienne valeur publique).
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    private String SECRET;
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,

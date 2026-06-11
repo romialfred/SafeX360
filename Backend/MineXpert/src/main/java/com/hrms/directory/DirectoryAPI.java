@@ -56,12 +56,13 @@ public class DirectoryAPI {
     private String internalSecret;
 
     /**
-     * LOT 52 — accès réservé : admin (JWT cookie + rôle SYSTEM_ADMINISTRATOR)
-     * ou appel interne (X-Secret-Key). Même politique que AdminUserController.
+     * LOT 52 — accès réservé aux administrateurs (remédiation GATE IAM-01).
+     * Si un cookie JWT est présent, SEUL le rôle décide (le secret interne,
+     * injecté par le gateway sur tout trafic utilisateur, n'est jamais une
+     * preuve d'administration). Le secret n'authentifie que les appels
+     * service-à-service sans cookie. Même politique que AdminUserController.
      */
     private void requireAdmin(String token, HttpServletRequest request) {
-        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
-        if (secret != null && secret.equals(internalSecret)) return;
         if (token != null && !token.isBlank()) {
             try {
                 String login = jwtHelper.getUsernameFromToken(token);
@@ -71,7 +72,11 @@ public class DirectoryAPI {
                     return;
                 }
             } catch (Exception ignored) { }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
         }
+        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
+        if (secret != null && secret.equals(internalSecret)) return;
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
     }

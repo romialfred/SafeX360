@@ -30,6 +30,19 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * LOT 52 (remédiation GATE IAM-01) : un ResponseStatusException porte un
+     * statut HTTP intentionnel (403 pour les gardes admin, etc.) — il doit être
+     * restitué tel quel, pas avalé en 500 par le handler générique.
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorInfo> responseStatusExceptionHandler(
+            org.springframework.web.server.ResponseStatusException exception) {
+        ErrorInfo error = new ErrorInfo(exception.getReason(), exception.getStatusCode().value(),
+                LocalDateTime.now());
+        return new ResponseEntity<>(error, exception.getStatusCode());
+    }
+
     @ExceptionHandler(HRMSException.class)
     public ResponseEntity<ErrorInfo> HRMSExceptionHandler(HRMSException exception) {
         String msg = environment.getProperty(exception.getMessage());

@@ -9,7 +9,12 @@ import io.jsonwebtoken.Jwts;
 
 @Component
 public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config> {
-    private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
+    // LOT 52 (remédiation GATE SEC-03) : clé JWT externalisée — la valeur par
+    // défaut historique reste en repli pour ne pas casser les déploiements
+    // existants ; LA ROTATION (nouvelle valeur via env JWT_SECRET sur tous les
+    // services simultanément) reste REQUISE, l'ancienne valeur étant publique.
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    private String SECRET;
 
     // LOT 41 P0 SECURITY: secret partagé entre Gateway et microservices.
     // Permet aux microservices de rejeter toute requête qui ne provient pas du Gateway.

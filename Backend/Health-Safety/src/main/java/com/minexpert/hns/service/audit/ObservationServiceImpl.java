@@ -113,13 +113,35 @@ public class ObservationServiceImpl implements ObservationService {
         return ncId;
     }
 
+    /**
+     * LOT 52 (remédiation GATE CODE-04) : mise à jour réelle d'un constat —
+     * mêmes règles de rigueur ISO qu'à la création (NC ⇒ clause + preuve).
+     * L'audit de rattachement et l'éventuel lien NonConformity sont préservés.
+     */
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AuditCacheNames.OBSERVATIONS_BY_AUDIT, allEntries = true),
+            @CacheEvict(cacheNames = AuditCacheNames.OBSERVATION_TITLES_BY_AUDIT, allEntries = true)
+    })
     public void updateObservation(ObservationDTO observationDTO) throws HSException {
+        Observation observation = observationRepository.findById(observationDTO.getId())
+                .orElseThrow(() -> new HSException("OBSERVATION_NOT_FOUND"));
+        validateIsoClassification(observationDTO);
 
-        // Observation observation =
-        // observationRepository.findById(observationDTO.getId())
-        // .orElseThrow(() -> new HSException("OBSERVATION_NOT_FOUND"));
-        // observationRepository.save(observation);
+        if (observationDTO.getTitle() != null) observation.setTitle(observationDTO.getTitle());
+        if (observationDTO.getDate() != null) observation.setDate(observationDTO.getDate());
+        if (observationDTO.getObservedFact() != null) observation.setObservedFact(observationDTO.getObservedFact());
+        if (observationDTO.getReference() != null) observation.setReference(observationDTO.getReference());
+        if (observationDTO.getType() != null) observation.setType(observationDTO.getType());
+        if (observationDTO.getSeverity() != null) observation.setSeverity(observationDTO.getSeverity());
+        if (observationDTO.getDescription() != null) observation.setDescription(observationDTO.getDescription());
+        if (observationDTO.getClassification() != null) observation.setClassification(observationDTO.getClassification());
+        if (observationDTO.getClause() != null) observation.setClause(observationDTO.getClause());
+        if (observationDTO.getEvidence() != null && !observationDTO.getEvidence().isEmpty()) {
+            observation.setEvidence(mediaService.saveAllMedia(observationDTO.getEvidence()));
+        }
+        observation.setUpdatedAt(LocalDateTime.now());
+        observationRepository.save(observation);
     }
 
     @Override
