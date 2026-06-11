@@ -58,10 +58,11 @@ import lombok.Setter;
  *   <li>PUT  /toggle-status/{id} — active ou desactive un compte</li>
  * </ul>
  *
- * <p><b>Securite :</b> ces endpoints SONT destines aux administrateurs uniquement. Pour le moment,
- * la protection passe par le filtre X-Secret-Key (gateway) et par l'application des @PreAuthorize
- * dans la phase de durcissement (LOT 50). En production, ajouter un check role 'Administrator'
- * via le JWT cookie.</p>
+ * <p><b>Securite (LOT 52) :</b> chaque endpoint passe par {@code requireAdmin} : si un
+ * cookie JWT est present, SEUL le role SYSTEM_ADMINISTRATOR (compte ACTIF) autorise
+ * l'acces — le secret interne X-Secret-Key, injecte par le gateway sur tout trafic
+ * utilisateur, n'est JAMAIS une preuve d'administration. Sans cookie, le secret
+ * n'authentifie que les appels service-a-service du reseau prive (seeders, init).</p>
  */
 @RestController
 @RequestMapping("/admin/users")

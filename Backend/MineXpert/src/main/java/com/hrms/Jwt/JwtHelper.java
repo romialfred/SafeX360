@@ -21,7 +21,11 @@ public class JwtHelper {
     @Value("${JWT_EXPIRATION_HOURS:8}")
     private long expirationHours;
 
-    private static final String SECRET = "80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874";
+    // LOT 52 (SEC-03 complet) : clé de SIGNATURE externalisée — indispensable
+    // avant rotation (AuthAPI et le gateway valident avec la même env JWT_SECRET ;
+    // un écart signature/validation casserait tous les logins).
+    @Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    private String SECRET;
 
     // LOT 41 P1 SECURITY: durée de vie effective du JWT en millisecondes.
     // Exposée pour que les couches API (cookie max-age) et JWT (setExpiration) restent cohérentes.

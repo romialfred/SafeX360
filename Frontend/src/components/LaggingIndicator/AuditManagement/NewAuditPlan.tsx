@@ -31,6 +31,7 @@ import { getAllActiveAuditArea } from "../../../services/AuditAreaService";
 import { isValidRichText, mapIdToName } from "../../../utility/OtherUtilities";
 import { auditTypesLabels, criteriaByLabel } from "../../../Data/DropdownData";
 import { getAllAuditors } from "../../../services/AuditorsService";
+import { validateAuditTeam } from "../../../services/AuditIsoService";
 import { getDateDifferenceInDays } from "../../../utility/DateFormats";
 import { getAllActiveWorkProcess } from "../../../services/WorkProcessService";
 import {
@@ -167,13 +168,39 @@ const NewAuditPlan: React.FC = () => {
     }
 
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
 
         form.validate();
         if (!form.isValid()) return;
         if (form.values.auditors.length === 0) {
             errorNotification("Ajoutez au moins un auditeur avant d'enregistrer");
             return;
+        }
+
+        // LOT 52 — validation d'équipe ISO 19011 §5.4.4/§7 (audits internes) :
+        // responsable d'audit qualifié, indépendance, certifications à jour.
+        // Bloquant : un plan d'audit ne se programme pas avec une équipe non conforme.
+        if (form.values.audit.category === "INTERNAL") {
+            try {
+                const teamAuditors = form.values.auditors
+                    .map((a: any) => auditorsMap[a.name])
+                    .filter((a: any) => a && a.employeeId != null);
+                const lead = form.values.auditors.find((a: any) => a.role === "Lead Auditor");
+                const verdict = await validateAuditTeam({
+                    auditorEmployeeIds: teamAuditors.map((a: any) => Number(a.employeeId)),
+                    leadEmployeeId: lead ? Number(auditorsMap[lead.name]?.employeeId ?? null) : null,
+                    auditedDepartmentIds: null,
+                });
+                if (!verdict.valid) {
+                    errorNotification(
+                        "Équipe non conforme ISO 19011 : " + (verdict.violations || []).join(" · "));
+                    return;
+                }
+            } catch (_e) {
+                // La validation ne doit pas bloquer si le service est indisponible :
+                // on trace et on laisse la programmation suivre son cours.
+                console.warn("Validation d'équipe indisponible", _e);
+            }
         }
 
         let values = form.values;
