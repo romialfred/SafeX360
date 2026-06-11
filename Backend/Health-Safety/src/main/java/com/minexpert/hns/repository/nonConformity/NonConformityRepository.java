@@ -46,4 +46,7 @@ public interface NonConformityRepository extends CrudRepository<NonConformity, L
 
     Optional<NonConformity> findFirstByTypeAndDateGreaterThanEqualAndStatusNotInOrderByDateAsc(EventType type,
             LocalDate date, List<EventStatus> excludedStatuses);
+
+    /** LOT 52 — total des non-conformités ouvertes (fallback du score de risque). */
+    long countByStatusNotIn(List<EventStatus> excludedStatuses);
 }

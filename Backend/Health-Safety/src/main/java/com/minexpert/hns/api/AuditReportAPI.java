@@ -16,6 +16,7 @@ import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.audit.ExecuteRequest;
 import com.minexpert.hns.dto.audit.ReportDTO;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.service.audit.AuditReportPdfService;
 import com.minexpert.hns.service.audit.ReportService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuditReportAPI {
     private final ReportService reportService;
+    private final AuditReportPdfService auditReportPdfService;
+
+    /**
+     * LOT 52 — rapport d'audit PDF structuré ISO 19011 §6.5 (identification,
+     * critères, équipe, réunions, synthèse checklist, constats classés,
+     * conclusions et approbation).
+     */
+    @GetMapping("/pdf/{auditId}")
+    public ResponseEntity<byte[]> getReportPdf(@PathVariable Long auditId) throws HSException {
+        byte[] pdf = auditReportPdfService.generatePdf(auditId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=rapport-audit-" + auditId + ".pdf")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/pdf")
+                .body(pdf);
+    }
 
     @PostMapping("/create")
     public ResponseEntity<Long> createReport(@RequestBody ExecuteRequest request) throws HSException {

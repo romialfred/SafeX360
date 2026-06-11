@@ -14,4 +14,10 @@ public interface ObservationService {
     public List<ObservationDTO> getAllObservationsByAuditId(Long auditId) throws HSException;
 
     public List<ObsTitle> getObservationTitlesByAuditId(Long auditId) throws HSException;
+
+    /**
+     * LOT 52 — escalade d'un constat classé NC_MAJEURE/NC_MINEURE vers un
+     * Constat central (NonConformity). Idempotent. Retourne l'id du constat central.
+     */
+    public Long escalateToNonConformity(Long observationId) throws HSException;
 }

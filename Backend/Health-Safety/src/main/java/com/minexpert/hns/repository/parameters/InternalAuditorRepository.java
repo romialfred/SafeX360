@@ -17,4 +17,7 @@ public interface InternalAuditorRepository extends CrudRepository<InternalAudito
 
     @Query("SELECT i FROM InternalAuditor i WHERE i.id = :id AND (:companyId IS NULL OR i.companyId = :companyId)")
     Optional<InternalAuditor> findByIdWithCompanyContext(@Param("id") Long id, @Param("companyId") Long companyId);
+
+    /** LOT 52 — recherche par employé sans contexte société (validation d'équipe). */
+    Optional<InternalAuditor> findFirstByEmployeeIdOrderByIdDesc(Long employeeId);
 }

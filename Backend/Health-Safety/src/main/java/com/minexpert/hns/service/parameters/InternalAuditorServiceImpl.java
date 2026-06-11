@@ -84,6 +84,31 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
         internalAuditor.setRole(internalAuditorDTO.getRole());
         internalAuditor.setStatus(internalAuditorDTO.getStatus());
         internalAuditor.setCompanyId(companyId);
+
+        // LOT 52 : champs compétences (ISO 19011 §7) — mis à jour seulement si
+        // fournis pour ne pas écraser les valeurs existantes avec un payload legacy.
+        if (internalAuditorDTO.getQualifications() != null) {
+            internalAuditor.setQualifications(internalAuditorDTO.getQualifications());
+        }
+        if (internalAuditorDTO.getDomains() != null) {
+            internalAuditor.setDomains(internalAuditorDTO.getDomains());
+        }
+        if (internalAuditorDTO.getLanguages() != null) {
+            internalAuditor.setLanguages(internalAuditorDTO.getLanguages());
+        }
+        if (internalAuditorDTO.getLeadQualified() != null) {
+            internalAuditor.setLeadQualified(internalAuditorDTO.getLeadQualified());
+        }
+        if (internalAuditorDTO.getDepartmentId() != null) {
+            internalAuditor.setDepartmentId(internalAuditorDTO.getDepartmentId());
+        }
+        if (internalAuditorDTO.getLastEvaluationDate() != null) {
+            internalAuditor.setLastEvaluationDate(internalAuditorDTO.getLastEvaluationDate());
+        }
+        if (internalAuditorDTO.getLastEvaluationScore() != null) {
+            internalAuditor.setLastEvaluationScore(internalAuditorDTO.getLastEvaluationScore());
+        }
+
         internalAuditor.setUpdatedAt(LocalDateTime.now());
 
         internalAuditorRepository.save(internalAuditor);
@@ -135,7 +160,14 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
                             auditor.getRole(),
                             auditor.getStatus(),
                             auditor.getCreatedAt(),
-                            auditor.getUpdatedAt());
+                            auditor.getUpdatedAt(),
+                            auditor.getQualifications(),
+                            auditor.getDomains(),
+                            auditor.getLanguages(),
+                            auditor.getLeadQualified(),
+                            auditor.getDepartmentId(),
+                            auditor.getLastEvaluationDate(),
+                            auditor.getLastEvaluationScore());
                 })
                 .toList();
 

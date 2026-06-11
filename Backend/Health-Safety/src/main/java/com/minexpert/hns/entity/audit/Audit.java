@@ -58,6 +58,13 @@ public class Audit {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** LOT 52 — rattachement optionnel au programme d'audit annuel (ISO 19011 §5). */
+    @Column(name = "program_id")
+    private Long programId;
+
+    /** LOT 52 — score de priorité basé risques calculé lors de la planification. */
+    private Integer riskScore;
+
     public Audit(Long id) {
         this.id = id;
     }
@@ -68,7 +75,7 @@ public class Audit {
                 StringListConverter.convertToLongList(processes), scope != null ? scope.getId() : null,
                 StringListConverter.convertToStringList(methods), description, category, auditTypes,
                 StringListConverter.convertToStringList(references),
-                startDate, endDate, status, planningStatus, createdAt, updatedAt);
+                startDate, endDate, status, planningStatus, createdAt, updatedAt, programId, riskScore);
     }
 
     public Audit update(AuditDTO auditDTO) {
@@ -83,6 +90,14 @@ public class Audit {
         this.references = auditDTO.getReferences().toString();
         this.startDate = auditDTO.getStartDate();
         this.endDate = auditDTO.getEndDate();
+        // LOT 52 : champs additifs — mis à jour seulement si fournis pour ne pas
+        // écraser les valeurs existantes avec un payload legacy.
+        if (auditDTO.getProgramId() != null) {
+            this.programId = auditDTO.getProgramId();
+        }
+        if (auditDTO.getRiskScore() != null) {
+            this.riskScore = auditDTO.getRiskScore();
+        }
         this.setUpdatedAt(LocalDateTime.now());
         return this;
     }

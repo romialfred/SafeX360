@@ -10,6 +10,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.minexpert.hns.entity.audit.Audit;
+import com.minexpert.hns.enums.AuditStatus;
 
 public interface AuditRepository extends CrudRepository<Audit, Long> {
 
@@ -22,4 +23,16 @@ public interface AuditRepository extends CrudRepository<Audit, Long> {
     Optional<Audit> findFirstByStartDateGreaterThanEqualOrderByStartDateAsc(LocalDate date);
 
     Optional<Audit> findFirstByEndDateGreaterThanEqualOrderByEndDateAsc(LocalDate date);
+
+    // ─── LOT 52 — Programme d'audit (ISO 19011:2018 §5) ────────────────────
+
+    List<Audit> findByProgramId(Long programId);
+
+    /**
+     * Dernière date de fin d'audit clôturé par domaine (via le périmètre direct).
+     * Utilisé par le calcul de priorisation basé risques.
+     */
+    @Query("SELECT a.scope.id, MAX(a.endDate) FROM Audit a "
+            + "WHERE a.status = :status AND a.endDate IS NOT NULL GROUP BY a.scope.id")
+    List<Object[]> findLastEndDateByScopeAndStatus(@Param("status") AuditStatus status);
 }

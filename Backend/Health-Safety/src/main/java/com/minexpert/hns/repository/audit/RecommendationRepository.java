@@ -12,6 +12,9 @@ import com.minexpert.hns.enums.RecommendationStatus;
 public interface RecommendationRepository extends CrudRepository<Recommendation, Long> {
     List<Recommendation> findByAudit_Id(Long auditId);
 
+    /** LOT 52 — recommandations de tous les audits d'un programme. */
+    List<Recommendation> findByAudit_IdIn(List<Long> auditIds);
+
     @Query("""
                 SELECT
                     r.id AS id,

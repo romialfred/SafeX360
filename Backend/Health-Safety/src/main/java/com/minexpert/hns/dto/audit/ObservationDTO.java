@@ -35,9 +35,19 @@ public class ObservationDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** LOT 52 — classification ISO : NC_MAJEURE / NC_MINEURE / OBSERVATION / OPPORTUNITE. */
+    private String classification;
+
+    /** LOT 52 — clause du référentiel concernée. */
+    private String clause;
+
+    /** LOT 52 — id de la NonConformity centrale créée par escalade (lecture seule). */
+    private Long nonConformityId;
+
     public Observation toEntity() {
         return new Observation(id, title, date, observedFact, reference, type, severity, new AuditAreas(zoneId),
                 description,
-                null, interviews, new Audit(auditId), createdAt, updatedAt);
+                null, interviews, new Audit(auditId), createdAt, updatedAt,
+                classification, clause, nonConformityId);
     }
 }

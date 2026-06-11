@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,12 +37,19 @@ public class Meeting {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** LOT 52 — type de réunion ISO 19011 §6.4 : OPENING / CLOSING / OTHER. */
+    private String type;
+
+    /** LOT 52 — participants au format JSON [{employeeId,name,present}]. */
+    @Lob
+    private String attendees;
+
     public Meeting(Long id) {
         this.id = id;
     }
 
     public MeetingDTO toDTO() {
         return new MeetingDTO(id, date, startTime, endTime, agenda, minutes,
-                audit != null ? audit.getId() : null, createdAt, updatedAt);
+                audit != null ? audit.getId() : null, createdAt, updatedAt, type, attendees);
     }
 }

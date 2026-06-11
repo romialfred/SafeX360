@@ -25,8 +25,14 @@ public class MeetingDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** LOT 52 — type de réunion : OPENING / CLOSING / OTHER. */
+    private String type;
+
+    /** LOT 52 — participants JSON [{employeeId,name,present}]. */
+    private String attendees;
+
     public Meeting toEntity() {
         return new Meeting(this.id, this.date, this.startTime, this.endTime, this.agenda, this.minutes,
-                new Audit(this.auditId), this.createdAt, this.updatedAt);
+                new Audit(this.auditId), this.createdAt, this.updatedAt, this.type, this.attendees);
     }
 }

@@ -37,12 +37,19 @@ public class AuditDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** LOT 52 — rattachement optionnel au programme d'audit annuel. */
+    private Long programId;
+
+    /** LOT 52 — score de priorité basé risques. */
+    private Integer riskScore;
+
     public Audit toEntity() {
         return new Audit(this.id, this.title, this.refNumber, objectives.toString(), processes.toString(),
                 new AuditAreas(scopeId), methods.toString(), description, this.category, auditTypes,
                 this.references.toString(),
                 this.startDate,
-                this.endDate, this.status, this.planningStatus, this.createdAt, this.updatedAt);
+                this.endDate, this.status, this.planningStatus, this.createdAt, this.updatedAt,
+                this.programId, this.riskScore);
     }
 
     public AuditDetails toDetails() {

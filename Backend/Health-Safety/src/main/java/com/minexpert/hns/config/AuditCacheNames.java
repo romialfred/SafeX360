@@ -42,4 +42,9 @@ public final class AuditCacheNames {
     public static final String RECOMMENDATION_DETAILS_BY_STATUS = "recommendationDetailsByStatus";
 
     public static final String RECOMMENDATION_FOLLOWUPS_BY_RECOMMENDATION = "recommendationFollowupsByRecommendation";
+
+    // ─── LOT 52 — ISO 19011:2018 ────────────────────────────────────────────
+
+    public static final String CHECKLIST_TEMPLATES = "auditChecklistTemplates";
+    public static final String CHECKLIST_ITEMS_BY_AUDIT = "auditChecklistItemsByAudit";
 }
