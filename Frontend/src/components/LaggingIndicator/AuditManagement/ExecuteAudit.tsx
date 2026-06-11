@@ -39,14 +39,17 @@ import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { getBase64 } from "../../../utility/DocumentUtility";
 import { REC_STATUS_OPTIONS, REC_TYPE_OPTIONS, VALIDATOR_STATUS_OPTIONS } from "./auditLabels";
+import AuditChecklistPanel from "./AuditChecklistPanel";
 
 
-const sectionMap = ['audit-area', 'audit-report', 'recommendations'];
+// LOT 52 — étape « Checklist ISO » insérée entre les domaines et le rapport.
+const sectionMap = ['audit-area', 'iso-checklist', 'audit-report', 'recommendations'];
+const LAST_STEP = sectionMap.length - 1;
 const ExecuteAudit = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [active, setActive] = useState(0); // step index (0 to 2)
+    const [active, setActive] = useState(0); // step index (0 to 3)
     const section = sectionMap[active];
     const [selectedArea, setSelectedArea] = useState<any>({});
     const [areas, setAreas] = useState<any[]>([]);
@@ -423,8 +426,9 @@ const ExecuteAudit = () => {
             <Card className="bg-white" shadow="sm" withBorder radius="md">
                 <Stepper allowNextStepsSelect={false} active={active} onStepClick={setActive} color="indigo" size="sm">
                     <Stepper.Step label="Étape 1" description="Domaines d'audit" />
-                    <Stepper.Step label="Étape 2" description="Rapport d'audit" />
-                    <Stepper.Step label="Étape 3" description="Recommandations" />
+                    <Stepper.Step label="Étape 2" description="Checklist ISO" />
+                    <Stepper.Step label="Étape 3" description="Rapport d'audit" />
+                    <Stepper.Step label="Étape 4" description="Recommandations" />
                 </Stepper>
                 <div className="mt-6">
                     {section === "audit-area" && (
@@ -439,6 +443,11 @@ const ExecuteAudit = () => {
                                 )}
                             </div>
                         </div>
+                    )}
+
+                    {/* LOT 52 — checklist ISO par référentiel (initialisation + évaluation) */}
+                    {section === "iso-checklist" && (
+                        <AuditChecklistPanel auditId={id} />
                     )}
 
                     {section === "audit-report" && (
@@ -591,8 +600,8 @@ const ExecuteAudit = () => {
                     <Button variant="default" onClick={() => setActive((a) => Math.max(a - 1, 0))} disabled={active === 0}>
                         Étape précédente
                     </Button>
-                    {active < 2 ? (
-                        <Button color="indigo" onClick={() => setActive((a) => Math.min(a + 1, 2))}>Étape suivante</Button>
+                    {active < LAST_STEP ? (
+                        <Button color="indigo" onClick={() => setActive((a) => Math.min(a + 1, LAST_STEP))}>Étape suivante</Button>
                     ) : (
                         <Button color="indigo" onClick={handleSubmit}>
                             Soumettre l'exécution

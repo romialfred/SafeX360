@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActionIcon, Badge, Button, Group, Select, TextInput } from "@mantine/core";
-import { IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconArrowUpRight, IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
 import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { isValidRichText } from "../../../../utility/OtherUtilities";
@@ -10,14 +10,28 @@ import FileUpdateDropzone from "../../../UtilityComp/FileUpdateDropzone";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { GetAllAuditArea } from "../../../../services/AuditAreaService";
 import { mantineColorToLevel } from "../../../../Data/DropdownData";
-import { OBS_SEVERITY_LABELS, OBS_SEVERITY_OPTIONS, OBSERVATION_TYPE_LABELS, OBSERVATION_TYPE_OPTIONS } from "../auditLabels";
+import {
+    auditIsoErrorMessage,
+    isNcClassification,
+    OBS_CLASSIFICATION_OPTIONS,
+    obsClassificationColor,
+    obsClassificationLabel,
+    OBS_SEVERITY_LABELS,
+    OBS_SEVERITY_OPTIONS,
+    OBSERVATION_TYPE_LABELS,
+    OBSERVATION_TYPE_OPTIONS,
+} from "../auditLabels";
 import { modals } from "@mantine/modals";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { createObservation, getObservationByAuditId } from "../../../../services/ObservationService";
+import { escalateObservation, getAuditChecklist } from "../../../../services/AuditIsoService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { convertFilesToBase64New, handlePreview } from "../../../../utility/DocumentUtility";
 import { useParams } from "react-router-dom";
+
+/** LOT 52 — id du datalist des clauses issues de la checklist initialisée. */
+const CLAUSE_DATALIST_ID = "audit-observation-clause-options";
 
 const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) => {
     const { id } = useParams();
@@ -26,6 +40,8 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
 
     const [auditAreas, setAuditAreas] = useState<any[]>([]);
     const [observations, setObservations] = useState<any[]>([]);
+    // LOT 52 — clauses du/des référentiels initialisés pour le datalist Clause.
+    const [checklistClauses, setChecklistClauses] = useState<string[]>([]);
 
 
     useEffect(() => {
@@ -43,6 +59,14 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
         });
 
         fetchObservations();
+
+        getAuditChecklist(Number(id)).then((res) => {
+            const clauses = Array.from(new Set(res.map((item) => item.clause).filter(Boolean)));
+            clauses.sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
+            setChecklistClauses(clauses);
+        }).catch((_err) => {
+            setChecklistClauses([]);
+        });
     }, []);
 
     const fetchObservations = () => {
@@ -99,9 +123,12 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             severity: '',
             zoneId: '',
             description: '',
-            evidence: [],
+            evidence: [] as any[],
             interviews: [] as any,
 
+            // LOT 52 — classification ISO 19011 + clause du référentiel.
+            classification: '',
+            clause: '',
 
         },
         validate: {
@@ -112,7 +139,15 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
             severity: (value) => (value ? null : 'La gravité est requise'),
             zoneId: (value) => (value ? null : 'La zone est requise'),
             description: (value) => (isValidRichText(value) ? null : 'La description est requise'),
-
+            // LOT 52 — rigueur ISO alignée backend : une NC exige clause + preuve.
+            clause: (value, values) =>
+                isNcClassification(values.classification) && !value?.trim()
+                    ? 'La clause du référentiel est obligatoire pour une non-conformité'
+                    : null,
+            evidence: (value, values) =>
+                isNcClassification(values.classification) && (!value || value.length === 0)
+                    ? 'Au moins une preuve est obligatoire pour une non-conformité'
+                    : null,
 
         }
     });
@@ -166,6 +201,41 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
 
     };
 
+    // LOT 52 — escalade d'un constat classé NC vers les Constats centraux
+    // (NonConformity). Idempotent côté backend : renvoie l'existant sinon.
+    const handleEscalate = (obs: any) => {
+        modals.openConfirmModal({
+            title: <span className="text-base">Escalader vers les Constats centraux</span>,
+            centered: true,
+            children: (
+                <span className="text-sm">
+                    Créer un Constat central (non-conformité) à partir du constat « {obs.title} » ?
+                    Le traitement de l'écart sera suivi dans le module Constats.
+                </span>
+            ),
+            labels: { confirm: "Oui, escalader", cancel: "Annuler" },
+            cancelProps: { color: "gray", variant: "default" },
+            confirmProps: { color: "indigo", variant: "filled" },
+            onConfirm: () => {
+                dispatch(showOverlay());
+                escalateObservation(obs.id)
+                    .then((res) => {
+                        successNotification(
+                            `${res?.message || 'Constat escaladé vers les Constats centraux'} — Constat central n° ${res?.nonConformityId}`
+                        );
+                        fetchObservations();
+                        onObservationAdded?.();
+                    })
+                    .catch((err) => {
+                        errorNotification(auditIsoErrorMessage(err, "L'escalade du constat a échoué"));
+                    })
+                    .finally(() => {
+                        dispatch(hideOverlay());
+                    });
+            },
+        });
+    };
+
     return (
         <div className="   p-6 bg-white rounded-xl shadow-sm border border-gray-300">
             {!showForm ? (
@@ -192,8 +262,41 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                                         <Badge variant="outline" color={mantineColorToLevel[obs.severity]} >
                                             {OBS_SEVERITY_LABELS[obs.severity] ?? obs.severity}
                                         </Badge>
+                                        {/* LOT 52 — classification ISO + clause */}
+                                        {obs.classification && (
+                                            <Badge variant="light" color={obsClassificationColor(obs.classification)} radius="sm">
+                                                {obsClassificationLabel(obs.classification)}
+                                            </Badge>
+                                        )}
+                                        {obs.clause && (
+                                            <Badge variant="outline" color="gray" radius="sm">
+                                                Clause {obs.clause}
+                                            </Badge>
+                                        )}
                                     </div>
-                                    <p className="text-xs text-gray-500">{formatDateShort(obs.date)}</p>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        {/* LOT 52 — escalade NC vers les Constats centraux */}
+                                        {isNcClassification(obs.classification) && (
+                                            obs.nonConformityId ? (
+                                                <Badge variant="light" color="indigo" radius="sm" leftSection={<IconArrowUpRight size={12} />}>
+                                                    Escaladé — Constat central n° {obs.nonConformityId}
+                                                </Badge>
+                                            ) : (
+                                                audit.status !== "CLOSED" && audit.status !== "CANCELLED" && (
+                                                    <Button
+                                                        size="xs"
+                                                        variant="light"
+                                                        color="indigo"
+                                                        leftSection={<IconArrowUpRight size={14} />}
+                                                        onClick={() => handleEscalate(obs)}
+                                                    >
+                                                        Escalader vers les Constats centraux
+                                                    </Button>
+                                                )
+                                            )
+                                        )}
+                                        <p className="text-xs text-gray-500">{formatDateShort(obs.date)}</p>
+                                    </div>
 
                                 </div>
 
@@ -280,6 +383,35 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
                         <div className="grid grid-cols-2 gap-4">
                             <Select label="Gravité" placeholder="Sélectionner la gravité" withAsterisk data={OBS_SEVERITY_OPTIONS}  {...form.getInputProps('severity')} />
                             <Select label="Lieu / zone" placeholder="Sélectionner le lieu" data={auditAreas} withAsterisk {...form.getInputProps('zoneId')} />
+                        </div>
+
+                        {/* LOT 52 — classification ISO 19011 du constat + clause du référentiel */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Select
+                                label="Classification ISO"
+                                placeholder="Sélectionner la classification"
+                                description="Une non-conformité (majeure ou mineure) exige la clause et au moins une preuve"
+                                data={OBS_CLASSIFICATION_OPTIONS}
+                                clearable
+                                {...form.getInputProps('classification')}
+                            />
+                            <div>
+                                <TextInput
+                                    label="Clause du référentiel"
+                                    placeholder={checklistClauses.length > 0 ? `ex. ${checklistClauses[0]}` : 'ex. 8.1.2'}
+                                    description={checklistClauses.length > 0
+                                        ? 'Suggestions issues de la checklist initialisée de cet audit'
+                                        : 'Aucune checklist initialisée : saisir la clause librement'}
+                                    list={CLAUSE_DATALIST_ID}
+                                    withAsterisk={isNcClassification(form.values.classification)}
+                                    {...form.getInputProps('clause')}
+                                />
+                                <datalist id={CLAUSE_DATALIST_ID}>
+                                    {checklistClauses.map((clause) => (
+                                        <option key={clause} value={clause} />
+                                    ))}
+                                </datalist>
+                            </div>
                         </div>
 
                         <div>

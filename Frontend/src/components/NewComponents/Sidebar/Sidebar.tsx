@@ -241,6 +241,7 @@ const menuItems: MenuItem[] = [
         icon: IconClipboardCheck,
         color: 'text-indigo-600',
         subItems: [
+            { id: 'audit-program', label: 'Programme d\'audit', icon: IconTarget },
             { id: 'audit-plan', label: 'Plan Annuel d\'Audits', icon: IconCalendar },
             { id: 'audits', label: 'Audits ISO 19011', icon: IconClipboardCheck },
             { id: 'audit-recommendations', label: 'Recommandations', icon: IconBulb }
@@ -444,6 +445,7 @@ export const menuIdToUrl: Record<string, string> = {
     "ppe-request": "/ppe-request",
 
     // Audits Management
+    "audit-program": "/audit-program",
     "audit-plan": "/annual-audit-plan",
     audits: "/audit-management",
     "audit-recommendations": "/audit-recommendations",
@@ -577,6 +579,7 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'system-settings': 'settings',
     'operational-references': 'settings',
     'annual-audit-plan': 'auditPlan',
+    'audit-program': 'auditPlan',
 };
 
 /** Convertit un id de menu kebab-case en clé de module camelCase. */

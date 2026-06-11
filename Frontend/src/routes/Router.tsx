@@ -92,6 +92,7 @@ import NonConformityDashboard from '../components/LeadingIndicator/Non-conformit
 import ModuleGuard from './ModuleGuard';
 import DemoPermissionGuard from './DemoPermissionGuard';
 import CreateUserPage from '../components/NewComponents/UsersManagement/CreateUserPage';
+import AuditProgramPage from '../components/LaggingIndicator/AuditManagement/AuditProgramPage';
 import NonConformityForm from '../components/LeadingIndicator/Non-conformity/NonConformityForm';
 import NonConformityDetails from '../components/LeadingIndicator/Non-conformity/details/NonConformityDetails';
 import NonConformityEditPage from '../pages/NonConformityEditPage';
@@ -353,6 +354,8 @@ const router = createBrowserRouter([
 
             { path: 'hs-activities-planning', element: <AnnualPlaningGridPage />, },
             { path: 'month-theme-subjects', element: <ThemeManagementPage />, },
+            // LOT 52 B — programme d'audit annuel ISO 19011 §5 (risques + KPI)
+            { path: 'audit-program', element: <AuditProgramPage />, },
             { path: 'annual-audit-plan', element: <AnnualAuditPlanPage />, },
             { path: 'annual-audit-plan/details/:id', element: <AuditDetailsTabsPage />, },
             { path: 'annual-audit-plan/new-auditplan', element: <NewAuditPlanPages />, },

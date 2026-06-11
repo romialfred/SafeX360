@@ -249,3 +249,185 @@ export const translateAuditTerm = (value?: string | null): string => {
     if (!v) return '—';
     return TERM_LABELS[v] ?? v;
 };
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOT 52 — Mise en conformité ISO 19011 : programme d'audit, checklist par
+// référentiel, classification des constats et vérification d'efficacité.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Statuts du programme d'audit annuel (AuditProgramStatus backend) ───────
+// violet = proposé (en attente direction) · green = approuvé · slate = clôturé
+
+export const PROGRAM_STATUS_LABELS: Record<string, string> = {
+    PROPOSED: 'Proposé',
+    APPROVED: 'Approuvé',
+    CLOSED: 'Clôturé',
+};
+
+export const PROGRAM_STATUS_COLORS: Record<string, string> = {
+    PROPOSED: 'violet',
+    APPROVED: 'green',
+    CLOSED: 'gray',
+};
+
+export const programStatusLabel = (status?: string | null): string =>
+    PROGRAM_STATUS_LABELS[String(status ?? '').toUpperCase()] ?? String(status ?? '—');
+
+export const programStatusColor = (status?: string | null): string =>
+    PROGRAM_STATUS_COLORS[String(status ?? '').toUpperCase()] ?? 'gray';
+
+// ─── Classification ISO 19011 des constats (Observation.classification) ─────
+// red = NC majeure · orange = NC mineure · blue = observation · teal = OFI
+
+export const OBS_CLASSIFICATION_LABELS: Record<string, string> = {
+    NC_MAJEURE: 'Non-conformité majeure',
+    NC_MINEURE: 'Non-conformité mineure',
+    OBSERVATION: 'Observation',
+    OPPORTUNITE: "Opportunité d'amélioration",
+};
+
+export const OBS_CLASSIFICATION_COLORS: Record<string, string> = {
+    NC_MAJEURE: 'red',
+    NC_MINEURE: 'orange',
+    OBSERVATION: 'blue',
+    OPPORTUNITE: 'teal',
+};
+
+export const OBS_CLASSIFICATION_OPTIONS = [
+    { value: 'NC_MAJEURE', label: 'Non-conformité majeure' },
+    { value: 'NC_MINEURE', label: 'Non-conformité mineure' },
+    { value: 'OBSERVATION', label: 'Observation' },
+    { value: 'OPPORTUNITE', label: "Opportunité d'amélioration" },
+];
+
+export const obsClassificationLabel = (classification?: string | null): string =>
+    OBS_CLASSIFICATION_LABELS[String(classification ?? '').toUpperCase()] ?? String(classification ?? '—');
+
+export const obsClassificationColor = (classification?: string | null): string =>
+    OBS_CLASSIFICATION_COLORS[String(classification ?? '').toUpperCase()] ?? 'gray';
+
+/** Une classification NC_* exige clause + preuve, et autorise l'escalade. */
+export const isNcClassification = (classification?: string | null): boolean =>
+    String(classification ?? '').toUpperCase().startsWith('NC_');
+
+// ─── Résultats de checklist (AuditChecklistItem.result) ─────────────────────
+// green = conforme · red = non conforme · slate = N.A. · amber = à évaluer
+
+export const CHECKLIST_RESULT_LABELS: Record<string, string> = {
+    CONFORME: 'Conforme',
+    NON_CONFORME: 'Non conforme',
+    NON_APPLICABLE: 'N.A.',
+    A_EVALUER: 'À évaluer',
+};
+
+export const CHECKLIST_RESULT_COLORS: Record<string, string> = {
+    CONFORME: 'green',
+    NON_CONFORME: 'red',
+    NON_APPLICABLE: 'gray',
+    A_EVALUER: 'yellow',
+};
+
+/** Pills Tailwind des boutons segmentés de résultat (état actif). */
+export const CHECKLIST_RESULT_ACTIVE_CHIPS: Record<string, string> = {
+    CONFORME: 'bg-emerald-600 text-white border-emerald-600',
+    NON_CONFORME: 'bg-rose-600 text-white border-rose-600',
+    NON_APPLICABLE: 'bg-slate-600 text-white border-slate-600',
+    A_EVALUER: 'bg-amber-500 text-white border-amber-500',
+};
+
+export const checklistResultLabel = (result?: string | null): string =>
+    CHECKLIST_RESULT_LABELS[String(result ?? '').toUpperCase()] ?? String(result ?? '—');
+
+// ─── Référentiels de checklist (valeurs backend ISO_45001...) ───────────────
+// Affichage : TOUJOURS via IsoBadge (règle plateforme — jamais de texte ISO nu).
+
+export const CHECKLIST_REFERENTIALS = ['ISO_45001', 'ISO_14001', 'ISO_9001'] as const;
+
+/** 'ISO_45001' (backend) → 'ISO 45001' (norme pour IsoBadge). */
+export const referentialToNorm = (referential?: string | null): string =>
+    String(referential ?? '').replace('_', ' ').trim();
+
+// ─── Verdicts de vérification d'efficacité (ISO 19011 §6.6) ─────────────────
+// green = efficace · amber = partiellement efficace · red = inefficace
+
+export const EFFECTIVENESS_VERDICT_LABELS: Record<string, string> = {
+    EFFICACE: 'Efficace',
+    PARTIELLEMENT_EFFICACE: 'Partiellement efficace',
+    INEFFICACE: 'Inefficace',
+};
+
+export const EFFECTIVENESS_VERDICT_COLORS: Record<string, string> = {
+    EFFICACE: 'green',
+    PARTIELLEMENT_EFFICACE: 'yellow',
+    INEFFICACE: 'red',
+};
+
+export const EFFECTIVENESS_VERDICT_OPTIONS = [
+    { value: 'EFFICACE', label: 'Efficace' },
+    { value: 'PARTIELLEMENT_EFFICACE', label: 'Partiellement efficace' },
+    { value: 'INEFFICACE', label: 'Inefficace' },
+];
+
+export const effectivenessVerdictLabel = (verdict?: string | null): string =>
+    EFFECTIVENESS_VERDICT_LABELS[String(verdict ?? '').toUpperCase()] ?? String(verdict ?? '—');
+
+export const effectivenessVerdictColor = (verdict?: string | null): string =>
+    EFFECTIVENESS_VERDICT_COLORS[String(verdict ?? '').toUpperCase()] ?? 'gray';
+
+// ─── Priorisation par les risques (RiskSuggestionDTO) ───────────────────────
+
+export const SUGGESTED_FREQUENCY_LABELS: Record<string, string> = {
+    TRIMESTRIEL: 'Trimestriel',
+    SEMESTRIEL: 'Semestriel',
+    ANNUEL: 'Annuel',
+};
+
+export const SUGGESTED_FREQUENCY_COLORS: Record<string, string> = {
+    TRIMESTRIEL: 'red',
+    SEMESTRIEL: 'orange',
+    ANNUEL: 'green',
+};
+
+/** Chip Tailwind du score de risque : rouge > 30, ambre > 15, sinon émeraude. */
+export const riskScoreChip = (score: number): string =>
+    score > 30
+        ? 'bg-rose-50 text-rose-700 border-rose-200'
+        : score > 15
+            ? 'bg-amber-50 text-amber-700 border-amber-200'
+            : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+// ─── Erreurs métier ISO 19011 (codes HSException backend) ───────────────────
+// Le backend ne traduit pas encore ces codes (clés absentes d'application.yml,
+// errorMessage arrive null) : la traduction FR est donc assurée côté frontend.
+
+export const AUDIT_ISO_ERROR_MESSAGES: Record<string, string> = {
+    COMMENT_REQUIRED_FOR_NON_CONFORME: 'Un commentaire factuel est obligatoire pour une réponse « Non conforme ».',
+    CHECKLIST_RESULT_INVALID: 'Résultat de checklist invalide.',
+    CHECKLIST_ITEM_NOT_FOUND: 'Question de checklist introuvable.',
+    CHECKLIST_REFERENTIAL_INVALID: 'Référentiel de checklist invalide.',
+    CLASSIFICATION_INVALID: 'Classification ISO invalide.',
+    CLAUSE_REQUIRED_FOR_NC: 'La clause du référentiel est obligatoire pour une non-conformité.',
+    EVIDENCE_REQUIRED_FOR_NC: 'Au moins une preuve est obligatoire pour une non-conformité.',
+    ONLY_NC_CAN_BE_ESCALATED: 'Seul un constat classé non-conformité (majeure ou mineure) peut être escaladé.',
+    OBSERVATION_NOT_FOUND: 'Constat introuvable.',
+    EFFECTIVENESS_REQUIRES_COMPLETED_RECOMMENDATION: "La vérification d'efficacité exige une recommandation terminée.",
+    EFFECTIVENESS_CHECK_NOT_FOUND: "Vérification d'efficacité introuvable.",
+    EFFECTIVENESS_ALREADY_CONCLUDED: 'Cette vérification a déjà reçu un verdict.',
+    VERDICT_INVALID: "Verdict d'efficacité invalide.",
+    DUE_DATE_REQUIRED: "La date d'échéance est obligatoire.",
+    AUDIT_PROGRAM_NOT_FOUND: "Programme d'audit introuvable.",
+    RECOMMENDATION_NOT_FOUND: 'Recommandation introuvable.',
+    AUDIT_NOT_FOUND: 'Audit introuvable.',
+};
+
+/**
+ * Extrait un message d'erreur FR d'une erreur axios des endpoints ISO 19011 :
+ * code métier connu → traduction FR ; message backend présent → tel quel ;
+ * sinon repli fourni par l'appelant.
+ */
+export const auditIsoErrorMessage = (err: any, fallback: string): string => {
+    const raw = err?.response?.data?.errorMessage;
+    if (raw && AUDIT_ISO_ERROR_MESSAGES[raw]) return AUDIT_ISO_ERROR_MESSAGES[raw];
+    if (typeof raw === 'string' && raw.trim().length > 0) return raw;
+    return fallback;
+};

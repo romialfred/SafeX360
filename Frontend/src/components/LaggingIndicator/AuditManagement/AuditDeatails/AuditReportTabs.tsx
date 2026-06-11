@@ -15,6 +15,7 @@ import {
 import { useForm } from "@mantine/form";
 import {
     IconCalendar,
+    IconDownload,
     IconEdit,
     IconFilePencil,
     IconPhoto,
@@ -34,6 +35,7 @@ import { convertFilesToBase64New, handlePreview } from "../../../../utility/Docu
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { addAuditReport, getAuditReportByAuditId } from "../../../../services/AuditReportService";
+import { downloadAuditReportPdf } from "../../../../services/AuditIsoService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { VALIDATOR_STATUS_LABELS, VALIDATOR_STATUS_OPTIONS } from "../auditLabels";
 
@@ -212,13 +214,31 @@ const AuditReportTabs = () => {
                         {/* Header */}
                         <Group justify="space-between" className="mb-2">
                             <h2 className="text-lg text-slate-800">Synthèse du rapport</h2>
-                            <Button
-                                onClick={() => setIsEditing(true)}
-                                radius="xl"
-                                leftSection={<IconEdit size={16} />}
-                            >
-                                Modifier
-                            </Button>
+                            <Group gap="xs">
+                                {/* LOT 52 — rapport d'audit PDF structuré ISO 19011 §6.5 */}
+                                <Button
+                                    variant="light"
+                                    color="teal"
+                                    radius="xl"
+                                    leftSection={<IconDownload size={16} />}
+                                    onClick={async () => {
+                                        try {
+                                            await downloadAuditReportPdf(id as string);
+                                        } catch (_e) {
+                                            errorNotification("Échec de la génération du rapport PDF");
+                                        }
+                                    }}
+                                >
+                                    Rapport PDF
+                                </Button>
+                                <Button
+                                    onClick={() => setIsEditing(true)}
+                                    radius="xl"
+                                    leftSection={<IconEdit size={16} />}
+                                >
+                                    Modifier
+                                </Button>
+                            </Group>
                         </Group>
 
                         {/* Content Container */}

@@ -223,6 +223,9 @@ const AuditRecommendations = () => {
 
                                 <TextEditor form={form} id="purpose" title="Commentaire de mise à jour" />
 
+                                {/* LOT 52 — vérification d'efficacité ISO 19011 §6.6 */}
+                                {selectedRow.id && <EffectivenessPanel recommendationId={Number(selectedRow.id)} />}
+
                                 <Divider size="xs" />
 
                                 <div className="flex justify-end gap-2">
