@@ -26,6 +26,12 @@ _ENV_PATH = pathlib.Path(__file__).resolve().parent / 'Backend' / '.env'
 
 
 def _env(name):
+    # LOT 52 : une variable d'environnement du processus prime sur le fichier —
+    # permet de cibler ponctuellement la prod (ex. DB_URL_HNS=$DB_URL_HNS_AIVEN
+    # python seed_xxx.py) sans toucher au .env.
+    import os
+    if os.environ.get(name):
+        return os.environ[name].strip().strip("'\"")
     text = _ENV_PATH.read_text(encoding='utf-8')
     m = re.search(rf"^{name}\s*=\s*(.+)$", text, re.M)
     if not m:

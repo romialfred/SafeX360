@@ -22,7 +22,9 @@ from datetime import datetime
 
 import db_env
 
-API_BASE = "http://localhost:8080/hrms"
+# Surchargables par variables d'environnement pour cibler la prod
+import os
+API_BASE = os.environ.get("SEED_API_BASE", "http://localhost:8080/hrms")
 SQL_ONLY = "--sql-only" in sys.argv
 
 DEPARTMENTS = [
