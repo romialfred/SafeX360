@@ -90,18 +90,42 @@ axiosInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+/**
+ * Sondes d'authentification : ces endpoints renvoient légitimement 401 quand
+ * l'utilisateur n'est PAS connecté (page de login, premier chargement). Leurs
+ * appelants gèrent déjà ce 401 (useAuth → user null, FirstLoginGuard → /login,
+ * usePermissions → profil null). L'intercepteur global NE DOIT PAS rediriger
+ * sur ces 401, sinon : 401 → navigate → re-montage → re-sonde → 401 → boucle
+ * infinie (bug du spinner sans fin sur /login).
+ */
+const AUTH_PROBE_PATHS = ['/hrms/auth/me', '/hrms/me/profile', '/hns/users/permissions/me'];
+
+const isAuthProbe = (url?: string): boolean =>
+    !!url && AUTH_PROBE_PATHS.some((p) => url.includes(p));
+
 export const setupResponseInterceptor = (navigate: any, dispatch: any) => {
     axiosInstance.interceptors.response.use(
         (response: AxiosResponse) => {
             return response;
         },
         (error) => {
-            if (error.response && error.response.status === 401) {
-                errorNotification("Session Expired, Please login again to continue");
-                navigateToLogin(navigate, dispatch);
+            const status = error.response?.status;
+            const url: string | undefined = error.config?.url;
 
+            // 401 sur une sonde d'auth : silencieux, l'appelant décide (pas de
+            // notification ni de redirection — c'est l'état « non connecté »).
+            if (status === 401 && isAuthProbe(url)) {
+                return Promise.reject(error);
             }
-            else throw error;
+
+            // 401 sur un appel applicatif réel = session réellement expirée.
+            if (status === 401) {
+                errorNotification("Session expirée, veuillez vous reconnecter");
+                navigateToLogin(navigate, dispatch);
+                return Promise.reject(error);
+            }
+
+            return Promise.reject(error);
         }
     );
 };

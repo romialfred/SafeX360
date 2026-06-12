@@ -51,7 +51,10 @@ const EffectivenessPanel = ({ recommendationId }: { recommendationId: number }) 
         }
         setLoading(true);
         try {
-            await planEffectivenessCheck(recommendationId, dueDate.toISOString().slice(0, 10));
+            await planEffectivenessCheck(recommendationId, {
+                dueDate: dueDate.toISOString().slice(0, 10),
+                evaluatorEmployeeId: null,
+            });
             successNotification('Vérification d\'efficacité planifiée');
             setDueDate(null);
             await reload();
@@ -72,7 +75,7 @@ const EffectivenessPanel = ({ recommendationId }: { recommendationId: number }) 
         }
         setLoading(true);
         try {
-            await concludeEffectivenessCheck(pending.id as number, verdict, comment);
+            await concludeEffectivenessCheck(pending.id as number, { verdict, comment });
             successNotification(verdict === 'INEFFICACE'
                 ? 'Verdict enregistré — la recommandation est rouverte automatiquement'
                 : 'Verdict d\'efficacité enregistré');

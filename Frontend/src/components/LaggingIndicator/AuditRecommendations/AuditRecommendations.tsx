@@ -11,6 +11,7 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { recommendationTableData } from "../../../Data/IncidentsData";
 import TextEditor from "../../UtilityComp/TextEditor";
+import EffectivenessPanel from "./EffectivenessPanel";
 import { useForm } from "@mantine/form";
 import { PAGINATOR_FR } from "../IncidentManagement/incidentLabels";
 
