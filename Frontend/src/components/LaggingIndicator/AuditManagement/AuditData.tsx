@@ -10,6 +10,7 @@ import { Toast } from 'primereact/toast';
 import { Toolbar } from 'primereact/toolbar';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getAllAudit, getLeadAuditors } from '../../../services/AuditService';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
@@ -31,6 +32,17 @@ const defaultFilters: DataTableFilterMeta = {
 
 const AuditData = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('audits');
+    // Libellés bilingues : clés i18n `audits:*`, repli sur les libellés FR centralisés.
+    // Statut (badge / CSV) — repli sur auditStatusMap (FR).
+    const tStatus = (code?: string | null): string =>
+        code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: auditStatusMap[code] ?? code }) : '—';
+    // Libellé d'onglet de statut — repli sur le label FR de auditStatuses.
+    const tStatusTab = (code: string, fallback: string): string =>
+        t(`statusTab.${String(code).toUpperCase()}`, { defaultValue: fallback });
+    // Catégorie (Interne / Externe) — repli sur auditCategoryLabel (FR).
+    const tCategory = (cat?: string | null): string =>
+        t(`category.${String(cat ?? '').toUpperCase()}`, { defaultValue: auditCategoryLabel(cat) });
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const [auditData, setAuditData] = useState<any[]>([]);
     const dispatch = useDispatch();
@@ -83,14 +95,14 @@ const AuditData = () => {
         return (
             <div className="flex gap-2">
 
-                {activeTab == "EXECUTION" && <Tooltip label="Exécuter l'audit">
-                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" variant="light" size="sm" aria-label="Exécuter l'audit">
+                {activeTab == "EXECUTION" && <Tooltip label={t('list.executeAudit')}>
+                    <ActionIcon onClick={() => navigate(`details/${rowData.id}?tab=execution`)} color="indigo" variant="light" size="sm" aria-label={t('list.executeAudit')}>
                         <IconPlayerPlay className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
                 }
-                <Tooltip label="Modifier la planification">
-                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} color="teal" variant="light" size="sm" aria-label="Modifier la planification">
+                <Tooltip label={t('list.editSchedule')}>
+                    <ActionIcon onClick={() => navigate(`edit-schedule/${rowData.id}`)} color="teal" variant="light" size="sm" aria-label={t('list.editSchedule')}>
                         <IconEdit className="!w-4/5 !h-4/5" stroke={1.75} />
                     </ActionIcon>
                 </Tooltip>
@@ -100,7 +112,7 @@ const AuditData = () => {
 
     // Export CSV de la liste filtrée (même pattern que le module Conformité).
     const exportCsv = () => {
-        const headers = ['Référence', 'Titre', 'Domaine', 'Auditeur principal', 'Catégorie', 'Début', 'Fin', 'Statut'];
+        const headers = [t('list.csvReference'), t('list.csvTitle'), t('list.csvScope'), t('list.csvLeadAuditor'), t('list.csvCategory'), t('list.csvStart'), t('list.csvEnd'), t('list.csvStatus')];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = filteredData.map((row: any) =>
             [
@@ -108,10 +120,10 @@ const AuditData = () => {
                 row.title ?? '',
                 auditAreaMap[row.scopeId]?.name ?? '',
                 leadAuditors[row.id]?.name ?? '',
-                auditCategoryLabel(row.category),
+                tCategory(row.category),
                 formatDateShort(row.startDate),
                 formatDateShort(row.endDate),
-                auditStatusMap[row.status] ?? row.status ?? '',
+                row.status ? tStatus(row.status) : '',
             ].map(escape).join(';')
         );
         const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
@@ -122,14 +134,14 @@ const AuditData = () => {
         link.download = `audits_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${filteredData.length} audit${filteredData.length > 1 ? 's' : ''} exporté${filteredData.length > 1 ? 's' : ''}`);
+        successNotification(t('list.exportedToast', { count: filteredData.length }));
     };
 
     const rightToolbarTemplate = () => {
         return (
             activeTab !== "dashboard" && <div className="flex gap-3 items-center">
                 <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-slate-50">
-                    <Tooltip label="Vue tableau">
+                    <Tooltip label={t('list.tableView')}>
                         <ActionIcon
                             variant={viewType === 'table' ? 'filled' : 'light'}
                             color="indigo"
@@ -139,7 +151,7 @@ const AuditData = () => {
                             <IconLayoutList size={16} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Vue cartes">
+                    <Tooltip label={t('list.cardView')}>
                         <ActionIcon
                             variant={viewType === 'card' ? 'filled' : 'light'}
                             color="indigo"
@@ -150,13 +162,13 @@ const AuditData = () => {
                         </ActionIcon>
                     </Tooltip>
                 </div>
-                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />} onClick={exportCsv} disabled={!filteredData.length}>Exporter</Button>
+                <Button size="sm" variant='default' leftSection={<IconUpload size={14} />} onClick={exportCsv} disabled={!filteredData.length}>{t('list.export')}</Button>
                 <TextInput
                     value={globalFilterValue}
                     onChange={onGlobalFilterChange}
                     size='sm'
                     radius="md"
-                    placeholder='Rechercher un audit…'
+                    placeholder={t('list.search')}
                     leftSection={<IconSearch size={14} />}
                 />
             </div>
@@ -166,7 +178,7 @@ const AuditData = () => {
     // Onglets statut audit — palette charte R7 (cyan=planifié, violet=en attente,
     // amber=en cours, emerald=clôturé, slate=annulé)
     const planningTabOptions = [
-        { value: 'dashboard', label: 'Tableau de bord', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
+        { value: 'dashboard', label: t('list.tabDashboard'), tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
         ...auditStatuses.map((status) => {
             let colorClass = '!text-slate-600';
             switch (status.value) {
@@ -178,7 +190,7 @@ const AuditData = () => {
             }
             return {
                 value: status.value,
-                label: `${status.label} (${auditData.filter(x => x.status === status.value).length})`,
+                label: `${tStatusTab(status.value, status.label)} (${auditData.filter(x => x.status === status.value).length})`,
                 tabClass: `!text-slate-600 ${colorClass}`
             };
         })
@@ -228,7 +240,7 @@ const AuditData = () => {
             }
             return {
                 value: cat,
-                label: `${cat === 'All' ? 'Toutes' : auditCategoryLabel(cat)} (${auditData.filter((x) => x.status == activeTab).filter(x => capitalizeFirstLetter(x.category) === cat || cat === 'All').length})`,
+                label: `${cat === 'All' ? t('list.all') : tCategory(cat)} (${auditData.filter((x) => x.status == activeTab).filter(x => capitalizeFirstLetter(x.category) === cat || cat === 'All').length})`,
                 tabClass: `!text-slate-600 ${colorClass}`
             };
         });
@@ -287,32 +299,32 @@ const AuditData = () => {
                                 dataKey="id"
                                 filters={filters}
                                 globalFilterFields={['title', 'refNumber', 'category']}
-                                currentPageReportTemplate="{first}–{last} sur {totalRecords} audits"
-                                emptyMessage="Aucun audit dans ce statut"
+                                currentPageReportTemplate={t('list.paginator')}
+                                emptyMessage={t('list.emptyTable')}
                                 onFilter={(e) => setFilters(e.filters)}
                             >
 
-                                <Column field="refNumber" header="Référence" sortable />
-                                <Column field="title" body={nameBodyTemplate} header="Titre de l'audit" sortable />
-                                <Column field="scopeId" header="Domaine d'audit" body={(rowData) => auditAreaMap[rowData.scopeId]?.name ?? '—'} />
-                                <Column align="center" field="leadAuditor" header="Auditeur principal" body={leadAuditorBodyTemplate} />
-                                <Column field="category" header="Catégorie" body={(rowData) => auditCategoryLabel(rowData.category)} />
+                                <Column field="refNumber" header={t('list.colReference')} sortable />
+                                <Column field="title" body={nameBodyTemplate} header={t('list.colTitle')} sortable />
+                                <Column field="scopeId" header={t('list.colScope')} body={(rowData) => auditAreaMap[rowData.scopeId]?.name ?? '—'} />
+                                <Column align="center" field="leadAuditor" header={t('list.colLeadAuditor')} body={leadAuditorBodyTemplate} />
+                                <Column field="category" header={t('list.colCategory')} body={(rowData) => tCategory(rowData.category)} />
 
-                                <Column field="startDate" header="Début" body={(rowData) => formatDateShort(rowData.startDate)} sortable />
-                                <Column field="endDate" header="Fin" body={(rowData) => formatDateShort(rowData.endDate)} />
+                                <Column field="startDate" header={t('list.colStart')} body={(rowData) => formatDateShort(rowData.startDate)} sortable />
+                                <Column field="endDate" header={t('list.colEnd')} body={(rowData) => formatDateShort(rowData.endDate)} />
 
-                                <Column field="status" header="Statut" body={(rowData) => (
+                                <Column field="status" header={t('list.colStatus')} body={(rowData) => (
                                     <Badge
                                         color={auditStatusColor(rowData.status)}
                                         size="sm"
                                         variant="light"
                                         className="rounded-full whitespace-nowrap"
                                     >
-                                        {auditStatusMap[rowData.status ?? ""] ?? rowData.status}
+                                        {tStatus(rowData.status)}
                                     </Badge>
                                 )} />
 
-                                <Column headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
+                                <Column headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header={t('list.colActions')} body={actionBodyTemplate} />
                             </DataTable>
 
                         ) : (
@@ -322,7 +334,7 @@ const AuditData = () => {
                                 ))}
                                 {filteredData.length === 0 && (
                                     <div className='text-sm text-slate-500 col-span-3 mx-auto py-8'>
-                                        Aucun audit dans ce statut
+                                        {t('list.emptyCard')}
                                     </div>
                                 )}
                             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Progress, Textarea, Tooltip } from "@mantine/core";
 import { IconChecklist, IconPick, IconRefresh } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import IsoBadge from "../../UtilityComp/IsoBadge";
 import EmptyState from "../../UtilityComp/EmptyState";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
@@ -26,13 +27,14 @@ import {
  * plateforme), badge sectoriel ambre dédié pour le référentiel MINIER.
  */
 const ReferentialBadge = ({ referential }: { referential: string }) => {
+    const { t } = useTranslation('audits');
     if (isIsoReferential(referential)) {
         return <IsoBadge norm={referentialToNorm(referential)} size="md" withLabel />;
     }
     return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-[12px] tracking-wide">
             <IconPick size={14} />
-            Référentiel minier
+            {t('checklist.minierBadge')}
         </span>
     );
 };
@@ -57,6 +59,10 @@ interface AuditChecklistPanelProps {
 const RESULT_BUTTONS: ChecklistResult[] = ['CONFORME', 'NON_CONFORME', 'NON_APPLICABLE', 'A_EVALUER'];
 
 const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
+    const { t } = useTranslation('audits');
+    // Libellé de résultat de checklist — clé i18n `audits:checklistResult.*`, repli sur le libellé FR centralisé.
+    const tResult = (result: ChecklistResult): string =>
+        t(`checklistResult.${result}`, { defaultValue: CHECKLIST_RESULT_LABELS[result] });
     const [items, setItems] = useState<AuditChecklistItemDTO[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [initializing, setInitializing] = useState(false);
@@ -97,11 +103,11 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
         setInitializing(true);
         initAuditChecklist(auditId, selectedReferentials)
             .then((res) => {
-                successNotification(res?.message || 'Checklist initialisée');
+                successNotification(res?.message || t('checklist.initializedToast'));
                 fetchChecklist();
             })
             .catch((err) => {
-                errorNotification(auditIsoErrorMessage(err, "L'initialisation de la checklist a échoué"));
+                errorNotification(auditIsoErrorMessage(err, t('checklist.initFailed')));
             })
             .finally(() => setInitializing(false));
     };
@@ -120,7 +126,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                 setItemErrors((prev) => ({ ...prev, [item.id]: '' }));
             })
             .catch((err) => {
-                const message = auditIsoErrorMessage(err, "L'enregistrement de la réponse a échoué");
+                const message = auditIsoErrorMessage(err, t('checklist.saveItemFailed'));
                 setItemErrors((prev) => ({ ...prev, [item.id]: message }));
                 errorNotification(message);
             })
@@ -187,8 +193,8 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                     compact
                     icon={<IconChecklist size={22} />}
                     iconColor="indigo"
-                    title="Aucune checklist initialisée pour cet audit"
-                    description="Sélectionnez les référentiels à auditer : les questions types par clause seront copiées dans la checklist de cet audit."
+                    title={t('checklist.emptyTitle')}
+                    description={t('checklist.emptyDescription')}
                 />
                 <div className="flex flex-wrap justify-center gap-3 mt-2">
                     {CHECKLIST_REFERENTIALS.map((referential) => {
@@ -218,7 +224,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                         loading={initializing}
                         onClick={handleInit}
                     >
-                        Initialiser la checklist
+                        {t('checklist.initButton')}
                     </Button>
                 </div>
             </div>
@@ -231,10 +237,10 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
         <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-lg text-gray-600 flex items-center gap-2">
-                    <IconChecklist size={20} stroke={1.5} /> Checklist ISO
+                    <IconChecklist size={20} stroke={1.5} /> {t('checklist.title')}
                 </p>
                 <Button size="xs" variant="default" leftSection={<IconRefresh size={14} />} onClick={fetchChecklist}>
-                    Actualiser
+                    {t('checklist.refresh')}
                 </Button>
             </div>
 
@@ -258,7 +264,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                                     className="flex-1"
                                 />
                                 <span className="text-[12px] text-slate-600 tabular-nums whitespace-nowrap">
-                                    {progress.evaluated}/{progress.total} évaluées
+                                    {t('checklist.evaluatedCount', { evaluated: progress.evaluated, total: progress.total })}
                                 </span>
                             </div>
                         </div>
@@ -268,7 +274,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                             {Object.entries(clauses).map(([clause, clauseItems]) => (
                                 <div key={clause} className="px-5 py-4">
                                     <p className="text-[12px] uppercase tracking-wider text-slate-500 mb-3">
-                                        Clause {clause}
+                                        {t('checklist.clause', { clause })}
                                     </p>
                                     <div className="space-y-4">
                                         {clauseItems.map((item) => {
@@ -282,7 +288,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                                                             {RESULT_BUTTONS.map((result) => {
                                                                 const isActive = item.result === result;
                                                                 return (
-                                                                    <Tooltip key={result} label={CHECKLIST_RESULT_LABELS[result]} withArrow disabled={isActive}>
+                                                                    <Tooltip key={result} label={tResult(result)} withArrow disabled={isActive}>
                                                                         <button
                                                                             type="button"
                                                                             disabled={isSaving}
@@ -294,7 +300,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                                                                                     : 'bg-white border-transparent text-slate-600 hover:bg-slate-200'
                                                                             } ${isSaving ? 'opacity-60 cursor-wait' : ''}`}
                                                                         >
-                                                                            {CHECKLIST_RESULT_LABELS[result]}
+                                                                            {tResult(result)}
                                                                         </button>
                                                                     </Tooltip>
                                                                 );
@@ -306,13 +312,13 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
                                                         className="mt-3"
                                                         placeholder={
                                                             item.result === 'NON_CONFORME'
-                                                                ? 'Commentaire factuel obligatoire : écart constaté, preuve, contexte...'
-                                                                : 'Commentaire (optionnel)'
+                                                                ? t('checklist.commentRequiredPlaceholder')
+                                                                : t('checklist.commentOptionalPlaceholder')
                                                         }
                                                         autosize
                                                         minRows={1}
                                                         withAsterisk={item.result === 'NON_CONFORME'}
-                                                        label={item.result === 'NON_CONFORME' ? 'Commentaire (obligatoire)' : undefined}
+                                                        label={item.result === 'NON_CONFORME' ? t('checklist.commentRequiredLabel') : undefined}
                                                         value={commentDrafts[item.id] ?? ''}
                                                         onChange={(e) =>
                                                             setCommentDrafts((prev) => ({ ...prev, [item.id]: e.currentTarget.value }))
@@ -323,7 +329,7 @@ const AuditChecklistPanel = ({ auditId }: AuditChecklistPanelProps) => {
 
                                                     {item.observationId && (
                                                         <Badge variant="light" color="indigo" radius="sm" className="mt-2">
-                                                            Liée au constat #{item.observationId}
+                                                            {t('checklist.linkedObservation', { id: item.observationId })}
                                                         </Badge>
                                                     )}
                                                 </div>

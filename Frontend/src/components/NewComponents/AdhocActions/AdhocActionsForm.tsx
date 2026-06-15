@@ -3,6 +3,7 @@ import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import {
     IconBolt,
@@ -65,6 +66,10 @@ const AdhocActionsForm = () => {
     const [employees, setEmployees] = useState<any[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const user = useSelector((state: any) => state.user);
+    const { t } = useTranslation('adhoc');
+    // Libellé bilingue du statut : clé i18n `adhoc:state.*`, repli sur le libellé FR centralisé (adhocLabels.ts).
+    const tState = (state?: string | null, fallback?: string) =>
+        t(`state.${(state ?? '').toUpperCase()}`, { defaultValue: fallback ?? (state ?? '—') });
 
     const form = useForm({
         initialValues: {
@@ -77,9 +82,9 @@ const AdhocActionsForm = () => {
             departmentId: user?.departmentId || null,
         },
         validate: {
-            actionName: (value) => (value.trim().length < 5 ? "L'intitulé doit compter au moins 5 caractères" : null),
-            description: (value) => (isValidRichText(value) ? null : 'La description est obligatoire'),
-            deadline: (value) => (value ? null : "L'échéance est obligatoire"),
+            actionName: (value) => (value.trim().length < 5 ? t('form.validationActionNameMin') : null),
+            description: (value) => (isValidRichText(value) ? null : t('form.validationDescriptionRequired')),
+            deadline: (value) => (value ? null : t('form.validationDeadlineRequired')),
         },
     });
 
@@ -103,11 +108,11 @@ const AdhocActionsForm = () => {
 
         createCorrectiveAction(payload)
             .then(() => {
-                successNotification("Suggestion d'amélioration créée. Elle sera soumise à approbation.");
+                successNotification(t('form.createdToast'));
                 navigate("/adhoc-actions");
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('form.createFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -121,15 +126,15 @@ const AdhocActionsForm = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Actions Correctives' },
-                    { label: "Suggestions d'amélioration", to: '/adhoc-actions' },
-                    { label: 'Nouvelle suggestion' },
+                    { label: t('form.breadcrumbHome'), to: '/' },
+                    { label: t('form.breadcrumbCorrective') },
+                    { label: t('form.breadcrumbSuggestions'), to: '/adhoc-actions' },
+                    { label: t('form.breadcrumbNew') },
                 ]}
                 icon={<IconBolt size={22} stroke={2} />}
                 iconColor="orange"
-                title="Nouvelle suggestion d'amélioration"
-                subtitle="Décrire l'idée, désigner un responsable et fixer une échéance réaliste"
+                title={t('form.title')}
+                subtitle={t('form.subtitle')}
             />
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -138,36 +143,36 @@ const AdhocActionsForm = () => {
                     <div className="xl:col-span-3 flex flex-col gap-4">
                         <SectionCard
                             icon={<IconClipboardText size={15} stroke={1.8} />}
-                            title="Description de la suggestion"
-                            subtitle="Ce que l'idée doit améliorer, en termes concrets pour les équipes"
+                            title={t('form.descriptionSectionTitle')}
+                            subtitle={t('form.descriptionSectionSubtitle')}
                         >
                             <TextInput
                                 withAsterisk
-                                label="Intitulé"
-                                placeholder="ex. Installer un miroir convexe à la sortie de l'atelier maintenance Nord"
+                                label={t('form.actionNameLabel')}
+                                placeholder={t('form.actionNamePlaceholder')}
                                 size="sm"
                                 {...form.getInputProps('actionName')}
                             />
-                            <TextEditor form={form} id="description" title="Description détaillée" withAsterisk />
+                            <TextEditor form={form} id="description" title={t('form.descriptionLabel')} withAsterisk />
                         </SectionCard>
 
                         <SectionCard
                             icon={<IconUserCheck size={15} stroke={1.8} />}
-                            title="Responsabilité et échéance"
-                            subtitle="Qui portera l'action et sous quel délai"
+                            title={t('form.responsibilitySectionTitle')}
+                            subtitle={t('form.responsibilitySectionSubtitle')}
                         >
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Select
                                     data={employees.map(emp => ({ value: "" + emp.id, label: emp.name }))}
-                                    label="Assignée à"
-                                    placeholder="Choisir un employé"
+                                    label={t('form.assignedToLabel')}
+                                    placeholder={t('form.assignedToPlaceholder')}
                                     size="sm"
                                     searchable
                                     {...form.getInputProps('assignedEmployeeId')}
                                 />
                                 <DateInput
-                                    label="Échéance"
-                                    placeholder="Choisir une date"
+                                    label={t('form.deadlineLabel')}
+                                    placeholder={t('form.deadlinePlaceholder')}
                                     minDate={new Date()}
                                     size="sm"
                                     withAsterisk
@@ -185,7 +190,7 @@ const AdhocActionsForm = () => {
                                 disabled={submitting}
                                 onClick={() => navigate('/adhoc-actions')}
                             >
-                                Annuler
+                                {t('form.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -194,7 +199,7 @@ const AdhocActionsForm = () => {
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
                             >
-                                Créer la suggestion
+                                {t('form.submit')}
                             </Button>
                         </div>
                     </div>
@@ -212,25 +217,24 @@ const AdhocActionsForm = () => {
                                         letterSpacing: '-0.01em',
                                     }}
                                 >
-                                    Circuit d'approbation
+                                    {t('form.approvalCircuitTitle')}
                                 </h4>
                                 <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                                    La suggestion est créée avec le statut{' '}
+                                    {t('form.approvalCircuitPrefix')}{' '}
                                     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider align-middle ${pendingCfg.chip}`}>
-                                        {pendingCfg.label}
+                                        {tState('PENDING', pendingCfg.label)}
                                     </span>{' '}
-                                    puis transmise au responsable de département pour approbation. Une fois approuvée,
-                                    elle passe en cours et sa progression peut être mise à jour jusqu'à clôture.
+                                    {t('form.approvalCircuitSuffix')}
                                 </p>
                             </div>
 
                             <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-                                <h5 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Conseils de rédaction</h5>
+                                <h5 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">{t('form.tipsTitle')}</h5>
                                 <ul className="text-[11.5px] text-slate-600 space-y-1 list-disc list-inside">
-                                    <li>Commencer l'intitulé par un verbe d'action</li>
-                                    <li>Préciser le lieu et l'équipement concernés</li>
-                                    <li>Décrire le gain attendu en sécurité ou en efficacité</li>
-                                    <li>Choisir une échéance réaliste compte tenu des dépendances</li>
+                                    <li>{t('form.tip1')}</li>
+                                    <li>{t('form.tip2')}</li>
+                                    <li>{t('form.tip3')}</li>
+                                    <li>{t('form.tip4')}</li>
                                 </ul>
                             </div>
                         </div>

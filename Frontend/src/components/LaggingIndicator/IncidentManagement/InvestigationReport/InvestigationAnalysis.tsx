@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, Group, Checkbox, Select, Textarea, TextInput, Button, Alert, ActionIcon, Tooltip } from '@mantine/core';
 import {
     IconUser,
@@ -42,24 +43,25 @@ import {
  */
 
 // ─── ICAM : 4 catégories canoniques (mappées aux buckets backend) ──────────────
+// `titleKey` → clé i18n (incidents.investigation.analysis.*) ; le libellé visible est résolu via `t`.
 const ICAM_CATEGORIES = [
-    { key: 'humanCauses', analysisKey: 'humanAnalysis', title: 'Actions individuelles & humaines', icon: IconUser, band: 'bg-blue-50/60 border-blue-200/70', chip: 'bg-blue-100 text-blue-700', options: HUMAN_CAUSE_OPTIONS },
-    { key: 'taskCauses', analysisKey: 'taskAnalysis', title: 'Facteurs liés à la tâche', icon: IconPencil, band: 'bg-rose-50/60 border-rose-200/70', chip: 'bg-rose-100 text-rose-700', options: TASK_CAUSE_OPTIONS },
-    { key: 'workingCauses', analysisKey: 'workingAnalysis', title: 'Conditions & environnement de travail', icon: IconBuildingFactory2, band: 'bg-emerald-50/60 border-emerald-200/70', chip: 'bg-emerald-100 text-emerald-700', options: WORKING_CAUSE_OPTIONS },
-    { key: 'organizationCauses', analysisKey: 'organizationAnalysis', title: 'Facteurs organisationnels & latents', icon: IconHierarchy, band: 'bg-violet-50/60 border-violet-200/70', chip: 'bg-violet-100 text-violet-700', options: ORGANIZATION_CAUSE_OPTIONS },
+    { key: 'humanCauses', analysisKey: 'humanAnalysis', titleKey: 'categoryHuman', icon: IconUser, band: 'bg-blue-50/60 border-blue-200/70', chip: 'bg-blue-100 text-blue-700', options: HUMAN_CAUSE_OPTIONS },
+    { key: 'taskCauses', analysisKey: 'taskAnalysis', titleKey: 'categoryTask', icon: IconPencil, band: 'bg-rose-50/60 border-rose-200/70', chip: 'bg-rose-100 text-rose-700', options: TASK_CAUSE_OPTIONS },
+    { key: 'workingCauses', analysisKey: 'workingAnalysis', titleKey: 'categoryWorking', icon: IconBuildingFactory2, band: 'bg-emerald-50/60 border-emerald-200/70', chip: 'bg-emerald-100 text-emerald-700', options: WORKING_CAUSE_OPTIONS },
+    { key: 'organizationCauses', analysisKey: 'organizationAnalysis', titleKey: 'categoryOrganization', icon: IconHierarchy, band: 'bg-violet-50/60 border-violet-200/70', chip: 'bg-violet-100 text-violet-700', options: ORGANIZATION_CAUSE_OPTIONS },
 ];
 
-const ANALYSIS_DESTINATIONS = ICAM_CATEGORIES.map((c) => ({ value: c.analysisKey, label: c.title }));
-
 // ─── Méthode choisie (étape 1) → libellé/icône + outil d'analyse ───────────────
-const METHOD_INFO: Record<string, { label: string; icon: any; color: string; level: string }> = {
-    ICAM: { label: 'ICAM — Incident Cause Analysis Method', icon: IconLayersIntersect, color: 'bg-teal-100 text-teal-700', level: 'N3 – N4' },
-    M5P: { label: 'Méthode des 5 Pourquoi', icon: IconArrowsSplit2, color: 'bg-blue-100 text-blue-700', level: 'N1 – N2' },
-    ISH: { label: "Diagramme d'Ishikawa (6M)", icon: IconFish, color: 'bg-emerald-100 text-emerald-700', level: 'N2 – N3' },
-    AC: { label: 'Arbre des causes', icon: IconBinaryTree, color: 'bg-violet-100 text-violet-700', level: 'N3 – N4' },
-    FTA: { label: 'Arbre des défaillances (FTA)', icon: IconSitemap, color: 'bg-amber-100 text-amber-700', level: 'N3 – N4' },
-    SMS: { label: 'Analyse des systèmes (SMS)', icon: IconSettings, color: 'bg-cyan-100 text-cyan-700', level: 'Systémique' },
-    RCA: { label: 'Root Cause Analysis (RCA)', icon: IconTargetArrow, color: 'bg-rose-100 text-rose-700', level: 'Tous niveaux' },
+// `labelKey` → clé i18n (incidents.investigation.analysis.*) ; le niveau ISO est résolu via
+// incidents.investigation.method.<CODE>.level.
+const METHOD_INFO: Record<string, { labelKey: string; icon: any; color: string }> = {
+    ICAM: { labelKey: 'methodIcamLabel', icon: IconLayersIntersect, color: 'bg-teal-100 text-teal-700' },
+    M5P: { labelKey: 'methodM5pLabel', icon: IconArrowsSplit2, color: 'bg-blue-100 text-blue-700' },
+    ISH: { labelKey: 'methodIshLabel', icon: IconFish, color: 'bg-emerald-100 text-emerald-700' },
+    AC: { labelKey: 'methodAcLabel', icon: IconBinaryTree, color: 'bg-violet-100 text-violet-700' },
+    FTA: { labelKey: 'methodFtaLabel', icon: IconSitemap, color: 'bg-amber-100 text-amber-700' },
+    SMS: { labelKey: 'methodSmsLabel', icon: IconSettings, color: 'bg-cyan-100 text-cyan-700' },
+    RCA: { labelKey: 'methodRcaLabel', icon: IconTargetArrow, color: 'bg-rose-100 text-rose-700' },
 };
 
 /** Mappe la méthode choisie (étape 1) vers l'outil d'analyse présenté. */
@@ -76,15 +78,16 @@ const methodToTool = (method?: string): string => {
     }
 };
 
-const ICAM_LABEL: Record<string, string> = {
-    humanAnalysis: 'Actions individuelles & humaines',
-    taskAnalysis: 'Facteurs liés à la tâche',
-    workingAnalysis: 'Conditions & environnement de travail',
-    organizationAnalysis: 'Facteurs organisationnels & latents',
+// analysisKey → clé i18n du libellé de catégorie ICAM (pour la notification de synthèse).
+const ICAM_LABEL_KEY: Record<string, string> = {
+    humanAnalysis: 'categoryHuman',
+    taskAnalysis: 'categoryTask',
+    workingAnalysis: 'categoryWorking',
+    organizationAnalysis: 'categoryOrganization',
 };
 
-const CauseCheckboxGroup = ({ form, fieldId, options }: { form: any; fieldId: string; options: { value: string; label: string }[] }) => (
-    <Checkbox.Group {...form.getInputProps(fieldId)} label="Causes potentielles" withAsterisk>
+const CauseCheckboxGroup = ({ form, fieldId, options, label }: { form: any; fieldId: string; options: { value: string; label: string }[]; label: string }) => (
+    <Checkbox.Group {...form.getInputProps(fieldId)} label={label} withAsterisk>
         <div className="mt-2 flex flex-wrap gap-2">
             {options.map((opt) => (
                 <Checkbox.Card
@@ -117,9 +120,14 @@ const SectionCard = ({ band, icon: Icon, title, count, children }: any) => (
 );
 
 const InvestigationAnalysis = ({ form }: any) => {
+    const { t } = useTranslation('incidents');
+    const aKey = (k: string) => `investigation.analysis.${k}`;
+    // Destinations de synthèse (libellés de catégories ICAM) — résolues via i18n.
+    const ANALYSIS_DESTINATIONS = ICAM_CATEGORIES.map((c) => ({ value: c.analysisKey, label: t(aKey(c.titleKey)) }));
     const method = String(form?.values?.method || 'ICAM').toUpperCase();
     const tool = methodToTool(method);
     const mInfo = METHOD_INFO[method] ?? METHOD_INFO.ICAM;
+    const mInfoKey = METHOD_INFO[method] ? method : 'ICAM';
     const [synthDone, setSynthDone] = useState(false);
 
     // Outils guidés — état LOCAL (non persisté).
@@ -128,13 +136,13 @@ const InvestigationAnalysis = ({ form }: any) => {
     const [whyDest, setWhyDest] = useState<string>('organizationAnalysis');
 
     const M6 = useMemo(() => ([
-        { key: 'manpower', label: 'Main-d\'œuvre' },
-        { key: 'method', label: 'Méthode' },
-        { key: 'machine', label: 'Matériel / Machine' },
-        { key: 'milieu', label: 'Milieu' },
-        { key: 'matter', label: 'Matière' },
-        { key: 'management', label: 'Management' },
-    ]), []);
+        { key: 'manpower', label: t(aKey('m6Manpower')) },
+        { key: 'method', label: t(aKey('m6Method')) },
+        { key: 'machine', label: t(aKey('m6Machine')) },
+        { key: 'milieu', label: t(aKey('m6Milieu')) },
+        { key: 'matter', label: t(aKey('m6Matter')) },
+        { key: 'management', label: t(aKey('m6Management')) },
+    ]), [t]);
     const [ishikawa, setIshikawa] = useState<Record<string, string[]>>({ manpower: [], method: [], machine: [], milieu: [], matter: [], management: [] });
     const [ishDest, setIshDest] = useState<string>('workingAnalysis');
 
@@ -145,23 +153,24 @@ const InvestigationAnalysis = ({ form }: any) => {
         const prev = form.values?.[dest] || '';
         form.setFieldValue(dest, `${prev}${prev ? '<br/>' : ''}${html}`);
         setSynthDone(true);
-        successNotification(`Synthèse ajoutée à « ${ICAM_LABEL[dest] ?? dest} »`);
+        const destLabel = ICAM_LABEL_KEY[dest] ? t(aKey(ICAM_LABEL_KEY[dest])) : dest;
+        successNotification(t(aKey('synthAdded'), { dest: destLabel }));
     };
 
     // ─── Synthèses ───
     const synthFiveWhys = () => {
         const items = whys.filter((w) => w.trim());
-        const html = `<p><strong>5 Pourquoi — ${problem || 'Problème analysé'}</strong></p><ol>${items.map((w) => `<li>${w}</li>`).join('')}</ol>${items.length ? `<p><em>Cause racine retenue :</em> ${items[items.length - 1]}</p>` : ''}`;
+        const html = `<p><strong>${t(aKey('synthFiveWhysTitle'))} — ${problem || t(aKey('synthDefaultProblem'))}</strong></p><ol>${items.map((w) => `<li>${w}</li>`).join('')}</ol>${items.length ? `<p><em>${t(aKey('synthRootCause'))}</em> ${items[items.length - 1]}</p>` : ''}`;
         appendToAnalysis(whyDest, html);
     };
     const synthIshikawa = () => {
         const blocks = M6.filter((m) => ishikawa[m.key].some((x) => x.trim()))
             .map((m) => `<p><strong>${m.label}</strong></p><ul>${ishikawa[m.key].filter((x) => x.trim()).map((x) => `<li>${x}</li>`).join('')}</ul>`)
             .join('');
-        appendToAnalysis(ishDest, `<p><strong>Ishikawa 6M</strong></p>${blocks}`);
+        appendToAnalysis(ishDest, `<p><strong>${t(aKey('synthIshikawaTitle'))}</strong></p>${blocks}`);
     };
     const synthTree = () => {
-        const html = `<p><strong>Arbre des causes</strong></p><ul>${treeNodes.filter((n) => n.text.trim()).map((n) => `<li style="margin-left:${n.depth * 16}px">[${n.connector}] ${n.text}</li>`).join('')}</ul>`;
+        const html = `<p><strong>${t(aKey('synthTreeTitle'))}</strong></p><ul>${treeNodes.filter((n) => n.text.trim()).map((n) => `<li style="margin-left:${n.depth * 16}px">[${n.connector}] ${n.text}</li>`).join('')}</ul>`;
         appendToAnalysis(treeDest, html);
     };
 
@@ -170,35 +179,35 @@ const InvestigationAnalysis = ({ form }: any) => {
     const analysisFilled = ICAM_CATEGORIES.some((c) => (form.values?.[c.analysisKey] || '').replace(/<[^>]+>/g, '').trim().length > 0);
     const evidenceFilled = (form.values?.evidence?.length ?? 0) > 0;
     const steps = [
-        { label: 'Causes', done: causesFilled },
-        { label: 'Analyse rédigée', done: analysisFilled },
-        { label: 'Preuves', done: evidenceFilled },
-        { label: 'Synthèse', done: tool === 'icam' ? analysisFilled : synthDone },
+        { label: t(aKey('progressCauses')), done: causesFilled },
+        { label: t(aKey('progressAnalysis')), done: analysisFilled },
+        { label: t(aKey('progressEvidence')), done: evidenceFilled },
+        { label: t(aKey('progressSynthesis')), done: tool === 'icam' ? analysisFilled : synthDone },
     ];
 
     return (
         <div className="mt-5 flex flex-col gap-5">
             {/* En-tête d'étape */}
             <div>
-                <h2 className="text-slate-800" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 600 }}>Analyse des causes</h2>
-                <p className="text-[13px] text-slate-500">Choisir la méthode, identifier les causes immédiates et profondes (ISO 45001 §10.2)</p>
+                <h2 className="text-slate-800" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 600 }}>{t(aKey('heading'))}</h2>
+                <p className="text-[13px] text-slate-500">{t(aKey('subheading'))}</p>
             </div>
 
             {/* Méthode retenue — définie à l'Étape 1 (plus de sélecteur ici) */}
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <span className={`inline-flex rounded-lg p-2 ${mInfo.color}`}><mInfo.icon size={20} /></span>
                 <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400">Méthode d'investigation</p>
-                    <p className="text-[14px] text-slate-800" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>{mInfo.label}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400">{t(aKey('methodLabel'))}</p>
+                    <p className="text-[14px] text-slate-800" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>{t(aKey(METHOD_INFO[mInfoKey].labelKey))}</p>
                 </div>
-                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9.5px] uppercase tracking-wider text-slate-500">{mInfo.level}</span>
-                <span className={`rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${tool === 'icam' ? 'border-teal-200 bg-teal-50 text-teal-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>{tool === 'icam' ? 'Persistée' : 'Outil guidé'}</span>
-                <span className="ml-auto text-[11.5px] text-slate-400">Définie à l'Étape 1 · modifiable en revenant en arrière</span>
+                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9.5px] uppercase tracking-wider text-slate-500">{t(`investigation.method.${mInfoKey}.level`)}</span>
+                <span className={`rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${tool === 'icam' ? 'border-teal-200 bg-teal-50 text-teal-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>{tool === 'icam' ? t(aKey('persisted')) : t(aKey('guidedTool'))}</span>
+                <span className="ml-auto text-[11.5px] text-slate-400">{t(aKey('definedAtStep1'))}</span>
             </div>
 
             {tool !== 'icam' && (
                 <Alert color="teal" variant="light" icon={<IconInfoCircle size={16} />} className="!py-2">
-                    <Text size="xs">Méthode d'aide à l'analyse. Seule la synthèse écrite dans l'analyse ICAM est enregistrée — utilisez « Synthétiser vers l'analyse ».</Text>
+                    <Text size="xs">{t(aKey('guidedHelper'))}</Text>
                 </Alert>
             )}
 
@@ -209,10 +218,10 @@ const InvestigationAnalysis = ({ form }: any) => {
                         const Icon = cat.icon;
                         const n = form.values?.[cat.key]?.length ?? 0;
                         return (
-                            <SectionCard key={cat.key} band={cat.band} icon={Icon} title={cat.title} count={`${n} sélectionnée(s)`}>
+                            <SectionCard key={cat.key} band={cat.band} icon={Icon} title={t(aKey(cat.titleKey))} count={t(aKey('selectedCount'), { count: n })}>
                                 <div className="flex flex-col gap-4">
-                                    <CauseCheckboxGroup form={form} fieldId={cat.key} options={cat.options} />
-                                    <TextEditor withAsterisk form={form} id={cat.analysisKey} title="Analyse détaillée" />
+                                    <CauseCheckboxGroup form={form} fieldId={cat.key} options={cat.options} label={t(aKey('potentialCauses'))} />
+                                    <TextEditor withAsterisk form={form} id={cat.analysisKey} title={t(aKey('detailedAnalysis'))} />
                                 </div>
                             </SectionCard>
                         );
@@ -222,9 +231,9 @@ const InvestigationAnalysis = ({ form }: any) => {
 
             {/* ── 5 Pourquoi ── */}
             {tool === 'fivewhys' && (
-                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconArrowsSplit2} title="5 Pourquoi — chaîne causale">
+                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconArrowsSplit2} title={t(aKey('fivewhysTitle'))}>
                     <div className="flex flex-col gap-4">
-                        <Textarea label="Problème / effet constaté" autosize minRows={2} value={problem} onChange={(e) => setProblem(e.currentTarget.value)} placeholder="Décrire l'effet observé (sans présumer la cause)" />
+                        <Textarea label={t(aKey('problemLabel'))} autosize minRows={2} value={problem} onChange={(e) => setProblem(e.currentTarget.value)} placeholder={t(aKey('problemPlaceholder'))} />
                         <div className="flex flex-col gap-0">
                             {whys.map((w, i) => (
                                 <div key={i} className="flex items-start gap-3" style={{ marginLeft: i * 14 }}>
@@ -236,7 +245,7 @@ const InvestigationAnalysis = ({ form }: any) => {
                                         <TextInput
                                             value={w}
                                             onChange={(e) => setWhys((arr) => arr.map((x, j) => (j === i ? e.currentTarget.value : x)))}
-                                            placeholder={i === 0 ? 'Pourquoi cela s\'est-il produit ?' : `Pourquoi : « ${whys[i - 1] || '…'} » ?`}
+                                            placeholder={i === 0 ? t(aKey('firstWhyPlaceholder')) : t(aKey('nextWhyPlaceholder'), { prev: whys[i - 1] || '…' })}
                                             rightSection={i >= 5 ? (
                                                 <ActionIcon variant="subtle" color="red" onClick={() => setWhys((arr) => arr.filter((_, j) => j !== i))}><IconTrash size={14} /></ActionIcon>
                                             ) : (i < whys.length - 1 ? <IconArrowDown size={14} className="text-teal-400" /> : null)}
@@ -246,17 +255,17 @@ const InvestigationAnalysis = ({ form }: any) => {
                             ))}
                         </div>
                         <div>
-                            <Button size="xs" variant="subtle" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setWhys((a) => [...a, ''])}>Ajouter un pourquoi</Button>
+                            <Button size="xs" variant="subtle" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setWhys((a) => [...a, ''])}>{t(aKey('addWhy'))}</Button>
                         </div>
                         {whys.filter((w) => w.trim()).length > 0 && (
                             <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50 p-3">
-                                <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-emerald-700"><IconTargetArrow size={14} /> Cause racine identifiée</p>
+                                <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-emerald-700"><IconTargetArrow size={14} /> {t(aKey('rootCauseIdentified'))}</p>
                                 <p className="mt-1 text-[13.5px] text-emerald-900">{whys.filter((w) => w.trim()).slice(-1)[0]}</p>
                             </div>
                         )}
                         <div className="flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
-                            <Select size="xs" label="Synthétiser dans" w={260} data={ANALYSIS_DESTINATIONS} value={whyDest} onChange={(v) => v && setWhyDest(v)} />
-                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthFiveWhys}>Synthétiser vers l'analyse</Button>
+                            <Select size="xs" label={t(aKey('synthesizeIn'))} w={260} data={ANALYSIS_DESTINATIONS} value={whyDest} onChange={(v) => v && setWhyDest(v)} />
+                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthFiveWhys}>{t(aKey('synthesizeToAnalysis'))}</Button>
                         </div>
                     </div>
                 </SectionCard>
@@ -264,7 +273,7 @@ const InvestigationAnalysis = ({ form }: any) => {
 
             {/* ── Ishikawa 6M ── */}
             {tool === 'ishikawa' && (
-                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconFish} title="Diagramme d'Ishikawa — 6M">
+                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconFish} title={t(aKey('ishikawaTitle'))}>
                     <div className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                             {M6.map((m) => (
@@ -273,18 +282,18 @@ const InvestigationAnalysis = ({ form }: any) => {
                                     <div className="flex flex-col gap-1.5">
                                         {ishikawa[m.key].map((c, i) => (
                                             <div key={i} className="flex items-center gap-1">
-                                                <TextInput size="xs" className="flex-1" value={c} onChange={(e) => setIshikawa((s) => ({ ...s, [m.key]: s[m.key].map((x, j) => (j === i ? e.currentTarget.value : x)) }))} placeholder="Cause possible" />
+                                                <TextInput size="xs" className="flex-1" value={c} onChange={(e) => setIshikawa((s) => ({ ...s, [m.key]: s[m.key].map((x, j) => (j === i ? e.currentTarget.value : x)) }))} placeholder={t(aKey('possibleCause'))} />
                                                 <ActionIcon variant="subtle" color="red" size="sm" onClick={() => setIshikawa((s) => ({ ...s, [m.key]: s[m.key].filter((_, j) => j !== i) }))}><IconTrash size={13} /></ActionIcon>
                                             </div>
                                         ))}
-                                        <Button size="compact-xs" variant="subtle" color="teal" leftSection={<IconPlus size={12} />} onClick={() => setIshikawa((s) => ({ ...s, [m.key]: [...s[m.key], ''] }))}>Ajouter</Button>
+                                        <Button size="compact-xs" variant="subtle" color="teal" leftSection={<IconPlus size={12} />} onClick={() => setIshikawa((s) => ({ ...s, [m.key]: [...s[m.key], ''] }))}>{t(aKey('add'))}</Button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                         <div className="flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
-                            <Select size="xs" label="Synthétiser dans" w={260} data={ANALYSIS_DESTINATIONS} value={ishDest} onChange={(v) => v && setIshDest(v)} />
-                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthIshikawa}>Synthétiser vers l'analyse</Button>
+                            <Select size="xs" label={t(aKey('synthesizeIn'))} w={260} data={ANALYSIS_DESTINATIONS} value={ishDest} onChange={(v) => v && setIshDest(v)} />
+                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthIshikawa}>{t(aKey('synthesizeToAnalysis'))}</Button>
                         </div>
                     </div>
                 </SectionCard>
@@ -292,39 +301,39 @@ const InvestigationAnalysis = ({ form }: any) => {
 
             {/* ── Arbre des causes ── */}
             {tool === 'tree' && (
-                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconBinaryTree} title="Arbre des causes">
+                <SectionCard band="bg-teal-50/60 border-teal-200/70" icon={IconBinaryTree} title={t(aKey('treeTitle'))}>
                     <div className="flex flex-col gap-3">
-                        <p className="text-[12px] text-slate-500">Remonter des faits vers les causes profondes ; indenter pour les antécédents, choisir le connecteur logique ET / OU.</p>
+                        <p className="text-[12px] text-slate-500">{t(aKey('treeHint'))}</p>
                         {treeNodes.map((node, i) => (
                             <div key={i} className="flex items-center gap-1.5" style={{ marginLeft: node.depth * 22 }}>
-                                <Tooltip label="Indenter"><ActionIcon variant="subtle" size="sm" onClick={() => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, depth: n.depth + 1 } : n)))}><IconIndentIncrease size={14} /></ActionIcon></Tooltip>
-                                <Tooltip label="Désindenter"><ActionIcon variant="subtle" size="sm" disabled={node.depth === 0} onClick={() => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, depth: Math.max(0, n.depth - 1) } : n)))}><IconIndentDecrease size={14} /></ActionIcon></Tooltip>
+                                <Tooltip label={t(aKey('indent'))}><ActionIcon variant="subtle" size="sm" onClick={() => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, depth: n.depth + 1 } : n)))}><IconIndentIncrease size={14} /></ActionIcon></Tooltip>
+                                <Tooltip label={t(aKey('outdent'))}><ActionIcon variant="subtle" size="sm" disabled={node.depth === 0} onClick={() => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, depth: Math.max(0, n.depth - 1) } : n)))}><IconIndentDecrease size={14} /></ActionIcon></Tooltip>
                                 <Select size="xs" w={72} data={['ET', 'OU']} value={node.connector} onChange={(v) => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, connector: (v as 'ET' | 'OU') } : n)))} />
-                                <TextInput size="xs" className="flex-1" value={node.text} onChange={(e) => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, text: e.currentTarget.value } : n)))} placeholder={i === 0 ? 'Événement / fait constaté' : 'Cause antécédente'} />
+                                <TextInput size="xs" className="flex-1" value={node.text} onChange={(e) => setTreeNodes((a) => a.map((n, j) => (j === i ? { ...n, text: e.currentTarget.value } : n)))} placeholder={i === 0 ? t(aKey('treeRootPlaceholder')) : t(aKey('treeChildPlaceholder'))} />
                                 <ActionIcon variant="subtle" color="red" size="sm" disabled={treeNodes.length === 1} onClick={() => setTreeNodes((a) => a.filter((_, j) => j !== i))}><IconTrash size={13} /></ActionIcon>
                             </div>
                         ))}
                         <div>
-                            <Button size="xs" variant="subtle" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setTreeNodes((a) => [...a, { text: '', depth: a[a.length - 1]?.depth ?? 0, connector: 'ET' }])}>Ajouter une cause</Button>
+                            <Button size="xs" variant="subtle" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setTreeNodes((a) => [...a, { text: '', depth: a[a.length - 1]?.depth ?? 0, connector: 'ET' }])}>{t(aKey('addCause'))}</Button>
                         </div>
                         <div className="flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
-                            <Select size="xs" label="Synthétiser dans" w={260} data={ANALYSIS_DESTINATIONS} value={treeDest} onChange={(v) => v && setTreeDest(v)} />
-                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthTree}>Synthétiser vers l'analyse</Button>
+                            <Select size="xs" label={t(aKey('synthesizeIn'))} w={260} data={ANALYSIS_DESTINATIONS} value={treeDest} onChange={(v) => v && setTreeDest(v)} />
+                            <Button color="teal" leftSection={<IconArrowBigRightLines size={15} />} onClick={synthTree}>{t(aKey('synthesizeToAnalysis'))}</Button>
                         </div>
                     </div>
                 </SectionCard>
             )}
 
             {/* ── Preuves (commun, persisté) ── */}
-            <SectionCard band="bg-yellow-50/60 border-yellow-200/70" icon={IconFile} title="Preuves & pièces justificatives" count={`${form.values?.evidence?.length ?? 0}`}>
+            <SectionCard band="bg-yellow-50/60 border-yellow-200/70" icon={IconFile} title={t(aKey('evidenceSection'))} count={`${form.values?.evidence?.length ?? 0}`}>
                 <div className="flex flex-col gap-4">
                     <FileUpdateDropzone form={form} id="evidence" />
                     <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-3">
                         <ul className="list-inside list-disc space-y-1 text-[12.5px] text-teal-800">
-                            <li>Photos de la scène, équipements endommagés, manquements constatés</li>
-                            <li>Procédures, dossiers de formation, registres de maintenance</li>
-                            <li>Témoignages, rapports d'experts ou analyses techniques</li>
-                            <li>Taille maximale : <strong>2 Mo</strong> par fichier</li>
+                            <li>{t(aKey('evidenceHint1'))}</li>
+                            <li>{t(aKey('evidenceHint2'))}</li>
+                            <li>{t(aKey('evidenceHint3'))}</li>
+                            <li>{t(aKey('evidenceMaxSize'))} <strong>{t(aKey('evidenceMaxSizeValue'))}</strong> {t(aKey('evidenceMaxSizeSuffix'))}</li>
                         </ul>
                     </div>
                 </div>
@@ -332,7 +341,7 @@ const InvestigationAnalysis = ({ form }: any) => {
 
             {/* ── Avancement de l'analyse ── */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                <p className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Avancement de l'analyse</p>
+                <p className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">{t(aKey('progress'))}</p>
                 <div className="flex items-center">
                     {steps.map((s, i) => (
                         <div key={s.label} className="flex flex-1 items-center last:flex-none">

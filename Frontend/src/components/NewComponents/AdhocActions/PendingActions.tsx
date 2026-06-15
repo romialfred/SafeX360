@@ -292,7 +292,7 @@ const PendingActions = () => {
             })();
             return {
                 id: String(x.id),
-                title: x.actionName ?? 'Action corrective',
+                title: x.actionName ?? t('pending.defaultActionTitle'),
                 description: stripHtml(x.description || ''),
                 type: x.type,
                 status: ['pending', 'urgent', 'overdue'].includes(normalizedStatus) ? normalizedStatus as PendingAction['status'] : 'pending',

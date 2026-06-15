@@ -16,6 +16,7 @@ import { useForm } from '@mantine/form';
 import { useState, useEffect } from 'react';
 import { IconCloudUpload, IconDownload, IconX, IconTrash } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { severity } from '../../../Data/IncidentsData';
 import { PickList } from 'primereact/picklist';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
@@ -25,6 +26,7 @@ import { errorNotification, successNotification } from '../../../utility/Notific
 const AddIncidents = () => {
     const theme = useMantineTheme();
     const navigate = useNavigate();
+    const { t } = useTranslation('incidents');
     const [uploadedImages, setUploadedImages] = useState<File[]>([]);
     const [emps, setEmps] = useState<any[]>([]);
     const [emps1, setEmps1] = useState<any[]>([]);
@@ -53,12 +55,12 @@ const AddIncidents = () => {
             docs: []
         },
         validate: {
-            title: (value) => (value?.trim().length > 0 ? null : 'Incident Title is Required'),
-            location: (value) => (value?.trim().length > 0 ? null : 'Incident Location is Required'),
-            incidentType: (value) => (value?.trim().length > 0 ? null : 'Incident Type is Required'),
-            severity: (value) => (value?.trim().length > 0 ? null : 'Severity Level is Required'),
-            description: (value) => (value?.trim().length > 0 ? null : 'Description is required'),
-            occurredAt: (value) => (value?.toString().length > 0 ? null : 'Occurrence Time Date is Required'),
+            title: (value) => (value?.trim().length > 0 ? null : t('report.validation.titleRequired')),
+            location: (value) => (value?.trim().length > 0 ? null : t('report.validation.locationRequired')),
+            incidentType: (value) => (value?.trim().length > 0 ? null : t('report.validation.typeRequired')),
+            severity: (value) => (value?.trim().length > 0 ? null : t('report.validation.severityRequired')),
+            description: (value) => (value?.trim().length > 0 ? null : t('report.validation.descriptionRequired')),
+            occurredAt: (value) => (value?.toString().length > 0 ? null : t('report.validation.occurredAtRequired')),
 
         },
     });
@@ -93,10 +95,10 @@ const AddIncidents = () => {
         if (!form.isValid()) return;
         const values = form.values;
         reportIncident({ ...values, involvedPersons: values.involvedPersons.map((x: any) => x.id), witnesses: values.witnesses.map((x: any) => x.id) }).then((_res: any) => {
-            successNotification("Incident Reported Successfully");
+            successNotification(t('report.successReported'));
             navigate("/incidents");
         }).catch((err: any) => {
-            errorNotification(err?.response?.data?.errorMessage || "Something went wrong");
+            errorNotification(err?.response?.data?.errorMessage || t('report.errorGeneric'));
         })
     }
 
@@ -105,15 +107,15 @@ const AddIncidents = () => {
             <div className="flex justify-between items-center">
                 <div>
                     {/* LOT 40 P1 fix: brand color teal */}
-                    <div className="text-2xl text-teal-700 w-fit">Report Incidents</div>
+                    <div className="text-2xl text-teal-700 w-fit">{t('report.title')}</div>
                     <Breadcrumbs mt="xs" mb="lg">
                         <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Home</Text>
+                            <Text variant="gradient">{t('report.breadcrumbHome')}</Text>
                         </Link>
                         <Link className="hover:!underline" to="/incidents">
-                            <Text variant="gradient">Incidents Management</Text>
+                            <Text variant="gradient">{t('report.breadcrumbManagement')}</Text>
                         </Link>
-                        <Text variant="gradient">Report Incidents</Text>
+                        <Text variant="gradient">{t('report.title')}</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -122,35 +124,35 @@ const AddIncidents = () => {
                 <Fieldset
                     /* LOT 40 P1 fix: responsive grid + teal brand legend */
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 [&>legend]:w-fit gap-5 flex-wrap"
-                    legend={<div className="text-lg text-teal-700">Report Incidents Info</div>}
+                    legend={<div className="text-lg text-teal-700">{t('report.infoLegend')}</div>}
                 >
-                    <TextInput withAsterisk label="Incident Title" placeholder="Enter Incident Title" {...form.getInputProps('title')} />
-                    <Select withAsterisk label="Incident Type" placeholder="Select Incident Type" data={['Server Outage', 'Bug', 'Security', 'Other']} {...form.getInputProps('incidentType')} />
-                    <TextInput withAsterisk label="Incident Location" placeholder="Enter Incident Location" {...form.getInputProps('location')} />
-                    <Select withAsterisk label="Severity Level" placeholder="Select Severity Level" searchable={false} data={severity} {...form.getInputProps('severity')} />
-                    <DateTimePicker withAsterisk withSeconds label="Occurred At" placeholder="Pick Date and Time" {...form.getInputProps('occurredAt')} />
+                    <TextInput withAsterisk label={t('report.titleLabel')} placeholder={t('report.titlePlaceholder')} {...form.getInputProps('title')} />
+                    <Select withAsterisk label={t('report.typeLabel')} placeholder={t('report.typePlaceholder')} data={['Server Outage', 'Bug', 'Security', 'Other']} {...form.getInputProps('incidentType')} />
+                    <TextInput withAsterisk label={t('report.locationLabel')} placeholder={t('report.locationPlaceholder')} {...form.getInputProps('location')} />
+                    <Select withAsterisk label={t('report.severityLabel')} placeholder={t('report.severityPlaceholder')} searchable={false} data={severity} {...form.getInputProps('severity')} />
+                    <DateTimePicker withAsterisk withSeconds label={t('report.occurredAtLabel')} placeholder={t('report.occurredAtPlaceholder')} {...form.getInputProps('occurredAt')} />
 
                     {/* LOT 40 P1 fix: responsive col-span to match grid */}
-                    <Textarea withAsterisk label="Description" placeholder="Enter Description" {...form.getInputProps('description')} className='sm:col-span-2 lg:col-span-3 ' rows={3} />
+                    <Textarea withAsterisk label={t('report.descriptionLabel')} placeholder={t('report.descriptionPlaceholder')} {...form.getInputProps('description')} className='sm:col-span-2 lg:col-span-3 ' rows={3} />
                 </Fieldset>
 
                 {/* LOT 40 P1 fix: teal brand legend */}
-                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg text-teal-700 ">Witnesses & Invloved Persons</div>}>
+                <Fieldset className=" [&>legend]:w-fit grid grid-cols-[1fr_auto_1fr] gap-5" legend={<div className="text-lg text-teal-700 ">{t('report.witnessesLegend')}</div>}>
                     <PickList
                         dataKey="id"
                         filter
                         filterBy="name"
-                        sourceFilterPlaceholder="Search by name"
+                        sourceFilterPlaceholder={t('report.searchByName')}
                         showTargetControls={false}
                         showSourceControls={false}
-                        targetFilterPlaceholder="Search by name"
+                        targetFilterPlaceholder={t('report.searchByName')}
                         source={emps}
                         target={form.getValues().witnesses}
                         onChange={onChange}
                         itemTemplate={itemTemplate}
                         breakpoint="1280px"
-                        sourceHeader={`Employees (${emps.length})`}
-                        targetHeader={`Witnesses (${form.getValues().witnesses.length})`}
+                        sourceHeader={t('report.employeesHeader', { count: emps.length })}
+                        targetHeader={t('report.witnessesHeader', { count: form.getValues().witnesses.length })}
                         sourceStyle={{ height: '24rem' }}
                         targetStyle={{ height: '24rem' }}
                     />
@@ -160,24 +162,24 @@ const AddIncidents = () => {
                         dataKey="id"
                         filter
                         filterBy="name"
-                        sourceFilterPlaceholder="Search by name"
+                        sourceFilterPlaceholder={t('report.searchByName')}
                         showTargetControls={false}
                         showSourceControls={false}
-                        targetFilterPlaceholder="Search by name"
+                        targetFilterPlaceholder={t('report.searchByName')}
                         source={emps1}
                         target={form.getValues().involvedPersons}
                         onChange={onPersonChange}
                         itemTemplate={itemTemplate}
                         breakpoint="1280px"
-                        sourceHeader={`Employees (${emps1.length})`}
-                        targetHeader={`Involved Persons (${form.getValues().involvedPersons.length})`}
+                        sourceHeader={t('report.employeesHeader', { count: emps1.length })}
+                        targetHeader={t('report.involvedPersonsHeader', { count: form.getValues().involvedPersons.length })}
                         sourceStyle={{ height: '24rem' }}
                         targetStyle={{ height: '24rem' }}
                     />
                 </Fieldset>
 
                 {/* LOT 40 P1 fix: teal brand legend */}
-                <Fieldset legend={<div className="text-lg text-teal-700">Upload Image</div>}>
+                <Fieldset legend={<div className="text-lg text-teal-700">{t('report.uploadLegend')}</div>}>
                     <Dropzone
                         onDrop={(files: any) => setUploadedImages([...uploadedImages, ...files])}
                         accept={['image/*']}
@@ -197,12 +199,12 @@ const AddIncidents = () => {
                                 </Dropzone.Idle>
                             </Group>
                             <Text ta="center" fz="lg" mt="xl">
-                                <Dropzone.Accept>Drop image files here</Dropzone.Accept>
-                                <Dropzone.Reject>Only image files under 30MB are allowed</Dropzone.Reject>
-                                <Dropzone.Idle>Upload incident images</Dropzone.Idle>
+                                <Dropzone.Accept>{t('report.dropAccept')}</Dropzone.Accept>
+                                <Dropzone.Reject>{t('report.dropReject')}</Dropzone.Reject>
+                                <Dropzone.Idle>{t('report.dropIdle')}</Dropzone.Idle>
                             </Text>
                             <Text ta="center" fz="sm" mt="xs" c="dimmed">
-                                Drag & drop images here to upload. You can upload multiple images under 30MB each.
+                                {t('report.dropHint')}
                             </Text>
                         </div>
                     </Dropzone>
@@ -239,7 +241,7 @@ const AddIncidents = () => {
             </div>
             <div className="flex justify-center mt-5">
                 <Button onClick={handleSubmit} className="!bg-primary-500 !text-white">
-                    Submit
+                    {t('report.submit')}
                 </Button>
             </div>
         </div>

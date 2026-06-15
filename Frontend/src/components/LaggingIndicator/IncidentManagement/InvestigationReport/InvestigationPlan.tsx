@@ -8,9 +8,11 @@ import { modals } from "@mantine/modals";
 import { removeCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { ACTION_STATUS_OPTIONS } from "../incidentLabels";
+import { useTranslation } from "react-i18next";
 
 
 const InvestigationPlan = ({ form, incident }: any) => {
+    const { t } = useTranslation('incidents');
     const [emps, setEmps] = useState([]);
 
     const handleAddIncident = () => {
@@ -42,14 +44,14 @@ const InvestigationPlan = ({ form, incident }: any) => {
     const handleRemoveActionPlan = (index: number, id: any) => {
         if (id) {
             modals.openConfirmModal({
-                title: <span className='text-lg'>Supprimer cette action</span>,
+                title: <span className='text-lg'>{t('investigation.plan.deleteModalTitle')}</span>,
                 centered: true,
                 children: (
                     <span className="text-md">
-                        L'action corrective sera définitivement retirée du plan. Cette opération est irréversible.
+                        {t('investigation.plan.deleteModalBody')}
                     </span>
                 ),
-                labels: { confirm: `Supprimer`, cancel: 'Annuler' },
+                labels: { confirm: t('investigation.plan.delete'), cancel: t('investigation.plan.cancel') },
                 cancelProps: { variant: "default" },
                 confirmProps: { color: 'red', variant: "filled" },
 
@@ -60,10 +62,10 @@ const InvestigationPlan = ({ form, incident }: any) => {
                     form.removeListItem('correctiveActions', index);
                     removeCorrectiveAction(id)
                         .then((_res) => {
-                            successNotification("Action corrective supprimée");
+                            successNotification(t('investigation.plan.actionDeleted'));
                         }
                         ).catch((err) => {
-                            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
+                            errorNotification(err.response?.data?.errorMessage || t('investigation.plan.deleteError'));
                         }
                         )
                 },
@@ -78,26 +80,26 @@ const InvestigationPlan = ({ form, incident }: any) => {
         <div className="flex flex-col p-5 gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="text-lg text-gray-800 ">Plan d'actions correctives</h3>
-                    <p>Définir les actions pour prévenir la récurrence de l'incident</p>
+                    <h3 className="text-lg text-gray-800 ">{t('investigation.plan.title')}</h3>
+                    <p>{t('investigation.plan.subtitle')}</p>
                 </div>
 
 
-                <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">Ajouter une action</Button>
+                <Button onClick={handleAddIncident} leftSection={<IconPlus />} variant="gradient">{t('investigation.plan.addAction')}</Button>
             </div>
             {form?.values.correctiveActions && form?.values.correctiveActions.map((x: any, index: any) => <Fieldset className="grid grid-cols-2 gap-6" legend={<div className="flex gap-5">
-                <div className="text-lg text-blue-500">Action {index + 1}</div>
-                <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label="Supprimer l'action">
+                <div className="text-lg text-blue-500">{t('investigation.plan.actionLabel', { index: index + 1 })}</div>
+                <ActionIcon onClick={() => handleRemoveActionPlan(index, x.id)} variant="filled" color="red" aria-label={t('investigation.plan.removeAction')}>
                     <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
             </div>}>
-                <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label="Intitulé de l'action" placeholder="Saisir l'intitulé de l'action" />
-                <Select {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={emps} label="Responsable" placeholder="Sélectionner le responsable" />
-                <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} minDate={incident?.discoveryDate ? new Date(incident.discoveryDate) : undefined} label="Échéance" placeholder="Sélectionner l'échéance" />
-                <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={ACTION_STATUS_OPTIONS} label="Statut" placeholder="Sélectionner le statut" />
+                <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label={t('investigation.plan.actionNameLabel')} placeholder={t('investigation.plan.actionNamePlaceholder')} />
+                <Select {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={emps} label={t('investigation.plan.ownerLabel')} placeholder={t('investigation.plan.ownerPlaceholder')} />
+                <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} minDate={incident?.discoveryDate ? new Date(incident.discoveryDate) : undefined} label={t('investigation.plan.deadlineLabel')} placeholder={t('investigation.plan.deadlinePlaceholder')} />
+                <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={ACTION_STATUS_OPTIONS} label={t('investigation.plan.statusLabel')} placeholder={t('investigation.plan.statusPlaceholder')} />
                 <div className='col-span-2'>
 
-                    <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title="Description" />
+                    <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title={t('investigation.plan.descriptionLabel')} />
                 </div>
             </Fieldset>)}
 

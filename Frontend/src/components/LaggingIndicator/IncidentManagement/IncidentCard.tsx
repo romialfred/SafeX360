@@ -8,6 +8,7 @@ import {
     IconSearch,
     IconUser,
 } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import { incidentStatusLabel } from "./incidentLabels";
 import { formatDateShort } from "../../../utility/DateFormats";
 
@@ -54,6 +55,10 @@ const STATUS_CHIP: Record<string, string> = {
  */
 const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps: any }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation('incidents');
+    // Statut bilingue : clé i18n `incidents:status.*`, repli sur le libellé FR centralisé.
+    const tStatus = (code?: string | null): string =>
+        code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: incidentStatusLabel(code) }) : '—';
 
     const sev = SEVERITY[incidentData.maxSeverityLevel ?? ''] ?? SEVERITY_FALLBACK;
     const statusUpper = String(incidentData?.status || '').toUpperCase();
@@ -78,7 +83,7 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                             {incidentData.incidentCategoryName || '—'}
                         </span>
                         <span className={`ml-auto inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wide ${statusChip}`}>
-                            {incidentStatusLabel(incidentData.status)}
+                            {tStatus(incidentData.status)}
                         </span>
                     </div>
 
@@ -96,19 +101,19 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                     <dl className="mt-3 space-y-1.5 text-[12.5px]">
                         <div className="flex items-center gap-2 text-slate-600">
                             <IconCalendarEvent size={14} className="shrink-0 text-slate-400" />
-                            <span>Survenance</span>
+                            <span>{t('card.occurredOn')}</span>
                             <span className="ml-auto text-slate-800">{formatDateShort(incidentData.incidentDate)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-slate-600">
                             <IconUser size={14} className="shrink-0 text-slate-400" />
-                            <span>Déclarant</span>
+                            <span>{t('card.reporter')}</span>
                             <span className="ml-auto truncate text-slate-800">{reporter}</span>
                         </div>
                     </dl>
 
                     <div className="mt-auto flex items-center gap-1.5 pt-3 text-[11px] text-slate-400">
                         <IconRotateClockwise size={13} className="transition-transform duration-300 group-hover:rotate-180" />
-                        Survolez pour les actions
+                        {t('card.hoverForActions')}
                     </div>
                 </div>
 
@@ -119,10 +124,10 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                 >
                     <div className="mb-2 flex items-center justify-between gap-2">
                         <span className="text-[10.5px] uppercase tracking-[0.16em] text-white/70">
-                            {incidentData.incidentCategoryName || 'Incident'}
+                            {incidentData.incidentCategoryName || t('card.fallbackCategory')}
                         </span>
                         <span className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-[10.5px] uppercase tracking-wide">
-                            {incidentStatusLabel(incidentData.status)}
+                            {tStatus(incidentData.status)}
                         </span>
                     </div>
 
@@ -131,7 +136,7 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                     </h3>
 
                     <p className="mt-2 line-clamp-3 text-[12px] leading-relaxed text-white/80">
-                        {incidentData.description || 'Aucune description fournie pour cet incident.'}
+                        {incidentData.description || t('card.noDescription')}
                     </p>
 
                     <div className="mt-auto space-y-2 pt-3">
@@ -140,7 +145,7 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                             onClick={() => navigate(`${incidentData.id}`)}
                             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-[12.5px] font-medium text-slate-800 transition-all hover:bg-white hover:shadow-md"
                         >
-                            Voir le détail
+                            {t('card.viewDetail')}
                             <IconArrowUpRight size={14} stroke={1.9} />
                         </button>
                         <div className="flex items-center gap-1.5">
@@ -149,26 +154,26 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                                 disabled={!canEdit}
                                 onClick={() => { if (canEdit) navigate(`edit/${incidentData.id}`); }}
                                 className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2 py-1.5 text-[11.5px] text-white transition-colors enabled:hover:bg-white/20 disabled:opacity-40"
-                                title={canEdit ? 'Modifier' : 'Verrouillé'}
+                                title={canEdit ? t('card.edit') : t('card.locked')}
                             >
-                                <IconEdit size={13} /> Modifier
+                                <IconEdit size={13} /> {t('card.edit')}
                             </button>
                             <button
                                 type="button"
                                 disabled={!canInvestigate}
                                 onClick={() => { if (canInvestigate) navigate(`investigation/${incidentData.id}`); }}
                                 className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2 py-1.5 text-[11.5px] text-white transition-colors enabled:hover:bg-white/20 disabled:opacity-40"
-                                title={canInvestigate ? 'Investigation' : 'Verrouillé'}
+                                title={canInvestigate ? t('card.investigation') : t('card.locked')}
                             >
-                                <IconSearch size={13} /> Enquête
+                                <IconSearch size={13} /> {t('card.investigate')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => navigate(`${incidentData.id}?tab=lessons`)}
                                 className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2 py-1.5 text-[11.5px] text-white transition-colors hover:bg-white/20"
-                                title="Leçon apprise"
+                                title={t('card.lessonTooltip')}
                             >
-                                <IconBook size={13} /> Leçon
+                                <IconBook size={13} /> {t('card.lesson')}
                             </button>
                         </div>
                     </div>
