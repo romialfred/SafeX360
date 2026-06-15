@@ -4,7 +4,6 @@ import 'primeicons/primeicons.css';
 import { useState, useMemo, useEffect, MouseEvent, ReactNode } from 'react';
 import { ActionIcon, Badge, Button, Select, TextInput, Tooltip } from '@mantine/core';
 import {
-    IconCircleCheck,
     IconDownload,
     IconLayoutGrid,
     IconLayoutList,
@@ -14,7 +13,6 @@ import {
     IconPlayerStop,
     IconPlus,
     IconSearch,
-    IconSend,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -23,7 +21,6 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { modals } from '@mantine/modals';
 import PageHeader from '../UtilityComp/PageHeader';
-import KpiTile from '../UtilityComp/KpiTile';
 import EmptyState from '../UtilityComp/EmptyState';
 import {
     getAllCommunications,
@@ -295,17 +292,6 @@ const EmployeeCommunications = () => {
         });
     }, [communications, search, typeFilter, categoryFilter, departmentFilter, statusFilter]);
 
-    const counts = useMemo(() => {
-        const inBucket = (comm: any, bucket: string) =>
-            STATUS_BUCKETS[bucket].includes(String(comm?.status ?? '').toUpperCase());
-        return {
-            total: communications.length,
-            active: communications.filter((c) => inBucket(c, 'ACTIVE')).length,
-            completed: communications.filter((c) => inBucket(c, 'COMPLETED')).length,
-            paused: communications.filter((c) => inBucket(c, 'PAUSED') || inBucket(c, 'CANCELLED')).length,
-        };
-    }, [communications]);
-
     const exportCsv = () => {
         const headers = [
             t('list.csvHeaderTitle'), t('list.csvHeaderType'), t('list.csvHeaderCategory'), t('list.csvHeaderUrgency'),
@@ -466,36 +452,6 @@ const EmployeeCommunications = () => {
                     </Button>
                 }
             />
-
-            {/* KPI du registre */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiTile
-                    label={t('list.kpiTotal')}
-                    value={loading ? '…' : counts.total}
-                    tone="slate"
-                    icon={<IconMessageCircle size={14} stroke={1.8} />}
-                />
-                <KpiTile
-                    label={t('list.kpiActive')}
-                    value={loading ? '…' : counts.active}
-                    tone="green"
-                    icon={<IconSend size={14} stroke={1.8} />}
-                    referenceValue={t('list.kpiActiveReference')}
-                />
-                <KpiTile
-                    label={t('list.kpiCompleted')}
-                    value={loading ? '…' : counts.completed}
-                    tone="teal"
-                    icon={<IconCircleCheck size={14} stroke={1.8} />}
-                />
-                <KpiTile
-                    label={t('list.kpiPausedCancelled')}
-                    value={loading ? '…' : counts.paused}
-                    tone="amber"
-                    icon={<IconPlayerPause size={14} stroke={1.8} />}
-                    referenceValue={t('list.kpiPausedCancelledReference')}
-                />
-            </div>
 
             {/* Barre de filtres */}
             <div className="bg-white rounded-xl border border-slate-200 p-3">
