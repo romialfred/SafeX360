@@ -1,0 +1,54 @@
+{
+  "header": {
+    "title": "Vos Applications",
+    "subtitle": "Plateforme intégrée Santé · Sécurité · Environnement"
+  },
+  "tabs": {
+    "all": { "label": "Toutes les applications", "description": "Vue d'ensemble exhaustive des modules de la plateforme SafeX 360" },
+    "pilotage": { "label": "Pilotage", "description": "Tableau de bord, rapports, analytics et planification annuelle" },
+    "securite": { "label": "Sécurité", "description": "Prévention, risques, EPI, communication et intervention d'urgence" },
+    "sante": { "label": "Santé", "description": "Dosimétrie, surveillance médicale, aptitudes professionnelles" },
+    "environnement": { "label": "Environnement", "description": "Aspects environnementaux, déchets, émissions (ISO 14001)" },
+    "iso": { "label": "Système ISO", "description": "Audits, non-conformités, actions correctives et documentation" },
+    "admin": { "label": "Administration", "description": "Utilisateurs, modules, paramètres et centre d'aide" }
+  },
+  "card": {
+    "open": "Ouvrir",
+    "subModule_one": "{{count}} sous-module",
+    "subModule_other": "{{count}} sous-modules",
+    "disabled": "Désactivé",
+    "emptyTitle": "Aucun module dans cette catégorie pour le moment",
+    "emptyBody": "De nouveaux modules y seront ajoutés dans les prochaines phases.",
+    "footer": "SafeX 360 · Plateforme HSE · {{count}} modules"
+  },
+  "flip": {
+    "summary": "Résumé du module",
+    "description": "Description",
+    "subModules": "Sous-modules inclus",
+    "back": "Retour",
+    "openModule": "Ouvrir le module"
+  },
+  "modules": {
+    "preventives-activities": { "title": "Activités Préventives", "description": "Inspections, observations terrain et signalements proactifs pour anticiper les risques.", "items": ["Constats centraux", "Inspections", "Réunions", "Tournée de direction"] },
+    "preventives-activities-2": { "title": "Surveillance des Activités", "description": "Déclaration et investigation des incidents, accidents et quasi-accidents HSE.", "items": ["Incidents", "Investigations", "Plans d'action"] },
+    "actions-managers": { "title": "Actions Correctives", "description": "Suivi des plans d'action issus d'incidents, audits et non-conformités (ISO 45001 §10.2).", "items": ["En attente", "Plans actifs", "Recommandations", "Idées"] },
+    "pending-actions-hub": { "title": "Hub de Suivi", "description": "Centralise toutes les validations et approbations en attente de l'utilisateur.", "items": ["Actions en attente", "Demandes EPI", "Validation docs", "Gestion documentaire"] },
+    "risk-management": { "title": "Gestion des Risques", "description": "Identification, évaluation et traitement des risques selon la méthodologie ISO 31000.", "items": ["Vue globale", "Registre", "Évaluation", "Produits chimiques"] },
+    "emergency-management": { "title": "Gestion des Urgences", "description": "SOS, alertes générales, évacuations et points de rassemblement temps réel (ISO 45001 §8.2).", "items": ["Tableau de bord", "Suivi SOS", "Points de rassemblement", "Paramètres"] },
+    "dosimetry": { "title": "Dosimétrie & Expositions", "description": "Suivi des doses individuelles, surveillance médicale et alertes de dépassement (CIPR 103 / AIEA GSR Part 3).", "items": ["Tableau de bord", "Registre travailleurs", "Suivi des doses", "Mon dossier médical"] },
+    "blast": { "title": "Gestion des Dynamitages", "description": "Planification des tirs, rappels automatiques et rapports d'évacuation après l'alerte générale.", "items": ["Tableau de bord", "Registre des tirs", "Planification rappels", "Rapports d'évacuation"] },
+    "ppe-management": { "title": "Gestion des EPI", "description": "Catalogue, dotation individuelle et suivi des équipements de protection.", "items": ["Catalogue", "Suivi dotations", "Demandes"] },
+    "audits-management": { "title": "Audits Internes", "description": "Programme annuel, exécution sur site et recommandations selon ISO 19011.", "items": ["Plan annuel", "Audits", "Recommandations"] },
+    "compliance-management": { "title": "Conformité Réglementaire", "description": "Veille des exigences légales, attribution aux postes et documents probants.", "items": ["Exigences", "Attributions", "Documents"] },
+    "planning": { "title": "Planification Annuelle", "description": "Calendrier HSE 12 mois × 7 catégories avec thèmes mensuels et activités.", "items": ["Activités HSE", "Thèmes", "Audit annuel"] },
+    "knowledge-management": { "title": "Centre de Connaissances", "description": "Capitalisation des retours d'expérience et bibliothèque documentaire.", "items": ["REX / Leçons apprises", "Documents"] },
+    "communication-management": { "title": "Communication Sécurité", "description": "Causeries, notifications ciblées et campagnes de sensibilisation HSE.", "items": ["Tableau de bord", "Communications", "Notifications"] },
+    "reports": { "title": "Rapports & Analytics", "description": "Tableaux de bord, indicateurs LTIFR/TRIFR et analyses de tendances multi-périodes.", "items": ["Mensuels", "KPI", "Performance", "Corporate"] },
+    "help": { "title": "Centre d'Aide", "description": "Guides utilisateur, vue d'ensemble fonctionnelle et documentation technique.", "items": ["Guides", "Fonctionnalités", "Doc technique"] },
+    "iso-documents": { "title": "Documentation ISO", "description": "Bibliothèque des normes applicables : 45001, 14001, 9001, 19011, 31000.", "items": ["ISO 45001", "ISO 19011", "ISO 9001"] },
+    "admin": { "title": "Administration", "description": "Définition des cibles HSE annuelles et prévisions de performance (LTIFR, TRIFR, formations).", "items": ["Cibles et prévisions"] },
+    "parameters": { "title": "Paramètres", "description": "Référentiels opérationnels (sites, types incidents, gravités) et paramètres système avancés.", "items": ["Références (données opérationnelles)", "Paramètres système"] },
+    "users-management-hub": { "title": "Gestion des utilisateurs", "description": "Comptes utilisateurs, rôles métiers HSE et permissions granulaires par module.", "items": ["Liste des utilisateurs", "Rôles et permissions"] },
+    "modules-management": { "title": "Gestion des Modules", "description": "Activation/désactivation des modules HSE par mine (matrice mines × modules, conformité ISO 45001).", "items": ["Matrice mines × modules"] }
+  }
+}

@@ -13,6 +13,7 @@ import {
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useDisclosure } from '@mantine/hooks';
+import { useTranslation } from 'react-i18next';
 import useLogout from '../../../hooks/useLogout';
 
 /**
@@ -30,6 +31,10 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
     const logoutUser = useLogout();
     const navigate = useNavigate();
     const [opened, { open, close }] = useDisclosure(false);
+    const { t, i18n } = useTranslation('navigation');
+    const langBase = (i18n.resolvedLanguage || i18n.language || 'fr').split('-')[0].toLowerCase();
+    const langCode = langBase.toUpperCase();
+    const langNative = langBase === 'en' ? 'English' : 'Français';
 
     const handleLogout = () => {
         open();
@@ -54,7 +59,7 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                     <button
                         type="button"
                         className="flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/25 px-2 py-1 rounded-lg transition cursor-pointer"
-                        aria-label="Menu utilisateur"
+                        aria-label={t('profileMenu.userMenu')}
                     >
                         <Avatar
                             src=""
@@ -67,10 +72,10 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                         />
                         <div className="hidden lg:flex flex-col items-start leading-tight pr-1">
                             <span className="text-xs text-white max-w-[120px] truncate">
-                                {user?.name || 'Utilisateur'}
+                                {user?.name || t('profileMenu.userFallback')}
                             </span>
                             <span className="text-[10px] text-white/70 uppercase tracking-wider">
-                                {user?.role || 'Rôle'}
+                                {user?.role || t('profileMenu.roleFallback')}
                             </span>
                         </div>
                         <IconChevronDown size={14} className="text-white/80 hidden lg:block" />
@@ -90,66 +95,66 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                         />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm text-white truncate">
-                                {user?.name || 'Utilisateur'}
+                                {user?.name || t('profileMenu.userFallback')}
                             </p>
                             <p className="text-[11px] text-teal-100 truncate">
-                                {user?.username || user?.email || 'Email indisponible'}
+                                {user?.username || user?.email || t('profileMenu.emailUnavailable')}
                             </p>
                             <Badge size="xs" color="dark" variant="filled" mt={4} radius="sm" className="!bg-white/20 !text-white">
-                                {user?.role || 'Rôle non défini'}
+                                {user?.role || t('profileMenu.roleUndefined')}
                             </Badge>
                         </div>
                     </div>
 
                     {/* Sections */}
-                    <Menu.Label>Mon Compte</Menu.Label>
+                    <Menu.Label>{t('profileMenu.accountSection')}</Menu.Label>
                     <Menu.Item
                         leftSection={<IconUser size={15} />}
                         onClick={() => { setDrawerOpened(false); navigate('/profile?tab=info'); }}
                     >
-                        Mon profil
+                        {t('profileMenu.myProfile')}
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconSettings size={15} />}
                         onClick={() => { setDrawerOpened(false); navigate('/profile?tab=preferences'); }}
                     >
-                        Préférences
+                        {t('profileMenu.preferences')}
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconKey size={15} />}
                         onClick={() => { setDrawerOpened(false); navigate('/profile?tab=security'); }}
                     >
-                        Mot de passe &amp; sécurité
+                        {t('profileMenu.passwordSecurity')}
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconBell size={15} />}
                         onClick={() => { setDrawerOpened(false); navigate('/profile?tab=notifications'); }}
                     >
-                        Préférences de notifications
+                        {t('profileMenu.notificationPrefs')}
                     </Menu.Item>
 
                     <Divider />
 
-                    <Menu.Label>Système</Menu.Label>
+                    <Menu.Label>{t('profileMenu.systemSection')}</Menu.Label>
                     <Menu.Item
                         leftSection={<IconLanguage size={15} />}
-                        rightSection={<Text size="xs" c="dimmed">FR</Text>}
+                        rightSection={<Text size="xs" c="dimmed">{langCode}</Text>}
                         onClick={() => { setDrawerOpened(false); navigate('/profile?tab=preferences'); }}
                     >
-                        Langue (Français)
+                        {t('profileMenu.language', { lang: langNative })}
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconShield size={15} />}
                         rightSection={<Badge size="xs" color="teal" variant="light">v2.4</Badge>}
                         onClick={() => { setDrawerOpened(false); navigate('/about'); }}
                     >
-                        À propos de SafeX&nbsp;360
+                        {t('profileMenu.aboutApp')}
                     </Menu.Item>
                     <Menu.Item
                         leftSection={<IconHelp size={15} />}
                         onClick={() => { setDrawerOpened(false); navigate('/how-to'); }}
                     >
-                        Centre d'aide
+                        {t('profileMenu.helpCenter')}
                     </Menu.Item>
 
                     <Divider />
@@ -159,7 +164,7 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                         leftSection={<IconLogout size={15} />}
                         onClick={handleLogout}
                     >
-                        Se déconnecter
+                        {t('profileMenu.logout')}
                     </Menu.Item>
                 </Menu.Dropdown>
             </Menu>
@@ -169,15 +174,15 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                 centered
                 onClose={close}
                 radius="md"
-                title={<span className="text-base">Confirmer la déconnexion</span>}
+                title={<span className="text-base">{t('profileMenu.logoutConfirmTitle')}</span>}
             >
                 <Text size="sm" c="dimmed" mb="md">
-                    Toute donnée non sauvegardée sera perdue. Êtes-vous sûr de vouloir vous déconnecter ?
+                    {t('profileMenu.logoutConfirmBody')}
                 </Text>
                 <div className="flex gap-2 justify-end">
-                    <Button variant="default" onClick={close}>Annuler</Button>
+                    <Button variant="default" onClick={close}>{t('profileMenu.cancel')}</Button>
                     <Button color="red" leftSection={<IconLogout size={16} />} onClick={logout}>
-                        Se déconnecter
+                        {t('profileMenu.logout')}
                     </Button>
                 </div>
             </Modal>

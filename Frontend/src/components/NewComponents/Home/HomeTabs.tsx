@@ -24,6 +24,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { IconChevronRight, IconApps, IconX, IconArrowUpRight, IconRotateClockwise } from '@tabler/icons-react';
 import { moduleGroups, type ModuleCard } from './Home';
 import { HOME_TABS, type HomeTabId, type HomeTab } from './homeCategories';
@@ -70,6 +71,18 @@ const ALL_APPS_TAB: HomeTab = {
 
 export default function HomeTabs() {
     const navigate = useNavigate();
+    const { t } = useTranslation('home');
+    // Résolveurs i18n : retombent sur le texte FR d'origine si une clé manque.
+    const tabLabel = (id: string) => t(`tabs.${id}.label`);
+    const tabDesc = (id: string) => t(`tabs.${id}.description`);
+    const modTitle = (m: ModuleCard) => t(`modules.${m.id}.title`, { defaultValue: m.title });
+    const modDesc = (m: ModuleCard) => t(`modules.${m.id}.description`, { defaultValue: m.description });
+    const modItems = (m: ModuleCard): string[] => {
+        const arr = t(`modules.${m.id}.items`, { returnObjects: true, defaultValue: [] }) as unknown;
+        return Array.isArray(arr) && arr.length
+            ? (arr as string[])
+            : m.items.map((it) => (typeof it === 'string' ? it : it.label));
+    };
     const [activeTabId, setActiveTabId] = useState<HomeTabId>('all' as HomeTabId);
     const [pendingSubscription, setPendingSubscription] = useState<ModuleCard | null>(null);
     // Module dont l'aperçu retourné (face arrière agrandie) est ouvert.
@@ -144,10 +157,10 @@ export default function HomeTabs() {
                             fontSize: '26px',
                         }}
                     >
-                        Vos Applications
+                        {t('header.title')}
                     </h1>
                     <p className="text-[13px] text-slate-500 mt-1 max-w-2xl">
-                        Plateforme intégrée Santé · Sécurité · Environnement
+                        {t('header.subtitle')}
                     </p>
                 </div>
             </header>
@@ -190,7 +203,7 @@ export default function HomeTabs() {
                                         fontWeight: isActive ? 600 : 500,
                                     }}
                                 >
-                                    {tab.label}
+                                    {tabLabel(tab.id)}
                                 </span>
                                 {count > 0 && (
                                     <span
@@ -235,10 +248,10 @@ export default function HomeTabs() {
                                 fontSize: '18px',
                             }}
                         >
-                            {activeTab.label}
+                            {tabLabel(activeTab.id)}
                         </h2>
                         <Text size="xs" className="text-slate-500 mt-0.5">
-                            {activeTab.description}
+                            {tabDesc(activeTab.id)}
                         </Text>
                     </div>
                 </div>
@@ -247,10 +260,10 @@ export default function HomeTabs() {
                 {visibleModules.length === 0 ? (
                     <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center">
                         <p className="text-[14px] font-medium text-slate-700">
-                            Aucun module dans cette catégorie pour le moment
+                            {t('card.emptyTitle')}
                         </p>
                         <p className="text-[12.5px] text-slate-500 mt-1">
-                            De nouveaux modules y seront ajoutés dans les prochaines phases.
+                            {t('card.emptyBody')}
                         </p>
                     </div>
                 ) : (
@@ -280,7 +293,7 @@ export default function HomeTabs() {
                                         !enabled ? 'opacity-75' : ''
                                     }`}
                                     style={{ ['--accent']: accent } as React.CSSProperties}
-                                    aria-label={`Ouvrir le module ${module.title}`}
+                                    aria-label={`${t('card.open')} — ${modTitle(module)}`}
                                 >
                                     {/* Barre d'accent supérieure — s'épaissit et s'étend au survol */}
                                     <span
@@ -299,8 +312,8 @@ export default function HomeTabs() {
                                         className="absolute top-2.5 right-2.5 z-10 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white/90 text-slate-400
                                                    opacity-0 transition-all duration-200 hover:text-[color:var(--accent)] hover:border-[color:var(--accent)]
                                                    group-hover:opacity-100 focus:opacity-100 focus:outline-none"
-                                        aria-label={`Aperçu du module ${module.title}`}
-                                        title="Aperçu — retourner la tuile"
+                                        aria-label={modTitle(module)}
+                                        title={t('card.open')}
                                     >
                                         <IconRotateClockwise size={14} stroke={1.7} />
                                     </button>
@@ -323,31 +336,30 @@ export default function HomeTabs() {
                                                 fontSize: '14.5px',
                                             }}
                                         >
-                                            {module.title}
+                                            {modTitle(module)}
                                         </h3>
                                     </div>
 
                                     <p className="text-[12.5px] text-slate-600 leading-relaxed line-clamp-3 mb-3">
-                                        {module.description}
+                                        {modDesc(module)}
                                     </p>
 
                                     <div className="flex items-center justify-between text-[11.5px]">
                                         <span className="text-slate-500">
-                                            {module.items.length} sous-module
-                                            {module.items.length > 1 ? 's' : ''}
+                                            {t('card.subModule', { count: module.items.length })}
                                         </span>
                                         <span
                                             className="inline-flex items-center gap-1 text-slate-600 group-hover:gap-1.5 transition-all"
                                             style={{ color: accent }}
                                         >
-                                            Ouvrir
+                                            {t('card.open')}
                                             <IconChevronRight size={12} stroke={2} />
                                         </span>
                                     </div>
 
                                     {!enabled && (
                                         <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                                            Désactivé
+                                            {t('card.disabled')}
                                         </span>
                                     )}
                                 </div>
@@ -359,8 +371,7 @@ export default function HomeTabs() {
                 {/* Indication ISO en bas */}
                 <div className="text-center pt-4">
                     <p className="text-[10.5px] text-slate-400 uppercase tracking-[0.16em]">
-                        SafeX 360 · Plateforme HSE ·{' '}
-                        {moduleGroups.length} modules
+                        {t('card.footer', { count: moduleGroups.length })}
                     </p>
                 </div>
             </section>
@@ -370,13 +381,13 @@ export default function HomeTabs() {
                 const accent = ACCENT_HEX[flipped.id] ?? '#0f766e';
                 const FIcon = flipped.icon;
                 const enabled = !flipped.requiredModuleId || isModuleEnabled(flipped.requiredModuleId);
-                const subs = flipped.items.map((it) => (typeof it === 'string' ? it : it.label));
+                const subs = modItems(flipped);
                 return (
                     <div
                         className="fixed inset-0 z-[60] flex items-center justify-center p-4"
                         role="dialog"
                         aria-modal="true"
-                        aria-label={`Résumé du module ${flipped.title}`}
+                        aria-label={`${t('flip.summary')} — ${modTitle(flipped)}`}
                         onClick={() => setFlipped(null)}
                     >
                         <style>{`
@@ -416,17 +427,17 @@ export default function HomeTabs() {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: accent }}>
-                                            Résumé du module
+                                            {t('flip.summary')}
                                         </p>
                                         <h2
                                             className="mt-0.5 leading-tight text-slate-900"
                                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: '22px' }}
                                         >
-                                            {flipped.title}
+                                            {modTitle(flipped)}
                                         </h2>
                                         <p className="mt-1 text-[12px] text-slate-500">
-                                            {subs.length} sous-module{subs.length > 1 ? 's' : ''}
-                                            {!enabled ? ' · module désactivé' : ''}
+                                            {t('card.subModule', { count: subs.length })}
+                                            {!enabled ? ` · ${t('card.disabled')}` : ''}
                                         </p>
                                     </div>
                                     <button
@@ -445,15 +456,15 @@ export default function HomeTabs() {
                                 <section>
                                     <h3 className="mb-1.5 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: accent }}>
                                         <span className="h-3 w-1 rounded-full" style={{ backgroundColor: accent }} />
-                                        Description
+                                        {t('flip.description')}
                                     </h3>
-                                    <p className="text-[13.5px] leading-relaxed text-slate-700">{flipped.description}</p>
+                                    <p className="text-[13.5px] leading-relaxed text-slate-700">{modDesc(flipped)}</p>
                                 </section>
 
                                 <section>
                                     <h3 className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: accent }}>
                                         <span className="h-3 w-1 rounded-full" style={{ backgroundColor: accent }} />
-                                        Sous-modules inclus
+                                        {t('flip.subModules')}
                                     </h3>
                                     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                         {subs.map((label, i) => (
@@ -475,7 +486,7 @@ export default function HomeTabs() {
                                         className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12.5px] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                                     >
                                         <IconRotateClockwise size={14} stroke={1.7} style={{ transform: 'scaleX(-1)' }} />
-                                        Retour
+                                        {t('flip.back')}
                                     </button>
                                     <button
                                         type="button"
@@ -487,7 +498,7 @@ export default function HomeTabs() {
                                         className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:-translate-y-px hover:shadow-md active:translate-y-0"
                                         style={{ backgroundColor: accent }}
                                     >
-                                        Ouvrir le module
+                                        {t('flip.openModule')}
                                         <IconArrowUpRight size={15} stroke={1.9} />
                                     </button>
                                 </div>

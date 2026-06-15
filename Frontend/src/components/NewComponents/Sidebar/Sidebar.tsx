@@ -105,6 +105,42 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Tableau de bord dynamitage': 'blast:sidebar.blastDashboard',
     'Registre des tirs': 'blast:sidebar.blastRegistry',
     'Enregistrer un tir': 'blast:sidebar.blastNew',
+    // LOT 58 — sous-items précédemment non traduits (ns 'navigation')
+    'Tableau de Bord': 'sidebar.dashboard',
+    'Gestion des Incidents': 'sidebar.incidentsManagement',
+    'Investigations': 'sidebar.investigations',
+    "Plans d'Actions": 'sidebar.actionPlans',
+    "Plan d'Actions": 'sidebar.actionPlan',
+    "Vue d'Ensemble": 'sidebar.overview',
+    'Registre des Risques': 'sidebar.riskRegister',
+    'Évaluation des Risques': 'sidebar.riskAssessment',
+    'Registre Chimique': 'sidebar.chemicalRegister',
+    "Demande d'EPI": 'sidebar.ppeRequest',
+    'Suivi des EPI': 'sidebar.ppeTracking',
+    'Actions en Attente': 'sidebar.pendingActions',
+    'Recommandations': 'sidebar.recommendations',
+    "Suggestions d'Amélioration": 'sidebar.improvementSuggestions',
+    'Audits ISO 19011': 'sidebar.auditsIso19011',
+    "Programme d'audit": 'sidebar.auditProgram',
+    "Plan Annuel d'Audits": 'sidebar.annualAuditPlan',
+    'Plan Annuel Audits': 'sidebar.annualAuditPlan',
+    'Suivi SOS': 'sidebar.sosTracking',
+    'Exigences légales': 'sidebar.legalRequirements',
+    'Affectations employés': 'sidebar.employeeAssignments',
+    'Affectations par poste': 'sidebar.positionAssignments',
+    'Documents': 'sidebar.documents',
+    'Activités HSE': 'sidebar.hseActivities',
+    'Thèmes Mensuels': 'sidebar.monthlyThemes',
+    'Communications HSE': 'sidebar.hseCommunications',
+    'Centre de Notifications': 'sidebar.notificationCenter',
+    "Retours d'Expérience": 'sidebar.lessonsLearned',
+    'Gestionnaire de Documents': 'sidebar.documentManager',
+    'Guides Pratiques': 'sidebar.practicalGuides',
+    'Aperçu des Fonctionnalités': 'sidebar.featuresOverview',
+    'Documentation Technique': 'sidebar.technicalDocs',
+    'Standards ISO': 'sidebar.isoStandards',
+    'Processus de Travail': 'sidebar.workProcesses',
+    'Validation des documents': 'sidebar.documentValidation',
 };
 import ModuleSubscriptionModal from '../Home/ModuleSubscriptionModal';
 import { useAppSelector } from '../../../slices/hooks';
@@ -934,7 +970,7 @@ const Sidebar = () => {
                                                     >
                                                         <subItem.icon className="w-3.5 h-3.5 flex-shrink-0" stroke={1.75} />
                                                         <span className={`text-[12px] leading-snug ${!isSubEnabled ? 'italic' : ''}`}>
-                                                            {subItem.label}
+                                                            {tLabel(subItem.label)}
                                                         </span>
                                                     </div>
                                                 );

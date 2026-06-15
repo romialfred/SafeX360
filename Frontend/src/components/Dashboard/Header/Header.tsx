@@ -23,7 +23,7 @@ const Header = () => {
     const user = useSelector((state: any) => state.user);
     const [drawerOpened, setDrawerOpened] = useState(false);
     const [notificationDrawerOpened, setNotificationDrawerOpened] = useState(false);
-    const [value, setValue] = useState("react");
+    const [value, setValue] = useState("all");
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const { t } = useTranslation(['navigation', 'common']);
@@ -45,24 +45,24 @@ const Header = () => {
     const notification = [
 
         {
-            label: "You have a new email",
+            label: t('navigation:notifications.items.newEmail'),
             icon: <Icon icon="fluent-color:mail-multiple-28" width="28" height="28" />
         },
         {
-            label: "You have a new message",
+            label: t('navigation:notifications.items.newMessage'),
             icon: <Icon icon="fluent-color:chat-multiple-16" width="28" height="28" />
         },
 
         {
-            label: "Delivery  your order is being shipped",
+            label: t('navigation:notifications.items.orderShipped'),
             icon: <Icon icon="fluent-color:alert-28" width="28" height="28" />
         },
         {
-            label: "Delivery  your order is being late",
+            label: t('navigation:notifications.items.orderLate'),
             icon: <Icon icon="fluent-color:alert-28" width="28" height="28" />
         },
         {
-            label: "You have a new offer",
+            label: t('navigation:notifications.items.newOffer'),
             icon: <Icon icon="fluent-color:chat-multiple-16" width="28" height="28" />
         },
     ]
@@ -156,7 +156,7 @@ const Header = () => {
                     padding="md"
                     size="sm"
                     position="right"
-                    title="Notification"
+                    title={t('navigation:notifications.title')}
 
                 >
                     <div className="flex flex-col h-full">
@@ -168,9 +168,9 @@ const Header = () => {
                                 color="primary"
                                 fullWidth
                                 data={[
-                                    { label: "All", value: "all" },
-                                    { label: "Unread", value: "unread" },
-                                    { label: "Archived", value: "archived" },
+                                    { label: t('navigation:notifications.all'), value: "all" },
+                                    { label: t('navigation:notifications.unread'), value: "unread" },
+                                    { label: t('navigation:notifications.archived'), value: "archived" },
                                 ]}
 
                             />
@@ -200,13 +200,13 @@ const Header = () => {
                                     <div className="flex flex-col gap-4">
                                         <div>
                                             <p className="text-base text-textprimary hover:text-primary">
-                                                Deja Brady sent you a friend request
+                                                {t('navigation:notifications.friendRequest', { name: 'Deja Brady' })}
                                             </p>
-                                            <p className="text-xs text-textprimary">37 minutes ago</p>
+                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">Accept</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">Reject</Button>
+                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.accept')}</Button>
+                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.reject')}</Button>
                                         </div>
                                     </div>
                                 </div>
@@ -216,13 +216,13 @@ const Header = () => {
                                     <div className="flex flex-col gap-4">
                                         <div>
                                             <p className="text-base text-textprimary hover:text-primary">
-                                                Luis Sen sent you a message
+                                                {t('navigation:notifications.sentMessage', { name: 'Luis Sen' })}
                                             </p>
-                                            <p className="text-xs text-textprimary">37 minutes ago</p>
+                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">Reply</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">Delete</Button>
+                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.reply')}</Button>
+                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.delete')}</Button>
                                         </div>
                                     </div>
                                 </div>
@@ -231,13 +231,13 @@ const Header = () => {
                                     <div className="flex flex-col gap-4">
                                         <div>
                                             <p className="text-base text-textprimary hover:text-primary">
-                                                Rwan sent you a friend request
+                                                {t('navigation:notifications.friendRequest', { name: 'Rwan' })}
                                             </p>
-                                            <p className="text-xs text-textprimary">37 minutes ago</p>
+                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">Accept</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">Reject</Button>
+                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.accept')}</Button>
+                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.reject')}</Button>
                                         </div>
                                     </div>
                                 </div>
@@ -248,7 +248,7 @@ const Header = () => {
                         {/* Fixed View All Button */}
                         <div className="bg-white p-3 shadow-md sticky bottom-0">
                             <Button variant="filled" size="md" radius="md" fullWidth className="!bg-primary-500">
-                                View All
+                                {t('navigation:notifications.viewAll')}
                             </Button>
                         </div>
                     </div>

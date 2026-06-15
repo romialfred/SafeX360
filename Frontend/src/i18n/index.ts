@@ -25,6 +25,7 @@ import frModuleManager from './locales/fr/moduleManager.json';
 import frDosimetry from './locales/fr/dosimetry.json';
 import frBlast from './locales/fr/blast.json';
 import frInspection from './locales/fr/inspection.json';
+import frHome from './locales/fr/home.json';
 
 // === EN ===
 import enCommon from './locales/en/common.json';
@@ -36,6 +37,7 @@ import enModuleManager from './locales/en/moduleManager.json';
 import enDosimetry from './locales/en/dosimetry.json';
 import enBlast from './locales/en/blast.json';
 import enInspection from './locales/en/inspection.json';
+import enHome from './locales/en/home.json';
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -60,6 +62,7 @@ i18n
                 dosimetry: frDosimetry,
                 blast: frBlast,
                 inspection: frInspection,
+                home: frHome,
             },
             en: {
                 common: enCommon,
@@ -71,13 +74,14 @@ i18n
                 dosimetry: enDosimetry,
                 blast: enBlast,
                 inspection: enInspection,
+                home: enHome,
             },
         },
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
         defaultNS: 'common',
-        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection'],
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection', 'home'],
 
         detection: {
             // Ordre de détection : 1) localStorage, 2) navigator

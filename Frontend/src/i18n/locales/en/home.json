@@ -1,0 +1,54 @@
+{
+  "header": {
+    "title": "Your Applications",
+    "subtitle": "Integrated Health · Safety · Environment platform"
+  },
+  "tabs": {
+    "all": { "label": "All applications", "description": "Comprehensive overview of all SafeX 360 platform modules" },
+    "pilotage": { "label": "Steering", "description": "Dashboard, reports, analytics and annual planning" },
+    "securite": { "label": "Safety", "description": "Prevention, risks, PPE, communication and emergency response" },
+    "sante": { "label": "Health", "description": "Dosimetry, medical surveillance, fitness for work" },
+    "environnement": { "label": "Environment", "description": "Environmental aspects, waste, emissions (ISO 14001)" },
+    "iso": { "label": "ISO System", "description": "Audits, non-conformities, corrective actions and documentation" },
+    "admin": { "label": "Administration", "description": "Users, modules, settings and help center" }
+  },
+  "card": {
+    "open": "Open",
+    "subModule_one": "{{count}} sub-module",
+    "subModule_other": "{{count}} sub-modules",
+    "disabled": "Disabled",
+    "emptyTitle": "No module in this category yet",
+    "emptyBody": "New modules will be added here in upcoming phases.",
+    "footer": "SafeX 360 · HSE platform · {{count}} modules"
+  },
+  "flip": {
+    "summary": "Module summary",
+    "description": "Description",
+    "subModules": "Included sub-modules",
+    "back": "Back",
+    "openModule": "Open module"
+  },
+  "modules": {
+    "preventives-activities": { "title": "Preventive Activities", "description": "Inspections, field observations and proactive reporting to anticipate risks.", "items": ["Central Findings", "Inspections", "Meetings", "Leadership Walk"] },
+    "preventives-activities-2": { "title": "Activity Monitoring", "description": "Reporting and investigation of HSE incidents, accidents and near-misses.", "items": ["Incidents", "Investigations", "Action plans"] },
+    "actions-managers": { "title": "Corrective Actions", "description": "Tracking of action plans from incidents, audits and non-conformities (ISO 45001 §10.2).", "items": ["Pending", "Active plans", "Recommendations", "Ideas"] },
+    "pending-actions-hub": { "title": "Approval Hub", "description": "Centralizes all approvals and validations awaiting the user.", "items": ["Pending actions", "PPE requests", "Document validation", "Document management"] },
+    "risk-management": { "title": "Risk Management", "description": "Identification, assessment and treatment of risks per the ISO 31000 methodology.", "items": ["Overview", "Register", "Assessment", "Chemicals"] },
+    "emergency-management": { "title": "Emergency Management", "description": "SOS, general alerts, evacuations and real-time assembly points (ISO 45001 §8.2).", "items": ["Dashboard", "SOS tracking", "Assembly points", "Settings"] },
+    "dosimetry": { "title": "Dosimetry & Exposures", "description": "Individual dose tracking, medical surveillance and exceedance alerts (ICRP 103 / IAEA GSR Part 3).", "items": ["Dashboard", "Worker register", "Dose tracking", "My medical record"] },
+    "blast": { "title": "Blast Management", "description": "Blast planning, automatic reminders and evacuation reports after the general alert.", "items": ["Dashboard", "Blast register", "Reminder planning", "Evacuation reports"] },
+    "ppe-management": { "title": "PPE Management", "description": "Catalogue, individual issuance and tracking of protective equipment.", "items": ["Catalogue", "Issuance tracking", "Requests"] },
+    "audits-management": { "title": "Internal Audits", "description": "Annual programme, on-site execution and recommendations per ISO 19011.", "items": ["Annual plan", "Audits", "Recommendations"] },
+    "compliance-management": { "title": "Regulatory Compliance", "description": "Legal requirements monitoring, assignment to positions and supporting documents.", "items": ["Requirements", "Assignments", "Documents"] },
+    "planning": { "title": "Annual Planning", "description": "12-month × 7-category HSE calendar with monthly themes and activities.", "items": ["HSE activities", "Themes", "Annual audit"] },
+    "knowledge-management": { "title": "Knowledge Center", "description": "Capturing lessons learned and documentary library.", "items": ["REX / Lessons learned", "Documents"] },
+    "communication-management": { "title": "Safety Communication", "description": "Toolbox talks, targeted notifications and HSE awareness campaigns.", "items": ["Dashboard", "Communications", "Notifications"] },
+    "reports": { "title": "Reports & Analytics", "description": "Dashboards, LTIFR/TRIFR indicators and multi-period trend analyses.", "items": ["Monthly", "KPI", "Performance", "Corporate"] },
+    "help": { "title": "Help Center", "description": "User guides, functional overview and technical documentation.", "items": ["Guides", "Features", "Technical docs"] },
+    "iso-documents": { "title": "ISO Documentation", "description": "Library of applicable standards: 45001, 14001, 9001, 19011, 31000.", "items": ["ISO 45001", "ISO 19011", "ISO 9001"] },
+    "admin": { "title": "Administration", "description": "Definition of annual HSE targets and performance forecasts (LTIFR, TRIFR, training).", "items": ["Targets and forecasts"] },
+    "parameters": { "title": "Settings", "description": "Operational references (sites, incident types, severities) and advanced system settings.", "items": ["References (operational data)", "System settings"] },
+    "users-management-hub": { "title": "User Management", "description": "User accounts, HSE business roles and granular per-module permissions.", "items": ["User list", "Roles and permissions"] },
+    "modules-management": { "title": "Module Management", "description": "Enable/disable HSE modules per mine (mines × modules matrix, ISO 45001 compliance).", "items": ["Mines × modules matrix"] }
+  }
+}
