@@ -3,6 +3,7 @@ import { Button, Select, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { IconClipboardCheck, IconDeviceFloppy, IconShield } from '@tabler/icons-react';
 import { riskKeyToSeverity } from '../../../Data/DropdownData';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
@@ -42,6 +43,10 @@ interface RiskAssessmentFormProps {
 const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, assessments, fetchAssessments }) => {
     const { id } = useParams();
     const dispatch = useDispatch();
+    const { t } = useTranslation('risk');
+    const gravityOptions = GRAVITY_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`gravityOption.${o.value}`, { defaultValue: o.label }) }));
+    const probabilityOptions = PROBABILITY_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`probabilityOption.${o.value}`, { defaultValue: o.label }) }));
+    const levelScoreOptions = LEVEL_SCORE_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`levelScoreOption.${o.value}`, { defaultValue: o.label }) }));
     const [submitting, setSubmitting] = useState(false);
     const isReassessment = (assessments?.length ?? 0) > 0;
 
@@ -60,10 +65,10 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
         },
         validate: {
             reason: (value) =>
-                isReassessment && !value.trim() ? 'Le motif de la réévaluation est obligatoire' : null,
-            gravity: (value) => (value ? null : 'La gravité est obligatoire'),
-            probability: (value) => (value ? null : 'La probabilité est obligatoire'),
-            currentControls: (value) => (value.trim() ? null : 'Les mesures de maîtrise actuelles sont obligatoires'),
+                isReassessment && !value.trim() ? t('assessmentTab.validate.reason') : null,
+            gravity: (value) => (value ? null : t('assessmentTab.validate.gravity')),
+            probability: (value) => (value ? null : t('assessmentTab.validate.probability')),
+            currentControls: (value) => (value.trim() ? null : t('assessmentTab.validate.currentControls')),
         },
         validateInputOnBlur: true,
     });
@@ -85,12 +90,12 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
         dispatch(showOverlay());
         addChemicalRiskAnalysis({ ...values, riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')) })
             .then(() => {
-                successNotification('Évaluation enregistrée');
+                successNotification(t('assessmentTab.savedToast'));
                 fetchAssessments();
                 onCancel();
             })
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "L'évaluation n'a pas pu être enregistrée");
+                errorNotification(error.response?.data?.errorMessage || t('assessmentTab.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -102,13 +107,13 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
         <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4">
             <SectionCard
                 icon={<IconClipboardCheck size={15} stroke={1.8} />}
-                title="Cotation du risque"
-                subtitle="Le niveau de risque est calculé automatiquement à partir de la probabilité et de la gravité"
+                title={t('assessmentTab.sectionRating')}
+                subtitle={t('assessmentTab.sectionRatingSub')}
             >
                 {isReassessment && (
                     <Textarea
-                        label="Motif de la réévaluation"
-                        placeholder="ex. Incident du 12 mai, changement de procédé, constat d'audit"
+                        label={t('assessmentTab.reasonLabel')}
+                        placeholder={t('assessmentTab.reasonPlaceholder')}
                         withAsterisk
                         minRows={2}
                         autosize
@@ -118,25 +123,25 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <Select
-                        label="Gravité"
-                        placeholder="Choisir la gravité"
-                        data={GRAVITY_OPTIONS_FR}
+                        label={t('assessmentTab.gravityLabel')}
+                        placeholder={t('assessmentTab.gravityPlaceholder')}
+                        data={gravityOptions}
                         withAsterisk
                         size="sm"
                         {...form.getInputProps('gravity')}
                     />
                     <Select
-                        label="Probabilité"
-                        placeholder="Choisir la probabilité"
-                        data={PROBABILITY_OPTIONS_FR}
+                        label={t('assessmentTab.probabilityLabel')}
+                        placeholder={t('assessmentTab.probabilityPlaceholder')}
+                        data={probabilityOptions}
                         withAsterisk
                         size="sm"
                         {...form.getInputProps('probability')}
                     />
                     <Select
-                        label="Niveau de risque (calculé)"
-                        placeholder="Calculé automatiquement"
-                        data={LEVEL_SCORE_OPTIONS_FR}
+                        label={t('assessmentTab.computedLevelLabel')}
+                        placeholder={t('assessmentTab.computedLevelPlaceholder')}
+                        data={levelScoreOptions}
                         disabled
                         size="sm"
                         {...form.getInputProps('severity')}
@@ -146,12 +151,12 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
 
             <SectionCard
                 icon={<IconShield size={15} stroke={1.8} />}
-                title="Maîtrise du risque"
-                subtitle="Mesures en place et plan d'amélioration"
+                title={t('assessmentTab.sectionControl')}
+                subtitle={t('assessmentTab.sectionControlSub')}
             >
                 <Textarea
-                    label="Mesures de maîtrise actuelles"
-                    placeholder="ex. Stockage en rétention ventilée, port du masque ABEK et de gants nitrile"
+                    label={t('assessmentTab.currentControlsLabel')}
+                    placeholder={t('chemicalAssessmentForm.currentControlsPlaceholder')}
                     withAsterisk
                     minRows={3}
                     autosize
@@ -159,32 +164,32 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
                     {...form.getInputProps('currentControls')}
                 />
                 <Textarea
-                    label="Mesures complémentaires nécessaires"
-                    placeholder="Mesures à mettre en place pour réduire le risque résiduel"
+                    label={t('assessmentTab.additionalControlLabel')}
+                    placeholder={t('assessmentTab.additionalControlPlaceholder')}
                     minRows={3}
                     autosize
                     size="sm"
                     {...form.getInputProps('additionalControl')}
                 />
                 <Textarea
-                    label="Mesures préventives"
-                    placeholder="Actions de prévention à engager (formation, signalisation, substitution…)"
+                    label={t('assessmentTab.preventiveLabel')}
+                    placeholder={t('chemicalAssessmentForm.preventivePlaceholder')}
                     minRows={3}
                     autosize
                     size="sm"
                     {...form.getInputProps('preventiveMeasures')}
                 />
                 <Textarea
-                    label="Mesures d'amélioration"
-                    placeholder="Améliorations du dispositif de maîtrise existant"
+                    label={t('assessmentTab.improvementsLabel')}
+                    placeholder={t('assessmentTab.improvementsPlaceholder')}
                     minRows={3}
                     autosize
                     size="sm"
                     {...form.getInputProps('improvementsMeasures')}
                 />
                 <Textarea
-                    label="Commentaires"
-                    placeholder="Validations, points de vigilance, suites à donner"
+                    label={t('assessmentTab.commentsLabel')}
+                    placeholder={t('assessmentTab.commentsPlaceholder')}
                     minRows={2}
                     autosize
                     size="sm"
@@ -194,7 +199,7 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
 
             <div className="flex justify-end gap-2">
                 <Button variant="default" size="sm" type="button" disabled={submitting} onClick={onCancel}>
-                    Annuler
+                    {t('common.cancel')}
                 </Button>
                 <Button
                     type="submit"
@@ -203,7 +208,7 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
                     loading={submitting}
                     leftSection={<IconDeviceFloppy size={15} />}
                 >
-                    Enregistrer l'évaluation
+                    {t('assessmentTab.saveAssessment')}
                 </Button>
             </div>
         </form>

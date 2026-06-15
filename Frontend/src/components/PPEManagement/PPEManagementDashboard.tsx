@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@mantine/core';
 import { BarChart } from '@mantine/charts';
 import {
@@ -28,6 +29,7 @@ import { ppeCategoryLabel, stockBucket, STOCK_STATUS_CONFIG, ppeStatusConfig } f
  */
 const PPEManagementDashboard = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('ppe');
     const [ppe, setPpe] = useState<any[]>([]);
     const [ppeEmp, setPpeEmp] = useState<any[]>([]);
     const [requests, setRequests] = useState<any[]>([]);
@@ -73,7 +75,7 @@ const PPEManagementDashboard = () => {
     const departmentChartData = useMemo(
         () =>
             ppeEmp.reduce((acc: any[], emp: any) => {
-                const department = empMap[emp?.empId]?.department || 'Non renseigné';
+                const department = empMap[emp?.empId]?.department || t('common.notProvided');
                 const assignments = emp.count || 0;
                 const existing = acc.find((item) => item.department === department);
                 if (existing) {
@@ -91,7 +93,14 @@ const PPEManagementDashboard = () => {
     );
 
     const exportCsv = () => {
-        const headers = ['EPI', 'Catégorie', 'Stock actuel', 'Stock minimum', 'Statut de stock', 'Statut catalogue'];
+        const headers = [
+            t('dashboard.csvHeaderPpe'),
+            t('dashboard.csvHeaderCategory'),
+            t('dashboard.csvHeaderCurrentStock'),
+            t('dashboard.csvHeaderMinStock'),
+            t('dashboard.csvHeaderStockStatus'),
+            t('dashboard.csvHeaderCatalogStatus'),
+        ];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = ppe.map((item) =>
             [
@@ -111,21 +120,21 @@ const PPEManagementDashboard = () => {
         link.download = `stock_epi_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${ppe.length} référence${ppe.length > 1 ? 's' : ''} EPI exportée${ppe.length > 1 ? 's' : ''}`);
+        successNotification(t('dashboard.exportSuccess', { count: ppe.length }));
     };
 
     return (
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI' },
-                    { label: "Vue d'ensemble" },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule') },
+                    { label: t('dashboard.breadcrumbOverview') },
                 ]}
                 icon={<IconShieldCheck size={22} stroke={2} />}
                 iconColor="amber"
-                title="Équipements de protection individuelle"
-                subtitle="Stocks, dotations et demandes d'EPI du site — ISO 45001 §8.1.2"
+                title={t('dashboard.title')}
+                subtitle={t('dashboard.subtitle')}
                 actions={
                     <>
                         <Button
@@ -135,16 +144,16 @@ const PPEManagementDashboard = () => {
                             onClick={exportCsv}
                             disabled={!ppe.length}
                         >
-                            Exporter CSV
+                            {t('dashboard.exportCsv')}
                         </Button>
                         <Button size="sm" variant="default" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-ppe')}>
-                            Nouvel EPI
+                            {t('common.newPpe')}
                         </Button>
                         <Button size="sm" color="teal" leftSection={<IconPackage size={14} />} onClick={() => navigate('stock-form')}>
-                            Entrée de stock
+                            {t('common.stockEntry')}
                         </Button>
                         <Button size="sm" variant="default" leftSection={<IconClipboardList size={14} />} onClick={() => navigate('request-table')}>
-                            Demandes
+                            {t('dashboard.requests')}
                         </Button>
                     </>
                 }
@@ -153,34 +162,34 @@ const PPEManagementDashboard = () => {
             {/* Indicateurs clés */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Stock total"
+                    label={t('dashboard.kpiTotalStock')}
                     value={loading ? '…' : metrics.totalStock}
-                    unit="unités"
+                    unit={t('dashboard.kpiUnit')}
                     tone="teal"
                     icon={<IconPackage size={14} stroke={1.8} />}
-                    referenceValue={`${ppe.length} référence${ppe.length > 1 ? 's' : ''} au catalogue`}
+                    referenceValue={t('dashboard.kpiTotalStockRef', { count: ppe.length })}
                 />
                 <KpiTile
-                    label="EPI disponibles"
+                    label={t('dashboard.kpiAvailable')}
                     value={loading ? '…' : metrics.availableStock}
-                    unit="unités"
+                    unit={t('dashboard.kpiUnit')}
                     tone="green"
                     icon={<IconShieldCheck size={14} stroke={1.8} />}
-                    referenceValue="Références actives uniquement"
+                    referenceValue={t('dashboard.kpiAvailableRef')}
                 />
                 <KpiTile
-                    label="Sous le seuil"
+                    label={t('dashboard.kpiLowStock')}
                     value={loading ? '…' : metrics.lowStockCount}
                     tone="amber"
                     icon={<IconTriangleSquareCircle size={14} stroke={1.8} />}
-                    referenceValue="Réapprovisionnement à planifier"
+                    referenceValue={t('dashboard.kpiLowStockRef')}
                 />
                 <KpiTile
-                    label="Demandes en attente"
+                    label={t('dashboard.kpiPending')}
                     value={loading ? '…' : metrics.pendingRequests}
                     tone="violet"
                     icon={<IconHourglassHigh size={14} stroke={1.8} />}
-                    referenceValue="File de validation EPI"
+                    referenceValue={t('dashboard.kpiPendingRef')}
                 />
             </div>
 
@@ -201,7 +210,7 @@ const PPEManagementDashboard = () => {
                             className="text-slate-800 mb-3"
                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
                         >
-                            Stock par catégorie d'EPI
+                            {t('dashboard.chartStockByCategory')}
                         </h2>
                         {categoryChartData.length ? (
                             <BarChart
@@ -210,13 +219,13 @@ const PPEManagementDashboard = () => {
                                 maxBarWidth={40}
                                 data={categoryChartData}
                                 dataKey="category"
-                                series={[{ name: 'quantity', color: 'color', label: 'Quantité en stock' }]}
+                                series={[{ name: 'quantity', color: 'color', label: t('dashboard.chartStockLegend') }]}
                                 withLegend={false}
                                 withTooltip
                             />
                         ) : (
                             <p className="text-[12.5px] text-slate-500 py-10 text-center">
-                                Aucun EPI au catalogue pour le moment.
+                                {t('dashboard.chartEmptyCatalog')}
                             </p>
                         )}
                     </div>
@@ -225,7 +234,7 @@ const PPEManagementDashboard = () => {
                             className="text-slate-800 mb-3"
                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
                         >
-                            Dotations par département
+                            {t('dashboard.chartAssignmentsByDept')}
                         </h2>
                         {departmentChartData.length ? (
                             <BarChart
@@ -234,13 +243,13 @@ const PPEManagementDashboard = () => {
                                 maxBarWidth={40}
                                 data={departmentChartData}
                                 dataKey="department"
-                                series={[{ name: 'assignments', color: 'color', label: 'Dotations actives' }]}
+                                series={[{ name: 'assignments', color: 'color', label: t('dashboard.chartAssignmentsLegend') }]}
                                 withLegend={false}
                                 withTooltip
                             />
                         ) : (
                             <p className="text-[12.5px] text-slate-500 py-10 text-center">
-                                Aucune dotation enregistrée pour le moment.
+                                {t('dashboard.chartEmptyAssignments')}
                             </p>
                         )}
                     </div>

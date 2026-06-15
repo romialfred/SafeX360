@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, NumberInput, Progress, Select, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
@@ -25,6 +26,7 @@ const PPEStockEntryForm = () => {
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('ppe');
 
     const form = useForm({
         initialValues: {
@@ -38,9 +40,9 @@ const PPEStockEntryForm = () => {
             expiryDate: null as Date | null,
         },
         validate: {
-            ppeId: (value) => (value ? null : 'Sélectionnez l\'EPI concerné'),
-            quantity: (value) => (value ? null : 'La quantité est obligatoire'),
-            unitPrice: (value) => (value && value > 0 ? null : 'Le prix unitaire est obligatoire'),
+            ppeId: (value) => (value ? null : t('stock.validatePpe')),
+            quantity: (value) => (value ? null : t('stock.validateQuantity')),
+            unitPrice: (value) => (value && value > 0 ? null : t('stock.validateUnitPrice')),
         },
     });
 
@@ -62,11 +64,11 @@ const PPEStockEntryForm = () => {
         };
         createPPEStock(payload)
             .then(() => {
-                successNotification('Entrée de stock enregistrée');
+                successNotification(t('stock.createSuccess'));
                 navigate('/ppe-management');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'entrée de stock a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('stock.createError'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -81,14 +83,14 @@ const PPEStockEntryForm = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI', to: '/ppe-management' },
-                    { label: 'Entrée de stock' },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule'), to: '/ppe-management' },
+                    { label: t('stock.breadcrumb') },
                 ]}
                 icon={<IconPackage size={22} stroke={2} />}
                 iconColor="amber"
-                title="Entrée de stock EPI"
-                subtitle="Enregistrer une réception : quantité, fournisseur et péremption éventuelle"
+                title={t('stock.title')}
+                subtitle={t('stock.subtitle')}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -103,19 +105,19 @@ const PPEStockEntryForm = () => {
                                 className="text-slate-800"
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                             >
-                                Réception de stock
+                                {t('stock.cardTitle')}
                             </h2>
-                            <p className="text-[11.5px] text-slate-500">EPI concerné, quantité reçue et informations fournisseur</p>
+                            <p className="text-[11.5px] text-slate-500">{t('stock.cardSubtitle')}</p>
                         </div>
                     </header>
                     <form onSubmit={form.onSubmit(handleSubmit)} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
                             {...form.getInputProps('ppeId')}
-                            label="EPI concerné"
-                            placeholder="Sélectionner l'EPI à réapprovisionner"
+                            label={t('stock.fieldPpe')}
+                            placeholder={t('stock.fieldPpePlaceholder')}
                             data={ppe.map((item: any) => ({
                                 value: item.id.toString(),
-                                label: `${item.name} — ${ppeCategoryLabel(item.category)}`,
+                                label: t('stock.ppeOptionLabel', { name: item.name, category: ppeCategoryLabel(item.category) }),
                             }))}
                             searchable
                             withAsterisk
@@ -123,44 +125,44 @@ const PPEStockEntryForm = () => {
                             className="md:col-span-2"
                         />
                         <NumberInput
-                            label="Quantité reçue"
-                            placeholder="1"
+                            label={t('stock.fieldQuantity')}
+                            placeholder={t('stock.fieldQuantityPlaceholder')}
                             min={1}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('quantity')}
                         />
                         <NumberInput
-                            label="Prix unitaire (€)"
-                            placeholder="0"
+                            label={t('stock.fieldUnitPrice')}
+                            placeholder={t('stock.fieldUnitPricePlaceholder')}
                             min={0}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('unitPrice')}
                         />
                         <TextInput
-                            label="Fournisseur"
-                            placeholder="ex. Sahel Équipements Sécurité"
+                            label={t('stock.fieldSupplier')}
+                            placeholder={t('stock.fieldSupplierPlaceholder')}
                             size="sm"
                             className="md:col-span-2"
                             {...form.getInputProps('supplier')}
                         />
-                        <TextInput label="Marque" placeholder="ex. MSA" size="sm" {...form.getInputProps('brand')} />
-                        <TextInput label="Modèle" placeholder="ex. V-Gard 500" size="sm" {...form.getInputProps('model')} />
-                        <TextInput label="Taille" placeholder="ex. Réglable" size="sm" {...form.getInputProps('size')} />
+                        <TextInput label={t('stock.fieldBrand')} placeholder={t('stock.fieldBrandPlaceholder')} size="sm" {...form.getInputProps('brand')} />
+                        <TextInput label={t('stock.fieldModel')} placeholder={t('stock.fieldModelPlaceholder')} size="sm" {...form.getInputProps('model')} />
+                        <TextInput label={t('stock.fieldSize')} placeholder={t('stock.fieldSizePlaceholder')} size="sm" {...form.getInputProps('size')} />
                         <DateInput
-                            label="Date de péremption (facultatif)"
-                            placeholder="JJ/MM/AAAA"
+                            label={t('stock.fieldExpiry')}
+                            placeholder={t('stock.datePlaceholder')}
                             valueFormat="DD/MM/YYYY"
                             size="sm"
                             {...form.getInputProps('expiryDate')}
                         />
                         <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
                             <Button variant="default" size="sm" onClick={() => navigate('/ppe-management')}>
-                                Annuler
+                                {t('common.cancel')}
                             </Button>
                             <Button type="submit" color="teal" size="sm" loading={submitting} leftSection={<IconPlus size={14} />}>
-                                Ajouter au stock
+                                {t('stock.submit')}
                             </Button>
                         </div>
                     </form>
@@ -177,44 +179,44 @@ const PPEStockEntryForm = () => {
                                 className="text-slate-800"
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                             >
-                                EPI sélectionné
+                                {t('stock.asideSelectedTitle')}
                             </h2>
                         </header>
                         <div className="p-4">
                             {selectedPpe ? (
                                 <dl className="space-y-2.5 text-[12.5px]">
                                     <div className="flex justify-between gap-2">
-                                        <dt className="text-slate-500">Catégorie</dt>
+                                        <dt className="text-slate-500">{t('stock.detailCategory')}</dt>
                                         <dd className="text-slate-800 text-right">{ppeCategoryLabel(selectedPpe.category)}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-slate-500 mb-0.5">Description</dt>
+                                        <dt className="text-slate-500 mb-0.5">{t('stock.detailDescription')}</dt>
                                         <dd className="text-slate-800 leading-snug">{selectedPpe.description || '—'}</dd>
                                     </div>
                                     <div className="flex justify-between gap-2">
-                                        <dt className="text-slate-500">Stock minimum</dt>
+                                        <dt className="text-slate-500">{t('stock.detailMinStock')}</dt>
                                         <dd className="text-slate-800">{selectedPpe.minStock ?? 0}</dd>
                                     </div>
                                     {selectedPpe.certificationStandard && (
                                         <div className="flex justify-between gap-2">
-                                            <dt className="text-slate-500">Certification</dt>
+                                            <dt className="text-slate-500">{t('stock.detailCertification')}</dt>
                                             <dd className="text-slate-800">{selectedPpe.certificationStandard}</dd>
                                         </div>
                                     )}
                                     <div className="flex justify-between gap-2 items-center pt-2 border-t border-slate-100">
-                                        <dt className="text-slate-500">Stock actuel</dt>
+                                        <dt className="text-slate-500">{t('stock.detailCurrentStock')}</dt>
                                         <dd>
                                             <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11.5px] text-slate-700 tabular-nums">
-                                                {selectedPpe.stock ?? 0} unité{(selectedPpe.stock ?? 0) > 1 ? 's' : ''}
+                                                {t('stock.unit', { count: selectedPpe.stock ?? 0 })}
                                             </span>
                                         </dd>
                                     </div>
                                     {!!form.values.quantity && (
                                         <div className="flex justify-between gap-2 items-center">
-                                            <dt className="text-slate-500">Nouveau total</dt>
+                                            <dt className="text-slate-500">{t('stock.detailNewTotal')}</dt>
                                             <dd>
                                                 <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11.5px] text-emerald-700 tabular-nums">
-                                                    {(selectedPpe.stock ?? 0) + parseInt(String(form.values.quantity || '0'), 10)} unités
+                                                    {t('stock.newTotalUnits', { count: (selectedPpe.stock ?? 0) + parseInt(String(form.values.quantity || '0'), 10) })}
                                                 </span>
                                             </dd>
                                         </div>
@@ -222,7 +224,7 @@ const PPEStockEntryForm = () => {
                                 </dl>
                             ) : (
                                 <p className="text-[12.5px] text-slate-500 py-4 text-center">
-                                    Sélectionnez un EPI pour afficher sa fiche.
+                                    {t('stock.asideEmpty')}
                                 </p>
                             )}
                         </div>
@@ -239,7 +241,7 @@ const PPEStockEntryForm = () => {
                                     className="text-slate-800"
                                     style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                                 >
-                                    Références sous le seuil
+                                    {t('stock.asideLowStockTitle')}
                                 </h2>
                             </header>
                             <div className="p-4 space-y-3">
@@ -256,7 +258,7 @@ const PPEStockEntryForm = () => {
                                                 </span>
                                             </div>
                                             <p className="text-[11px] text-slate-500 mb-1">{ppeCategoryLabel(item.category)}</p>
-                                            <Progress value={percentage} color="amber" size="xs" aria-label={`Niveau de stock : ${percentage} %`} />
+                                            <Progress value={percentage} color="amber" size="xs" aria-label={t('stock.stockLevelAria', { percentage })} />
                                         </div>
                                     );
                                 })}

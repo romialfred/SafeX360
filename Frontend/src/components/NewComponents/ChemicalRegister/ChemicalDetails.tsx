@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Tabs } from '@mantine/core';
 import { IconClipboardCheck, IconEye, IconFlask2, IconHistory, IconPlus } from '@tabler/icons-react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { errorNotification } from '../../../utility/NotificationUtility';
 import { getAllDepartments } from '../../../services/HrmsService';
@@ -21,6 +22,9 @@ import { normalizeRiskStatus, riskStatusConfig } from './chemicalLabels';
  */
 const ChemicalDetails = () => {
     const { id } = useParams();
+    const { t } = useTranslation('risk');
+    const tStatusLabel = (status?: string | null): string =>
+        t(`status.${normalizeRiskStatus(status)}`, { defaultValue: riskStatusConfig(status).label });
     const [activeTab, setActiveTab] = useState<string | null>('details');
     const [showNewAssessment, setShowNewAssessment] = useState(false);
     const [risk, setRisk] = useState<any>({});
@@ -33,7 +37,7 @@ const ChemicalDetails = () => {
         getChemicalAnalysisByRisk(id)
             .then((data) => setAssessments(data ?? []))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "Échec du chargement de l'historique des évaluations");
+                errorNotification(error.response?.data?.errorMessage || t('chemicalDetail.loadAssessmentsFailed'));
             });
     };
 
@@ -41,22 +45,22 @@ const ChemicalDetails = () => {
         getChemicalRiskByID(id)
             .then((data) => setRisk(data))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "Le risque chimique n'a pas pu être chargé");
+                errorNotification(error.response?.data?.errorMessage || t('chemicalDetail.loadFailed'));
             });
         getAllDepartments()
             .then((data) => setDepartmentMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments'));
             });
         GetAllWorkProcess({})
             .then((data) => setProcessMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses'));
             });
         getEmployeeDropdown()
             .then((data) => setEmpMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees'));
             });
         fetchAssessments();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,15 +78,15 @@ const ChemicalDetails = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: 'Registre chimique', to: '/chemical-register' },
-                    { label: 'Détail du risque' },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('chemicalRegister.breadcrumb'), to: '/chemical-register' },
+                    { label: t('chemicalDetail.breadcrumbDetail') },
                 ]}
                 icon={<IconFlask2 size={22} stroke={2} />}
                 iconColor="violet"
-                title={risk?.chemicalName || risk?.title || 'Détail du risque chimique'}
-                subtitle="Synthèse du risque, historique des évaluations et nouvelle évaluation"
+                title={risk?.chemicalName || risk?.title || t('chemicalDetail.fallbackTitle')}
+                subtitle={t('chemicalDetail.subtitle')}
                 actions={
                     <Button
                         size="sm"
@@ -91,7 +95,7 @@ const ChemicalDetails = () => {
                         onClick={handleNewAssessment}
                         disabled={isLockedStatus}
                     >
-                        Nouvelle évaluation
+                        {t('chemicalDetail.newAssessment')}
                     </Button>
                 }
             />
@@ -99,7 +103,7 @@ const ChemicalDetails = () => {
             {isLockedStatus && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-2.5">
                     <p className="text-[12px] text-slate-600">
-                        Les évaluations sont verrouillées : ce risque est au statut « {riskStatusConfig(risk?.status).label} ».
+                        {t('chemicalDetail.locked', { status: tStatusLabel(risk?.status) })}
                     </p>
                 </div>
             )}
@@ -108,14 +112,14 @@ const ChemicalDetails = () => {
                 <Tabs value={activeTab} onChange={setActiveTab} color="violet">
                     <Tabs.List>
                         <Tabs.Tab value="details" leftSection={<IconEye size={15} />}>
-                            Synthèse
+                            {t('chemicalDetail.tabOverview')}
                         </Tabs.Tab>
                         <Tabs.Tab value="history" leftSection={<IconHistory size={15} />}>
-                            Historique des évaluations
+                            {t('chemicalDetail.tabHistory')}
                         </Tabs.Tab>
                         {showNewAssessment && (
                             <Tabs.Tab value="assessment" leftSection={<IconClipboardCheck size={15} />}>
-                                Nouvelle évaluation
+                                {t('chemicalDetail.tabNewAssessment')}
                             </Tabs.Tab>
                         )}
                     </Tabs.List>

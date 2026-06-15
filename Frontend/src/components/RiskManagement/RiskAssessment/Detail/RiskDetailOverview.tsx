@@ -1,12 +1,15 @@
+import { useTranslation } from 'react-i18next';
 import {
     GRAVITY_LABELS_FR,
     PROBABILITY_VALUE_LABELS_FR,
     formatDateFr,
+    normalizeRiskStatus,
     riskLevelFromKey,
     riskStatusConfig,
     scoreChip,
 } from '../../riskLabels';
 import { classificationConfig, hazardSourceLabel } from '../../../NewComponents/ChemicalRegister/chemicalLabels';
+import { riskMap } from '../../../../Data/DropdownData';
 
 /**
  * Synthèse d'un risque (LOT 50) — partagée entre le registre des risques et
@@ -53,33 +56,41 @@ const ScoreChip = ({ label, score, scoreLabel }: { label: string; score?: string
 );
 
 const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessment }: any) => {
+    const { t } = useTranslation('risk');
     const isChemical = Boolean(risk?.chemicalName || risk?.casNumber || risk?.classification);
     const classCfg = classificationConfig(risk?.classification);
     const statusCfg = riskStatusConfig(risk?.status);
-    const levelCfg = riskLevelFromKey(assessment?.riskLevel ?? risk?.riskLevel);
+    const levelKey = assessment?.riskLevel ?? risk?.riskLevel;
+    const levelCfg = riskLevelFromKey(levelKey);
+    const statusLabel = t(`status.${normalizeRiskStatus(risk?.status)}`, { defaultValue: statusCfg.label });
+    const levelLabel = levelCfg ? t(`level.${riskMap[String(levelKey)]?.level}`, { defaultValue: levelCfg.label }) : '';
+    const classLabel = classCfg ? t(`chemical.classification.${risk?.classification}`, { defaultValue: classCfg.label }) : '';
+    const tGravity = (g?: string | number | null) => g ? t(`severity.${g}`, { defaultValue: GRAVITY_LABELS_FR[String(g)] }) : undefined;
+    const tProbability = (p?: string | number | null) => p ? t(`probability.${p}`, { defaultValue: PROBABILITY_VALUE_LABELS_FR[String(p)] }) : undefined;
+    const tHazardSource = (code?: string | null) => code ? t(`chemical.hazardSource.${code}`, { defaultValue: hazardSourceLabel(code) }) : undefined;
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
             <div className="xl:col-span-2 flex flex-col gap-4">
                 {/* Informations générales */}
                 <section className="bg-white rounded-xl border border-slate-200 p-4">
-                    <CardTitle>Informations générales</CardTitle>
+                    <CardTitle>{t('overview.generalInfo')}</CardTitle>
                     <dl className="space-y-3">
-                        <Field label="Intitulé" value={risk?.title} />
-                        <Field label="Description" value={risk?.description} />
+                        <Field label={t('overview.labelTitle')} value={risk?.title} />
+                        <Field label={t('overview.labelDescription')} value={risk?.description} />
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <Field label="Département" value={departmentMap[risk?.departmentId]?.name} />
-                            <Field label="Processus" value={processMap[risk?.workProcessId]?.name} />
-                            <Field label="Responsable" value={empMap[risk?.ownerId]?.name} />
+                            <Field label={t('overview.labelDepartment')} value={departmentMap[risk?.departmentId]?.name} />
+                            <Field label={t('overview.labelProcess')} value={processMap[risk?.workProcessId]?.name} />
+                            <Field label={t('overview.labelOwner')} value={empMap[risk?.ownerId]?.name} />
                         </div>
                         {risk?.hazardSource && (
                             <Field
-                                label="Source de danger"
-                                value={isChemical ? hazardSourceLabel(risk.hazardSource) : risk.hazardSource}
+                                label={t('overview.labelHazardSource')}
+                                value={isChemical ? tHazardSource(risk.hazardSource) : risk.hazardSource}
                             />
                         )}
                         {risk?.potentialConsequences && (
-                            <Field label="Conséquences potentielles" value={risk.potentialConsequences} />
+                            <Field label={t('overview.labelConsequences')} value={risk.potentialConsequences} />
                         )}
                     </dl>
                 </section>
@@ -87,17 +98,17 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
                 {/* Produit chimique (uniquement pour un risque chimique) */}
                 {isChemical && (
                     <section className="bg-white rounded-xl border border-slate-200 p-4">
-                        <CardTitle>Produit chimique</CardTitle>
+                        <CardTitle>{t('overview.chemicalProduct')}</CardTitle>
                         <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <Field label="Produit" value={risk?.chemicalName} />
-                            <Field label="N° CAS" value={risk?.casNumber} />
+                            <Field label={t('overview.labelProduct')} value={risk?.chemicalName} />
+                            <Field label={t('overview.labelCas')} value={risk?.casNumber} />
                             <div>
-                                <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Classification SGH</dt>
+                                <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">{t('overview.labelClassification')}</dt>
                                 <dd>
                                     {classCfg ? (
                                         <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${classCfg.chip}`}>
                                             <span className="font-medium">{classCfg.sgh}</span>
-                                            {classCfg.label}
+                                            {classLabel}
                                         </span>
                                     ) : (
                                         <span className="text-[12.5px] text-slate-400">—</span>
@@ -107,7 +118,7 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
                         </dl>
                         {risk?.methodOfUse && (
                             <dl className="mt-3">
-                                <Field label="Mode d'utilisation" value={risk.methodOfUse} />
+                                <Field label={t('overview.labelMethodOfUse')} value={risk.methodOfUse} />
                             </dl>
                         )}
                     </section>
@@ -116,19 +127,19 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
                 {/* Maîtrise du risque */}
                 {assessment && (
                     <section className="bg-white rounded-xl border border-slate-200 p-4">
-                        <CardTitle>Maîtrise du risque</CardTitle>
+                        <CardTitle>{t('overview.riskControl')}</CardTitle>
                         <dl className="space-y-3">
-                            <Field label="Mesures de maîtrise actuelles" value={assessment.currentControls} />
+                            <Field label={t('overview.labelCurrentControls')} value={assessment.currentControls} />
                             {assessment.additionalControl && (
-                                <Field label="Mesures complémentaires" value={assessment.additionalControl} />
+                                <Field label={t('overview.labelAdditionalControls')} value={assessment.additionalControl} />
                             )}
                             {assessment.preventiveMeasures && (
-                                <Field label="Mesures préventives" value={assessment.preventiveMeasures} />
+                                <Field label={t('overview.labelPreventive')} value={assessment.preventiveMeasures} />
                             )}
                             {assessment.improvementsMeasures && (
-                                <Field label="Mesures d'amélioration" value={assessment.improvementsMeasures} />
+                                <Field label={t('overview.labelImprovements')} value={assessment.improvementsMeasures} />
                             )}
-                            {assessment.comments && <Field label="Commentaires" value={assessment.comments} />}
+                            {assessment.comments && <Field label={t('overview.labelComments')} value={assessment.comments} />}
                         </dl>
                     </section>
                 )}
@@ -137,45 +148,45 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
             <div className="flex flex-col gap-4">
                 {/* Évaluation actuelle */}
                 <section className="bg-white rounded-xl border border-slate-200 p-4">
-                    <CardTitle>Évaluation actuelle</CardTitle>
+                    <CardTitle>{t('overview.currentAssessment')}</CardTitle>
                     {assessment ? (
                         <dl className="space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <ScoreChip
-                                    label="Gravité"
+                                    label={t('overview.labelGravity')}
                                     score={assessment.gravity}
-                                    scoreLabel={GRAVITY_LABELS_FR[String(assessment.gravity)]}
+                                    scoreLabel={tGravity(assessment.gravity)}
                                 />
                                 <ScoreChip
-                                    label="Probabilité"
+                                    label={t('overview.labelProbability')}
                                     score={assessment.probability}
-                                    scoreLabel={PROBABILITY_VALUE_LABELS_FR[String(assessment.probability)]}
+                                    scoreLabel={tProbability(assessment.probability)}
                                 />
                             </div>
                             <div>
-                                <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Niveau de risque</dt>
+                                <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">{t('overview.labelRiskLevel')}</dt>
                                 <dd>
                                     {levelCfg ? (
                                         <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${levelCfg.chip}`}>
-                                            {levelCfg.label}
+                                            {levelLabel}
                                         </span>
                                     ) : (
                                         <span className="text-[12.5px] text-slate-400">—</span>
                                     )}
                                 </dd>
                             </div>
-                            <Field label="Évaluée le" value={formatDateFr(assessment.createdAt)} />
+                            <Field label={t('overview.labelAssessedOn')} value={formatDateFr(assessment.createdAt)} />
                         </dl>
                     ) : (
                         <p className="text-[12.5px] text-slate-500">
-                            Aucune évaluation enregistrée. Utilisez « Nouvelle évaluation » pour coter ce risque.
+                            {t('overview.noAssessment')}
                         </p>
                     )}
                     <div className="mt-3 pt-3 border-t border-slate-100">
-                        <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Statut du risque</dt>
+                        <dt className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">{t('overview.labelRiskStatus')}</dt>
                         <dd>
                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                {statusCfg.label}
+                                {statusLabel}
                             </span>
                         </dd>
                     </div>
@@ -183,9 +194,9 @@ const RiskDetailOverview = ({ risk, departmentMap, processMap, empMap, assessmen
 
                 {/* Référence normative */}
                 <section className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Référence normative</p>
+                    <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">{t('overview.normReference')}</p>
                     <p className="text-[12px] text-slate-600 leading-relaxed">
-                        {risk?.isoReference || 'ISO 45001 · 6.1.2 — Identification des dangers et évaluation des risques'}
+                        {risk?.isoReference || t('overview.defaultNorm')}
                     </p>
                 </section>
             </div>

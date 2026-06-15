@@ -1,5 +1,6 @@
 import { Button } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { IconFileText, IconPlus } from '@tabler/icons-react';
 import RiskTable from './RiskRegister/RiskTable';
 import PageHeader from '../UtilityComp/PageHeader';
@@ -10,19 +11,20 @@ import PageHeader from '../UtilityComp/PageHeader';
  */
 const RiskRegister = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('risk');
 
     return (
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: 'Registre des risques' },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('register.breadcrumb') },
                 ]}
                 icon={<IconFileText size={22} stroke={2} />}
                 iconColor="red"
-                title="Registre des risques"
-                subtitle="Catalogue des risques HSE identifiés : contexte, responsables et suivi du traitement"
+                title={t('register.title')}
+                subtitle={t('register.subtitle')}
                 actions={
                     <Button
                         size="sm"
@@ -30,7 +32,7 @@ const RiskRegister = () => {
                         leftSection={<IconPlus size={14} />}
                         onClick={() => navigate('register-form')}
                     >
-                        Nouveau risque
+                        {t('register.newRisk')}
                     </Button>
                 }
             />

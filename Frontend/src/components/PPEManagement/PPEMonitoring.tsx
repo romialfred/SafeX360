@@ -2,6 +2,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActionIcon, Button, Select, TextInput, Tooltip } from '@mantine/core';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -30,6 +31,12 @@ const PPEMonitoring = () => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [employeeSearch, setEmployeeSearch] = useState('');
     const navigate = useNavigate();
+    const { t } = useTranslation('ppe');
+    // Libellés bilingues : clés i18n `ppe:*`, repli sur les libellés FR centralisés (ppeLabels.ts).
+    const tStockStatus = (bucket: keyof typeof STOCK_STATUS_CONFIG): string =>
+        t(`stockStatus.${bucket}`, { defaultValue: STOCK_STATUS_CONFIG[bucket].label });
+    const tCatalogStatus = (status?: string | null): string =>
+        t(`catalogStatus.${(status ?? '').toUpperCase()}`, { defaultValue: ppeStatusConfig(status).label });
     const [ppe, setPpe] = useState<any[]>([]);
     const [ppeEmp, setPpeEmp] = useState<any[]>([]);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
@@ -47,13 +54,13 @@ const PPEMonitoring = () => {
         return ppeEmp.map((emp) => ({
             ...emp,
             name: empMap[emp?.empId]?.name ?? '—',
-            department: empMap[emp?.empId]?.department ?? 'Non renseigné',
+            department: empMap[emp?.empId]?.department ?? t('common.notProvided'),
             position: empMap[emp?.empId]?.position ?? '—',
         }));
     }, [ppeEmp, empMap]);
 
     const departments = useMemo(
-        () => [...new Set(employeesTableData.map((emp) => emp.department || 'Non renseigné'))].sort(),
+        () => [...new Set(employeesTableData.map((emp) => emp.department || t('common.notProvided')))].sort(),
         [employeesTableData]
     );
 
@@ -99,9 +106,9 @@ const PPEMonitoring = () => {
 
     const actionBodyTemplate = (rowData: any) => (
         <div className="flex gap-1.5 justify-center">
-            <Tooltip label="Consulter la dotation" withArrow>
+            <Tooltip label={t('monitoring.tooltipViewAssignment')} withArrow>
                 <ActionIcon
-                    aria-label="Consulter la dotation EPI de l'employé"
+                    aria-label={t('monitoring.ariaViewAssignment')}
                     onClick={() => navigate(`details/${rowData.empId}`)}
                     color="teal"
                     variant="light"
@@ -117,14 +124,14 @@ const PPEMonitoring = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI' },
-                    { label: 'Suivi des EPI' },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule') },
+                    { label: t('monitoring.breadcrumb') },
                 ]}
                 icon={<IconHelmet size={22} stroke={2} />}
                 iconColor="amber"
-                title="Suivi des EPI"
-                subtitle="Dotations par employé et niveaux de stock des équipements de protection"
+                title={t('monitoring.title')}
+                subtitle={t('monitoring.subtitle')}
                 actions={
                     <>
                         <Button
@@ -133,7 +140,7 @@ const PPEMonitoring = () => {
                             size="sm"
                             variant="default"
                         >
-                            Nouvel EPI
+                            {t('common.newPpe')}
                         </Button>
                         <Button
                             leftSection={<IconPackage size={14} />}
@@ -141,7 +148,7 @@ const PPEMonitoring = () => {
                             size="sm"
                             color="teal"
                         >
-                            Entrée de stock
+                            {t('common.stockEntry')}
                         </Button>
                     </>
                 }
@@ -154,30 +161,30 @@ const PPEMonitoring = () => {
                         <IconHelmet size={14} className="text-amber-700" aria-hidden="true" />
                     </div>
                     <h2 className="text-slate-800" style={sectionTitleStyle}>
-                        Dotations par employé
+                        {t('monitoring.sectionEmployeesTitle')}
                     </h2>
                     <span className="text-[11.5px] text-slate-500">
-                        {filteredEmployees.length} employé{filteredEmployees.length > 1 ? 's' : ''}
+                        {t('monitoring.employeeCount', { count: filteredEmployees.length })}
                     </span>
                     <div className="ml-auto flex items-center gap-2 flex-wrap">
                         <TextInput
-                            placeholder="Rechercher un employé…"
+                            placeholder={t('monitoring.searchEmployeePlaceholder')}
                             leftSection={<IconSearch size={14} />}
                             value={employeeSearch}
                             onChange={(e) => setEmployeeSearch(e.currentTarget.value)}
                             size="xs"
                             w={200}
-                            aria-label="Rechercher un employé"
+                            aria-label={t('monitoring.searchEmployeeAria')}
                         />
                         <Select
-                            placeholder="Tous départements"
+                            placeholder={t('monitoring.filterAllDepartments')}
                             data={departments}
                             value={selectedDepartment}
                             onChange={setSelectedDepartment}
                             clearable
                             size="xs"
                             w={190}
-                            aria-label="Filtrer par département"
+                            aria-label={t('monitoring.filterDepartmentAria')}
                         />
                     </div>
                 </header>
@@ -187,8 +194,8 @@ const PPEMonitoring = () => {
                     ) : !filteredEmployees.length ? (
                         <EmptyState
                             icon={<IconHelmet size={24} />}
-                            title="Aucune dotation trouvée"
-                            description="Aucun employé ne correspond aux critères. Élargissez la recherche ou changez de département."
+                            title={t('monitoring.emptyAssignmentsTitle')}
+                            description={t('monitoring.emptyAssignmentsDescription')}
                             compact
                         />
                     ) : (
@@ -203,11 +210,11 @@ const PPEMonitoring = () => {
                             dataKey="empId"
                             className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                            currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                            currentPageReportTemplate={t('monitoring.currentPageReport')}
                         >
                             <Column
                                 field="name"
-                                header="Employé"
+                                header={t('monitoring.colEmployee')}
                                 sortable
                                 body={(row) => (
                                     <div className="min-w-0">
@@ -218,25 +225,25 @@ const PPEMonitoring = () => {
                             />
                             <Column
                                 field="department"
-                                header="Département"
+                                header={t('monitoring.colDepartment')}
                                 sortable
                                 body={(row) => <span className="text-[12.5px] text-slate-600">{row.department}</span>}
                             />
                             <Column
-                                header="EPI dotés"
+                                header={t('monitoring.colAssignedPpe')}
                                 sortable
                                 sortField="count"
                                 style={{ width: '8rem' }}
                                 body={(row) => (
                                     <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11.5px] text-slate-700 tabular-nums">
-                                        {row.count} EPI
+                                        {t('monitoring.assignedPpeCount', { count: row.count })}
                                     </span>
                                 )}
                             />
                             <Column
                                 headerStyle={{ width: '6rem', textAlign: 'center' }}
                                 bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
-                                header="Actions"
+                                header={t('monitoring.colActions')}
                                 body={actionBodyTemplate}
                             />
                         </DataTable>
@@ -251,21 +258,21 @@ const PPEMonitoring = () => {
                         <IconPackage size={14} className="text-sky-700" aria-hidden="true" />
                     </div>
                     <h2 className="text-slate-800" style={sectionTitleStyle}>
-                        Niveaux de stock
+                        {t('monitoring.sectionStockTitle')}
                     </h2>
                     <span className="text-[11.5px] text-slate-500">
-                        {stockTableData.length} référence{stockTableData.length > 1 ? 's' : ''}
+                        {t('monitoring.referenceCount', { count: stockTableData.length })}
                     </span>
                     <div className="ml-auto">
                         <Select
-                            placeholder="Toutes catégories"
+                            placeholder={t('monitoring.filterAllCategories')}
                             data={categoryOptions}
                             value={selectedCategory}
                             onChange={setSelectedCategory}
                             clearable
                             size="xs"
                             w={210}
-                            aria-label="Filtrer par catégorie"
+                            aria-label={t('monitoring.filterCategoryAria')}
                         />
                     </div>
                 </header>
@@ -275,12 +282,12 @@ const PPEMonitoring = () => {
                     ) : !stockTableData.length ? (
                         <EmptyState
                             icon={<IconPackage size={24} />}
-                            title="Aucun EPI au catalogue"
-                            description="Créez une première référence EPI puis enregistrez une entrée de stock."
+                            title={t('monitoring.emptyStockTitle')}
+                            description={t('monitoring.emptyStockDescription')}
                             compact
                             action={
                                 <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('/ppe-management/create-ppe')}>
-                                    Nouvel EPI
+                                    {t('common.newPpe')}
                                 </Button>
                             }
                         />
@@ -296,11 +303,11 @@ const PPEMonitoring = () => {
                             dataKey="id"
                             className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                            currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                            currentPageReportTemplate={t('monitoring.currentPageReport')}
                         >
                             <Column
                                 field="name"
-                                header="EPI"
+                                header={t('monitoring.colPpe')}
                                 sortable
                                 body={(row) => (
                                     <div className="min-w-0">
@@ -311,7 +318,7 @@ const PPEMonitoring = () => {
                             />
                             <Column
                                 align="center"
-                                header="Stock actuel"
+                                header={t('monitoring.colCurrentStock')}
                                 sortable
                                 sortField="stock"
                                 style={{ width: '8.5rem' }}
@@ -332,31 +339,32 @@ const PPEMonitoring = () => {
                             <Column
                                 align="center"
                                 field="minStock"
-                                header="Stock minimum"
+                                header={t('monitoring.colMinStock')}
                                 sortable
                                 style={{ width: '9rem' }}
                                 body={(row) => <span className="text-[12.5px] text-slate-600 tabular-nums">{row.minStock ?? 0}</span>}
                             />
                             <Column
                                 align="center"
-                                header="Statut de stock"
+                                header={t('monitoring.colStockStatus')}
                                 sortable
                                 sortField="bucket"
                                 style={{ width: '9.5rem' }}
                                 body={(row) => {
-                                    const cfg = STOCK_STATUS_CONFIG[row.bucket as keyof typeof STOCK_STATUS_CONFIG];
-                                    return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+                                    const bucket = row.bucket as keyof typeof STOCK_STATUS_CONFIG;
+                                    const cfg = STOCK_STATUS_CONFIG[bucket];
+                                    return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tStockStatus(bucket)}</span>;
                                 }}
                             />
                             <Column
                                 align="center"
-                                header="Catalogue"
+                                header={t('monitoring.colCatalog')}
                                 sortable
                                 sortField="status"
                                 style={{ width: '8rem' }}
                                 body={(row) => {
                                     const cfg = ppeStatusConfig(row.status);
-                                    return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+                                    return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tCatalogStatus(row.status)}</span>;
                                 }}
                             />
                         </DataTable>

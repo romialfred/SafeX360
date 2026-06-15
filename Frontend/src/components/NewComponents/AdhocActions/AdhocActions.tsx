@@ -18,6 +18,7 @@ import {
 } from '@tabler/icons-react';
 import { ActionIcon, Button, Select, TextInput, Tooltip } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import PageHeader from '../../UtilityComp/PageHeader';
@@ -44,6 +45,10 @@ const ALL = 'ALL';
 
 const AdhocActions = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('adhoc');
+    // Statuts issus de adhocLabels.ts (codes backend) : clés i18n `adhoc:state.*`, repli sur le libellé FR centralisé.
+    const tState = (status?: string | null, fallback?: string) =>
+        t(`state.${(status ?? '').toUpperCase()}`, { defaultValue: fallback ?? (status ?? '—') });
     const [actions, setActions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [deptMap, setDeptMap] = useState<Record<number, any>>({});
@@ -62,7 +67,7 @@ const AdhocActions = () => {
         getAllAdhoc()
             .then((res) => setActions(res ?? []))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des suggestions');
+                errorNotification(err.response?.data?.errorMessage || t('list.loadFailed'));
             })
             .finally(() => setLoading(false));
 
@@ -105,7 +110,15 @@ const AdhocActions = () => {
     }, [enrichedActions, search, selectedStatus, selectedOwner, selectedDepartment]);
 
     const exportCsv = () => {
-        const headers = ['Titre', 'Assignée à', 'Responsable', 'Département', 'Échéance', 'Progression (%)', 'Statut'];
+        const headers = [
+            t('list.csvHeaderTitle'),
+            t('list.csvHeaderAssignedTo'),
+            t('list.csvHeaderOwner'),
+            t('list.csvHeaderDepartment'),
+            t('list.csvHeaderDeadline'),
+            t('list.csvHeaderProgress'),
+            t('list.csvHeaderStatus'),
+        ];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = filteredData.map((row: any) =>
             [
@@ -115,7 +128,7 @@ const AdhocActions = () => {
                 row.departmentName === '—' ? '' : row.departmentName,
                 formatDateFr(row.deadline),
                 Number(row.progress ?? 0),
-                adhocStatusConfig(row.status).label,
+                tState(row.status, adhocStatusConfig(row.status).label),
             ].map(escape).join(';')
         );
         const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
@@ -126,7 +139,7 @@ const AdhocActions = () => {
         link.download = `suggestions_amelioration_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${filteredData.length} suggestion${filteredData.length > 1 ? 's' : ''} exportée${filteredData.length > 1 ? 's' : ''}`);
+        successNotification(t('list.exportedToast', { count: filteredData.length }));
     };
 
     // ─── Règles d'édition / mise à jour ──────────────────────────────────────
@@ -138,16 +151,16 @@ const AdhocActions = () => {
         const canUpdate = progress < 100 && !['COMPLETED', 'PENDING', 'CANCELLED'].includes(statusUpper);
 
         const editTooltip = canEdit
-            ? 'Modifier la suggestion'
-            : statusUpper === 'COMPLETED' ? 'Suggestion clôturée — modification impossible'
-            : statusUpper === 'CANCELLED' ? 'Suggestion annulée — modification impossible'
-            : "Modification possible uniquement en attente d'approbation";
+            ? t('list.editSuggestion')
+            : statusUpper === 'COMPLETED' ? t('list.editTooltipCompleted')
+            : statusUpper === 'CANCELLED' ? t('list.editTooltipCancelled')
+            : t('list.editTooltipPendingOnly');
 
         const updateTooltip = canUpdate
-            ? 'Mettre à jour la progression'
-            : statusUpper === 'PENDING' ? "En attente d'approbation — mise à jour indisponible"
-            : statusUpper === 'CANCELLED' ? 'Suggestion annulée — mise à jour impossible'
-            : 'Suggestion déjà clôturée';
+            ? t('list.updateProgress')
+            : statusUpper === 'PENDING' ? t('list.updateTooltipPending')
+            : statusUpper === 'CANCELLED' ? t('list.updateTooltipCancelled')
+            : t('list.updateTooltipClosed');
 
         return { canEdit, canUpdate, editTooltip, updateTooltip };
     };
@@ -164,7 +177,7 @@ const AdhocActions = () => {
                 {row.actionName}
             </button>
             {row.assignedEmployeeName && (
-                <p className="text-[11.5px] text-slate-500 mt-0.5 truncate">Assignée à {row.assignedEmployeeName}</p>
+                <p className="text-[11.5px] text-slate-500 mt-0.5 truncate">{t('list.assignedTo')} {row.assignedEmployeeName}</p>
             )}
         </div>
     );
@@ -173,7 +186,7 @@ const AdhocActions = () => {
         const cfg = adhocStatusConfig(row.status);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tState(row.status, cfg.label)}
             </span>
         );
     };
@@ -194,13 +207,13 @@ const AdhocActions = () => {
         const { canEdit, canUpdate, editTooltip, updateTooltip } = editRules(row);
         return (
             <div className="flex gap-1.5 justify-center">
-                <Tooltip label="Consulter le détail" withArrow>
+                <Tooltip label={t('list.viewDetail')} withArrow>
                     <ActionIcon
                         variant="light"
                         size="sm"
                         color="teal"
                         onClick={() => navigate(`adhocAction-details/${row.id}`)}
-                        aria-label="Consulter le détail"
+                        aria-label={t('list.viewDetail')}
                     >
                         <IconEye size={14} stroke={1.5} />
                     </ActionIcon>
@@ -213,7 +226,7 @@ const AdhocActions = () => {
                             size="sm"
                             color="blue"
                             disabled={!canEdit}
-                            aria-label="Modifier la suggestion"
+                            aria-label={t('list.editSuggestion')}
                         >
                             <IconEdit size={14} stroke={1.5} />
                         </ActionIcon>
@@ -227,7 +240,7 @@ const AdhocActions = () => {
                             size="sm"
                             color="orange"
                             disabled={!canUpdate}
-                            aria-label="Mettre à jour la progression"
+                            aria-label={t('list.updateProgress')}
                         >
                             <IconClock size={14} stroke={1.5} />
                         </ActionIcon>
@@ -244,14 +257,14 @@ const AdhocActions = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Actions Correctives' },
-                    { label: "Suggestions d'amélioration" },
+                    { label: t('list.breadcrumbHome'), to: '/' },
+                    { label: t('list.breadcrumbCorrective') },
+                    { label: t('list.breadcrumbSuggestions') },
                 ]}
                 icon={<IconBolt size={22} stroke={2} />}
                 iconColor="orange"
-                title="Suggestions d'amélioration HSE"
-                subtitle="Recueil, approbation et suivi des idées d'amélioration proposées par les équipes"
+                title={t('list.title')}
+                subtitle={t('list.subtitle')}
                 actions={
                     <Button
                         size="sm"
@@ -259,7 +272,7 @@ const AdhocActions = () => {
                         leftSection={<IconPlus size={14} />}
                         color="orange"
                     >
-                        Nouvelle suggestion
+                        {t('list.newSuggestion')}
                     </Button>
                 }
             />
@@ -268,7 +281,7 @@ const AdhocActions = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <TextInput
-                        placeholder="Rechercher par titre, assigné ou responsable…"
+                        placeholder={t('list.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={search}
                         onChange={(e) => setSearch(e.currentTarget.value)}
@@ -276,50 +289,53 @@ const AdhocActions = () => {
                         className="flex-1 min-w-[220px]"
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous statuts' }, ...ADHOC_STATUS_OPTIONS]}
+                        data={[
+                            { value: ALL, label: t('list.allStatuses') },
+                            ...ADHOC_STATUS_OPTIONS.map((opt) => ({ value: opt.value, label: tState(opt.value, opt.label) })),
+                        ]}
                         value={selectedStatus}
                         onChange={(v) => setSelectedStatus(v ?? ALL)}
                         size="xs"
                         w={140}
-                        aria-label="Filtrer par statut"
+                        aria-label={t('list.filterByStatus')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous responsables' }, ...owners]}
+                        data={[{ value: ALL, label: t('list.allOwners') }, ...owners]}
                         value={selectedOwner}
                         onChange={(v) => setSelectedOwner(v ?? ALL)}
                         size="xs"
                         w={170}
                         searchable
-                        aria-label="Filtrer par responsable"
+                        aria-label={t('list.filterByOwner')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous départements' }, ...departments]}
+                        data={[{ value: ALL, label: t('list.allDepartments') }, ...departments]}
                         value={selectedDepartment}
                         onChange={(v) => setSelectedDepartment(v ?? ALL)}
                         size="xs"
                         w={170}
-                        aria-label="Filtrer par département"
+                        aria-label={t('list.filterByDepartment')}
                     />
                     <div className="flex items-center gap-2 ml-auto">
                         <div className="flex items-center gap-0.5 border border-slate-200 rounded-lg p-0.5 bg-slate-50">
-                            <Tooltip label="Vue tableau" withArrow>
+                            <Tooltip label={t('list.viewTable')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'table' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('table')}
-                                    aria-label="Vue tableau"
+                                    aria-label={t('list.viewTable')}
                                 >
                                     <IconLayoutList size={14} />
                                 </ActionIcon>
                             </Tooltip>
-                            <Tooltip label="Vue cartes" withArrow>
+                            <Tooltip label={t('list.viewCards')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'card' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('card')}
-                                    aria-label="Vue cartes"
+                                    aria-label={t('list.viewCards')}
                                 >
                                     <IconLayoutGrid size={14} />
                                 </ActionIcon>
@@ -332,14 +348,14 @@ const AdhocActions = () => {
                             onClick={exportCsv}
                             disabled={!filteredData.length}
                         >
-                            Exporter CSV
+                            {t('list.exportCsv')}
                         </Button>
                     </div>
                 </div>
                 <p className="text-[11.5px] text-slate-500 mt-2">
                     {loading
-                        ? 'Chargement des suggestions…'
-                        : `${filteredData.length} suggestion${filteredData.length > 1 ? 's' : ''} affichée${filteredData.length > 1 ? 's' : ''} sur ${actions.length}`}
+                        ? t('list.loading')
+                        : t('list.shownCount', { count: filteredData.length, total: actions.length })}
                 </p>
             </div>
 
@@ -354,11 +370,11 @@ const AdhocActions = () => {
                 ) : !filteredData.length ? (
                     <EmptyState
                         icon={<IconBolt size={24} />}
-                        title={hasActiveFilters ? 'Aucune suggestion ne correspond aux filtres' : 'Aucune suggestion enregistrée'}
+                        title={hasActiveFilters ? t('list.emptyFilteredTitle') : t('list.emptyTitle')}
                         description={
                             hasActiveFilters
-                                ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.'
-                                : "Proposez la première idée d'amélioration pour alimenter le registre."
+                                ? t('list.emptyFilteredDescription')
+                                : t('list.emptyDescription')
                         }
                         compact
                         action={
@@ -373,11 +389,11 @@ const AdhocActions = () => {
                                         setSelectedDepartment(ALL);
                                     }}
                                 >
-                                    Réinitialiser les filtres
+                                    {t('list.resetFilters')}
                                 </Button>
                             ) : (
                                 <Button size="xs" color="orange" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-adhocAction')}>
-                                    Nouvelle suggestion
+                                    {t('list.newSuggestion')}
                                 </Button>
                             )
                         }
@@ -394,33 +410,33 @@ const AdhocActions = () => {
                         dataKey="id"
                         className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                        currentPageReportTemplate={t('list.currentPageReport')}
                     >
-                        <Column header="Suggestion" body={nameBody} sortable sortField="actionName" />
+                        <Column header={t('list.colSuggestion')} body={nameBody} sortable sortField="actionName" />
                         <Column
-                            header="Responsable"
+                            header={t('list.colOwner')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{row.ownerName}</span>}
                             sortable
                             sortField="ownerName"
                             style={{ width: '11rem' }}
                         />
                         <Column
-                            header="Département"
+                            header={t('list.colDepartment')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{row.departmentName}</span>}
                             sortable
                             sortField="departmentName"
                             style={{ width: '10rem' }}
                         />
                         <Column
-                            header="Échéance"
+                            header={t('list.colDeadline')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{formatDateFr(row.deadline)}</span>}
                             sortable
                             sortField="deadline"
                             style={{ width: '8.5rem' }}
                         />
-                        <Column header="Progression" body={progressBody} sortable sortField="progress" style={{ width: '10rem' }} />
-                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
-                        <Column header="Actions" body={actionsBody} headerStyle={{ width: '7.5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                        <Column header={t('list.colProgress')} body={progressBody} sortable sortField="progress" style={{ width: '10rem' }} />
+                        <Column header={t('list.colStatus')} body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header={t('list.colActions')} body={actionsBody} headerStyle={{ width: '7.5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                     </DataTable>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-1">
@@ -443,7 +459,7 @@ const AdhocActions = () => {
                                             {action.actionName}
                                         </h3>
                                         <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider flex-shrink-0 ${cfg.chip}`}>
-                                            {cfg.label}
+                                            {tState(action.status, cfg.label)}
                                         </span>
                                     </div>
 
@@ -451,26 +467,26 @@ const AdhocActions = () => {
                                         {action.assignedEmployeeName && (
                                             <div className="flex items-center gap-1.5 text-slate-600">
                                                 <IconUser size={13} className="text-slate-400 flex-shrink-0" aria-hidden="true" />
-                                                <span className="text-slate-500">Assignée à</span>
+                                                <span className="text-slate-500">{t('list.assignedTo')}</span>
                                                 <span className="text-slate-800">{action.assignedEmployeeName}</span>
                                             </div>
                                         )}
                                         <div className="flex items-center gap-1.5 text-slate-600">
                                             <IconCalendar size={13} className="text-slate-400 flex-shrink-0" aria-hidden="true" />
-                                            <span className="text-slate-500">Échéance</span>
+                                            <span className="text-slate-500">{t('list.deadline')}</span>
                                             <span className="text-slate-800">{formatDateFr(action.deadline)}</span>
                                         </div>
                                         {action.ownerName && action.ownerName !== '—' && (
                                             <div className="flex items-center gap-1.5 text-slate-600">
                                                 <IconUser size={13} className="text-slate-400 flex-shrink-0" aria-hidden="true" />
-                                                <span className="text-slate-500">Responsable</span>
+                                                <span className="text-slate-500">{t('list.owner')}</span>
                                                 <span className="text-slate-800">{action.ownerName}</span>
                                             </div>
                                         )}
                                         {action.departmentName && action.departmentName !== '—' && (
                                             <div className="flex items-center gap-1.5 text-slate-600">
                                                 <IconBuilding size={13} className="text-slate-400 flex-shrink-0" aria-hidden="true" />
-                                                <span className="text-slate-500">Département</span>
+                                                <span className="text-slate-500">{t('list.department')}</span>
                                                 <span className="text-slate-800">{action.departmentName}</span>
                                             </div>
                                         )}
@@ -478,7 +494,7 @@ const AdhocActions = () => {
 
                                     <div className="mt-3">
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[11.5px] text-slate-500">Progression</span>
+                                            <span className="text-[11.5px] text-slate-500">{t('list.progress')}</span>
                                             <span className="text-[11.5px] text-slate-800 tabular-nums">{p}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={p} aria-valuemin={0} aria-valuemax={100}>
@@ -487,13 +503,13 @@ const AdhocActions = () => {
                                     </div>
 
                                     <div className="flex items-center justify-end gap-1.5 pt-3 mt-auto border-t border-slate-100">
-                                        <Tooltip label="Consulter le détail" withArrow>
+                                        <Tooltip label={t('list.viewDetail')} withArrow>
                                             <ActionIcon
                                                 variant="light"
                                                 size="sm"
                                                 color="teal"
                                                 onClick={() => navigate(`adhocAction-details/${action.id}`)}
-                                                aria-label="Consulter le détail"
+                                                aria-label={t('list.viewDetail')}
                                             >
                                                 <IconEye size={14} stroke={1.5} />
                                             </ActionIcon>
@@ -506,7 +522,7 @@ const AdhocActions = () => {
                                                     color="blue"
                                                     disabled={!canEdit}
                                                     onClick={() => canEdit && navigate(`edit/${action.id}`)}
-                                                    aria-label="Modifier la suggestion"
+                                                    aria-label={t('list.editSuggestion')}
                                                 >
                                                     <IconEdit size={14} stroke={1.5} />
                                                 </ActionIcon>
@@ -520,7 +536,7 @@ const AdhocActions = () => {
                                                     color="orange"
                                                     disabled={!canUpdate}
                                                     onClick={() => canUpdate && navigate(`updateAdhocAction-details/${action.id}`)}
-                                                    aria-label="Mettre à jour la progression"
+                                                    aria-label={t('list.updateProgress')}
                                                 >
                                                     <IconClock size={14} stroke={1.5} />
                                                 </ActionIcon>

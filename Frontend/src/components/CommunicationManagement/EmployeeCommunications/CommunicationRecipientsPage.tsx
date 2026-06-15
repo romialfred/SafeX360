@@ -3,6 +3,7 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
 import { IconUsers } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import EmptyState from '../../UtilityComp/EmptyState';
@@ -15,6 +16,10 @@ import { notifStatusConfig, parseRecipientIds } from '../communicationLabels';
  */
 
 const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
+    const { t } = useTranslation('communications');
+    // Libellé de statut bilingue : clé i18n, repli sur le libellé FR centralisé.
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
     const [latestNotificationStatus, setLatestNotificationStatus] = useState<string | null>(null);
 
     useEffect(() => {
@@ -75,25 +80,26 @@ const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
     const rows = useMemo(() => {
         return parseRecipientIds(communication?.recipients).map((recipientId: string) => ({
             id: recipientId,
-            name: empMap[recipientId]?.name || 'Employé inconnu',
+            name: empMap[recipientId]?.name || t('recipientsPage.unknownEmployee'),
             department: empMap[recipientId]?.department || '—',
             position: empMap[recipientId]?.position || '—',
             sentStatus: latestNotificationStatus,
         }));
-    }, [communication, empMap, latestNotificationStatus]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [communication, empMap, latestNotificationStatus, t]);
 
     const sentStatusBody = (row: any) => {
         if (!row.sentStatus) {
             return (
                 <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10.5px] uppercase tracking-wider text-slate-600">
-                    Non envoyée
+                    {t('recipientsPage.notSent')}
                 </span>
             );
         }
         const cfg = notifStatusConfig(row.sentStatus);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tNotifStatus(row.sentStatus)}
             </span>
         );
     };
@@ -110,18 +116,18 @@ const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
                         letterSpacing: '-0.01em',
                     }}
                 >
-                    Liste des destinataires
+                    {t('recipientsPage.title')}
                 </h3>
                 <span className="text-[11.5px] text-slate-500">
-                    {rows.length} destinataire{rows.length > 1 ? 's' : ''}
+                    {t('recipientsPage.count', { count: rows.length })}
                 </span>
             </div>
 
             {!rows.length ? (
                 <EmptyState
                     icon={<IconUsers size={24} />}
-                    title="Aucun destinataire"
-                    description="Cette communication ne cible encore aucun employé."
+                    title={t('recipientsPage.emptyTitle')}
+                    description={t('recipientsPage.emptyDescription')}
                     compact
                 />
             ) : (
@@ -135,29 +141,29 @@ const CommunicationRecipientsPage = ({ communication, empMap }: any) => {
                     rowsPerPageOptions={[10, 25, 50]}
                     className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    currentPageReportTemplate="{first}–{last} sur {totalRecords}"
-                    emptyMessage="Aucun destinataire."
+                    currentPageReportTemplate={t('recipientsPage.paginatorReport')}
+                    emptyMessage={t('recipientsPage.emptyMessage')}
                 >
                     <Column
                         field="name"
-                        header="Nom"
+                        header={t('recipientsPage.colName')}
                         body={(row) => <span className="text-[13px] text-slate-800">{row.name}</span>}
                         sortable
                     />
                     <Column
                         field="department"
-                        header="Département"
+                        header={t('recipientsPage.colDepartment')}
                         body={(row) => <span className="text-[12.5px] text-slate-600">{row.department}</span>}
                         sortable
                     />
                     <Column
                         field="position"
-                        header="Poste"
+                        header={t('recipientsPage.colPosition')}
                         body={(row) => <span className="text-[12.5px] text-slate-600">{row.position}</span>}
                         sortable
                     />
                     <Column
-                        header="Dernier envoi"
+                        header={t('recipientsPage.colLastSend')}
                         body={sentStatusBody}
                         style={{ width: '9rem' }}
                         bodyStyle={{ textAlign: 'center' }}

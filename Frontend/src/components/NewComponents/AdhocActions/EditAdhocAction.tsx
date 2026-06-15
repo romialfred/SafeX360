@@ -3,6 +3,7 @@ import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import {
     IconBolt,
@@ -62,6 +63,7 @@ const SectionCard = ({
 const EditAdhocAction = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('adhoc');
     const { id } = useParams();
     const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,9 +80,9 @@ const EditAdhocAction = () => {
             id: null as any,
         },
         validate: {
-            actionName: (value) => (value.trim().length < 5 ? "L'intitulé doit compter au moins 5 caractères" : null),
-            description: (value) => (isValidRichText(value) ? null : 'La description est obligatoire'),
-            deadline: (value) => (value ? null : "L'échéance est obligatoire"),
+            actionName: (value) => (value.trim().length < 5 ? t('edit.validationActionNameMin') : null),
+            description: (value) => (isValidRichText(value) ? null : t('edit.validationDescriptionRequired')),
+            deadline: (value) => (value ? null : t('edit.validationDeadlineRequired')),
         },
     });
 
@@ -94,7 +96,7 @@ const EditAdhocAction = () => {
             .then((res) => {
                 const statusUpper = String(res?.status || '').toUpperCase();
                 if (statusUpper !== 'PENDING') {
-                    errorNotification('Seules les suggestions en attente peuvent être modifiées.');
+                    errorNotification(t('edit.pendingOnly'));
                     navigate(`/adhoc-actions/adhocAction-details/${id}`);
                     return;
                 }
@@ -110,7 +112,7 @@ const EditAdhocAction = () => {
                 });
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "La suggestion n'a pas pu être chargée");
+                errorNotification(err.response?.data?.errorMessage || t('edit.loadFailed'));
             })
             .finally(() => setLoading(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,11 +136,11 @@ const EditAdhocAction = () => {
         };
         updateCorrectiveAction(payload)
             .then(() => {
-                successNotification('Suggestion mise à jour');
+                successNotification(t('edit.updatedToast'));
                 navigate('/adhoc-actions');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('edit.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -150,15 +152,15 @@ const EditAdhocAction = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Actions Correctives' },
-                    { label: "Suggestions d'amélioration", to: '/adhoc-actions' },
-                    { label: 'Modifier la suggestion' },
+                    { label: t('edit.breadcrumbHome'), to: '/' },
+                    { label: t('edit.breadcrumbCorrective') },
+                    { label: t('edit.breadcrumbSuggestions'), to: '/adhoc-actions' },
+                    { label: t('edit.breadcrumbEdit') },
                 ]}
                 icon={<IconBolt size={22} stroke={2} />}
                 iconColor="orange"
-                title="Modifier la suggestion d'amélioration"
-                subtitle="Ajuster l'intitulé, la description, le responsable ou l'échéance avant approbation"
+                title={t('edit.title')}
+                subtitle={t('edit.subtitle')}
             />
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -167,36 +169,36 @@ const EditAdhocAction = () => {
                     <div className="xl:col-span-3 flex flex-col gap-4">
                         <SectionCard
                             icon={<IconClipboardText size={15} stroke={1.8} />}
-                            title="Description de la suggestion"
-                            subtitle="Ce que l'idée doit améliorer, en termes concrets pour les équipes"
+                            title={t('edit.descriptionSectionTitle')}
+                            subtitle={t('edit.descriptionSectionSubtitle')}
                         >
                             <TextInput
                                 withAsterisk
-                                label="Intitulé"
-                                placeholder="ex. Installer un miroir convexe à la sortie de l'atelier maintenance Nord"
+                                label={t('edit.actionNameLabel')}
+                                placeholder={t('edit.actionNamePlaceholder')}
                                 size="sm"
                                 {...form.getInputProps('actionName')}
                             />
-                            <TextEditor form={form} id="description" title="Description détaillée" withAsterisk />
+                            <TextEditor form={form} id="description" title={t('edit.descriptionLabel')} withAsterisk />
                         </SectionCard>
 
                         <SectionCard
                             icon={<IconUserCheck size={15} stroke={1.8} />}
-                            title="Responsabilité et échéance"
-                            subtitle="Qui portera l'action et sous quel délai"
+                            title={t('edit.responsibilitySectionTitle')}
+                            subtitle={t('edit.responsibilitySectionSubtitle')}
                         >
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Select
                                     data={employees.map(emp => ({ value: String(emp.id), label: emp.name }))}
-                                    label="Assignée à"
-                                    placeholder="Choisir un employé"
+                                    label={t('edit.assignedToLabel')}
+                                    placeholder={t('edit.assignedToPlaceholder')}
                                     size="sm"
                                     searchable
                                     {...form.getInputProps('assignedEmployeeId')}
                                 />
                                 <DateInput
-                                    label="Échéance"
-                                    placeholder="Choisir une date"
+                                    label={t('edit.deadlineLabel')}
+                                    placeholder={t('edit.deadlinePlaceholder')}
                                     minDate={new Date()}
                                     size="sm"
                                     withAsterisk
@@ -214,7 +216,7 @@ const EditAdhocAction = () => {
                                 disabled={submitting}
                                 onClick={() => navigate('/adhoc-actions')}
                             >
-                                Annuler
+                                {t('edit.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -224,7 +226,7 @@ const EditAdhocAction = () => {
                                 disabled={loading}
                                 leftSection={<IconDeviceFloppy size={15} />}
                             >
-                                Enregistrer les modifications
+                                {t('edit.submit')}
                             </Button>
                         </div>
                     </div>
@@ -242,18 +244,16 @@ const EditAdhocAction = () => {
                                         letterSpacing: '-0.01em',
                                     }}
                                 >
-                                    Portée de la modification
+                                    {t('edit.scopeTitle')}
                                 </h4>
                                 <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                                    La modification ne porte que sur la fiche de la suggestion : l'historique des mises à
-                                    jour et la progression restent inchangés. Une fois la suggestion approuvée, sa fiche
-                                    n'est plus modifiable.
+                                    {t('edit.scopeText')}
                                 </p>
                             </div>
 
                             <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                                 <p className="text-[11.5px] text-slate-600 leading-relaxed">
-                                    Référence interne : <span className="font-mono text-slate-700">SUG-{String(id)}</span>
+                                    {t('edit.internalReference')} <span className="font-mono text-slate-700">SUG-{String(id)}</span>
                                 </p>
                             </div>
                         </div>

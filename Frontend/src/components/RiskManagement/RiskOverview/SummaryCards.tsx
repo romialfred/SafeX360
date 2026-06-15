@@ -1,5 +1,6 @@
 import React from 'react';
 import { IconAlertOctagon, IconCircleCheck, IconClock, IconShield } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import KpiTile from '../../UtilityComp/KpiTile';
 
 /**
@@ -19,35 +20,38 @@ interface SummaryCardsProps {
     metrics: OverviewMetrics;
 }
 
-const SummaryCards: React.FC<SummaryCardsProps> = ({ metrics }) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiTile
-            label="Risques au registre"
-            value={metrics.total}
-            tone="slate"
-            icon={<IconShield size={14} stroke={1.8} />}
-        />
-        <KpiTile
-            label="Ouverts"
-            value={metrics.open}
-            tone="blue"
-            icon={<IconAlertOctagon size={14} stroke={1.8} />}
-            referenceValue="En attente de traitement"
-        />
-        <KpiTile
-            label="En traitement"
-            value={metrics.inProgress}
-            tone="amber"
-            icon={<IconClock size={14} stroke={1.8} />}
-        />
-        <KpiTile
-            label="Clôturés"
-            value={metrics.closed}
-            tone="green"
-            icon={<IconCircleCheck size={14} stroke={1.8} />}
-            referenceValue={`${metrics.overdue} revue${metrics.overdue > 1 ? 's' : ''} en retard`}
-        />
-    </div>
-);
+const SummaryCards: React.FC<SummaryCardsProps> = ({ metrics }) => {
+    const { t } = useTranslation('risk');
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiTile
+                label={t('dashboard.kpi.total')}
+                value={metrics.total}
+                tone="slate"
+                icon={<IconShield size={14} stroke={1.8} />}
+            />
+            <KpiTile
+                label={t('dashboard.kpi.open')}
+                value={metrics.open}
+                tone="blue"
+                icon={<IconAlertOctagon size={14} stroke={1.8} />}
+                referenceValue={t('dashboard.kpi.openReference')}
+            />
+            <KpiTile
+                label={t('dashboard.kpi.inProgress')}
+                value={metrics.inProgress}
+                tone="amber"
+                icon={<IconClock size={14} stroke={1.8} />}
+            />
+            <KpiTile
+                label={t('dashboard.kpi.closed')}
+                value={metrics.closed}
+                tone="green"
+                icon={<IconCircleCheck size={14} stroke={1.8} />}
+                referenceValue={t('dashboard.kpi.overdueReference', { count: metrics.overdue })}
+            />
+        </div>
+    );
+};
 
 export default SummaryCards;

@@ -3,6 +3,7 @@ import { Button, Select, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { IconClipboardCheck, IconDeviceFloppy, IconShield } from '@tabler/icons-react';
 import { addRiskAnalysis } from '../../../../services/RiskAnalysisService';
 import { hideOverlay, showOverlay } from '../../../../slices/OverlaySlice';
@@ -71,50 +72,36 @@ const SectionCard = ({
     </section>
 );
 
-const GUIDE_BLOCKS: { title: string; accent: string; items: string[] }[] = [
-    {
-        title: 'Lire le niveau calculé',
-        accent: 'border-amber-200 bg-amber-50/60',
-        items: [
-            'Faible et faible à modéré : risque acceptable, à surveiller dans le cycle normal.',
-            "Modéré : risque tolérable sous réserve d'un plan d'action suivi.",
-            'Élevé et critique : traitement prioritaire, mesures complémentaires obligatoires.',
-        ],
-    },
-    {
-        title: 'Coter la probabilité',
-        accent: 'border-sky-200 bg-sky-50/60',
-        items: [
-            'Rare : envisageable seulement dans des circonstances exceptionnelles.',
-            'Possible : pourrait survenir au cours du cycle de production.',
-            'Quasi-certain : attendu si rien ne change dans les conditions actuelles.',
-        ],
-    },
-    {
-        title: 'Coter la gravité',
-        accent: 'border-rose-200 bg-rose-50/60',
-        items: [
-            'Négligeable : pas de blessure, impact minime.',
-            'Modérée : soins médicaux nécessaires, arrêt de courte durée.',
-            'Catastrophique : décès ou invalidité permanente.',
-        ],
-    },
-    {
-        title: 'Documenter la maîtrise',
-        accent: 'border-emerald-200 bg-emerald-50/60',
-        items: [
-            'Listez les mesures existantes : protections collectives, EPI, consignes.',
-            'Les mesures proposées doivent avoir un responsable et une échéance.',
-            'Réévaluez après tout incident, changement de procédé ou constat d\'audit.',
-        ],
-    },
-];
+const GUIDE_ACCENTS: Record<string, string> = {
+    readLevel: 'border-amber-200 bg-amber-50/60',
+    rateProbability: 'border-sky-200 bg-sky-50/60',
+    rateGravity: 'border-rose-200 bg-rose-50/60',
+    documentControl: 'border-emerald-200 bg-emerald-50/60',
+};
 
 const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessments, fetchAssessments }) => {
     const { id } = useParams();
     const dispatch = useDispatch();
+    const { t } = useTranslation('risk');
     const [submitting, setSubmitting] = useState(false);
     const isReassessment = (assessments?.length ?? 0) > 0;
+
+    // Options de cotation traduites (valeurs backend 1-5 conservées).
+    const gravityOptions = GRAVITY_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`gravityOption.${o.value}`, { defaultValue: o.label }) }));
+    const probabilityOptions = PROBABILITY_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`probabilityOption.${o.value}`, { defaultValue: o.label }) }));
+    const levelScoreOptions = LEVEL_SCORE_OPTIONS_FR.map((o) => ({ value: o.value, label: t(`levelScoreOption.${o.value}`, { defaultValue: o.label }) }));
+
+    // Aide-mémoire de cotation (libellés + items i18n, accents charte conservés).
+    const guideBlocks = (['readLevel', 'rateProbability', 'rateGravity', 'documentControl'] as const).map((key) => ({
+        key,
+        accent: GUIDE_ACCENTS[key],
+        title: t(`assessmentTab.guide.${key}.title`),
+        items: [
+            t(`assessmentTab.guide.${key}.item1`),
+            t(`assessmentTab.guide.${key}.item2`),
+            t(`assessmentTab.guide.${key}.item3`),
+        ],
+    }));
 
     const form = useForm<RiskAssessmentFormValues>({
         initialValues: {
@@ -131,10 +118,10 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
         },
         validate: {
             reason: (value) =>
-                isReassessment && !value.trim() ? 'Le motif de la réévaluation est obligatoire' : null,
-            gravity: (value) => (value ? null : 'La gravité est obligatoire'),
-            probability: (value) => (value ? null : 'La probabilité est obligatoire'),
-            currentControls: (value) => (value.trim() ? null : 'Les mesures de maîtrise actuelles sont obligatoires'),
+                isReassessment && !value.trim() ? t('assessmentTab.validate.reason') : null,
+            gravity: (value) => (value ? null : t('assessmentTab.validate.gravity')),
+            probability: (value) => (value ? null : t('assessmentTab.validate.probability')),
+            currentControls: (value) => (value.trim() ? null : t('assessmentTab.validate.currentControls')),
         },
         validateInputOnBlur: true,
     });
@@ -155,12 +142,12 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
         dispatch(showOverlay());
         addRiskAnalysis({ ...values, riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')) })
             .then(() => {
-                successNotification('Évaluation enregistrée');
+                successNotification(t('assessmentTab.savedToast'));
                 fetchAssessments();
                 onCancel();
             })
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "L'évaluation n'a pas pu être enregistrée");
+                errorNotification(error.response?.data?.errorMessage || t('assessmentTab.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -173,13 +160,13 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
             <form onSubmit={form.onSubmit(handleSubmit)} className="xl:col-span-2 flex flex-col gap-4">
                 <SectionCard
                     icon={<IconClipboardCheck size={15} stroke={1.8} />}
-                    title="Cotation du risque"
-                    subtitle="Le niveau de risque est calculé automatiquement à partir de la probabilité et de la gravité"
+                    title={t('assessmentTab.sectionRating')}
+                    subtitle={t('assessmentTab.sectionRatingSub')}
                 >
                     {isReassessment && (
                         <Textarea
-                            label="Motif de la réévaluation"
-                            placeholder="ex. Incident du 12 mai, changement de procédé, constat d'audit"
+                            label={t('assessmentTab.reasonLabel')}
+                            placeholder={t('assessmentTab.reasonPlaceholder')}
                             withAsterisk
                             minRows={2}
                             autosize
@@ -189,25 +176,25 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <Select
-                            label="Gravité"
-                            placeholder="Choisir la gravité"
-                            data={GRAVITY_OPTIONS_FR}
+                            label={t('assessmentTab.gravityLabel')}
+                            placeholder={t('assessmentTab.gravityPlaceholder')}
+                            data={gravityOptions}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('gravity')}
                         />
                         <Select
-                            label="Probabilité"
-                            placeholder="Choisir la probabilité"
-                            data={PROBABILITY_OPTIONS_FR}
+                            label={t('assessmentTab.probabilityLabel')}
+                            placeholder={t('assessmentTab.probabilityPlaceholder')}
+                            data={probabilityOptions}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('probability')}
                         />
                         <Select
-                            label="Niveau de risque (calculé)"
-                            placeholder="Calculé automatiquement"
-                            data={LEVEL_SCORE_OPTIONS_FR}
+                            label={t('assessmentTab.computedLevelLabel')}
+                            placeholder={t('assessmentTab.computedLevelPlaceholder')}
+                            data={levelScoreOptions}
                             disabled
                             size="sm"
                             {...form.getInputProps('severity')}
@@ -217,12 +204,12 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
 
                 <SectionCard
                     icon={<IconShield size={15} stroke={1.8} />}
-                    title="Maîtrise du risque"
-                    subtitle="Mesures en place et plan d'amélioration"
+                    title={t('assessmentTab.sectionControl')}
+                    subtitle={t('assessmentTab.sectionControlSub')}
                 >
                     <Textarea
-                        label="Mesures de maîtrise actuelles"
-                        placeholder="ex. Balisage de la zone, vigie pendant les manœuvres, consigne de vitesse à 20 km/h"
+                        label={t('assessmentTab.currentControlsLabel')}
+                        placeholder={t('assessmentTab.currentControlsPlaceholder')}
                         withAsterisk
                         minRows={3}
                         autosize
@@ -230,32 +217,32 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         {...form.getInputProps('currentControls')}
                     />
                     <Textarea
-                        label="Mesures complémentaires nécessaires"
-                        placeholder="Mesures à mettre en place pour réduire le risque résiduel"
+                        label={t('assessmentTab.additionalControlLabel')}
+                        placeholder={t('assessmentTab.additionalControlPlaceholder')}
                         minRows={3}
                         autosize
                         size="sm"
                         {...form.getInputProps('additionalControl')}
                     />
                     <Textarea
-                        label="Mesures préventives"
-                        placeholder="Actions de prévention à engager (formation, signalisation, maintenance…)"
+                        label={t('assessmentTab.preventiveLabel')}
+                        placeholder={t('assessmentTab.preventivePlaceholder')}
                         minRows={3}
                         autosize
                         size="sm"
                         {...form.getInputProps('preventiveMeasures')}
                     />
                     <Textarea
-                        label="Mesures d'amélioration"
-                        placeholder="Améliorations du dispositif de maîtrise existant"
+                        label={t('assessmentTab.improvementsLabel')}
+                        placeholder={t('assessmentTab.improvementsPlaceholder')}
                         minRows={3}
                         autosize
                         size="sm"
                         {...form.getInputProps('improvementsMeasures')}
                     />
                     <Textarea
-                        label="Commentaires"
-                        placeholder="Validations, points de vigilance, suites à donner"
+                        label={t('assessmentTab.commentsLabel')}
+                        placeholder={t('assessmentTab.commentsPlaceholder')}
                         minRows={2}
                         autosize
                         size="sm"
@@ -265,7 +252,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
 
                 <div className="flex justify-end gap-2">
                     <Button variant="default" size="sm" type="button" disabled={submitting} onClick={onCancel}>
-                        Annuler
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         type="submit"
@@ -274,15 +261,15 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         loading={submitting}
                         leftSection={<IconDeviceFloppy size={15} />}
                     >
-                        Enregistrer l'évaluation
+                        {t('assessmentTab.saveAssessment')}
                     </Button>
                 </div>
             </form>
 
             {/* Aide-mémoire de cotation */}
-            <aside className="flex flex-col gap-3" aria-label="Aide à l'évaluation">
-                {GUIDE_BLOCKS.map((block) => (
-                    <div key={block.title} className={`rounded-xl border p-3 ${block.accent}`}>
+            <aside className="flex flex-col gap-3" aria-label={t('assessmentTab.guideAria')}>
+                {guideBlocks.map((block) => (
+                    <div key={block.key} className={`rounded-xl border p-3 ${block.accent}`}>
                         <h4
                             className="text-slate-800 mb-1.5"
                             style={{

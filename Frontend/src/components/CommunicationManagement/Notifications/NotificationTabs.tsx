@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Tabs } from '@mantine/core';
 import { IconBell, IconInfoCircle, IconSend, IconUsers } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { SkeletonTable } from '../../UtilityComp/LoadingSkeleton';
@@ -22,6 +23,10 @@ import { notifStatusConfig } from '../communicationLabels';
 const NotificationTabs = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
 
     const [notification, setNotification] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,7 +41,7 @@ const NotificationTabs = () => {
                 setNotification(found ?? null);
             })
             .catch((error: any) => {
-                errorNotification(error?.response?.data?.errorMessage || "La notification n'a pas pu être chargée");
+                errorNotification(error?.response?.data?.errorMessage || t('notificationsDetail.loadError'));
                 setNotification(null);
             })
             .finally(() => setLoading(false));
@@ -61,19 +66,19 @@ const NotificationTabs = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Centre de notifications', to: '/notifications' },
-                    { label: 'Détail de la notification' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.notificationsCenter'), to: '/notifications' },
+                    { label: t('notificationsDetail.breadcrumb') },
                 ]}
                 icon={<IconBell size={22} stroke={2} />}
                 iconColor="pink"
-                title={notification?.title || 'Détail de la notification'}
-                subtitle="Contenu de l'envoi, destinataires et état de livraison"
+                title={notification?.title || t('notificationsDetail.defaultTitle')}
+                subtitle={t('notificationsDetail.subtitle')}
                 badge={
                     statusCfg ? (
                         <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                            {statusCfg.label}
+                            {tNotifStatus(notification?.status)}
                         </span>
                     ) : undefined
                 }
@@ -85,7 +90,7 @@ const NotificationTabs = () => {
                             leftSection={<IconSend size={15} />}
                             onClick={() => navigate(`/communications/communications-details/${notification.communicationId}`)}
                         >
-                            Voir la communication
+                            {t('notificationsDetail.viewCommunication')}
                         </Button>
                     ) : undefined
                 }
@@ -99,12 +104,12 @@ const NotificationTabs = () => {
                 <div className="bg-white rounded-xl border border-slate-200 p-2">
                     <EmptyState
                         icon={<IconBell size={24} />}
-                        title="Notification introuvable"
-                        description="Cette notification n'existe pas ou n'est plus disponible dans le journal des envois."
+                        title={t('notificationsDetail.notFoundTitle')}
+                        description={t('notificationsDetail.notFoundDescription')}
                         compact
                         action={
                             <Button variant="default" size="xs" onClick={() => navigate('/notifications')}>
-                                Retour au centre de notifications
+                                {t('notificationsDetail.backToCenter')}
                             </Button>
                         }
                     />
@@ -113,13 +118,13 @@ const NotificationTabs = () => {
                 <Tabs defaultValue="details" color="teal">
                     <Tabs.List>
                         <Tabs.Tab value="details" leftSection={<IconInfoCircle size={15} />}>
-                            Détails
+                            {t('notificationsDetail.tabDetails')}
                         </Tabs.Tab>
                         <Tabs.Tab value="recipients" leftSection={<IconUsers size={15} />}>
-                            Destinataires
+                            {t('notificationsDetail.tabRecipients')}
                         </Tabs.Tab>
                         <Tabs.Tab value="delivery" leftSection={<IconSend size={15} />}>
-                            Livraison
+                            {t('notificationsDetail.tabDelivery')}
                         </Tabs.Tab>
                     </Tabs.List>
 

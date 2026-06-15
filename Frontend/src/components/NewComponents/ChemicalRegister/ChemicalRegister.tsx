@@ -19,6 +19,7 @@ import { ActionIcon, Button, Select, TextInput, Tooltip } from '@mantine/core';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import KpiTile from '../../UtilityComp/KpiTile';
 import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
@@ -55,6 +56,26 @@ const ALL = 'all';
 
 const ChemicalRegister = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('risk');
+    // Libellés bilingues : clé i18n d'abord, repli sur le libellé FR centralisé (chemicalLabels.ts).
+    const tStatusLabel = (status?: string | null): string => {
+        const cfg = riskStatusConfig(status);
+        return t(`status.${normalizeRiskStatus(status)}`, { defaultValue: cfg.label });
+    };
+    const tLevelLabel = (key?: string | null): string => {
+        const cfg = riskLevelFromKey(key);
+        return cfg ? t(`level.${riskMap[String(key)]?.level}`, { defaultValue: cfg.label }) : '';
+    };
+    const tClassLabel = (code?: string | null): string => {
+        const cfg = classificationConfig(code);
+        return cfg ? t(`chemical.classification.${code}`, { defaultValue: cfg.label }) : '';
+    };
+    const tHazardSource = (code?: string | null): string =>
+        code ? t(`chemical.hazardSource.${code}`, { defaultValue: hazardSourceLabel(code) }) : '—';
+    const tSeverity = (idx: number) => t(`severity.${idx + 1}`, { defaultValue: SEVERITY_LABELS_FR[idx] });
+    const tProbability = (idx: number) => t(`probability.${idx + 1}`, { defaultValue: PROBABILITY_LABELS_FR[idx] });
+    const levelOptions = RISK_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: t(`level.${o.value}`, { defaultValue: o.label }) }));
+    const statusOptions = RISK_STATUS_OPTIONS.map((o) => ({ value: o.value, label: t(`status.${o.value}`, { defaultValue: o.label }) }));
 
     const [risks, setRisks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -77,17 +98,17 @@ const ChemicalRegister = () => {
                 setDepartments(data);
             })
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments'));
             });
         GetAllWorkProcess({})
             .then((data) => setProcessMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses'));
             });
         getEmployeeDropdown()
             .then((data) => setEmpMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees'));
             });
     }, []);
 
@@ -96,7 +117,7 @@ const ChemicalRegister = () => {
         getAllChemicalRisks()
             .then((res) => setRisks(res ?? []))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement du registre chimique');
+                errorNotification(err.response?.data?.errorMessage || t('chemicalRegister.loadFailed'));
             })
             .finally(() => setLoading(false));
     }, []);
@@ -160,23 +181,35 @@ const ChemicalRegister = () => {
     }, [filteredRisks]);
 
     // ─── Export CSV ──────────────────────────────────────────────────────────
+    const tClassCsv = (code?: string | null): string => {
+        const cfg = classificationConfig(code);
+        return cfg ? `${cfg.sgh} · ${tClassLabel(code)}` : (code ? classificationLabel(code) : '—');
+    };
+
     const exportCsv = () => {
         const headers = [
-            'Produit', 'N° CAS', 'Classification SGH', 'Source de danger', 'Département',
-            'Processus', 'Responsable', 'Niveau de risque', 'Statut',
+            t('chemicalRegister.csvCol.product'),
+            t('chemicalRegister.csvCol.cas'),
+            t('chemicalRegister.csvCol.classification'),
+            t('chemicalRegister.csvCol.hazardSource'),
+            t('chemicalRegister.csvCol.department'),
+            t('chemicalRegister.csvCol.process'),
+            t('chemicalRegister.csvCol.owner'),
+            t('chemicalRegister.csvCol.level'),
+            t('chemicalRegister.csvCol.status'),
         ];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = filteredRisks.map((row: any) =>
             [
                 row.chemicalName ?? row.title ?? '',
                 row.casNumber ?? '',
-                classificationLabel(row.classification),
-                hazardSourceLabel(row.hazardSource),
+                tClassCsv(row.classification),
+                tHazardSource(row.hazardSource),
                 row.departmentName,
                 row.processName,
                 row.ownerName,
-                riskLevelFromKey(row.riskLevel)?.label ?? '',
-                riskStatusConfig(row.status).label,
+                tLevelLabel(row.riskLevel),
+                tStatusLabel(row.status),
             ].map(escape).join(';')
         );
         const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
@@ -184,10 +217,10 @@ const ChemicalRegister = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `registre_chimique_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.download = `${t('chemicalRegister.csvFilename')}_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${filteredRisks.length} risque${filteredRisks.length > 1 ? 's' : ''} exporté${filteredRisks.length > 1 ? 's' : ''}`);
+        successNotification(t('common.exported', { count: filteredRisks.length }));
     };
 
     // ─── Rendus de colonnes ──────────────────────────────────────────────────
@@ -196,7 +229,7 @@ const ChemicalRegister = () => {
         <div className="min-w-0 max-w-md">
             <p className="text-[13px] text-slate-800 leading-snug">{row.chemicalName || row.title || '—'}</p>
             <p className="text-[11.5px] text-slate-500 mt-0.5 truncate">
-                {[row.casNumber ? `CAS ${row.casNumber}` : null, hazardSourceLabel(row.hazardSource) !== '—' ? hazardSourceLabel(row.hazardSource) : null]
+                {[row.casNumber ? `CAS ${row.casNumber}` : null, tHazardSource(row.hazardSource) !== '—' ? tHazardSource(row.hazardSource) : null]
                     .filter(Boolean)
                     .join(' · ') || row.title}
             </p>
@@ -209,7 +242,7 @@ const ChemicalRegister = () => {
         return (
             <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
                 <span className="font-medium">{cfg.sgh}</span>
-                {cfg.label}
+                {tClassLabel(row.classification)}
             </span>
         );
     };
@@ -219,7 +252,7 @@ const ChemicalRegister = () => {
         if (!cfg) return <span className="text-[12.5px] text-slate-400">—</span>;
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tLevelLabel(row.riskLevel)}
             </span>
         );
     };
@@ -228,31 +261,31 @@ const ChemicalRegister = () => {
         const cfg = riskStatusConfig(row.status);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tStatusLabel(row.status)}
             </span>
         );
     };
 
     const actionsBody = (row: any) => (
         <div className="flex gap-1.5 justify-center">
-            <Tooltip label="Consulter le détail" withArrow>
+            <Tooltip label={t('common.viewDetail')} withArrow>
                 <ActionIcon
                     color="violet"
                     variant="light"
                     size="sm"
                     onClick={() => navigate(`chemicalRegister-details/${row.id}`)}
-                    aria-label="Consulter le détail du risque"
+                    aria-label={t('common.viewRiskDetail')}
                 >
                     <IconEye size={14} stroke={1.5} />
                 </ActionIcon>
             </Tooltip>
-            <Tooltip label="Modifier le risque" withArrow>
+            <Tooltip label={t('common.editRisk')} withArrow>
                 <ActionIcon
                     color="blue"
                     variant="light"
                     size="sm"
                     onClick={() => navigate(`edit/${row.id}`)}
-                    aria-label="Modifier le risque"
+                    aria-label={t('common.editRisk')}
                 >
                     <IconEdit size={14} stroke={1.5} />
                 </ActionIcon>
@@ -274,17 +307,17 @@ const ChemicalRegister = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: 'Registre chimique' },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('chemicalRegister.breadcrumb') },
                 ]}
                 icon={<IconFlask2 size={22} stroke={2} />}
                 iconColor="violet"
-                title="Registre chimique"
-                subtitle="Inventaire des produits chimiques et évaluation des risques associés, selon la classification SGH"
+                title={t('chemicalRegister.title')}
+                subtitle={t('chemicalRegister.subtitle')}
                 actions={
                     <Button size="sm" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
-                        Nouveau risque chimique
+                        {t('chemicalRegister.newChemicalRisk')}
                     </Button>
                 }
             />
@@ -292,26 +325,26 @@ const ChemicalRegister = () => {
             {/* KPI */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Produits référencés"
+                    label={t('chemicalRegister.kpiTotal')}
                     value={loading ? '…' : kpis.total}
                     tone="violet"
                     icon={<IconFlask2 size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Risques élevés ou critiques"
+                    label={t('chemicalRegister.kpiHigh')}
                     value={loading ? '…' : kpis.highCount}
                     tone="rose"
                     icon={<IconAlertTriangle size={14} stroke={1.8} />}
-                    referenceValue="Niveaux élevé et critique"
+                    referenceValue={t('chemicalRegister.kpiHighReference')}
                 />
                 <KpiTile
-                    label="En traitement"
+                    label={t('chemicalRegister.kpiInProgress')}
                     value={loading ? '…' : kpis.inProgress}
                     tone="amber"
                     icon={<IconClock size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Clôturés"
+                    label={t('chemicalRegister.kpiClosed')}
                     value={loading ? '…' : kpis.closed}
                     tone="green"
                     icon={<IconCircleCheck size={14} stroke={1.8} />}
@@ -324,8 +357,8 @@ const ChemicalRegister = () => {
                     value={activeTab}
                     onChange={setActiveTab}
                     options={[
-                        { value: 'DASHBOARD', label: 'Synthèse', color: 'violet' },
-                        { value: 'RISKS', label: 'Registre', count: risks.length, color: 'violet' },
+                        { value: 'DASHBOARD', label: t('chemicalRegister.tabDashboard'), color: 'violet' },
+                        { value: 'RISKS', label: t('chemicalRegister.tabRisks'), count: risks.length, color: 'violet' },
                     ]}
                 />
             </div>
@@ -336,10 +369,10 @@ const ChemicalRegister = () => {
                         className="text-slate-800 mb-1"
                         style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14.5px', fontWeight: 600 }}
                     >
-                        Matrice probabilité × gravité
+                        {t('chemicalRegister.matrixTitle')}
                     </h2>
                     <p className="text-[11.5px] text-slate-500 mb-3">
-                        Chaque cellule indique le nombre de risques chimiques positionnés sur la combinaison correspondante.
+                        {t('chemicalRegister.matrixSubtitle')}
                     </p>
 
                     {loading ? (
@@ -354,14 +387,14 @@ const ChemicalRegister = () => {
                                 <thead>
                                     <tr>
                                         <th className="p-2 bg-slate-50 border border-slate-200 text-left text-[12px] font-medium text-slate-600">
-                                            Probabilité ↓ / Gravité →
+                                            {t('chemicalRegister.matrixHeader')}
                                         </th>
-                                        {SEVERITY_LABELS_FR.map((severity) => (
+                                        {SEVERITY_LABELS_FR.map((severity, sIdx) => (
                                             <th
                                                 key={severity}
                                                 className="p-2 bg-slate-50 border border-slate-200 text-center text-[12px] font-medium text-slate-600 min-w-24"
                                             >
-                                                {severity}
+                                                {tSeverity(sIdx)}
                                             </th>
                                         ))}
                                     </tr>
@@ -370,7 +403,7 @@ const ChemicalRegister = () => {
                                     {PROBABILITY_LABELS_FR.map((probability, pIdx) => (
                                         <tr key={probability}>
                                             <td className="p-2 bg-slate-50 border border-slate-200 text-[12px] text-slate-600 min-w-28">
-                                                {probability}
+                                                {tProbability(pIdx)}
                                             </td>
                                             {SEVERITY_LABELS_FR.map((_s, gIdx) => {
                                                 const level = MATRIX_LEVEL_GRID[pIdx][gIdx];
@@ -382,7 +415,7 @@ const ChemicalRegister = () => {
                                                         className={`p-1.5 border border-slate-200 text-center h-11 ${cfg?.cell ?? 'bg-slate-50 text-slate-600'}`}
                                                     >
                                                         <div className="text-[10px] uppercase tracking-wider leading-none mb-1 opacity-80">
-                                                            {cfg?.label ?? level}
+                                                            {cfg ? t(`level.${level}`, { defaultValue: cfg.label }) : level}
                                                         </div>
                                                         <div className="text-[14px] leading-none font-medium tabular-nums">{count}</div>
                                                     </td>
@@ -403,7 +436,7 @@ const ChemicalRegister = () => {
                     <div className="bg-white rounded-xl border border-slate-200 p-3">
                         <div className="flex flex-wrap items-center gap-2">
                             <TextInput
-                                placeholder="Rechercher un produit, un n° CAS, un responsable…"
+                                placeholder={t('chemicalRegister.searchPlaceholder')}
                                 leftSection={<IconSearch size={14} />}
                                 value={search}
                                 onChange={(e) => setSearch(e.currentTarget.value)}
@@ -411,33 +444,33 @@ const ChemicalRegister = () => {
                                 className="flex-1 min-w-[220px]"
                             />
                             <Select
-                                data={[{ value: ALL, label: 'Tous statuts' }, ...RISK_STATUS_OPTIONS]}
+                                data={[{ value: ALL, label: t('common.allStatuses') }, ...statusOptions]}
                                 value={statusFilter}
                                 onChange={(v) => setStatusFilter(v ?? ALL)}
                                 size="xs"
                                 w={150}
-                                aria-label="Filtrer par statut"
+                                aria-label={t('common.filterByStatus')}
                             />
                             <Select
                                 data={[
-                                    { value: ALL, label: 'Tous départements' },
+                                    { value: ALL, label: t('common.allDepartments') },
                                     ...departments.map((dept) => ({ label: dept.name, value: String(dept.id) })),
                                 ]}
                                 value={departmentFilter}
                                 onChange={(v) => setDepartmentFilter(v ?? ALL)}
                                 size="xs"
                                 w={180}
-                                aria-label="Filtrer par département"
+                                aria-label={t('common.filterByDepartment')}
                             />
                             <Select
-                                data={RISK_LEVEL_OPTIONS}
+                                data={levelOptions}
                                 value={riskLevelFilter}
                                 onChange={setRiskLevelFilter}
-                                placeholder="Niveau de risque"
+                                placeholder={t('common.riskLevelPlaceholder')}
                                 size="xs"
                                 w={170}
                                 clearable
-                                aria-label="Filtrer par niveau de risque"
+                                aria-label={t('common.filterByRiskLevel')}
                             />
                             <div className="flex items-center gap-2 ml-auto">
                                 <Button
@@ -447,27 +480,27 @@ const ChemicalRegister = () => {
                                     onClick={exportCsv}
                                     disabled={!filteredRisks.length}
                                 >
-                                    Exporter CSV
+                                    {t('common.exportCsv')}
                                 </Button>
                                 <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
-                                    <Tooltip label="Vue tableau" withArrow>
+                                    <Tooltip label={t('common.tableView')} withArrow>
                                         <ActionIcon
                                             variant={viewType === 'table' ? 'filled' : 'subtle'}
                                             color="violet"
                                             size="sm"
                                             onClick={() => setViewType('table')}
-                                            aria-label="Afficher en tableau"
+                                            aria-label={t('common.showAsTable')}
                                         >
                                             <IconLayoutList size={15} />
                                         </ActionIcon>
                                     </Tooltip>
-                                    <Tooltip label="Vue cartes" withArrow>
+                                    <Tooltip label={t('common.cardView')} withArrow>
                                         <ActionIcon
                                             variant={viewType === 'card' ? 'filled' : 'subtle'}
                                             color="violet"
                                             size="sm"
                                             onClick={() => setViewType('card')}
-                                            aria-label="Afficher en cartes"
+                                            aria-label={t('common.showAsCards')}
                                         >
                                             <IconLayoutGrid size={15} />
                                         </ActionIcon>
@@ -477,8 +510,8 @@ const ChemicalRegister = () => {
                         </div>
                         <p className="text-[11.5px] text-slate-500 mt-2">
                             {loading
-                                ? 'Chargement du registre…'
-                                : `${filteredRisks.length} risque${filteredRisks.length > 1 ? 's' : ''} affiché${filteredRisks.length > 1 ? 's' : ''} sur ${risks.length}`}
+                                ? t('common.loadingRegister')
+                                : t('common.displayedOf', { count: filteredRisks.length, total: risks.length })}
                         </p>
                     </div>
 
@@ -493,21 +526,21 @@ const ChemicalRegister = () => {
                         ) : !filteredRisks.length ? (
                             <EmptyState
                                 icon={<IconFlask2 size={24} />}
-                                title={hasActiveFilters ? 'Aucun risque ne correspond aux filtres' : 'Aucun risque chimique enregistré'}
+                                title={hasActiveFilters ? t('common.noMatchTitle') : t('chemicalRegister.emptyTitle')}
                                 description={
                                     hasActiveFilters
-                                        ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.'
-                                        : 'Identifiez le premier produit chimique à risque manipulé sur le site.'
+                                        ? t('common.broadenSearch')
+                                        : t('chemicalRegister.emptyDescription')
                                 }
                                 compact
                                 action={
                                     hasActiveFilters ? (
                                         <Button variant="default" size="xs" onClick={resetFilters}>
-                                            Réinitialiser les filtres
+                                            {t('common.resetFilters')}
                                         </Button>
                                     ) : (
                                         <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('create-chemical')}>
-                                            Nouveau risque chimique
+                                            {t('chemicalRegister.newChemicalRisk')}
                                         </Button>
                                     )
                                 }
@@ -524,27 +557,27 @@ const ChemicalRegister = () => {
                                 dataKey="id"
                                 className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                                currentPageReportTemplate={t('common.currentPageReport', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })}
                             >
-                                <Column header="Produit / risque" body={productBody} sortable sortField="chemicalName" />
-                                <Column header="Classification" body={classificationBody} sortable sortField="classification" style={{ width: '13rem' }} />
+                                <Column header={t('chemicalRegister.col.product')} body={productBody} sortable sortField="chemicalName" />
+                                <Column header={t('chemicalRegister.col.classification')} body={classificationBody} sortable sortField="classification" style={{ width: '13rem' }} />
                                 <Column
-                                    header="Département"
+                                    header={t('chemicalRegister.col.department')}
                                     body={(row) => <span className="text-[12.5px] text-slate-600">{row.departmentName}</span>}
                                     sortable
                                     sortField="departmentName"
                                     style={{ width: '10rem' }}
                                 />
                                 <Column
-                                    header="Responsable"
+                                    header={t('chemicalRegister.col.owner')}
                                     body={(row) => <span className="text-[12.5px] text-slate-600">{row.ownerName}</span>}
                                     sortable
                                     sortField="ownerName"
                                     style={{ width: '10rem' }}
                                 />
-                                <Column header="Niveau" body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
-                                <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
-                                <Column header="Actions" body={actionsBody} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                                <Column header={t('chemicalRegister.col.level')} body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
+                                <Column header={t('chemicalRegister.col.status')} body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                                <Column header={t('chemicalRegister.col.actions')} body={actionsBody} headerStyle={{ width: '6rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                             </DataTable>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
@@ -558,13 +591,13 @@ const ChemicalRegister = () => {
                                                 {classCfg ? (
                                                     <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${classCfg.chip}`}>
                                                         <span className="font-medium">{classCfg.sgh}</span>
-                                                        {classCfg.label}
+                                                        {tClassLabel(risk.classification)}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-[11px] text-slate-400">Classification non renseignée</span>
+                                                    <span className="text-[11px] text-slate-400">{t('chemicalRegister.classificationNotSet')}</span>
                                                 )}
                                                 <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                                    {statusCfg.label}
+                                                    {tStatusLabel(risk.status)}
                                                 </span>
                                             </div>
                                             <p className="text-[13px] text-slate-800 leading-snug">{risk.chemicalName || risk.title}</p>
@@ -574,37 +607,37 @@ const ChemicalRegister = () => {
                                             <dl className="text-[11.5px] text-slate-500 space-y-1 mt-1">
                                                 {risk.casNumber && (
                                                     <div className="flex justify-between gap-2">
-                                                        <dt>N° CAS</dt>
+                                                        <dt>{t('chemicalRegister.col.cas')}</dt>
                                                         <dd className="text-slate-700">{risk.casNumber}</dd>
                                                     </div>
                                                 )}
                                                 <div className="flex justify-between gap-2">
-                                                    <dt>Responsable</dt>
+                                                    <dt>{t('common.owner')}</dt>
                                                     <dd className="text-slate-700">{risk.ownerName}</dd>
                                                 </div>
                                                 <div className="flex justify-between gap-2">
-                                                    <dt>Département</dt>
+                                                    <dt>{t('common.department')}</dt>
                                                     <dd className="text-slate-700">{risk.departmentName}</dd>
                                                 </div>
                                                 <div className="flex justify-between gap-2 items-center">
-                                                    <dt>Niveau de risque</dt>
+                                                    <dt>{t('common.riskLevel')}</dt>
                                                     <dd>
                                                         {levelCfg ? (
                                                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] uppercase tracking-wider ${levelCfg.chip}`}>
-                                                                {levelCfg.label}
+                                                                {tLevelLabel(risk.riskLevel)}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-slate-400">Non évalué</span>
+                                                            <span className="text-slate-400">{t('common.notAssessed')}</span>
                                                         )}
                                                     </dd>
                                                 </div>
                                             </dl>
                                             <div className="flex justify-end gap-2 mt-auto pt-2 border-t border-slate-100">
                                                 <Button size="compact-xs" variant="default" onClick={() => navigate(`chemicalRegister-details/${risk.id}`)}>
-                                                    Détail
+                                                    {t('common.detail')}
                                                 </Button>
                                                 <Button size="compact-xs" variant="light" color="violet" onClick={() => navigate(`edit/${risk.id}`)}>
-                                                    Modifier
+                                                    {t('common.edit')}
                                                 </Button>
                                             </div>
                                         </div>

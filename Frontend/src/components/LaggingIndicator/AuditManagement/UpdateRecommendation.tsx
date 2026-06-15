@@ -2,6 +2,7 @@ import { Button, Card, NumberInput, Select, Text, Progress, Badge, Group } from 
 import { IconClock, IconFileText, IconCalendar, IconBulb } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useForm } from "@mantine/form";
 import { createFollowup, getRecommendationById, getRecommendationFollowups } from "../../../services/AuditService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
@@ -15,6 +16,10 @@ import { REC_STATUS_OPTIONS, recStatusColor, recStatusLabel } from "./auditLabel
 const UpdateRecommendation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation('audits');
+  // Libellé de statut bilingue : clé i18n `audits:recStatus.*`, repli sur le libellé FR centralisé.
+  const tStatus = (code?: string | null): string =>
+    code ? t(`recStatus.${String(code).toUpperCase()}`, { defaultValue: recStatusLabel(code) }) : '—';
   const [followups, setFollowups] = useState<any[]>([]);
   const [rec, setRec] = useState<any>(null);
   // Track initial/previous for sync logic
@@ -30,8 +35,8 @@ const UpdateRecommendation = () => {
       comment: '',
     },
     validate: {
-      status: (v) => (v?.trim()?.length ? null : 'Le statut est requis'),
-      comment: (v) => (isValidRichText(v) ? null : 'Le commentaire est requis'),
+      status: (v) => (v?.trim()?.length ? null : t('recommendations.statusRequired')),
+      comment: (v) => (isValidRichText(v) ? null : t('recommendations.commentRequired')),
     }
   });
 
@@ -48,11 +53,11 @@ const UpdateRecommendation = () => {
         prevProgressRef.current = p;
         prevStatusRef.current = String(s || '').toUpperCase();
       })
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Échec du chargement de la recommandation'));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || t('recommendations.loadRecommendationFailed')));
 
     getRecommendationFollowups(id)
       .then(setFollowups)
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || "Échec du chargement de l'historique"));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || t('recommendations.loadHistoryFailed')));
   }, [id]);
 
   // Keep status/progress in sync like UpdateAdhocAction
@@ -100,24 +105,24 @@ const UpdateRecommendation = () => {
     const payload = { ...sanitized, recommendationId: id };
     createFollowup(payload)
       .then(() => {
-        successNotification('Recommandation mise à jour');
+        successNotification(t('recommendations.updatedToast'));
         navigate('/audit-recommendations');
       })
-      .catch((err) => errorNotification(err.response?.data?.errorMessage || 'La mise à jour a échoué'));
+      .catch((err) => errorNotification(err.response?.data?.errorMessage || t('recommendations.saveFailed')));
   };
 
   return (
     <div className="flex flex-col gap-5 w-full">
       <PageHeader
         breadcrumbs={[
-          { label: 'Accueil', to: '/' },
-          { label: 'Suivi des recommandations', to: '/audit-recommendations' },
-          { label: 'Mettre à jour' },
+          { label: t('recommendations.breadcrumbHome'), to: '/' },
+          { label: t('recommendations.breadcrumbTracking'), to: '/audit-recommendations' },
+          { label: t('recommendations.breadcrumbUpdate') },
         ]}
         icon={<IconBulb size={22} stroke={2} />}
         iconColor="indigo"
-        title="Mettre à jour la recommandation"
-        subtitle="Avancement, statut et commentaire de suivi"
+        title={t('recommendations.updateTitle')}
+        subtitle={t('recommendations.updateSubtitle')}
       />
 
       {/* LOT 40 P1: responsive grid breakpoints */}
@@ -131,8 +136,8 @@ const UpdateRecommendation = () => {
                 <div className="flex items-center gap-2">
                   <IconFileText className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-sm text-blue-900">Détail de la recommandation</p>
-                    <p className="text-xs text-blue-700">Relisez le contexte de la recommandation avant la mise à jour.</p>
+                    <p className="text-sm text-blue-900">{t('recommendations.detailBoxTitle')}</p>
+                    <p className="text-xs text-blue-700">{t('recommendations.detailBoxHint')}</p>
                   </div>
                 </div>
               </div>
@@ -143,7 +148,7 @@ const UpdateRecommendation = () => {
                 <div className="flex items-start gap-2">
                   <span className="p-1.5 rounded-md bg-cyan-50 text-cyan-600"><IconFileText size={16} /></span>
                   <div>
-                    <p className="text-xs tracking-wide text-gray-500">Titre</p>
+                    <p className="text-xs tracking-wide text-gray-500">{t('recommendations.fieldTitle')}</p>
                     <p className="text-sm text-gray-900">{rec?.title || '—'}</p>
                   </div>
                 </div>
@@ -152,11 +157,11 @@ const UpdateRecommendation = () => {
               {/* Stats row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> Échéance</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1 flex items-center gap-1"><IconCalendar size={14} /> {t('recommendations.colDeadline')}</p>
                   <p className="text-sm text-gray-900">{rec?.deadline ? formatDateShort(rec.deadline) : '—'}</p>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs tracking-wide text-gray-500 mb-1">Avancement actuel</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">{t('recommendations.currentProgress')}</p>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-900">{rec?.progress ?? 0}%</p>
                   </div>
@@ -165,16 +170,16 @@ const UpdateRecommendation = () => {
                   </div>
                 </div>
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs tracking-wide text-gray-500 mb-1">Statut actuel</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">{t('recommendations.currentStatus')}</p>
                   <Badge size="sm" radius="sm" variant="light" color={recStatusColor(rec?.status)}>
-                    <Group gap={4}><IconClock size={14} /> {recStatusLabel(rec?.status)}</Group>
+                    <Group gap={4}><IconClock size={14} /> {tStatus(rec?.status)}</Group>
                   </Badge>
                 </div>
               </div>
 
               {rec?.description && (
                 <div className="rounded-md border border-gray-200 p-3">
-                  <p className="text-xs tracking-wide text-gray-500 mb-1">Description</p>
+                  <p className="text-xs tracking-wide text-gray-500 mb-1">{t('recommendations.description')}</p>
                   {/* LOT 41 P0 XSS fix */}
                   <SafeHtml html={rec?.description} className="text-gray-700 text-sm" />
                 </div>
@@ -191,8 +196,8 @@ const UpdateRecommendation = () => {
               <div className="flex items-center gap-2">
                 <IconClock className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm text-blue-900">Mise à jour du statut</p>
-                  <p className="text-xs text-blue-700">Actualisez l'avancement et documentez le suivi.</p>
+                  <p className="text-sm text-blue-900">{t('recommendations.updateBoxTitle')}</p>
+                  <p className="text-xs text-blue-700">{t('recommendations.updateBoxHint')}</p>
                 </div>
               </div>
             </div>
@@ -202,22 +207,22 @@ const UpdateRecommendation = () => {
           {cannotUpdate ? (
             <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
               {isCompleted && (
-                <Text c="green">Cette recommandation est déjà terminée (100 % ou statut Terminée). Aucune mise à jour supplémentaire n'est possible.</Text>
+                <Text c="green">{t('recommendations.alreadyCompleted')}</Text>
               )}
               {isPending && (
-                <Text c="yellow">Cette recommandation est en attente. La mise à jour sera possible une fois le traitement démarré.</Text>
+                <Text c="yellow">{t('recommendations.pendingNotice')}</Text>
               )}
             </Card>
           ) : (
             <form className="space-y-3" onSubmit={form.onSubmit(handleSubmit)}>
               <div className="grid grid-cols-2 gap-3">
-                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Avancement (%)" max={100} clampBehavior="blur" min={rec?.progress ?? 0} />
-                <Select size="sm" disabled={cannotUpdate} {...form.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={REC_STATUS_OPTIONS.slice(REC_STATUS_OPTIONS.findIndex((x) => x.value === (followups?.length > 0 ? followups[followups.length - 1]?.status : rec?.status)))} />
+                <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label={t('recommendations.progressLabel')} max={100} clampBehavior="blur" min={rec?.progress ?? 0} />
+                <Select size="sm" disabled={cannotUpdate} {...form.getInputProps('status')} label={t('recommendations.statusLabel')} placeholder={t('recommendations.selectStatus')} data={REC_STATUS_OPTIONS.slice(REC_STATUS_OPTIONS.findIndex((x) => x.value === (followups?.length > 0 ? followups[followups.length - 1]?.status : rec?.status))).map((o) => ({ value: o.value, label: t(`recStatus.${o.value}`, { defaultValue: o.label }) }))} />
               </div>
-              <TextEditor form={form} id="comment" title="Commentaire" withAsterisk />
+              <TextEditor form={form} id="comment" title={t('recommendations.comment')} withAsterisk />
               <div className="flex gap-2 mt-2">
-                <Button variant="default" onClick={() => navigate('/audit-recommendations')}>Annuler</Button>
-                <Button type="submit" color="indigo">Enregistrer</Button>
+                <Button variant="default" onClick={() => navigate('/audit-recommendations')}>{t('recommendations.cancel')}</Button>
+                <Button type="submit" color="indigo">{t('recommendations.save')}</Button>
               </div>
             </form>
           )}
@@ -225,14 +230,14 @@ const UpdateRecommendation = () => {
 
         {/* Right Side: History */}
         <div className="col-span-1 self-start p-5 space-y-5 rounded-md border shadow-sm border-gray-200">
-          <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> Historique des suivis</p>
+          <p className="text-lg items-center mb-4 flex gap-1 text-amber-600"><IconClock /> {t('recommendations.followupsHistory')}</p>
           {followups.length === 0 && (
             <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-              <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> Conseils</h4>
+              <h4 className="text-sm text-blue-900 mb-2 flex items-center gap-1"><IconBulb size={16} /> {t('recommendations.tipsTitle')}</h4>
               <ul className="text-xs text-blue-700 space-y-1">
-                <li>• Actualisez l'avancement régulièrement</li>
-                <li>• Décrivez les obstacles rencontrés</li>
-                <li>• Informez le responsable des changements importants</li>
+                <li>• {t('recommendations.tip1')}</li>
+                <li>• {t('recommendations.tip2')}</li>
+                <li>• {t('recommendations.tip3')}</li>
               </ul>
             </div>
           )}
@@ -248,7 +253,7 @@ const UpdateRecommendation = () => {
                         <IconClock /> {formatDateShort(x.followupDate)}
                       </p>
                     </div>
-                    <Badge radius="sm" variant="outline" color={recStatusColor(x.status)}>{recStatusLabel(x.status)}</Badge>
+                    <Badge radius="sm" variant="outline" color={recStatusColor(x.status)}>{tStatus(x.status)}</Badge>
                   </div>
                   <Progress.Root size={20}>
                     <Progress.Section value={previous} color="blue">
@@ -261,7 +266,7 @@ const UpdateRecommendation = () => {
                     )}
                   </Progress.Root>
                   <div className="bg-blue-50 shadow-sm rounded-lg p-2">
-                    <p className="text-blue-400">Détail du suivi</p>
+                    <p className="text-blue-400">{t('recommendations.followupDetail')}</p>
                     {/* LOT 41 P0 XSS fix */}
                     <SafeHtml html={x.comment || '-'} className="text-gray-700 mt-1 text-sm" />
                   </div>

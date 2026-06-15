@@ -4,6 +4,7 @@ import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     IconAlertTriangle,
     IconBuildingFactory2,
@@ -83,6 +84,16 @@ const CAS_REGEX = /^\d{2,7}-\d{2}-\d$/;
 const RiskIdentification = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('risk');
+    // Options SGH / sources de danger traduites (codes backend conservés).
+    const classificationOptions = CLASSIFICATION_OPTIONS.map((o) => ({
+        value: o.value,
+        label: `${classificationConfig(o.value)?.sgh ?? ''} · ${t(`chemical.classification.${o.value}`, { defaultValue: classificationConfig(o.value)?.label ?? o.label })}`,
+    }));
+    const hazardSourceOptions = HAZARD_SOURCE_OPTIONS.map((o) => ({
+        value: o.value,
+        label: t(`chemical.hazardSource.${o.value}`, { defaultValue: o.label }),
+    }));
     const [submitting, setSubmitting] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
@@ -91,13 +102,14 @@ const RiskIdentification = () => {
     useEffect(() => {
         getAllDepartments()
             .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments')));
         GetAllWorkProcess({})
             .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses')));
         getEmployeeDropdown()
             .then((data) => setEmps(data))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees')));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const form = useForm<ChemicalRiskFormValues>({
@@ -115,21 +127,21 @@ const RiskIdentification = () => {
             potentialConsequences: '',
         },
         validate: {
-            reviewDate: (value) => (value ? null : "La date d'identification est obligatoire"),
-            departmentId: (value) => (value ? null : 'Le département est obligatoire'),
-            workProcessId: (value) => (value ? null : 'Le processus de travail est obligatoire'),
-            ownerId: (value) => (value ? null : 'Le responsable du risque est obligatoire'),
-            chemicalName: (value) => (value.trim() ? null : 'Le nom du produit est obligatoire'),
+            reviewDate: (value) => (value ? null : t('chemicalForm.validate.identificationDate')),
+            departmentId: (value) => (value ? null : t('chemicalForm.validate.department')),
+            workProcessId: (value) => (value ? null : t('chemicalForm.validate.workProcess')),
+            ownerId: (value) => (value ? null : t('chemicalForm.validate.owner')),
+            chemicalName: (value) => (value.trim() ? null : t('chemicalForm.validate.chemicalName')),
             casNumber: (value) => {
                 const trimmed = value.trim();
-                if (!trimmed) return 'Le n° CAS est obligatoire';
-                return CAS_REGEX.test(trimmed) ? null : 'Format attendu : 7664-93-9';
+                if (!trimmed) return t('chemicalForm.validate.casRequired');
+                return CAS_REGEX.test(trimmed) ? null : t('chemicalForm.validate.casFormat');
             },
-            classification: (value) => (value ? null : 'La classification SGH est obligatoire'),
-            hazardSource: (value) => (value ? null : 'La source de danger est obligatoire'),
-            methodOfUse: (value) => (value.trim() ? null : "Le mode d'utilisation est obligatoire"),
-            description: (value) => (value.trim() ? null : 'La description du risque est obligatoire'),
-            potentialConsequences: (value) => (value.trim() ? null : 'Les conséquences potentielles sont obligatoires'),
+            classification: (value) => (value ? null : t('chemicalForm.validate.classification')),
+            hazardSource: (value) => (value ? null : t('chemicalForm.validate.hazardSource')),
+            methodOfUse: (value) => (value.trim() ? null : t('chemicalForm.validate.methodOfUse')),
+            description: (value) => (value.trim() ? null : t('chemicalForm.validate.description')),
+            potentialConsequences: (value) => (value.trim() ? null : t('chemicalForm.validate.consequences')),
         },
         validateInputOnBlur: true,
     });
@@ -159,11 +171,11 @@ const RiskIdentification = () => {
 
         createChemicalRisk(payload)
             .then(() => {
-                successNotification('Risque chimique enregistré au registre');
+                successNotification(t('chemicalForm.savedToast'));
                 navigate('/chemical-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -180,21 +192,21 @@ const RiskIdentification = () => {
                 <div className="xl:col-span-3 flex flex-col gap-4">
                     <SectionCard
                         icon={<IconBuildingFactory2 size={15} stroke={1.8} />}
-                        title="Contexte d'identification"
-                        subtitle="Où le produit est manipulé et qui répond du risque"
+                        title={t('chemicalForm.sectionContext')}
+                        subtitle={t('chemicalForm.sectionContextSub')}
                     >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <DateInput
-                                label="Date d'identification"
-                                placeholder="Choisir une date"
+                                label={t('chemicalForm.identificationDateLabel')}
+                                placeholder={t('chemicalForm.chooseDate')}
                                 withAsterisk
                                 size="sm"
                                 valueFormat="DD/MM/YYYY"
                                 {...form.getInputProps('reviewDate')}
                             />
                             <Select
-                                label="Département"
-                                placeholder="Choisir un département"
+                                label={t('chemicalForm.departmentLabel')}
+                                placeholder={t('common.chooseDepartment')}
                                 data={departments}
                                 withAsterisk
                                 size="sm"
@@ -202,8 +214,8 @@ const RiskIdentification = () => {
                                 {...form.getInputProps('departmentId')}
                             />
                             <Select
-                                label="Processus de travail"
-                                placeholder="Choisir un processus"
+                                label={t('chemicalForm.workProcessLabel')}
+                                placeholder={t('common.chooseProcess')}
                                 data={workProcesses}
                                 withAsterisk
                                 size="sm"
@@ -211,8 +223,8 @@ const RiskIdentification = () => {
                                 {...form.getInputProps('workProcessId')}
                             />
                             <Select
-                                label="Responsable du risque"
-                                placeholder="Choisir un responsable"
+                                label={t('chemicalForm.ownerLabel')}
+                                placeholder={t('common.chooseOwner')}
                                 data={emps.map((emp) => ({ value: String(emp.id), label: emp.name }))}
                                 withAsterisk
                                 size="sm"
@@ -224,28 +236,28 @@ const RiskIdentification = () => {
 
                     <SectionCard
                         icon={<IconFlask2 size={15} stroke={1.8} />}
-                        title="Produit chimique et danger"
-                        subtitle="Identification du produit telle qu'elle figure sur la fiche de données de sécurité"
+                        title={t('chemicalForm.sectionProduct')}
+                        subtitle={t('chemicalForm.sectionProductSub')}
                     >
                         <TextInput
-                            label="Nom du produit"
-                            placeholder="ex. Acide sulfurique 98 %"
+                            label={t('chemicalForm.productNameLabel')}
+                            placeholder={t('chemicalForm.productNamePlaceholder')}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('chemicalName')}
                         />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <TextInput
-                                label="N° CAS"
-                                placeholder="ex. 7664-93-9"
+                                label={t('chemicalForm.casLabel')}
+                                placeholder={t('chemicalForm.casPlaceholder')}
                                 withAsterisk
                                 size="sm"
                                 {...form.getInputProps('casNumber')}
                             />
                             <Select
-                                label="Classification SGH"
-                                placeholder="Choisir une classe de danger"
-                                data={CLASSIFICATION_OPTIONS}
+                                label={t('chemicalForm.classificationLabel')}
+                                placeholder={t('chemicalForm.classificationPlaceholder')}
+                                data={classificationOptions}
                                 withAsterisk
                                 size="sm"
                                 searchable
@@ -253,16 +265,16 @@ const RiskIdentification = () => {
                             />
                         </div>
                         <Select
-                            label="Source de danger"
-                            placeholder="Choisir la situation exposante"
-                            data={HAZARD_SOURCE_OPTIONS}
+                            label={t('chemicalForm.hazardSourceLabel')}
+                            placeholder={t('chemicalForm.hazardSourcePlaceholder')}
+                            data={hazardSourceOptions}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('hazardSource')}
                         />
                         <Textarea
-                            label="Mode d'utilisation"
-                            placeholder="ex. Dilution en cuve fermée pour le traitement du minerai, deux fois par poste"
+                            label={t('chemicalForm.methodOfUseLabel')}
+                            placeholder={t('chemicalForm.methodOfUsePlaceholder')}
                             minRows={3}
                             autosize
                             withAsterisk
@@ -273,12 +285,12 @@ const RiskIdentification = () => {
 
                     <SectionCard
                         icon={<IconAlertTriangle size={15} stroke={1.8} />}
-                        title="Description du risque"
-                        subtitle="Le scénario d'exposition et ses conséquences crédibles"
+                        title={t('chemicalForm.sectionDescription')}
+                        subtitle={t('chemicalForm.sectionDescriptionSub')}
                     >
                         <Textarea
-                            label="Description"
-                            placeholder="Qui est exposé, pendant quelle tâche et dans quelles conditions"
+                            label={t('chemicalForm.descriptionLabel')}
+                            placeholder={t('chemicalForm.descriptionPlaceholder')}
                             minRows={3}
                             autosize
                             withAsterisk
@@ -286,8 +298,8 @@ const RiskIdentification = () => {
                             {...form.getInputProps('description')}
                         />
                         <Textarea
-                            label="Conséquences potentielles"
-                            placeholder="Effets possibles sur la santé, la sécurité ou l'environnement"
+                            label={t('chemicalForm.consequencesLabel')}
+                            placeholder={t('chemicalForm.consequencesPlaceholder')}
                             minRows={3}
                             autosize
                             withAsterisk
@@ -304,7 +316,7 @@ const RiskIdentification = () => {
                             disabled={submitting}
                             onClick={() => navigate('/chemical-register')}
                         >
-                            Annuler
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="submit"
@@ -313,7 +325,7 @@ const RiskIdentification = () => {
                             loading={submitting}
                             leftSection={<IconDeviceFloppy size={15} />}
                         >
-                            Enregistrer le risque
+                            {t('chemicalForm.saveRisk')}
                         </Button>
                     </div>
                 </div>
@@ -324,10 +336,10 @@ const RiskIdentification = () => {
                         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                             <div className="px-4 py-2.5 bg-gradient-to-r from-violet-800 to-violet-600 flex items-center justify-between gap-2">
                                 <span className="text-[10px] uppercase tracking-[0.18em] text-violet-50">
-                                    Fiche risque chimique
+                                    {t('chemicalForm.cardEyebrow')}
                                 </span>
                                 <span className="text-[11px] font-mono bg-white/15 text-white rounded px-1.5 py-0.5">
-                                    {form.values.casNumber.trim() || 'CAS ···'}
+                                    {form.values.casNumber.trim() || t('chemicalForm.cardCasPlaceholder')}
                                 </span>
                             </div>
 
@@ -336,7 +348,7 @@ const RiskIdentification = () => {
                                     <div
                                         className={`absolute top-3 right-3 rotate-[-6deg] border-2 rounded px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] ${classCfg.chip}`}
                                         role="img"
-                                        aria-label={`Classification : ${classCfg.sgh} ${classCfg.label}`}
+                                        aria-label={t('chemicalForm.classificationAria', { sgh: classCfg.sgh, label: t(`chemical.classification.${form.values.classification}`, { defaultValue: classCfg.label }) })}
                                     >
                                         {classCfg.sgh}
                                     </div>
@@ -351,43 +363,43 @@ const RiskIdentification = () => {
                                         letterSpacing: '-0.01em',
                                     }}
                                 >
-                                    {form.values.chemicalName || 'Nom du produit chimique'}
+                                    {form.values.chemicalName || t('chemicalForm.cardProductPlaceholder')}
                                 </h4>
                                 <p className={`text-[12px] mt-1.5 leading-relaxed ${form.values.description ? 'text-slate-600' : 'text-slate-400 italic'}`}>
-                                    {form.values.description || "La description du risque apparaîtra ici, telle que les équipes HSE la liront."}
+                                    {form.values.description || t('chemicalForm.cardDescriptionPlaceholder')}
                                 </p>
 
                                 <dl className="mt-4 grid grid-cols-1 gap-2 text-[12px]">
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Classification</dt>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardClassification')}</dt>
                                         <dd className="text-slate-800">
-                                            {classCfg ? `${classCfg.sgh} · ${classCfg.label}` : '—'}
+                                            {classCfg ? `${classCfg.sgh} · ${t(`chemical.classification.${form.values.classification}`, { defaultValue: classCfg.label })}` : '—'}
                                         </dd>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Source de danger</dt>
-                                        <dd className="text-slate-800">{hazardSourceLabel(form.values.hazardSource)}</dd>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardHazardSource')}</dt>
+                                        <dd className="text-slate-800">{form.values.hazardSource ? t(`chemical.hazardSource.${form.values.hazardSource}`, { defaultValue: hazardSourceLabel(form.values.hazardSource) }) : '—'}</dd>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Département</dt>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardDepartment')}</dt>
                                         <dd className="text-slate-800">
                                             {departments.find((d) => d.value === form.values.departmentId)?.label ?? '—'}
                                         </dd>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Processus</dt>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardProcess')}</dt>
                                         <dd className="text-slate-800">
                                             {workProcesses.find((p) => p.value === form.values.workProcessId)?.label ?? '—'}
                                         </dd>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Responsable</dt>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardOwner')}</dt>
                                         <dd className="text-slate-800">
                                             {emps.find((e) => String(e.id) === form.values.ownerId)?.name ?? '—'}
                                         </dd>
                                     </div>
                                     <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                        <dt className="text-slate-500">Identifié le</dt>
+                                        <dt className="text-slate-500">{t('chemicalForm.cardIdentifiedOn')}</dt>
                                         <dd className="text-slate-800">{formatDateFr(form.values.reviewDate)}</dd>
                                     </div>
                                 </dl>
@@ -395,16 +407,14 @@ const RiskIdentification = () => {
 
                             <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
                                 <p className="text-[10.5px] text-slate-500">
-                                    ISO 45001 · 6.1.2 — Identification des dangers · Règlement CLP (SGH)
+                                    {t('chemicalForm.isoReference')}
                                 </p>
                             </div>
                         </div>
 
                         <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                             <p className="text-[11.5px] text-slate-600 leading-relaxed">
-                                Une fois le risque enregistré, réalisez une première évaluation
-                                (probabilité × gravité) depuis sa fiche détaillée pour le positionner
-                                sur la matrice.
+                                {t('chemicalForm.hint')}
                             </p>
                         </div>
                     </div>

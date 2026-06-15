@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
@@ -71,6 +72,7 @@ export const SectionCard = ({
 const RegisterForm = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('risk');
     const [submitting, setSubmitting] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
@@ -79,13 +81,14 @@ const RegisterForm = () => {
     useEffect(() => {
         getAllDepartments()
             .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments')));
         GetAllWorkProcess({})
             .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses')));
         getEmployeeDropdown()
             .then((data) => setEmps(data))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees')));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const form = useForm<RiskFormValues>({
@@ -99,12 +102,12 @@ const RegisterForm = () => {
             reviewDate: null,
         },
         validate: {
-            description: (value) => (value.trim() ? null : 'La description du risque est obligatoire'),
-            departmentId: (value) => (value ? null : 'Le département est obligatoire'),
-            workProcessId: (value) => (value ? null : 'Le processus de travail est obligatoire'),
-            hazardSource: (value) => (value.trim() ? null : 'La source de danger est obligatoire'),
-            potentialConsequences: (value) => (value.trim() ? null : 'Les conséquences potentielles sont obligatoires'),
-            ownerId: (value) => (value ? null : 'Le responsable du risque est obligatoire'),
+            description: (value) => (value.trim() ? null : t('registerForm.validate.description')),
+            departmentId: (value) => (value ? null : t('registerForm.validate.department')),
+            workProcessId: (value) => (value ? null : t('registerForm.validate.workProcess')),
+            hazardSource: (value) => (value.trim() ? null : t('registerForm.validate.hazardSource')),
+            potentialConsequences: (value) => (value.trim() ? null : t('registerForm.validate.consequences')),
+            ownerId: (value) => (value ? null : t('registerForm.validate.owner')),
         },
         validateInputOnBlur: true,
     });
@@ -129,11 +132,11 @@ const RegisterForm = () => {
         };
         createRisk(payload)
             .then(() => {
-                successNotification('Risque enregistré au registre');
+                successNotification(t('registerForm.savedToast'));
                 navigate('/risks-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -145,15 +148,15 @@ const RegisterForm = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: 'Registre des risques', to: '/risks-register' },
-                    { label: 'Nouveau risque' },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('register.breadcrumb'), to: '/risks-register' },
+                    { label: t('registerForm.breadcrumbNew') },
                 ]}
                 icon={<IconFileText size={22} stroke={2} />}
                 iconColor="red"
-                title="Identifier un risque"
-                subtitle="Décrire le scénario, la source de danger et le responsable du suivi"
+                title={t('registerForm.title')}
+                subtitle={t('registerForm.subtitle')}
             />
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -162,12 +165,12 @@ const RegisterForm = () => {
                     <div className="xl:col-span-3 flex flex-col gap-4">
                         <SectionCard
                             icon={<IconAlertTriangle size={15} stroke={1.8} />}
-                            title="Identification du risque"
-                            subtitle="Le scénario observé et ses conséquences crédibles"
+                            title={t('registerForm.sectionIdentification')}
+                            subtitle={t('registerForm.sectionIdentificationSub')}
                         >
                             <Textarea
-                                label="Description du risque"
-                                placeholder="Ce qui se produit ou pourrait se produire : conditions déclenchantes, lieux, équipements concernés"
+                                label={t('registerForm.descriptionLabel')}
+                                placeholder={t('registerForm.descriptionPlaceholder')}
                                 minRows={3}
                                 autosize
                                 withAsterisk
@@ -175,15 +178,15 @@ const RegisterForm = () => {
                                 {...form.getInputProps('description')}
                             />
                             <TextInput
-                                label="Source de danger"
-                                placeholder="ex. Circulation d'engins à proximité des piétons en zone de chargement"
+                                label={t('registerForm.hazardSourceLabel')}
+                                placeholder={t('registerForm.hazardSourcePlaceholder')}
                                 withAsterisk
                                 size="sm"
                                 {...form.getInputProps('hazardSource')}
                             />
                             <Textarea
-                                label="Conséquences potentielles"
-                                placeholder="Effets crédibles : blessure, arrêt d'exploitation, impact environnemental"
+                                label={t('registerForm.consequencesLabel')}
+                                placeholder={t('registerForm.consequencesPlaceholder')}
                                 minRows={2}
                                 autosize
                                 withAsterisk
@@ -194,13 +197,13 @@ const RegisterForm = () => {
 
                         <SectionCard
                             icon={<IconBuildingFactory2 size={15} stroke={1.8} />}
-                            title="Contexte et responsabilité"
-                            subtitle="Où le risque se situe et qui en assure le suivi"
+                            title={t('registerForm.sectionContext')}
+                            subtitle={t('registerForm.sectionContextSub')}
                         >
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Select
-                                    label="Département"
-                                    placeholder="Choisir un département"
+                                    label={t('registerForm.departmentLabel')}
+                                    placeholder={t('common.chooseDepartment')}
                                     data={departments}
                                     withAsterisk
                                     size="sm"
@@ -208,8 +211,8 @@ const RegisterForm = () => {
                                     {...form.getInputProps('departmentId')}
                                 />
                                 <Select
-                                    label="Processus de travail"
-                                    placeholder="Choisir un processus"
+                                    label={t('registerForm.workProcessLabel')}
+                                    placeholder={t('common.chooseProcess')}
                                     data={workProcesses}
                                     withAsterisk
                                     size="sm"
@@ -217,8 +220,8 @@ const RegisterForm = () => {
                                     {...form.getInputProps('workProcessId')}
                                 />
                                 <Select
-                                    label="Responsable du risque"
-                                    placeholder="Choisir un responsable"
+                                    label={t('registerForm.ownerLabel')}
+                                    placeholder={t('common.chooseOwner')}
                                     data={emps.map((emp) => ({ value: String(emp.id), label: emp.name }))}
                                     withAsterisk
                                     size="sm"
@@ -226,8 +229,8 @@ const RegisterForm = () => {
                                     {...form.getInputProps('ownerId')}
                                 />
                                 <DateInput
-                                    label="Date de revue"
-                                    placeholder="Prochaine revue du risque"
+                                    label={t('registerForm.reviewDateLabel')}
+                                    placeholder={t('registerForm.reviewDatePlaceholder')}
                                     minDate={new Date()}
                                     size="sm"
                                     valueFormat="DD/MM/YYYY"
@@ -245,7 +248,7 @@ const RegisterForm = () => {
                                 disabled={submitting}
                                 onClick={() => navigate('/risks-register')}
                             >
-                                Annuler
+                                {t('common.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -254,7 +257,7 @@ const RegisterForm = () => {
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
                             >
-                                Enregistrer le risque
+                                {t('registerForm.saveRisk')}
                             </Button>
                         </div>
                     </div>
@@ -265,10 +268,10 @@ const RegisterForm = () => {
                             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                 <div className="px-4 py-2.5 bg-gradient-to-r from-slate-800 to-slate-600 flex items-center justify-between gap-2">
                                     <span className="text-[10px] uppercase tracking-[0.18em] text-slate-100">
-                                        Fiche risque HSE
+                                        {t('registerForm.cardEyebrow')}
                                     </span>
                                     <span className="text-[11px] font-mono bg-white/15 text-white rounded px-1.5 py-0.5">
-                                        Statut : ouvert
+                                        {t('registerForm.cardStatusOpen')}
                                     </span>
                                 </div>
 
@@ -282,33 +285,33 @@ const RegisterForm = () => {
                                             letterSpacing: '-0.01em',
                                         }}
                                     >
-                                        {form.values.hazardSource || 'Source de danger'}
+                                        {form.values.hazardSource || t('registerForm.cardHazardPlaceholder')}
                                     </h4>
                                     <p className={`text-[12px] mt-1.5 leading-relaxed ${form.values.description ? 'text-slate-600' : 'text-slate-400 italic'}`}>
-                                        {form.values.description || 'La description saisie apparaîtra ici, telle que les équipes HSE la liront.'}
+                                        {form.values.description || t('registerForm.cardDescriptionPlaceholder')}
                                     </p>
 
                                     <dl className="mt-4 grid grid-cols-1 gap-2 text-[12px]">
                                         <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                            <dt className="text-slate-500">Département</dt>
+                                            <dt className="text-slate-500">{t('registerForm.cardDepartment')}</dt>
                                             <dd className="text-slate-800">
                                                 {departments.find((d) => d.value === form.values.departmentId)?.label ?? '—'}
                                             </dd>
                                         </div>
                                         <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                            <dt className="text-slate-500">Processus</dt>
+                                            <dt className="text-slate-500">{t('registerForm.cardProcess')}</dt>
                                             <dd className="text-slate-800">
                                                 {workProcesses.find((p) => p.value === form.values.workProcessId)?.label ?? '—'}
                                             </dd>
                                         </div>
                                         <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                            <dt className="text-slate-500">Responsable</dt>
+                                            <dt className="text-slate-500">{t('registerForm.cardOwner')}</dt>
                                             <dd className="text-slate-800">
                                                 {emps.find((e) => String(e.id) === form.values.ownerId)?.name ?? '—'}
                                             </dd>
                                         </div>
                                         <div className="flex items-center justify-between gap-3 py-1.5 border-t border-slate-100">
-                                            <dt className="text-slate-500">Prochaine revue</dt>
+                                            <dt className="text-slate-500">{t('registerForm.cardNextReview')}</dt>
                                             <dd className="text-slate-800">{formatDateFr(form.values.reviewDate)}</dd>
                                         </div>
                                     </dl>
@@ -316,16 +319,14 @@ const RegisterForm = () => {
 
                                 <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
                                     <p className="text-[10.5px] text-slate-500">
-                                        ISO 45001 · 6.1.2 — Identification des dangers et évaluation des risques
+                                        {t('registerForm.isoReference')}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                                 <p className="text-[11.5px] text-slate-600 leading-relaxed">
-                                    Une fois le risque enregistré, réalisez une première évaluation
-                                    (probabilité × gravité) depuis sa fiche détaillée pour le positionner
-                                    sur la matrice.
+                                    {t('registerForm.hint')}
                                 </p>
                             </div>
                         </div>

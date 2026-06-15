@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { IconChartBar } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import SummaryCards from './RiskOverview/SummaryCards';
 import Charts from './RiskOverview/Charts';
 import PageHeader from '../UtilityComp/PageHeader';
@@ -15,6 +16,13 @@ import { PROBABILITY_LABELS_FR, SEVERITY_LABELS_FR } from './riskLabels';
  * de danger et par département, matrice probabilité × gravité.
  */
 const RiskOverview: React.FC = () => {
+    const { t } = useTranslation('risk');
+    // Axes de la matrice : libellés API d'abord, repli sur les clés i18n indexées
+    // (qui retombent elles-mêmes sur le libellé FR centralisé de riskLabels.ts).
+    const tProbability = (idx: number): string =>
+        t(`probability.${idx + 1}`, { defaultValue: PROBABILITY_LABELS_FR[idx] });
+    const tSeverity = (idx: number): string =>
+        t(`severity.${idx + 1}`, { defaultValue: SEVERITY_LABELS_FR[idx] });
     const [loading, setLoading] = useState(true);
     const [overview, setOverview] = useState<RiskOverviewResponse | null>(null);
     const [departmentMap, setDepartmentMap] = useState<Record<string | number, any>>({});
@@ -23,7 +31,7 @@ const RiskOverview: React.FC = () => {
         getRiskOverview()
             .then(setOverview)
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Échec du chargement de la vue d'ensemble");
+                errorNotification(err.response?.data?.errorMessage || t('dashboard.loadFailed'));
             })
             .finally(() => setLoading(false));
 
@@ -40,8 +48,11 @@ const RiskOverview: React.FC = () => {
             });
     }, []);
 
-    const probabilityLabels = overview?.matrix?.probabilityLabels || PROBABILITY_LABELS_FR;
-    const severityLabels = overview?.matrix?.severityLabels || SEVERITY_LABELS_FR;
+    // Repli traduit (FR/EN) quand l'API ne fournit pas les axes ; sinon, libellés API conservés.
+    const fallbackProbabilityLabels = PROBABILITY_LABELS_FR.map((_l, idx) => tProbability(idx));
+    const fallbackSeverityLabels = SEVERITY_LABELS_FR.map((_l, idx) => tSeverity(idx));
+    const probabilityLabels = overview?.matrix?.probabilityLabels || fallbackProbabilityLabels;
+    const severityLabels = overview?.matrix?.severityLabels || fallbackSeverityLabels;
 
     // Donuts — palette cyclique sobre (les segments étaient sans couleur)
     const DONUT_PALETTE = ['#0F766E', '#D97706', '#7C3AED', '#0284C7', '#E11D48', '#475569', '#059669', '#C2410C'];
@@ -75,14 +86,14 @@ const RiskOverview: React.FC = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: "Vue d'ensemble" },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('dashboard.breadcrumb') },
                 ]}
                 icon={<IconChartBar size={22} stroke={2} />}
                 iconColor="red"
-                title="Vue d'ensemble des risques"
-                subtitle="Indicateurs, répartitions et matrice probabilité × gravité — cadre ISO 31000"
+                title={t('dashboard.title')}
+                subtitle={t('dashboard.subtitle')}
             />
 
             {loading ? (
@@ -91,8 +102,8 @@ const RiskOverview: React.FC = () => {
                 <>
                     <SummaryCards metrics={overview.metrics} />
                     <Charts
-                        leftDonutTitle="Répartition par source de danger"
-                        rightDonutTitle="Répartition par département"
+                        leftDonutTitle={t('dashboard.donutHazardTitle')}
+                        rightDonutTitle={t('dashboard.donutDepartmentTitle')}
                         leftDonutData={hazardDonut}
                         rightDonutData={departmentDonut}
                         matrixCounts={overview.matrix.counts}
@@ -105,8 +116,8 @@ const RiskOverview: React.FC = () => {
                 <div className="bg-white rounded-xl border border-slate-200">
                     <EmptyState
                         icon={<IconChartBar size={24} />}
-                        title="Aucune donnée de synthèse disponible"
-                        description="La vue d'ensemble s'alimente automatiquement dès que des risques sont enregistrés au registre."
+                        title={t('dashboard.emptyTitle')}
+                        description={t('dashboard.emptyDescription')}
                         compact
                     />
                 </div>

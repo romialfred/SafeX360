@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from '@mantine/core';
 import { BarChart, DonutChart } from '@mantine/charts';
+import { useTranslation } from 'react-i18next';
 import {
     MATRIX_LEVEL_GRID,
     PROBABILITY_LABELS_FR,
@@ -41,12 +42,13 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const DonutCard = ({ title, data }: { title: string; data: DonutDatum[] }) => {
+    const { t } = useTranslation('risk');
     const total = data.reduce((acc, d) => acc + (Number(d.value) || 0), 0);
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-4">
             <SectionTitle>{title}</SectionTitle>
             {data.length === 0 ? (
-                <p className="text-[12.5px] text-slate-500 py-6 text-center">Aucune donnée à représenter.</p>
+                <p className="text-[12.5px] text-slate-500 py-6 text-center">{t('dashboard.donutEmpty')}</p>
             ) : (
                 <div className="grid grid-cols-3 gap-2 items-center">
                     <div className="col-span-2 flex items-center justify-center">
@@ -90,6 +92,7 @@ const Charts: React.FC<ChartsProps> = ({
     severityLabels,
     frequencyChartData,
 }) => {
+    const { t } = useTranslation('risk');
     const leftColors = ['#0E7490', '#D97706', '#059669', '#7C3AED', '#0284C7'];
     const rightColors = ['#0284C7', '#0D9488', '#E11D48', '#7C3AED', '#CA8A04'];
     const coloredLeft = leftDonutData.map((d, idx) => ({ ...d, color: d.color || leftColors[idx % leftColors.length] }));
@@ -107,13 +110,13 @@ const Charts: React.FC<ChartsProps> = ({
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-4">
-                    <SectionTitle>Matrice probabilité × gravité</SectionTitle>
+                    <SectionTitle>{t('dashboard.matrixTitle')}</SectionTitle>
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse min-w-[640px]">
                             <thead>
                                 <tr>
                                     <th className="p-2 bg-slate-50 border border-slate-200 text-left text-[12px] font-medium text-slate-600 w-40">
-                                        Probabilité ↓ / Gravité →
+                                        {t('dashboard.matrixHeader')}
                                     </th>
                                     {sevLabels.map((severity) => (
                                         <th
@@ -141,7 +144,7 @@ const Charts: React.FC<ChartsProps> = ({
                                                     className={`p-1.5 border border-slate-200 text-center h-11 align-middle ${cfg?.cell ?? 'bg-slate-50 text-slate-600'}`}
                                                 >
                                                     <div className="text-[10px] uppercase tracking-wider leading-none mb-1 opacity-80">
-                                                        {cfg?.label ?? level}
+                                                        {t(`level.${level}`, { defaultValue: cfg?.label ?? level })}
                                                     </div>
                                                     <div className="text-[14px] leading-none font-medium tabular-nums">{count}</div>
                                                 </td>
@@ -153,17 +156,17 @@ const Charts: React.FC<ChartsProps> = ({
                         </table>
                     </div>
                     <p className="text-[11.5px] text-slate-500 mt-2 text-center">
-                        Chaque cellule indique le nombre de risques positionnés sur la combinaison correspondante.
+                        {t('dashboard.matrixCaption')}
                     </p>
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <SectionTitle>Fréquence par probabilité</SectionTitle>
+                    <SectionTitle>{t('dashboard.frequencyTitle')}</SectionTitle>
                     <BarChart
                         h={300}
                         data={frequencyChartData}
                         dataKey="probability"
-                        series={[{ name: 'count', label: 'Risques', color: '#0F766E' }]}
+                        series={[{ name: 'count', label: t('dashboard.frequencySeriesLabel'), color: '#0F766E' }]}
                         orientation="horizontal"
                         gridAxis="none"
                         withBarValueLabel

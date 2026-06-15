@@ -2,6 +2,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@mantine/core';
 import { IconArrowLeft, IconHistory, IconPackage, IconUserShield } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -22,6 +23,10 @@ import { assignmentStatusConfig, CHIP_BASE, formatDateFr, ppeCategoryLabel } fro
 const PPEEmployeeDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation('ppe');
+    // Libellé de statut d'affectation bilingue : clé i18n `ppe:assignmentStatus.*`, repli sur le libellé FR centralisé.
+    const tAssignmentStatus = (status?: string | null): string =>
+        t(`assignmentStatus.${(status ?? '').toUpperCase()}`, { defaultValue: assignmentStatusConfig(status).label });
     const [assignments, setAssignments] = useState<any[]>([]);
     const [emp, setEmp] = useState<any>({});
     const [ppeMap, setPpeMap] = useState<Record<string, any>>({});
@@ -41,14 +46,14 @@ const PPEEmployeeDetails = () => {
 
     const ppeNameBody = (row: any) => (
         <div className="min-w-0">
-            <p className="text-[13px] text-slate-800 leading-snug">{ppeMap[row.ppeId]?.name || `EPI #${row.ppeId}`}</p>
+            <p className="text-[13px] text-slate-800 leading-snug">{ppeMap[row.ppeId]?.name || t('employeeDetails.ppeFallback', { id: row.ppeId })}</p>
             <p className="text-[11.5px] text-slate-500 mt-0.5">{ppeCategoryLabel(ppeMap[row.ppeId]?.category)}</p>
         </div>
     );
 
     const statusBody = (row: any) => {
         const cfg = assignmentStatusConfig(row.status);
-        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tAssignmentStatus(row.status)}</span>;
     };
 
     const dateBody = (row: any) => (
@@ -76,11 +81,11 @@ const PPEEmployeeDetails = () => {
                 dataKey="id"
                 className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                currentPageReportTemplate={t('employeeDetails.currentPageReport')}
             >
-                <Column header="EPI" body={ppeNameBody} sortable sortField="ppeId" />
-                <Column header="Affecté le" body={dateBody} sortable sortField="date" style={{ width: '11rem' }} />
-                <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '9rem' }} />
+                <Column header={t('employeeDetails.colPpe')} body={ppeNameBody} sortable sortField="ppeId" />
+                <Column header={t('employeeDetails.colAssignedOn')} body={dateBody} sortable sortField="date" style={{ width: '11rem' }} />
+                <Column header={t('employeeDetails.colStatus')} body={statusBody} sortable sortField="status" style={{ width: '9rem' }} />
             </DataTable>
         );
 
@@ -88,17 +93,17 @@ const PPEEmployeeDetails = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI', to: '/ppe-management' },
-                    { label: 'Dotation employé' },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule'), to: '/ppe-management' },
+                    { label: t('employeeDetails.breadcrumb') },
                 ]}
                 icon={<IconUserShield size={22} stroke={2} />}
                 iconColor="amber"
-                title={emp?.name || 'Dotation EPI'}
-                subtitle="Équipements affectés et historique des dotations de l'employé"
+                title={emp?.name || t('employeeDetails.titleFallback')}
+                subtitle={t('employeeDetails.subtitle')}
                 actions={
                     <Button variant="default" size="sm" leftSection={<IconArrowLeft size={14} />} onClick={() => navigate(-1)}>
-                        Retour
+                        {t('common.back')}
                     </Button>
                 }
             />
@@ -118,7 +123,7 @@ const PPEEmployeeDetails = () => {
                                 }`}
                             >
                                 <IconPackage size={14} aria-hidden="true" />
-                                EPI affectés
+                                {t('employeeDetails.tabAssigned')}
                                 <span
                                     className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-[10px] ${
                                         activeTab === 'assignments' ? 'bg-white/20' : 'bg-slate-200 text-slate-600'
@@ -137,7 +142,7 @@ const PPEEmployeeDetails = () => {
                                 }`}
                             >
                                 <IconHistory size={14} aria-hidden="true" />
-                                Historique
+                                {t('employeeDetails.tabHistory')}
                                 <span
                                     className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-[10px] ${
                                         activeTab === 'history' ? 'bg-white/20' : 'bg-slate-200 text-slate-600'
@@ -151,13 +156,13 @@ const PPEEmployeeDetails = () => {
                     {activeTab === 'assignments'
                         ? renderTable(
                               activeAssignments,
-                              'Aucun EPI affecté',
-                              "Cet employé n'a pas de dotation EPI en cours. Les affectations apparaîtront ici."
+                              t('employeeDetails.emptyAssignedTitle'),
+                              t('employeeDetails.emptyAssignedDescription')
                           )
                         : renderTable(
                               assignments,
-                              'Aucun historique de dotation',
-                              "Aucune affectation d'EPI n'a encore été enregistrée pour cet employé."
+                              t('employeeDetails.emptyHistoryTitle'),
+                              t('employeeDetails.emptyHistoryDescription')
                           )}
                 </section>
 
@@ -168,24 +173,24 @@ const PPEEmployeeDetails = () => {
                             className="text-slate-800"
                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                         >
-                            Fiche employé
+                            {t('employeeDetails.cardEmployeeTitle')}
                         </h2>
                     </header>
                     <dl className="p-4 space-y-2.5 text-[12.5px]">
                         <div className="flex justify-between gap-2">
-                            <dt className="text-slate-500">Département</dt>
+                            <dt className="text-slate-500">{t('employeeDetails.detailDepartment')}</dt>
                             <dd className="text-slate-800 text-right">{emp?.department || '—'}</dd>
                         </div>
                         <div className="flex justify-between gap-2">
-                            <dt className="text-slate-500">Poste</dt>
+                            <dt className="text-slate-500">{t('employeeDetails.detailPosition')}</dt>
                             <dd className="text-slate-800 text-right">{emp?.position || '—'}</dd>
                         </div>
                         <div className="flex justify-between gap-2">
-                            <dt className="text-slate-500">Courriel</dt>
+                            <dt className="text-slate-500">{t('employeeDetails.detailEmail')}</dt>
                             <dd className="text-slate-800 text-right break-all">{emp?.email || '—'}</dd>
                         </div>
                         <div className="flex justify-between gap-2 pt-2 border-t border-slate-100">
-                            <dt className="text-slate-500">Dotations en cours</dt>
+                            <dt className="text-slate-500">{t('employeeDetails.detailActiveAssignments')}</dt>
                             <dd className="text-slate-800 tabular-nums">{activeAssignments.length}</dd>
                         </div>
                     </dl>

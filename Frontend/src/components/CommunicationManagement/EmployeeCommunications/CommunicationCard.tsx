@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Badge, Button } from '@mantine/core';
 import { IconEye } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import {
     CATEGORY_COLORS,
     categoryLabel,
@@ -25,6 +26,17 @@ interface CommunicationCardProps {
 }
 
 const CommunicationCard = ({ communication, departmentName, onViewDetails, actions }: CommunicationCardProps) => {
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tCategory = (code?: string | null) => t(`category.${code ?? ''}`, { defaultValue: categoryLabel(code) });
+    const tScheduleType = (code?: string | null) =>
+        t(`scheduleType.${(code ?? '').toUpperCase()}`, { defaultValue: scheduleTypeLabel(code) });
+    const tCommStatus = (status?: string | null) =>
+        t(`commStatus.${(status ?? '').toUpperCase()}`, { defaultValue: commStatusConfig(status).label });
+    const tUrgency = (urgency?: string | null) =>
+        t(`urgency.${(urgency ?? '').toUpperCase()}`, { defaultValue: urgencyConfig(urgency).label });
+
     const statusCfg = commStatusConfig(communication?.status);
     const urgencyCfg = urgencyConfig(communication?.urgency);
     const departmentLabel = departmentName && departmentName !== '—' ? departmentName : null;
@@ -41,52 +53,52 @@ const CommunicationCard = ({ communication, departmentName, onViewDetails, actio
                         size="sm"
                         radius="sm"
                     >
-                        {categoryLabel(communication.category)}
+                        {tCategory(communication.category)}
                     </Badge>
                 )}
                 {isUrgentValue(communication?.urgency) && (
                     <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${urgencyCfg.chip}`}>
-                        {urgencyCfg.label}
+                        {tUrgency(communication?.urgency)}
                     </span>
                 )}
                 <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                    {statusCfg.label}
+                    {tCommStatus(communication?.status)}
                 </span>
             </div>
 
             <div className="min-w-0">
                 <p className="text-[13.5px] text-slate-800 leading-snug">{communication?.title}</p>
-                <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(communication?.type)}</p>
+                <p className="text-[11.5px] text-slate-500 mt-0.5">{tType(communication?.type)}</p>
             </div>
 
             <dl className="grid grid-cols-1 gap-1 text-[12px]">
                 {departmentLabel && (
                     <div className="flex justify-between gap-3">
-                        <dt className="text-slate-500">Département</dt>
+                        <dt className="text-slate-500">{t('card.department')}</dt>
                         <dd className="text-slate-700 text-right">{departmentLabel}</dd>
                     </div>
                 )}
                 {typeof recipientsCount === 'number' && (
                     <div className="flex justify-between gap-3">
-                        <dt className="text-slate-500">Destinataires</dt>
+                        <dt className="text-slate-500">{t('card.recipients')}</dt>
                         <dd className="text-slate-700 tabular-nums">{recipientsCount}</dd>
                     </div>
                 )}
                 {communication?.scheduleType && (
                     <div className="flex justify-between gap-3">
-                        <dt className="text-slate-500">Planification</dt>
-                        <dd className="text-slate-700 text-right">{scheduleTypeLabel(communication.scheduleType)}</dd>
+                        <dt className="text-slate-500">{t('card.schedule')}</dt>
+                        <dd className="text-slate-700 text-right">{tScheduleType(communication.scheduleType)}</dd>
                     </div>
                 )}
                 {communication?.nextRunAt && (
                     <div className="flex justify-between gap-3">
-                        <dt className="text-slate-500">Prochain envoi</dt>
+                        <dt className="text-slate-500">{t('card.nextRun')}</dt>
                         <dd className="text-slate-700 text-right">{formatDateFr(communication.nextRunAt)}</dd>
                     </div>
                 )}
                 {communication?.expiresAt && (
                     <div className="flex justify-between gap-3">
-                        <dt className="text-slate-500">Échéance</dt>
+                        <dt className="text-slate-500">{t('card.deadline')}</dt>
                         <dd className="text-slate-700 text-right">{formatDateFr(communication.expiresAt)}</dd>
                     </div>
                 )}
@@ -101,7 +113,7 @@ const CommunicationCard = ({ communication, departmentName, onViewDetails, actio
                     leftSection={<IconEye size={14} />}
                     onClick={onViewDetails}
                 >
-                    Voir le détail
+                    {t('card.viewDetails')}
                 </Button>
             </div>
         </div>

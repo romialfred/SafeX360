@@ -12,6 +12,7 @@ import {
     IconAlertTriangle,
 } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import PageHeader from '../UtilityComp/PageHeader';
@@ -56,6 +57,13 @@ const ALL = 'ALL';
 
 const NotificationsManagement = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
+    const tUrgency = (urgency?: string | null) =>
+        t(`urgency.${(urgency ?? '').toUpperCase()}`, { defaultValue: urgencyConfig(urgency).label });
     const [notificationsList, setNotificationsList] = useState<NotificationSummary[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [departmentMap, setDepartmentMap] = useState<Record<string, any>>({});
@@ -74,7 +82,7 @@ const NotificationsManagement = () => {
                 setNotificationsList(response ?? []);
             })
             .catch((error: any) => {
-                errorNotification(error?.response?.data?.errorMessage || 'Échec du chargement des notifications');
+                errorNotification(error?.response?.data?.errorMessage || t('notifications.loadError'));
             })
             .finally(() => setLoading(false));
     }, []);
@@ -101,31 +109,34 @@ const NotificationsManagement = () => {
             const hasDepartment = notification.departmentId !== null && notification.departmentId !== undefined;
             return {
                 ...notification,
-                departmentName: departmentName ?? (hasDepartment ? `Département ${notification.departmentId}` : undefined),
+                departmentName: departmentName ?? (hasDepartment ? t('notifications.departmentFallback', { id: notification.departmentId }) : undefined),
             };
         });
-    }, [notificationsList, resolveDepartmentName]);
+    }, [notificationsList, resolveDepartmentName, t]);
 
     // ─── Options de filtres dérivées des données ─────────────────────────────
 
     const typeOptions = useMemo(() => {
         const values = Array.from(new Set(enrichedNotifications.map((item) => item.type).filter(Boolean)));
-        const known = TYPE_OPTIONS.filter((opt) => values.includes(opt.value));
+        const known = TYPE_OPTIONS.filter((opt) => values.includes(opt.value)).map((opt) => ({ value: opt.value, label: tType(opt.value) }));
         const unknown = values
             .filter((value) => !TYPE_OPTIONS.some((opt) => opt.value === value))
-            .map((value) => ({ value: value!, label: typeLabel(value) }));
+            .map((value) => ({ value: value!, label: tType(value) }));
         return [...known, ...unknown];
-    }, [enrichedNotifications]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enrichedNotifications, t]);
 
     const statusOptions = useMemo(() => {
         const values = Array.from(new Set(enrichedNotifications.map((item) => item.status).filter(Boolean)));
-        return values.map((value) => ({ value, label: notifStatusConfig(value).label }));
-    }, [enrichedNotifications]);
+        return values.map((value) => ({ value, label: tNotifStatus(value) }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enrichedNotifications, t]);
 
     const urgencyOptions = useMemo(() => {
         const values = Array.from(new Set(enrichedNotifications.map((item) => item.urgency).filter(Boolean)));
-        return values.map((value) => ({ value: value!, label: urgencyConfig(value).label }));
-    }, [enrichedNotifications]);
+        return values.map((value) => ({ value: value!, label: tUrgency(value) }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enrichedNotifications, t]);
 
     const zoneOptions = useMemo(() => {
         const values = Array.from(new Set(enrichedNotifications.map((item) => item.zoneName).filter(Boolean)));
@@ -142,9 +153,9 @@ const NotificationsManagement = () => {
         );
         return values.map((value) => ({
             value: String(value),
-            label: resolveDepartmentName(value) ?? `Département ${value}`,
+            label: resolveDepartmentName(value) ?? t('notifications.departmentFallback', { id: value }),
         }));
-    }, [enrichedNotifications, resolveDepartmentName]);
+    }, [enrichedNotifications, resolveDepartmentName, t]);
 
     const filteredNotifications = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -192,9 +203,9 @@ const NotificationsManagement = () => {
 
     const resolveDescription = (rowData: NotificationSummary) => {
         if (isNotifFailure(rowData.status)) {
-            return rowData.responseMessage || "Erreur lors de l'envoi du message.";
+            return rowData.responseMessage || t('notifications.sendError');
         }
-        return rowData.responseMessage || 'Notification transmise.';
+        return rowData.responseMessage || t('notifications.transmitted');
     };
 
     const titleBody = (rowData: NotificationSummary) => {
@@ -207,11 +218,11 @@ const NotificationsManagement = () => {
                         to={`/communications/communications-details/${rowData.communicationId}`}
                         className="text-[13px] text-slate-800 leading-snug hover:text-teal-700 hover:underline"
                     >
-                        {rowData.title || `Notification n° ${rowData.id}`}
+                        {rowData.title || t('notifications.notificationNumber', { id: rowData.id })}
                     </Link>
                 ) : (
                     <p className="text-[13px] text-slate-800 leading-snug">
-                        {rowData.title || `Notification n° ${rowData.id}`}
+                        {rowData.title || t('notifications.notificationNumber', { id: rowData.id })}
                     </p>
                 )}
                 <p className={`text-[11.5px] mt-0.5 truncate ${failure ? 'text-rose-600' : 'text-slate-500'}`}>
@@ -225,7 +236,7 @@ const NotificationsManagement = () => {
         const cfg = notifStatusConfig(rowData.status);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tNotifStatus(rowData.status)}
             </span>
         );
     };
@@ -234,7 +245,7 @@ const NotificationsManagement = () => {
         const cfg = urgencyConfig(rowData.urgency);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tUrgency(rowData.urgency)}
             </span>
         );
     };
@@ -246,13 +257,13 @@ const NotificationsManagement = () => {
     };
 
     const actionsBody = (rowData: NotificationSummary) => (
-        <Tooltip label="Consulter la notification" withArrow>
+        <Tooltip label={t('notifications.viewNotification')} withArrow>
             <ActionIcon
                 variant="light"
                 size="sm"
                 color="teal"
                 onClick={() => navigate(`notifications-details/${rowData.id}`)}
-                aria-label="Consulter la notification"
+                aria-label={t('notifications.viewNotification')}
             >
                 <IconEye size={14} stroke={1.5} />
             </ActionIcon>
@@ -263,43 +274,43 @@ const NotificationsManagement = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Centre de notifications' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.notificationsCenter') },
                 ]}
                 icon={<IconBell size={22} stroke={2} />}
                 iconColor="pink"
-                title="Centre de notifications"
-                subtitle="Suivi des envois générés par les communications : livraison, urgence et destinataires"
+                title={t('notifications.title')}
+                subtitle={t('notifications.subtitle')}
             />
 
             {/* KPI des envois */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Total notifications"
+                    label={t('notifications.kpiTotal')}
                     value={loading ? '…' : counts.total}
                     tone="slate"
                     icon={<IconBell size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Envoyées"
+                    label={t('notifications.kpiSent')}
                     value={loading ? '…' : counts.delivered}
                     tone="green"
                     icon={<IconCircleCheck size={14} stroke={1.8} />}
-                    referenceValue={counts.successRate !== null ? `Taux de réussite : ${counts.successRate}%` : undefined}
+                    referenceValue={counts.successRate !== null ? t('notifications.kpiSuccessRate', { rate: counts.successRate }) : undefined}
                 />
                 <KpiTile
-                    label="En attente"
+                    label={t('notifications.kpiPending')}
                     value={loading ? '…' : counts.pending}
                     tone="violet"
                     icon={<IconHourglassHigh size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Échecs"
+                    label={t('notifications.kpiFailed')}
                     value={loading ? '…' : counts.failed}
                     tone="rose"
                     icon={<IconAlertTriangle size={14} stroke={1.8} />}
-                    referenceValue={counts.failed > 0 ? 'Envois à relancer' : 'Aucun échec enregistré'}
+                    referenceValue={counts.failed > 0 ? t('notifications.kpiFailedReferenceHas') : t('notifications.kpiFailedReferenceNone')}
                 />
             </div>
 
@@ -307,7 +318,7 @@ const NotificationsManagement = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <TextInput
-                        placeholder="Rechercher par titre, message ou zone…"
+                        placeholder={t('notifications.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={search}
                         onChange={(e) => setSearch(e.currentTarget.value)}
@@ -315,52 +326,52 @@ const NotificationsManagement = () => {
                         className="flex-1 min-w-[200px]"
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous types' }, ...typeOptions]}
+                        data={[{ value: ALL, label: t('notifications.allTypes') }, ...typeOptions]}
                         value={typeFilter}
                         onChange={(v) => setTypeFilter(v ?? ALL)}
                         size="xs"
                         w={165}
-                        aria-label="Filtrer par type"
+                        aria-label={t('notifications.filterByType')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous statuts' }, ...statusOptions]}
+                        data={[{ value: ALL, label: t('notifications.allStatuses') }, ...statusOptions]}
                         value={statusFilter}
                         onChange={(v) => setStatusFilter(v ?? ALL)}
                         size="xs"
                         w={140}
-                        aria-label="Filtrer par statut"
+                        aria-label={t('notifications.filterByStatus')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Toutes urgences' }, ...urgencyOptions]}
+                        data={[{ value: ALL, label: t('notifications.allUrgencies') }, ...urgencyOptions]}
                         value={urgencyFilter}
                         onChange={(v) => setUrgencyFilter(v ?? ALL)}
                         size="xs"
                         w={145}
-                        aria-label="Filtrer par urgence"
+                        aria-label={t('notifications.filterByUrgency')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Toutes zones' }, ...zoneOptions]}
+                        data={[{ value: ALL, label: t('notifications.allZones') }, ...zoneOptions]}
                         value={zoneFilter}
                         onChange={(v) => setZoneFilter(v ?? ALL)}
                         size="xs"
                         w={140}
                         searchable
-                        aria-label="Filtrer par zone"
+                        aria-label={t('notifications.filterByZone')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous départements' }, ...departmentOptions]}
+                        data={[{ value: ALL, label: t('notifications.allDepartments') }, ...departmentOptions]}
                         value={departmentFilter}
                         onChange={(v) => setDepartmentFilter(v ?? ALL)}
                         size="xs"
                         w={165}
                         searchable
-                        aria-label="Filtrer par département"
+                        aria-label={t('notifications.filterByDepartment')}
                     />
                 </div>
                 <p className="text-[11.5px] text-slate-500 mt-2">
                     {loading
-                        ? 'Chargement des notifications…'
-                        : `${filteredNotifications.length} notification${filteredNotifications.length > 1 ? 's' : ''} affichée${filteredNotifications.length > 1 ? 's' : ''} sur ${enrichedNotifications.length}`}
+                        ? t('notifications.loadingNotifications')
+                        : t('notifications.displayedCount', { count: filteredNotifications.length, total: enrichedNotifications.length })}
                 </p>
             </div>
 
@@ -375,8 +386,8 @@ const NotificationsManagement = () => {
                 ) : !filteredNotifications.length ? (
                     <EmptyState
                         icon={<IconBell size={24} />}
-                        title="Aucune notification trouvée"
-                        description="Aucun envoi ne correspond aux filtres sélectionnés. Les nouvelles notifications apparaîtront ici."
+                        title={t('notifications.emptyTitle')}
+                        description={t('notifications.emptyDescription')}
                         compact
                     />
                 ) : (
@@ -391,28 +402,28 @@ const NotificationsManagement = () => {
                         dataKey="id"
                         className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                        currentPageReportTemplate={t('notifications.paginatorReport')}
                     >
-                        <Column header="Notification" body={titleBody} sortable sortField="title" />
+                        <Column header={t('notifications.colNotification')} body={titleBody} sortable sortField="title" />
                         <Column
-                            header="Type"
+                            header={t('notifications.colType')}
                             body={(rowData: NotificationSummary) => (
-                                <span className="text-[12.5px] text-slate-600">{typeLabel(rowData.type)}</span>
+                                <span className="text-[12.5px] text-slate-600">{tType(rowData.type)}</span>
                             )}
                             sortable
                             sortField="type"
                             style={{ width: '10rem' }}
                         />
-                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
-                        <Column header="Urgence" body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
+                        <Column header={t('notifications.colStatus')} body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header={t('notifications.colUrgency')} body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
                         <Column
-                            header="Destinataires"
+                            header={t('notifications.colRecipients')}
                             body={recipientsBody}
                             style={{ width: '7.5rem' }}
                             bodyStyle={{ textAlign: 'center' }}
                         />
                         <Column
-                            header="Zone"
+                            header={t('notifications.colZone')}
                             body={(rowData: NotificationSummary) => (
                                 <span className="text-[12.5px] text-slate-600">{rowData.zoneName || '—'}</span>
                             )}
@@ -421,7 +432,7 @@ const NotificationsManagement = () => {
                             style={{ width: '9rem' }}
                         />
                         <Column
-                            header="Département"
+                            header={t('notifications.colDepartment')}
                             body={(rowData: NotificationSummary) => (
                                 <span className="text-[12.5px] text-slate-600">{rowData.departmentName || '—'}</span>
                             )}
@@ -430,7 +441,7 @@ const NotificationsManagement = () => {
                             style={{ width: '9.5rem' }}
                         />
                         <Column
-                            header="Envoyée le"
+                            header={t('notifications.colSentAt')}
                             body={(rowData: NotificationSummary) => (
                                 <span className="text-[12.5px] text-slate-600">{formatDateTimeFr(rowData.createdAt)}</span>
                             )}
@@ -439,7 +450,7 @@ const NotificationsManagement = () => {
                             style={{ width: '10.5rem' }}
                         />
                         <Column
-                            header="Actions"
+                            header={t('notifications.colActions')}
                             body={actionsBody}
                             headerStyle={{ width: '5rem', textAlign: 'center' }}
                             bodyStyle={{ textAlign: 'center', overflow: 'visible' }}

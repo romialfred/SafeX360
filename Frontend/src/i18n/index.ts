@@ -29,6 +29,9 @@ import frHome from './locales/fr/home.json';
 import frIncidents from './locales/fr/incidents.json';
 import frAdhoc from './locales/fr/adhoc.json';
 import frAudits from './locales/fr/audits.json';
+import frPpe from './locales/fr/ppe.json';
+import frRisk from './locales/fr/risk.json';
+import frCommunications from './locales/fr/communications.json';
 
 // === EN ===
 import enCommon from './locales/en/common.json';
@@ -44,6 +47,9 @@ import enHome from './locales/en/home.json';
 import enIncidents from './locales/en/incidents.json';
 import enAdhoc from './locales/en/adhoc.json';
 import enAudits from './locales/en/audits.json';
+import enPpe from './locales/en/ppe.json';
+import enRisk from './locales/en/risk.json';
+import enCommunications from './locales/en/communications.json';
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -72,6 +78,9 @@ i18n
                 incidents: frIncidents,
                 adhoc: frAdhoc,
                 audits: frAudits,
+                ppe: frPpe,
+                risk: frRisk,
+                communications: frCommunications,
             },
             en: {
                 common: enCommon,
@@ -87,13 +96,16 @@ i18n
                 incidents: enIncidents,
                 adhoc: enAdhoc,
                 audits: enAudits,
+                ppe: enPpe,
+                risk: enRisk,
+                communications: enCommunications,
             },
         },
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
         defaultNS: 'common',
-        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection', 'home', 'incidents', 'adhoc', 'audits'],
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection', 'home', 'incidents', 'adhoc', 'audits', 'ppe', 'risk', 'communications'],
 
         detection: {
             // Ordre de détection : 1) localStorage, 2) navigator

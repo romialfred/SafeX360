@@ -18,6 +18,7 @@ import {
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { modals } from '@mantine/modals';
@@ -84,6 +85,16 @@ const normalizeCommunication = (comm: any) => {
 const EmployeeCommunications = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tCategory = (code?: string | null) => t(`category.${code ?? ''}`, { defaultValue: categoryLabel(code) });
+    const tScheduleType = (code?: string | null) =>
+        t(`scheduleType.${(code ?? '').toUpperCase()}`, { defaultValue: scheduleTypeLabel(code) });
+    const tCommStatus = (status?: string | null) =>
+        t(`commStatus.${(status ?? '').toUpperCase()}`, { defaultValue: commStatusConfig(status).label });
+    const tUrgency = (urgency?: string | null) =>
+        t(`urgency.${(urgency ?? '').toUpperCase()}`, { defaultValue: urgencyConfig(urgency).label });
 
     const [communications, setCommunications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -105,7 +116,7 @@ const EmployeeCommunications = () => {
                 setCommunications((data || []).map((comm: any) => normalizeCommunication(comm)));
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des communications');
+                errorNotification(err.response?.data?.errorMessage || t('list.loadError'));
             })
             .finally(() => setLoading(false));
 
@@ -141,9 +152,9 @@ const EmployeeCommunications = () => {
         dispatch(showOverlay());
 
         const successMessages: Record<ScheduleAction, string> = {
-            resume: 'Planification reprise',
-            pause: 'Planification suspendue',
-            cancel: 'Planification annulée',
+            resume: t('list.resumeScheduleSuccess'),
+            pause: t('list.pauseScheduleSuccess'),
+            cancel: t('list.cancelScheduleSuccess'),
         };
 
         try {
@@ -160,7 +171,7 @@ const EmployeeCommunications = () => {
             setCommunications((prev) => prev.map((comm) => (comm.id === normalized.id ? normalized : comm)));
             successNotification(successMessages[action]);
         } catch (error: any) {
-            errorNotification(error?.response?.data?.message || 'La mise à jour de la planification a échoué');
+            errorNotification(error?.response?.data?.message || t('list.scheduleUpdateError'));
         } finally {
             dispatch(hideOverlay());
             setScheduleActionLoading((prev) => {
@@ -193,25 +204,25 @@ const EmployeeCommunications = () => {
             confirmLabel: string;
         }> = {
             resume: {
-                label: 'Reprendre la planification',
+                label: t('list.resumeLabel'),
                 color: 'teal',
                 icon: <IconPlayerPlay size={14} stroke={1.5} />,
-                confirmation: 'La planification reprendra et la prochaine exécution sera recalculée. Continuer ?',
-                confirmLabel: 'Reprendre',
+                confirmation: t('list.resumeConfirmation'),
+                confirmLabel: t('list.resumeConfirmLabel'),
             },
             pause: {
-                label: 'Suspendre la planification',
+                label: t('list.pauseLabel'),
                 color: 'orange',
                 icon: <IconPlayerPause size={14} stroke={1.5} />,
-                confirmation: "Les envois seront suspendus jusqu'à la reprise de la planification. Continuer ?",
-                confirmLabel: 'Suspendre',
+                confirmation: t('list.pauseConfirmation'),
+                confirmLabel: t('list.pauseConfirmLabel'),
             },
             cancel: {
-                label: 'Annuler la planification',
+                label: t('list.cancelLabel'),
                 color: 'red',
                 icon: <IconPlayerStop size={14} stroke={1.5} />,
-                confirmation: 'La planification sera annulée définitivement. Il faudra en créer une nouvelle pour reprendre les envois. Confirmer ?',
-                confirmLabel: 'Annuler la planification',
+                confirmation: t('list.cancelConfirmation'),
+                confirmLabel: t('list.cancelConfirmLabel'),
             },
         };
 
@@ -228,12 +239,12 @@ const EmployeeCommunications = () => {
                 centered: true,
                 children: (
                     <span className="text-sm">
-                        Communication : <strong>{communication?.title}</strong>.
+                        {t('list.confirmCommunicationPrefix')}<strong>{communication?.title}</strong>.
                         <br />
                         {meta.confirmation}
                     </span>
                 ),
-                labels: { confirm: meta.confirmLabel, cancel: 'Fermer' },
+                labels: { confirm: meta.confirmLabel, cancel: t('list.confirmClose') },
                 cancelProps: { color: 'gray', variant: 'default' },
                 confirmProps: { color: meta.color },
                 onConfirm: () => handleScheduleAction(communication, action),
@@ -297,20 +308,21 @@ const EmployeeCommunications = () => {
 
     const exportCsv = () => {
         const headers = [
-            'Titre', 'Type', 'Catégorie', 'Urgence', 'Statut', 'Département',
-            'Destinataires', 'Planification', 'Prochaine exécution', 'Échéance',
+            t('list.csvHeaderTitle'), t('list.csvHeaderType'), t('list.csvHeaderCategory'), t('list.csvHeaderUrgency'),
+            t('list.csvHeaderStatus'), t('list.csvHeaderDepartment'), t('list.csvHeaderRecipients'),
+            t('list.csvHeaderSchedule'), t('list.csvHeaderNextRun'), t('list.csvHeaderDeadline'),
         ];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = filteredCommunications.map((comm) =>
             [
                 comm.title,
-                typeLabel(comm.type),
-                categoryLabel(comm.category),
-                urgencyConfig(comm.urgency).label,
-                commStatusConfig(comm.status).label,
+                tType(comm.type),
+                tCategory(comm.category),
+                tUrgency(comm.urgency),
+                tCommStatus(comm.status),
                 resolveDepartmentName(comm) === '—' ? '' : resolveDepartmentName(comm),
                 comm.recipientCount ?? 0,
-                comm.scheduleType ? scheduleTypeLabel(comm.scheduleType) : '',
+                comm.scheduleType ? tScheduleType(comm.scheduleType) : '',
                 comm.nextRunAt ? formatDateFr(comm.nextRunAt) : '',
                 comm.expiresAt ? formatDateFr(comm.expiresAt) : '',
             ].map(escape).join(';')
@@ -323,7 +335,7 @@ const EmployeeCommunications = () => {
         link.download = `communications_hse_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${filteredCommunications.length} communication${filteredCommunications.length > 1 ? 's' : ''} exportée${filteredCommunications.length > 1 ? 's' : ''}`);
+        successNotification(t('list.exportSuccess', { count: filteredCommunications.length }));
     };
 
     // ─── Rendus de colonnes ──────────────────────────────────────────────────
@@ -337,7 +349,7 @@ const EmployeeCommunications = () => {
             >
                 {comm.title}
             </button>
-            <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(comm.type)}</p>
+            <p className="text-[11.5px] text-slate-500 mt-0.5">{tType(comm.type)}</p>
         </div>
     );
 
@@ -348,7 +360,7 @@ const EmployeeCommunications = () => {
             size="sm"
             radius="sm"
         >
-            {categoryLabel(comm.category)}
+            {tCategory(comm.category)}
         </Badge>
     );
 
@@ -356,7 +368,7 @@ const EmployeeCommunications = () => {
         const cfg = urgencyConfig(comm.urgency);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tUrgency(comm.urgency)}
             </span>
         );
     };
@@ -365,7 +377,7 @@ const EmployeeCommunications = () => {
         const cfg = commStatusConfig(comm.status);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tCommStatus(comm.status)}
             </span>
         );
     };
@@ -373,11 +385,11 @@ const EmployeeCommunications = () => {
     const scheduleBody = (comm: any) => (
         <div className="min-w-0">
             <p className="text-[12.5px] text-slate-600">
-                {comm.scheduleType ? scheduleTypeLabel(comm.scheduleType) : '—'}
+                {comm.scheduleType ? tScheduleType(comm.scheduleType) : '—'}
             </p>
             {comm.nextRunAt && (
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                    Prochain envoi : {formatDateFr(comm.nextRunAt)}
+                    {t('list.nextRun', { date: formatDateFr(comm.nextRunAt) })}
                 </p>
             )}
         </div>
@@ -405,17 +417,17 @@ const EmployeeCommunications = () => {
     const emptyState = (
         <EmptyState
             icon={<IconSearch size={24} />}
-            title={hasActiveFilters ? 'Aucune communication ne correspond aux filtres' : 'Aucune communication enregistrée'}
+            title={hasActiveFilters ? t('list.emptyFilteredTitle') : t('list.emptyTitle')}
             description={
                 hasActiveFilters
-                    ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.'
-                    : 'Créez la première communication sécurité à diffuser aux équipes.'
+                    ? t('list.emptyFilteredDescription')
+                    : t('list.emptyDescription')
             }
             compact
             action={
                 hasActiveFilters ? (
                     <Button variant="default" size="xs" onClick={resetFilters}>
-                        Réinitialiser les filtres
+                        {t('list.resetFilters')}
                     </Button>
                 ) : (
                     <Button
@@ -424,7 +436,7 @@ const EmployeeCommunications = () => {
                         leftSection={<IconPlus size={14} />}
                         onClick={() => navigate('create-communications')}
                     >
-                        Nouvelle communication
+                        {t('list.newCommunication')}
                     </Button>
                 )
             }
@@ -435,14 +447,14 @@ const EmployeeCommunications = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Communications HSE' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.communications') },
                 ]}
                 icon={<IconMessageCircle size={22} stroke={2} />}
                 iconColor="pink"
-                title="Communications HSE"
-                subtitle="Diffusion et suivi des communications sécurité envoyées aux employés"
+                title={t('list.title')}
+                subtitle={t('list.subtitle')}
                 actions={
                     <Button
                         size="sm"
@@ -450,7 +462,7 @@ const EmployeeCommunications = () => {
                         leftSection={<IconPlus size={15} />}
                         onClick={() => navigate('create-communications')}
                     >
-                        Nouvelle communication
+                        {t('list.newCommunication')}
                     </Button>
                 }
             />
@@ -458,30 +470,30 @@ const EmployeeCommunications = () => {
             {/* KPI du registre */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Total communications"
+                    label={t('list.kpiTotal')}
                     value={loading ? '…' : counts.total}
                     tone="slate"
                     icon={<IconMessageCircle size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Actives"
+                    label={t('list.kpiActive')}
                     value={loading ? '…' : counts.active}
                     tone="green"
                     icon={<IconSend size={14} stroke={1.8} />}
-                    referenceValue="Planifiées ou en diffusion"
+                    referenceValue={t('list.kpiActiveReference')}
                 />
                 <KpiTile
-                    label="Terminées"
+                    label={t('list.kpiCompleted')}
                     value={loading ? '…' : counts.completed}
                     tone="teal"
                     icon={<IconCircleCheck size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Suspendues / annulées"
+                    label={t('list.kpiPausedCancelled')}
                     value={loading ? '…' : counts.paused}
                     tone="amber"
                     icon={<IconPlayerPause size={14} stroke={1.8} />}
-                    referenceValue="En attente d'une décision"
+                    referenceValue={t('list.kpiPausedCancelledReference')}
                 />
             </div>
 
@@ -489,7 +501,7 @@ const EmployeeCommunications = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <TextInput
-                        placeholder="Rechercher par titre, contenu ou expéditeur…"
+                        placeholder={t('list.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={search}
                         onChange={(e) => setSearch(e.currentTarget.value)}
@@ -497,24 +509,30 @@ const EmployeeCommunications = () => {
                         className="flex-1 min-w-[220px]"
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous types' }, ...TYPE_OPTIONS]}
+                        data={[
+                            { value: ALL, label: t('list.allTypes') },
+                            ...TYPE_OPTIONS.map((o) => ({ value: o.value, label: tType(o.value) })),
+                        ]}
                         value={typeFilter}
                         onChange={(v) => setTypeFilter(v ?? ALL)}
                         size="xs"
                         w={170}
-                        aria-label="Filtrer par type"
+                        aria-label={t('list.filterByType')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Toutes catégories' }, ...CATEGORY_OPTIONS]}
+                        data={[
+                            { value: ALL, label: t('list.allCategories') },
+                            ...CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: tCategory(o.value) })),
+                        ]}
                         value={categoryFilter}
                         onChange={(v) => setCategoryFilter(v ?? ALL)}
                         size="xs"
                         w={155}
-                        aria-label="Filtrer par catégorie"
+                        aria-label={t('list.filterByCategory')}
                     />
                     <Select
                         data={[
-                            { value: ALL, label: 'Tous départements' },
+                            { value: ALL, label: t('list.allDepartments') },
                             ...departments.map((dep) => ({ value: String(dep.id), label: dep.name })),
                         ]}
                         value={departmentFilter}
@@ -522,42 +540,42 @@ const EmployeeCommunications = () => {
                         size="xs"
                         w={165}
                         searchable
-                        aria-label="Filtrer par département"
+                        aria-label={t('list.filterByDepartment')}
                     />
                     <Select
                         data={[
-                            { value: ALL, label: 'Tous statuts' },
-                            { value: 'ACTIVE', label: 'Actives' },
-                            { value: 'PAUSED', label: 'En pause' },
-                            { value: 'COMPLETED', label: 'Terminées' },
-                            { value: 'CANCELLED', label: 'Annulées' },
+                            { value: ALL, label: t('list.allStatuses') },
+                            { value: 'ACTIVE', label: t('list.statusActive') },
+                            { value: 'PAUSED', label: t('list.statusPaused') },
+                            { value: 'COMPLETED', label: t('list.statusCompleted') },
+                            { value: 'CANCELLED', label: t('list.statusCancelled') },
                         ]}
                         value={statusFilter}
                         onChange={(v) => setStatusFilter(v ?? ALL)}
                         size="xs"
                         w={135}
-                        aria-label="Filtrer par statut"
+                        aria-label={t('list.filterByStatus')}
                     />
                     <div className="flex items-center gap-2 ml-auto">
                         <div className="inline-flex items-center gap-0.5 rounded-md border border-slate-200 bg-slate-50 p-0.5">
-                            <Tooltip label="Vue tableau" withArrow>
+                            <Tooltip label={t('list.tableView')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'table' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('table')}
-                                    aria-label="Vue tableau"
+                                    aria-label={t('list.tableView')}
                                 >
                                     <IconLayoutList size={14} stroke={1.5} />
                                 </ActionIcon>
                             </Tooltip>
-                            <Tooltip label="Vue cartes" withArrow>
+                            <Tooltip label={t('list.cardView')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'card' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('card')}
-                                    aria-label="Vue cartes"
+                                    aria-label={t('list.cardView')}
                                 >
                                     <IconLayoutGrid size={14} stroke={1.5} />
                                 </ActionIcon>
@@ -570,14 +588,14 @@ const EmployeeCommunications = () => {
                             onClick={exportCsv}
                             disabled={!filteredCommunications.length}
                         >
-                            Exporter CSV
+                            {t('list.exportCsv')}
                         </Button>
                     </div>
                 </div>
                 <p className="text-[11.5px] text-slate-500 mt-2">
                     {loading
-                        ? 'Chargement du registre…'
-                        : `${filteredCommunications.length} communication${filteredCommunications.length > 1 ? 's' : ''} affichée${filteredCommunications.length > 1 ? 's' : ''} sur ${communications.length}`}
+                        ? t('list.loadingRegistry')
+                        : t('list.displayedCount', { count: filteredCommunications.length, total: communications.length })}
                 </p>
             </div>
 
@@ -603,14 +621,14 @@ const EmployeeCommunications = () => {
                         dataKey="id"
                         className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                        currentPageReportTemplate={t('list.paginatorReport')}
                     >
-                        <Column header="Communication" body={titleBody} sortable sortField="title" />
-                        <Column header="Catégorie" body={categoryBody} sortable sortField="category" style={{ width: '8.5rem' }} />
-                        <Column header="Urgence" body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
-                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header={t('list.colCommunication')} body={titleBody} sortable sortField="title" />
+                        <Column header={t('list.colCategory')} body={categoryBody} sortable sortField="category" style={{ width: '8.5rem' }} />
+                        <Column header={t('list.colUrgency')} body={urgencyBody} sortable sortField="urgency" style={{ width: '7rem' }} />
+                        <Column header={t('list.colStatus')} body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
                         <Column
-                            header="Département"
+                            header={t('list.colDepartment')}
                             body={(comm: any) => (
                                 <span className="text-[12.5px] text-slate-600">{resolveDepartmentName(comm)}</span>
                             )}
@@ -619,7 +637,7 @@ const EmployeeCommunications = () => {
                             style={{ width: '9rem' }}
                         />
                         <Column
-                            header="Destinataires"
+                            header={t('list.colRecipients')}
                             body={(comm: any) => (
                                 <span className="text-[12.5px] text-slate-600 tabular-nums">{comm.recipientCount ?? 0}</span>
                             )}
@@ -629,9 +647,9 @@ const EmployeeCommunications = () => {
                             bodyStyle={{ textAlign: 'center' }}
                             headerStyle={{ textAlign: 'center' }}
                         />
-                        <Column header="Planification" body={scheduleBody} sortable sortField="nextRunAt" style={{ width: '11rem' }} />
+                        <Column header={t('list.colSchedule')} body={scheduleBody} sortable sortField="nextRunAt" style={{ width: '11rem' }} />
                         <Column
-                            header="Échéance"
+                            header={t('list.colDeadline')}
                             body={(comm: any) => (
                                 <span className="text-[12.5px] text-slate-600">{formatDateFr(comm.expiresAt)}</span>
                             )}
@@ -640,7 +658,7 @@ const EmployeeCommunications = () => {
                             style={{ width: '7.5rem' }}
                         />
                         <Column
-                            header="Actions"
+                            header={t('list.colActions')}
                             body={actionsBody}
                             headerStyle={{ width: '7.5rem', textAlign: 'center' }}
                             bodyStyle={{ textAlign: 'center', overflow: 'visible' }}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Colonne d'aide latérale réutilisable (LOT 50) — cartes de conseils sobres
@@ -55,12 +56,13 @@ const GuideCard = ({ section }: { section: GuideSection }) => {
 };
 
 const GuideSidebar: React.FC<GuideSidebarProps> = ({ sections, className }) => {
+    const { t } = useTranslation('risk');
     const baseClasses =
         'w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col gap-3 border-t border-slate-200 mt-4 pt-4 lg:mt-0 lg:pt-0 lg:border-t-0 lg:border-l lg:pl-4 lg:self-stretch lg:h-full lg:max-h-full lg:min-h-0 lg:overflow-y-auto';
     const sidebarClasses = className ? `${baseClasses} ${className}` : baseClasses;
 
     return (
-        <aside className={sidebarClasses} aria-label="Aide à l'évaluation">
+        <aside className={sidebarClasses} aria-label={t('assessmentTab.guideAria')}>
             {sections.map((section) => (
                 <GuideCard key={section.title} section={section} />
             ))}

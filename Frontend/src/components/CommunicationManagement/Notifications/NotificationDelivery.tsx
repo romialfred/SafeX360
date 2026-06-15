@@ -1,4 +1,5 @@
 import { IconAlertTriangle, IconCircleCheck, IconHourglassHigh, IconUsers } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import KpiTile from '../../UtilityComp/KpiTile';
 import {
     formatDateTimeFr,
@@ -16,6 +17,11 @@ const DELIVERED_STATUSES = ['SUCCESS', 'SENT', 'DELIVERED', 'COMPLETED'];
 const PENDING_STATUSES = ['PENDING', 'QUEUED', 'IN_PROGRESS', 'SENDING', 'SCHEDULED'];
 
 const NotificationDelivery = ({ notification }: any) => {
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tNotifStatus = (value?: string | null) =>
+        t(`notifStatus.${(value ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(value).label });
+
     const statusCfg = notifStatusConfig(notification?.status);
     const status = (notification?.status ?? '').toUpperCase();
     const recipientsCount = parseRecipientIds(notification?.recipients).length;
@@ -28,25 +34,25 @@ const NotificationDelivery = ({ notification }: any) => {
         <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Destinataires"
+                    label={t('notificationsDetail.kpiRecipients')}
                     value={recipientsCount}
                     tone="slate"
                     icon={<IconUsers size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="Livraison réussie"
+                    label={t('notificationsDetail.kpiDelivered')}
                     value={isDelivered ? recipientsCount : 0}
                     tone="green"
                     icon={<IconCircleCheck size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="En attente"
+                    label={t('notificationsDetail.kpiPending')}
                     value={isPending ? recipientsCount : 0}
                     tone="violet"
                     icon={<IconHourglassHigh size={14} stroke={1.8} />}
                 />
                 <KpiTile
-                    label="En échec"
+                    label={t('notificationsDetail.kpiFailed')}
                     value={isFailed ? recipientsCount : 0}
                     tone="rose"
                     icon={<IconAlertTriangle size={14} stroke={1.8} />}
@@ -64,35 +70,35 @@ const NotificationDelivery = ({ notification }: any) => {
                             letterSpacing: '-0.01em',
                         }}
                     >
-                        État de livraison
+                        {t('notificationsDetail.deliveryStatusTitle')}
                     </h3>
                     <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                        {statusCfg.label}
+                        {tNotifStatus(notification?.status)}
                     </span>
                 </div>
 
                 <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
                     <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
-                        <dt className="text-slate-500 flex-shrink-0">Envoyée le</dt>
+                        <dt className="text-slate-500 flex-shrink-0">{t('notificationsDetail.sentAt')}</dt>
                         <dd className="text-slate-800 text-right">{formatDateTimeFr(notification?.createdAt)}</dd>
                     </div>
                     <div className="flex items-start justify-between gap-3 py-1.5 border-t border-slate-100">
-                        <dt className="text-slate-500 flex-shrink-0">Retour du canal</dt>
+                        <dt className="text-slate-500 flex-shrink-0">{t('notificationsDetail.channelReturn')}</dt>
                         <dd className={`text-right ${isFailed ? 'text-rose-600' : 'text-slate-800'}`}>
                             {notification?.responseMessage ||
                                 (isFailed
-                                    ? "L'envoi a échoué sans détail complémentaire."
-                                    : 'Aucun détail complémentaire.')}
+                                    ? t('notificationsDetail.deliveryFailureEmpty')
+                                    : t('notificationsDetail.deliveryNoDetail'))}
                         </dd>
                     </div>
                 </dl>
 
                 <p className="text-[11.5px] text-slate-500 mt-3 pt-3 border-t border-slate-100">
                     {isFailed
-                        ? "Vérifiez la communication d'origine puis relancez un envoi depuis sa fiche (« Envoyer maintenant »)."
+                        ? t('notificationsDetail.footerFailed')
                         : isPending
-                            ? "L'envoi est en cours de traitement : le statut sera mis à jour automatiquement."
-                            : "La notification a été remise au canal de diffusion pour l'ensemble des destinataires."}
+                            ? t('notificationsDetail.footerPending')
+                            : t('notificationsDetail.footerDelivered')}
                 </p>
             </div>
         </div>

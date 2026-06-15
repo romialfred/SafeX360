@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Badge, Button, Tooltip } from '@mantine/core';
 import { IconEdit, IconPaperclip, IconSend } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { handlePreview } from '../../../utility/DocumentUtility';
 import { sendCommunicationNow } from '../../../services/CommunicationService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
@@ -58,6 +59,18 @@ const InfoRow = ({ label, children }: { label: string; children: React.ReactNode
 
 const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any) => {
     const navigate = useNavigate();
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tCategory = (code?: string | null) => t(`category.${code ?? ''}`, { defaultValue: categoryLabel(code) });
+    const tScheduleType = (code?: string | null) =>
+        t(`scheduleType.${(code ?? '').toUpperCase()}`, { defaultValue: scheduleTypeLabel(code) });
+    const tCommStatus = (status?: string | null) =>
+        t(`commStatus.${(status ?? '').toUpperCase()}`, { defaultValue: commStatusConfig(status).label });
+    const tUrgency = (urgency?: string | null) =>
+        t(`urgency.${(urgency ?? '').toUpperCase()}`, { defaultValue: urgencyConfig(urgency).label });
+    const tWeeklyDay = (code?: string | null) =>
+        t(`weeklyDay.${(code ?? '').toUpperCase()}`, { defaultValue: weeklyDayLabel(code) });
     const [isSendingNow, setIsSendingNow] = useState(false);
 
     const schedule = communication?.schedule ?? {};
@@ -71,28 +84,28 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
     const urgent = isUrgentValue(communication?.urgency);
 
     const scheduleItems = [
-        { label: 'Statut', value: schedule?.status ? commStatusConfig(schedule.status).label : null },
-        { label: 'Type de planification', value: schedule?.scheduleType ? scheduleTypeLabel(schedule.scheduleType) : null },
-        { label: 'Prochain envoi', value: schedule?.nextRunAt ? formatDateTimeFr(schedule.nextRunAt) : null },
-        { label: 'Dernier envoi', value: schedule?.lastRunAt ? formatDateTimeFr(schedule.lastRunAt) : null },
-        { label: 'Envoi unique le', value: schedule?.oneTimeAt ? formatDateTimeFr(schedule.oneTimeAt) : null },
-        { label: "Heure d'envoi", value: schedule?.timeOfDay ?? null },
-        { label: 'Jour de la semaine', value: schedule?.weeklyDay ? weeklyDayLabel(schedule.weeklyDay) : null },
-        { label: 'Jour du mois', value: schedule?.monthlyDay ?? null },
+        { label: t('detailsTab.scheduleStatus'), value: schedule?.status ? tCommStatus(schedule.status) : null },
+        { label: t('detailsTab.scheduleType'), value: schedule?.scheduleType ? tScheduleType(schedule.scheduleType) : null },
+        { label: t('detailsTab.scheduleNextRun'), value: schedule?.nextRunAt ? formatDateTimeFr(schedule.nextRunAt) : null },
+        { label: t('detailsTab.scheduleLastRun'), value: schedule?.lastRunAt ? formatDateTimeFr(schedule.lastRunAt) : null },
+        { label: t('detailsTab.scheduleOneTimeAt'), value: schedule?.oneTimeAt ? formatDateTimeFr(schedule.oneTimeAt) : null },
+        { label: t('detailsTab.scheduleTimeOfDay'), value: schedule?.timeOfDay ?? null },
+        { label: t('detailsTab.scheduleWeeklyDay'), value: schedule?.weeklyDay ? tWeeklyDay(schedule.weeklyDay) : null },
+        { label: t('detailsTab.scheduleMonthlyDay'), value: schedule?.monthlyDay ?? null },
     ].filter((item) => item.value !== null && item.value !== undefined && item.value !== '—');
 
     const handleSendNow = async () => {
         if (!communication?.id) return;
         if (!canSendNow) {
-            errorNotification("L'envoi immédiat n'est possible que lorsque la communication est active.");
+            errorNotification(t('detailsTab.sendNowDisabled'));
             return;
         }
         setIsSendingNow(true);
         try {
             await sendCommunicationNow(communication.id);
-            successNotification("Communication placée en file d'envoi immédiat");
+            successNotification(t('detailsTab.sendNowQueued'));
         } catch (error: any) {
-            errorNotification(error?.response?.data?.errorMessage || "L'envoi immédiat a échoué");
+            errorNotification(error?.response?.data?.errorMessage || t('detailsTab.sendNowError'));
         } finally {
             setIsSendingNow(false);
         }
@@ -106,7 +119,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                     <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
                         <div className="min-w-0">
                             <SectionTitle>{communication?.title || '—'}</SectionTitle>
-                            <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(communication?.type)}</p>
+                            <p className="text-[11.5px] text-slate-500 mt-0.5">{tType(communication?.type)}</p>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             {communication?.category && (
@@ -116,17 +129,17 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                                     size="sm"
                                     radius="sm"
                                 >
-                                    {categoryLabel(communication.category)}
+                                    {tCategory(communication.category)}
                                 </Badge>
                             )}
                             {urgent && (
                                 <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${urgencyCfg.chip}`}>
-                                    {urgencyCfg.label}
+                                    {tUrgency(communication?.urgency)}
                                 </span>
                             )}
                             {statusCfg && (
                                 <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                    {statusCfg.label}
+                                    {tCommStatus(scheduleStatus)}
                                 </span>
                             )}
                         </div>
@@ -137,25 +150,25 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                     </div>
 
                     <dl className="mt-3 grid grid-cols-1 gap-0 text-[12.5px]">
-                        <InfoRow label="Expéditeur">{communication?.senderName || '—'}</InfoRow>
-                        <InfoRow label="Département">
+                        <InfoRow label={t('detailsTab.sender')}>{communication?.senderName || '—'}</InfoRow>
+                        <InfoRow label={t('detailsTab.department')}>
                             {departmentMap[communication?.departmentId]?.name ?? '—'}
                         </InfoRow>
                         {communication?.zoneId && (
-                            <InfoRow label="Zone">{zoneMap[communication?.zoneId]?.name ?? '—'}</InfoRow>
+                            <InfoRow label={t('detailsTab.zone')}>{zoneMap[communication?.zoneId]?.name ?? '—'}</InfoRow>
                         )}
                         {communication?.expiresAt && (
-                            <InfoRow label="Échéance">
+                            <InfoRow label={t('detailsTab.deadline')}>
                                 <span className="inline-flex items-center gap-1.5">
                                     {formatDateTimeFr(communication.expiresAt)}
                                     {isExpiringSoon(communication.expiresAt) && (
                                         <span className="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-amber-700">
-                                            Échéance proche
+                                            {t('detailsTab.expiringSoon')}
                                         </span>
                                     )}
                                     {isExpired(communication.expiresAt) && (
                                         <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-rose-700">
-                                            Expirée
+                                            {t('detailsTab.expired')}
                                         </span>
                                     )}
                                 </span>
@@ -165,7 +178,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
 
                     {communication?.attachments?.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-slate-100">
-                            <p className="text-[11.5px] text-slate-500 mb-1.5">Pièces jointes</p>
+                            <p className="text-[11.5px] text-slate-500 mb-1.5">{t('detailsTab.attachments')}</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {communication.attachments.map((item: any, index: number) => (
                                     <button
@@ -173,7 +186,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                                         type="button"
                                         onClick={() => handlePreview(item)}
                                         className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11.5px] text-slate-700 hover:border-teal-300 hover:text-teal-700"
-                                        aria-label={`Ouvrir la pièce jointe ${item.name}`}
+                                        aria-label={t('detailsTab.openAttachment', { name: item.name })}
                                     >
                                         <IconPaperclip size={12} aria-hidden="true" />
                                         {item.name}
@@ -186,7 +199,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
 
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Planification</SectionTitle>
+                        <SectionTitle>{t('detailsTab.scheduleTitle')}</SectionTitle>
                     </div>
                     {scheduleItems.length ? (
                         <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
@@ -198,7 +211,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                         </dl>
                     ) : (
                         <p className="text-[12.5px] text-slate-500">
-                            Aucune planification : cette communication est diffusée manuellement.
+                            {t('detailsTab.noSchedule')}
                         </p>
                     )}
                 </div>
@@ -208,13 +221,13 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
             <div className="xl:col-span-2 flex flex-col gap-4">
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Chronologie</SectionTitle>
+                        <SectionTitle>{t('detailsTab.timelineTitle')}</SectionTitle>
                     </div>
                     <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
-                        <InfoRow label="Créée le">{formatDateTimeFr(communication?.createdAt)}</InfoRow>
-                        <InfoRow label="Publiée le">{formatDateTimeFr(communication?.scheduledAt)}</InfoRow>
+                        <InfoRow label={t('detailsTab.createdAt')}>{formatDateTimeFr(communication?.createdAt)}</InfoRow>
+                        <InfoRow label={t('detailsTab.publishedAt')}>{formatDateTimeFr(communication?.scheduledAt)}</InfoRow>
                         {communication?.expiresAt && (
-                            <InfoRow label="Expire le">
+                            <InfoRow label={t('detailsTab.expiresAt')}>
                                 <span className={isExpired(communication.expiresAt) ? 'text-rose-700' : isExpiringSoon(communication.expiresAt) ? 'text-amber-700' : undefined}>
                                     {formatDateTimeFr(communication.expiresAt)}
                                 </span>
@@ -225,11 +238,11 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
 
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Actions</SectionTitle>
+                        <SectionTitle>{t('detailsTab.actionsTitle')}</SectionTitle>
                     </div>
                     <div className="flex flex-col gap-2">
                         <Tooltip
-                            label="La modification n'est possible que lorsque la planification est active ou en pause."
+                            label={t('detailsTab.editTooltip')}
                             withArrow
                             position="top"
                             disabled={canEdit}
@@ -243,12 +256,12 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                                     onClick={() => navigate(`/communications/edit/${communication?.id}`)}
                                     disabled={!canEdit}
                                 >
-                                    Modifier la communication
+                                    {t('detailsTab.editButton')}
                                 </Button>
                             </span>
                         </Tooltip>
                         <Tooltip
-                            label="L'envoi immédiat n'est possible que lorsque la communication est active."
+                            label={t('detailsTab.sendNowTooltip')}
                             withArrow
                             position="top"
                             disabled={canSendNow}
@@ -263,7 +276,7 @@ const CommunicationDetailsTab = ({ communication, departmentMap, zoneMap }: any)
                                     loading={isSendingNow}
                                     disabled={!canSendNow}
                                 >
-                                    Envoyer maintenant
+                                    {t('detailsTab.sendNowButton')}
                                 </Button>
                             </span>
                         </Tooltip>

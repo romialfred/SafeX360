@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { IconUsers } from '@tabler/icons-react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { useTranslation } from 'react-i18next';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { notifStatusConfig, parseRecipientIds } from '../communicationLabels';
 
@@ -14,14 +15,19 @@ import { notifStatusConfig, parseRecipientIds } from '../communicationLabels';
  */
 
 const NotificationRecipients = ({ notification, empMap }: any) => {
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
+
     const rows = useMemo(() => {
         return parseRecipientIds(notification?.recipients).map((recipientId: string) => ({
             id: recipientId,
-            name: empMap[recipientId]?.name || 'Employé inconnu',
+            name: empMap[recipientId]?.name || t('notificationsDetail.unknownEmployee'),
             department: empMap[recipientId]?.department || '—',
             position: empMap[recipientId]?.position || '—',
         }));
-    }, [notification, empMap]);
+    }, [notification, empMap, t]);
 
     const statusCfg = notifStatusConfig(notification?.status);
 
@@ -37,18 +43,18 @@ const NotificationRecipients = ({ notification, empMap }: any) => {
                         letterSpacing: '-0.01em',
                     }}
                 >
-                    Liste des destinataires
+                    {t('notificationsDetail.recipientsTitle')}
                 </h3>
                 <span className="text-[11.5px] text-slate-500">
-                    {rows.length} destinataire{rows.length > 1 ? 's' : ''}
+                    {t('notificationsDetail.recipientsCount', { count: rows.length })}
                 </span>
             </div>
 
             {!rows.length ? (
                 <EmptyState
                     icon={<IconUsers size={24} />}
-                    title="Aucun destinataire"
-                    description="Cette notification ne référence aucun employé."
+                    title={t('notificationsDetail.noRecipientsTitle')}
+                    description={t('notificationsDetail.noRecipientsDescription')}
                     compact
                 />
             ) : (
@@ -62,32 +68,32 @@ const NotificationRecipients = ({ notification, empMap }: any) => {
                     rowsPerPageOptions={[10, 25, 50]}
                     className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    currentPageReportTemplate="{first}–{last} sur {totalRecords}"
-                    emptyMessage="Aucun destinataire."
+                    currentPageReportTemplate={t('notificationsDetail.paginatorReport')}
+                    emptyMessage={t('notificationsDetail.emptyMessage')}
                 >
                     <Column
                         field="name"
-                        header="Nom"
+                        header={t('notificationsDetail.colName')}
                         body={(row) => <span className="text-[13px] text-slate-800">{row.name}</span>}
                         sortable
                     />
                     <Column
                         field="department"
-                        header="Département"
+                        header={t('notificationsDetail.colDepartment')}
                         body={(row) => <span className="text-[12.5px] text-slate-600">{row.department}</span>}
                         sortable
                     />
                     <Column
                         field="position"
-                        header="Poste"
+                        header={t('notificationsDetail.colPosition')}
                         body={(row) => <span className="text-[12.5px] text-slate-600">{row.position}</span>}
                         sortable
                     />
                     <Column
-                        header="État de l'envoi"
+                        header={t('notificationsDetail.colSendStatus')}
                         body={() => (
                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                {statusCfg.label}
+                                {tNotifStatus(notification?.status)}
                             </span>
                         )}
                         style={{ width: '9rem' }}

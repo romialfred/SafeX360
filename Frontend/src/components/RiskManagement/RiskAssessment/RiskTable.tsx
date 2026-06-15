@@ -14,6 +14,7 @@ import {
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import RiskCards from './RiskCards';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { getRisksWithRiskLevel } from '../../../services/RiskRegisterService';
@@ -41,6 +42,17 @@ const ALL = 'all';
 
 const RiskDataTable = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('risk');
+    const tStatusLabel = (status?: string | null): string => {
+        const cfg = riskStatusConfig(status);
+        return t(`status.${normalizeRiskStatus(status)}`, { defaultValue: cfg.label });
+    };
+    const tLevelLabel = (key?: string | null): string => {
+        const cfg = riskLevelFromKey(key);
+        return cfg ? t(`level.${riskMap[String(key)]?.level}`, { defaultValue: cfg.label }) : '';
+    };
+    const levelOptions = RISK_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: t(`level.${o.value}`, { defaultValue: o.label }) }));
+    const statusOptions = RISK_STATUS_OPTIONS.map((o) => ({ value: o.value, label: t(`status.${o.value}`, { defaultValue: o.label }) }));
     const [viewType, setViewType] = useState<'table' | 'card'>('table');
     const [loading, setLoading] = useState(true);
     const [risks, setRisks] = useState<any[]>([]);
@@ -61,17 +73,17 @@ const RiskDataTable = () => {
                 setDepartments(data);
             })
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments'));
             });
         GetAllWorkProcess({})
             .then((data) => setProcessMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses'));
             });
         getEmployeeDropdown()
             .then((data) => setEmpMap(mapIdToName(data)))
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés');
+                errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees'));
             });
     }, []);
 
@@ -80,7 +92,7 @@ const RiskDataTable = () => {
         getRisksWithRiskLevel()
             .then((res) => setRisks(res ?? []))
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'Échec du chargement des risques évalués');
+                errorNotification(err.response?.data?.errorMessage || t('assessment.loadFailed'));
             })
             .finally(() => setLoading(false));
     }, []);
@@ -129,7 +141,15 @@ const RiskDataTable = () => {
     };
 
     const exportCsv = () => {
-        const headers = ['Risque', 'Département', 'Processus', 'Responsable', 'Dernière évaluation', 'Niveau', 'Statut'];
+        const headers = [
+            t('assessment.col.risk'),
+            t('assessment.col.department'),
+            t('assessment.col.process'),
+            t('assessment.col.owner'),
+            t('assessment.col.lastAssessment'),
+            t('assessment.col.level'),
+            t('assessment.col.status'),
+        ];
         const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
         const lines = filteredData.map((row: any) =>
             [
@@ -138,8 +158,8 @@ const RiskDataTable = () => {
                 row.processName,
                 row.ownerName,
                 row.updatedAtFormatted,
-                riskLevelFromKey(row.riskLevel)?.label ?? '',
-                riskStatusConfig(row.status).label,
+                tLevelLabel(row.riskLevel),
+                tStatusLabel(row.status),
             ].map(escape).join(';')
         );
         const csv = '﻿' + [headers.map(escape).join(';'), ...lines].join('\r\n');
@@ -147,10 +167,10 @@ const RiskDataTable = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `risques_evalues_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.download = `${t('assessment.csvFilename')}_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        successNotification(`${filteredData.length} risque${filteredData.length > 1 ? 's' : ''} exporté${filteredData.length > 1 ? 's' : ''}`);
+        successNotification(t('common.exported', { count: filteredData.length }));
     };
 
     // ─── Rendus de colonnes ──────────────────────────────────────────────────
@@ -169,7 +189,7 @@ const RiskDataTable = () => {
         if (!cfg) return <span className="text-[12.5px] text-slate-400">—</span>;
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tLevelLabel(row.riskLevel)}
             </span>
         );
     };
@@ -178,20 +198,20 @@ const RiskDataTable = () => {
         const cfg = riskStatusConfig(row.status);
         return (
             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                {cfg.label}
+                {tStatusLabel(row.status)}
             </span>
         );
     };
 
     const actionBody = (row: any) => (
         <div className="flex justify-center">
-            <Tooltip label="Consulter le détail" withArrow>
+            <Tooltip label={t('common.viewDetail')} withArrow>
                 <ActionIcon
                     variant="light"
                     size="sm"
                     color="violet"
                     onClick={() => navigate(`register-details/${row.id}`)}
-                    aria-label="Consulter le détail du risque"
+                    aria-label={t('common.viewRiskDetail')}
                 >
                     <IconEye size={14} stroke={1.5} />
                 </ActionIcon>
@@ -205,7 +225,7 @@ const RiskDataTable = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <TextInput
-                        placeholder="Rechercher un risque, une source de danger, un responsable…"
+                        placeholder={t('register.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={search}
                         onChange={(e) => setSearch(e.currentTarget.value)}
@@ -214,32 +234,32 @@ const RiskDataTable = () => {
                     />
                     <Select
                         data={[
-                            { value: ALL, label: 'Tous départements' },
+                            { value: ALL, label: t('common.allDepartments') },
                             ...departments.map((dept) => ({ label: dept.name, value: String(dept.id) })),
                         ]}
                         value={departmentFilter}
                         onChange={(v) => setDepartmentFilter(v ?? ALL)}
                         size="xs"
                         w={180}
-                        aria-label="Filtrer par département"
+                        aria-label={t('common.filterByDepartment')}
                     />
                     <Select
-                        data={RISK_LEVEL_OPTIONS}
+                        data={levelOptions}
                         value={riskLevelFilter}
                         onChange={setRiskLevelFilter}
-                        placeholder="Niveau de risque"
+                        placeholder={t('common.riskLevelPlaceholder')}
                         size="xs"
                         w={170}
                         clearable
-                        aria-label="Filtrer par niveau de risque"
+                        aria-label={t('common.filterByRiskLevel')}
                     />
                     <Select
-                        data={[{ value: ALL, label: 'Tous statuts' }, ...RISK_STATUS_OPTIONS]}
+                        data={[{ value: ALL, label: t('common.allStatuses') }, ...statusOptions]}
                         value={statusFilter}
                         onChange={(v) => setStatusFilter(v ?? ALL)}
                         size="xs"
                         w={150}
-                        aria-label="Filtrer par statut"
+                        aria-label={t('common.filterByStatus')}
                     />
                     <div className="flex items-center gap-2 ml-auto">
                         <Button
@@ -249,27 +269,27 @@ const RiskDataTable = () => {
                             onClick={exportCsv}
                             disabled={!filteredData.length}
                         >
-                            Exporter CSV
+                            {t('common.exportCsv')}
                         </Button>
                         <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
-                            <Tooltip label="Vue tableau" withArrow>
+                            <Tooltip label={t('common.tableView')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'table' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('table')}
-                                    aria-label="Afficher en tableau"
+                                    aria-label={t('common.showAsTable')}
                                 >
                                     <IconLayoutList size={15} />
                                 </ActionIcon>
                             </Tooltip>
-                            <Tooltip label="Vue cartes" withArrow>
+                            <Tooltip label={t('common.cardView')} withArrow>
                                 <ActionIcon
                                     variant={viewType === 'card' ? 'filled' : 'subtle'}
                                     color="teal"
                                     size="sm"
                                     onClick={() => setViewType('card')}
-                                    aria-label="Afficher en cartes"
+                                    aria-label={t('common.showAsCards')}
                                 >
                                     <IconLayoutGrid size={15} />
                                 </ActionIcon>
@@ -279,8 +299,8 @@ const RiskDataTable = () => {
                 </div>
                 <p className="text-[11.5px] text-slate-500 mt-2">
                     {loading
-                        ? 'Chargement des risques évalués…'
-                        : `${filteredData.length} risque${filteredData.length > 1 ? 's' : ''} affiché${filteredData.length > 1 ? 's' : ''} sur ${risks.length}`}
+                        ? t('assessment.loadingList')
+                        : t('common.displayedOf', { count: filteredData.length, total: risks.length })}
                 </p>
             </div>
 
@@ -295,17 +315,17 @@ const RiskDataTable = () => {
                 ) : !filteredData.length ? (
                     <EmptyState
                         icon={<IconClipboardCheck size={24} />}
-                        title={hasActiveFilters ? 'Aucun risque ne correspond aux filtres' : 'Aucun risque évalué'}
+                        title={hasActiveFilters ? t('common.noMatchTitle') : t('assessment.emptyTitle')}
                         description={
                             hasActiveFilters
-                                ? 'Élargissez la recherche ou réinitialisez les filtres pour retrouver la liste complète.'
-                                : "Les risques apparaissent ici dès qu'une première évaluation probabilité × gravité est enregistrée depuis leur fiche."
+                                ? t('assessment.broadenSearchList')
+                                : t('assessment.emptyDescription')
                         }
                         compact
                         action={
                             hasActiveFilters ? (
                                 <Button variant="default" size="xs" onClick={resetFilters}>
-                                    Réinitialiser les filtres
+                                    {t('common.resetFilters')}
                                 </Button>
                             ) : undefined
                         }
@@ -322,33 +342,33 @@ const RiskDataTable = () => {
                         dataKey="id"
                         className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                        currentPageReportTemplate={t('common.currentPageReport', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })}
                     >
-                        <Column header="Risque" body={titleBody} sortable sortField="title" />
+                        <Column header={t('assessment.col.risk')} body={titleBody} sortable sortField="title" />
                         <Column
-                            header="Département"
+                            header={t('assessment.col.department')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{row.departmentName}</span>}
                             sortable
                             sortField="departmentName"
                             style={{ width: '10rem' }}
                         />
                         <Column
-                            header="Responsable"
+                            header={t('assessment.col.owner')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{row.ownerName}</span>}
                             sortable
                             sortField="ownerName"
                             style={{ width: '10rem' }}
                         />
                         <Column
-                            header="Dernière évaluation"
+                            header={t('assessment.col.lastAssessment')}
                             body={(row) => <span className="text-[12.5px] text-slate-600">{row.updatedAtFormatted}</span>}
                             sortable
                             sortField="updatedAt"
                             style={{ width: '10rem' }}
                         />
-                        <Column header="Niveau" body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
-                        <Column header="Statut" body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
-                        <Column header="Actions" body={actionBody} headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                        <Column header={t('assessment.col.level')} body={levelBody} sortable sortField="levelRank" style={{ width: '9rem' }} />
+                        <Column header={t('assessment.col.status')} body={statusBody} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header={t('assessment.col.actions')} body={actionBody} headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                     </DataTable>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-1">

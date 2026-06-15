@@ -2,6 +2,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActionIcon,
     Button,
@@ -48,6 +49,17 @@ const ALL = 'ALL';
  * consultation des demandes de dotation.
  */
 const PPERequestsTable = () => {
+    const { t } = useTranslation('ppe');
+    // Libellés bilingues : clés i18n `ppe:*`, repli sur les libellés FR centralisés (ppeLabels.ts).
+    const tPriority = (code?: string | null): string =>
+        t(`priority.${(code ?? '').toUpperCase()}`, { defaultValue: priorityConfig(code).label });
+    const tRequestStatus = (code?: string | null): string =>
+        t(`requestStatus.${(code ?? '').toUpperCase()}`, { defaultValue: requestStatusConfig(code).label });
+    // Options de priorité traduites pour le <Select> (mêmes valeurs backend).
+    const priorityOptions = PRIORITY_OPTIONS.map((o) => ({
+        value: o.value,
+        label: t(`priority.${o.value.toUpperCase()}`, { defaultValue: o.label }),
+    }));
     const [showRequestForm, setShowRequestForm] = useState(false);
     const [employees, setEmployees] = useState<any[]>([]);
     // EPI actifs : pour le formulaire de demande (on ne demande que des EPI encore au catalogue)
@@ -77,18 +89,18 @@ const PPERequestsTable = () => {
             reason: '',
         },
         validate: {
-            empIds: (value) => (value.length > 0 ? null : 'Sélectionnez au moins un employé'),
-            ppeIds: (value) => (value.length > 0 ? null : 'Sélectionnez au moins un EPI'),
-            desiredDate: (value) => (value ? null : 'Choisissez une date souhaitée'),
-            priority: (value) => (value ? null : 'Sélectionnez une priorité'),
-            reason: (value) => (value ? null : 'Précisez le motif de la demande'),
+            empIds: (value) => (value.length > 0 ? null : t('requests.validateEmployees')),
+            ppeIds: (value) => (value.length > 0 ? null : t('requests.validatePpe')),
+            desiredDate: (value) => (value ? null : t('requests.validateDesiredDate')),
+            priority: (value) => (value ? null : t('requests.validatePriority')),
+            reason: (value) => (value ? null : t('requests.validateReason')),
         },
     });
 
     const approveForm = useForm({ initialValues: { comment: '' } });
     const rejectForm = useForm({
         initialValues: { comment: '' },
-        validate: { comment: (val) => (val.trim() ? null : 'Le motif du rejet est obligatoire') },
+        validate: { comment: (val) => (val.trim() ? null : t('requests.validateRejectComment')) },
     });
 
     useEffect(() => {
@@ -117,7 +129,7 @@ const PPERequestsTable = () => {
         getAllPpeRequests()
             .then(setRequests)
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des demandes EPI');
+                errorNotification(error.response?.data?.errorMessage || t('requests.loadError'));
             })
             .finally(() => setLoadingList(false));
     };
@@ -156,11 +168,11 @@ const PPERequestsTable = () => {
         try {
             setLoading(true);
             await approvePpeRequest(selectedRequest.id, values.comment);
-            successNotification('Demande approuvée');
+            successNotification(t('requests.approveSuccess'));
             setShowApproveModal(false);
             fetchRequests();
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || "L'approbation a échoué");
+            errorNotification(err.response?.data?.errorMessage || t('requests.approveError'));
         } finally {
             setLoading(false);
         }
@@ -170,11 +182,11 @@ const PPERequestsTable = () => {
         try {
             setLoading(true);
             await rejectPpeRequest(selectedRequest.id, values.comment);
-            successNotification('Demande rejetée');
+            successNotification(t('requests.rejectSuccess'));
             setShowRejectModal(false);
             fetchRequests();
         } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || 'Le rejet a échoué');
+            errorNotification(err.response?.data?.errorMessage || t('requests.rejectError'));
         } finally {
             setLoading(false);
         }
@@ -187,7 +199,7 @@ const PPERequestsTable = () => {
         for (const x of values.ppeIds) {
             const ppeItem = ppeMap[x];
             if (ppeItem && ppeItem.stock < empSize) {
-                error = `Stock insuffisant pour ${ppeItem.name}`;
+                error = t('requests.insufficientStock', { name: ppeItem.name });
                 break;
             }
         }
@@ -204,13 +216,13 @@ const PPERequestsTable = () => {
         };
         createPpeRequest(payload)
             .then(() => {
-                successNotification('Demande EPI enregistrée');
+                successNotification(t('requests.createSuccess'));
                 setShowRequestForm(false);
                 requestForm.reset();
                 fetchRequests();
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || 'La création de la demande a échoué');
+                errorNotification(err.response?.data?.errorMessage || t('requests.createError'));
             })
             .finally(() => setLoading(false));
     };
@@ -224,7 +236,7 @@ const PPERequestsTable = () => {
             <div className="flex flex-col gap-0.5">
                 {ids.map((id: any) => (
                     <span key={id} className="text-[13px] text-slate-800">
-                        {empMap[id]?.name || `Employé #${id}`}
+                        {empMap[id]?.name || t('requests.employeeFallback', { id })}
                     </span>
                 ))}
             </div>
@@ -238,7 +250,7 @@ const PPERequestsTable = () => {
             <div className="flex flex-col gap-0.5">
                 {ids.map((ppeId: any) => (
                     <span key={ppeId} className="text-[13px] text-slate-800">
-                        {ppeMap[ppeId]?.name || `EPI #${ppeId}`}
+                        {ppeMap[ppeId]?.name || t('requests.ppeFallback', { id: ppeId })}
                     </span>
                 ))}
             </div>
@@ -257,12 +269,12 @@ const PPERequestsTable = () => {
 
     const priorityTemplate = (rowData: any) => {
         const cfg = priorityConfig(rowData.priority);
-        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tPriority(rowData.priority)}</span>;
     };
 
     const statusTemplate = (rowData: any) => {
         const cfg = requestStatusConfig(rowData.status);
-        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{cfg.label}</span>;
+        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tRequestStatus(rowData.status)}</span>;
     };
 
     const dateTemplate = (rowData: any) => (
@@ -273,37 +285,37 @@ const PPERequestsTable = () => {
         <div className="flex gap-1.5 justify-center">
             {String(rowData.status).toUpperCase() === 'PENDING' && (
                 <>
-                    <Tooltip label="Approuver la demande" withArrow>
+                    <Tooltip label={t('requests.tooltipApprove')} withArrow>
                         <ActionIcon
                             variant="light"
                             color="teal"
                             size="sm"
                             onClick={() => openApproveModal(rowData)}
-                            aria-label="Approuver la demande"
+                            aria-label={t('requests.ariaApprove')}
                         >
                             <IconCheck size={14} stroke={1.5} />
                         </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Rejeter avec motif" withArrow>
+                    <Tooltip label={t('requests.tooltipReject')} withArrow>
                         <ActionIcon
                             variant="light"
                             color="red"
                             size="sm"
                             onClick={() => openRejectModal(rowData)}
-                            aria-label="Rejeter la demande"
+                            aria-label={t('requests.ariaReject')}
                         >
                             <IconX size={14} stroke={1.5} />
                         </ActionIcon>
                     </Tooltip>
                 </>
             )}
-            <Tooltip label="Consulter le détail" withArrow>
+            <Tooltip label={t('requests.tooltipView')} withArrow>
                 <ActionIcon
                     variant="light"
                     color="blue"
                     size="sm"
                     onClick={() => openViewModal(rowData)}
-                    aria-label="Consulter le détail de la demande"
+                    aria-label={t('requests.ariaView')}
                 >
                     <IconEye size={14} stroke={1.5} />
                 </ActionIcon>
@@ -315,14 +327,14 @@ const PPERequestsTable = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI' },
-                    { label: "Demandes d'EPI" },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule') },
+                    { label: t('requests.breadcrumb') },
                 ]}
                 icon={<IconClipboardList size={22} stroke={2} />}
                 iconColor="amber"
-                title="Demandes d'EPI"
-                subtitle="Demander, approuver ou rejeter les dotations d'équipements de protection"
+                title={t('requests.title')}
+                subtitle={t('requests.subtitle')}
                 actions={
                     <Button
                         leftSection={<IconPlus size={14} />}
@@ -330,7 +342,7 @@ const PPERequestsTable = () => {
                         size="sm"
                         onClick={() => setShowRequestForm(true)}
                     >
-                        Nouvelle demande
+                        {t('requests.newRequest')}
                     </Button>
                 }
             />
@@ -341,20 +353,20 @@ const PPERequestsTable = () => {
                     value={statusFilter}
                     onChange={setStatusFilter}
                     options={[
-                        { value: ALL, label: 'Toutes', count: requests.length, color: 'slate' },
-                        { value: 'PENDING', label: 'En attente', count: statusCounts.PENDING, color: 'violet' },
-                        { value: 'APPROVED', label: 'Approuvées', count: statusCounts.APPROVED, color: 'green' },
-                        { value: 'REJECTED', label: 'Rejetées', count: statusCounts.REJECTED, color: 'rose' },
+                        { value: ALL, label: t('requests.filterAll'), count: requests.length, color: 'slate' },
+                        { value: 'PENDING', label: t('requests.filterPending'), count: statusCounts.PENDING, color: 'violet' },
+                        { value: 'APPROVED', label: t('requests.filterApproved'), count: statusCounts.APPROVED, color: 'green' },
+                        { value: 'REJECTED', label: t('requests.filterRejected'), count: statusCounts.REJECTED, color: 'rose' },
                     ]}
                     rightElement={
                         <TextInput
-                            placeholder="Rechercher un employé, un EPI, un motif…"
+                            placeholder={t('requests.searchPlaceholder')}
                             leftSection={<IconSearch size={14} />}
                             value={search}
                             onChange={(e) => setSearch(e.currentTarget.value)}
                             size="xs"
                             w={280}
-                            aria-label="Rechercher une demande"
+                            aria-label={t('requests.searchAria')}
                         />
                     }
                 />
@@ -371,17 +383,17 @@ const PPERequestsTable = () => {
                 ) : !filteredRequests.length ? (
                     <EmptyState
                         icon={<IconClipboardList size={24} />}
-                        title={statusFilter === ALL ? 'Aucune demande enregistrée' : 'Aucune demande dans cette catégorie'}
+                        title={statusFilter === ALL ? t('requests.emptyAllTitle') : t('requests.emptyFilteredTitle')}
                         description={
                             statusFilter === ALL
-                                ? 'Créez la première demande de dotation EPI pour vos équipes.'
-                                : 'Changez de filtre pour consulter les autres demandes.'
+                                ? t('requests.emptyAllDescription')
+                                : t('requests.emptyFilteredDescription')
                         }
                         compact
                         action={
                             statusFilter === ALL ? (
                                 <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setShowRequestForm(true)}>
-                                    Nouvelle demande
+                                    {t('requests.newRequest')}
                                 </Button>
                             ) : undefined
                         }
@@ -398,15 +410,15 @@ const PPERequestsTable = () => {
                         dataKey="id"
                         className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="{first}–{last} sur {totalRecords}"
+                        currentPageReportTemplate={t('requests.currentPageReport')}
                     >
-                        <Column header="Employés" body={employeeTemplate} />
-                        <Column header="EPI demandés" body={requestedPpeTemplate} />
-                        <Column header="Motif" body={reasonTemplate} />
-                        <Column header="Priorité" body={priorityTemplate} sortable sortField="priority" style={{ width: '7.5rem' }} />
-                        <Column header="Date souhaitée" body={dateTemplate} sortable sortField="desiredDate" style={{ width: '9.5rem' }} />
-                        <Column header="Statut" body={statusTemplate} sortable sortField="status" style={{ width: '8rem' }} />
-                        <Column header="Actions" body={actionTemplate} headerStyle={{ width: '7rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
+                        <Column header={t('requests.colEmployees')} body={employeeTemplate} />
+                        <Column header={t('requests.colRequestedPpe')} body={requestedPpeTemplate} />
+                        <Column header={t('requests.colReason')} body={reasonTemplate} />
+                        <Column header={t('requests.colPriority')} body={priorityTemplate} sortable sortField="priority" style={{ width: '7.5rem' }} />
+                        <Column header={t('requests.colDesiredDate')} body={dateTemplate} sortable sortField="desiredDate" style={{ width: '9.5rem' }} />
+                        <Column header={t('requests.colStatus')} body={statusTemplate} sortable sortField="status" style={{ width: '8rem' }} />
+                        <Column header={t('requests.colActions')} body={actionTemplate} headerStyle={{ width: '7rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                     </DataTable>
                 )}
             </div>
@@ -415,7 +427,7 @@ const PPERequestsTable = () => {
             <Modal
                 opened={showRequestForm}
                 onClose={() => setShowRequestForm(false)}
-                title={<span className="text-base text-slate-900">Nouvelle demande d'EPI</span>}
+                title={<span className="text-base text-slate-900">{t('requests.modalNewTitle')}</span>}
                 size="xl"
                 centered
                 radius="md"
@@ -423,8 +435,8 @@ const PPERequestsTable = () => {
                 <LoadingOverlay visible={loading} />
                 <form className="grid grid-cols-1 gap-4" onSubmit={requestForm.onSubmit(handleSubmitRequest)}>
                     <MultiSelect
-                        label="Employés concernés"
-                        placeholder="Sélectionner les employés"
+                        label={t('requests.fieldEmployees')}
+                        placeholder={t('requests.fieldEmployeesPlaceholder')}
                         data={employees.map((emp: any) => ({ value: '' + emp.id, label: emp.name }))}
                         searchable
                         hidePickedOptions
@@ -433,11 +445,11 @@ const PPERequestsTable = () => {
                         {...requestForm.getInputProps('empIds')}
                     />
                     <MultiSelect
-                        label="EPI demandés"
-                        placeholder="Sélectionner les EPI"
+                        label={t('requests.fieldRequestedPpe')}
+                        placeholder={t('requests.fieldRequestedPpePlaceholder')}
                         data={activePpe.map((item: any) => ({
                             value: '' + item.id,
-                            label: `${item.name} — ${ppeCategoryLabel(item.category)} (stock : ${item.stock})`,
+                            label: t('requests.ppeOptionLabel', { name: item.name, category: ppeCategoryLabel(item.category), stock: item.stock }),
                         }))}
                         hidePickedOptions
                         searchable
@@ -447,8 +459,8 @@ const PPERequestsTable = () => {
                     />
                     <div className="grid grid-cols-2 gap-3">
                         <DateInput
-                            label="Date souhaitée"
-                            placeholder="JJ/MM/AAAA"
+                            label={t('requests.fieldDesiredDate')}
+                            placeholder={t('requests.datePlaceholder')}
                             withAsterisk
                             size="sm"
                             valueFormat="DD/MM/YYYY"
@@ -456,17 +468,17 @@ const PPERequestsTable = () => {
                             minDate={new Date()}
                         />
                         <Select
-                            label="Priorité"
-                            placeholder="Sélectionner une priorité"
-                            data={PRIORITY_OPTIONS}
+                            label={t('requests.fieldPriority')}
+                            placeholder={t('requests.fieldPriorityPlaceholder')}
+                            data={priorityOptions}
                             withAsterisk
                             size="sm"
                             {...requestForm.getInputProps('priority')}
                         />
                     </div>
                     <Textarea
-                        label="Motif"
-                        placeholder="ex. Renouvellement des gants anti-coupure de l'équipe forage après usure"
+                        label={t('requests.fieldReason')}
+                        placeholder={t('requests.fieldReasonPlaceholder')}
                         rows={3}
                         withAsterisk
                         size="sm"
@@ -474,10 +486,10 @@ const PPERequestsTable = () => {
                     />
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                         <Button variant="default" size="sm" onClick={() => setShowRequestForm(false)}>
-                            Annuler
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" size="sm" color="teal" leftSection={<IconClipboardList size={14} />}>
-                            Soumettre la demande
+                            {t('requests.submit')}
                         </Button>
                     </div>
                 </form>
@@ -487,24 +499,24 @@ const PPERequestsTable = () => {
             <Modal
                 opened={showApproveModal}
                 onClose={() => setShowApproveModal(false)}
-                title={<span className="text-base text-slate-900">Approuver la demande</span>}
+                title={<span className="text-base text-slate-900">{t('requests.modalApproveTitle')}</span>}
                 centered
                 radius="md"
             >
                 <LoadingOverlay visible={loading} />
                 <form onSubmit={approveForm.onSubmit(handleApprove)}>
                     <Textarea
-                        label="Commentaire (facultatif)"
-                        placeholder="ex. Retrait au magasin EPI dès réception"
+                        label={t('requests.fieldApproveComment')}
+                        placeholder={t('requests.fieldApproveCommentPlaceholder')}
                         size="sm"
                         {...approveForm.getInputProps('comment')}
                     />
                     <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
                         <Button variant="default" size="sm" onClick={() => setShowApproveModal(false)}>
-                            Annuler
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" size="sm" color="teal" leftSection={<IconCheck size={14} />}>
-                            Approuver
+                            {t('requests.approve')}
                         </Button>
                     </div>
                 </form>
@@ -514,25 +526,25 @@ const PPERequestsTable = () => {
             <Modal
                 opened={showRejectModal}
                 onClose={() => setShowRejectModal(false)}
-                title={<span className="text-base text-slate-900">Rejeter la demande</span>}
+                title={<span className="text-base text-slate-900">{t('requests.modalRejectTitle')}</span>}
                 centered
                 radius="md"
             >
                 <LoadingOverlay visible={loading} />
                 <form onSubmit={rejectForm.onSubmit(handleReject)}>
                     <Textarea
-                        label="Motif du rejet"
-                        placeholder="ex. Référence indisponible, demande à reformuler avec la taille exacte"
+                        label={t('requests.fieldRejectComment')}
+                        placeholder={t('requests.fieldRejectCommentPlaceholder')}
                         withAsterisk
                         size="sm"
                         {...rejectForm.getInputProps('comment')}
                     />
                     <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
                         <Button variant="default" size="sm" onClick={() => setShowRejectModal(false)}>
-                            Annuler
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" size="sm" color="red" leftSection={<IconX size={14} />}>
-                            Rejeter
+                            {t('requests.reject')}
                         </Button>
                     </div>
                 </form>
@@ -542,7 +554,7 @@ const PPERequestsTable = () => {
             <Modal
                 opened={showViewModal}
                 onClose={() => setShowViewModal(false)}
-                title={<span className="text-base text-slate-900">Détail de la demande</span>}
+                title={<span className="text-base text-slate-900">{t('requests.modalViewTitle')}</span>}
                 size="lg"
                 centered
                 radius="md"
@@ -550,44 +562,44 @@ const PPERequestsTable = () => {
                 {viewData && (
                     <div className="flex flex-col gap-2 text-[12.5px]">
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">Employés</span>
+                            <span className="text-slate-500">{t('requests.detailEmployees')}</span>
                             <span className="text-slate-800">
                                 {(viewData.empIds || []).map((id: any) => empMap[id]?.name || `#${id}`).join(', ') || '—'}
                             </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">EPI demandés</span>
+                            <span className="text-slate-500">{t('requests.detailRequestedPpe')}</span>
                             <span className="text-slate-800">
                                 {(viewData.ppeIds || []).map((id: any) => ppeMap[id]?.name || `#${id}`).join(', ') || '—'}
                             </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">Motif</span>
+                            <span className="text-slate-500">{t('requests.detailReason')}</span>
                             <span className="text-slate-800">{viewData.reason || '—'}</span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                            <span className="text-slate-500">Priorité</span>
+                            <span className="text-slate-500">{t('requests.detailPriority')}</span>
                             <span>
                                 <span className={`${CHIP_BASE} ${priorityConfig(viewData.priority).chip}`}>
-                                    {priorityConfig(viewData.priority).label}
+                                    {tPriority(viewData.priority)}
                                 </span>
                             </span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">Date souhaitée</span>
+                            <span className="text-slate-500">{t('requests.detailDesiredDate')}</span>
                             <span className="text-slate-800">{formatDateFr(viewData.desiredDate)}</span>
                         </div>
                         <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                            <span className="text-slate-500">Statut</span>
+                            <span className="text-slate-500">{t('requests.detailStatus')}</span>
                             <span>
                                 <span className={`${CHIP_BASE} ${requestStatusConfig(viewData.status).chip}`}>
-                                    {requestStatusConfig(viewData.status).label}
+                                    {tRequestStatus(viewData.status)}
                                 </span>
                             </span>
                         </div>
                         {viewData.comment && (
                             <div className="grid grid-cols-[140px_1fr] gap-2">
-                                <span className="text-slate-500">Commentaire</span>
+                                <span className="text-slate-500">{t('requests.detailComment')}</span>
                                 <span className="text-slate-800">{viewData.comment}</span>
                             </div>
                         )}
@@ -595,7 +607,7 @@ const PPERequestsTable = () => {
                 )}
                 <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
                     <Button variant="default" size="sm" onClick={() => setShowViewModal(false)}>
-                        Fermer
+                        {t('requests.close')}
                     </Button>
                 </div>
             </Modal>

@@ -3,6 +3,7 @@ import { Tabs } from '@mantine/core';
 import { IconBellRinging, IconInfoCircle, IconMessageCircle, IconUsers } from '@tabler/icons-react';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import CommunicationDetailsTab from './CommunicationDetailsTab';
 import CommunicationRecipientsPage from './CommunicationRecipientsPage';
@@ -21,6 +22,7 @@ import { errorNotification } from '../../../utility/NotificationUtility';
 
 const CommunicationDetails = () => {
     const { id } = useParams();
+    const { t } = useTranslation('communications');
 
     const [communication, setCommunication] = useState<any>({});
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
@@ -35,7 +37,7 @@ const CommunicationDetails = () => {
                 setCommunication(data ?? {});
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "La communication n'a pas pu être chargée");
+                errorNotification(err.response?.data?.errorMessage || t('details.loadError'));
             })
             .finally(() => {
                 dispatch(hideOverlay());
@@ -65,27 +67,27 @@ const CommunicationDetails = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Communications HSE', to: '/communications' },
-                    { label: 'Détail de la communication' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.communications'), to: '/communications' },
+                    { label: t('breadcrumbs.communicationDetail') },
                 ]}
                 icon={<IconMessageCircle size={22} stroke={2} />}
                 iconColor="pink"
-                title={communication?.title || 'Détail de la communication'}
-                subtitle="Contenu, planification, destinataires et historique des envois"
+                title={communication?.title || t('details.defaultTitle')}
+                subtitle={t('details.subtitle')}
             />
 
             <Tabs defaultValue="details" color="teal">
                 <Tabs.List>
                     <Tabs.Tab value="details" leftSection={<IconInfoCircle size={15} />}>
-                        Détails
+                        {t('details.tabDetails')}
                     </Tabs.Tab>
                     <Tabs.Tab value="recipients" leftSection={<IconUsers size={15} />}>
-                        Destinataires
+                        {t('details.tabRecipients')}
                     </Tabs.Tab>
                     <Tabs.Tab value="notifications" leftSection={<IconBellRinging size={15} />}>
-                        Historique des envois
+                        {t('details.tabNotifications')}
                     </Tabs.Tab>
                 </Tabs.List>
 

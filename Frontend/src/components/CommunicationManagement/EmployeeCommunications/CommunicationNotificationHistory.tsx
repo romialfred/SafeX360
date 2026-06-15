@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconBellRinging } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { getNotificationsByCommunication } from '../../../services/NotificationService';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { SkeletonTable } from '../../UtilityComp/LoadingSkeleton';
@@ -26,6 +27,10 @@ type NotificationItem = {
 };
 
 const CommunicationNotificationHistory = ({ communicationId }: NotificationHistoryProps) => {
+    const { t } = useTranslation('communications');
+    // Libellé de statut bilingue : clé i18n, repli sur le libellé FR centralisé.
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
     const [data, setData] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState(false);
@@ -62,8 +67,8 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
             <div className="bg-white rounded-xl border border-slate-200 p-4">
                 <EmptyState
                     icon={<IconBellRinging size={24} />}
-                    title="Communication introuvable"
-                    description="L'historique des envois n'a pas pu être rattaché à une communication."
+                    title={t('notificationHistory.communicationNotFoundTitle')}
+                    description={t('notificationHistory.communicationNotFoundDescription')}
                     compact
                 />
             </div>
@@ -82,11 +87,11 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
                         letterSpacing: '-0.01em',
                     }}
                 >
-                    Historique des envois
+                    {t('notificationHistory.title')}
                 </h3>
                 {!loading && sortedData.length > 0 && (
                     <span className="text-[11.5px] text-slate-500">
-                        {sortedData.length} envoi{sortedData.length > 1 ? 's' : ''}
+                        {t('notificationHistory.count', { count: sortedData.length })}
                     </span>
                 )}
             </div>
@@ -96,16 +101,16 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
             ) : loadError ? (
                 <EmptyState
                     icon={<IconBellRinging size={24} />}
-                    title="Historique indisponible"
-                    description="L'historique des envois n'a pas pu être chargé. Réessayez plus tard."
+                    title={t('notificationHistory.unavailableTitle')}
+                    description={t('notificationHistory.unavailableDescription')}
                     iconColor="rose"
                     compact
                 />
             ) : sortedData.length === 0 ? (
                 <EmptyState
                     icon={<IconBellRinging size={24} />}
-                    title="Aucune notification générée"
-                    description="Aucune notification n'a encore été envoyée pour cette communication."
+                    title={t('notificationHistory.emptyTitle')}
+                    description={t('notificationHistory.emptyDescription')}
                     compact
                 />
             ) : (
@@ -113,9 +118,9 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-200">
-                                <th className="py-2 pr-4 text-[12px] font-medium text-slate-500 w-36">Statut</th>
-                                <th className="py-2 pr-4 text-[12px] font-medium text-slate-500">Détail</th>
-                                <th className="py-2 text-[12px] font-medium text-slate-500 w-44">Envoyée le</th>
+                                <th className="py-2 pr-4 text-[12px] font-medium text-slate-500 w-36">{t('notificationHistory.colStatus')}</th>
+                                <th className="py-2 pr-4 text-[12px] font-medium text-slate-500">{t('notificationHistory.colDetail')}</th>
+                                <th className="py-2 text-[12px] font-medium text-slate-500 w-44">{t('notificationHistory.colSentAt')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -123,13 +128,13 @@ const CommunicationNotificationHistory = ({ communicationId }: NotificationHisto
                                 const cfg = notifStatusConfig(item.status);
                                 const failure = isNotifFailure(item.status);
                                 const detail = failure
-                                    ? item.responseMessage || "L'envoi de la notification a échoué."
-                                    : item.responseMessage || 'Aucun détail complémentaire';
+                                    ? item.responseMessage || t('notificationHistory.failureDefault')
+                                    : item.responseMessage || t('notificationHistory.noDetail');
                                 return (
                                     <tr key={item.id}>
                                         <td className="py-2 pr-4">
                                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${cfg.chip}`}>
-                                                {cfg.label}
+                                                {tNotifStatus(item.status)}
                                             </span>
                                         </td>
                                         <td className={`py-2 pr-4 text-[12.5px] ${failure ? 'text-rose-600' : 'text-slate-600'}`}>

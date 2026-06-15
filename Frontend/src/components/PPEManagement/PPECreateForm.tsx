@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconDeviceFloppy, IconHelmet, IconListDetails, IconShieldPlus } from '@tabler/icons-react';
@@ -17,6 +18,10 @@ import { CHIP_BASE, PPE_CATEGORY_OPTIONS, ppeCategoryLabel, STOCK_STATUS_CONFIG,
 const PPECreateForm = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('ppe');
+    // Libellé de statut de stock bilingue : clé i18n `ppe:stockStatus.*`, repli sur le libellé FR centralisé.
+    const tStockStatus = (bucket: keyof typeof STOCK_STATUS_CONFIG): string =>
+        t(`stockStatus.${bucket}`, { defaultValue: STOCK_STATUS_CONFIG[bucket].label });
     const [ppe, setPpe] = useState<any[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
@@ -31,16 +36,16 @@ const PPECreateForm = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return 'Le nom de l\'EPI est obligatoire';
-                return trimmed.length > 50 ? '50 caractères maximum' : null;
+                if (trimmed.length === 0) return t('create.validateNameRequired');
+                return trimmed.length > 50 ? t('create.validateNameMax') : null;
             },
             description: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return 'La description est obligatoire';
-                return trimmed.length > 250 ? '250 caractères maximum' : null;
+                if (trimmed.length === 0) return t('create.validateDescriptionRequired');
+                return trimmed.length > 250 ? t('create.validateDescriptionMax') : null;
             },
-            category: (value) => (value?.trim().length > 0 ? null : 'La catégorie est obligatoire'),
-            minStock: (value) => (value ? null : 'Le stock minimum est obligatoire'),
+            category: (value) => (value?.trim().length > 0 ? null : t('create.validateCategory')),
+            minStock: (value) => (value ? null : t('create.validateMinStock')),
         },
     });
 
@@ -55,11 +60,11 @@ const PPECreateForm = () => {
         dispatch(showOverlay());
         createPPE(form.values)
             .then(() => {
-                successNotification('EPI ajouté au catalogue');
+                successNotification(t('create.createSuccess'));
                 navigate('/ppe-management');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "La création de l'EPI a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('create.createError'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -71,14 +76,14 @@ const PPECreateForm = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des EPI', to: '/ppe-management' },
-                    { label: 'Nouvel EPI' },
+                    { label: t('common.breadcrumbHome'), to: '/' },
+                    { label: t('common.breadcrumbModule'), to: '/ppe-management' },
+                    { label: t('create.breadcrumb') },
                 ]}
                 icon={<IconShieldPlus size={22} stroke={2} />}
                 iconColor="amber"
-                title="Nouvel EPI au catalogue"
-                subtitle="Référencer un équipement de protection avec son seuil de réapprovisionnement"
+                title={t('create.title')}
+                subtitle={t('create.subtitle')}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -93,23 +98,23 @@ const PPECreateForm = () => {
                                 className="text-slate-800"
                                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                             >
-                                Caractéristiques de l'EPI
+                                {t('create.cardTitle')}
                             </h2>
-                            <p className="text-[11.5px] text-slate-500">Nom, catégorie, description et seuil de stock</p>
+                            <p className="text-[11.5px] text-slate-500">{t('create.cardSubtitle')}</p>
                         </div>
                     </header>
                     <form onSubmit={form.onSubmit(handleSubmit)} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TextInput
-                            label="Nom de l'EPI"
-                            placeholder="ex. Casque MSA V-Gard"
+                            label={t('create.fieldName')}
+                            placeholder={t('create.fieldNamePlaceholder')}
                             withAsterisk
                             size="sm"
                             className="md:col-span-2"
                             {...form.getInputProps('name')}
                         />
                         <Select
-                            label="Catégorie"
-                            placeholder="Sélectionner une catégorie"
+                            label={t('create.fieldCategory')}
+                            placeholder={t('create.fieldCategoryPlaceholder')}
                             data={PPE_CATEGORY_OPTIONS}
                             withAsterisk
                             size="sm"
@@ -117,8 +122,8 @@ const PPECreateForm = () => {
                             {...form.getInputProps('category')}
                         />
                         <Textarea
-                            label="Description"
-                            placeholder="ex. Casque de chantier avec jugulaire 4 points, coiffe réglable, usage mine à ciel ouvert"
+                            label={t('create.fieldDescription')}
+                            placeholder={t('create.fieldDescriptionPlaceholder')}
                             rows={4}
                             withAsterisk
                             size="sm"
@@ -126,23 +131,23 @@ const PPECreateForm = () => {
                             {...form.getInputProps('description')}
                         />
                         <NumberInput
-                            label="Stock minimum"
-                            description="Seuil d'alerte de réapprovisionnement"
-                            placeholder="5"
+                            label={t('create.fieldMinStock')}
+                            description={t('create.fieldMinStockDescription')}
+                            placeholder={t('create.fieldMinStockPlaceholder')}
                             min={1}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('minStock')}
                         />
                         <TextInput
-                            label="Norme de certification (facultatif)"
-                            placeholder="ex. EN 397"
+                            label={t('create.fieldCertification')}
+                            placeholder={t('create.fieldCertificationPlaceholder')}
                             size="sm"
                             {...form.getInputProps('certificationStandard')}
                         />
                         <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
                             <Button variant="default" size="sm" onClick={() => navigate('/ppe-management')}>
-                                Annuler
+                                {t('common.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -151,7 +156,7 @@ const PPECreateForm = () => {
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={14} />}
                             >
-                                Créer l'EPI
+                                {t('create.submit')}
                             </Button>
                         </div>
                     </form>
@@ -167,13 +172,13 @@ const PPECreateForm = () => {
                             className="text-slate-800"
                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}
                         >
-                            Déjà au catalogue
+                            {t('create.asideTitle')}
                         </h2>
                     </header>
                     <div className="p-3 space-y-2">
                         {ppe.length === 0 && (
                             <p className="text-[12.5px] text-slate-500 py-4 text-center">
-                                Aucun EPI actif au catalogue pour le moment.
+                                {t('create.asideEmpty')}
                             </p>
                         )}
                         {ppe.slice(0, 6).map((item: any) => {
@@ -183,11 +188,11 @@ const PPECreateForm = () => {
                                 <div key={item.id} className="border border-slate-200 rounded-lg p-3">
                                     <div className="flex items-start justify-between gap-2">
                                         <p className="text-[13px] text-slate-800 leading-snug">{item.name}</p>
-                                        <span className={`${CHIP_BASE} ${cfg.chip} flex-shrink-0`}>{cfg.label}</span>
+                                        <span className={`${CHIP_BASE} ${cfg.chip} flex-shrink-0`}>{tStockStatus(bucket)}</span>
                                     </div>
                                     <p className="text-[11.5px] text-slate-500 mt-0.5">{ppeCategoryLabel(item.category)}</p>
                                     <p className="text-[11.5px] text-slate-500 mt-1">
-                                        Stock : {item.stock ?? 0} · Minimum : {item.minStock ?? 0}
+                                        {t('create.stockLine', { stock: item.stock ?? 0, minStock: item.minStock ?? 0 })}
                                     </p>
                                 </div>
                             );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge, Box, Center, Loader, ScrollArea, ThemeIcon, Timeline } from '@mantine/core';
 import { DonutChart, BarChart } from '@mantine/charts';
 import {
@@ -118,6 +119,14 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const CommunicationDashboard = () => {
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tCategory = (code?: string | null) => t(`category.${code ?? ''}`, { defaultValue: categoryLabel(code) });
+    const tScheduleType = (code?: string | null) =>
+        t(`scheduleType.${(code ?? '').toUpperCase()}`, { defaultValue: scheduleTypeLabel(code) });
+    const tCommStatus = (status?: string | null) =>
+        t(`commStatus.${(status ?? '').toUpperCase()}`, { defaultValue: commStatusConfig(status).label });
     const [stats, setStats] = useState<CommunicationStatsResponse>(DEFAULT_STATS);
     const [recentCommunications, setRecentCommunications] = useState<CommunicationSummary[]>([]);
     const [departmentMap, setDepartmentMap] = useState<DepartmentsMap>({});
@@ -157,7 +166,7 @@ const CommunicationDashboard = () => {
                 setDepartmentMap(mapIdToName(departmentsList) as DepartmentsMap);
             } catch (_err) {
                 if (!ignore) {
-                    setError('Les données du tableau de bord sont momentanément indisponibles.');
+                    setError(t('dashboard.loadErrorMessage'));
                     setStats(DEFAULT_STATS);
                     setRecentCommunications([]);
                     setDepartmentMap({});
@@ -207,26 +216,28 @@ const CommunicationDashboard = () => {
 
     const typeChartData = useMemo(
         () => sortedByType.map((item, index) => ({
-            name: typeLabel(item.type),
+            name: tType(item.type),
             value: item.total ?? 0,
             color: CHART_COLORS[index % CHART_COLORS.length],
         })),
-        [sortedByType],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [sortedByType, t],
     );
 
     const categoryChartData = useMemo(
         () => sortedByCategory.map((item, index) => ({
-            name: categoryLabel(item.category),
+            name: tCategory(item.category),
             total: item.total ?? 0,
             color: CHART_COLORS[index % CHART_COLORS.length],
         })),
-        [sortedByCategory],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [sortedByCategory, t],
     );
 
     const resolveDepartmentName = useCallback((id?: number | null) => {
-        if (id === null || typeof id === 'undefined') return 'Non affecté';
-        return departmentMap[id]?.name || `Département ${id}`;
-    }, [departmentMap]);
+        if (id === null || typeof id === 'undefined') return t('dashboard.unassignedDepartment');
+        return departmentMap[id]?.name || t('dashboard.departmentFallback', { id });
+    }, [departmentMap, t]);
 
     const departmentDonutData = useMemo(
         () => sortedByDepartment.map((item, index) => ({
@@ -267,18 +278,18 @@ const CommunicationDashboard = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Tableau de bord' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.dashboard') },
                 ]}
                 icon={<IconMessageCircle size={22} stroke={2} />}
                 iconColor="pink"
-                title="Tableau de bord — Communication HSE"
-                subtitle="ISO 45001 §7.4 — Communications internes, sensibilisation et engagement des collaborateurs"
+                title={t('dashboard.title')}
+                subtitle={t('dashboard.subtitle')}
             />
 
             {error && (
-                <ErrorBanner tone="error" title="Échec du chargement">
+                <ErrorBanner tone="error" title={t('dashboard.loadErrorTitle')}>
                     {error}
                 </ErrorBanner>
             )}
@@ -286,40 +297,40 @@ const CommunicationDashboard = () => {
             {/* KPI */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <KpiTile
-                    label="Total communications"
+                    label={t('dashboard.kpiTotal')}
                     value={loading ? '…' : formatCount(totalByType)}
                     tone="slate"
                     icon={<IconMail size={14} stroke={1.8} />}
-                    referenceValue="Toutes périodes confondues"
+                    referenceValue={t('dashboard.kpiTotalReference')}
                 />
                 <KpiTile
-                    label="Canal principal"
-                    value={loading ? '…' : topType ? typeLabel(topType.type) : '—'}
+                    label={t('dashboard.kpiMainChannel')}
+                    value={loading ? '…' : topType ? tType(topType.type) : '—'}
                     tone="blue"
                     icon={<IconBell size={14} stroke={1.8} />}
                     referenceValue={
                         loading
                             ? undefined
                             : topType
-                                ? `${formatCount(topType.total)} envoi${(topType.total ?? 0) > 1 ? 's' : ''}${topTypeShare ? ` · ${topTypeShare}%` : ''}`
-                                : 'En attente de statistiques'
+                                ? `${t('dashboard.kpiMainChannelSend', { count: topType.total ?? 0 })}${topTypeShare ? t('dashboard.kpiShareSuffix', { share: topTypeShare }) : ''}`
+                                : t('dashboard.kpiAwaitingStats')
                     }
                 />
                 <KpiTile
-                    label="Catégorie principale"
-                    value={loading ? '…' : topCategory ? categoryLabel(topCategory.category) : '—'}
+                    label={t('dashboard.kpiMainCategory')}
+                    value={loading ? '…' : topCategory ? tCategory(topCategory.category) : '—'}
                     tone="teal"
                     icon={<IconChartBar size={14} stroke={1.8} />}
                     referenceValue={
                         loading
                             ? undefined
                             : topCategory
-                                ? `${formatCount(topCategory.total)} communication${(topCategory.total ?? 0) > 1 ? 's' : ''}`
-                                : 'En attente de statistiques'
+                                ? t('dashboard.kpiCommunication', { count: topCategory.total ?? 0 })
+                                : t('dashboard.kpiAwaitingStats')
                     }
                 />
                 <KpiTile
-                    label="Département le plus actif"
+                    label={t('dashboard.kpiMostActiveDepartment')}
                     value={loading ? '…' : topDepartment ? resolveDepartmentName(topDepartment.departmentId) : '—'}
                     tone="violet"
                     icon={<IconUsers size={14} stroke={1.8} />}
@@ -327,8 +338,8 @@ const CommunicationDashboard = () => {
                         loading
                             ? undefined
                             : topDepartment
-                                ? `${formatCount(topDepartment.total)} communication${(topDepartment.total ?? 0) > 1 ? 's' : ''}${topDepartmentShare ? ` · ${topDepartmentShare}% du volume` : ''}`
-                                : 'En attente de statistiques'
+                                ? `${t('dashboard.kpiCommunication', { count: topDepartment.total ?? 0 })}${topDepartmentShare ? t('dashboard.kpiVolumeShareSuffix', { share: topDepartmentShare }) : ''}`
+                                : t('dashboard.kpiAwaitingStats')
                     }
                 />
             </div>
@@ -337,13 +348,13 @@ const CommunicationDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Communications par canal</SectionTitle>
+                        <SectionTitle>{t('dashboard.byChannelTitle')}</SectionTitle>
                         <span className="text-[11.5px] text-slate-500">
                             {loading
-                                ? 'Chargement…'
+                                ? t('dashboard.loading')
                                 : typeChartData.length
-                                    ? `${typeChartData.length} can${typeChartData.length > 1 ? 'aux suivis' : 'al suivi'}`
-                                    : 'Aucune donnée'}
+                                    ? t('dashboard.channelsTracked', { count: typeChartData.length })
+                                    : t('dashboard.noData')}
                         </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
@@ -368,8 +379,8 @@ const CommunicationDashboard = () => {
                                 ) : (
                                     <EmptyState
                                         icon={<IconChartBar size={20} />}
-                                        title="Aucune donnée par canal"
-                                        description="Les volumes apparaîtront après les premières diffusions."
+                                        title={t('dashboard.emptyChannelTitle')}
+                                        description={t('dashboard.emptyChannelDescription')}
                                         compact
                                     />
                                 )}
@@ -400,13 +411,13 @@ const CommunicationDashboard = () => {
 
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Communications par catégorie</SectionTitle>
+                        <SectionTitle>{t('dashboard.byCategoryTitle')}</SectionTitle>
                         <span className="text-[11.5px] text-slate-500">
                             {loading
-                                ? 'Chargement…'
+                                ? t('dashboard.loading')
                                 : categoryChartData.length
-                                    ? 'Répartition des envois'
-                                    : 'Aucune donnée'}
+                                    ? t('dashboard.categoryDistribution')
+                                    : t('dashboard.noData')}
                         </span>
                     </div>
                     <Box h={260}>
@@ -419,7 +430,7 @@ const CommunicationDashboard = () => {
                                 h={250}
                                 data={categoryChartData}
                                 dataKey="name"
-                                series={[{ name: 'total', color: CHART_COLORS[0], label: 'Communications' }]}
+                                series={[{ name: 'total', color: CHART_COLORS[0], label: t('dashboard.communicationsSeriesLabel') }]}
                                 withTooltip
                                 gridAxis="y"
                                 strokeDasharray="3 3"
@@ -430,8 +441,8 @@ const CommunicationDashboard = () => {
                         ) : (
                             <EmptyState
                                 icon={<IconChartBar size={20} />}
-                                title="Aucune donnée par catégorie"
-                                description="Les volumes apparaîtront après les premières diffusions."
+                                title={t('dashboard.emptyCategoryTitle')}
+                                description={t('dashboard.emptyCategoryDescription')}
                                 compact
                             />
                         )}
@@ -443,12 +454,12 @@ const CommunicationDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Répartition par département</SectionTitle>
+                        <SectionTitle>{t('dashboard.byDepartmentTitle')}</SectionTitle>
                         <span className="text-[11.5px] text-slate-500">
                             {loading
-                                ? 'Chargement…'
+                                ? t('dashboard.loading')
                                 : topDepartmentShare
-                                    ? `Part principale : ${topDepartmentShare}%`
+                                    ? t('dashboard.mainShare', { share: topDepartmentShare })
                                     : '—'}
                         </span>
                     </div>
@@ -478,8 +489,8 @@ const CommunicationDashboard = () => {
                                 ) : (
                                     <EmptyState
                                         icon={<IconUsers size={20} />}
-                                        title="Aucune donnée par département"
-                                        description="Les volumes apparaîtront après les premières diffusions."
+                                        title={t('dashboard.emptyDepartmentTitle')}
+                                        description={t('dashboard.emptyDepartmentDescription')}
                                         compact
                                     />
                                 )}
@@ -510,13 +521,13 @@ const CommunicationDashboard = () => {
 
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Dernières communications</SectionTitle>
+                        <SectionTitle>{t('dashboard.recentTitle')}</SectionTitle>
                         <span className="text-[11.5px] text-slate-500">
                             {loading
-                                ? 'Chargement…'
+                                ? t('dashboard.loading')
                                 : timelineItems.length
-                                    ? 'Cinq entrées les plus récentes'
-                                    : 'Aucune communication récente'}
+                                    ? t('dashboard.recentFiveEntries')
+                                    : t('dashboard.noRecentCommunication')}
                         </span>
                     </div>
                     <ScrollArea h={300}>
@@ -530,6 +541,7 @@ const CommunicationDashboard = () => {
                                     const urgent = isUrgentValue(comm.urgency);
                                     const scheduleStatus = comm.schedule?.status;
                                     const statusCfg = scheduleStatus ? commStatusConfig(scheduleStatus) : null;
+                                    const statusLabel = scheduleStatus ? tCommStatus(scheduleStatus) : null;
                                     const recipientsTotal = parseRecipientIds(comm.recipients).length;
                                     const departmentName = resolveDepartmentName(comm.departmentId);
                                     const BulletIcon = urgent ? IconAlertTriangle : IconMail;
@@ -539,7 +551,7 @@ const CommunicationDashboard = () => {
                                             key={comm.id}
                                             title={
                                                 <span className="text-[13px] text-slate-800">
-                                                    {comm.title || 'Communication sans titre'}
+                                                    {comm.title || t('dashboard.untitledCommunication')}
                                                 </span>
                                             }
                                             bullet={(
@@ -557,17 +569,17 @@ const CommunicationDashboard = () => {
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     {comm.category && (
                                                         <Badge color="gray" variant="light" size="xs" radius="sm">
-                                                            {categoryLabel(comm.category)}
+                                                            {tCategory(comm.category)}
                                                         </Badge>
                                                     )}
                                                     {urgent && (
                                                         <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-rose-700">
-                                                            Urgente
+                                                            {t('dashboard.badgeUrgent')}
                                                         </span>
                                                     )}
                                                     {statusCfg && (
                                                         <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                                            {statusCfg.label}
+                                                            {statusLabel}
                                                         </span>
                                                     )}
                                                 </div>
@@ -576,27 +588,27 @@ const CommunicationDashboard = () => {
                                                 </span>
                                             </div>
                                             <p className="text-[12px] text-slate-600">
-                                                {typeLabel(comm.type)} · {recipientsTotal} destinataire{recipientsTotal > 1 ? 's' : ''} · {departmentName}
+                                                {tType(comm.type)} · {t('dashboard.recipients', { count: recipientsTotal })} · {departmentName}
                                             </p>
                                             {comm.schedule?.scheduleType && (
                                                 <p className="text-[11.5px] text-slate-500 mt-0.5">
-                                                    Planification : {scheduleTypeLabel(comm.schedule.scheduleType)}
+                                                    {t('dashboard.schedulePrefix', { value: tScheduleType(comm.schedule.scheduleType) })}
                                                 </p>
                                             )}
                                             {comm.schedule?.nextRunAt && (
                                                 <p className="text-[11.5px] text-slate-500 mt-0.5 inline-flex items-center gap-1">
                                                     <IconClock size={12} aria-hidden="true" />
-                                                    Prochain envoi : {formatDateFr(comm.schedule.nextRunAt)}
+                                                    {t('dashboard.nextRun', { date: formatDateFr(comm.schedule.nextRunAt) })}
                                                 </p>
                                             )}
                                             {comm.expiresAt && (
                                                 <p className="text-[11.5px] text-slate-500 mt-0.5">
-                                                    Échéance : {formatDateFr(comm.expiresAt)}
+                                                    {t('dashboard.deadline', { date: formatDateFr(comm.expiresAt) })}
                                                 </p>
                                             )}
                                             {comm.senderName && (
                                                 <p className="text-[11.5px] text-slate-500 mt-0.5">
-                                                    Expéditeur : {comm.senderName}
+                                                    {t('dashboard.sender', { name: comm.senderName })}
                                                 </p>
                                             )}
                                         </Timeline.Item>
@@ -606,8 +618,8 @@ const CommunicationDashboard = () => {
                         ) : (
                             <EmptyState
                                 icon={<IconMessageCircle size={20} />}
-                                title="Aucune communication récente"
-                                description="Les dernières diffusions apparaîtront ici."
+                                title={t('dashboard.emptyRecentTitle')}
+                                description={t('dashboard.emptyRecentDescription')}
                                 compact
                             />
                         )}

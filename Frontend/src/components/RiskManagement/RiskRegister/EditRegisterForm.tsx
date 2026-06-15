@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
@@ -42,6 +43,8 @@ const EditRegisterForm = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { id } = useParams();
+    const { t } = useTranslation('risk');
+    const statusOptions = RISK_STATUS_OPTIONS.map((o) => ({ value: o.value, label: t(`status.${o.value}`, { defaultValue: o.label }) }));
     const [submitting, setSubmitting] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
@@ -50,13 +53,14 @@ const EditRegisterForm = () => {
     useEffect(() => {
         getAllDepartments()
             .then((data) => setDepartments(data.map((d: any) => ({ value: String(d.id), label: d.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des départements'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadDepartments')));
         GetAllWorkProcess({})
             .then((data) => setWorkProcesses(data.map((wp: any) => ({ value: String(wp.id), label: wp.name }))))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des processus'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadProcesses')));
         getEmployeeDropdown()
             .then((data) => setEmps(data))
-            .catch((error) => errorNotification(error.response?.data?.errorMessage || 'Échec du chargement des employés'));
+            .catch((error) => errorNotification(error.response?.data?.errorMessage || t('errors.loadEmployees')));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const form = useForm<EditRiskFormValues>({
@@ -72,12 +76,12 @@ const EditRegisterForm = () => {
             reviewDate: null,
         },
         validate: {
-            description: (value) => (value.trim() ? null : 'La description du risque est obligatoire'),
-            departmentId: (value) => (value ? null : 'Le département est obligatoire'),
-            workProcessId: (value) => (value ? null : 'Le processus de travail est obligatoire'),
-            hazardSource: (value) => (value.trim() ? null : 'La source de danger est obligatoire'),
-            potentialConsequences: (value) => (value.trim() ? null : 'Les conséquences potentielles sont obligatoires'),
-            ownerId: (value) => (value ? null : 'Le responsable du risque est obligatoire'),
+            description: (value) => (value.trim() ? null : t('registerForm.validate.description')),
+            departmentId: (value) => (value ? null : t('registerForm.validate.department')),
+            workProcessId: (value) => (value ? null : t('registerForm.validate.workProcess')),
+            hazardSource: (value) => (value.trim() ? null : t('registerForm.validate.hazardSource')),
+            potentialConsequences: (value) => (value.trim() ? null : t('registerForm.validate.consequences')),
+            ownerId: (value) => (value ? null : t('registerForm.validate.owner')),
         },
         validateInputOnBlur: true,
     });
@@ -100,7 +104,7 @@ const EditRegisterForm = () => {
                 });
             })
             .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || "Le risque n'a pas pu être chargé");
+                errorNotification(error.response?.data?.errorMessage || t('editRegisterForm.loadFailed'));
                 navigate('/risks-register');
             })
             .finally(() => dispatch(hideOverlay()));
@@ -128,11 +132,11 @@ const EditRegisterForm = () => {
         };
         updateRisk(payload)
             .then(() => {
-                successNotification('Risque mis à jour');
+                successNotification(t('editRegisterForm.updatedToast'));
                 navigate('/risks-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "L'enregistrement a échoué");
+                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);
@@ -144,27 +148,27 @@ const EditRegisterForm = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Risques' },
-                    { label: 'Registre des risques', to: '/risks-register' },
-                    { label: 'Modifier le risque' },
+                    { label: t('common.home'), to: '/' },
+                    { label: t('common.riskManagement') },
+                    { label: t('register.breadcrumb'), to: '/risks-register' },
+                    { label: t('editRegisterForm.breadcrumbEdit') },
                 ]}
                 icon={<IconFileText size={22} stroke={2} />}
                 iconColor="red"
-                title="Modifier le risque"
-                subtitle="Mettre à jour le scénario, le contexte et le statut de traitement"
+                title={t('editRegisterForm.title')}
+                subtitle={t('editRegisterForm.subtitle')}
             />
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start max-w-6xl">
                     <SectionCard
                         icon={<IconAlertTriangle size={15} stroke={1.8} />}
-                        title="Identification du risque"
-                        subtitle="Le scénario observé et ses conséquences crédibles"
+                        title={t('registerForm.sectionIdentification')}
+                        subtitle={t('registerForm.sectionIdentificationSub')}
                     >
                         <Textarea
-                            label="Description du risque"
-                            placeholder="Ce qui se produit ou pourrait se produire : conditions déclenchantes, lieux, équipements concernés"
+                            label={t('registerForm.descriptionLabel')}
+                            placeholder={t('registerForm.descriptionPlaceholder')}
                             minRows={3}
                             autosize
                             withAsterisk
@@ -172,15 +176,15 @@ const EditRegisterForm = () => {
                             {...form.getInputProps('description')}
                         />
                         <TextInput
-                            label="Source de danger"
-                            placeholder="ex. Circulation d'engins à proximité des piétons en zone de chargement"
+                            label={t('registerForm.hazardSourceLabel')}
+                            placeholder={t('registerForm.hazardSourcePlaceholder')}
                             withAsterisk
                             size="sm"
                             {...form.getInputProps('hazardSource')}
                         />
                         <Textarea
-                            label="Conséquences potentielles"
-                            placeholder="Effets crédibles : blessure, arrêt d'exploitation, impact environnemental"
+                            label={t('registerForm.consequencesLabel')}
+                            placeholder={t('registerForm.consequencesPlaceholder')}
                             minRows={2}
                             autosize
                             withAsterisk
@@ -192,13 +196,13 @@ const EditRegisterForm = () => {
                     <div className="flex flex-col gap-4">
                         <SectionCard
                             icon={<IconBuildingFactory2 size={15} stroke={1.8} />}
-                            title="Contexte et suivi"
-                            subtitle="Affectation, statut de traitement et prochaine revue"
+                            title={t('editRegisterForm.sectionContext')}
+                            subtitle={t('editRegisterForm.sectionContextSub')}
                         >
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Select
-                                    label="Département"
-                                    placeholder="Choisir un département"
+                                    label={t('registerForm.departmentLabel')}
+                                    placeholder={t('common.chooseDepartment')}
                                     data={departments}
                                     withAsterisk
                                     size="sm"
@@ -206,8 +210,8 @@ const EditRegisterForm = () => {
                                     {...form.getInputProps('departmentId')}
                                 />
                                 <Select
-                                    label="Processus de travail"
-                                    placeholder="Choisir un processus"
+                                    label={t('registerForm.workProcessLabel')}
+                                    placeholder={t('common.chooseProcess')}
                                     data={workProcesses}
                                     withAsterisk
                                     size="sm"
@@ -215,8 +219,8 @@ const EditRegisterForm = () => {
                                     {...form.getInputProps('workProcessId')}
                                 />
                                 <Select
-                                    label="Responsable du risque"
-                                    placeholder="Choisir un responsable"
+                                    label={t('registerForm.ownerLabel')}
+                                    placeholder={t('common.chooseOwner')}
                                     data={emps.map((emp: any) => ({ value: String(emp.id), label: emp.name }))}
                                     withAsterisk
                                     size="sm"
@@ -224,8 +228,8 @@ const EditRegisterForm = () => {
                                     {...form.getInputProps('ownerId')}
                                 />
                                 <Select
-                                    label="Statut de traitement"
-                                    data={RISK_STATUS_OPTIONS}
+                                    label={t('editRegisterForm.statusLabel')}
+                                    data={statusOptions}
                                     withAsterisk
                                     size="sm"
                                     allowDeselect={false}
@@ -233,8 +237,8 @@ const EditRegisterForm = () => {
                                 />
                             </div>
                             <DateInput
-                                label="Date de revue"
-                                placeholder="Prochaine revue du risque"
+                                label={t('registerForm.reviewDateLabel')}
+                                placeholder={t('registerForm.reviewDatePlaceholder')}
                                 minDate={new Date()}
                                 size="sm"
                                 valueFormat="DD/MM/YYYY"
@@ -245,8 +249,7 @@ const EditRegisterForm = () => {
 
                         <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                             <p className="text-[11.5px] text-slate-600 leading-relaxed">
-                                Les modifications sont visibles immédiatement sur le registre et la
-                                vue d'ensemble. L'historique des évaluations du risque est conservé.
+                                {t('editRegisterForm.hint')}
                             </p>
                         </div>
 
@@ -258,7 +261,7 @@ const EditRegisterForm = () => {
                                 disabled={submitting}
                                 onClick={() => navigate('/risks-register')}
                             >
-                                Annuler
+                                {t('common.cancel')}
                             </Button>
                             <Button
                                 type="submit"
@@ -267,7 +270,7 @@ const EditRegisterForm = () => {
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
                             >
-                                Enregistrer les modifications
+                                {t('editRegisterForm.saveChanges')}
                             </Button>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     formatDateTimeFr,
     isNotifFailure,
@@ -35,13 +36,21 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const NotificationDetails = ({ notification, departmentMap }: any) => {
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tNotifStatus = (status?: string | null) =>
+        t(`notifStatus.${(status ?? '').toUpperCase()}`, { defaultValue: notifStatusConfig(status).label });
+    const tUrgency = (urgency?: string | null) =>
+        t(`urgency.${(urgency ?? '').toUpperCase()}`, { defaultValue: urgencyConfig(urgency).label });
+
     const statusCfg = notifStatusConfig(notification?.status);
     const urgencyCfg = urgencyConfig(notification?.urgency);
     const failure = isNotifFailure(notification?.status);
     const recipientsCount = parseRecipientIds(notification?.recipients).length;
     const departmentName =
         notification?.departmentId !== null && notification?.departmentId !== undefined
-            ? departmentMap[String(notification.departmentId)]?.name ?? `Département ${notification.departmentId}`
+            ? departmentMap[String(notification.departmentId)]?.name ?? t('notificationsDetail.departmentFallback', { id: notification.departmentId })
             : null;
 
     return (
@@ -50,33 +59,33 @@ const NotificationDetails = ({ notification, departmentMap }: any) => {
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
                         <div className="min-w-0">
-                            <SectionTitle>{notification?.title || `Notification n° ${notification?.id}`}</SectionTitle>
-                            <p className="text-[11.5px] text-slate-500 mt-0.5">{typeLabel(notification?.type)}</p>
+                            <SectionTitle>{notification?.title || t('notificationsDetail.notificationNumber', { id: notification?.id })}</SectionTitle>
+                            <p className="text-[11.5px] text-slate-500 mt-0.5">{tType(notification?.type)}</p>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${urgencyCfg.chip}`}>
-                                {urgencyCfg.label}
+                                {tUrgency(notification?.urgency)}
                             </span>
                             <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${statusCfg.chip}`}>
-                                {statusCfg.label}
+                                {tNotifStatus(notification?.status)}
                             </span>
                         </div>
                     </div>
 
                     <dl className="grid grid-cols-1 gap-0 text-[12.5px]">
-                        <InfoRow label="Destinataires">
-                            {recipientsCount > 0 ? `${recipientsCount} employé${recipientsCount > 1 ? 's' : ''}` : '—'}
+                        <InfoRow label={t('notificationsDetail.recipients')}>
+                            {recipientsCount > 0 ? t('notificationsDetail.employeeCount', { count: recipientsCount }) : '—'}
                         </InfoRow>
-                        {departmentName && <InfoRow label="Département">{departmentName}</InfoRow>}
-                        {notification?.zoneName && <InfoRow label="Zone">{notification.zoneName}</InfoRow>}
-                        <InfoRow label="Envoyée le">{formatDateTimeFr(notification?.createdAt)}</InfoRow>
+                        {departmentName && <InfoRow label={t('notificationsDetail.department')}>{departmentName}</InfoRow>}
+                        {notification?.zoneName && <InfoRow label={t('notificationsDetail.zone')}>{notification.zoneName}</InfoRow>}
+                        <InfoRow label={t('notificationsDetail.sentAt')}>{formatDateTimeFr(notification?.createdAt)}</InfoRow>
                         {notification?.communicationId && (
-                            <InfoRow label="Communication d'origine">
+                            <InfoRow label={t('notificationsDetail.originCommunication')}>
                                 <Link
                                     to={`/communications/communications-details/${notification.communicationId}`}
                                     className="text-teal-700 hover:underline"
                                 >
-                                    Consulter la communication
+                                    {t('notificationsDetail.viewNotificationCommunication')}
                                 </Link>
                             </InfoRow>
                         )}
@@ -87,13 +96,13 @@ const NotificationDetails = ({ notification, departmentMap }: any) => {
             <div className="xl:col-span-2">
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="mb-3 pb-3 border-b border-slate-100">
-                        <SectionTitle>Retour du canal d'envoi</SectionTitle>
+                        <SectionTitle>{t('notificationsDetail.channelResponseTitle')}</SectionTitle>
                     </div>
                     <p className={`text-[12.5px] leading-relaxed ${failure ? 'text-rose-600' : 'text-slate-600'}`}>
                         {notification?.responseMessage ||
                             (failure
-                                ? "L'envoi de la notification a échoué. Aucun détail supplémentaire n'a été retourné."
-                                : "Aucun détail complémentaire retourné par le canal d'envoi.")}
+                                ? t('notificationsDetail.channelResponseFailure')
+                                : t('notificationsDetail.channelResponseEmpty'))}
                     </p>
                 </div>
             </div>

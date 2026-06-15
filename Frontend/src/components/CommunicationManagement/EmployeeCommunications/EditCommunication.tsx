@@ -25,6 +25,7 @@ import {
 } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import TextEditor from '../../UtilityComp/TextEditor';
 import FileUpdateDropzone from '../../UtilityComp/FileUpdateDropzone';
@@ -145,6 +146,10 @@ const EditCommunication = () => {
     const [submitting, setSubmitting] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useTranslation('communications');
+    // Libellés bilingues : clés i18n `communications:*`, repli sur les libellés FR centralisés.
+    const tType = (code?: string | null) => t(`type.${code ?? ''}`, { defaultValue: typeLabel(code) });
+    const tCategory = (code?: string | null) => t(`category.${code ?? ''}`, { defaultValue: categoryLabel(code) });
 
     const form = useForm({
         initialValues: {
@@ -170,30 +175,30 @@ const EditCommunication = () => {
             monthlyDay: null as number | null,
         },
         validate: {
-            type: (value) => (value.length > 0 ? null : 'Le type est obligatoire'),
-            title: (value) => (value.trim().length > 0 ? null : 'Le titre est obligatoire'),
-            content: (value) => (isValidRichText(value) ? null : 'Le contenu est obligatoire'),
-            category: (value) => (value.length > 0 ? null : 'La catégorie est obligatoire'),
-            senderId: (value) => (value.length > 0 ? null : "L'expéditeur est obligatoire"),
-            recipients: (value) => (value.length > 0 ? null : 'Sélectionnez au moins un destinataire'),
-            zoneId: (value) => (value ? null : 'La zone est obligatoire'),
+            type: (value) => (value.length > 0 ? null : t('editCommunication.validation.typeRequired')),
+            title: (value) => (value.trim().length > 0 ? null : t('editCommunication.validation.titleRequired')),
+            content: (value) => (isValidRichText(value) ? null : t('editCommunication.validation.contentRequired')),
+            category: (value) => (value.length > 0 ? null : t('editCommunication.validation.categoryRequired')),
+            senderId: (value) => (value.length > 0 ? null : t('editCommunication.validation.senderRequired')),
+            recipients: (value) => (value.length > 0 ? null : t('editCommunication.validation.recipientsRequired')),
+            zoneId: (value) => (value ? null : t('editCommunication.validation.zoneRequired')),
             scheduleType: (_value, values) =>
-                values.hasSchedule ? (values.scheduleType ? null : 'Le type de planification est obligatoire') : null,
+                values.hasSchedule ? (values.scheduleType ? null : t('editCommunication.validation.scheduleTypeRequired')) : null,
             oneTimeAt: (value, values) =>
                 values.hasSchedule && values.scheduleType === 'ONE_TIME'
-                    ? (value ? null : "La date et l'heure d'envoi sont obligatoires")
+                    ? (value ? null : t('editCommunication.validation.oneTimeAtRequired'))
                     : null,
             timeOfDay: (value, values) =>
                 values.hasSchedule && ['WEEKLY', 'BI_WEEKLY', 'MONTHLY'].includes(values.scheduleType)
-                    ? (value ? null : "L'heure d'envoi est obligatoire")
+                    ? (value ? null : t('editCommunication.validation.timeOfDayRequired'))
                     : null,
             weeklyDay: (value, values) =>
                 values.hasSchedule && ['WEEKLY', 'BI_WEEKLY'].includes(values.scheduleType)
-                    ? (value ? null : 'Choisissez un jour de la semaine')
+                    ? (value ? null : t('editCommunication.validation.weeklyDayRequired'))
                     : null,
             monthlyDay: (value, values) =>
                 values.hasSchedule && values.scheduleType === 'MONTHLY'
-                    ? (value ? null : 'Choisissez un jour du mois')
+                    ? (value ? null : t('editCommunication.validation.monthlyDayRequired'))
                     : null,
         },
     });
@@ -206,21 +211,21 @@ const EditCommunication = () => {
                 setEmpMap(mapIdToName(data || []));
             })
             .catch(() => {
-                errorNotification('Échec du chargement des employés');
+                errorNotification(t('editCommunication.loadEmployeesError'));
             });
         getAllDepartments()
             .then((data) => {
                 setDepartments(data || []);
             })
             .catch(() => {
-                errorNotification('Échec du chargement des départements');
+                errorNotification(t('editCommunication.loadDepartmentsError'));
             });
         GetAllWorkArea({})
             .then((data) => {
                 setZones(data || []);
             })
             .catch(() => {
-                errorNotification('Échec du chargement des zones');
+                errorNotification(t('editCommunication.loadZonesError'));
             })
             .finally(() => dispatch(hideOverlay()));
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,7 +272,7 @@ const EditCommunication = () => {
                     monthlyDay: data.schedule?.monthlyDay ?? null,
                 });
             })
-            .catch(() => errorNotification("La communication n'a pas pu être chargée"))
+            .catch(() => errorNotification(t('editCommunication.loadCommunicationError')))
             .finally(() => dispatch(hideOverlay()));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [communicationId]);
@@ -419,17 +424,17 @@ const EditCommunication = () => {
                 .filter((recipientId) => !Number.isNaN(recipientId));
 
             if (Number.isNaN(senderId)) {
-                errorNotification("L'expéditeur sélectionné est invalide");
+                errorNotification(t('editCommunication.invalidSender'));
                 return;
             }
 
             if (Number.isNaN(zoneId)) {
-                errorNotification('La zone sélectionnée est invalide');
+                errorNotification(t('editCommunication.invalidZone'));
                 return;
             }
 
             if (recipientIds.length !== values.recipients.length) {
-                errorNotification("Certains destinataires n'ont pas pu être résolus. Sélectionnez-les à nouveau.");
+                errorNotification(t('editCommunication.unresolvedRecipients'));
                 return;
             }
 
@@ -463,10 +468,10 @@ const EditCommunication = () => {
             };
 
             await updateCommunication(payload);
-            successNotification('Communication mise à jour');
+            successNotification(t('editCommunication.updateSuccess'));
             navigate(`/communications/communications-details/${values.id}`);
         } catch (error: any) {
-            errorNotification(error?.response?.data?.errorMessage || "L'enregistrement a échoué");
+            errorNotification(error?.response?.data?.errorMessage || t('editCommunication.saveError'));
         } finally {
             setSubmitting(false);
             dispatch(hideOverlay());
@@ -477,15 +482,15 @@ const EditCommunication = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Communication Sécurité' },
-                    { label: 'Communications HSE', to: '/communications' },
-                    { label: 'Modifier la communication' },
+                    { label: t('breadcrumbs.home'), to: '/' },
+                    { label: t('breadcrumbs.module') },
+                    { label: t('breadcrumbs.communications'), to: '/communications' },
+                    { label: t('editCommunication.breadcrumb') },
                 ]}
                 icon={<IconMessageCircle size={22} stroke={2} />}
                 iconColor="pink"
-                title="Modifier la communication"
-                subtitle="Mettre à jour le message, les destinataires et la planification"
+                title={t('editCommunication.title')}
+                subtitle={t('editCommunication.subtitle')}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
@@ -494,23 +499,23 @@ const EditCommunication = () => {
                         <div className="flex flex-col gap-4">
                             <SectionCard
                                 icon={<IconFileDescription size={15} stroke={1.8} />}
-                                title="Identification"
-                                subtitle="Type de message, catégorie et titre lisible par les équipes"
+                                title={t('editCommunication.sectionIdentification')}
+                                subtitle={t('editCommunication.sectionIdentificationSubtitle')}
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <Select
-                                        label="Type"
-                                        placeholder="Choisir le type de communication"
-                                        data={TYPE_OPTIONS}
+                                        label={t('editCommunication.fieldType')}
+                                        placeholder={t('editCommunication.fieldTypePlaceholder')}
+                                        data={TYPE_OPTIONS.map((o) => ({ value: o.value, label: tType(o.value) }))}
                                         withAsterisk
                                         searchable
                                         size="sm"
                                         {...form.getInputProps('type')}
                                     />
                                     <Select
-                                        label="Catégorie"
-                                        placeholder="Choisir la catégorie"
-                                        data={CATEGORY_OPTIONS}
+                                        label={t('editCommunication.fieldCategory')}
+                                        placeholder={t('editCommunication.fieldCategoryPlaceholder')}
+                                        data={CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: tCategory(o.value) }))}
                                         withAsterisk
                                         searchable
                                         size="sm"
@@ -518,8 +523,8 @@ const EditCommunication = () => {
                                     />
                                 </div>
                                 <TextInput
-                                    label="Titre"
-                                    placeholder="ex. Tir de mine prévu vendredi à 14 h — Zone B"
+                                    label={t('editCommunication.fieldTitle')}
+                                    placeholder={t('editCommunication.fieldTitlePlaceholder')}
                                     withAsterisk
                                     size="sm"
                                     {...form.getInputProps('title')}
@@ -528,13 +533,13 @@ const EditCommunication = () => {
 
                             <SectionCard
                                 icon={<IconUser size={15} stroke={1.8} />}
-                                title="Expéditeur"
-                                subtitle="Personne au nom de laquelle la communication est diffusée"
+                                title={t('editCommunication.sectionSender')}
+                                subtitle={t('editCommunication.sectionSenderSubtitle')}
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <Select
-                                        label="Expéditeur"
-                                        placeholder="Choisir l'expéditeur"
+                                        label={t('editCommunication.fieldSender')}
+                                        placeholder={t('editCommunication.fieldSenderPlaceholder')}
                                         data={employees.map((x) => ({ value: String(x.id), label: x.name }))}
                                         searchable
                                         withAsterisk
@@ -543,8 +548,8 @@ const EditCommunication = () => {
                                     />
                                     <TextInput
                                         disabled
-                                        label="Courriel de l'expéditeur"
-                                        placeholder="Renseigné automatiquement"
+                                        label={t('editCommunication.fieldSenderEmail')}
+                                        placeholder={t('editCommunication.fieldSenderEmailPlaceholder')}
                                         size="sm"
                                         {...form.getInputProps('senderEmail')}
                                     />
@@ -553,21 +558,21 @@ const EditCommunication = () => {
 
                             <SectionCard
                                 icon={<IconFileDescription size={15} stroke={1.8} />}
-                                title="Contenu"
-                                subtitle="Message diffusé aux destinataires, mise en forme comprise"
+                                title={t('editCommunication.sectionContent')}
+                                subtitle={t('editCommunication.sectionContentSubtitle')}
                             >
                                 <TextEditor form={form} id="content" />
                             </SectionCard>
 
                             <SectionCard
                                 icon={<IconUsers size={15} stroke={1.8} />}
-                                title="Destinataires"
-                                subtitle="Périmètre de diffusion et employés ciblés"
+                                title={t('editCommunication.sectionRecipients')}
+                                subtitle={t('editCommunication.sectionRecipientsSubtitle')}
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <Select
-                                        label="Département"
-                                        placeholder="Choisir le département"
+                                        label={t('editCommunication.fieldDepartment')}
+                                        placeholder={t('editCommunication.fieldDepartmentPlaceholder')}
                                         data={departments.map((x) => ({ value: String(x.id), label: x.name }))}
                                         searchable
                                         clearable
@@ -575,8 +580,8 @@ const EditCommunication = () => {
                                         {...form.getInputProps('departmentId')}
                                     />
                                     <Select
-                                        label="Zone"
-                                        placeholder="Choisir la zone"
+                                        label={t('editCommunication.fieldZone')}
+                                        placeholder={t('editCommunication.fieldZonePlaceholder')}
                                         data={zones.map((x) => ({ value: String(x.id), label: x.name }))}
                                         searchable
                                         withAsterisk
@@ -585,12 +590,12 @@ const EditCommunication = () => {
                                     />
                                 </div>
                                 <TextInput
-                                    placeholder="Rechercher par nom, département ou poste…"
+                                    placeholder={t('editCommunication.recipientSearchPlaceholder')}
                                     leftSection={<IconSearch size={14} />}
                                     value={recipientSearchTerm}
                                     onChange={(e) => setRecipientSearchTerm(e.target.value)}
                                     size="sm"
-                                    aria-label="Rechercher un destinataire"
+                                    aria-label={t('editCommunication.recipientSearchAria')}
                                 />
                                 {form.errors.recipients && (
                                     <p className="text-[11.5px] text-red-600 -mt-1">{form.errors.recipients}</p>
@@ -598,7 +603,7 @@ const EditCommunication = () => {
                                 {selectedRecipients.length > 0 && (
                                     <div>
                                         <p className="text-[11.5px] text-slate-500 mb-1.5">
-                                            {selectedRecipients.length} destinataire{selectedRecipients.length > 1 ? 's' : ''} sélectionné{selectedRecipients.length > 1 ? 's' : ''}
+                                            {t('editCommunication.selectedCount', { count: selectedRecipients.length })}
                                         </p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {selectedRecipients.map((recipientId) => {
@@ -649,7 +654,7 @@ const EditCommunication = () => {
                                                     </span>
                                                     {isSelected && (
                                                         <span className="flex-shrink-0 inline-flex items-center rounded border border-teal-200 bg-teal-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-teal-700">
-                                                            Sélectionné
+                                                            {t('editCommunication.selected')}
                                                         </span>
                                                     )}
                                                 </button>
@@ -661,12 +666,12 @@ const EditCommunication = () => {
 
                             <SectionCard
                                 icon={<IconCalendarTime size={15} stroke={1.8} />}
-                                title="Planification"
-                                subtitle="Échéance de la communication et envois récurrents"
+                                title={t('editCommunication.sectionSchedule')}
+                                subtitle={t('editCommunication.sectionScheduleSubtitle')}
                             >
                                 <DateTimePicker
-                                    label="Échéance (facultatif)"
-                                    placeholder="Date et heure de fin de validité"
+                                    label={t('editCommunication.fieldDeadline')}
+                                    placeholder={t('editCommunication.fieldDeadlinePlaceholder')}
                                     withSeconds
                                     size="sm"
                                     value={form.values.expiresAt ?? null}
@@ -675,8 +680,8 @@ const EditCommunication = () => {
                                     error={form.errors.expiresAt}
                                 />
                                 <Switch
-                                    label="Planifier cette communication"
-                                    description="Programmer un envoi unique ou récurrent au lieu d'une diffusion immédiate."
+                                    label={t('editCommunication.switchSchedule')}
+                                    description={t('editCommunication.switchScheduleDescription')}
                                     color="teal"
                                     size="sm"
                                     {...form.getInputProps('hasSchedule', { type: 'checkbox' })}
@@ -684,16 +689,16 @@ const EditCommunication = () => {
                                 {form.values.hasSchedule && (
                                     <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
                                         <Select
-                                            label="Type de planification"
-                                            data={SCHEDULE_TYPE_OPTIONS}
+                                            label={t('editCommunication.fieldScheduleType')}
+                                            data={SCHEDULE_TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(`scheduleType.${o.value}`, { defaultValue: o.label }) }))}
                                             withAsterisk
                                             size="sm"
                                             {...form.getInputProps('scheduleType')}
                                         />
                                         {form.values.scheduleType === 'ONE_TIME' && (
                                             <DateTimePicker
-                                                label="Envoi unique le"
-                                                placeholder="Choisir la date et l'heure"
+                                                label={t('editCommunication.fieldOneTimeAt')}
+                                                placeholder={t('editCommunication.fieldOneTimeAtPlaceholder')}
                                                 withSeconds
                                                 size="sm"
                                                 value={form.values.oneTimeAt ?? null}
@@ -705,7 +710,7 @@ const EditCommunication = () => {
                                         {['WEEKLY', 'BI_WEEKLY', 'MONTHLY'].includes(form.values.scheduleType) && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <TimeInput
-                                                    label="Heure d'envoi"
+                                                    label={t('editCommunication.fieldTimeOfDay')}
                                                     withSeconds
                                                     size="sm"
                                                     value={form.values.timeOfDay}
@@ -714,8 +719,8 @@ const EditCommunication = () => {
                                                 />
                                                 {['WEEKLY', 'BI_WEEKLY'].includes(form.values.scheduleType) && (
                                                     <Select
-                                                        label="Jour de la semaine"
-                                                        data={WEEKLY_DAY_OPTIONS}
+                                                        label={t('editCommunication.fieldWeeklyDay')}
+                                                        data={WEEKLY_DAY_OPTIONS.map((o) => ({ value: o.value, label: t(`weeklyDay.${o.value}`, { defaultValue: o.label }) }))}
                                                         withAsterisk
                                                         size="sm"
                                                         {...form.getInputProps('weeklyDay')}
@@ -723,7 +728,7 @@ const EditCommunication = () => {
                                                 )}
                                                 {form.values.scheduleType === 'MONTHLY' && (
                                                     <NumberInput
-                                                        label="Jour du mois"
+                                                        label={t('editCommunication.fieldMonthlyDay')}
                                                         withAsterisk
                                                         min={1}
                                                         max={31}
@@ -738,8 +743,8 @@ const EditCommunication = () => {
                                     </div>
                                 )}
                                 <Switch
-                                    label="Marquer comme urgente"
-                                    description="La communication sera signalée comme urgente aux destinataires."
+                                    label={t('editCommunication.switchUrgent')}
+                                    description={t('editCommunication.switchUrgentDescription')}
                                     color="red"
                                     size="sm"
                                     {...form.getInputProps('isUrgent', { type: 'checkbox' })}
@@ -748,8 +753,8 @@ const EditCommunication = () => {
 
                             <SectionCard
                                 icon={<IconPaperclip size={15} stroke={1.8} />}
-                                title="Pièces jointes"
-                                subtitle="Documents transmis avec la communication"
+                                title={t('editCommunication.sectionAttachments')}
+                                subtitle={t('editCommunication.sectionAttachmentsSubtitle')}
                             >
                                 <FileUpdateDropzone id="attachments" form={form} />
                             </SectionCard>
@@ -762,7 +767,7 @@ const EditCommunication = () => {
                                     disabled={submitting}
                                     onClick={() => navigate(-1)}
                                 >
-                                    Annuler
+                                    {t('editCommunication.cancel')}
                                 </Button>
                                 <Button
                                     type="submit"
@@ -771,7 +776,7 @@ const EditCommunication = () => {
                                     loading={submitting}
                                     leftSection={<IconDeviceFloppy size={15} />}
                                 >
-                                    Enregistrer les modifications
+                                    {t('editCommunication.submit')}
                                 </Button>
                             </div>
                         </div>
@@ -790,10 +795,10 @@ const EditCommunication = () => {
                                 letterSpacing: '-0.01em',
                             }}
                         >
-                            Dernières communications
+                            {t('editCommunication.recentTitle')}
                         </h3>
                         <p className="text-[11.5px] text-slate-500 mb-3">
-                            Aperçu des diffusions récentes pour garder un message cohérent.
+                            {t('editCommunication.recentSubtitle')}
                         </p>
 
                         {recentLoading ? (
@@ -808,8 +813,8 @@ const EditCommunication = () => {
                                     const urgent = isUrgentValue(comm?.urgency);
                                     const recipientCount = getRecipientCount(comm);
                                     const infoParts = [
-                                        comm?.type ? typeLabel(comm.type) : null,
-                                        recipientCount > 0 ? `${recipientCount} destinataire${recipientCount > 1 ? 's' : ''}` : null,
+                                        comm?.type ? tType(comm.type) : null,
+                                        recipientCount > 0 ? t('editCommunication.recipients', { count: recipientCount }) : null,
                                     ].filter(Boolean);
                                     const primaryDate = selectPrimaryDate(comm);
                                     const dateLabel = primaryDate ? formatDateFr(primaryDate) : '—';
@@ -819,7 +824,7 @@ const EditCommunication = () => {
                                             key={comm?.id ?? `${comm?.title ?? 'communication'}-${dateLabel}`}
                                             title={
                                                 <span className="text-[12.5px] text-slate-800">
-                                                    {comm?.title || 'Communication sans titre'}
+                                                    {comm?.title || t('editCommunication.untitledCommunication')}
                                                 </span>
                                             }
                                         >
@@ -832,12 +837,12 @@ const EditCommunication = () => {
                                                             size="xs"
                                                             radius="sm"
                                                         >
-                                                            {categoryLabel(comm.category)}
+                                                            {tCategory(comm.category)}
                                                         </Badge>
                                                     )}
                                                     {urgent && (
                                                         <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-rose-700">
-                                                            Urgente
+                                                            {t('editCommunication.badgeUrgent')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -851,7 +856,7 @@ const EditCommunication = () => {
                                 })}
                             </Timeline>
                         ) : (
-                            <p className="text-[12px] text-slate-500">Aucune communication récente.</p>
+                            <p className="text-[12px] text-slate-500">{t('editCommunication.noRecentCommunication')}</p>
                         )}
                     </div>
                 </aside>

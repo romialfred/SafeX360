@@ -23,6 +23,7 @@ import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
@@ -39,6 +40,10 @@ const defaultFilters: DataTableFilterMeta = {
 };
 
 const Recommendation = () => {
+    const { t } = useTranslation('audits');
+    // Libellé de statut bilingue : clé i18n `audits:recStatus.*`, repli sur le libellé FR centralisé.
+    const tStatus = (code?: string | null): string =>
+        code ? t(`recStatus.${String(code).toUpperCase()}`, { defaultValue: recStatusLabel(code) }) : '—';
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const [recommendations, setRecommendations] = useState<any>([]);
     const [countMap, setCountMap] = useState<any>({});
@@ -98,19 +103,19 @@ const Recommendation = () => {
         const normalizedProgress = Number(progress ?? 0);
 
         if (normalizedProgress >= 100) {
-            return 'Avancement déjà à 100 %.';
+            return t('recommendations.restrictionProgress100');
         }
 
         if (normalizedStatus === 'PENDING') {
-            return 'Une recommandation en attente ne peut pas être mise à jour.';
+            return t('recommendations.restrictionPending');
         }
 
         if (normalizedStatus === 'COMPLETED') {
-            return 'Recommandation déjà terminée.';
+            return t('recommendations.restrictionCompleted');
         }
 
         if (normalizedStatus === 'CANCELLED') {
-            return 'Une recommandation annulée ne peut pas être mise à jour.';
+            return t('recommendations.restrictionCancelled');
         }
 
         return null;
@@ -118,7 +123,7 @@ const Recommendation = () => {
 
     const getSeverity = (rowData: any, field: 'status' | 'progress') => {
         if (field === 'status') {
-            return <Badge size="md" variant="light" color={recStatusColor(rowData.status)} >{recStatusLabel(rowData.status)}</Badge>
+            return <Badge size="md" variant="light" color={recStatusColor(rowData.status)} >{tStatus(rowData.status)}</Badge>
         }
         return <Progress.Root size={15}>
             <Tooltip label={`${rowData.progress}%`} withArrow>
@@ -130,16 +135,16 @@ const Recommendation = () => {
     };
 
     const recommendationSummaryData = [
-        { id: 'total', label: 'Total recommandations', icon: IconTrendingUp, color: '#2563eb' },
-        { id: 'inProgress', label: 'En cours', icon: IconClock, color: '#f59e0b' },
-        { id: 'implemented', label: 'Mises en œuvre', icon: IconCircleCheck, color: '#22c55e' },
-        { id: 'overdue', label: 'En retard', icon: IconAlertTriangle, color: '#f97316' },
-        { id: 'execRate', label: 'Taux de réalisation', icon: IconTrendingUp, color: '#8b5cf6' },
+        { id: 'total', label: t('recommendations.summaryTotal'), icon: IconTrendingUp, color: '#2563eb' },
+        { id: 'inProgress', label: t('recommendations.summaryInProgress'), icon: IconClock, color: '#f59e0b' },
+        { id: 'implemented', label: t('recommendations.summaryImplemented'), icon: IconCircleCheck, color: '#22c55e' },
+        { id: 'overdue', label: t('recommendations.summaryOverdue'), icon: IconAlertTriangle, color: '#f97316' },
+        { id: 'execRate', label: t('recommendations.summaryExecRate'), icon: IconTrendingUp, color: '#8b5cf6' },
     ];
 
     const actionBodyTemplate = (rowData: any) => {
         const restriction = getUpdateRestriction(rowData?.status, rowData?.progress);
-        const tooltipLabel = restriction ?? 'Mettre à jour';
+        const tooltipLabel = restriction ?? t('recommendations.update');
 
         return (
             <div className="flex items-center gap-4">
@@ -151,7 +156,7 @@ const Recommendation = () => {
                             disabled={Boolean(restriction)}
                             onClick={() => navigate(`update/${rowData.id}`)}
                         >
-                            Mettre à jour
+                            {t('recommendations.update')}
                         </Button>
                     </span>
                 </Tooltip>
@@ -183,10 +188,10 @@ const Recommendation = () => {
             value={selectedStatus}
             onChange={setSelectedStatus}
             data={[
-                { label: `Toutes (${recommendations.length})`, value: 'All' },
-                { label: `En attente (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'pending').length})`, value: 'PENDING' },
-                { label: `En cours (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'in_progress').length})`, value: 'IN_PROGRESS' },
-                { label: `Terminées (${recommendations.filter((r: any) => r.status?.toLowerCase() === 'completed').length})`, value: 'COMPLETED' },
+                { label: t('recommendations.filterAll', { count: recommendations.length }), value: 'All' },
+                { label: t('recommendations.filterPending', { count: recommendations.filter((r: any) => r.status?.toLowerCase() === 'pending').length }), value: 'PENDING' },
+                { label: t('recommendations.filterInProgress', { count: recommendations.filter((r: any) => r.status?.toLowerCase() === 'in_progress').length }), value: 'IN_PROGRESS' },
+                { label: t('recommendations.filterCompleted', { count: recommendations.filter((r: any) => r.status?.toLowerCase() === 'completed').length }), value: 'COMPLETED' },
             ]}
             color="blue"
         />
@@ -198,20 +203,20 @@ const Recommendation = () => {
             const d = String(r.department || '').trim();
             if (d) set.add(d);
         });
-        return [{ value: 'All', label: 'Tous départements' }, ...Array.from(set).sort().map((d) => ({ value: d, label: d }))];
+        return [{ value: 'All', label: t('recommendations.filterDeptAll') }, ...Array.from(set).sort().map((d) => ({ value: d, label: d }))];
     })();
 
     const departmentFilter = () => {
         return (
             <Select
                 className="col-span-2"
-                placeholder="Filtrer par département"
+                placeholder={t('recommendations.filterDeptPlaceholder')}
                 data={departmentOptions}
                 value={selectedDepartment}
                 onChange={(v) => setSelectedDepartment(v ?? 'All')}
                 allowDeselect={false}
                 size="sm"
-                aria-label="Filtrer par département"
+                aria-label={t('recommendations.filterDeptAria')}
             />
         );
     };
@@ -231,15 +236,15 @@ const Recommendation = () => {
                 value={selectedProgress}
                 onChange={setSelectedProgress}
                 data={[
-                    { label: `Tous`, value: 'All' },
-                    { label: '0-20%', value: '20' },
-                    { label: '21-70%', value: '70' },
-                    { label: '71-100%', value: '71' },
+                    { label: t('recommendations.filterProgressAll'), value: 'All' },
+                    { label: t('recommendations.filterProgress0_20'), value: '20' },
+                    { label: t('recommendations.filterProgress21_70'), value: '70' },
+                    { label: t('recommendations.filterProgress71_100'), value: '71' },
                 ]}
                 color={selectedProgress === 'All' ? 'blue' : selectedProgress === '20' ? 'red' : selectedProgress === '70' ? 'orange' : 'green'}
             />
             <div className="flex mx-auto gap-2 border border-primary rounded-lg p-2 bg-gray-100">
-                <Tooltip label="Vue tableau">
+                <Tooltip label={t('recommendations.tableView')}>
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
@@ -248,7 +253,7 @@ const Recommendation = () => {
                         <IconLayoutList size={18} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Vue cartes">
+                <Tooltip label={t('recommendations.cardView')}>
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
@@ -265,14 +270,14 @@ const Recommendation = () => {
         <div className="p-5 space-y-5 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Gestion des Audits', to: '/audit-management' },
-                    { label: 'Suivi des recommandations' },
+                    { label: t('recommendations.breadcrumbHome'), to: '/' },
+                    { label: t('recommendations.breadcrumbAudits'), to: '/audit-management' },
+                    { label: t('recommendations.breadcrumbTracking') },
                 ]}
                 icon={<IconBulb size={22} stroke={2} />}
                 iconColor="indigo"
-                title="Suivi des recommandations d'audit"
-                subtitle="Suivi de la mise en œuvre des recommandations d'audit et améliorations associées jusqu'à clôture"
+                title={t('recommendations.listTitle')}
+                subtitle={t('recommendations.listSubtitle')}
             />
             <div className="flex flex-col gap-5">
                 {/* Summary Cards */}
@@ -327,16 +332,16 @@ const Recommendation = () => {
                                 dataKey="id"
                                 filters={filters}
                                 globalFilterFields={['title', 'auditTitle', 'department']}
-                                currentPageReportTemplate="{first}–{last} sur {totalRecords}"
-                                emptyMessage="Aucune recommandation ne correspond aux filtres"
+                                currentPageReportTemplate={t('recommendations.paginator')}
+                                emptyMessage={t('recommendations.emptyFilters')}
                                 onFilter={(e) => setFilters(e.filters)}
                             >
-                                <Column field="title" header="Recommandation" body={nameBodyTemplate} sortable />
-                                <Column field="auditTitle" header="Audit lié" />
-                                <Column field="endDate" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} sortable />
-                                <Column field="status" header="Statut" body={(rowData) => getSeverity(rowData, 'status')} sortable />
-                                <Column field="progress" header="Progression" body={(rowData) => getSeverity(rowData, 'progress')} sortable />
-                                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header="Actions" body={actionBodyTemplate} />
+                                <Column field="title" header={t('recommendations.colRecommendation')} body={nameBodyTemplate} sortable />
+                                <Column field="auditTitle" header={t('recommendations.colLinkedAudit')} />
+                                <Column field="endDate" header={t('recommendations.colDeadline')} body={(rowData) => formatDateShort(rowData.deadline)} sortable />
+                                <Column field="status" header={t('recommendations.colStatus')} body={(rowData) => getSeverity(rowData, 'status')} sortable />
+                                <Column field="progress" header={t('recommendations.colProgress')} body={(rowData) => getSeverity(rowData, 'progress')} sortable />
+                                <Column headerStyle={{ width: '5rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} header={t('recommendations.colActions')} body={actionBodyTemplate} />
                             </DataTable>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -344,7 +349,7 @@ const Recommendation = () => {
                                     <RecommendationCard key={rec.id} data={rec} onView={() => navigate(`details/${rec.id}`)} onUpdate={() => navigate(`update/${rec.id}`)} />
                                 ))}
                                 {filteredRecommendations.length === 0 && (
-                                    <div className="col-span-3 text-gray-500 text-center">Aucune recommandation ne correspond aux filtres</div>
+                                    <div className="col-span-3 text-gray-500 text-center">{t('recommendations.emptyFilters')}</div>
                                 )}
                             </div>
                         )
