@@ -28,12 +28,13 @@ import { Toast } from 'primereact/toast';
 import { Toolbar } from 'primereact/toolbar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import IncidentCard from './IncidentCard';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { IconShieldExclamation } from '@tabler/icons-react';
 
 import { getAllIncidents } from '../../../services/IncidentService';
-import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel, PAGINATOR_FR } from './incidentLabels';
+import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from './incidentLabels';
 import { formatDateShort } from '../../../utility/DateFormats';
 import { getUniqueSeverityLevel } from '../../../services/SeverityLevelService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
@@ -49,6 +50,15 @@ const defaultFilters: DataTableFilterMeta = {
 
 const IncidentManagementData = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('incidents');
+    // Libellé de statut bilingue : clé i18n `incidents:status.*`, repli sur le libellé FR centralisé.
+    const tStatus = (code?: string | null): string =>
+        code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: incidentStatusLabel(code) }) : '—';
+    // Options de statut traduites pour le <Select> de filtre (mêmes valeurs backend).
+    const statusOptions = INCIDENT_STATUS_OPTIONS.map((o) => ({
+        value: o.value,
+        label: t(`status.${o.value}`, { defaultValue: o.label }),
+    }));
     const [selectedLevel, setSelectedLevel] = useState<string>('All');
     const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('All');
     // Source filter : ALL / EMPLOYEE / AI — permet de distinguer les declarations classiques
@@ -145,7 +155,7 @@ const IncidentManagementData = () => {
                     {cleanTitle}
                 </Link>
                 {ai && (
-                    <Tooltip label={`Declaration assistee par IA${rowData.aiConfidence ? ` (confiance ${Math.round(rowData.aiConfidence * 100)}%)` : ''}`}>
+                    <Tooltip label={rowData.aiConfidence ? t('list.aiBadgeTooltipConf', { conf: Math.round(rowData.aiConfidence * 100) }) : t('list.aiBadgeTooltip')}>
                         <Badge
                             size="xs"
                             radius="sm"
@@ -165,10 +175,10 @@ const IncidentManagementData = () => {
     /** Export CSV simple du registre filtré (colonnes visibles). */
     const handleExportCsv = () => {
         const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-        const header = ['Numéro', 'Incident', 'Catégorie', 'Département', 'Déclarant', 'Gravité', 'Date de déclaration', 'Statut'];
+        const header = [t('list.colNumber'), t('list.colIncident'), t('list.colCategory'), t('list.colDepartment'), t('list.colReporter'), t('list.colSeverity'), t('list.colDate'), t('list.colStatus')];
         const rows = filteredData.map((i: any) => [
             i.number, i.title, i.incidentCategoryName, i.departmentName, i.reporterName,
-            i.severityLevelName, formatDateShort(i.incidentDate), incidentStatusLabel(i.status),
+            i.severityLevelName, formatDateShort(i.incidentDate), tStatus(i.status),
         ].map(esc).join(';'));
         const blob = new Blob(['﻿' + [header.map(esc).join(';'), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -182,21 +192,21 @@ const IncidentManagementData = () => {
     const rightToolbarTemplate = () => (
         <div className="flex gap-4 items-center">
             <div className="flex items-center gap-1 border border-primary rounded-lg p-1 bg-gray-100">
-                <Tooltip label="Vue tableau">
+                <Tooltip label={t('list.tableView')}>
                     <ActionIcon
                         variant={viewType === 'table' ? 'filled' : 'light'}
                         color="blue"
-                        aria-label="Vue tableau"
+                        aria-label={t('list.tableView')}
                         onClick={() => setViewType('table')}
                     >
                         <IconLayoutList size={18} />
                     </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Vue cartes">
+                <Tooltip label={t('list.cardView')}>
                     <ActionIcon
                         variant={viewType === 'card' ? 'filled' : 'light'}
                         color="blue"
-                        aria-label="Vue cartes"
+                        aria-label={t('list.cardView')}
                         onClick={() => setViewType('card')}
                     >
                         <IconLayoutGrid size={18} />
@@ -204,13 +214,13 @@ const IncidentManagementData = () => {
                 </Tooltip>
             </div>
             <Button size="sm" variant="outline" leftSection={<IconUpload />} onClick={handleExportCsv}>
-                Exporter
+                {t('list.export')}
             </Button>
             <TextInput
                 value={globalFilterValue}
                 onChange={onGlobalFilterChange}
                 size="sm"
-                placeholder="Rechercher"
+                placeholder={t('list.search')}
                 leftSection={<IconSearch />}
             />
         </div>
@@ -227,7 +237,7 @@ const IncidentManagementData = () => {
             }))
             .filter((o) => o.count > 0)
             .map((o) => ({ value: o.value, label: `${o.name} (${o.count})` }));
-        return [{ value: 'All', label: `Toutes gravités (${incidents.length})` }, ...opts];
+        return [{ value: 'All', label: t('list.allSeverities', { count: incidents.length }) }, ...opts];
     };
 
     const leftToolbarTemplate = () => (
@@ -235,7 +245,7 @@ const IncidentManagementData = () => {
             allowDeselect={false}
             size="sm"
             w={230}
-            aria-label="Filtrer par gravité"
+            aria-label={t('list.filterBySeverity')}
             leftSection={<IconAlertTriangle size={15} />}
             data={severitySelectData()}
             value={selectedLevel}
@@ -272,7 +282,7 @@ const IncidentManagementData = () => {
                                 value={cat}
                                 className={`!text-slate-600 ${colorClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
                             >
-                                {isAll ? 'Tous' : cat} ({count})
+                                {isAll ? t('list.all') : cat} ({count})
                             </Tabs.Tab>
                         );
                     })}
@@ -285,15 +295,15 @@ const IncidentManagementData = () => {
         <div className="flex items-center gap-2">
             <Select allowDeselect={false}
                 size='sm'
-                aria-label="Filtrer par statut"
-                data={[{ label: "Tous les statuts", value: "All" }, ...INCIDENT_STATUS_OPTIONS]}
+                aria-label={t('list.filterByStatus')}
+                data={[{ label: t('list.allStatuses'), value: "All" }, ...statusOptions]}
                 value={selectedStatus}
                 onChange={setSelectedStatus}
             />
             <Select allowDeselect={false}
                 size='sm'
-                aria-label="Filtrer par département"
-                data={[{ label: "Tous les départements", value: "All" }, ...departments]}
+                aria-label={t('list.filterByDepartment')}
+                data={[{ label: t('list.allDepartments'), value: "All" }, ...departments]}
                 value={selectedDepartment}
                 onChange={setSelectedDepartment}
 
@@ -356,7 +366,7 @@ const IncidentManagementData = () => {
                 color={color}
                 variant="light"
             >
-                {incidentStatusLabel(rowData.status)}
+                {tStatus(rowData.status)}
             </Badge>
         );
     };
@@ -367,8 +377,8 @@ const IncidentManagementData = () => {
         const isRejected = statusUpper === 'REJECTED';
         const canEdit = !(isClosed || isRejected);
         const canInvestigate = !(isClosed || isRejected);
-        const editTooltip = canEdit ? 'Modifier' : (isClosed ? 'Incident clôturé — modification impossible' : 'Incident rejeté — modification impossible');
-        const invTooltip = canInvestigate ? 'Investigation' : (isClosed ? 'Incident clôturé — investigation impossible' : 'Incident rejeté — investigation impossible');
+        const editTooltip = canEdit ? t('list.edit') : (isClosed ? t('list.editClosed') : t('list.editRejected'));
+        const invTooltip = canInvestigate ? t('list.investigate') : (isClosed ? t('list.investigateClosed') : t('list.investigateRejected'));
         return (
             <div className='flex gap-3 justify-center'>
                 <Tooltip label={editTooltip}>
@@ -428,7 +438,7 @@ const IncidentManagementData = () => {
     const sourceFilterBanner = (
         <div className="mb-3 flex items-center gap-3 flex-wrap rounded-xl border border-slate-200 bg-gradient-to-r from-white via-slate-50/60 to-white px-3 py-2 shadow-sm">
             <span className="text-[12px] uppercase tracking-wide text-slate-500 font-semibold pl-1">
-                Source
+                {t('list.source')}
             </span>
             <div className="flex items-center gap-1.5">
                 {/* TOUS */}
@@ -442,7 +452,7 @@ const IncidentManagementData = () => {
                     }`}
                 >
                     <IconUsersGroup size={14} />
-                    Toutes les sources
+                    {t('list.allSources')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                         selectedSource === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                     }`}>
@@ -460,7 +470,7 @@ const IncidentManagementData = () => {
                     }`}
                 >
                     <IconUser size={14} />
-                    Employes
+                    {t('list.employees')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                         selectedSource === 'EMPLOYEE' ? 'bg-white/25 text-white' : 'bg-teal-50 text-teal-700'
                     }`}>
@@ -478,7 +488,7 @@ const IncidentManagementData = () => {
                     }`}
                 >
                     <IconSparkles size={14} />
-                    Intelligence Artificielle
+                    {t('list.ai')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                         selectedSource === 'AI' ? 'bg-white/25 text-white' : 'bg-violet-50 text-violet-700'
                     }`}>
@@ -489,13 +499,13 @@ const IncidentManagementData = () => {
             {selectedSource === 'AI' && (
                 <span className="ml-auto flex items-center gap-1.5 text-[12px] text-violet-700 bg-violet-50 px-2.5 py-1 rounded-md border border-violet-200">
                     <IconSparkles size={12} />
-                    Declarations capturees via le wizard photo + analyse Claude Vision
+                    {t('list.aiHint')}
                 </span>
             )}
             {selectedSource === 'EMPLOYEE' && (
                 <span className="ml-auto flex items-center gap-1.5 text-[12px] text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200">
                     <IconUser size={12} />
-                    Declarations saisies directement par les employes
+                    {t('list.employeeHint')}
                 </span>
             )}
         </div>
@@ -524,17 +534,17 @@ const IncidentManagementData = () => {
                         dataKey="id"
                         filters={filters}
                         globalFilterFields={['title', 'incidentCategoryName', 'status', 'departmentName', 'reporterName']}
-                        currentPageReportTemplate={PAGINATOR_FR}
-                        emptyMessage="Aucun incident ne correspond aux filtres sélectionnés."
+                        currentPageReportTemplate={t('list.paginator')}
+                        emptyMessage={t('list.emptyTable')}
                         onFilter={(e) => setFilters(e.filters)}
                     >
-                        <Column style={{ fontWeight: 'normal' }} field="title" body={nameBodyTemplate} header="Incident" sortable />
-                        <Column style={{ fontWeight: 'normal' }} field="incidentCategoryName" header="Catégorie" />
-                        <Column style={{ fontWeight: 'normal' }} field="departmentName" header="Département" />
-                        <Column style={{ fontWeight: 'normal' }} field="reporterName" header="Déclarant" />
-                        <Column style={{ fontWeight: 'normal' }} field="severity" header="Gravité" body={levelBodyTemplate} />
-                        <Column style={{ fontWeight: 'normal' }} field="incidentDate" header="Date de déclaration" body={(rowData: any) => formatDateShort(rowData.incidentDate)} />
-                        <Column style={{ fontWeight: 'normal' }} field="status" header="Statut" body={getSeverity} />
+                        <Column style={{ fontWeight: 'normal' }} field="title" body={nameBodyTemplate} header={t('list.colIncident')} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentCategoryName" header={t('list.colCategory')} />
+                        <Column style={{ fontWeight: 'normal' }} field="departmentName" header={t('list.colDepartment')} />
+                        <Column style={{ fontWeight: 'normal' }} field="reporterName" header={t('list.colReporter')} />
+                        <Column style={{ fontWeight: 'normal' }} field="severity" header={t('list.colSeverity')} body={levelBodyTemplate} />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentDate" header={t('list.colDate')} body={(rowData: any) => formatDateShort(rowData.incidentDate)} />
+                        <Column style={{ fontWeight: 'normal' }} field="status" header={t('list.colStatus')} body={getSeverity} />
                         <Column bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
                     </DataTable>
                 ) : (
@@ -547,8 +557,8 @@ const IncidentManagementData = () => {
                             <div className="col-span-full">
                                 <EmptyState
                                     icon={<IconShieldExclamation size={28} />}
-                                    title="Aucun incident à afficher"
-                                    description="Aucun incident ne correspond aux filtres sélectionnés."
+                                    title={t('list.emptyCardTitle')}
+                                    description={t('list.emptyCardBody')}
                                     iconColor="slate"
                                 />
                             </div>

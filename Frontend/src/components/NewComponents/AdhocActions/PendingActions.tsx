@@ -33,6 +33,7 @@ import {
 import { getTeamMemberByEmployeeId } from '../../../services/TeamMemberService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
@@ -92,6 +93,14 @@ const PendingActions = () => {
     const [descMap, setDescMap] = useState<Record<string, { loading: boolean; value?: string; error?: string }>>({});
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const user = useSelector((state: any) => state.user);
+    const { t } = useTranslation('adhoc');
+    // Libellés bilingues : clés i18n `adhoc:*`, repli sur les libellés FR centralisés (adhocLabels.ts).
+    const tSourceType = (code?: string | null) => {
+        const norm = (code ?? '').toString().trim().toUpperCase().replace(/[\s-]+/g, '_');
+        return t(`sourceType.${norm}`, { defaultValue: sourceTypeLabel(code) });
+    };
+    const tState = (state?: string | null, fallback?: string) =>
+        t(`state.${(state ?? '').toUpperCase()}`, { defaultValue: fallback ?? (state ?? '—') });
 
     const normalizeType = (value: string) => value?.toString?.().trim().toUpperCase().replace(/[\s-]+/g, '_') ?? '';
 
@@ -116,7 +125,7 @@ const PendingActions = () => {
             normalized,
             icon: iconCfg?.icon ?? IconFileText,
             iconColor: iconCfg?.iconColor ?? 'text-slate-500',
-            label: sourceTypeLabel(type),
+            label: tSourceType(type),
         };
     };
 
@@ -140,11 +149,11 @@ const PendingActions = () => {
         dispatch(showOverlay());
         try {
             await approveCorrectiveAction(action.id);
-            successNotification(`Action « ${action.title || 'sans titre'} » approuvée`);
+            successNotification(t('pending.approvedToast', { title: action.title || t('pending.untitled') }));
             setActions(prev => prev.filter(a => a.id !== action.id));
             setHighlightedId(null);
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || "L'approbation a échoué");
+            errorNotification(e?.response?.data?.errorMessage || t('pending.approveFailed'));
         }
         dispatch(hideOverlay());
     };
@@ -154,11 +163,11 @@ const PendingActions = () => {
         dispatch(showOverlay());
         try {
             await cancelCorrectiveAction(action.id);
-            successNotification(`Action « ${action.title || 'sans titre'} » annulée`);
+            successNotification(t('pending.cancelledToast', { title: action.title || t('pending.untitled') }));
             setActions(prev => prev.filter(a => a.id !== action.id));
             setHighlightedId(null);
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || "L'annulation a échoué");
+            errorNotification(e?.response?.data?.errorMessage || t('pending.cancelFailed'));
         }
         dispatch(hideOverlay());
     };
@@ -166,14 +175,14 @@ const PendingActions = () => {
     const handleApprove = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="text-base">Approuver cette action ?</span>,
+            title: <span className="text-base">{t('pending.approveModalTitle')}</span>,
             centered: true,
             children: (
                 <span className="text-sm text-slate-700">
-                    Confirmer l'approbation de <strong>{action.title}</strong> ? Elle passera en cours de réalisation.
+                    {t('pending.approveBodyPrefix')}<strong>{action.title}</strong>{t('pending.approveBodySuffix')}
                 </span>
             ),
-            labels: { confirm: 'Approuver', cancel: 'Annuler' },
+            labels: { confirm: t('pending.approveConfirm'), cancel: t('pending.modalCancel') },
             confirmProps: { color: 'teal' },
             cancelProps: { color: 'gray', variant: 'default' },
             withCloseButton: false,
@@ -186,14 +195,14 @@ const PendingActions = () => {
     const handleCancel = (action: PendingAction) => {
         setHighlightedId(action.id);
         modals.openConfirmModal({
-            title: <span className="text-base">Annuler cette action ?</span>,
+            title: <span className="text-base">{t('pending.cancelModalTitle')}</span>,
             centered: true,
             children: (
                 <span className="text-sm text-slate-700">
-                    Confirmer l'annulation de <strong>{action.title}</strong> ? Elle sera retirée de la file d'approbation.
+                    {t('pending.cancelBodyPrefix')}<strong>{action.title}</strong>{t('pending.cancelBodySuffix')}
                 </span>
             ),
-            labels: { confirm: "Annuler l'action", cancel: 'Garder en attente' },
+            labels: { confirm: t('pending.cancelConfirm'), cancel: t('pending.keepPending') },
             confirmProps: { color: 'red' },
             cancelProps: { color: 'gray', variant: 'default' },
             withCloseButton: false,
@@ -222,7 +231,7 @@ const PendingActions = () => {
             const desc = await getCorrectiveActionDescription(id);
             setDescMap(prev => ({ ...prev, [id]: { loading: false, value: desc } }));
         } catch (e: any) {
-            setDescMap(prev => ({ ...prev, [id]: { loading: false, error: e?.response?.data?.errorMessage || 'Le chargement de la description a échoué' } }));
+            setDescMap(prev => ({ ...prev, [id]: { loading: false, error: e?.response?.data?.errorMessage || t('pending.descLoadFailed') } }));
         }
     };
 
@@ -355,37 +364,37 @@ const PendingActions = () => {
         <div className="p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Actions Correctives' },
-                    { label: 'Actions en attente' },
+                    { label: t('pending.breadcrumbHome', { defaultValue: 'Accueil' }), to: '/' },
+                    { label: t('pending.breadcrumbCorrective') },
+                    { label: t('pending.title') },
                 ]}
                 icon={<IconClock size={22} stroke={2} />}
                 iconColor="orange"
-                title="Actions en attente"
-                subtitle="Revue et approbation des actions correctives soumises par les équipes"
+                title={t('pending.title')}
+                subtitle={t('pending.subtitle')}
             />
 
             {/* Onglets de statut raffinés — remplacent les tuiles KPI : ils comptent ET filtrent */}
             <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5">
                 {[
-                    { value: ALL, label: 'Toutes', count: totalActions, Icon: IconClock, active: 'bg-slate-800 text-white border-slate-800' },
-                    { value: 'overdue', label: 'En retard', count: overdueActions, Icon: IconAlertTriangle, active: 'bg-rose-600 text-white border-rose-600' },
-                    { value: 'urgent', label: 'Urgentes', count: actions.filter((a) => normalizeType(a.status) === 'URGENT').length, Icon: IconBolt, active: 'bg-orange-500 text-white border-orange-500' },
-                    { value: 'duesoon', label: 'Échéance ≤ 7 j', count: dueSoonActions, Icon: IconCalendarDue, active: 'bg-amber-500 text-white border-amber-500' },
-                ].map((t) => {
-                    const isActive = statusFilter === t.value;
+                    { value: ALL, label: t('pending.tabAll'), count: totalActions, Icon: IconClock, active: 'bg-slate-800 text-white border-slate-800' },
+                    { value: 'overdue', label: t('pending.tabOverdue'), count: overdueActions, Icon: IconAlertTriangle, active: 'bg-rose-600 text-white border-rose-600' },
+                    { value: 'urgent', label: t('pending.tabUrgent'), count: actions.filter((a) => normalizeType(a.status) === 'URGENT').length, Icon: IconBolt, active: 'bg-orange-500 text-white border-orange-500' },
+                    { value: 'duesoon', label: t('pending.tabDueSoon'), count: dueSoonActions, Icon: IconCalendarDue, active: 'bg-amber-500 text-white border-amber-500' },
+                ].map((tab) => {
+                    const isActive = statusFilter === tab.value;
                     return (
                         <button
-                            key={t.value}
+                            key={tab.value}
                             type="button"
-                            onClick={() => setStatusFilter(t.value)}
-                            className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[13px] transition-colors ${isActive ? `${t.active} shadow-sm` : 'border-transparent bg-white text-slate-600 hover:bg-slate-50'}`}
+                            onClick={() => setStatusFilter(tab.value)}
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[13px] transition-colors ${isActive ? `${tab.active} shadow-sm` : 'border-transparent bg-white text-slate-600 hover:bg-slate-50'}`}
                             aria-pressed={isActive}
                         >
-                            <t.Icon size={15} stroke={1.8} />
-                            {t.label}
+                            <tab.Icon size={15} stroke={1.8} />
+                            {tab.label}
                             <span className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[11px] ${isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                                {t.count}
+                                {tab.count}
                             </span>
                         </button>
                     );
@@ -396,7 +405,7 @@ const PendingActions = () => {
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <TextInput
-                        placeholder="Rechercher par intitulé, description ou assigné…"
+                        placeholder={t('pending.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.currentTarget.value)}
@@ -405,31 +414,31 @@ const PendingActions = () => {
                     />
                     <Select
                         data={[
-                            { value: ALL, label: 'Tous les types' },
+                            { value: ALL, label: t('pending.allTypes') },
                             ...availableTypes.map((type) => ({ value: type, label: getTypeConfig(type).label })),
                         ]}
                         value={typeFilter}
                         onChange={(v) => setTypeFilter(v ?? ALL)}
                         size="xs"
                         w={200}
-                        aria-label="Filtrer par type"
+                        aria-label={t('pending.filterByType')}
                     />
                     <Select
                         data={[
-                            { value: ALL, label: 'Tous les statuts' },
-                            { value: 'pending', label: 'En attente' },
-                            { value: 'urgent', label: 'Urgentes' },
-                            { value: 'overdue', label: 'En retard' },
+                            { value: ALL, label: t('pending.allStatuses') },
+                            { value: 'pending', label: t('pending.statusPending') },
+                            { value: 'urgent', label: t('pending.statusUrgent') },
+                            { value: 'overdue', label: t('pending.statusOverdue') },
                         ]}
                         value={statusFilter}
                         onChange={(v) => setStatusFilter(v ?? ALL)}
                         size="xs"
                         w={150}
-                        aria-label="Filtrer par statut"
+                        aria-label={t('pending.filterByStatus')}
                     />
                 </div>
                 <p className="text-[11.5px] text-slate-500 mt-2">
-                    {filteredActions.length} action{filteredActions.length > 1 ? 's' : ''} affichée{filteredActions.length > 1 ? 's' : ''} sur {totalActions}
+                    {t('pending.shownCount', { count: filteredActions.length, total: totalActions })}
                 </p>
             </div>
 
@@ -440,13 +449,13 @@ const PendingActions = () => {
                         <table className="w-full text-left text-[13px]">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-                                    <th className="px-4 py-2.5 font-medium">Action corrective</th>
-                                    <th className="px-4 py-2.5 font-medium">Assignation</th>
-                                    <th className="px-4 py-2.5 font-medium">Département</th>
-                                    <th className="px-4 py-2.5 font-medium">Échéance</th>
-                                    <th className="px-4 py-2.5 font-medium">Progression</th>
-                                    <th className="px-4 py-2.5 font-medium">Statut</th>
-                                    <th className="px-4 py-2.5 font-medium text-right">Actions</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colAction')}</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colAssignment')}</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colDepartment')}</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colDue')}</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colProgress')}</th>
+                                    <th className="px-4 py-2.5 font-medium">{t('pending.colStatus')}</th>
+                                    <th className="px-4 py-2.5 font-medium text-right">{t('pending.colActions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -454,7 +463,8 @@ const PendingActions = () => {
                                     const typeConfig: any = getTypeConfig(action.type);
                                     const daysUntilDue = getDaysUntilDue(action.dueDateRaw);
                                     const overdue = isOverdue(action.dueDateRaw);
-                                    const stateCfg = pendingStateConfig(overdue ? 'OVERDUE' : action.status);
+                                    const stateCode = overdue ? 'OVERDUE' : action.status;
+                                    const stateCfg = pendingStateConfig(stateCode);
                                     const isExpanded = expandedId === action.id;
                                     const isHighlighted = highlightedId === action.id || isExpanded;
                                     const progress = action.details.actionProgress;
@@ -502,13 +512,13 @@ const PendingActions = () => {
                                                     </div>
                                                     <div className="mt-0.5 text-[11px]">
                                                         {overdue ? (
-                                                            <span className="text-rose-600">{Math.abs(daysUntilDue)} j de retard</span>
+                                                            <span className="text-rose-600">{t('pending.daysOverdue', { count: Math.abs(daysUntilDue) })}</span>
                                                         ) : daysUntilDue === 0 ? (
-                                                            <span className="text-amber-700">Aujourd'hui</span>
+                                                            <span className="text-amber-700">{t('pending.today')}</span>
                                                         ) : daysUntilDue === 1 ? (
-                                                            <span className="text-amber-700">Demain</span>
+                                                            <span className="text-amber-700">{t('pending.tomorrow')}</span>
                                                         ) : (
-                                                            <span className="text-slate-400">{daysUntilDue} j restants</span>
+                                                            <span className="text-slate-400">{t('pending.daysLeft', { count: daysUntilDue })}</span>
                                                         )}
                                                     </div>
                                                 </td>
@@ -526,7 +536,7 @@ const PendingActions = () => {
                                                 {/* Statut */}
                                                 <td className="px-4 py-3">
                                                     <span className={`inline-flex items-center whitespace-nowrap rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wider ${stateCfg.chip}`}>
-                                                        {stateCfg.label}
+                                                        {tState(stateCode, stateCfg.label)}
                                                     </span>
                                                 </td>
                                                 {/* Actions */}
@@ -535,13 +545,13 @@ const PendingActions = () => {
                                                         <Button variant="default" size="xs" onClick={() => handleToggleDetails(action.id)}
                                                             leftSection={isExpanded ? <IconChevronDown size={13} /> : <IconChevronRight size={13} />}
                                                             aria-expanded={isExpanded}>
-                                                            Détails
+                                                            {t('pending.details')}
                                                         </Button>
                                                         <Button color="teal" size="xs" onClick={() => handleApprove(action)} leftSection={<IconCircleCheck size={13} />}>
-                                                            Approuver
+                                                            {t('pending.approve')}
                                                         </Button>
                                                         <Button color="red" variant="light" size="xs" onClick={() => handleCancel(action)} leftSection={<IconX size={13} />}>
-                                                            Annuler
+                                                            {t('pending.cancel')}
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -550,11 +560,11 @@ const PendingActions = () => {
                                                 <tr className="bg-slate-50/50">
                                                     <td colSpan={7} className="px-4 pb-4 pt-0">
                                                         <div className="mt-1 rounded-md border border-slate-200 bg-white p-3">
-                                                            <p className="mb-1 text-[10.5px] uppercase tracking-wider text-slate-500">Description complète</p>
-                                                            {descMap[action.id]?.loading && <p className="text-[12.5px] text-slate-600">Chargement de la description…</p>}
+                                                            <p className="mb-1 text-[10.5px] uppercase tracking-wider text-slate-500">{t('pending.fullDescription')}</p>
+                                                            {descMap[action.id]?.loading && <p className="text-[12.5px] text-slate-600">{t('pending.loadingDescription')}</p>}
                                                             {descMap[action.id]?.error && <p className="text-[12.5px] text-rose-600">{descMap[action.id]?.error}</p>}
                                                             {descMap[action.id]?.value && <SafeHtml html={descMap[action.id]?.value || ''} className="text-[12.5px] text-slate-700" />}
-                                                            {!isNumericId(action.id) && !descMap[action.id] && <p className="text-[12.5px] text-slate-600">Description indisponible pour cet élément.</p>}
+                                                            {!isNumericId(action.id) && !descMap[action.id] && <p className="text-[12.5px] text-slate-600">{t('pending.descriptionUnavailable')}</p>}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -572,11 +582,11 @@ const PendingActions = () => {
                 <div className="bg-white rounded-xl border border-slate-200">
                     <EmptyState
                         icon={<IconCircleCheck size={28} />}
-                        title="Aucune action en attente"
+                        title={t('pending.emptyTitle')}
                         description={
                             searchTerm || typeFilter !== ALL || statusFilter !== ALL
-                                ? 'Aucune action ne correspond aux filtres sélectionnés.'
-                                : 'Toutes les actions correctives sont à jour.'
+                                ? t('pending.emptyFiltered')
+                                : t('pending.emptyAllDone')
                         }
                         iconColor="emerald"
                     />
