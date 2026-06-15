@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActionIcon, Tooltip } from '@mantine/core';
-import { IconCheck, IconEdit, IconEye, IconRotateClockwise, IconX, IconCalendarTime, IconUserShield, IconMapPin } from '@tabler/icons-react';
+import { IconArrowUpRight, IconCheck, IconEdit, IconEye, IconRotateClockwise, IconX, IconCalendarTime, IconUserShield, IconMapPin } from '@tabler/icons-react';
 import IsoBadge from '../../UtilityComp/IsoBadge';
 import { auditCategoryConfig, formatDateFr, planStatusConfig } from '../planningLabels';
 
@@ -203,12 +203,20 @@ const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditArea
                 <button
                     type="button"
                     onClick={() => onView(audit)}
-                    className="text-[12px] text-teal-100 hover:text-white underline-offset-2 hover:underline transition-colors"
+                    className="group/btn inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-3.5 py-1.5 text-[12px] font-medium text-teal-800 shadow-sm ring-1 ring-white/30
+                               transition-all duration-200 hover:bg-white hover:shadow-md hover:-translate-y-px active:translate-y-0"
                 >
                     Ouvrir le détail
+                    <IconArrowUpRight size={14} stroke={1.9} className="transition-transform duration-200 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                 </button>
                 <Tooltip label="Revenir au recto" withArrow>
-                    <ActionIcon variant="white" size="sm" color="dark" onClick={() => setFlipped(false)} aria-label="Revenir au recto">
+                    <ActionIcon
+                        variant="subtle"
+                        size="sm"
+                        onClick={() => setFlipped(false)}
+                        aria-label="Revenir au recto"
+                        className="!text-teal-50 hover:!bg-white/15"
+                    >
                         <IconRotateClockwise size={14} stroke={1.5} style={{ transform: 'scaleX(-1)' }} />
                     </ActionIcon>
                 </Tooltip>

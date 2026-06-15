@@ -32,6 +32,31 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Affordance « pointeur » — tout élément cliquable affiche le curseur main.
+   (LOT 56) Couvre les boutons natifs, Mantine, les div role="button" et les
+   onglets/liens. Les éléments désactivés gardent un curseur « interdit ».
+   --------------------------------------------------------------------------- */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"],
+a[href],
+summary,
+select,
+label[for],
+.cursor-pointer,
+.mantine-Button-root:not([data-disabled]),
+.mantine-ActionIcon-root:not([data-disabled]) {
+  cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"],
+[data-disabled],
+.mantine-Button-root[data-disabled],
+.mantine-ActionIcon-root[data-disabled] {
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
    Règle de NORMALISATION
    --------------------------------------------------------------------------
    LOT 39 audit P1 fix : on cible explicitement les éléments de contenu plutôt

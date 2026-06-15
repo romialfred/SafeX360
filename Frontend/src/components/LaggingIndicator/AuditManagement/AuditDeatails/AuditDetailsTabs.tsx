@@ -235,20 +235,20 @@ const AuditDetailsTabs = () => {
                     { label: "Détails de l'audit" },
                 ]}
                 icon={<IconClipboardCheck size={22} stroke={2} />}
-                iconColor="indigo"
+                iconColor="teal"
                 title="Détails de l'audit"
                 subtitle="Suivi complet du cycle d'audit ISO 19011 — exécution, recommandations et clôture"
             />
 
             {/* Bandeau d'identification de l'audit */}
-            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-md">
+            <div className="rounded-xl p-5 space-y-3 bg-gradient-to-br from-teal-600 to-teal-800 shadow-md">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div className='flex flex-col gap-1.5'>
                         <h2 className="text-xl flex items-center gap-3 text-white flex-wrap">
                             {audit?.title}
-                            <Badge radius="sm" size="md" color="indigo.2" variant="filled" className="!text-indigo-900">{audit?.refNumber}</Badge>
+                            <Badge radius="sm" size="md" color="teal.2" variant="filled" className="!text-teal-900">{audit?.refNumber}</Badge>
                         </h2>
-                        <div className="flex items-center gap-1.5 text-indigo-100 text-sm">
+                        <div className="flex items-center gap-1.5 text-teal-100 text-sm">
                             <IconCalendarEvent size={16} />
                             <span>{formatDateShort(audit.startDate)} au {formatDateShort(audit.endDate)}</span>
                         </div>
@@ -260,7 +260,7 @@ const AuditDetailsTabs = () => {
                             leftSection={<IconClock size={15} />}
                             onClick={handleStatusChange}
                             disabled={(audit.planningStatus && audit.planningStatus !== "APPROVED") || isAuditLocked}
-                            className="!bg-white !text-indigo-700 hover:!bg-indigo-50"
+                            className="!bg-white !text-teal-700 hover:!bg-teal-50"
                         >
                             {auditStatusMap[audit.status] || "Statut"}
                         </Button>
@@ -287,7 +287,7 @@ const AuditDetailsTabs = () => {
                                     type="button"
                                     onClick={() => handleTabChange(key)}
                                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${activeTab === key
-                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        ? 'bg-teal-600 text-white shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}
                                 >
@@ -312,7 +312,7 @@ const AuditDetailsTabs = () => {
                 onClose={close}
                 title={
                     <div className='text-base flex items-center gap-2'>
-                        <span className='bg-indigo-100 text-indigo-700 rounded-full p-2'><IconLock size={18} /></span>
+                        <span className='bg-teal-100 text-teal-700 rounded-full p-2'><IconLock size={18} /></span>
                         Changer le statut de l'audit
                     </div>
                 }
@@ -389,7 +389,7 @@ const AuditDetailsTabs = () => {
                         <Button variant="default" onClick={close}>
                             Annuler
                         </Button>
-                        <Button color="indigo" type="submit">
+                        <Button color="teal" type="submit">
                             Soumettre
                         </Button>
                     </div>

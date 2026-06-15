@@ -134,14 +134,16 @@ const Investigation = () => {
             method: (value) => (value ? null : "La méthode d'investigation est requise"),
             startDate: (value) => (value ? null : "La date de début de l'investigation est requise"),
 
-            humanCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause humaine est requise"),
-            taskCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause liée à la tâche est requise"),
-            workingCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause liée aux conditions de travail est requise"),
-            organizationCauses: (value) => (value.length > 0 || active < 1 ? null : "Au moins une cause organisationnelle est requise"),
-            taskAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des tâches est requise"),
-            workingAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des conditions de travail est requise"),
-            humanAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse des actions humaines est requise"),
-            organizationAnalysis: (value) => (isValidRichText(value) || active < 1 ? null : "L'analyse organisationnelle est requise"),
+            // Chaque catégorie ICAM est satisfaite par une cause cochée OU une analyse rédigée
+            // (les outils guidés — 5 Pourquoi, Ishikawa, Arbre — alimentent l'analyse).
+            humanCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.humanAnalysis) || active < 1 ? null : "Renseignez une cause ou l'analyse — Actions individuelles & humaines"),
+            taskCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.taskAnalysis) || active < 1 ? null : "Renseignez une cause ou l'analyse — Facteurs liés à la tâche"),
+            workingCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.workingAnalysis) || active < 1 ? null : "Renseignez une cause ou l'analyse — Conditions & environnement de travail"),
+            organizationCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.organizationAnalysis) || active < 1 ? null : "Renseignez une cause ou l'analyse — Facteurs organisationnels & latents"),
+            taskAnalysis: (value, values: any) => (isValidRichText(value) || values.taskCauses.length > 0 || active < 1 ? null : "Renseignez l'analyse ou une cause — Facteurs liés à la tâche"),
+            workingAnalysis: (value, values: any) => (isValidRichText(value) || values.workingCauses.length > 0 || active < 1 ? null : "Renseignez l'analyse ou une cause — Conditions & environnement de travail"),
+            humanAnalysis: (value, values: any) => (isValidRichText(value) || values.humanCauses.length > 0 || active < 1 ? null : "Renseignez l'analyse ou une cause — Actions individuelles & humaines"),
+            organizationAnalysis: (value, values: any) => (isValidRichText(value) || values.organizationCauses.length > 0 || active < 1 ? null : "Renseignez l'analyse ou une cause — Facteurs organisationnels & latents"),
             report: (value) => (isValidRichText(value) || active < 3 ? null : "Le rapport d'investigation est requis"),
             correctiveActions: {
                 actionName: (value) => value.trim()?.length > 0 || active < 2 ? null : "L'intitulé de l'action est requis",
@@ -215,42 +217,27 @@ const Investigation = () => {
         <div className="flex flex-col gap-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-2xl text-blue-500 w-fit">Investigation d'incident</div>
-                    <Breadcrumbs my="xs" >
-                        <Link className="hover:!underline" to="/">
-                            <Text variant="gradient">Accueil</Text>
-                        </Link>
-                        <Link className="hover:!underline" to="/incidents">
-                            <Text variant="gradient">Gestion des incidents</Text>
-                        </Link>
-                        <Text variant="gradient">Investigation d'incident</Text>
+                    <h1 className="text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 600 }}>Investigation d'incident</h1>
+                    <Breadcrumbs my="xs" className="!text-xs">
+                        <Link className="hover:!underline" to="/"><Text size="xs" c="dimmed">Accueil</Text></Link>
+                        <Link className="hover:!underline" to="/incidents"><Text size="xs" c="dimmed">Gestion des incidents</Text></Link>
+                        <Text size="xs" c="teal">Investigation d'incident</Text>
                     </Breadcrumbs>
                 </div>
             </div>
             {/* <p className=' italic my-3'>Proactive workplace walkthroughs ensuring safety compliance, engagement, and continuous improvement</p> */}
-            <div className="  shadow-md rounded-lg bg-red-100 border-red-400 border-1 p-3 flex justify-between items-center">
-
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-red-100 rounded-3xl p-1">
-                        <IconExclamationCircle className="text-red-600 " size={50} />
-                    </div>
-
+                    <span className="rounded-xl bg-red-100 p-2 text-red-600"><IconExclamationCircle size={26} /></span>
                     <div>
-                        <h2 className="text-lg text-red-800 ">{incident.title}</h2>
-                        <span className="bg-red-200 rounded-md text-sm p-1 text-red-600">
-                            {incident.number}
-                        </span>
-
+                        <h2 className="text-[15px] text-red-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>{incident.title}</h2>
+                        <span className="font-mono text-xs text-red-700">{incident.number}</span>
                     </div>
                 </div>
-                <div className="flex flex-col gap-1 items-end">
-                    <p className="text-sm  text-red-700">{formatDateWithDay(incident.incidentDate)}</p>
-                    <p className="text-sm text-red-700">
-                        Déclaré par : <span className="font-medium">
-                            {empMap[incident.reporterId] ? empMap[incident.reporterId]?.name : "—"}</span>
-                    </p>
+                <div className="text-right text-sm text-red-700">
+                    <p>{formatDateWithDay(incident.incidentDate)}</p>
+                    <p>Déclaré par : <span className="font-medium">{empMap[incident.reporterId]?.name ?? "—"}</span></p>
                 </div>
-
             </div>
 
             {lockedInfo.locked && (
@@ -261,8 +248,8 @@ const Investigation = () => {
                 </Alert>
             )}
 
-            <div className="flex flex-col gap-5   [&_.mantine-Stepper-steps]:p-5  [&_.mantine-Stepper-steps]:gap-5">
-                <Stepper active={active} onStepClick={(s) => { if (!lockedInfo.locked) setActive(s); }}>
+            <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] [&_.mantine-Stepper-steps]:gap-4 [&_.mantine-Stepper-separator]:!mx-2">
+                <Stepper active={active} onStepClick={(s) => { if (!lockedInfo.locked) setActive(s); }} color="teal" size="sm" iconSize={32}>
                     <Stepper.Step label="Étape 1" description="Détails de l'investigation">
                         <InvestigationDetails incident={incident} form={form} employees={emps} />
                     </Stepper.Step>

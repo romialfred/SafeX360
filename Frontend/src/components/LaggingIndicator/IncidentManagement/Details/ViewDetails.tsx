@@ -15,6 +15,7 @@ import {
     IconUser,
     IconEdit,
     IconPrinter,
+    IconCheck,
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -264,6 +265,33 @@ const ViewDetails = () => {
 
     const isLoading = !incident?.id;
 
+    // ─── Workflow ISO 45001 — étapes + dates (depuis l'historique) ───
+    const stepsOrder = ['REPORTED', 'INVESTIGATION', 'INVESTIGATION_COMPLETED', 'CORRECTIVE_ACTIONS', 'CLOSED'];
+    const stepLabels: Record<string, string> = {
+        REPORTED: 'Déclaré',
+        INVESTIGATION: 'Investigation',
+        INVESTIGATION_COMPLETED: 'Analyse complétée',
+        CORRECTIVE_ACTIONS: 'Actions correctives',
+        CLOSED: 'Clôturé',
+    };
+    const stepIso: Record<string, string> = {
+        REPORTED: 'ISO 45001 §10.2.1 a',
+        INVESTIGATION: '§10.2.1 b',
+        INVESTIGATION_COMPLETED: '§10.2.1 c',
+        CORRECTIVE_ACTIONS: '§10.2.1 d–e',
+        CLOSED: '§10.2.1 f',
+    };
+    const currentIdx = stepsOrder.indexOf(currentStatusKey);
+    const rejected = currentStatusKey === 'REJECTED';
+    const stepDateFor = (status: string): any => {
+        const match = [...history]
+            .filter((h) => String(h.status).toUpperCase() === status)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+        if (match?.date) return match.date;
+        if (status === 'REPORTED') return incident?.discoveryTime || incident?.occurredAt || incident?.createdAt || null;
+        return null;
+    };
+
     return (
         <div className="p-5 space-y-5 w-full">
             {/* Page header — breadcrumb + titre + actions */}
@@ -354,25 +382,6 @@ const ViewDetails = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="lg:w-64 flex-shrink-0">
-                            <Tooltip label={locked.locked ? (locked.status === 'CLOSED' ? 'Incident clôturé, le statut ne peut plus être modifié' : 'Incident rejeté, le statut ne peut plus être modifié') : 'Changer le statut'}>
-                                <span className="inline-flex w-full">
-                                    <Button
-                                        fullWidth
-                                        size="md"
-                                        color="teal"
-                                        leftSection={<IconClock size={18} />}
-                                        onClick={handleStatusChange}
-                                        disabled={locked.locked}
-                                    >
-                                        Changer le statut
-                                    </Button>
-                                </span>
-                            </Tooltip>
-                            <p className="text-xs text-slate-500 mt-2 text-center">
-                                Workflow ISO 45001 : transitions tracées dans l'historique
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -390,99 +399,100 @@ const ViewDetails = () => {
                 </Alert>
             )}
 
-            {/* Workflow ISO 45001 — étapes visuelles */}
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                <header className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-                    <div className="p-1 rounded bg-slate-200">
-                        <IconCalendarFilled size={14} className="text-slate-700" />
-                    </div>
-                    <h2 className="text-xs text-slate-800 uppercase tracking-wider flex-1">
-                        Workflow ISO 45001 — Étapes du dossier
-                    </h2>
-                    <span className="text-[10px] text-slate-500">
-                        ISO 45001 §10.2.1 (a→f)
-                    </span>
-                </header>
-                <div className="p-4">
-                    {(() => {
-                        const stepsOrder = ['REPORTED', 'INVESTIGATION', 'INVESTIGATION_COMPLETED', 'CORRECTIVE_ACTIONS', 'CLOSED'];
-                        const stepLabels: Record<string, string> = {
-                            REPORTED: 'Déclaré',
-                            INVESTIGATION: 'Investigation',
-                            INVESTIGATION_COMPLETED: 'Analyse complétée',
-                            CORRECTIVE_ACTIONS: 'Actions correctives',
-                            CLOSED: 'Clôturé',
-                        };
-                        const currentIdx = stepsOrder.indexOf(currentStatusKey);
-                        const rejected = currentStatusKey === 'REJECTED';
-                        return (
-                            <div className="flex items-center gap-1 overflow-x-auto">
+            {/* Contenu principal (onglets) + volet workflow à droite */}
+            <div className="flex flex-col lg:flex-row gap-5 items-start">
+                {/* Colonne principale — onglets */}
+                <div className="flex-1 min-w-0 w-full">
+                    <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)} color="teal" variant="pills">
+                        <Tabs.List className="bg-white border border-slate-200 rounded-xl p-1.5 !flex !flex-wrap !gap-0.5">
+                            {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
+                                !hide && (
+                                    <Tabs.Tab
+                                        key={key}
+                                        value={key}
+                                        leftSection={<Icon size={15} />}
+                                        className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-colors"
+                                    >
+                                        {label}
+                                    </Tabs.Tab>
+                                )
+                            ))}
+                        </Tabs.List>
+
+                        {Object.entries(tabData).map(([key, { content }]) => (
+                            <Tabs.Panel value={key} key={key} pt="md">
+                                <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                                    {content}
+                                </div>
+                            </Tabs.Panel>
+                        ))}
+                    </Tabs>
+                </div>
+
+                {/* Volet droit — workflow ISO 45001 vertical avec dates */}
+                <aside className="w-full lg:w-[310px] xl:w-[340px] flex-shrink-0 space-y-4 lg:sticky lg:top-4">
+                    <Tooltip label={locked.locked ? (locked.status === 'CLOSED' ? 'Incident clôturé, le statut ne peut plus être modifié' : 'Incident rejeté, le statut ne peut plus être modifié') : 'Changer le statut'}>
+                        <span className="inline-flex w-full">
+                            <Button fullWidth size="md" color="teal" leftSection={<IconClock size={18} />} onClick={handleStatusChange} disabled={locked.locked}>
+                                Changer le statut
+                            </Button>
+                        </span>
+                    </Tooltip>
+
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <header className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                            <div className="p-1 rounded bg-slate-200">
+                                <IconCalendarFilled size={14} className="text-slate-700" />
+                            </div>
+                            <h2 className="text-xs text-slate-800 uppercase tracking-wider flex-1">Workflow ISO 45001</h2>
+                            <span className="text-[10px] text-slate-500">§10.2.1</span>
+                        </header>
+                        <div className="p-4">
+                            {rejected && (
+                                <div className="mb-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border bg-red-50 text-red-700 border-red-200 text-[11px]">
+                                    <IconLock size={11} /> Dossier rejeté lors de l'analyse préliminaire
+                                </div>
+                            )}
+                            <ol className="relative">
                                 {stepsOrder.map((step, i) => {
                                     const isDone = !rejected && currentIdx >= i;
-                                    const isCurrent = currentIdx === i;
+                                    const isCurrent = !rejected && currentIdx === i;
+                                    const date = stepDateFor(step);
+                                    const isLast = i === stepsOrder.length - 1;
                                     return (
-                                        <div key={step} className="flex items-center gap-1 flex-shrink-0">
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] transition-colors
-                                                ${isCurrent ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
-                                                  : isDone ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                                  : rejected && i === 0 ? 'bg-red-50 text-red-700 border-red-200'
-                                                  : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                                                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px]
-                                                    ${isCurrent ? 'bg-white text-teal-700'
-                                                      : isDone ? 'bg-teal-200 text-teal-800'
-                                                      : 'bg-slate-200 text-slate-500'}`}>
-                                                    {i + 1}
-                                                </span>
-                                                <span className="whitespace-nowrap">{stepLabels[step]}</span>
-                                            </div>
-                                            {i < stepsOrder.length - 1 && (
-                                                <div className={`w-6 h-0.5 ${currentIdx > i ? 'bg-teal-400' : 'bg-slate-200'}`} />
+                                        <li key={step} className="relative flex gap-3 pb-5 last:pb-0">
+                                            {!isLast && (
+                                                <span className={`absolute left-[11px] top-7 bottom-0 w-px ${(!rejected && currentIdx > i) ? 'bg-teal-400' : 'bg-slate-200'}`} />
                                             )}
-                                        </div>
+                                            <span className={`relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold
+                                                ${isCurrent ? 'bg-teal-600 text-white ring-4 ring-teal-100'
+                                                  : isDone ? 'bg-teal-100 text-teal-700'
+                                                  : 'bg-slate-100 text-slate-400'}`}>
+                                                {isDone && !isCurrent ? <IconCheck size={13} /> : i + 1}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className={`text-[13px] leading-tight ${isCurrent ? 'font-semibold text-teal-700' : isDone ? 'text-slate-800' : 'text-slate-400'}`}>
+                                                    {stepLabels[step]}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wide">{stepIso[step]}</p>
+                                                <p className={`mt-1 inline-flex items-center gap-1 text-[11.5px] ${date ? 'text-slate-600' : 'text-slate-300'}`}>
+                                                    <IconCalendarEvent size={12} className="shrink-0" />
+                                                    {date ? `${safeDate(date)}${safeTime(date) ? ` · ${safeTime(date)}` : ''}` : (isCurrent ? 'En cours' : 'En attente')}
+                                                </p>
+                                            </div>
+                                        </li>
                                     );
                                 })}
-                                {rejected && (
-                                    <div className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border bg-red-50 text-red-700 border-red-200 text-[11px]">
-                                        <IconLock size={11} />
-                                        Dossier rejeté
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })()}
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <Tabs
-                value={activeTab}
-                onChange={(value) => value && setActiveTab(value)}
-                color="teal"
-                variant="pills"
-            >
-                <Tabs.List className="bg-white border border-slate-200 rounded-xl p-1.5 !flex !gap-0.5">
-                    {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
-                        !hide && (
-                            <Tabs.Tab
-                                key={key}
-                                value={key}
-                                leftSection={<Icon size={15} />}
-                                className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-colors"
-                            >
-                                {label}
-                            </Tabs.Tab>
-                        )
-                    ))}
-                </Tabs.List>
-
-                {Object.entries(tabData).map(([key, { content }]) => (
-                    <Tabs.Panel value={key} key={key} pt="md">
-                        <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                            {content}
+                            </ol>
                         </div>
-                    </Tabs.Panel>
-                ))}
-            </Tabs>
+                        <footer className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
+                            <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                                Transitions tracées dans l'historique — preuve réglementaire ISO 45001 §7.5.3.
+                            </p>
+                        </footer>
+                    </div>
+                </aside>
+            </div>
 
             <Modal
                 opened={opened}

@@ -54,18 +54,20 @@ const severityMap: Record<string, string> = {
 
 const investMethod = [
     { label: "ICAM (Incident Cause Analysis Method)", value: "ICAM" },
-    { label: "Analyse des systèmes (SMS)", value: "SMS" },
-    { label: "FTA – Fault Tree Analysis", value: "FTA" },
-    { label: "Arbre des causes", value: "AC" },
     { label: "Méthode des 5 Pourquoi", value: "M5P" },
+    { label: "Ishikawa – Diagramme 6M", value: "ISH" },
+    { label: "Arbre des causes", value: "AC" },
+    { label: "FTA – Fault Tree Analysis", value: "FTA" },
+    { label: "Analyse des systèmes (SMS)", value: "SMS" },
     { label: "Root Cause Analysis (RCA)", value: "RCA" }
 ]
 const investMethodMap: Record<string, string> = {
     ICAM: "Incident Cause Analysis Method",
-    SMS: "Analyse des systèmes (SMS)",
-    FTA: "Fault Tree Analysis",
-    AC: "Arbre des causes",
     M5P: "Méthode des 5 Pourquoi",
+    ISH: "Diagramme d'Ishikawa (6M)",
+    AC: "Arbre des causes",
+    FTA: "Fault Tree Analysis",
+    SMS: "Analyse des systèmes (SMS)",
     RCA: "Root Cause Analysis (RCA)"
 }
 

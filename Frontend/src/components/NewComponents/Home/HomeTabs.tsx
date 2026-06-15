@@ -21,10 +21,10 @@
  * un problème survient, le fallback est Home.tsx classique.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Text } from '@mantine/core';
-import { IconChevronRight, IconApps } from '@tabler/icons-react';
+import { IconChevronRight, IconApps, IconX, IconArrowUpRight, IconRotateClockwise } from '@tabler/icons-react';
 import { moduleGroups, type ModuleCard } from './Home';
 import { HOME_TABS, type HomeTabId, type HomeTab } from './homeCategories';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -72,6 +72,8 @@ export default function HomeTabs() {
     const navigate = useNavigate();
     const [activeTabId, setActiveTabId] = useState<HomeTabId>('all' as HomeTabId);
     const [pendingSubscription, setPendingSubscription] = useState<ModuleCard | null>(null);
+    // Module dont l'aperçu retourné (face arrière agrandie) est ouvert.
+    const [flipped, setFlipped] = useState<ModuleCard | null>(null);
 
     /** Liste complete des onglets : "Toutes" + 6 categories thematiques. */
     const ALL_TABS = useMemo<HomeTab[]>(() => [ALL_APPS_TAB, ...HOME_TABS], []);
@@ -113,6 +115,21 @@ export default function HomeTabs() {
         }
         navigate(module.url);
     };
+
+    // Aperçu retourné : verrouille le scroll de fond et ferme via Échap.
+    useEffect(() => {
+        if (!flipped) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setFlipped(null);
+        };
+        document.addEventListener('keydown', onKey);
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.body.style.overflow = prevOverflow;
+        };
+    }, [flipped]);
 
     return (
         <div className="w-full space-y-5">
@@ -245,25 +262,52 @@ export default function HomeTabs() {
                                 !module.requiredModuleId || isModuleEnabled(module.requiredModuleId);
 
                             return (
-                                <button
+                                <div
                                     key={module.id}
-                                    type="button"
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() => openModule(module)}
-                                    className={`cursor-pointer group relative text-left bg-white border border-slate-200 rounded-2xl p-4 transition-all hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 ${
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            openModule(module);
+                                        }
+                                    }}
+                                    className={`cursor-pointer group relative text-left bg-white border border-slate-200 rounded-2xl p-4
+                                                transition-all duration-300 will-change-transform hover:-translate-y-1 hover:scale-[1.02]
+                                                hover:shadow-[0_16px_36px_-16px_rgba(15,23,42,0.35)]
+                                                focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-teal-500 ${
                                         !enabled ? 'opacity-75' : ''
                                     }`}
+                                    style={{ ['--accent']: accent } as React.CSSProperties}
                                     aria-label={`Ouvrir le module ${module.title}`}
                                 >
-                                    {/* Barre d'accent supérieure */}
+                                    {/* Barre d'accent supérieure — s'épaissit et s'étend au survol */}
                                     <span
-                                        className="absolute top-0 left-4 right-4 h-0.5 rounded-b"
+                                        className="absolute top-0 left-4 right-4 h-0.5 rounded-b transition-all duration-300 group-hover:h-1 group-hover:left-0 group-hover:right-0"
                                         style={{ backgroundColor: accent }}
                                         aria-hidden="true"
                                     />
 
-                                    <div className="flex items-start gap-3 mb-2">
+                                    {/* Bouton retournement → aperçu agrandi (n'ouvre pas le module) */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setFlipped(module);
+                                        }}
+                                        className="absolute top-2.5 right-2.5 z-10 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white/90 text-slate-400
+                                                   opacity-0 transition-all duration-200 hover:text-[color:var(--accent)] hover:border-[color:var(--accent)]
+                                                   group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+                                        aria-label={`Aperçu du module ${module.title}`}
+                                        title="Aperçu — retourner la tuile"
+                                    >
+                                        <IconRotateClockwise size={14} stroke={1.7} />
+                                    </button>
+
+                                    <div className="flex items-start gap-3 mb-2 pr-8">
                                         <div
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
                                             style={{
                                                 backgroundColor: accent + '15',
                                                 color: accent,
@@ -302,11 +346,11 @@ export default function HomeTabs() {
                                     </div>
 
                                     {!enabled && (
-                                        <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                                        <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
                                             Désactivé
                                         </span>
                                     )}
-                                </button>
+                                </div>
                             );
                         })}
                     </div>
@@ -320,6 +364,138 @@ export default function HomeTabs() {
                     </p>
                 </div>
             </section>
+
+            {/* ─── Aperçu retourné : face arrière agrandie (~2,5× la tuile) ─── */}
+            {flipped && (() => {
+                const accent = ACCENT_HEX[flipped.id] ?? '#0f766e';
+                const FIcon = flipped.icon;
+                const enabled = !flipped.requiredModuleId || isModuleEnabled(flipped.requiredModuleId);
+                const subs = flipped.items.map((it) => (typeof it === 'string' ? it : it.label));
+                return (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Résumé du module ${flipped.title}`}
+                        onClick={() => setFlipped(null)}
+                    >
+                        <style>{`
+                            @keyframes safexBackdropIn { from { opacity: 0 } to { opacity: 1 } }
+                            @keyframes safexFlipIn {
+                                0%   { opacity: 0; transform: perspective(1600px) rotateY(-78deg) scale(.86); }
+                                55%  { opacity: 1; }
+                                100% { opacity: 1; transform: perspective(1600px) rotateY(0deg) scale(1); }
+                            }
+                        `}</style>
+
+                        <div
+                            className="absolute inset-0 bg-slate-900/55 backdrop-blur-sm"
+                            style={{ animation: 'safexBackdropIn .2s ease both' }}
+                        />
+
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+                            style={{
+                                animation: 'safexFlipIn .55s cubic-bezier(.2,.7,.2,1) both',
+                                transformOrigin: 'center',
+                                borderTop: `4px solid ${accent}`,
+                            }}
+                        >
+                            {/* En-tête teinté à la couleur du module */}
+                            <div
+                                className="px-7 pt-6 pb-5"
+                                style={{ background: `linear-gradient(160deg, ${accent}1f, ${accent}08 45%, transparent 75%)` }}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+                                        style={{ backgroundColor: accent + '24', color: accent }}
+                                    >
+                                        <FIcon size={28} stroke={1.7} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: accent }}>
+                                            Résumé du module
+                                        </p>
+                                        <h2
+                                            className="mt-0.5 leading-tight text-slate-900"
+                                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: '22px' }}
+                                        >
+                                            {flipped.title}
+                                        </h2>
+                                        <p className="mt-1 text-[12px] text-slate-500">
+                                            {subs.length} sous-module{subs.length > 1 ? 's' : ''}
+                                            {!enabled ? ' · module désactivé' : ''}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFlipped(null)}
+                                        aria-label="Fermer l'aperçu"
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                    >
+                                        <IconX size={17} stroke={1.7} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Corps structuré : titres de sections en couleur du module */}
+                            <div className="space-y-5 px-7 pb-6 pt-2">
+                                <section>
+                                    <h3 className="mb-1.5 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: accent }}>
+                                        <span className="h-3 w-1 rounded-full" style={{ backgroundColor: accent }} />
+                                        Description
+                                    </h3>
+                                    <p className="text-[13.5px] leading-relaxed text-slate-700">{flipped.description}</p>
+                                </section>
+
+                                <section>
+                                    <h3 className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]" style={{ color: accent }}>
+                                        <span className="h-3 w-1 rounded-full" style={{ backgroundColor: accent }} />
+                                        Sous-modules inclus
+                                    </h3>
+                                    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        {subs.map((label, i) => (
+                                            <li
+                                                key={i}
+                                                className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-[12.5px] text-slate-700"
+                                            >
+                                                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+                                                <span className="truncate">{label}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+
+                                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFlipped(null)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12.5px] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                    >
+                                        <IconRotateClockwise size={14} stroke={1.7} style={{ transform: 'scaleX(-1)' }} />
+                                        Retour
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const m = flipped;
+                                            setFlipped(null);
+                                            openModule(m);
+                                        }}
+                                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:-translate-y-px hover:shadow-md active:translate-y-0"
+                                        style={{ backgroundColor: accent }}
+                                    >
+                                        Ouvrir le module
+                                        <IconArrowUpRight size={15} stroke={1.9} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             <ModuleSubscriptionModal
                 isOpen={pendingSubscription !== null}

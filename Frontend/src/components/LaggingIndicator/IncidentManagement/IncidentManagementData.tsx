@@ -19,6 +19,7 @@ import {
     IconSparkles,
     IconUser,
     IconUsersGroup,
+    IconAlertTriangle,
 } from '@tabler/icons-react';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
@@ -215,73 +216,70 @@ const IncidentManagementData = () => {
         </div>
     );
 
-    // Severity Tabs (like NonConformityDashboard)
-    const severityTabOptions = [
-        { value: 'All', label: 'Tous', tabClass: '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400' },
-        ...levels.filter(l => l.value !== 'All').map(l => {
-            let colorClass = '!text-slate-600';
-            switch (l.value) {
-                case '1': colorClass = 'hover:!text-green-600 data-[active]:!bg-green-100 data-[active]:!text-green-800 data-[active]:!border-green-500'; break;
-                case '2': colorClass = 'hover:!text-yellow-600 data-[active]:!bg-yellow-100 data-[active]:!text-yellow-800 data-[active]:!border-yellow-500'; break;
-                case '3': colorClass = 'hover:!text-orange-600 data-[active]:!bg-orange-100 data-[active]:!text-orange-800 data-[active]:!border-orange-500'; break;
-                case '4': colorClass = 'hover:!text-red-700 data-[active]:!bg-red-100 data-[active]:!text-red-800 data-[active]:!border-red-600'; break;
-                case '5': colorClass = 'hover:!text-red-900 data-[active]:!bg-red-100 data-[active]:!text-red-900 data-[active]:!border-red-900'; break;
-                default: break;
-            }
-            return {
+    // Gravité → liste déroulante (les niveaux à compteur 0 ne sont pas proposés).
+    const severitySelectData = () => {
+        const opts = levels
+            .filter((l) => l.value !== 'All')
+            .map((l) => ({
                 value: l.value,
-                label: l.label,
-                tabClass: `!text-slate-600 ${colorClass}`
-            };
-        })
-    ];
+                name: l.label,
+                count: incidents.filter((x) => x.maxSeverityLevel == l.value).length,
+            }))
+            .filter((o) => o.count > 0)
+            .map((o) => ({ value: o.value, label: `${o.name} (${o.count})` }));
+        return [{ value: 'All', label: `Toutes gravités (${incidents.length})` }, ...opts];
+    };
 
-    // Severity tab counts are NOT affected by category filter
     const leftToolbarTemplate = () => (
-        <Tabs value={selectedLevel} onChange={value => value && setSelectedLevel(value)} keepMounted={false}>
-            <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
-                {severityTabOptions.map(opt => (
-                    <Tabs.Tab
-                        key={opt.value}
-                        value={opt.value}
-                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
-                    >
-                        {levels.find(l => l.value === opt.value)?.label || opt.label} ({incidents.filter(x => (opt.value === 'All' || x.maxSeverityLevel == opt.value)).length})
-                    </Tabs.Tab>
-                ))}
-            </Tabs.List>
-        </Tabs>
+        <Select
+            allowDeselect={false}
+            size="sm"
+            w={230}
+            aria-label="Filtrer par gravité"
+            leftSection={<IconAlertTriangle size={15} />}
+            data={severitySelectData()}
+            value={selectedLevel}
+            onChange={(value) => value && setSelectedLevel(value)}
+            comboboxProps={{ withinPortal: true }}
+        />
     );
 
-    // Category Tabs (like NonConformityDashboard)
-    // Cross-filtered count: category tab counts filtered by selectedLevel
-    const categoryTabOptions = categories.map(category => {
-        let colorClass = '!text-slate-600';
-        if (category !== 'All') {
-            colorClass = 'hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500';
-        }
-        return {
-            value: category,
-            label: category === 'All' ? 'Tous' : category,
-            tabClass: `!text-slate-600 ${colorClass}`
-        };
-    });
-
-    const categoryTemplate = () => (
-        <Tabs value={selectedCategoryTab} onChange={value => value && setSelectedCategoryTab(value)} keepMounted={false}>
-            <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
-                {categoryTabOptions.map(opt => (
-                    <Tabs.Tab
-                        key={opt.value}
-                        value={opt.value}
-                        className={`${opt.tabClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
-                    >
-                        {opt.label} ({incidents.filter(x => (selectedLevel === 'All' || x.maxSeverityLevel == selectedLevel) && (opt.value === 'All' || x.incidentCategoryName === opt.value)).length})
-                    </Tabs.Tab>
-                ))}
-            </Tabs.List>
-        </Tabs>
-    );
+    // Catégories : on n'affiche que celles ayant au moins un incident (compteur absolu > 0).
+    // Le compteur affiché reste, lui, croisé avec le filtre de gravité actif.
+    const categoryTemplate = () => {
+        const visibleCats = [
+            'All',
+            ...categories.filter(
+                (c) => c !== 'All' && incidents.filter((x) => x.incidentCategoryName === c).length > 0,
+            ),
+        ];
+        return (
+            <Tabs value={selectedCategoryTab} onChange={value => value && setSelectedCategoryTab(value)} keepMounted={false}>
+                <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
+                    {visibleCats.map((cat) => {
+                        const isAll = cat === 'All';
+                        const count = incidents.filter(
+                            (x) =>
+                                (selectedLevel === 'All' || x.maxSeverityLevel == selectedLevel) &&
+                                (isAll || x.incidentCategoryName === cat),
+                        ).length;
+                        const colorClass = isAll
+                            ? '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400'
+                            : 'hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500';
+                        return (
+                            <Tabs.Tab
+                                key={cat}
+                                value={cat}
+                                className={`!text-slate-600 ${colorClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
+                            >
+                                {isAll ? 'Tous' : cat} ({count})
+                            </Tabs.Tab>
+                        );
+                    })}
+                </Tabs.List>
+            </Tabs>
+        );
+    };
 
     const dropdownFilterTemplate = () => (
         <div className="flex items-center gap-2">
