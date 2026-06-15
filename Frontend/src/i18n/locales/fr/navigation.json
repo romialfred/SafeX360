@@ -1,4 +1,42 @@
 {
+    "userMgmt": {
+        "welcome": {
+            "emailSubject": "Bienvenue sur SafeX 360 — vos accès",
+            "hello": "Bonjour {{name}},",
+            "intro": "Votre compte SafeX 360, la plateforme HSE de gestion de la santé et de la sécurité, vient d'être créé. Vous trouverez ci-dessous vos identifiants de connexion.",
+            "credentialsTitle": "Vos identifiants de connexion",
+            "loginLabel": "Identifiant :",
+            "emailLabel": "Email :",
+            "passwordLabel": "Mot de passe temporaire :",
+            "ctaConnect": "Se connecter à SafeX 360",
+            "expiryNotice": "Pour des raisons de sécurité, connectez-vous et changez votre mot de passe sous 24 heures. Passé ce délai, l'invitation expire et un nouveau mot de passe devra être généré.",
+            "helpNote": "Si vous rencontrez une difficulté, contactez votre administrateur SafeX 360.",
+            "signature": "Cordialement,",
+            "teamName": "L'équipe SafeX 360",
+            "copyForOutlook": "Copier le message pour Outlook",
+            "copyPassword": "Copier",
+            "copied": "Copié",
+            "passwordCopied": "Mot de passe copié",
+            "copiedRich": "Message copié",
+            "copyError": "Échec de la copie. Sélectionnez et copiez le message manuellement.",
+            "close": "Fermer"
+        },
+        "delete": {
+            "tooltip": "Supprimer l'utilisateur",
+            "tooltipSelf": "Vous ne pouvez pas supprimer votre propre compte",
+            "confirmTitle": "Supprimer l'utilisateur ?",
+            "confirmIntro": "Vous êtes sur le point de supprimer définitivement le compte de",
+            "confirmWarning": ". Cette action est irréversible.",
+            "confirmButton": "Oui, supprimer",
+            "cancelButton": "Annuler",
+            "success": "Utilisateur supprimé avec succès",
+            "errorSelf": "Vous ne pouvez pas supprimer votre propre compte",
+            "errorProtected": "Ce compte est protégé et ne peut pas être supprimé",
+            "errorNotFound": "Ce compte est introuvable ou a déjà été supprimé",
+            "errorGeneric": "Échec de la suppression de l'utilisateur",
+            "noAccountId": "Impossible de déterminer le compte à supprimer. Rechargez la page et réessayez."
+        }
+    },
     "header": {
         "platformTitle": "La plateforme Santé Sécurité pour l'industrie minière africaine",
         "platformSlogan": "La Santé & Sécurité au cœur des opérations minières",

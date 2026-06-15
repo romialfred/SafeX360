@@ -1,4 +1,42 @@
 {
+    "userMgmt": {
+        "welcome": {
+            "emailSubject": "Welcome to SafeX 360 — your access",
+            "hello": "Hello {{name}},",
+            "intro": "Your SafeX 360 account, the HSE health and safety management platform, has just been created. Below are your login credentials.",
+            "credentialsTitle": "Your login credentials",
+            "loginLabel": "Login:",
+            "emailLabel": "Email:",
+            "passwordLabel": "Temporary password:",
+            "ctaConnect": "Sign in to SafeX 360",
+            "expiryNotice": "For security reasons, please sign in and change your password within 24 hours. After this period, the invitation expires and a new password will have to be generated.",
+            "helpNote": "If you run into any issue, please contact your SafeX 360 administrator.",
+            "signature": "Best regards,",
+            "teamName": "The SafeX 360 team",
+            "copyForOutlook": "Copy message for Outlook",
+            "copyPassword": "Copy",
+            "copied": "Copied",
+            "passwordCopied": "Password copied",
+            "copiedRich": "Message copied",
+            "copyError": "Copy failed. Please select and copy the message manually.",
+            "close": "Close"
+        },
+        "delete": {
+            "tooltip": "Delete user",
+            "tooltipSelf": "You cannot delete your own account",
+            "confirmTitle": "Delete user?",
+            "confirmIntro": "You are about to permanently delete the account of",
+            "confirmWarning": ". This action cannot be undone.",
+            "confirmButton": "Yes, delete",
+            "cancelButton": "Cancel",
+            "success": "User deleted successfully",
+            "errorSelf": "You cannot delete your own account",
+            "errorProtected": "This account is protected and cannot be deleted",
+            "errorNotFound": "This account could not be found or has already been deleted",
+            "errorGeneric": "Failed to delete the user",
+            "noAccountId": "Could not determine which account to delete. Please reload the page and try again."
+        }
+    },
     "header": {
         "platformTitle": "The OH&S platform for the African mining industry",
         "platformSlogan": "Health & Safety at the heart of mining operations",

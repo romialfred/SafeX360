@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { TextInput, Select, Group, Badge, ActionIcon, Tooltip, Avatar } from "@mantine/core";
+import { TextInput, Select, Group, Badge, ActionIcon, Tooltip, Avatar, Text } from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { useTranslation } from "react-i18next";
 import {
     IconEdit,
     IconEye,
@@ -15,6 +17,9 @@ import { predefinedRoles } from "../data/roles";
 import { Toolbar } from "primereact/toolbar";
 import { useNavigate } from "react-router-dom";
 import { getAllPermissions, updatePermissionStatus } from "../../../services/PermissionManagementService";
+import { deleteUser } from "../../../services/UserManagementService";
+import { getAllAccounts } from "../../../services/AccountService";
+import { usePermissions } from "../../../hooks/usePermissions";
 import { mapIdToName } from "../../../utility/OtherUtilities";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
@@ -27,7 +32,8 @@ const UsersContent = () => {
     const [filterStatus, setFilterStatus] = useState("all");
     const [users, setUsers] = useState<any[]>([]);
 
-
+    const { t } = useTranslation('navigation');
+    const perms = usePermissions();
     const navigate = useNavigate();
 
 
@@ -60,10 +66,16 @@ const UsersContent = () => {
     };
 
     useEffect(() => {
-        Promise.all([getAllPermissions(), getAllEmployeeWithDirection()])
-            .then(([profiles, employees]) => {
-                console.log(employees);
+        // On charge aussi les comptes HRMS : le DTO permissions (getAll) ne porte pas
+        // l'accountId, or l'endpoint de suppression cible l'accountId HRMS. On reconstruit
+        // donc le lien employeeId -> accountId via la liste des comptes (champ empId).
+        Promise.all([getAllPermissions(), getAllEmployeeWithDirection(), getAllAccounts().catch(() => [])])
+            .then(([profiles, employees, accounts]) => {
                 const eMap = mapIdToName(employees || []);
+                const accByEmp: Record<number, number> = {};
+                (Array.isArray(accounts) ? accounts : []).forEach((a: any) => {
+                    if (a?.empId != null && a?.id != null) accByEmp[Number(a.empId)] = Number(a.id);
+                });
                 const mapped = (profiles || []).map((p: any) => {
                     const emp = eMap[Number(p.employeeId)] || {};
                     const fullName: string = emp.name || '';
@@ -73,6 +85,7 @@ const UsersContent = () => {
                     return {
                         id: p.id,
                         employeeId: p.employeeId,
+                        accountId: accByEmp[Number(p.employeeId)] ?? null,
                         firstName: first || fullName || '-',
                         lastName: last || '',
                         email: emp.email || '-',
@@ -107,10 +120,53 @@ const UsersContent = () => {
             .finally(() => dispatch(hideOverlay()));
     };
 
-    const handleDeleteUser = (userId: string) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
-            setUsers(users.filter((user) => user.id !== userId));
+    const performDelete = (rowData: any) => {
+        const accountId: number | null = rowData.accountId;
+        if (accountId == null) {
+            errorNotification(t('userMgmt.delete.noAccountId'));
+            return;
         }
+        dispatch(showOverlay());
+        deleteUser(accountId)
+            .then(() => {
+                setUsers((prev) => prev.filter((u) => u.id !== rowData.id));
+                successNotification(t('userMgmt.delete.success'));
+            })
+            .catch((err) => {
+                const code = err?.response?.data?.errorMessage || err?.response?.data?.error;
+                if (code === 'CANNOT_DELETE_SELF') {
+                    errorNotification(t('userMgmt.delete.errorSelf'));
+                } else if (code === 'ACCOUNT_PROTECTED') {
+                    errorNotification(t('userMgmt.delete.errorProtected'));
+                } else if (code === 'ACCOUNT_NOT_FOUND') {
+                    errorNotification(t('userMgmt.delete.errorNotFound'));
+                } else {
+                    errorNotification(t('userMgmt.delete.errorGeneric'));
+                }
+            })
+            .finally(() => dispatch(hideOverlay()));
+    };
+
+    const handleDeleteUser = (rowData: any) => {
+        const fullName = `${rowData.firstName || ''} ${rowData.lastName || ''}`.trim() || rowData.email;
+        modals.openConfirmModal({
+            title: <Text fw={700} size="lg">{t('userMgmt.delete.confirmTitle')}</Text>,
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {t('userMgmt.delete.confirmIntro')}{' '}
+                    <strong>{fullName}</strong>
+                    {t('userMgmt.delete.confirmWarning')}
+                </Text>
+            ),
+            labels: {
+                confirm: t('userMgmt.delete.confirmButton'),
+                cancel: t('userMgmt.delete.cancelButton'),
+            },
+            confirmProps: { color: 'red', variant: 'filled' },
+            cancelProps: { variant: 'default' },
+            onConfirm: () => performDelete(rowData),
+        });
     };
 
 
@@ -173,12 +229,18 @@ const UsersContent = () => {
                 </ActionIcon>
             </Tooltip>
 
-            <Tooltip label="Delete User">
+            <Tooltip
+                label={
+                    rowData.accountId != null && rowData.accountId === perms.profile?.accountId
+                        ? t('userMgmt.delete.tooltipSelf')
+                        : t('userMgmt.delete.tooltip')
+                }
+            >
                 <ActionIcon
                     color="red"
                     variant="subtle"
-                    display="none"
-                    onClick={() => handleDeleteUser(rowData.id)}
+                    disabled={rowData.accountId != null && rowData.accountId === perms.profile?.accountId}
+                    onClick={() => handleDeleteUser(rowData)}
                 >
                     <IconTrash size={16} />
                 </ActionIcon>

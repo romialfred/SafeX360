@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -88,7 +89,7 @@ public class AdminUserController {
     private DirectoryService directoryService;
 
     /** Durée de validité du mot de passe temporaire (invitation). */
-    private static final int INVITATION_VALIDITY_HOURS = 72;
+    private static final int INVITATION_VALIDITY_HOURS = 24;
 
     @Value("${spring.mail.username:noreply@safex360.com}")
     private String fromEmail;
@@ -241,7 +242,9 @@ public class AdminUserController {
                 saved.getId(),
                 saved.getLogin(),
                 saved.getEmail(),
-                (isAd || emailSent) ? null : tempPassword,
+                // LOT 61 : on renvoie TOUJOURS le mot de passe temporaire (sauf AD) à l'admin
+                // créateur, pour qu'il puisse générer/copier le message de bienvenue formaté.
+                isAd ? null : tempPassword,
                 emailSent,
                 isAd
                     ? "Compte importé de l'annuaire. L'utilisateur se connecte avec ses identifiants Active Directory."
@@ -389,6 +392,48 @@ public class AdminUserController {
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // DELETE /admin/users/{id} — suppression définitive d'un compte (LOT 61)
+    // Garde-fous : admin requis, interdiction de se supprimer soi-même et de
+    // supprimer les comptes protégés (démo). Supprime aussi le profil de
+    // permissions HSE (best-effort). Action journalisée.
+    // ─────────────────────────────────────────────────────────────────────
+    private static final java.util.Set<String> PROTECTED_LOGINS =
+            java.util.Set.of("SAFEX360DEMO");
+
+    @DeleteMapping("/{id}")
+    @Transactional(rollbackFor = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#id"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true)
+    })
+    public ResponseEntity<ToggleStatusResponse> deleteUser(@PathVariable Long id,
+            @CookieValue(name = "jwt", required = false) String token,
+            HttpServletRequest httpRequest) throws HRMSException {
+        String performedBy = requireAdmin(token, httpRequest);
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
+
+        if (account.getLogin() != null && account.getLogin().equalsIgnoreCase(performedBy)) {
+            throw new HRMSException("CANNOT_DELETE_SELF");
+        }
+        if (account.getLogin() != null && PROTECTED_LOGINS.contains(account.getLogin())) {
+            throw new HRMSException("ACCOUNT_PROTECTED");
+        }
+
+        String login = account.getLogin();
+        deletePermissionsHSE(account.getId()); // best-effort, non bloquant
+        accountRepository.delete(account);
+
+        adminActionLogRepository.save(AdminActionLog.of(
+                "USER_DELETED", id, login, performedBy, null));
+
+        return new ResponseEntity<>(new ToggleStatusResponse(
+                id, "DELETED", "Compte supprimé : " + login
+        ), HttpStatus.OK);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // GET /admin/users/journal — journal d'administration (append-only)
     // ─────────────────────────────────────────────────────────────────────
 
@@ -439,6 +484,20 @@ public class AdminUserController {
         } catch (Exception e) {
             LOG.warn("Permission init HSE failed for accountId={}: {}", accountId, e.getMessage());
             return false;
+        }
+    }
+
+    /** LOT 61 — supprime le profil de permissions HSE d'un compte (best-effort, non bloquant). */
+    private void deletePermissionsHSE(Long accountId) {
+        try {
+            RestTemplate rest = new RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-Secret-Key", internalSecret);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            rest.exchange(hsePermissionsUrl + "/by-account/" + accountId,
+                    org.springframework.http.HttpMethod.DELETE, entity, String.class);
+        } catch (Exception e) {
+            LOG.warn("Permission delete HSE failed for accountId={}: {}", accountId, e.getMessage());
         }
     }
 

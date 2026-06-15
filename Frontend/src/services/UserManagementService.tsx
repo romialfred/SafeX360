@@ -52,6 +52,12 @@ export interface ToggleStatusResponse {
     message: string;
 }
 
+export interface DeleteUserResponse {
+    accountId: number;
+    status: 'DELETED';
+    message: string;
+}
+
 export interface MyProfile {
     accountId: number;
     login: string;
@@ -94,6 +100,16 @@ const resetUserPassword = async (accountId: number): Promise<ResetPasswordRespon
 
 const toggleUserStatus = async (accountId: number): Promise<ToggleStatusResponse> => {
     const res = await axiosInstance.put(`/hrms/admin/users/toggle-status/${accountId}`);
+    return res.data;
+};
+
+/**
+ * Supprime definitivement un compte utilisateur.
+ * DELETE /hrms/admin/users/{id} (via gateway).
+ * Erreurs HRMSException possibles : CANNOT_DELETE_SELF, ACCOUNT_PROTECTED, ACCOUNT_NOT_FOUND.
+ */
+const deleteUser = async (accountId: number): Promise<DeleteUserResponse> => {
+    const res = await axiosInstance.delete(`/hrms/admin/users/${accountId}`);
     return res.data;
 };
 
@@ -175,6 +191,7 @@ export {
     createUser,
     resetUserPassword,
     toggleUserStatus,
+    deleteUser,
     getMyProfile,
     changePasswordFirst,
     getModulesByAccount,

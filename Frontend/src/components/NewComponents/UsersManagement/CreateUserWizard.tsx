@@ -24,6 +24,7 @@ import {
     CreateUserResponse,
 } from '../../../services/UserManagementService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import WelcomeMessageModal from './WelcomeMessageModal';
 
 interface Props {
     opened: boolean;
@@ -216,6 +217,9 @@ export default function CreateUserWizard({ opened, onClose, onCreated }: Props) 
     const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
     const [submitting, setSubmitting] = useState(false);
     const [createdResponse, setCreatedResponse] = useState<CreateUserResponse | null>(null);
+    // Modale « Message de bienvenue » premium (affichee apres creation reussie)
+    const [welcomeOpen, setWelcomeOpen] = useState(false);
+    const [createdName, setCreatedName] = useState('');
 
     const form = useForm({
         initialValues: {
@@ -250,6 +254,8 @@ export default function CreateUserWizard({ opened, onClose, onCreated }: Props) 
                 form.reset();
                 setSelectedModules(new Set());
                 setCreatedResponse(null);
+                setWelcomeOpen(false);
+                setCreatedName('');
             }, 300);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -301,8 +307,11 @@ export default function CreateUserWizard({ opened, onClose, onCreated }: Props) 
                 allowedModules: Array.from(selectedModules).join(','),
             });
             setCreatedResponse(resp);
+            setCreatedName(form.values.name.trim());
             setStep(2);
             successNotification(`Compte ${resp.login} cree avec succes`);
+            // Ouvre la modale « Message de bienvenue » premium par-dessus le recapitulatif
+            setWelcomeOpen(true);
             onCreated?.(resp);
         } catch (e: any) {
             const code = e?.response?.data?.errorMessage || e?.response?.data?.error;
@@ -326,6 +335,7 @@ export default function CreateUserWizard({ opened, onClose, onCreated }: Props) 
     );
 
     return (
+        <>
         <Modal
             opened={opened}
             onClose={onClose}
@@ -630,5 +640,18 @@ export default function CreateUserWizard({ opened, onClose, onCreated }: Props) 
                 </Group>
             </Stack>
         </Modal>
+
+        {/* Modale « Message de bienvenue » premium — affichee apres creation reussie */}
+        {createdResponse && (
+            <WelcomeMessageModal
+                opened={welcomeOpen}
+                onClose={() => setWelcomeOpen(false)}
+                name={createdName || createdResponse.login}
+                login={createdResponse.login}
+                email={createdResponse.email}
+                temporaryPassword={createdResponse.temporaryPassword}
+            />
+        )}
+        </>
     );
 }

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -137,6 +138,21 @@ public class AccountPermissionController {
                     empty.put("role", null);
                     return ResponseEntity.ok((Object) empty);
                 });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DELETE /by-account/{id} — supprime le profil de permissions (LOT 61)
+    // Appelé par MineXpert lors de la suppression d'un compte. Idempotent.
+    // ─────────────────────────────────────────────────────────────────────
+
+    @DeleteMapping("/by-account/{accountId}")
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<?> deleteByAccount(@PathVariable Long accountId) {
+        permissionRepository.findByAccountId(accountId).ifPresent(permissionRepository::delete);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("accountId", accountId);
+        resp.put("deleted", true);
+        return ResponseEntity.ok(resp);
     }
 
     // ─────────────────────────────────────────────────────────────────────

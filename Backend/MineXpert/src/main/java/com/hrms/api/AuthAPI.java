@@ -128,12 +128,15 @@ public class AuthAPI {
              // safex360.data-univers.com) et backend (Render onrender.com) sont
              // sur des registrable-domains différents → cookie cross-site →
              // Lax bloquerait l'envoi du cookie par le navigateur.
+            // LOT 61 SECURITY : cookie de SESSION (pas de maxAge) — le navigateur le supprime
+            // à la fermeture du navigateur, donc la session ne « survit » pas indéfiniment.
+            // Le JWT garde sa propre expiration absolue (JWT_EXPIRATION_HOURS, défaut 8h),
+            // qui borne la validité même si le navigateur restaure les cookies de session.
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
                     .secure(true)
                     .path("/")
                     .sameSite("None")
-                    .maxAge(Duration.ofMillis(helper.getExpirationMillis()))
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
