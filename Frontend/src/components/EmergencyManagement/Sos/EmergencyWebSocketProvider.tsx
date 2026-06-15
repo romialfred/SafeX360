@@ -90,6 +90,13 @@ const resolveWsBaseUrl = (): string => {
 
 export const EmergencyWebSocketProvider = ({ children }: Props) => {
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
+    const user = useAppSelector((state: any) => state.user);
+    // En « Vue consolidée » (Toutes les Mines), selectedCompanyId est null : il
+    // FAUT quand même ouvrir le WebSocket, sinon aucun SOS/Alerte n'arrive jamais
+    // (ni popup ni sirène). On retombe sur la mine d'attache de l'utilisateur —
+    // EXACTEMENT la même résolution que l'émetteur SOS (SosButton.resolveCompanyId),
+    // donc l'émetteur reçoit bien son propre broadcast.
+    const effectiveCompanyId = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1);
     const [connected, setConnected] = useState(false);
     const clientRef = useRef<Client | null>(null);
     const listenersRef = useRef<Set<AlertListener>>(new Set());
@@ -119,7 +126,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     }, []);
 
     useEffect(() => {
-        if (!selectedCompanyId) return;
+        if (!effectiveCompanyId) return;
 
         const baseUrl = resolveWsBaseUrl();
         const wsUrl = `${baseUrl}/ws/emergency`;
@@ -136,7 +143,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                 setConnected(true);
                 // SOS individuels
                 client.subscribe(
-                    `/topic/emergency/sos/company/${selectedCompanyId}`,
+                    `/topic/emergency/sos/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
                             const payload: SosAlertDTO = JSON.parse(msg.body);
@@ -148,7 +155,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                 );
                 // Alertes Générales (Phase 4)
                 client.subscribe(
-                    `/topic/emergency/alert/company/${selectedCompanyId}`,
+                    `/topic/emergency/alert/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
                             const payload: GeneralAlertDTO = JSON.parse(msg.body);
@@ -175,7 +182,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     }
                 );
                 client.subscribe(
-                    `/topic/blast-popup/mine/${selectedCompanyId}`,
+                    `/topic/blast-popup/mine/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
                             const payload: BlastPopupPayload = JSON.parse(msg.body);
