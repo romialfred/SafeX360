@@ -147,7 +147,7 @@ const OnlineUsers = () => {
                     rows={10}
                     rowsPerPageOptions={[10, 25, 50]}
                     dataKey="id"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} risks"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} users"
                 >
                     <Column
                         style={{ fontWeight: "normal", fontSize: "14px" }}

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { PageLoader } from '../components/UtilityComp/SandglassLoader';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import EmergencySettingsPage from '../components/EmergencyManagement/Settings/EmergencySettingsPage';
 import AssemblyPointsPage from '../components/EmergencyManagement/AssemblyPoints/AssemblyPointsPage';
@@ -132,7 +132,6 @@ import SettingsPage from '../components/NewComponents/Settings/Settings';
 import ModulesManagementPage from '../components/NewComponents/Settings/ModulesManagementPage';
 import OperationalReferencesPage from '../components/NewComponents/OperationalReferences/OperationalReferencesPage';
 import ISODocuments from '../components/NewComponents/ISODocuments/ISODocuments';
-import UserManagementTabsPage from '../pages/dashboard/UserManagementTabsPage';
 import UserDetails from '../components/NewComponents/UsersManagement/UserDetails';
 import Guide from '../components/NewComponents/HelpCenter/Guide';
 import FeatureOverview from '../components/NewComponents/HelpCenter/FeatureOverview';
@@ -513,8 +512,11 @@ const router = createBrowserRouter([
             { path: "ai-assistant", element: <AIAssistant /> },
 
 
-            { path: "users-management", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserManagementTabsPage /></DemoPermissionGuard> },
-            // LOT 49 — Nouvelle page admin Gestion utilisateurs (creation+ permissions modules)
+            // LOT 61 — l'unique experience premium vit sous /users-admin (UsersAdminPage).
+            // L'ancien chemin /users-management redirige vers /users-admin (le legacy
+            // UserManagementTabsPage / UsersContent / CreateUserWizard a ete supprime).
+            { path: "users-management", element: <Navigate to="/users-admin" replace /> },
+            // LOT 49 — Page admin premium Gestion utilisateurs (creation + permissions modules)
             { path: "users-admin", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UsersAdminPage /></DemoPermissionGuard> },
             // LOT 52 A2 — création d'utilisateur en page pleine largeur (remplace le modal)
             { path: "users-admin/new", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><CreateUserPage /></DemoPermissionGuard> },

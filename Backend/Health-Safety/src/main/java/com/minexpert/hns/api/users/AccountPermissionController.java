@@ -11,6 +11,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +22,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.minexpert.hns.entity.users.PermissionManagement;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.enums.UserRole;
 import com.minexpert.hns.repository.users.PermissionManagementRepository;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -56,6 +64,72 @@ public class AccountPermissionController {
     private PermissionManagementRepository permissionRepository;
 
     // ─────────────────────────────────────────────────────────────────────
+    // Garde par rôle des endpoints mutateurs (remédiation sécurité).
+    //
+    // Le gateway injecte X-Secret-Key sur TOUT trafic authentifié : ce secret
+    // seul ne prouve donc PAS qu'on est admin. Règle :
+    //   - cookie jwt présent  → décision EXCLUSIVEMENT sur le rôle du token
+    //                            (claim role ∈ alias admin) ; sinon 403.
+    //   - pas de cookie + X-Secret-Key == secret interne → appel service-à-
+    //     service légitime de MineXpert (init/delete permissions) → autorisé.
+    //   - sinon 403.
+    // ─────────────────────────────────────────────────────────────────────
+
+    // MÊME valeur par défaut que les autres services (MineXpert, gateway) : une
+    // divergence casserait la validation de signature. La ROTATION reste requise.
+    @Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    private String jwtSecret;
+
+    @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    private String internalGatewaySecret;
+
+    /** Alias de rôle « administrateur » (insensible à la casse) — aligné sur MineXpert. */
+    private static final Set<String> ADMIN_ROLE_ALIASES = Set.of(
+            "SYSTEM_ADMINISTRATOR", "ADMINISTRATOR", "ADMIN");
+
+    /**
+     * Autorise uniquement un admin (cookie jwt avec rôle admin) OU un appel
+     * interne service-à-service (X-Secret-Key sans cookie). Lève 403 sinon.
+     */
+    private void requireAdminOrInternal(HttpServletRequest request) {
+        String token = readJwtCookie(request);
+        if (token != null && !token.isBlank()) {
+            // Identité utilisateur présente : seul le rôle du token décide.
+            try {
+                Claims claims = Jwts.parser().setSigningKey(jwtSecret)
+                        .parseClaimsJws(token).getBody();
+                Object roleClaim = claims.get("role");
+                String role = roleClaim != null ? roleClaim.toString().trim().toUpperCase() : null;
+                if (role != null && ADMIN_ROLE_ALIASES.contains(role)) {
+                    return;
+                }
+            } catch (Exception e) {
+                LOG.warn("JWT permissions invalide: {}", e.getMessage());
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Accès réservé aux administrateurs");
+        }
+        // Aucune identité utilisateur : appel interne service-à-service uniquement.
+        String secret = request.getHeader("X-Secret-Key");
+        if (secret != null && secret.equals(internalGatewaySecret)) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Accès réservé aux administrateurs");
+    }
+
+    private String readJwtCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+        for (Cookie c : cookies) {
+            if ("jwt".equals(c.getName())) {
+                return c.getValue();
+            }
+        }
+        return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // POST /init-for-account — cree profil au moment de la creation de l'Account
     // ─────────────────────────────────────────────────────────────────────
 
@@ -72,7 +146,9 @@ public class AccountPermissionController {
 
     @PostMapping("/init-for-account")
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<?> initForAccount(@RequestBody InitForAccountRequest req) {
+    public ResponseEntity<?> initForAccount(@RequestBody InitForAccountRequest req,
+                                            HttpServletRequest request) {
+        requireAdminOrInternal(request);
         if (req.getAccountId() == null) {
             return badRequest("ACCOUNT_ID_REQUIRED", "accountId est requis");
         }
@@ -147,7 +223,9 @@ public class AccountPermissionController {
 
     @DeleteMapping("/by-account/{accountId}")
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<?> deleteByAccount(@PathVariable Long accountId) {
+    public ResponseEntity<?> deleteByAccount(@PathVariable Long accountId,
+                                             HttpServletRequest request) {
+        requireAdminOrInternal(request);
         permissionRepository.findByAccountId(accountId).ifPresent(permissionRepository::delete);
         Map<String, Object> resp = new HashMap<>();
         resp.put("accountId", accountId);
@@ -171,7 +249,9 @@ public class AccountPermissionController {
     @PostMapping("/update-modules/{accountId}")
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<?> updateModules(@PathVariable Long accountId,
-                                           @RequestBody UpdateModulesRequest req) {
+                                           @RequestBody UpdateModulesRequest req,
+                                           HttpServletRequest request) {
+        requireAdminOrInternal(request);
         PermissionManagement pm = permissionRepository.findByAccountId(accountId)
                 .orElseGet(() -> {
                     // Cree a la volee si manquant (resilience)

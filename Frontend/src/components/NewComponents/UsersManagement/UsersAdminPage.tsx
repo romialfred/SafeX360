@@ -1,16 +1,19 @@
 /**
- * UsersAdminPage — Page principale de gestion des utilisateurs (LOT 49).
+ * UsersAdminPage — Page principale de gestion des utilisateurs (LOT 49 / LOT 61).
  *
  * Fonctionnalites :
  *  - Liste des comptes (nom, login, email, role, statut)
  *  - Filtres : recherche, statut (ACTIVE/INACTIVE), role
- *  - Actions par ligne : reinitialiser MDP, activer/desactiver, editer modules
- *  - Action header : creer un nouvel utilisateur (CreateUserWizard)
+ *  - Actions par ligne : reinitialiser MDP, activer/desactiver, editer modules, SUPPRIMER
+ *  - Action header : creer un nouvel utilisateur (page CreateUserPage)
  *
  * Securite frontend :
  *  - Reservee aux administrateurs (verifie via usePermissions().isAdmin)
  *  - Confirmation Mantine pour les actions sensibles
  *  - Affichage des MDP temporaires uniquement si email NON envoye
+ *  - Suppression : modale de confirmation, jamais sur son propre compte
+ *
+ * i18n : useTranslation('navigation'), cles sous t('userMgmt.list.*') et t('userMgmt.delete.*').
  */
 
 import { useEffect, useState, useMemo } from 'react';
@@ -19,19 +22,20 @@ import {
     Paper, Group, Button, TextInput, Select, Badge, ActionIcon, Tooltip, Modal,
     Text, Stack, Code, CopyButton, Alert, Box, Loader, Title,
 } from '@mantine/core';
+import { modals } from '@mantine/modals';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import {
     IconUserPlus, IconRefresh, IconSearch, IconLock, IconPower, IconEdit,
-    IconAlertCircle, IconShieldLock, IconUsers, IconCopy, IconCircleCheck,
+    IconAlertCircle, IconShieldLock, IconUsers, IconCopy, IconCircleCheck, IconTrash,
 } from '@tabler/icons-react';
-import CreateUserWizard from './CreateUserWizard';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { getAllAccounts } from '../../../services/AccountService';
-import { resetUserPassword, toggleUserStatus } from '../../../services/UserManagementService';
+import { resetUserPassword, toggleUserStatus, deleteUser } from '../../../services/UserManagementService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -62,17 +66,6 @@ const ROLE_COLOR: Record<string, string> = {
     HSE_MANAGER: 'indigo',
 };
 
-const ROLE_LABEL: Record<string, string> = {
-    SYSTEM_ADMINISTRATOR: 'Admin Systeme',
-    Administrator: 'Administrateur',
-    HEALTH_SAFETY_COORDINATOR: 'Coordinateur HSE',
-    INCIDENT_INVESTIGATOR: 'Enqueteur',
-    AUDITOR: 'Auditeur',
-    EMPLOYEE: 'Employe',
-    BLAST_OFFICER: 'Boutefeu',
-    HSE_MANAGER: 'Manager HSE',
-};
-
 // ─────────────────────────────────────────────────────────────────────────
 // COMPOSANT
 // ─────────────────────────────────────────────────────────────────────────
@@ -80,6 +73,7 @@ const ROLE_LABEL: Record<string, string> = {
 export default function UsersAdminPage() {
     const navigate = useNavigate();
     const perms = usePermissions();
+    const { t } = useTranslation('navigation');
 
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,13 +81,14 @@ export default function UsersAdminPage() {
     const [statusFilter, setStatusFilter] = useState<string | null>('ALL');
     const [roleFilter, setRoleFilter] = useState<string | null>('ALL');
 
-    const [wizardOpen, setWizardOpen] = useState(false);
-
     // Modal reset password — affiche le MDP temporaire si email non envoye
     const [resetResult, setResetResult] = useState<{ login: string; tempPassword: string | null; emailSent: boolean } | null>(null);
 
     // Modal confirmation toggle status
     const [statusConfirm, setStatusConfirm] = useState<Account | null>(null);
+
+    // Libelle traduit d'un role (repli sur le code brut).
+    const roleLabel = (role: string) => t(`userMgmt.list.roles.${role}`, { defaultValue: role || '—' });
 
     // ─── Chargement ───
     const loadAccounts = async () => {
@@ -102,7 +97,7 @@ export default function UsersAdminPage() {
             const res = await getAllAccounts();
             setAccounts(Array.isArray(res) ? res : []);
         } catch (e: any) {
-            errorNotification('Impossible de charger la liste des utilisateurs');
+            errorNotification(t('userMgmt.list.loadError'));
         } finally {
             setLoading(false);
         }
@@ -110,6 +105,7 @@ export default function UsersAdminPage() {
 
     useEffect(() => {
         loadAccounts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ─── Filtrage ───
@@ -138,9 +134,9 @@ export default function UsersAdminPage() {
                 tempPassword: resp.temporaryPassword,
                 emailSent: resp.emailSent,
             });
-            successNotification(`Mot de passe reinitialise pour ${account.login}`);
+            successNotification(t('userMgmt.list.resetSuccess', { login: account.login }));
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || 'Erreur lors de la reinitialisation');
+            errorNotification(e?.response?.data?.errorMessage || t('userMgmt.list.resetError'));
         }
     };
 
@@ -152,8 +148,50 @@ export default function UsersAdminPage() {
             setStatusConfirm(null);
             await loadAccounts();
         } catch (e: any) {
-            errorNotification(e?.response?.data?.errorMessage || 'Erreur lors du changement de statut');
+            errorNotification(e?.response?.data?.errorMessage || t('userMgmt.list.toggleError'));
         }
+    };
+
+    // ─── Suppression (l'id de la ligne EST l'accountId HRMS, cf. getAllAccounts) ───
+    const performDelete = async (account: Account) => {
+        try {
+            await deleteUser(account.id);
+            setAccounts((prev) => prev.filter((a) => a.id !== account.id));
+            successNotification(t('userMgmt.delete.success'));
+        } catch (err: any) {
+            const code = err?.response?.data?.errorMessage || err?.response?.data?.error;
+            if (code === 'CANNOT_DELETE_SELF') {
+                errorNotification(t('userMgmt.delete.errorSelf'));
+            } else if (code === 'ACCOUNT_PROTECTED') {
+                errorNotification(t('userMgmt.delete.errorProtected'));
+            } else if (code === 'ACCOUNT_NOT_FOUND') {
+                errorNotification(t('userMgmt.delete.errorNotFound'));
+            } else {
+                errorNotification(t('userMgmt.delete.errorGeneric'));
+            }
+        }
+    };
+
+    const handleDeleteUser = (account: Account) => {
+        const fullName = account.name || account.login || account.email;
+        modals.openConfirmModal({
+            title: <Text fw={700} size="lg">{t('userMgmt.delete.confirmTitle')}</Text>,
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {t('userMgmt.delete.confirmIntro')}{' '}
+                    <strong>{fullName}</strong>
+                    {t('userMgmt.delete.confirmWarning')}
+                </Text>
+            ),
+            labels: {
+                confirm: t('userMgmt.delete.confirmButton'),
+                cancel: t('userMgmt.delete.cancelButton'),
+            },
+            confirmProps: { color: 'red', variant: 'filled' },
+            cancelProps: { variant: 'default' },
+            onConfirm: () => performDelete(account),
+        });
     };
 
     // ─── Rendu cellules ───
@@ -170,7 +208,7 @@ export default function UsersAdminPage() {
 
     const renderRole = (row: Account) => (
         <Badge color={ROLE_COLOR[row.role] || 'gray'} variant="light" size="sm">
-            {ROLE_LABEL[row.role] || row.role || '—'}
+            {roleLabel(row.role)}
         </Badge>
     );
 
@@ -178,53 +216,67 @@ export default function UsersAdminPage() {
         const s = (row.status || 'ACTIVE').toUpperCase();
         return (
             <Badge color={s === 'ACTIVE' ? 'teal' : 'gray'} variant={s === 'ACTIVE' ? 'filled' : 'light'} size="sm">
-                {s === 'ACTIVE' ? 'Actif' : 'Inactif'}
+                {s === 'ACTIVE' ? t('userMgmt.list.statusActive') : t('userMgmt.list.statusInactive')}
             </Badge>
         );
     };
 
-    const renderActions = (row: Account) => (
-        <Group gap={4} justify="center">
-            <Tooltip label="Editer les modules autorises">
-                <ActionIcon
-                    variant="light"
-                    color="blue"
-                    size="sm"
-                    onClick={() => navigate(`/users-management/edit/${row.id}`)}
-                >
-                    <IconEdit size={14} />
-                </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Reinitialiser le mot de passe">
-                <ActionIcon
-                    variant="light"
-                    color="orange"
-                    size="sm"
-                    onClick={() => handleResetPassword(row)}
-                >
-                    <IconLock size={14} />
-                </ActionIcon>
-            </Tooltip>
-            <Tooltip label={(row.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'Desactiver le compte' : 'Activer le compte'}>
-                <ActionIcon
-                    variant="light"
-                    color={(row.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'red' : 'teal'}
-                    size="sm"
-                    onClick={() => setStatusConfirm(row)}
-                >
-                    <IconPower size={14} />
-                </ActionIcon>
-            </Tooltip>
-        </Group>
-    );
+    const renderActions = (row: Account) => {
+        const isSelf = perms.profile?.accountId != null && row.id === perms.profile.accountId;
+        return (
+            <Group gap={4} justify="center">
+                <Tooltip label={t('userMgmt.list.actionEditModules')}>
+                    <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="sm"
+                        onClick={() => navigate(`/users-management/edit/${row.id}`)}
+                    >
+                        <IconEdit size={14} />
+                    </ActionIcon>
+                </Tooltip>
+                <Tooltip label={t('userMgmt.list.actionResetPassword')}>
+                    <ActionIcon
+                        variant="light"
+                        color="orange"
+                        size="sm"
+                        onClick={() => handleResetPassword(row)}
+                    >
+                        <IconLock size={14} />
+                    </ActionIcon>
+                </Tooltip>
+                <Tooltip label={(row.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? t('userMgmt.list.actionDeactivate') : t('userMgmt.list.actionActivate')}>
+                    <ActionIcon
+                        variant="light"
+                        color={(row.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'red' : 'teal'}
+                        size="sm"
+                        onClick={() => setStatusConfirm(row)}
+                    >
+                        <IconPower size={14} />
+                    </ActionIcon>
+                </Tooltip>
+                <Tooltip label={isSelf ? t('userMgmt.delete.tooltipSelf') : t('userMgmt.delete.tooltip')}>
+                    <ActionIcon
+                        variant="light"
+                        color="red"
+                        size="sm"
+                        disabled={isSelf}
+                        onClick={() => handleDeleteUser(row)}
+                    >
+                        <IconTrash size={14} />
+                    </ActionIcon>
+                </Tooltip>
+            </Group>
+        );
+    };
 
     // ─── Garde RBAC ───
     if (!perms.loading && !perms.isAdmin) {
         return (
             <Box p="lg">
                 <Alert color="red" icon={<IconShieldLock size={16} />}>
-                    <Text fw={600}>Acces refuse</Text>
-                    <Text size="sm">Seuls les administrateurs peuvent gerer les utilisateurs.</Text>
+                    <Text fw={600}>{t('userMgmt.list.accessDeniedTitle')}</Text>
+                    <Text size="sm">{t('userMgmt.list.accessDeniedText')}</Text>
                 </Alert>
             </Box>
         );
@@ -243,14 +295,14 @@ export default function UsersAdminPage() {
         <Box p="md">
             <PageHeader
                 breadcrumbs={[
-                    { label: 'Accueil', to: '/' },
-                    { label: 'Administration' },
-                    { label: 'Gestion des utilisateurs' },
+                    { label: t('userMgmt.list.breadcrumbHome'), to: '/' },
+                    { label: t('userMgmt.list.breadcrumbAdmin') },
+                    { label: t('userMgmt.list.breadcrumbUsers') },
                 ]}
                 icon={<IconUsers size={22} stroke={2} />}
                 iconColor="teal"
-                title="Gestion des utilisateurs"
-                subtitle="Comptes, roles et permissions par module"
+                title={t('userMgmt.list.title')}
+                subtitle={t('userMgmt.list.subtitle')}
                 actions={
                     <Group gap="xs">
                         <Button
@@ -260,13 +312,12 @@ export default function UsersAdminPage() {
                             onClick={loadAccounts}
                             disabled={loading}
                         >
-                            Rafraichir
+                            {t('userMgmt.list.refresh')}
                         </Button>
                         <Button
                             size="sm"
                             leftSection={<IconUserPlus size={14} />}
-                            // LOT 52 — la création passe par la page pleine largeur (CreateUserPage),
-                            // le modal CreateUserWizard reste en place mais n'est plus ouvert.
+                            // LOT 52 — la création passe par la page pleine largeur (CreateUserPage).
                             onClick={() => navigate('/users-admin/new')}
                             styles={{
                                 root: {
@@ -275,7 +326,7 @@ export default function UsersAdminPage() {
                                 },
                             }}
                         >
-                            Nouvel utilisateur
+                            {t('userMgmt.list.newUser')}
                         </Button>
                     </Group>
                 }
@@ -283,17 +334,17 @@ export default function UsersAdminPage() {
 
             {/* KPI cards */}
             <Group grow gap="sm" mb="md" mt="md">
-                <KpiCard label="Total comptes" value={stats.total} color="slate" />
-                <KpiCard label="Actifs" value={stats.active} color="teal" />
-                <KpiCard label="Inactifs" value={stats.inactive} color="gray" />
-                <KpiCard label="Administrateurs" value={stats.admins} color="red" />
+                <KpiCard label={t('userMgmt.list.kpiTotal')} value={stats.total} color="slate" />
+                <KpiCard label={t('userMgmt.list.kpiActive')} value={stats.active} color="teal" />
+                <KpiCard label={t('userMgmt.list.kpiInactive')} value={stats.inactive} color="gray" />
+                <KpiCard label={t('userMgmt.list.kpiAdmins')} value={stats.admins} color="red" />
             </Group>
 
             {/* Filtres */}
             <Paper p="sm" radius="md" style={{ border: '1px solid #E2E8F0' }} mb="md">
                 <Group gap="sm">
                     <TextInput
-                        placeholder="Rechercher par nom, login ou email…"
+                        placeholder={t('userMgmt.list.searchPlaceholder')}
                         leftSection={<IconSearch size={14} />}
                         value={search}
                         onChange={(e) => setSearch(e.currentTarget.value)}
@@ -301,11 +352,11 @@ export default function UsersAdminPage() {
                         size="sm"
                     />
                     <Select
-                        placeholder="Statut"
+                        placeholder={t('userMgmt.list.statusPlaceholder')}
                         data={[
-                            { value: 'ALL', label: 'Tous les statuts' },
-                            { value: 'ACTIVE', label: 'Actifs uniquement' },
-                            { value: 'INACTIVE', label: 'Inactifs uniquement' },
+                            { value: 'ALL', label: t('userMgmt.list.statusAll') },
+                            { value: 'ACTIVE', label: t('userMgmt.list.statusActiveOnly') },
+                            { value: 'INACTIVE', label: t('userMgmt.list.statusInactiveOnly') },
                         ]}
                         value={statusFilter}
                         onChange={setStatusFilter}
@@ -313,10 +364,10 @@ export default function UsersAdminPage() {
                         w={180}
                     />
                     <Select
-                        placeholder="Role"
+                        placeholder={t('userMgmt.list.rolePlaceholder')}
                         data={[
-                            { value: 'ALL', label: 'Tous les roles' },
-                            ...Object.entries(ROLE_LABEL).map(([v, l]) => ({ value: v, label: l })),
+                            { value: 'ALL', label: t('userMgmt.list.roleAll') },
+                            ...Object.keys(ROLE_COLOR).map((v) => ({ value: v, label: roleLabel(v) })),
                         ]}
                         value={roleFilter}
                         onChange={setRoleFilter}
@@ -331,7 +382,7 @@ export default function UsersAdminPage() {
                 {loading ? (
                     <Box style={{ padding: 60, textAlign: 'center' }}>
                         <Loader color="teal" />
-                        <Text size="sm" c="dimmed" mt={12}>Chargement des comptes…</Text>
+                        <Text size="sm" c="dimmed" mt={12}>{t('userMgmt.list.loading')}</Text>
                     </Box>
                 ) : (
                     <DataTable
@@ -342,39 +393,29 @@ export default function UsersAdminPage() {
                         dataKey="id"
                         emptyMessage={
                             <Box style={{ padding: 40, textAlign: 'center' }}>
-                                <Text size="sm" c="dimmed">Aucun utilisateur ne correspond aux filtres</Text>
+                                <Text size="sm" c="dimmed">{t('userMgmt.list.empty')}</Text>
                             </Box>
                         }
                         size="small"
                         stripedRows
                         className="[&_.p-datatable-tbody]:!text-sm"
-                        currentPageReportTemplate="Affichage {first}-{last} sur {totalRecords}"
+                        currentPageReportTemplate="{first}-{last} / {totalRecords}"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                     >
-                        <Column header="Utilisateur" body={renderName} sortable sortField="name" />
-                        <Column header="Email" body={renderEmail} sortable sortField="email" />
-                        <Column header="Role" body={renderRole} sortable sortField="role" />
-                        <Column header="Statut" body={renderStatus} sortable sortField="status" />
-                        <Column header="Actions" body={renderActions} style={{ width: 160, textAlign: 'center' }} />
+                        <Column header={t('userMgmt.list.colUser')} body={renderName} sortable sortField="name" />
+                        <Column header={t('userMgmt.list.colEmail')} body={renderEmail} sortable sortField="email" />
+                        <Column header={t('userMgmt.list.colRole')} body={renderRole} sortable sortField="role" />
+                        <Column header={t('userMgmt.list.colStatus')} body={renderStatus} sortable sortField="status" />
+                        <Column header={t('userMgmt.list.colActions')} body={renderActions} style={{ width: 180, textAlign: 'center' }} />
                     </DataTable>
                 )}
             </Paper>
-
-            {/* Wizard creation */}
-            <CreateUserWizard
-                opened={wizardOpen}
-                onClose={() => setWizardOpen(false)}
-                onCreated={() => {
-                    setWizardOpen(false);
-                    loadAccounts();
-                }}
-            />
 
             {/* Modal reset password — affiche MDP si email non envoye */}
             <Modal
                 opened={resetResult !== null}
                 onClose={() => setResetResult(null)}
-                title={<Text fw={600}>Mot de passe reinitialise</Text>}
+                title={<Text fw={600}>{t('userMgmt.list.resetTitle')}</Text>}
                 centered
                 size="md"
             >
@@ -385,22 +426,16 @@ export default function UsersAdminPage() {
                             icon={resetResult.emailSent ? <IconCircleCheck size={16} /> : <IconAlertCircle size={16} />}
                         >
                             {resetResult.emailSent ? (
-                                <Text size="sm">
-                                    Un email a ete envoye a <strong>{resetResult.login}</strong> avec son nouveau
-                                    mot de passe temporaire. L'utilisateur devra le changer a sa prochaine connexion.
-                                </Text>
+                                <Text size="sm">{t('userMgmt.list.resetEmailSent', { login: resetResult.login })}</Text>
                             ) : (
-                                <Text size="sm">
-                                    Email <strong>non envoye</strong>. Communiquez le mot de passe ci-dessous a
-                                    l'utilisateur de maniere securisee.
-                                </Text>
+                                <Text size="sm">{t('userMgmt.list.resetEmailNotSent')}</Text>
                             )}
                         </Alert>
 
                         {resetResult.tempPassword && (
                             <Paper p="md" radius="md" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
                                 <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={6}>
-                                    Mot de passe temporaire pour {resetResult.login}
+                                    {t('userMgmt.list.resetTempLabel', { login: resetResult.login })}
                                 </Text>
                                 <Group gap={6}>
                                     <Code style={{ fontSize: 14, padding: '6px 10px' }}>
@@ -415,7 +450,7 @@ export default function UsersAdminPage() {
                                                 leftSection={<IconCopy size={12} />}
                                                 onClick={copy}
                                             >
-                                                {copied ? 'Copie !' : 'Copier'}
+                                                {copied ? t('userMgmt.list.copied') : t('userMgmt.list.copy')}
                                             </Button>
                                         )}
                                     </CopyButton>
@@ -424,7 +459,7 @@ export default function UsersAdminPage() {
                         )}
 
                         <Button color="teal" onClick={() => setResetResult(null)}>
-                            Fermer
+                            {t('userMgmt.list.close')}
                         </Button>
                     </Stack>
                 )}
@@ -434,35 +469,33 @@ export default function UsersAdminPage() {
             <Modal
                 opened={statusConfirm !== null}
                 onClose={() => setStatusConfirm(null)}
-                title={<Text fw={600}>Confirmation</Text>}
+                title={<Text fw={600}>{t('userMgmt.list.confirmTitle')}</Text>}
                 centered
                 size="sm"
             >
                 {statusConfirm && (
                     <Stack gap="md">
                         <Text size="sm">
-                            Voulez-vous vraiment{' '}
+                            {t('userMgmt.list.confirmIntro')}{' '}
                             <strong>
-                                {(statusConfirm.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'desactiver' : 'activer'}
+                                {(statusConfirm.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? t('userMgmt.list.confirmDeactivate') : t('userMgmt.list.confirmActivate')}
                             </strong>{' '}
-                            le compte de <strong>{statusConfirm.name}</strong> (@{statusConfirm.login}) ?
+                            <strong>{statusConfirm.name}</strong> (@{statusConfirm.login}) ?
                         </Text>
                         {(statusConfirm.status || 'ACTIVE').toUpperCase() === 'ACTIVE' && (
                             <Alert color="orange" icon={<IconAlertCircle size={14} />}>
-                                <Text size="xs">
-                                    L'utilisateur ne pourra plus se connecter tant que son compte est desactive.
-                                </Text>
+                                <Text size="xs">{t('userMgmt.list.deactivateWarning')}</Text>
                             </Alert>
                         )}
                         <Group justify="flex-end">
                             <Button variant="default" onClick={() => setStatusConfirm(null)}>
-                                Annuler
+                                {t('userMgmt.list.cancel')}
                             </Button>
                             <Button
                                 color={(statusConfirm.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'red' : 'teal'}
                                 onClick={handleToggleStatus}
                             >
-                                Confirmer
+                                {t('userMgmt.list.confirm')}
                             </Button>
                         </Group>
                     </Stack>

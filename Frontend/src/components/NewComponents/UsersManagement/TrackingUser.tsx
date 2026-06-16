@@ -141,7 +141,7 @@ const TrackingUser = () => {
 
                     rowsPerPageOptions={[10, 25, 50]}
 
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} risks"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} users"
                 >
                     <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="user" header="User" body={userBodyTemplate} />
                     <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Session Status" body={statusBodyTemplate} />

@@ -1,7 +1,7 @@
 /**
  * WelcomeMessageModal — Modale « Message de bienvenue » premium.
  *
- * Affichee automatiquement APRES une creation d'utilisateur reussie (CreateUserWizard).
+ * Affichee automatiquement APRES une creation d'utilisateur reussie (CreateUserPage).
  * Presente, en charte teal SafeX 360 :
  *  - Salutation au nom de l'utilisateur + message de bienvenue professionnel.
  *  - Bloc identifiants (Login + Mot de passe temporaire) avec bouton copier le MDP seul.

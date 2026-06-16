@@ -13,6 +13,7 @@
 
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     Paper, PasswordInput, Button, Title, Text, Stack, Progress, Alert, List, Group, Box,
 } from '@mantine/core';
@@ -25,11 +26,11 @@ import {
 } from '../../services/UserManagementService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 
-const STRENGTH_LABELS = ['', 'Tres faible', 'Faible', 'Correct', 'Fort'];
 const STRENGTH_COLORS = ['gray', 'red', 'orange', 'yellow', 'teal'];
 
 export default function FirstLoginPasswordChange() {
     const navigate = useNavigate();
+    const { t } = useTranslation('navigation');
     const [submitting, setSubmitting] = useState(false);
     const [userName, setUserName] = useState<string>('');
 
@@ -45,45 +46,45 @@ export default function FirstLoginPasswordChange() {
             confirmPassword: '',
         },
         validate: {
-            oldPassword: (v) => (v.length === 0 ? 'Le mot de passe temporaire est requis' : null),
+            oldPassword: (v) => (v.length === 0 ? t('userMgmt.firstLogin.oldRequired') : null),
             newPassword: (v) => validatePassword(v),
-            confirmPassword: (v, values) => (v !== values.newPassword ? 'Les mots de passe ne correspondent pas' : null),
+            confirmPassword: (v, values) => (v !== values.newPassword ? t('userMgmt.firstLogin.mismatch') : null),
         },
         validateInputOnBlur: true,
     });
 
     const score = passwordStrengthScore(form.values.newPassword);
-    const strengthLabel = STRENGTH_LABELS[score] || '';
+    const strengthLabel = score > 0 ? t(`userMgmt.firstLogin.strength.${score}`) : '';
     const strengthColor = STRENGTH_COLORS[score];
 
     const checks = [
-        { ok: form.values.newPassword.length >= 10, label: 'Au moins 10 caracteres' },
-        { ok: /[A-Z]/.test(form.values.newPassword), label: 'Au moins une majuscule (A-Z)' },
-        { ok: /[a-z]/.test(form.values.newPassword), label: 'Au moins une minuscule (a-z)' },
-        { ok: /[0-9]/.test(form.values.newPassword), label: 'Au moins un chiffre (0-9)' },
-        { ok: /[^A-Za-z0-9]/.test(form.values.newPassword), label: 'Au moins un caractere special (!@#$%...)' },
-        { ok: form.values.newPassword !== form.values.oldPassword && form.values.newPassword.length > 0, label: 'Different du mot de passe actuel' },
+        { ok: form.values.newPassword.length >= 10, label: t('userMgmt.firstLogin.checks.minLength') },
+        { ok: /[A-Z]/.test(form.values.newPassword), label: t('userMgmt.firstLogin.checks.upper') },
+        { ok: /[a-z]/.test(form.values.newPassword), label: t('userMgmt.firstLogin.checks.lower') },
+        { ok: /[0-9]/.test(form.values.newPassword), label: t('userMgmt.firstLogin.checks.digit') },
+        { ok: /[^A-Za-z0-9]/.test(form.values.newPassword), label: t('userMgmt.firstLogin.checks.special') },
+        { ok: form.values.newPassword !== form.values.oldPassword && form.values.newPassword.length > 0, label: t('userMgmt.firstLogin.checks.different') },
     ];
     const allOk = checks.every((c) => c.ok);
 
     const handleSubmit = async (values: typeof form.values) => {
         if (!allOk) {
-            errorNotification('Le mot de passe ne respecte pas tous les criteres');
+            errorNotification(t('userMgmt.firstLogin.errorPolicy'));
             return;
         }
         setSubmitting(true);
         try {
             await changePasswordFirst(values.oldPassword, values.newPassword);
-            successNotification('Mot de passe change avec succes — Bienvenue !');
+            successNotification(t('userMgmt.firstLogin.successChanged'));
             // Petit delai pour que la notif s'affiche avant la redirection
             setTimeout(() => navigate('/home'), 600);
         } catch (e: any) {
             const code = e?.response?.data?.error;
             const message = e?.response?.data?.message;
             if (code === 'OLD_PASSWORD_INVALID') {
-                form.setFieldError('oldPassword', 'Mot de passe temporaire incorrect');
+                form.setFieldError('oldPassword', t('userMgmt.firstLogin.errorOldInvalid'));
             } else {
-                errorNotification(message || 'Erreur lors du changement de mot de passe');
+                errorNotification(message || t('userMgmt.firstLogin.errorGeneric'));
             }
         } finally {
             setSubmitting(false);
@@ -133,11 +134,11 @@ export default function FirstLoginPasswordChange() {
                             <IconShieldLock size={32} color="white" stroke={1.8} />
                         </Box>
                         <Title order={2} ta="center" style={{ color: '#0F172A', fontWeight: 600 }}>
-                            Definissez votre mot de passe
+                            {t('userMgmt.firstLogin.title')}
                         </Title>
                         <Text size="sm" c="dimmed" ta="center">
-                            {userName ? `Bienvenue ${userName}, ` : ''}
-                            pour proteger votre compte, vous devez changer votre mot de passe temporaire avant de continuer.
+                            {userName ? t('userMgmt.firstLogin.welcomeName', { name: userName }) : ''}
+                            {t('userMgmt.firstLogin.subtitle')}
                         </Text>
                     </Stack>
 
@@ -149,9 +150,7 @@ export default function FirstLoginPasswordChange() {
                         styles={{ root: { border: '1px solid #99F6E4' } }}
                     >
                         <Text size="xs">
-                            Cette etape est <strong>obligatoire</strong>. Votre nouveau mot de passe doit respecter
-                            la politique de securite affichee ci-dessous. Vous ne pourrez pas acceder aux applications
-                            tant que cette etape n'est pas validee.
+                            {t('userMgmt.firstLogin.mandatoryNotice')}
                         </Text>
                     </Alert>
 
@@ -159,8 +158,8 @@ export default function FirstLoginPasswordChange() {
                     <form onSubmit={form.onSubmit(handleSubmit)}>
                         <Stack gap="md">
                             <PasswordInput
-                                label="Mot de passe temporaire (recu par email)"
-                                placeholder="Votre mot de passe actuel"
+                                label={t('userMgmt.firstLogin.fieldOld')}
+                                placeholder={t('userMgmt.firstLogin.fieldOldPlaceholder')}
                                 leftSection={<IconLock size={16} />}
                                 {...form.getInputProps('oldPassword')}
                                 disabled={submitting}
@@ -169,8 +168,8 @@ export default function FirstLoginPasswordChange() {
 
                             <div>
                                 <PasswordInput
-                                    label="Nouveau mot de passe"
-                                    placeholder="Choisissez un mot de passe fort"
+                                    label={t('userMgmt.firstLogin.fieldNew')}
+                                    placeholder={t('userMgmt.firstLogin.fieldNewPlaceholder')}
                                     leftSection={<IconLock size={16} />}
                                     {...form.getInputProps('newPassword')}
                                     disabled={submitting}
@@ -193,8 +192,8 @@ export default function FirstLoginPasswordChange() {
                             </div>
 
                             <PasswordInput
-                                label="Confirmer le nouveau mot de passe"
-                                placeholder="Retapez votre nouveau mot de passe"
+                                label={t('userMgmt.firstLogin.fieldConfirm')}
+                                placeholder={t('userMgmt.firstLogin.fieldConfirmPlaceholder')}
                                 leftSection={<IconLock size={16} />}
                                 {...form.getInputProps('confirmPassword')}
                                 disabled={submitting}
@@ -208,7 +207,7 @@ export default function FirstLoginPasswordChange() {
                                 style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
                             >
                                 <Text size="xs" fw={600} c="dimmed" mb={6} tt="uppercase">
-                                    Politique de mot de passe
+                                    {t('userMgmt.firstLogin.policyTitle')}
                                 </Text>
                                 <List spacing={3} size="xs" listStyleType="none">
                                     {checks.map((c, i) => (
@@ -242,7 +241,7 @@ export default function FirstLoginPasswordChange() {
                                     disabled={submitting}
                                     size="sm"
                                 >
-                                    Annuler et se deconnecter
+                                    {t('userMgmt.firstLogin.logout')}
                                 </Button>
                                 <Button
                                     type="submit"
@@ -257,7 +256,7 @@ export default function FirstLoginPasswordChange() {
                                     }}
                                     size="sm"
                                 >
-                                    Valider et continuer
+                                    {t('userMgmt.firstLogin.submit')}
                                 </Button>
                             </Group>
                         </Stack>

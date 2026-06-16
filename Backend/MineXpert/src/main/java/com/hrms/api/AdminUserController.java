@@ -91,6 +91,35 @@ public class AdminUserController {
     /** Durée de validité du mot de passe temporaire (invitation). */
     private static final int INVITATION_VALIDITY_HOURS = 24;
 
+    /**
+     * Alias de rôle considérés « administrateur » (comparaison insensible à la
+     * casse). Le compte admin de PROD porte le rôle BDD "Administrator" — il ne
+     * doit JAMAIS être verrouillé hors de la gestion des utilisateurs.
+     */
+    private static final java.util.Set<String> ADMIN_ROLE_ALIASES = java.util.Set.of(
+            "SYSTEM_ADMINISTRATOR", "ADMINISTRATOR", "ADMIN");
+
+    private static boolean isAdminRole(String role) {
+        return role != null && ADMIN_ROLE_ALIASES.contains(role.trim().toUpperCase());
+    }
+
+    /**
+     * Liste blanche des rôles acceptés à la création d'un compte (LOT — remédiation).
+     * Valeurs EXACTES envoyées par le formulaire front (CreateUserWizard /
+     * CreateUserPage PREDEFINED_ROLES) — identiques à l'enum HSE UserRole.
+     * Comparaison insensible à la casse via {@link #isAllowedCreationRole(String)}.
+     */
+    private static final java.util.Set<String> ALLOWED_CREATION_ROLES = java.util.Set.of(
+            "SYSTEM_ADMINISTRATOR",
+            "HEALTH_SAFETY_COORDINATOR",
+            "INCIDENT_INVESTIGATOR",
+            "AUDITOR",
+            "EMPLOYEE");
+
+    private static boolean isAllowedCreationRole(String role) {
+        return role != null && ALLOWED_CREATION_ROLES.contains(role.trim().toUpperCase());
+    }
+
     @Value("${spring.mail.username:noreply@safex360.com}")
     private String fromEmail;
     @Value("${loginUrl:http://localhost:5173}")
@@ -168,6 +197,10 @@ public class AdminUserController {
         }
         if (req.getRole() == null || req.getRole().trim().isEmpty()) {
             throw new HRMSException("ROLE_REQUIRED");
+        }
+        // Liste blanche : seuls les rôles proposés par le formulaire sont acceptés.
+        if (!isAllowedCreationRole(req.getRole())) {
+            throw new HRMSException("ROLE_INVALID");
         }
         // LOT 52 : la mine de rattachement est OBLIGATOIRE — aucun utilisateur orphelin.
         if (req.getCompanyId() == null) {
@@ -275,8 +308,11 @@ public class AdminUserController {
             try {
                 String login = jwtHelper.getUsernameFromToken(token);
                 Account admin = accountRepository.findByLogin(login).orElse(null);
-                if (admin != null && "SYSTEM_ADMINISTRATOR".equalsIgnoreCase(admin.getRole())
-                        && "ACTIVE".equalsIgnoreCase(admin.getStatus())) {
+                // Alias admin (Administrator/Admin/SYSTEM_ADMINISTRATOR), compte ACTIF,
+                // et MDP temporaire déjà changé (un admin firstLogin ne peut pas administrer).
+                if (admin != null && isAdminRole(admin.getRole())
+                        && "ACTIVE".equalsIgnoreCase(admin.getStatus())
+                        && !Boolean.TRUE.equals(admin.getFirstLogin())) {
                     return login;
                 }
             } catch (Exception e) {
@@ -470,12 +506,13 @@ public class AdminUserController {
             headers.set("Content-Type", "application/json");
             headers.set("X-Secret-Key", internalSecret);
 
-            String body = String.format(
-                "{\"accountId\":%d,\"role\":\"%s\",\"allowedModules\":\"%s\"}",
-                accountId,
-                role != null ? role : "EMPLOYEE",
-                allowedModules != null ? allowedModules.replace("\"", "\\\"") : ""
-            );
+            // Sérialisation Jackson : élimine toute injection JSON via role/allowedModules.
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String body = mapper.writeValueAsString(java.util.Map.of(
+                    "accountId", accountId,
+                    "role", role != null ? role : "EMPLOYEE",
+                    "allowedModules", allowedModules != null ? allowedModules : ""
+            ));
 
             org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(body, headers);
             String url = hsePermissionsUrl + "/init-for-account";

@@ -1,5 +1,5 @@
 /**
- * CreateUserPage — Création d'un utilisateur SafeX 360 en page pleine largeur (LOT 52).
+ * CreateUserPage — Création d'un utilisateur SafeX 360 en page pleine largeur (LOT 52 / LOT 61).
  *
  * Remplace le modal CreateUserWizard par un parcours professionnel en 4 étapes,
  * avec rail de progression latéral sticky (convention plateforme R1, voir
@@ -16,12 +16,18 @@
  *   Étape 4 « Récapitulatif & création »: synthèse + MDP temporaire affiché UNE FOIS
  *                                        (72 h) si compte LOCAL sans email envoyé.
  *
+ * Après une création réussie, la WelcomeMessageModal premium s'ouvre par-dessus
+ * l'écran de succès (message de bienvenue copiable pour Outlook).
+ *
  * Validation client identique au backend (validateLogin, validateEmail, etc.)
- * et mapping des codes d'erreur backend vers des messages français.
+ * et mapping des codes d'erreur backend vers des messages traduits.
+ *
+ * i18n : useTranslation('navigation'), clés sous t('userMgmt.create.*').
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     TextInput, Select, Button, Group, Stack, Checkbox, Paper, Text, Badge,
     Alert, Code, CopyButton, Modal, Loader, Switch,
@@ -43,6 +49,7 @@ import {
 } from '../../../services/DirectoryService';
 import { getAllCompanies, getDepartmentsByCompany } from '../../../services/HrmsService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import WelcomeMessageModal from './WelcomeMessageModal';
 
 // ─────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -62,15 +69,13 @@ interface DepartmentOption {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// ROLES PREDEFINIS (synchronisés avec roles.tsx côté frontend et backend —
-// repris du CreateUserWizard, qui sera supprimé une fois cette page câblée)
+// ROLES PREDEFINIS (synchronisés avec roles.tsx côté frontend et backend).
+// Les libellés/descriptions sont traduits via i18n (userMgmt.create.roles.*).
 // ─────────────────────────────────────────────────────────────────────────
 
 const PREDEFINED_ROLES = [
     {
         value: 'SYSTEM_ADMINISTRATOR',
-        label: 'Administrateur Système',
-        description: 'Accès total à tous les modules + paramètres système',
         color: 'red',
         defaultModules: [
             'home', 'nonConformity', 'inspections', 'meetings', 'managementTour',
@@ -87,8 +92,6 @@ const PREDEFINED_ROLES = [
     },
     {
         value: 'HEALTH_SAFETY_COORDINATOR',
-        label: 'Coordinateur HSE',
-        description: 'Supervision des activités HSE — incidents, audits, EPI, risques',
         color: 'teal',
         defaultModules: [
             'home', 'nonConformity', 'inspections', 'meetings',
@@ -102,8 +105,6 @@ const PREDEFINED_ROLES = [
     },
     {
         value: 'INCIDENT_INVESTIGATOR',
-        label: 'Enquêteur Incidents',
-        description: 'Spécialisé sur la déclaration et l\'investigation d\'incidents',
         color: 'orange',
         defaultModules: [
             'home', 'incidentManagement', 'investigations', 'actionPlansInc',
@@ -113,8 +114,6 @@ const PREDEFINED_ROLES = [
     },
     {
         value: 'AUDITOR',
-        label: 'Auditeur',
-        description: 'Audits, conformité réglementaire, recommandations',
         color: 'blue',
         defaultModules: [
             'home', 'auditPlan', 'audits', 'auditRecommendations',
@@ -125,8 +124,6 @@ const PREDEFINED_ROLES = [
     },
     {
         value: 'EMPLOYEE',
-        label: 'Employé (self-service)',
-        description: 'Déclaration d\'incidents, demande EPI, consultation documents',
         color: 'gray',
         defaultModules: [
             'home', 'incidentManagement', 'nonConformity',
@@ -136,132 +133,43 @@ const PREDEFINED_ROLES = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
-// CATEGORIES DE MODULES — pour la matrice de l'étape 3
+// CATEGORIES DE MODULES — pour la matrice de l'étape 3.
+// Les libellés sont traduits via i18n (userMgmt.create.categories/modules.*).
 // ─────────────────────────────────────────────────────────────────────────
 
 interface ModuleCategory {
-    name: string;
+    key: string;
     color: string;
-    modules: { id: string; label: string }[];
+    modules: string[];
 }
 
 const MODULE_CATEGORIES: ModuleCategory[] = [
-    {
-        name: 'Généraux', color: 'gray',
-        modules: [
-            { id: 'home', label: 'Accueil / Dashboard' },
-            { id: 'notifications', label: 'Notifications' },
-        ],
-    },
-    {
-        name: 'Incidents & Investigations', color: 'orange',
-        modules: [
-            { id: 'incidentManagement', label: 'Gestion des incidents' },
-            { id: 'investigations', label: 'Investigations' },
-            { id: 'actionPlansInc', label: 'Plans d\'actions incidents' },
-            { id: 'nonConformity', label: 'Non-conformités' },
-        ],
-    },
-    {
-        name: 'Activités Préventives', color: 'teal',
-        modules: [
-            { id: 'inspections', label: 'Inspections' },
-            { id: 'meetings', label: 'Réunions HSE' },
-            { id: 'managementTour', label: 'Tournées direction' },
-        ],
-    },
-    {
-        name: 'Actions Correctives', color: 'cyan',
-        modules: [
-            { id: 'pendingActions', label: 'Actions en cours' },
-            { id: 'actionPlan', label: 'Plans d\'actions' },
-            { id: 'recommendations', label: 'Recommandations' },
-            { id: 'adhocActions', label: 'Actions ad-hoc' },
-        ],
-    },
-    {
-        name: 'Risques', color: 'red',
-        modules: [
-            { id: 'riskOverview', label: 'Vue d\'ensemble risques' },
-            { id: 'riskRegister', label: 'Registre des risques' },
-            { id: 'riskAssessment', label: 'Évaluation des risques' },
-            { id: 'chemicalRegister', label: 'Registre chimique' },
-        ],
-    },
-    {
-        name: 'EPI', color: 'yellow',
-        modules: [
-            { id: 'ppeOverview', label: 'Vue d\'ensemble EPI' },
-            { id: 'ppeMonitoring', label: 'Suivi EPI' },
-            { id: 'ppeRequest', label: 'Demande EPI' },
-        ],
-    },
-    {
-        name: 'Audits', color: 'indigo',
-        modules: [
-            { id: 'auditPlan', label: 'Planification audits' },
-            { id: 'audits', label: 'Audits' },
-            { id: 'auditRecommendations', label: 'Recommandations audits' },
-        ],
-    },
-    {
-        name: 'Conformité', color: 'green',
-        modules: [
-            { id: 'complianceDashboard', label: 'Dashboard conformité' },
-            { id: 'requirements', label: 'Exigences' },
-            { id: 'positionAssignments', label: 'Affectations postes' },
-            { id: 'employeeAssignments', label: 'Affectations employés' },
-        ],
-    },
-    {
-        name: 'Documentation', color: 'violet',
-        modules: [
-            { id: 'documents', label: 'Documents' },
-            { id: 'documentValidation', label: 'Validation documents' },
-            { id: 'lessonsLearned', label: 'Leçons apprises' },
-            { id: 'documentManager', label: 'Gestionnaire documents' },
-        ],
-    },
-    {
-        name: 'Communication', color: 'pink',
-        modules: [
-            { id: 'commDashboard', label: 'Dashboard communication' },
-            { id: 'employeeComm', label: 'Communication employés' },
-        ],
-    },
-    {
-        name: 'Administration', color: 'red',
-        modules: [
-            { id: 'usersManagement', label: 'Gestion utilisateurs' },
-            { id: 'settings', label: 'Paramètres' },
-        ],
-    },
+    { key: 'general', color: 'gray', modules: ['home', 'notifications'] },
+    { key: 'incidents', color: 'orange', modules: ['incidentManagement', 'investigations', 'actionPlansInc', 'nonConformity'] },
+    { key: 'preventive', color: 'teal', modules: ['inspections', 'meetings', 'managementTour'] },
+    { key: 'corrective', color: 'cyan', modules: ['pendingActions', 'actionPlan', 'recommendations', 'adhocActions'] },
+    { key: 'risks', color: 'red', modules: ['riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister'] },
+    { key: 'ppe', color: 'yellow', modules: ['ppeOverview', 'ppeMonitoring', 'ppeRequest'] },
+    { key: 'audits', color: 'indigo', modules: ['auditPlan', 'audits', 'auditRecommendations'] },
+    { key: 'compliance', color: 'green', modules: ['complianceDashboard', 'requirements', 'positionAssignments', 'employeeAssignments'] },
+    { key: 'documentation', color: 'violet', modules: ['documents', 'documentValidation', 'lessonsLearned', 'documentManager'] },
+    { key: 'communication', color: 'pink', modules: ['commDashboard', 'employeeComm'] },
+    { key: 'administration', color: 'red', modules: ['usersManagement', 'settings'] },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// ETAPES + MAPPING DES ERREURS BACKEND
-// ─────────────────────────────────────────────────────────────────────────
-
-const STEPS = [
-    { title: 'Source d\'identité', hint: 'SafeX ou annuaire AD' },
-    { title: 'Identité & rattachement', hint: 'Compte, mine, département' },
-    { title: 'Rôle & accès aux modules', hint: 'Permissions par module' },
-    { title: 'Récapitulatif & création', hint: 'Vérification finale' },
-];
-
-/** Codes d'erreur backend → message français + étape/champ à corriger. */
-const API_ERRORS: Record<string, { message: string; step?: number; field?: string }> = {
-    LOGIN_TOO_SHORT: { message: 'Le login doit comporter au moins 3 caractères', step: 1, field: 'login' },
-    LOGIN_INVALID_FORMAT: { message: 'Le login ne peut contenir que des lettres, chiffres, point, underscore ou tiret', step: 1, field: 'login' },
-    EMAIL_INVALID: { message: 'Format email invalide', step: 1, field: 'email' },
-    NAME_REQUIRED: { message: 'Le nom est requis', step: 1, field: 'name' },
-    ROLE_REQUIRED: { message: 'Le rôle est requis', step: 2 },
-    COMPANY_REQUIRED: { message: 'La mine de rattachement est obligatoire', step: 1, field: 'companyId' },
-    COMPANY_NOT_FOUND: { message: 'La mine sélectionnée est introuvable', step: 1, field: 'companyId' },
-    MODULES_REQUIRED: { message: 'Sélectionnez au moins un module', step: 2 },
-    LOGIN_ALREADY_EXISTS: { message: 'Ce login est déjà utilisé', step: 1, field: 'login' },
-    DIRECTORY_DISABLED: { message: 'Le connecteur Active Directory est désactivé — import impossible', step: 0 },
-    PERMISSIONS_INIT_FAILED: { message: 'Le compte a été créé mais l\'initialisation des permissions a échoué. Contactez le support.' },
+/** Codes d'erreur backend → étape/champ à corriger (le message vient de l'i18n). */
+const API_ERROR_TARGETS: Record<string, { step?: number; field?: string }> = {
+    LOGIN_TOO_SHORT: { step: 1, field: 'login' },
+    LOGIN_INVALID_FORMAT: { step: 1, field: 'login' },
+    EMAIL_INVALID: { step: 1, field: 'email' },
+    NAME_REQUIRED: { step: 1, field: 'name' },
+    ROLE_REQUIRED: { step: 2 },
+    COMPANY_REQUIRED: { step: 1, field: 'companyId' },
+    COMPANY_NOT_FOUND: { step: 1, field: 'companyId' },
+    MODULES_REQUIRED: { step: 2 },
+    LOGIN_ALREADY_EXISTS: { step: 1, field: 'login' },
+    DIRECTORY_DISABLED: { step: 0 },
+    PERMISSIONS_INIT_FAILED: {},
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -270,6 +178,14 @@ const API_ERRORS: Record<string, { message: string; step?: number; field?: strin
 
 export default function CreateUserPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('navigation');
+
+    const STEPS = useMemo(() => ([
+        { title: t('userMgmt.create.stepSourceTitle'), hint: t('userMgmt.create.stepSourceHint') },
+        { title: t('userMgmt.create.stepIdentityTitle'), hint: t('userMgmt.create.stepIdentityHint') },
+        { title: t('userMgmt.create.stepModulesTitle'), hint: t('userMgmt.create.stepModulesHint') },
+        { title: t('userMgmt.create.stepSummaryTitle'), hint: t('userMgmt.create.stepSummaryHint') },
+    ]), [t]);
 
     const [step, setStep] = useState(0);
     const [identitySource, setIdentitySource] = useState<IdentitySource>('LOCAL');
@@ -277,6 +193,9 @@ export default function CreateUserPage() {
     const [submitting, setSubmitting] = useState(false);
     const [createdResponse, setCreatedResponse] = useState<CreateUserResponse | null>(null);
     const [cancelConfirm, setCancelConfirm] = useState(false);
+    // Modale « Message de bienvenue » premium (affichée après création réussie)
+    const [welcomeOpen, setWelcomeOpen] = useState(false);
+    const [createdName, setCreatedName] = useState('');
 
     // ── Annuaire AD ──
     const [dirStatus, setDirStatus] = useState<DirectoryStatus | null>(null);
@@ -304,9 +223,9 @@ export default function CreateUserPage() {
         validate: {
             login: (v) => validateLogin(v),
             email: (v) => validateEmail(v),
-            name: (v) => (v.trim().length === 0 ? 'Le nom est requis' : null),
-            role: (v) => (v.trim().length === 0 ? 'Le rôle est requis' : null),
-            companyId: (v) => (!v ? 'La mine de rattachement est obligatoire' : null),
+            name: (v) => (v.trim().length === 0 ? t('userMgmt.create.apiErrors.NAME_REQUIRED') : null),
+            role: (v) => (v.trim().length === 0 ? t('userMgmt.create.apiErrors.ROLE_REQUIRED') : null),
+            companyId: (v) => (!v ? t('userMgmt.create.apiErrors.COMPANY_REQUIRED') : null),
         },
         validateInputOnBlur: true,
     });
@@ -319,7 +238,8 @@ export default function CreateUserPage() {
             .finally(() => setDirStatusLoading(false));
         getAllCompanies()
             .then((res: CompanyOption[]) => setCompanies(Array.isArray(res) ? res : []))
-            .catch(() => errorNotification('Impossible de charger la liste des mines'));
+            .catch(() => errorNotification(t('userMgmt.create.loadCompaniesError')));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ── Recherche annuaire avec debounce 300 ms (uniquement si AD actif) ──
@@ -355,6 +275,11 @@ export default function CreateUserPage() {
     // HELPERS
     // ─────────────────────────────────────────────────────────────────────
 
+    const roleLabel = (value: string) => t(`userMgmt.create.roles.${value}`, { defaultValue: value });
+    const roleDesc = (value: string) => t(`userMgmt.create.roleDesc.${value}`, { defaultValue: '' });
+    const moduleLabel = (id: string) => t(`userMgmt.create.modules.${id}`, { defaultValue: id });
+    const categoryLabel = (key: string) => t(`userMgmt.create.categories.${key}`, { defaultValue: key });
+
     const selectedRoleInfo = useMemo(
         () => PREDEFINED_ROLES.find((r) => r.value === form.values.role),
         [form.values.role]
@@ -382,13 +307,13 @@ export default function CreateUserPage() {
     const companyLabel = (id: string | null) => {
         if (!id) return '—';
         const c = companies.find((x) => String(x.id) === id);
-        return c?.name || c?.shortName || `Mine #${id}`;
+        return c?.name || c?.shortName || `#${id}`;
     };
 
     const departmentLabel = (id: string | null) => {
         if (!id) return '—';
         const d = departments.find((x) => String(x.id) === id);
-        return d?.name || `Département #${id}`;
+        return d?.name || `#${id}`;
     };
 
     const toggleModule = (moduleId: string) => {
@@ -403,7 +328,7 @@ export default function CreateUserPage() {
     const toggleCategory = (cat: ModuleCategory, on: boolean) => {
         setSelectedModules((prev) => {
             const next = new Set(prev);
-            cat.modules.forEach((m) => { if (on) next.add(m.id); else next.delete(m.id); });
+            cat.modules.forEach((m) => { if (on) next.add(m); else next.delete(m); });
             return next;
         });
     };
@@ -440,11 +365,11 @@ export default function CreateUserPage() {
         if (s === 0) {
             if (identitySource === 'ACTIVE_DIRECTORY') {
                 if (!dirStatus?.enabled) {
-                    errorNotification('Le connecteur Active Directory est désactivé — import impossible');
+                    errorNotification(t('userMgmt.create.errorAdDisabled'));
                     return false;
                 }
                 if (!adUser) {
-                    errorNotification('Sélectionnez un utilisateur dans l\'annuaire avant de continuer');
+                    errorNotification(t('userMgmt.create.errorSelectAd'));
                     return false;
                 }
             }
@@ -456,7 +381,7 @@ export default function CreateUserPage() {
         }
         if (s === 2) {
             if (selectedModules.size === 0) {
-                errorNotification('Sélectionnez au moins un module pour l\'utilisateur');
+                errorNotification(t('userMgmt.create.errorSelectModule'));
                 return false;
             }
             return true;
@@ -502,17 +427,21 @@ export default function CreateUserPage() {
                 identitySource,
             });
             setCreatedResponse(resp);
-            successNotification(`Compte ${resp.login} créé avec succès`);
+            setCreatedName(form.values.name.trim());
+            successNotification(t('userMgmt.create.createdSuccess', { login: resp.login }));
+            // Ouvre la modale « Message de bienvenue » premium (comptes LOCAL avec MDP).
+            if (resp.temporaryPassword) setWelcomeOpen(true);
         } catch (e: unknown) {
             const err = e as { response?: { data?: { errorMessage?: string; error?: string } } };
             const code = err?.response?.data?.errorMessage || err?.response?.data?.error;
-            const known = code ? API_ERRORS[code] : undefined;
-            if (known) {
-                if (known.field) form.setFieldError(known.field, known.message);
-                if (known.step !== undefined) setStep(known.step);
-                errorNotification(known.message);
+            const target = code ? API_ERROR_TARGETS[code] : undefined;
+            if (target) {
+                const message = t(`userMgmt.create.apiErrors.${code}`, { defaultValue: code as string });
+                if (target.field) form.setFieldError(target.field, message);
+                if (target.step !== undefined) setStep(target.step);
+                errorNotification(message);
             } else {
-                errorNotification(code || 'Erreur lors de la création du compte');
+                errorNotification(code || t('userMgmt.create.errorGeneric'));
             }
         } finally {
             setSubmitting(false);
@@ -530,7 +459,7 @@ export default function CreateUserPage() {
         <aside className="hidden lg:block w-64 flex-shrink-0">
             <div className="sticky top-4 bg-white border border-slate-200 rounded-xl shadow-sm p-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400 font-medium mb-3">
-                    Parcours de création
+                    {t('userMgmt.create.railTitle')}
                 </p>
                 <ol className="space-y-1">
                     {STEPS.map((s, i) => {
@@ -637,11 +566,10 @@ export default function CreateUserPage() {
                     className="text-slate-900"
                     style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 16 }}
                 >
-                    D'où proviennent les identifiants de cet utilisateur ?
+                    {t('userMgmt.create.sourceQuestion')}
                 </h2>
                 <p className="text-[12.5px] text-slate-500 mt-0.5 leading-relaxed">
-                    Un compte local reçoit un mot de passe temporaire SafeX (valable 72 h). Un compte importé
-                    depuis l'annuaire se connecte avec ses identifiants Active Directory.
+                    {t('userMgmt.create.sourceIntro')}
                 </p>
             </div>
 
@@ -649,20 +577,20 @@ export default function CreateUserPage() {
                 {sourceCard(
                     'LOCAL',
                     <IconKey size={20} stroke={1.8} />,
-                    'Compte local',
-                    'Créer les identifiants dans SafeX — mot de passe temporaire généré, changement forcé à la première connexion.',
+                    t('userMgmt.create.sourceLocalTitle'),
+                    t('userMgmt.create.sourceLocalDesc'),
                 )}
                 {sourceCard(
                     'ACTIVE_DIRECTORY',
                     <IconAddressBook size={20} stroke={1.8} />,
-                    'Active Directory',
-                    'Importer depuis l\'annuaire — identité pré-remplie, connexion avec les identifiants AD existants.',
+                    t('userMgmt.create.sourceAdTitle'),
+                    t('userMgmt.create.sourceAdDesc'),
                     dirStatusLoading ? (
                         <Loader size={12} color="teal" />
                     ) : dirStatus?.demoMode ? (
-                        <Badge color="violet" variant="light" size="xs">Annuaire démo</Badge>
+                        <Badge color="violet" variant="light" size="xs">{t('userMgmt.create.badgeDemoDirectory')}</Badge>
                     ) : dirStatus && !dirStatus.enabled ? (
-                        <Badge color="gray" variant="light" size="xs">Connecteur désactivé</Badge>
+                        <Badge color="gray" variant="light" size="xs">{t('userMgmt.create.badgeConnectorDisabled')}</Badge>
                     ) : undefined,
                     !dirStatusLoading && (!dirStatus || !dirStatus.enabled),
                 )}
@@ -672,21 +600,20 @@ export default function CreateUserPage() {
             {identitySource === 'ACTIVE_DIRECTORY' && dirStatus?.enabled && (
                 <div className="pt-4 border-t border-slate-100 space-y-3">
                     <TextInput
-                        label="Rechercher dans l'annuaire"
-                        placeholder="Nom, login ou email…"
+                        label={t('userMgmt.create.adSearchLabel')}
+                        placeholder={t('userMgmt.create.adSearchPlaceholder')}
                         leftSection={adSearching ? <Loader size={14} color="teal" /> : <IconSearch size={14} />}
                         value={adQuery}
                         onChange={(e) => setAdQuery(e.currentTarget.value)}
                         description={dirStatus.demoMode
-                            ? 'Annuaire de démonstration — les profils listés sont fictifs.'
-                            : `Annuaire connecté : ${dirStatus.host || 'LDAP'}`}
+                            ? t('userMgmt.create.adSearchDescDemo')
+                            : t('userMgmt.create.adSearchDescConnected', { host: dirStatus.host || 'LDAP' })}
                     />
 
                     {adUser && (
                         <Alert color="teal" variant="light" icon={<IconCircleCheck size={16} />}>
                             <Text size="sm">
-                                Profil sélectionné : <strong>{adUser.displayName}</strong> (@{adUser.login}) —
-                                son identité sera pré-remplie et verrouillée à l'étape suivante.
+                                {t('userMgmt.create.adProfileSelected', { name: adUser.displayName, login: adUser.login })}
                             </Text>
                         </Alert>
                     )}
@@ -694,7 +621,7 @@ export default function CreateUserPage() {
                     <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-[340px] overflow-y-auto">
                         {adResults.length === 0 && !adSearching && (
                             <p className="text-[12.5px] text-slate-500 text-center py-6">
-                                Aucun profil trouvé dans l'annuaire pour cette recherche.
+                                {t('userMgmt.create.adNoResults')}
                             </p>
                         )}
                         {adResults.map((u) => {
@@ -723,7 +650,7 @@ export default function CreateUserPage() {
                                             <span className="text-[13px] text-slate-800 font-medium">{u.displayName}</span>
                                             <span className="text-[11.5px] text-slate-400">@{u.login}</span>
                                             {u.alreadyImported && (
-                                                <Badge color="gray" variant="light" size="xs">Déjà importé</Badge>
+                                                <Badge color="gray" variant="light" size="xs">{t('userMgmt.create.adAlreadyImported')}</Badge>
                                             )}
                                         </span>
                                         <span className="block text-[11.5px] text-slate-500 truncate">
@@ -757,19 +684,19 @@ export default function CreateUserPage() {
                     className="text-slate-900"
                     style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 16 }}
                 >
-                    Identité de l'utilisateur
+                    {t('userMgmt.create.identityTitle')}
                 </h2>
                 <p className="text-[12.5px] text-slate-500 mt-0.5 leading-relaxed">
                     {adUser
-                        ? 'Identité importée depuis l\'annuaire Active Directory — login, email et nom sont verrouillés.'
-                        : 'Renseignez les informations du compte. Le login servira d\'identifiant de connexion.'}
+                        ? t('userMgmt.create.identityIntroAd')
+                        : t('userMgmt.create.identityIntroLocal')}
                 </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput
-                    label="Nom complet"
-                    placeholder="DUPONT Jean"
+                    label={t('userMgmt.create.fieldName')}
+                    placeholder={t('userMgmt.create.fieldNamePlaceholder')}
                     leftSection={<IconUser size={14} />}
                     rightSection={adUser ? adLockBadge : undefined}
                     rightSectionWidth={adUser ? 52 : undefined}
@@ -778,8 +705,8 @@ export default function CreateUserPage() {
                     required
                 />
                 <TextInput
-                    label="Login"
-                    placeholder="ex. jdupont"
+                    label={t('userMgmt.create.fieldLogin')}
+                    placeholder={t('userMgmt.create.fieldLoginPlaceholder')}
                     leftSection={<IconUser size={14} />}
                     rightSection={adUser ? adLockBadge : undefined}
                     rightSectionWidth={adUser ? 52 : undefined}
@@ -788,8 +715,8 @@ export default function CreateUserPage() {
                     required
                 />
                 <TextInput
-                    label="Email"
-                    placeholder="jean.dupont@mine.com"
+                    label={t('userMgmt.create.fieldEmail')}
+                    placeholder={t('userMgmt.create.fieldEmailPlaceholder')}
                     leftSection={<IconMail size={14} />}
                     rightSection={adUser ? adLockBadge : undefined}
                     rightSectionWidth={adUser ? 52 : undefined}
@@ -798,8 +725,8 @@ export default function CreateUserPage() {
                     required
                 />
                 <TextInput
-                    label="Téléphone"
-                    placeholder="+226 77 96 35 25"
+                    label={t('userMgmt.create.fieldPhone')}
+                    placeholder={t('userMgmt.create.fieldPhonePlaceholder')}
                     leftSection={<IconPhone size={14} />}
                     {...form.getInputProps('phoneNumber')}
                 />
@@ -810,19 +737,19 @@ export default function CreateUserPage() {
                     className="text-slate-900 mb-1"
                     style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 14.5 }}
                 >
-                    Rattachement organisationnel
+                    {t('userMgmt.create.orgTitle')}
                 </h3>
                 <p className="text-[12px] text-slate-500 mb-4 leading-relaxed">
-                    La mine détermine le périmètre des données visibles par l'utilisateur.
+                    {t('userMgmt.create.orgIntro')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select
-                        label="Mine"
-                        placeholder="Sélectionner la mine de rattachement"
+                        label={t('userMgmt.create.fieldMine')}
+                        placeholder={t('userMgmt.create.fieldMinePlaceholder')}
                         leftSection={<IconBuildingFactory2 size={14} />}
                         data={companies.map((c) => ({
                             value: String(c.id),
-                            label: c.name || c.shortName || `Mine #${c.id}`,
+                            label: c.name || c.shortName || `#${c.id}`,
                         }))}
                         searchable
                         value={form.values.companyId}
@@ -835,11 +762,11 @@ export default function CreateUserPage() {
                         required
                     />
                     <Select
-                        label="Département"
-                        placeholder={form.values.companyId ? 'Optionnel' : 'Choisissez d\'abord une mine'}
+                        label={t('userMgmt.create.fieldDepartment')}
+                        placeholder={form.values.companyId ? t('userMgmt.create.fieldDepartmentOptional') : t('userMgmt.create.fieldDepartmentNeedMine')}
                         data={departments.map((d) => ({
                             value: String(d.id),
-                            label: d.name || `Département #${d.id}`,
+                            label: d.name || `#${d.id}`,
                         }))}
                         searchable
                         clearable
@@ -847,7 +774,7 @@ export default function CreateUserPage() {
                         value={form.values.departmentId}
                         onChange={(v) => form.setFieldValue('departmentId', v)}
                         description={form.values.companyId && departments.length === 0
-                            ? 'Aucun département référencé pour cette mine'
+                            ? t('userMgmt.create.fieldDepartmentNone')
                             : undefined}
                     />
                 </div>
@@ -864,17 +791,17 @@ export default function CreateUserPage() {
                         className="text-slate-900"
                         style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 16 }}
                     >
-                        Rôle de l'utilisateur
+                        {t('userMgmt.create.roleTitle')}
                     </h2>
                     <p className="text-[12.5px] text-slate-500 mt-0.5 leading-relaxed">
-                        Le rôle pré-coche les modules recommandés — vous pouvez ensuite ajuster la sélection.
+                        {t('userMgmt.create.roleIntro')}
                     </p>
                 </div>
                 <Select
-                    label="Rôle"
-                    placeholder="Choisir un rôle prédéfini"
+                    label={t('userMgmt.create.fieldRole')}
+                    placeholder={t('userMgmt.create.fieldRolePlaceholder')}
                     leftSection={<IconShieldCheck size={14} />}
-                    data={PREDEFINED_ROLES.map((r) => ({ value: r.value, label: r.label }))}
+                    data={PREDEFINED_ROLES.map((r) => ({ value: r.value, label: roleLabel(r.value) }))}
                     {...form.getInputProps('role')}
                     required
                 />
@@ -882,20 +809,20 @@ export default function CreateUserPage() {
                     <Paper p="sm" radius="md" style={{ background: '#F0FDFA', border: '1px solid #99F6E4' }}>
                         <Group gap={6} mb={4}>
                             <Badge color={selectedRoleInfo.color} variant="filled" size="sm">
-                                {selectedRoleInfo.label}
+                                {roleLabel(selectedRoleInfo.value)}
                             </Badge>
                             <Text size="xs" c="dimmed">
-                                {selectedRoleInfo.defaultModules.length} modules par défaut
+                                {t('userMgmt.create.roleDefaultModules', { count: selectedRoleInfo.defaultModules.length })}
                             </Text>
                             {presetDelta.isCustom && (
                                 <Badge color="amber" variant="light" size="sm">
-                                    Personnalisé
+                                    {t('userMgmt.create.custom')}
                                     {presetDelta.added > 0 && ` · +${presetDelta.added}`}
                                     {presetDelta.removed > 0 && ` · −${presetDelta.removed}`}
                                 </Badge>
                             )}
                         </Group>
-                        <Text size="xs" c="dimmed">{selectedRoleInfo.description}</Text>
+                        <Text size="xs" c="dimmed">{roleDesc(selectedRoleInfo.value)}</Text>
                     </Paper>
                 )}
             </div>
@@ -907,34 +834,34 @@ export default function CreateUserPage() {
                             className="text-slate-900"
                             style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 16 }}
                         >
-                            Accès aux modules
+                            {t('userMgmt.create.modulesTitle')}
                         </h2>
                         <p className="text-[12.5px] text-slate-500 mt-0.5 leading-relaxed">
-                            Cochez les modules auxquels {form.values.name || 'l\'utilisateur'} aura accès.
+                            {t('userMgmt.create.modulesIntro', { name: form.values.name || t('userMgmt.create.modulesIntroFallback') })}
                         </p>
                     </div>
                     <Badge variant="filled" color={selectedModules.size === 0 ? 'red' : 'teal'} size="lg">
-                        {selectedModules.size} module{selectedModules.size > 1 ? 's' : ''} sélectionné{selectedModules.size > 1 ? 's' : ''}
+                        {t('userMgmt.create.modulesSelected', { count: selectedModules.size })}
                     </Badge>
                 </div>
 
                 {selectedModules.size === 0 && (
                     <Alert color="red" variant="light" icon={<IconAlertCircle size={14} />}>
                         <Text size="xs">
-                            Au moins un module est requis pour passer au récapitulatif.
+                            {t('userMgmt.create.modulesRequired')}
                         </Text>
                     </Alert>
                 )}
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                     {MODULE_CATEGORIES.map((cat) => {
-                        const catSelectedCount = cat.modules.filter((m) => selectedModules.has(m.id)).length;
+                        const catSelectedCount = cat.modules.filter((m) => selectedModules.has(m)).length;
                         const allSelected = catSelectedCount === cat.modules.length;
                         return (
-                            <Paper key={cat.name} p="sm" radius="md" style={{ border: '1px solid #E2E8F0' }}>
+                            <Paper key={cat.key} p="sm" radius="md" style={{ border: '1px solid #E2E8F0' }}>
                                 <Group justify="space-between" mb={8} wrap="nowrap">
                                     <Group gap={6} wrap="nowrap">
-                                        <Badge color={cat.color} variant="dot" size="sm">{cat.name}</Badge>
+                                        <Badge color={cat.color} variant="dot" size="sm">{categoryLabel(cat.key)}</Badge>
                                         <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                                             {catSelectedCount}/{cat.modules.length}
                                         </Text>
@@ -942,7 +869,7 @@ export default function CreateUserPage() {
                                     <Switch
                                         size="xs"
                                         color={cat.color}
-                                        label={allSelected ? 'Tout décocher' : 'Tout cocher'}
+                                        label={allSelected ? t('userMgmt.create.toggleAllOff') : t('userMgmt.create.toggleAllOn')}
                                         checked={allSelected}
                                         onChange={(e) => toggleCategory(cat, e.currentTarget.checked)}
                                     />
@@ -950,12 +877,12 @@ export default function CreateUserPage() {
                                 <Stack gap={6}>
                                     {cat.modules.map((m) => (
                                         <Checkbox
-                                            key={m.id}
+                                            key={m}
                                             size="sm"
                                             color={cat.color}
-                                            label={m.label}
-                                            checked={selectedModules.has(m.id)}
-                                            onChange={() => toggleModule(m.id)}
+                                            label={moduleLabel(m)}
+                                            checked={selectedModules.has(m)}
+                                            onChange={() => toggleModule(m)}
                                         />
                                     ))}
                                 </Stack>
@@ -983,38 +910,38 @@ export default function CreateUserPage() {
                     className="text-slate-900"
                     style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: 16 }}
                 >
-                    Récapitulatif avant création
+                    {t('userMgmt.create.summaryTitle')}
                 </h2>
                 <p className="text-[12.5px] text-slate-500 mt-0.5 leading-relaxed">
-                    Vérifiez les informations — le compte et ses permissions seront créés en une seule opération.
+                    {t('userMgmt.create.summaryIntro')}
                 </p>
             </div>
 
             <Paper p="md" radius="md" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                {summaryRow('Source d\'identité', identitySource === 'LOCAL' ? (
-                    <Badge color="teal" variant="light" leftSection={<IconKey size={10} />}>Compte local SafeX</Badge>
+                {summaryRow(t('userMgmt.create.summarySource'), identitySource === 'LOCAL' ? (
+                    <Badge color="teal" variant="light" leftSection={<IconKey size={10} />}>{t('userMgmt.create.summaryLocal')}</Badge>
                 ) : (
                     <Group gap={6}>
                         <Badge color="violet" variant="light" leftSection={<IconAddressBook size={10} />}>
-                            Active Directory
+                            {t('userMgmt.create.sourceAdTitle')}
                         </Badge>
-                        {dirStatus?.demoMode && <Badge color="violet" variant="outline" size="xs">Annuaire démo</Badge>}
+                        {dirStatus?.demoMode && <Badge color="violet" variant="outline" size="xs">{t('userMgmt.create.badgeDemoDirectory')}</Badge>}
                     </Group>
                 ))}
-                {summaryRow('Nom complet', form.values.name || '—')}
-                {summaryRow('Login', <Code>{form.values.login}</Code>)}
-                {summaryRow('Email', form.values.email || '—')}
-                {summaryRow('Téléphone', form.values.phoneNumber || '—')}
-                {summaryRow('Mine', companyLabel(form.values.companyId))}
-                {summaryRow('Département', departmentLabel(form.values.departmentId))}
-                {summaryRow('Rôle', (
-                    <Badge color={selectedRoleInfo?.color} variant="light">{selectedRoleInfo?.label}</Badge>
+                {summaryRow(t('userMgmt.create.summaryName'), form.values.name || '—')}
+                {summaryRow(t('userMgmt.create.summaryLogin'), <Code>{form.values.login}</Code>)}
+                {summaryRow(t('userMgmt.create.summaryEmail'), form.values.email || '—')}
+                {summaryRow(t('userMgmt.create.summaryPhone'), form.values.phoneNumber || '—')}
+                {summaryRow(t('userMgmt.create.summaryMine'), companyLabel(form.values.companyId))}
+                {summaryRow(t('userMgmt.create.summaryDepartment'), departmentLabel(form.values.departmentId))}
+                {summaryRow(t('userMgmt.create.summaryRole'), (
+                    <Badge color={selectedRoleInfo?.color} variant="light">{selectedRoleInfo ? roleLabel(selectedRoleInfo.value) : '—'}</Badge>
                 ))}
-                {summaryRow('Modules autorisés', (
+                {summaryRow(t('userMgmt.create.summaryModules'), (
                     <Group gap={6}>
-                        <Badge color="teal" variant="filled">{selectedModules.size} modules</Badge>
+                        <Badge color="teal" variant="filled">{t('userMgmt.create.summaryModulesCount', { count: selectedModules.size })}</Badge>
                         {presetDelta.isCustom && (
-                            <Badge color="amber" variant="light" size="sm">Personnalisé</Badge>
+                            <Badge color="amber" variant="light" size="sm">{t('userMgmt.create.custom')}</Badge>
                         )}
                     </Group>
                 ))}
@@ -1022,18 +949,11 @@ export default function CreateUserPage() {
 
             {identitySource === 'LOCAL' ? (
                 <Alert color="blue" variant="light" icon={<IconAlertCircle size={14} />}>
-                    <Text size="xs">
-                        Un mot de passe temporaire fort sera <strong>généré automatiquement</strong> (valable 72 h)
-                        et envoyé par email si la messagerie est disponible. L'utilisateur devra le changer
-                        obligatoirement lors de sa première connexion.
-                    </Text>
+                    <Text size="xs">{t('userMgmt.create.summaryLocalNotice')}</Text>
                 </Alert>
             ) : (
                 <Alert color="violet" variant="light" icon={<IconAddressBook size={14} />}>
-                    <Text size="xs">
-                        Aucun mot de passe local ne sera créé : l'utilisateur se connectera directement
-                        avec ses <strong>identifiants Active Directory</strong>.
-                    </Text>
+                    <Text size="xs">{t('userMgmt.create.summaryAdNotice')}</Text>
                 </Alert>
             )}
         </div>
@@ -1043,17 +963,17 @@ export default function CreateUserPage() {
     const renderSuccess = createdResponse && (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-4">
             <Alert color="teal" variant="light" icon={<IconCircleCheck size={16} />}>
-                <Text size="sm" fw={500}>Compte créé avec succès !</Text>
+                <Text size="sm" fw={500}>{t('userMgmt.create.successTitle')}</Text>
                 <Text size="xs" c="dimmed">{createdResponse.message}</Text>
             </Alert>
 
             <Paper p="md" radius="md" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                {summaryRow('Login', <Code>{createdResponse.login}</Code>)}
-                {summaryRow('Email', (
+                {summaryRow(t('userMgmt.create.summaryLogin'), <Code>{createdResponse.login}</Code>)}
+                {summaryRow(t('userMgmt.create.summaryEmail'), (
                     <Group gap={6}>
                         <span>{createdResponse.email}</span>
                         {createdResponse.emailSent && (
-                            <Badge color="teal" size="xs" variant="light">Email envoyé</Badge>
+                            <Badge color="teal" size="xs" variant="light">{t('userMgmt.create.successEmailSent')}</Badge>
                         )}
                     </Group>
                 ))}
@@ -1061,17 +981,11 @@ export default function CreateUserPage() {
 
             {identitySource === 'ACTIVE_DIRECTORY' ? (
                 <Alert color="violet" variant="light" icon={<IconAddressBook size={16} />}>
-                    <Text size="sm">
-                        L'utilisateur se connecte avec ses <strong>identifiants Active Directory</strong> —
-                        aucun mot de passe SafeX n'a été créé pour ce compte.
-                    </Text>
+                    <Text size="sm">{t('userMgmt.create.successAdNotice')}</Text>
                 </Alert>
             ) : createdResponse.emailSent ? (
                 <Alert color="teal" variant="light" icon={<IconMail size={16} />}>
-                    <Text size="sm">
-                        Un email contenant le mot de passe temporaire a été envoyé
-                        à <strong>{createdResponse.email}</strong>. Il devra être changé à la première connexion.
-                    </Text>
+                    <Text size="sm">{t('userMgmt.create.successEmailNotice', { email: createdResponse.email })}</Text>
                 </Alert>
             ) : null}
 
@@ -1080,7 +994,7 @@ export default function CreateUserPage() {
                     <Group gap={6} align="center" mb={6}>
                         <IconClock size={14} stroke={1.8} className="text-amber-700" />
                         <Text size="xs" fw={500} tt="uppercase" style={{ color: '#92400E', letterSpacing: 0.4 }}>
-                            Mot de passe temporaire — affiché une seule fois
+                            {t('userMgmt.create.tempPasswordTitle')}
                         </Text>
                     </Group>
                     <Group gap={6}>
@@ -1096,15 +1010,13 @@ export default function CreateUserPage() {
                                     leftSection={<IconCopy size={12} />}
                                     onClick={copy}
                                 >
-                                    {copied ? 'Copié !' : 'Copier'}
+                                    {copied ? t('userMgmt.list.copied') : t('userMgmt.list.copy')}
                                 </Button>
                             )}
                         </CopyButton>
                     </Group>
                     <Text size="xs" mt={6} style={{ color: '#92400E' }}>
-                        Valable <strong>72 heures</strong>. Communiquez-le à l'utilisateur de manière sécurisée :
-                        il devra le changer obligatoirement à sa première connexion. Ce mot de passe ne pourra
-                        plus être affiché — en cas de perte, utilisez « Réinitialiser le mot de passe ».
+                        {t('userMgmt.create.tempPasswordNotice')}
                     </Text>
                 </Paper>
             )}
@@ -1115,7 +1027,7 @@ export default function CreateUserPage() {
                     onClick={() => navigate('/users-admin')}
                     styles={{ root: { background: '#0F766E' } }}
                 >
-                    Retour à la liste
+                    {t('userMgmt.create.backToList')}
                 </Button>
             </Group>
         </div>
@@ -1134,16 +1046,16 @@ export default function CreateUserPage() {
                         type="button"
                         onClick={handleCancel}
                         className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-300 text-slate-600 bg-white hover:bg-slate-50 transition flex-shrink-0"
-                        aria-label="Retour à la gestion des utilisateurs"
-                        title="Retour à la gestion des utilisateurs"
+                        aria-label={t('userMgmt.create.backAria')}
+                        title={t('userMgmt.create.backAria')}
                     >
                         <IconArrowLeft size={14} stroke={1.8} />
                     </button>
-                    <span className="uppercase tracking-[0.16em] font-medium">Administration</span>
+                    <span className="uppercase tracking-[0.16em] font-medium">{t('userMgmt.create.breadcrumbAdmin')}</span>
                     <IconChevronRight size={10} className="text-slate-400" />
-                    <span className="uppercase tracking-[0.16em] font-medium">Gestion des utilisateurs</span>
+                    <span className="uppercase tracking-[0.16em] font-medium">{t('userMgmt.create.breadcrumbUsers')}</span>
                     <IconChevronRight size={10} className="text-slate-400" />
-                    <span className="uppercase tracking-[0.16em] text-teal-700 font-medium">Nouvel utilisateur</span>
+                    <span className="uppercase tracking-[0.16em] text-teal-700 font-medium">{t('userMgmt.create.breadcrumbNew')}</span>
                 </div>
                 <div className="flex items-end justify-between gap-4 flex-wrap">
                     <div className="min-w-0 flex items-center gap-3">
@@ -1160,17 +1072,17 @@ export default function CreateUserPage() {
                                     letterSpacing: '-0.015em',
                                 }}
                             >
-                                Nouvel utilisateur
+                                {t('userMgmt.create.title')}
                             </h1>
                             <p className="text-[12.5px] text-slate-500 mt-0.5">
-                                Compte, rattachement et permissions par module — en 4 étapes
+                                {t('userMgmt.create.headerSubtitle')}
                             </p>
                         </div>
                     </div>
                     <div className="min-w-[200px]">
                         <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
                             <span>
-                                {createdResponse ? 'Création terminée' : `Étape ${step + 1} sur ${STEPS.length}`}
+                                {createdResponse ? t('userMgmt.create.progressDone') : t('userMgmt.create.progressStep', { current: step + 1, total: STEPS.length })}
                             </span>
                             <span className="font-medium text-slate-700 tabular-nums">{progressPct}%</span>
                         </div>
@@ -1222,7 +1134,7 @@ export default function CreateUserPage() {
                             <div className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
                                 <Group gap="xs">
                                     <Button variant="subtle" color="gray" onClick={handleCancel} disabled={submitting}>
-                                        Annuler
+                                        {t('userMgmt.create.cancel')}
                                     </Button>
                                 </Group>
                                 <Group gap="xs">
@@ -1233,7 +1145,7 @@ export default function CreateUserPage() {
                                             onClick={handleBack}
                                             disabled={submitting}
                                         >
-                                            Précédent
+                                            {t('userMgmt.create.previous')}
                                         </Button>
                                     )}
                                     {step < STEPS.length - 1 ? (
@@ -1243,7 +1155,7 @@ export default function CreateUserPage() {
                                             disabled={step === 2 && selectedModules.size === 0}
                                             styles={{ root: { background: '#0F766E' } }}
                                         >
-                                            Suivant
+                                            {t('userMgmt.create.next')}
                                         </Button>
                                     ) : (
                                         <Button
@@ -1257,7 +1169,7 @@ export default function CreateUserPage() {
                                                 },
                                             }}
                                         >
-                                            Créer l'utilisateur
+                                            {t('userMgmt.create.submit')}
                                         </Button>
                                     )}
                                 </Group>
@@ -1271,25 +1183,36 @@ export default function CreateUserPage() {
             <Modal
                 opened={cancelConfirm}
                 onClose={() => setCancelConfirm(false)}
-                title={<Text fw={500}>Abandonner la création ?</Text>}
+                title={<Text fw={500}>{t('userMgmt.create.cancelTitle')}</Text>}
                 centered
                 size="sm"
             >
                 <Stack gap="md">
                     <Text size="sm">
-                        Les informations saisies seront perdues. Voulez-vous vraiment revenir
-                        à la liste des utilisateurs ?
+                        {t('userMgmt.create.cancelText')}
                     </Text>
                     <Group justify="flex-end">
                         <Button variant="default" onClick={() => setCancelConfirm(false)}>
-                            Continuer la saisie
+                            {t('userMgmt.create.cancelContinue')}
                         </Button>
                         <Button color="red" onClick={() => navigate('/users-admin')}>
-                            Abandonner
+                            {t('userMgmt.create.cancelConfirm')}
                         </Button>
                     </Group>
                 </Stack>
             </Modal>
+
+            {/* ── Modale « Message de bienvenue » premium — après création réussie ── */}
+            {createdResponse && (
+                <WelcomeMessageModal
+                    opened={welcomeOpen}
+                    onClose={() => setWelcomeOpen(false)}
+                    name={createdName || createdResponse.login}
+                    login={createdResponse.login}
+                    email={createdResponse.email}
+                    temporaryPassword={createdResponse.temporaryPassword}
+                />
+            )}
         </div>
     );
 }

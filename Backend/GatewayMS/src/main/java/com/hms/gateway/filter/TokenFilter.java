@@ -2,6 +2,7 @@ package com.hms.gateway.filter;
 
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -53,7 +54,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             }
 
             if (token == null || token.isEmpty()) {
-                throw new RuntimeException("JWT cookie is missing");
+                // Cookie JWT manquant : 401 réactif (pas de 500).
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
 
             try {
@@ -68,7 +71,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         .build();
 
             } catch (Exception e) {
-                throw new RuntimeException("Token is invalid");
+                // Token invalide/expiré : 401 réactif (pas de 500).
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
 
             return chain.filter(exchange);
