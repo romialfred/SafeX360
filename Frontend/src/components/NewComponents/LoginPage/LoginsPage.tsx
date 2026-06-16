@@ -41,7 +41,8 @@ const LoginsPage = () => {
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
     const [loading, setLoading] = useState(false);
     const dispatch = useAppDispatch();
-    const [error, setError] = useState(false);
+    type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | null;
+    const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
 
     const t = language === 'fr'
         ? {
@@ -55,7 +56,10 @@ const LoginsPage = () => {
             forgotPassword: 'Mot de passe oublié',
             loginButton: 'Se connecter',
             loginProgress: 'Connexion…',
-            errorMessage: 'Identifiant ou mot de passe incorrect',
+            errorCredentials: 'Identifiant ou mot de passe incorrect',
+            errorNetwork: 'Service injoignable. Vérifiez votre connexion ou réessayez dans quelques secondes (le serveur se réveille).',
+            errorServer: 'Erreur côté serveur. Réessayez ; si le problème persiste, contactez le support.',
+            errorWaking: 'Réveil du serveur en cours… nouvelle tentative automatique.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Application mobile terrain',
             mobileSubtitle: 'Android · Hors ligne · ISO 45001',
@@ -75,7 +79,10 @@ const LoginsPage = () => {
             forgotPassword: 'Forgot password',
             loginButton: 'Sign in',
             loginProgress: 'Signing in…',
-            errorMessage: 'Incorrect user ID or password',
+            errorCredentials: 'Incorrect user ID or password',
+            errorNetwork: 'Service unreachable. Check your connection or retry in a few seconds (the server is waking up).',
+            errorServer: 'Server-side error. Please retry; if it persists, contact support.',
+            errorWaking: 'Server is waking up… retrying automatically.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Mobile application',
             mobileSubtitle: 'Android · Offline · ISO 45001',
@@ -98,17 +105,37 @@ const LoginsPage = () => {
     });
 
     const handleSubmit = async (values: any) => {
-        setError(false);
+        setErrorKind(null);
         form.validate();
         if (!form.isValid()) return;
         setLoading(true);
+
+        // Render free-tier : le gateway peut être en veille (cold start ~30-60 s).
+        // Une erreur RÉSEAU (aucune réponse HTTP : DNS, timeout, connexion refusée)
+        // n'est PAS une erreur d'identifiants → on le distingue clairement et on
+        // retente automatiquement quelques fois le temps que le serveur se réveille.
+        const attempt = async (retriesLeft: number): Promise<void> => {
+            try {
+                await loginUser({ ...values });
+                const res: any = await getUser();
+                dispatch(setUser(res));
+                navigate('/');
+            } catch (err: any) {
+                const isNetwork = !err?.response; // pas de réponse HTTP = problème réseau/serveur injoignable
+                const status = err?.response?.status;
+                if (isNetwork && retriesLeft > 0) {
+                    setErrorKind('waking');
+                    await new Promise((r) => setTimeout(r, 4000));
+                    return attempt(retriesLeft - 1);
+                }
+                if (status === 401 || status === 403) setErrorKind('credentials');
+                else if (isNetwork) setErrorKind('network');
+                else setErrorKind('server');
+            }
+        };
+
         try {
-            await loginUser({ ...values });
-            const res: any = await getUser();
-            dispatch(setUser(res));
-            navigate('/');
-        } catch {
-            setError(true);
+            await attempt(2);
         } finally {
             setLoading(false);
         }
@@ -315,15 +342,28 @@ const LoginsPage = () => {
                             {t.loginSubtitle}
                         </p>
 
-                        {/* Erreur */}
-                        {error && (
+                        {/* Erreur / état réseau */}
+                        {errorKind && (
                             <div
-                                className="mt-3 p-2 rounded-lg bg-red-500/15 border border-red-400/40 flex items-center gap-2"
+                                className={`mt-3 p-2 rounded-lg border flex items-center gap-2 ${
+                                    errorKind === 'waking'
+                                        ? 'bg-amber-500/15 border-amber-400/40'
+                                        : 'bg-red-500/15 border-red-400/40'
+                                }`}
                                 role="alert"
                                 aria-live="assertive"
                             >
-                                <IconAlertTriangle size={14} className="text-red-300 flex-shrink-0" aria-hidden="true" />
-                                <span className="text-[12.5px] text-red-100">{t.errorMessage}</span>
+                                <IconAlertTriangle
+                                    size={14}
+                                    className={`flex-shrink-0 ${errorKind === 'waking' ? 'text-amber-300' : 'text-red-300'}`}
+                                    aria-hidden="true"
+                                />
+                                <span className={`text-[12.5px] ${errorKind === 'waking' ? 'text-amber-100' : 'text-red-100'}`}>
+                                    {errorKind === 'credentials' && t.errorCredentials}
+                                    {errorKind === 'network' && t.errorNetwork}
+                                    {errorKind === 'server' && t.errorServer}
+                                    {errorKind === 'waking' && t.errorWaking}
+                                </span>
                             </div>
                         )}
 
