@@ -11,6 +11,9 @@ import {
     IconActivity,
     IconBolt,
     IconChevronRight,
+    IconChevronDown,
+    IconFilter,
+    IconX,
 } from "@tabler/icons-react";
 
 /**
@@ -152,6 +155,15 @@ const FILTERS = {
     departments:['Tous départements', 'Maintenance', 'Production', 'Logistique', 'Géologie'],
 };
 
+/** Valeur « tout afficher » de chaque filtre — sert de référence pour compter
+ *  les filtres réellement actifs et pour la réinitialisation. */
+const DEFAULT_FILTERS = {
+    mine: FILTERS.mines[0],
+    period: FILTERS.periods[0],
+    severity: FILTERS.severities[0],
+    department: FILTERS.departments[0],
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //   COULEURS PAR KPI
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,17 +186,25 @@ const ALERT_TONE_MAP = {
 
 const OhsDashboardPage = () => {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState({
-        mine: FILTERS.mines[0],
-        period: FILTERS.periods[0],
-        severity: FILTERS.severities[0],
-        department: FILTERS.departments[0],
-    });
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const [filtersOpen, setFiltersOpen] = useState(false);
 
     const totalIncidents = useMemo(
         () => INCIDENT_BY_TYPE.reduce((s, x) => s + x.count, 0),
         [],
     );
+
+    // Nombre de filtres réellement actifs (≠ valeur « tout afficher »).
+    const activeFilters = useMemo(
+        () => ([
+            { key: 'mine' as const,       value: filters.mine,       def: DEFAULT_FILTERS.mine },
+            { key: 'period' as const,     value: filters.period,     def: DEFAULT_FILTERS.period },
+            { key: 'severity' as const,   value: filters.severity,   def: DEFAULT_FILTERS.severity },
+            { key: 'department' as const, value: filters.department, def: DEFAULT_FILTERS.department },
+        ]).filter((f) => f.value !== f.def),
+        [filters],
+    );
+    const activeCount = activeFilters.length;
 
     return (
         <div className="px-6 lg:px-8 py-5 space-y-5 w-full bg-[#FAF8F3] min-h-full">
@@ -210,13 +230,139 @@ const OhsDashboardPage = () => {
                         Pilotage opérationnel multi-sites — indicateurs sentinelles, distribution des risques et alertes prioritaires.
                     </p>
                 </div>
-                <div className="text-[12px] text-slate-500 self-start md:self-end">
-                    <span className="inline-flex items-center gap-1.5">
+                <div className="flex items-center gap-3 self-start md:self-end">
+                    <span className="text-[12px] text-slate-500 inline-flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
                         Dernière maj · {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
+
+                    {/* ─── Bouton Filtres + panneau déroulant ─── */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen((o) => !o)}
+                            aria-expanded={filtersOpen}
+                            aria-haspopup="dialog"
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[13px] font-medium transition-colors ${
+                                filtersOpen || activeCount > 0
+                                    ? 'border-teal-300 bg-teal-50 text-teal-800'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                        >
+                            <IconFilter size={15} aria-hidden="true" />
+                            Filtres
+                            {activeCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-teal-600 text-white text-[10.5px] font-semibold tabular-nums">
+                                    {activeCount}
+                                </span>
+                            )}
+                            <IconChevronDown
+                                size={14}
+                                className={`text-slate-400 transition-transform ${filtersOpen ? 'rotate-180' : ''}`}
+                                aria-hidden="true"
+                            />
+                        </button>
+
+                        {filtersOpen && (
+                            <>
+                                {/* Couche de fermeture au clic extérieur */}
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setFiltersOpen(false)}
+                                    aria-hidden="true"
+                                />
+                                {/* Panneau */}
+                                <div
+                                    role="dialog"
+                                    aria-label="Filtres du tableau de bord"
+                                    className="absolute right-0 z-50 mt-2 w-[300px] rounded-xl border border-slate-200 bg-white shadow-xl p-4 origin-top-right"
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                                            Filtrer le tableau de bord
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFiltersOpen(false)}
+                                            className="text-slate-400 hover:text-slate-700 transition-colors"
+                                            aria-label="Fermer les filtres"
+                                        >
+                                            <IconX size={15} />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {([
+                                            { key: 'mine',       label: 'Mine',       options: FILTERS.mines },
+                                            { key: 'period',     label: 'Période',    options: FILTERS.periods },
+                                            { key: 'severity',   label: 'Gravité',    options: FILTERS.severities },
+                                            { key: 'department', label: 'Département', options: FILTERS.departments },
+                                        ] as const).map((g) => (
+                                            <FilterSelect
+                                                key={g.key}
+                                                label={g.label}
+                                                value={filters[g.key]}
+                                                options={g.options}
+                                                onChange={(v) => setFilters((f) => ({ ...f, [g.key]: v }))}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFilters(DEFAULT_FILTERS)}
+                                            disabled={activeCount === 0}
+                                            className="text-[12px] text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Réinitialiser
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFiltersOpen(false)}
+                                            className="rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-[12.5px] font-medium px-4 py-1.5 transition-colors"
+                                        >
+                                            Appliquer
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </header>
+
+            {/* ─── Bandeau filtres actifs (chips) ─────────────────────── */}
+            {activeCount > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Filtres actifs
+                    </span>
+                    {activeFilters.map((f) => (
+                        <span
+                            key={f.key}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 pl-2.5 pr-1.5 py-1 text-[12px] text-teal-800"
+                        >
+                            {f.value}
+                            <button
+                                type="button"
+                                onClick={() => setFilters((prev) => ({ ...prev, [f.key]: DEFAULT_FILTERS[f.key] }))}
+                                className="text-teal-500 hover:text-teal-900 transition-colors"
+                                aria-label={`Retirer le filtre ${f.value}`}
+                            >
+                                <IconX size={12} />
+                            </button>
+                        </span>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => setFilters(DEFAULT_FILTERS)}
+                        className="text-[11.5px] text-slate-500 hover:text-slate-900 underline underline-offset-2 transition-colors"
+                    >
+                        Tout effacer
+                    </button>
+                </div>
+            )}
 
             {/* ─── KPI BAR — 4 indicateurs sentinelles ─────────────────── */}
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -269,60 +415,10 @@ const OhsDashboardPage = () => {
                 })}
             </section>
 
-            {/* ─── BODY : filtres latéraux + grille de graphiques ─────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[210px_minmax(0,1fr)_280px] gap-4">
+            {/* ─── BODY : grille de graphiques + colonne d'alertes ───── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4">
 
-                {/* ===== FILTRES (gauche) ===== */}
-                <aside className="bg-white rounded-xl border border-slate-200 p-4 h-fit lg:sticky lg:top-[140px]">
-                    <h2 className="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-3">
-                        Filtres
-                    </h2>
-
-                    {([
-                        { key: 'mine',       label: 'Mine',       options: FILTERS.mines },
-                        { key: 'period',     label: 'Période',    options: FILTERS.periods },
-                        { key: 'severity',   label: 'Gravité',    options: FILTERS.severities },
-                        { key: 'department', label: 'Département', options: FILTERS.departments },
-                    ] as const).map((group) => (
-                        <div key={group.key} className="mb-4 last:mb-0">
-                            <p className="text-[11px] font-medium text-slate-700 mb-1.5">{group.label}</p>
-                            <div className="space-y-0.5">
-                                {group.options.map((opt) => {
-                                    const isActive = filters[group.key] === opt;
-                                    return (
-                                        <button
-                                            key={opt}
-                                            type="button"
-                                            onClick={() => setFilters((f) => ({ ...f, [group.key]: opt }))}
-                                            className={`w-full text-left text-[12px] px-2 py-1 rounded transition-colors ${
-                                                isActive
-                                                    ? 'bg-teal-50 text-teal-800 font-medium'
-                                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                            }`}
-                                        >
-                                            {opt}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
-
-                    <button
-                        type="button"
-                        onClick={() => setFilters({
-                            mine: FILTERS.mines[0],
-                            period: FILTERS.periods[0],
-                            severity: FILTERS.severities[0],
-                            department: FILTERS.departments[0],
-                        })}
-                        className="mt-3 w-full text-[11.5px] text-slate-500 hover:text-slate-900 transition-colors py-1.5 border-t border-slate-100"
-                    >
-                        Réinitialiser
-                    </button>
-                </aside>
-
-                {/* ===== GRILLE CHARTS (centre) ===== */}
+                {/* ===== GRILLE CHARTS (gauche) ===== */}
                 <div className="space-y-4 min-w-0">
 
                     {/* Row 1 : Distribution par type + Distribution par mine */}
@@ -470,6 +566,41 @@ const OhsDashboardPage = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 //   SOUS-COMPOSANTS : Card + Charts SVG inline
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Liste déroulante raffinée (select natif stylé + chevron). */
+function FilterSelect({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    options: readonly string[];
+    onChange: (v: string) => void;
+}) {
+    return (
+        <label className="block">
+            <span className="block text-[11px] font-medium text-slate-600 mb-1">{label}</span>
+            <div className="relative">
+                <select
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-9 py-2 text-[13px] text-slate-800 cursor-pointer hover:border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-colors"
+                >
+                    {options.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                    ))}
+                </select>
+                <IconChevronDown
+                    size={15}
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                />
+            </div>
+        </label>
+    );
+}
 
 function ChartCard({
     title,

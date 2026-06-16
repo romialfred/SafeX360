@@ -73,6 +73,16 @@ import {
 
 const ALL_CATEGORIES: KpiCategory[] = ['WORKER_A', 'WORKER_B', 'APPRENTICE', 'PREGNANCY', 'PUBLIC'];
 
+// Libellés courts pour le mini-breakdown de la tuile « Travailleurs » (évite la
+// troncature des noms longs « Apprentis (16 à 18 ans) » dans une demi-tuile).
+const CATEGORY_SHORT: Record<KpiCategory, string> = {
+    WORKER_A: 'Cat. A',
+    WORKER_B: 'Cat. B',
+    APPRENTICE: 'Apprentis',
+    PREGNANCY: 'Grossesse',
+    PUBLIC: 'Public',
+};
+
 // Limites reglementaires CIPR 103 par categorie (mSv/an, Hp10).
 // On laisse le backend retourner la limite via distribution.regulatoryLimit,
 // mais on conserve un fallback de reference pour le chart de tendance.
@@ -469,7 +479,7 @@ const DosimetryDashboardPage = () => {
 
                 {/* ─── Section 1 : KPI Hero (6 tiles) ─── */}
                 <div className="mb-5">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3 auto-rows-fr">
                         <DosimetryKpiTile
                             icon={IconUsersGroup}
                             label={t('dashboard.kpi.workersLabel', { defaultValue: 'Travailleurs exposés' })}
@@ -481,11 +491,11 @@ const DosimetryDashboardPage = () => {
                                     'Nombre total de travailleurs exposés sur le périmètre sélectionné. La répartition par catégorie est affichée juste en dessous.',
                             })}
                         >
-                            <div className="text-[10.5px] text-slate-600 leading-tight space-y-0.5">
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10.5px] text-slate-600 leading-tight">
                                 {ALL_CATEGORIES.filter((c) => aggregated.breakdown[c] > 0).map((c) => (
-                                    <div key={c} className="flex justify-between gap-2">
-                                        <span className="truncate">
-                                            {t(`thresholds.categories.${c}`, { defaultValue: c })}
+                                    <div key={c} className="flex items-center justify-between gap-1.5">
+                                        <span className="truncate" title={t(`thresholds.categories.${c}`, { defaultValue: c })}>
+                                            {t(`dashboard.kpi.catShort.${c}`, { defaultValue: CATEGORY_SHORT[c] })}
                                         </span>
                                         <span className="font-mono font-semibold text-slate-800 tabular-nums">
                                             {aggregated.breakdown[c]}
@@ -493,7 +503,7 @@ const DosimetryDashboardPage = () => {
                                     </div>
                                 ))}
                                 {Object.values(aggregated.breakdown).every((v) => v === 0) && (
-                                    <span className="text-slate-400">
+                                    <span className="col-span-2 text-slate-400">
                                         {t('dashboard.kpi.workersEmpty', {
                                             defaultValue: "Aucun travailleur enregistré pour l'instant.",
                                         })}

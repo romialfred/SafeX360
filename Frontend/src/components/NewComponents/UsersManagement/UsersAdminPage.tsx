@@ -282,15 +282,6 @@ export default function UsersAdminPage() {
         );
     }
 
-    // ─── KPI ───
-    const stats = useMemo(() => {
-        const total = accounts.length;
-        const active = accounts.filter((a) => (a.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
-        const inactive = total - active;
-        const admins = accounts.filter((a) => a.role === 'Administrator' || a.role === 'SYSTEM_ADMINISTRATOR').length;
-        return { total, active, inactive, admins };
-    }, [accounts]);
-
     return (
         <Box p="md">
             <PageHeader
@@ -331,14 +322,6 @@ export default function UsersAdminPage() {
                     </Group>
                 }
             />
-
-            {/* KPI cards */}
-            <Group grow gap="sm" mb="md" mt="md">
-                <KpiCard label={t('userMgmt.list.kpiTotal')} value={stats.total} color="slate" />
-                <KpiCard label={t('userMgmt.list.kpiActive')} value={stats.active} color="teal" />
-                <KpiCard label={t('userMgmt.list.kpiInactive')} value={stats.inactive} color="gray" />
-                <KpiCard label={t('userMgmt.list.kpiAdmins')} value={stats.admins} color="red" />
-            </Group>
 
             {/* Filtres */}
             <Paper p="sm" radius="md" style={{ border: '1px solid #E2E8F0' }} mb="md">
@@ -505,33 +488,3 @@ export default function UsersAdminPage() {
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// COMPOSANT KPI
-// ─────────────────────────────────────────────────────────────────────────
-
-function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-    const bgMap: Record<string, string> = {
-        slate: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-        teal: 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',
-        gray: 'linear-gradient(135deg, #475569 0%, #64748B 100%)',
-        red: 'linear-gradient(135deg, #B91C1C 0%, #DC2626 100%)',
-    };
-    return (
-        <Paper
-            radius="md"
-            p="md"
-            style={{
-                background: bgMap[color] || bgMap.slate,
-                color: 'white',
-                boxShadow: '0 6px 16px -6px rgba(0,0,0,0.15)',
-            }}
-        >
-            <Text size="xs" tt="uppercase" style={{ opacity: 0.8, letterSpacing: 0.5 }}>
-                {label}
-            </Text>
-            <Title order={2} mt={4} style={{ color: 'white', fontWeight: 600 }}>
-                {value}
-            </Title>
-        </Paper>
-    );
-}

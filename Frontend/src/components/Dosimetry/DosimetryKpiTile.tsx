@@ -267,7 +267,7 @@ function DosimetryKpiTileImpl({
     if (loading) {
         return (
             <div
-                className={`relative flex flex-col gap-2 px-4 py-3.5 rounded-xl border ${palette.bg} ${palette.border} animate-pulse`}
+                className={`relative flex flex-col gap-2 h-full px-4 py-3.5 rounded-xl border ${palette.bg} ${palette.border} animate-pulse`}
                 style={{ minWidth }}
             >
                 <div className="flex items-center gap-2.5">
@@ -312,7 +312,7 @@ function DosimetryKpiTileImpl({
                     </div>
                     <div className="min-w-0">
                         <p
-                            className={`text-[10px] uppercase tracking-[0.14em] leading-none font-semibold ${palette.labelColor} truncate`}
+                            className={`text-[10px] uppercase tracking-[0.12em] leading-[1.3] font-semibold ${palette.labelColor} line-clamp-2 min-h-[26px] flex items-center`}
                             title={label}
                         >
                             {label}
@@ -370,7 +370,7 @@ function DosimetryKpiTileImpl({
         </>
     );
 
-    const baseClass = `relative flex flex-col px-4 py-3.5 pt-4 rounded-xl border shadow-sm ${palette.bg} ${palette.border} ${
+    const baseClass = `relative flex flex-col h-full px-4 py-3.5 pt-4 rounded-xl border shadow-sm ${palette.bg} ${palette.border} ${
         pulse ? 'ring-2 ring-red-300 ring-offset-1 animate-pulse' : ''
     } ${
         isInteractive
