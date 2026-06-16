@@ -46,7 +46,10 @@ const ALL = 'ALL';
 const AnnualDataFile = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [viewType, setViewType] = useState<'table' | 'card'>('table');
+    // Vue « cartes » par défaut : met en avant les tuiles d'audit (zoom au survol
+    // + retournement 3D recto/verso des plans approuvés, LOT 54). La vue tableau
+    // reste accessible via le sélecteur de vue.
+    const [viewType, setViewType] = useState<'table' | 'card'>('card');
     const [audits, setAudits] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [auditAreaMap, setAuditAreaMap] = useState<any>({});
