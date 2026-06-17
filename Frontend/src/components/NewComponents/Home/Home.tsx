@@ -419,69 +419,109 @@ const NewHomePage = () => {
                                     />
                                 )}
 
-                                <div className="p-3.5 flex flex-col h-full min-h-[138px]">
-                                    {/* En-tête : icône compacte à gauche + badge compteur à droite */}
-                                    <div className="flex items-start justify-between mb-2 gap-2">
-                                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-white border ${moduleEnabled ? 'border-white shadow-sm' : 'border-slate-200'} group-hover:scale-110 group-hover:rotate-[-3deg] transition-transform duration-200`}>
-                                            <module.icon
-                                                className={moduleEnabled ? module.color : 'text-slate-400'}
-                                                size={17}
-                                                stroke={1.8}
-                                                aria-hidden="true"
-                                            />
-                                        </div>
-                                        {/* Badge compteur sous-modules — version compacte (chiffre seul) */}
-                                        {moduleEnabled && subCount > 0 && (
-                                            <span
-                                                className={`inline-flex items-center justify-center min-w-[22px] h-[20px] px-1.5 rounded-full bg-white/85 border border-white text-[10px] font-semibold ${module.color} shadow-sm`}
-                                                title={`${subCount} sous-modules disponibles`}
+                                {/* Scène 3D : recto (tuile) ↔ verso (sous-modules) au survol */}
+                                <div className="relative min-h-[150px] [perspective:1000px]">
+                                    <div className={`relative h-full min-h-[150px] [transform-style:preserve-3d] transition-transform duration-[600ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] ${moduleEnabled ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
+
+                                        {/* ── RECTO : la tuile (identique à l'existant) ── */}
+                                        <div className="absolute inset-0 p-3.5 flex flex-col [backface-visibility:hidden]">
+                                            {/* En-tête : icône compacte à gauche + badge compteur à droite */}
+                                            <div className="flex items-start justify-between mb-2 gap-2">
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-white border ${moduleEnabled ? 'border-white shadow-sm' : 'border-slate-200'} group-hover:scale-110 group-hover:rotate-[-3deg] transition-transform duration-200`}>
+                                                    <module.icon
+                                                        className={moduleEnabled ? module.color : 'text-slate-400'}
+                                                        size={17}
+                                                        stroke={1.8}
+                                                        aria-hidden="true"
+                                                    />
+                                                </div>
+                                                {/* Badge compteur sous-modules — version compacte (chiffre seul) */}
+                                                {moduleEnabled && subCount > 0 && (
+                                                    <span
+                                                        className={`inline-flex items-center justify-center min-w-[22px] h-[20px] px-1.5 rounded-full bg-white/85 border border-white text-[10px] font-semibold ${module.color} shadow-sm`}
+                                                        title={`${subCount} sous-modules disponibles`}
+                                                    >
+                                                        {subCount}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Titre — serif accentué, taille réduite */}
+                                            <h3
+                                                className={`${moduleEnabled ? 'text-slate-900' : 'text-slate-500 italic'} transition-colors`}
+                                                style={{
+                                                    fontFamily: "'Source Serif 4', Georgia, serif",
+                                                    fontWeight: 600,
+                                                    fontSize: '14px',
+                                                    letterSpacing: '-0.012em',
+                                                    lineHeight: 1.2,
+                                                }}
                                             >
-                                                {subCount}
-                                            </span>
-                                        )}
-                                    </div>
+                                                {module.title}
+                                            </h3>
 
-                                    {/* Titre — serif accentué, taille réduite */}
-                                    <h3
-                                        className={`${moduleEnabled ? 'text-slate-900' : 'text-slate-500 italic'} transition-colors`}
-                                        style={{
-                                            fontFamily: "'Source Serif 4', Georgia, serif",
-                                            fontWeight: 600,
-                                            fontSize: '14px',
-                                            letterSpacing: '-0.012em',
-                                            lineHeight: 1.2,
-                                        }}
-                                    >
-                                        {module.title}
-                                    </h3>
+                                            {/* Description — 2 lignes max, taille réduite */}
+                                            <p
+                                                className={`mt-1 text-[11.5px] leading-snug flex-1 line-clamp-2 ${
+                                                    moduleEnabled ? 'text-slate-600' : 'text-slate-400'
+                                                }`}
+                                            >
+                                                {module.description}
+                                            </p>
 
-                                    {/* Description — 2 lignes max, taille réduite */}
-                                    <p
-                                        className={`mt-1 text-[11.5px] leading-snug flex-1 line-clamp-2 ${
-                                            moduleEnabled ? 'text-slate-600' : 'text-slate-400'
-                                        }`}
-                                    >
-                                        {module.description}
-                                    </p>
+                                            {/* Footer CTA permanent — compact */}
+                                            <div className="mt-2 pt-2 border-t border-white/70 flex items-center justify-between">
+                                                {moduleEnabled ? (
+                                                    <>
+                                                        <span className={`text-[10px] uppercase tracking-[0.10em] font-medium ${module.color}`}>
+                                                            Ouvrir
+                                                        </span>
+                                                        <span
+                                                            className={`w-5 h-5 rounded-full bg-white border border-white shadow-sm flex items-center justify-center ${module.color} group-hover:translate-x-1 group-hover:shadow-md transition-all`}
+                                                            aria-hidden="true"
+                                                        >
+                                                            <IconArrowRight size={11} stroke={2.4} />
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-[10px] uppercase tracking-[0.10em] text-slate-400 font-medium">
+                                                        Non inclus
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                    {/* Footer CTA permanent — compact */}
-                                    <div className="mt-2 pt-2 border-t border-white/70 flex items-center justify-between">
-                                        {moduleEnabled ? (
-                                            <>
-                                                <span className={`text-[10px] uppercase tracking-[0.10em] font-medium ${module.color}`}>
-                                                    Ouvrir
-                                                </span>
-                                                <span
-                                                    className={`w-5 h-5 rounded-full bg-white border border-white shadow-sm flex items-center justify-center ${module.color} group-hover:translate-x-1 group-hover:shadow-md transition-all`}
-                                                    aria-hidden="true"
-                                                >
-                                                    <IconArrowRight size={11} stroke={2.4} />
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="text-[10px] uppercase tracking-[0.10em] text-slate-400 font-medium">
-                                                Non inclus
-                                            </span>
+                                        {/* ── VERSO : aperçu des sous-modules (survol) ── */}
+                                        {moduleEnabled && (
+                                            <div className="absolute inset-0 p-3.5 flex flex-col rounded-[10px] bg-white [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                                <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: accentColor }} aria-hidden="true" />
+                                                <p className="mt-0.5 mb-1.5 text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: accentColor }}>
+                                                    Sous-modules
+                                                </p>
+                                                <ul className="flex-1 space-y-1 overflow-hidden">
+                                                    {module.items.slice(0, 5).map((it, i) => {
+                                                        const label = typeof it === 'string' ? it : it.label;
+                                                        return (
+                                                            <li key={i} className="flex items-center gap-1.5 text-[11.5px] text-slate-700">
+                                                                <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: accentColor }} aria-hidden="true" />
+                                                                <span className="truncate">{label}</span>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                    <span className="text-[10px] uppercase tracking-[0.10em] font-medium" style={{ color: accentColor }}>
+                                                        Ouvrir le module
+                                                    </span>
+                                                    <span
+                                                        className="w-5 h-5 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:translate-x-1 transition-all"
+                                                        style={{ color: accentColor }}
+                                                        aria-hidden="true"
+                                                    >
+                                                        <IconArrowRight size={11} stroke={2.4} />
+                                                    </span>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

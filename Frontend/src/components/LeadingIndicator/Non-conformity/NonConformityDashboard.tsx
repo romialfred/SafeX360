@@ -10,7 +10,6 @@ import {
 } from '@mantine/core';
 import {
     IconSearch,
-    IconEye,
     IconEdit,
     IconFileExport,
     IconAlertTriangle,
@@ -22,6 +21,8 @@ import {
     IconPlus,
     IconClipboardList,
     IconChartPie,
+    IconRotateClockwise,
+    IconArrowUpRight,
 } from '@tabler/icons-react';
 import { NonConformity } from './NonConformity';
 import { useNavigate } from 'react-router-dom';
@@ -279,6 +280,15 @@ const NonConformityDashboard = () => {
             Majeure:        'bg-orange-50 text-orange-700 border-orange-200',
             Catastrophique: 'bg-red-50 text-red-700 border-red-200',
         };
+        // Dégradé du verso (carte retournée au survol) — teinté par la sévérité.
+        const severityGrad: Record<string, string> = {
+            Insignifiante:  'linear-gradient(150deg,#10b981 0%,#047857 55%,#064e3b 100%)',
+            Mineure:        'linear-gradient(150deg,#65a30d 0%,#3f6212 55%,#1a2e05 100%)',
+            'Modérée':      'linear-gradient(150deg,#ca8a04 0%,#a16207 55%,#713f12 100%)',
+            Majeure:        'linear-gradient(150deg,#ea580c 0%,#c2410c 55%,#7c2d12 100%)',
+            Catastrophique: 'linear-gradient(150deg,#dc2626 0%,#b91c1c 55%,#7f1d1d 100%)',
+        };
+        const severityGradFallback = 'linear-gradient(150deg,#475569 0%,#334155 55%,#1e293b 100%)';
         if (data.length === 0) {
             return (
                 <div className="bg-white border border-dashed border-slate-300 rounded-xl py-12 text-center">
@@ -299,117 +309,113 @@ const NonConformityDashboard = () => {
                     const statChipColor = ncStatusChip(statusUpper);
                     const canEdit = !['CLOSED', 'REJECTED', 'CANCELLED'].includes(statusUpper);
 
-                    // LOT 43 hotfix : background hover doux pour mettre en valeur la tuile
-                    // Le hover bg dépend de la sévérité (cohérence couleur + ruban)
-                    const hoverBg: Record<string, string> = {
-                        Insignifiante:  'hover:bg-emerald-50/40',
-                        Mineure:        'hover:bg-lime-50/40',
-                        'Modérée':      'hover:bg-yellow-50/40',
-                        Majeure:        'hover:bg-orange-50/40',
-                        Catastrophique: 'hover:bg-red-50/40',
-                    };
-                    const hoverBgClass = hoverBg[sev] || 'hover:bg-slate-50';
+                    const grad = severityGrad[sev] || severityGradFallback;
 
                     return (
-                        <div
-                            key={nc.id}
-                            onClick={() => onView(nc)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') onView(nc); }}
-                            role="button"
-                            tabIndex={0}
-                            className={`group relative bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer transition-[box-shadow,border-color,background-color] duration-200 ease-out hover:shadow-md hover:border-slate-300 ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2`}
-                        >
-                            {/* Ruban gauche couleur sévérité */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`} aria-hidden="true" />
+                        <div key={nc.id} className="group h-full min-h-[214px] [perspective:1300px]">
+                            <div className="relative h-full min-h-[214px] transition-transform duration-[600ms] [transform-style:preserve-3d] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:[transform:rotateY(180deg)]">
 
-                            <div className="pl-4 pr-3.5 py-3.5 pb-3">
-                                {/* Ligne 1 : numéro + status chip (status TOUJOURS visible, jamais caché) */}
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                    <span className="text-[11.5px] uppercase tracking-[0.12em] text-slate-500 font-mono">
-                                        {nc.number}
-                                    </span>
-                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${statChipColor} flex-shrink-0`}>
-                                        {ncStatusLabel(nc.status)}
-                                    </span>
-                                </div>
-
-                                {/* Ligne 2 : titre serif */}
-                                <h3
-                                    className="text-slate-900 line-clamp-2 mb-2.5"
-                                    style={{
-                                        fontFamily: "'Source Serif 4', Georgia, serif",
-                                        fontWeight: 500,
-                                        fontSize: '14.5px',
-                                        letterSpacing: '-0.008em',
-                                        lineHeight: 1.3,
-                                    }}
+                                {/* ── Recto ──────────────────────────────────────── */}
+                                <div
+                                    onClick={() => onView(nc)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') onView(nc); }}
+                                    role="button"
+                                    tabIndex={0}
+                                    className="absolute inset-0 flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm cursor-pointer [backface-visibility:hidden] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
                                 >
-                                    {nc.title}
-                                </h3>
+                                    <span className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] rounded-t-xl ${barColor}`} aria-hidden="true" />
 
-                                {/* Ligne 3 : badges sévérité + priorité */}
-                                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                                    {sev && (
-                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${sevChipColor}`}>
-                                            {sev}
+                                    <div className="mb-2 flex items-start justify-between gap-2">
+                                        <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-500">{nc.number}</span>
+                                        <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${statChipColor} flex-shrink-0`}>
+                                            {ncStatusLabel(nc.status)}
                                         </span>
-                                    )}
-                                    {nc.priority && (
-                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${ncPriorityChip(nc.priority)}`}>
-                                            {nc.priority}
-                                        </span>
-                                    )}
+                                    </div>
+
+                                    <h3
+                                        className="mb-2.5 line-clamp-2 text-slate-900"
+                                        style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500, fontSize: '14.5px', letterSpacing: '-0.008em', lineHeight: 1.3 }}
+                                    >
+                                        {nc.title}
+                                    </h3>
+
+                                    <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                                        {sev && (
+                                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${sevChipColor}`}>{sev}</span>
+                                        )}
+                                        {nc.priority && (
+                                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${ncPriorityChip(nc.priority)}`}>{nc.priority}</span>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-2">
+                                        <div className="min-w-0">
+                                            <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Déclaré par</p>
+                                            <p className="truncate text-[12px] text-slate-700" title={nc.reporterName}>{nc.reporterName || '—'}</p>
+                                        </div>
+                                        <div className="ml-2 flex-shrink-0 text-right">
+                                            <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Date</p>
+                                            <p className="text-[12px] text-slate-700">{formatDateShort(nc.date)}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+                                        <IconRotateClockwise size={13} className="transition-transform duration-300 group-hover:rotate-180" />
+                                        Survolez pour les actions
+                                    </div>
                                 </div>
 
-                                {/* Ligne 4 : reporter + date TOUJOURS visibles + actions en pastille flottante au hover
-                                    LOT 48 P6.e — Correction UX : avant, group-hover:opacity-0 masquait
-                                    complètement les libellés "Déclaré par" et "Date" sur survol. Désormais
-                                    ces infos restent visibles ; les actions apparaissent dans une pastille
-                                    compacte ancrée en bas-droite, qui ne masque QUE la zone date. */}
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 relative">
-                                    {/* Bloc reporter (gauche) — TOUJOURS visible */}
-                                    <div className="min-w-0">
-                                        <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Déclaré par</p>
-                                        <p className="text-[12px] text-slate-700 truncate" title={nc.reporterName}>
-                                            {nc.reporterName || '—'}
-                                        </p>
-                                    </div>
-                                    {/* Bloc date (droite) — TOUJOURS visible, juste légèrement estompé au hover
-                                        pour donner du contraste à la pastille d'actions qui se superpose. */}
-                                    <div className="text-right ml-2 flex-shrink-0 transition-opacity group-hover:opacity-40">
-                                        <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400">Date</p>
-                                        <p className="text-[12px] text-slate-700">{formatDateShort(nc.date)}</p>
+                                {/* ── Verso (au survol) : panneau teinté par la sévérité ── */}
+                                <div
+                                    className="absolute inset-0 flex flex-col overflow-hidden rounded-xl p-4 text-white shadow-sm [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                                    style={{ background: grad }}
+                                >
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <span className="text-[10.5px] uppercase tracking-[0.16em] text-white/70">
+                                            {nc.type === 'NEAR_MISS' ? 'Quasi-accident' : 'Non-conformité'}
+                                        </span>
+                                        <span className="rounded border border-white/25 bg-white/10 px-2 py-0.5 text-[10.5px] uppercase tracking-wide">
+                                            {ncStatusLabel(nc.status)}
+                                        </span>
                                     </div>
 
-                                    {/* Pastille actions : bottom-right uniquement (pas inset-0 plein cadre),
-                                        fond blanc semi-opaque + ombre + bordure → propre et lisible,
-                                        ne masque QUE la zone date (le reporter reste 100% lisible). */}
-                                    <div className="absolute bottom-0 right-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-slate-200/80 px-1.5 py-1">
-                                        <Tooltip label="Voir le détail">
-                                            <ActionIcon
-                                                variant="filled"
-                                                color="blue"
-                                                size="md"
-                                                radius="md"
-                                                onClick={(e) => { e.stopPropagation(); onView(nc); }}
-                                            >
-                                                <IconEye size={15} />
-                                            </ActionIcon>
-                                        </Tooltip>
-                                        <Tooltip label={canEdit ? 'Modifier' : 'Modification impossible'}>
-                                            <span className="inline-flex">
-                                                <ActionIcon
-                                                    variant="filled"
-                                                    color="teal"
-                                                    size="md"
-                                                    radius="md"
-                                                    disabled={!canEdit}
-                                                    onClick={(e) => { if (canEdit) { e.stopPropagation(); navigate('/non-conformity/edit/' + nc.id); } }}
-                                                >
-                                                    <IconEdit size={15} />
-                                                </ActionIcon>
-                                            </span>
-                                        </Tooltip>
+                                    <h3 className="line-clamp-2 text-[14px] font-medium leading-snug text-white" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                                        {nc.title}
+                                    </h3>
+
+                                    <dl className="mt-2 space-y-1 text-[11.5px] text-white/85">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-white/60">Sévérité</span>
+                                            <span className="font-medium">{sev || '—'}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-white/60">Déclaré par</span>
+                                            <span className="truncate font-medium">{nc.reporterName || '—'}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-white/60">Date</span>
+                                            <span className="font-medium">{formatDateShort(nc.date)}</span>
+                                        </div>
+                                    </dl>
+
+                                    <div className="mt-auto space-y-2 pt-3">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); onView(nc); }}
+                                            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-[12.5px] font-medium text-slate-800 transition-all hover:bg-white hover:shadow-md"
+                                        >
+                                            Voir le détail
+                                            <IconArrowUpRight size={14} stroke={1.9} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!canEdit}
+                                            onClick={(e) => { if (canEdit) { e.stopPropagation(); navigate('/non-conformity/edit/' + nc.id); } }}
+                                            className="flex w-full items-center justify-center gap-1 rounded-lg border border-white/30 bg-white/10 px-2 py-1.5 text-[11.5px] text-white transition-colors enabled:hover:bg-white/20 disabled:opacity-40"
+                                            title={canEdit ? 'Modifier' : 'Modification impossible'}
+                                        >
+                                            <IconEdit size={13} /> Modifier
+                                        </button>
                                     </div>
                                 </div>
                             </div>
