@@ -56,10 +56,10 @@ const LoginsPage = () => {
             forgotPassword: 'Mot de passe oublié',
             loginButton: 'Se connecter',
             loginProgress: 'Connexion…',
-            errorCredentials: 'Identifiant ou mot de passe incorrect',
-            errorNetwork: 'Service injoignable. Vérifiez votre connexion ou réessayez dans quelques secondes (le serveur se réveille).',
-            errorServer: 'Erreur côté serveur. Réessayez ; si le problème persiste, contactez le support.',
-            errorWaking: 'Réveil du serveur en cours… nouvelle tentative automatique.',
+            errorCredentials: 'Identifiant ou mot de passe incorrect.',
+            errorNetwork: 'Service injoignable — réessayez dans un instant.',
+            errorServer: 'Erreur serveur — réessayez.',
+            errorWaking: 'Réveil du serveur… nouvelle tentative.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Application mobile terrain',
             mobileSubtitle: 'Android · Hors ligne · ISO 45001',
@@ -79,10 +79,10 @@ const LoginsPage = () => {
             forgotPassword: 'Forgot password',
             loginButton: 'Sign in',
             loginProgress: 'Signing in…',
-            errorCredentials: 'Incorrect user ID or password',
-            errorNetwork: 'Service unreachable. Check your connection or retry in a few seconds (the server is waking up).',
-            errorServer: 'Server-side error. Please retry; if it persists, contact support.',
-            errorWaking: 'Server is waking up… retrying automatically.',
+            errorCredentials: 'Incorrect user ID or password.',
+            errorNetwork: 'Service unreachable — please retry shortly.',
+            errorServer: 'Server error — please retry.',
+            errorWaking: 'Server waking up… retrying.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Mobile application',
             mobileSubtitle: 'Android · Offline · ISO 45001',
@@ -123,7 +123,10 @@ const LoginsPage = () => {
             } catch (err: any) {
                 const isNetwork = !err?.response; // pas de réponse HTTP = problème réseau/serveur injoignable
                 const status = err?.response?.status;
-                if (isNetwork && retriesLeft > 0) {
+                // Cold start Render free-tier : pas de réponse OU 5xx transitoire (502/503/504/500)
+                // pendant le réveil du conteneur → on retente automatiquement.
+                const isColdStart = isNetwork || (typeof status === 'number' && status >= 500);
+                if (isColdStart && retriesLeft > 0) {
                     setErrorKind('waking');
                     await new Promise((r) => setTimeout(r, 4000));
                     return attempt(retriesLeft - 1);
@@ -135,7 +138,7 @@ const LoginsPage = () => {
         };
 
         try {
-            await attempt(2);
+            await attempt(3);
         } finally {
             setLoading(false);
         }
@@ -205,7 +208,7 @@ const LoginsPage = () => {
                 de 200px vers la GAUCHE par rapport au centre de la page, MAIS chaque element
                 reste centre HORIZONTALEMENT par rapport aux autres (alignement interne).
                 Sur mobile (< md), pas de decalage pour rester lisible. */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-4 py-3 md:py-5 overflow-hidden md:-translate-x-[100px] lg:-translate-x-[200px]">
+            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-5 overflow-y-auto md:-translate-x-[100px] lg:-translate-x-[200px]">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
                 <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md">
