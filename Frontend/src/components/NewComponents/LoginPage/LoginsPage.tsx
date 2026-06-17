@@ -316,7 +316,7 @@ const LoginsPage = () => {
                         boxShadow: '0 20px 60px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(94,234,212,0.08) inset',
                     }}
                 >
-                    <div className="p-5 sm:p-6">
+                    <div className="px-6 py-8 sm:px-7 sm:py-10">
 
                         {/* Titre Connexion — BLANC PUR, gros, sans décorations qui le rendent illisible */}
                         <h2
@@ -370,7 +370,7 @@ const LoginsPage = () => {
                             </div>
                         )}
 
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-4 space-y-3">
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-6 space-y-5">
 
                             <TextInput
                                 label={
@@ -469,11 +469,14 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
+                {/* Pied : bouton Google Play + badges ISO sur une même ligne horizontale */}
+                <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px]">
+
                 {/* Bouton "Télécharger l'app Android" — Phase M6 */}
                 <a
                     href="/downloads/SafexMobile.apk"
                     download="SafexMobile.apk"
-                    className="mt-3 md:mt-4 mx-auto flex items-center justify-between gap-3 px-3 py-2 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[340px] w-full"
+                    className="flex items-center gap-3 px-3.5 py-2.5 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[320px]"
                     style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
                     aria-label={t.mobileDownloadAria}
                 >
@@ -550,12 +553,13 @@ const LoginsPage = () => {
                     </div>
                 </a>
 
-                {/* Footer minimal — badges officiels des normes ISO (règle plateforme :
-                    jamais de norme en texte nu) */}
-                <div className="mt-3 md:mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                {/* Badges officiels des normes ISO (règle plateforme : jamais de norme en texte nu) */}
+                <div className="flex items-center gap-2.5">
                     {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
                         <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
                     ))}
+                </div>
+
                 </div>
             </div>
         </div>
