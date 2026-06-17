@@ -109,6 +109,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Bundle JS principal ~4 MB → augmenter la limite a 8 MB pour precache PWA
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // Durcissement : purge les anciens precaches a chaque nouveau SW
+        // (evite l'accumulation d'assets perimes et les melanges de versions).
+        cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           // Les routes API ne doivent jamais retomber sur index.html
