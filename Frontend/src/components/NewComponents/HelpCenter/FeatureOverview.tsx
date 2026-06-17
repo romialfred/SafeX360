@@ -268,15 +268,15 @@ const FeatureOverview = () => {
                 description: 'Guide d\'introduction',
             }}
             nextPage={{
-                label: 'Documentation technique',
-                to: '/technical-docs',
-                description: 'Architecture, API, modèle de données',
+                label: 'Cartographie ISO',
+                to: '/iso-mapping',
+                description: 'Modules ↔ clauses ISO',
             }}
         >
             <Callout tone="info" title="Comment lire cette page">
                 Chaque section présente un module avec sa description, ses fonctionnalités principales,
                 les clauses ISO qu'il couvre et un lien direct vers le module dans la plateforme.
-                Pour les détails techniques, consultez la <Link to="/technical-docs" className="text-sky-700 hover:underline">documentation technique</Link>.
+                Pour la traçabilité normative, consultez la <Link to="/iso-mapping" className="text-sky-700 hover:underline">cartographie ISO</Link>.
             </Callout>
 
             {MODULES.map((mod) => (

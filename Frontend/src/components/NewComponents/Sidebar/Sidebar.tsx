@@ -352,17 +352,8 @@ const menuItems: MenuItem[] = [
             { id: 'process-docs', label: 'Processus de Travail', icon: IconFileTextSpark }
         ]
     },
-    {
-        id: 'help',
-        label: 'Centre d\'Aide',
-        icon: IconMessageCircle,
-        color: 'text-emerald-600',
-        subItems: [
-            { id: 'how-to', label: 'Guides Pratiques', icon: IconBook },
-            { id: 'features-overview', label: 'Aperçu des Fonctionnalités', icon: IconEye },
-            { id: 'technical-documentation', label: 'Documentation Technique', icon: IconFileText }
-        ]
-    },
+    // Centre d'Aide : retiré de la sidebar — désormais accessible via le menu
+    // déroulant de l'utilisateur connecté (ProfileMenu → « Centre d'aide »).
     // LOT — Module Dosimetrie & Expositions
     {
         id: 'dosimetry',

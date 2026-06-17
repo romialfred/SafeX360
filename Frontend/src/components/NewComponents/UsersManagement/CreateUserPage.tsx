@@ -157,6 +157,21 @@ const MODULE_CATEGORIES: ModuleCategory[] = [
     { key: 'administration', color: 'red', modules: ['usersManagement', 'settings'] },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────
+// MODULES GÉRÉS PAR MINE (activation via « Gestion des Modules »).
+// Ils ne sont PAS attribuables par utilisateur : leur visibilité dépend de
+// l'activation du module sur la mine, pas du profil de permissions individuel.
+// Affichés en lecture seule dans l'étape modules pour que l'admin ait une
+// vue complète. Tenir à jour si de nouveaux modules « par mine » sont ajoutés.
+// ─────────────────────────────────────────────────────────────────────────
+const MINE_MANAGED_MODULES: { key: string; fr: string }[] = [
+    { key: 'emergency', fr: 'Gestion des Urgences' },
+    { key: 'dosimetry', fr: 'Dosimétrie & Expositions' },
+    { key: 'blast', fr: 'Gestion des Dynamitages' },
+    { key: 'planning', fr: 'Planification Annuelle' },
+    { key: 'reports', fr: 'Rapports & Analytics' },
+];
+
 /** Codes d'erreur backend → étape/champ à corriger (le message vient de l'i18n). */
 const API_ERROR_TARGETS: Record<string, { step?: number; field?: string }> = {
     LOGIN_TOO_SHORT: { step: 1, field: 'login' },
@@ -890,6 +905,29 @@ export default function CreateUserPage() {
                         );
                     })}
                 </div>
+
+                {/* Modules gérés au niveau de la mine — lecture seule (activés via
+                    « Gestion des Modules », non attribuables par utilisateur). */}
+                <Paper mt="md" p="sm" radius="md" style={{ border: '1px dashed #CBD5E1', background: '#F8FAFC' }}>
+                    <Group gap={6} mb={6} wrap="nowrap">
+                        <IconBuildingFactory2 size={15} className="text-slate-500" />
+                        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
+                            {t('userMgmt.create.mineModulesTitle', { defaultValue: 'Modules gérés au niveau de la mine' })}
+                        </Text>
+                    </Group>
+                    <Text size="xs" c="dimmed" mb={8}>
+                        {t('userMgmt.create.mineModulesHint', {
+                            defaultValue: "Ces modules s'activent par mine via « Gestion des Modules » et ne se règlent pas par utilisateur. Ils sont affichés ici pour information.",
+                        })}
+                    </Text>
+                    <Group gap={6}>
+                        {MINE_MANAGED_MODULES.map((m) => (
+                            <Badge key={m.key} variant="light" color="gray" size="sm">
+                                {t(`userMgmt.create.mineModules.${m.key}`, { defaultValue: m.fr })}
+                            </Badge>
+                        ))}
+                    </Group>
+                </Paper>
             </div>
         </div>
     );
