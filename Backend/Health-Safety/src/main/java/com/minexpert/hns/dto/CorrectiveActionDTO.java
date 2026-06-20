@@ -34,6 +34,8 @@ public class CorrectiveActionDTO {
     private Long nonConformityId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // Lien federateur (souple) vers un controle du « Plan de maitrise » d'un risque.
+    private Long riskControlId;
 
     public CorrectiveAction toEntity() {
         return new CorrectiveAction(
@@ -52,6 +54,8 @@ public class CorrectiveActionDTO {
                 this.progress,
                 this.companyId,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                null,
+                this.riskControlId);
     }
 }

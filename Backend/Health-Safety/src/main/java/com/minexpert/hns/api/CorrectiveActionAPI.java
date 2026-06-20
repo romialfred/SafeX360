@@ -116,6 +116,12 @@ public class CorrectiveActionAPI {
                 HttpStatus.OK);
     }
 
+    @GetMapping("/by-risk-control/{riskControlId}")
+    public ResponseEntity<List<CorrectiveActionDTO>> getActionsByRiskControl(
+            @PathVariable Long riskControlId) throws HSException {
+        return new ResponseEntity<>(correctiveActionService.getByRiskControl(riskControlId), HttpStatus.OK);
+    }
+
     @GetMapping("/get/{id}")
     public ResponseEntity<CorrectiveActionResponse> getCorrectiveActionById(
             @RequestParam(name = "companyId", required = false) Long companyId,

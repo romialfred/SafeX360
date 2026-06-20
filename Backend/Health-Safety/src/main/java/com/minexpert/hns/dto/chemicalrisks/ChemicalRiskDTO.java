@@ -34,6 +34,16 @@ public class ChemicalRiskDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // ISO 45001 — Hazard identification (B1)
+    private String activityType;
+    private String hazardCategory;
+    private String personsExposed;
+    private Integer exposureCount;
+
+    // ISO 45001 §6.1.3 — Legal & other requirements + next review (C1)
+    private String legalRequirements;
+    private LocalDate nextReviewDate;
+
     public ChemicalRisk toEntity() {
         return new ChemicalRisk(
                 this.id,
@@ -52,7 +62,13 @@ public class ChemicalRiskDTO {
                 this.classification,
                 this.methodOfUse,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.activityType,
+                this.hazardCategory,
+                this.personsExposed,
+                this.exposureCount,
+                this.legalRequirements,
+                this.nextReviewDate);
     }
 }
 

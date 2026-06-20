@@ -28,6 +28,6 @@ public class LessonLearnedDTO {
     public LessonLearned toEntity() {
         return new LessonLearned(id, date, employeeId, category, status, description,
                 incidentId != null ? new Incident(incidentId) : null,
-                createdAt, updatedAt);
+                createdAt, updatedAt, null);
     }
 }

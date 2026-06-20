@@ -435,4 +435,10 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         return actions;
     }
 
+    @Override
+    public List<CorrectiveActionDTO> getByRiskControl(Long riskControlId) throws HSException {
+        List<CorrectiveAction> actions = correctiveActionRepository.findByRiskControlId(riskControlId);
+        return actions.stream().map(CorrectiveAction::toDTO).toList();
+    }
+
 }

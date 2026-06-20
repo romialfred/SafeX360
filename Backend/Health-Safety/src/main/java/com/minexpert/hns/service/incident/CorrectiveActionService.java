@@ -44,4 +44,6 @@ public interface CorrectiveActionService {
 
     void cancelAction(Long companyId, Long id) throws HSException;
 
+    List<CorrectiveActionDTO> getByRiskControl(Long riskControlId) throws HSException;
+
 }

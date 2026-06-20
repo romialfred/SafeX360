@@ -31,6 +31,16 @@ public class RiskDTO {
     private Integer probability;
     private Integer severity;
 
+    // ISO 45001 — Hazard identification (B1)
+    private String activityType;
+    private String hazardCategory;
+    private String personsExposed;
+    private Integer exposureCount;
+
+    // ISO 45001 §6.1.3 — Legal & other requirements + next review (C1)
+    private String legalRequirements;
+    private LocalDate nextReviewDate;
+
     public Risk toEntity() {
         return new Risk(
                 this.id,
@@ -45,7 +55,13 @@ public class RiskDTO {
                 this.reviewDate,
                 this.status,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.activityType,
+                this.hazardCategory,
+                this.personsExposed,
+                this.exposureCount,
+                this.legalRequirements,
+                this.nextReviewDate);
     }
 
 }

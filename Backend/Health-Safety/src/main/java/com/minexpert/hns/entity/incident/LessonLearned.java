@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.minexpert.hns.enums.LessonStatus;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -34,4 +35,9 @@ public class LessonLearned {
     private Incident incident;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Lien federateur (souple) vers un evenement erreur (module Gestion des
+    // Erreurs). Reference Long nullable, volontairement non mappee en ManyToOne.
+    @Column(name = "error_event_id")
+    private Long errorEventId;
 }

@@ -67,6 +67,10 @@ public class RiskAnalysisServiceImpl implements RiskAnalysisService {
                 existing.setImprovementsMeasures(dto.getImprovementsMeasures());
                 existing.setComments(dto.getComments());
                 existing.setReason(dto.getReason());
+                existing.setResidualProbability(dto.getResidualProbability());
+                existing.setResidualGravity(dto.getResidualGravity());
+                existing.setResidualSeverity(dto.getResidualSeverity());
+                existing.setResidualRiskLevel(dto.getResidualRiskLevel());
                 RiskAnalysis updated = analysisRepository.save(existing);
                 return updated.toDTO();
         }

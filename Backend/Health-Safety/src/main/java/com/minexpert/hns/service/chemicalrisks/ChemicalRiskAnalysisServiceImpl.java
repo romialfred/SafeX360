@@ -65,6 +65,10 @@ public class ChemicalRiskAnalysisServiceImpl implements ChemicalRiskAnalysisServ
         existing.setImprovementsMeasures(dto.getImprovementsMeasures());
         existing.setComments(dto.getComments());
         existing.setReason(dto.getReason());
+        existing.setResidualProbability(dto.getResidualProbability());
+        existing.setResidualGravity(dto.getResidualGravity());
+        existing.setResidualSeverity(dto.getResidualSeverity());
+        existing.setResidualRiskLevel(dto.getResidualRiskLevel());
         ChemicalRiskAnalysis updated = analysisRepository.save(existing);
         return updated.toDTO();
     }

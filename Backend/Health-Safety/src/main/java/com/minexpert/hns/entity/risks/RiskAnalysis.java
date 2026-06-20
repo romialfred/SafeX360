@@ -38,6 +38,19 @@ public class RiskAnalysis {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // ISO 45001 — Residual risk (B2)
+    @Column(name = "residual_probability")
+    private Short residualProbability;
+
+    @Column(name = "residual_gravity")
+    private Short residualGravity;
+
+    @Column(name = "residual_severity")
+    private Short residualSeverity;
+
+    @Column(name = "residual_risk_level")
+    private String residualRiskLevel;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -64,6 +77,10 @@ public class RiskAnalysis {
                 this.reason,
                 this.risk != null ? this.risk.getId() : null,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.residualProbability,
+                this.residualGravity,
+                this.residualSeverity,
+                this.residualRiskLevel);
     }
 }

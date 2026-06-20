@@ -57,6 +57,12 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
         existing.setCasNumber(dto.getCasNumber());
         existing.setClassification(dto.getClassification());
         existing.setMethodOfUse(dto.getMethodOfUse());
+        existing.setActivityType(dto.getActivityType());
+        existing.setHazardCategory(dto.getHazardCategory());
+        existing.setPersonsExposed(dto.getPersonsExposed());
+        existing.setExposureCount(dto.getExposureCount());
+        existing.setLegalRequirements(dto.getLegalRequirements());
+        existing.setNextReviewDate(dto.getNextReviewDate());
         ChemicalRisk updated = chemicalRiskRepository.save(existing);
         return updated.toDTO();
     }

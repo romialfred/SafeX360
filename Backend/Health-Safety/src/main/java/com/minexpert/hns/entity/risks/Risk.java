@@ -45,6 +45,26 @@ public class Risk {
 
     private LocalDateTime updatedAt;
 
+    // ISO 45001 — Hazard identification (B1)
+    @Column(name = "activity_type")
+    private String activityType;
+
+    @Column(name = "hazard_category")
+    private String hazardCategory;
+
+    @Column(name = "persons_exposed")
+    private String personsExposed;
+
+    @Column(name = "exposure_count")
+    private Integer exposureCount;
+
+    // ISO 45001 §6.1.3 — Legal & other requirements + next review (C1)
+    @Column(name = "legal_requirements", length = 2000)
+    private String legalRequirements;
+
+    @Column(name = "next_review_date")
+    private LocalDate nextReviewDate;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -72,7 +92,13 @@ public class Risk {
                 this.createdAt,
                 this.updatedAt,
                 null,
-                null);
+                null,
+                this.activityType,
+                this.hazardCategory,
+                this.personsExposed,
+                this.exposureCount,
+                this.legalRequirements,
+                this.nextReviewDate);
 
         if (this.riskLevel != null && this.riskLevel.matches("^[1-5][1-5]$")) {
             dto.setProbability(Character.getNumericValue(this.riskLevel.charAt(0)));

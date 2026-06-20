@@ -29,6 +29,12 @@ public class RiskAnalysisDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // ISO 45001 — Residual risk (B2)
+    private Short residualProbability;
+    private Short residualGravity;
+    private Short residualSeverity;
+    private String residualRiskLevel;
+
     public RiskAnalysis toEntity(Risk risk) {
         return new RiskAnalysis(
                 this.id,
@@ -44,7 +50,11 @@ public class RiskAnalysisDTO {
                 this.reason,
                 risk,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.residualProbability,
+                this.residualGravity,
+                this.residualSeverity,
+                this.residualRiskLevel);
     }
 
     public static RiskAnalysisDTO fromEntity(RiskAnalysis analysis) {
@@ -62,6 +72,10 @@ public class RiskAnalysisDTO {
                 analysis.getReason(),
                 analysis.getRisk() != null ? analysis.getRisk().getId() : null,
                 analysis.getCreatedAt(),
-                analysis.getUpdatedAt());
+                analysis.getUpdatedAt(),
+                analysis.getResidualProbability(),
+                analysis.getResidualGravity(),
+                analysis.getResidualSeverity(),
+                analysis.getResidualRiskLevel());
     }
 }

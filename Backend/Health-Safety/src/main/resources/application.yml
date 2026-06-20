@@ -264,3 +264,13 @@ CLOSURE_REQUIRES_COMPLETED_CHECKLIST: Cloture impossible, des questions de check
 CLOSURE_REQUIRES_CLASSIFIED_FINDINGS: Cloture impossible, tous les constats doivent etre classes (NC majeure/mineure, observation ou opportunite — ISO 19011 6.4.8).
 CLOSURE_REQUIRES_ESCALATED_NC: Cloture impossible, toute non-conformite doit etre escaladee vers les Constats centraux pour suivi des actions (ISO 19011 6.7).
 CLOSURE_REQUIRES_OPENING_AND_CLOSING_MEETINGS: Cloture impossible, les reunions d ouverture ET de cloture doivent etre enregistrees (ISO 19011 6.4.2 / 6.4.9).
+
+# Module Gestion des Erreurs (Error Management) — messages d erreur
+COMPANY_ID_REQUIRED: La mine de rattachement est obligatoire.
+ERROR_EVENT_DETAILS_REQUIRED: Les informations de l evenement sont obligatoires.
+ERROR_EVENT_NOT_FOUND: L evenement erreur indique n existe pas.
+ERROR_EVENT_STATUS_REQUIRED: Le statut cible est obligatoire.
+ERROR_EVENT_STATUS_UNCHANGED: Le statut cible est identique au statut actuel.
+ERROR_EVENT_STATUS_REGRESSION_FORBIDDEN: Transition interdite, le workflow ne peut pas revenir en arriere (sauf reouverture justifiee).
+CAUSAL_ANALYSIS_NOT_FOUND: L analyse causale indiquee n existe pas.
+CAUSE_NOT_FOUND: La cause indiquee n existe pas.

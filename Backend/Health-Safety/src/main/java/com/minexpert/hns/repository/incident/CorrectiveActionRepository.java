@@ -279,6 +279,42 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
     List<CorrectiveActionResponse> findAllActionsByStatus(@Param("companyId") Long companyId,
             @Param("status") ActionStatus status);
 
+    // ─── Module Gestion des Erreurs : CAPA rattachees a un evenement erreur ───
+
+    /** CAPA liees a un evenement erreur (lien federateur), filtrees par societe. */
+    @Query("""
+            SELECT c FROM CorrectiveAction c
+            WHERE c.errorEventId IS NOT NULL
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveAction> findByErrorEventLink(@Param("companyId") Long companyId);
+
+    /** CAPA d'un evenement erreur donne. */
+    @Query("""
+            SELECT c FROM CorrectiveAction c
+            WHERE c.errorEventId = :errorEventId
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    List<CorrectiveAction> findByErrorEventId(@Param("companyId") Long companyId,
+            @Param("errorEventId") Long errorEventId);
+
+    /** Nombre de CAPA en retard (echeance depassee, statut non terminal) liees a une erreur. */
+    @Query("""
+            SELECT COUNT(c) FROM CorrectiveAction c
+            WHERE c.errorEventId IS NOT NULL
+              AND c.deadline < :today
+              AND c.status NOT IN :closedStatuses
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    long countOverdueErrorCapa(@Param("companyId") Long companyId,
+            @Param("today") LocalDate today,
+            @Param("closedStatuses") List<ActionStatus> closedStatuses);
+
+    // ─── Module Gestion des Risques : CAPA rattachees a un controle du Plan de maitrise ───
+
+    /** CAPA liees a un controle du Plan de maitrise d'un risque (lien federateur). */
+    List<CorrectiveAction> findByRiskControlId(Long riskControlId);
+
     long countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(Long companyId, Long departmentId,
             List<ActionStatus> statuses,
             LocalDate fromDate, LocalDate toDate);

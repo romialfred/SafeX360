@@ -61,6 +61,12 @@ public class RiskServiceImpl implements RiskService {
                 existing.setOwnerId(dto.getOwnerId());
                 existing.setReviewDate(dto.getReviewDate());
                 existing.setStatus(dto.getStatus());
+                existing.setActivityType(dto.getActivityType());
+                existing.setHazardCategory(dto.getHazardCategory());
+                existing.setPersonsExposed(dto.getPersonsExposed());
+                existing.setExposureCount(dto.getExposureCount());
+                existing.setLegalRequirements(dto.getLegalRequirements());
+                existing.setNextReviewDate(dto.getNextReviewDate());
                 Risk updated = riskRepository.save(existing);
                 return updated.toDTO();
         }

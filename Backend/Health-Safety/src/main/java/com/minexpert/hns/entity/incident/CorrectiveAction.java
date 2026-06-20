@@ -58,6 +58,19 @@ public class CorrectiveAction {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Lien federateur (souple) vers un evenement erreur (module Gestion des
+    // Erreurs). Reference Long nullable volontairement non mappee en ManyToOne
+    // pour ne pas modifier le comportement de chargement de cette entite.
+    @Column(name = "error_event_id")
+    private Long errorEventId;
+
+    // Lien federateur (souple) vers un controle du « Plan de maitrise » d'un
+    // risque (module Gestion des Risques). Reference Long nullable volontairement
+    // non mappee en ManyToOne pour ne pas modifier le comportement de chargement
+    // de cette entite (meme precedent que errorEventId).
+    @Column(name = "risk_control_id")
+    private Long riskControlId;
+
     public CorrectiveAction(Long id) {
         this.id = id;
     }
@@ -79,7 +92,8 @@ public class CorrectiveAction {
                 null,
                 null,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.riskControlId);
     }
 
     // Add logic to ensure only one FK is set
