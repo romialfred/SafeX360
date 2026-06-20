@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Select, Textarea, TextInput } from '@mantine/core';
+import { Button, MultiSelect, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import {
@@ -7,6 +7,8 @@ import {
     IconBuildingFactory2,
     IconDeviceFloppy,
     IconFileText,
+    IconGavel,
+    IconShieldSearch,
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -20,7 +22,13 @@ import { GetAllWorkProcess } from '../../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
 import { getRiskById, updateRisk } from '../../../services/RiskRegisterService';
 import { SectionCard } from './RegisterForm';
-import { RISK_STATUS_OPTIONS, normalizeRiskStatus } from '../riskLabels';
+import {
+    ACTIVITY_TYPE_OPTIONS,
+    HAZARD_CATEGORY_OPTIONS,
+    PERSONS_EXPOSED_OPTIONS,
+    RISK_STATUS_OPTIONS,
+    normalizeRiskStatus,
+} from '../riskLabels';
 
 /**
  * Modification d'un risque du registre (LOT 50) — même structure sectionnée
@@ -37,6 +45,14 @@ interface EditRiskFormValues {
     ownerId: string;
     status: string;
     reviewDate: Date | null;
+    // ISO 45001 §6.1.2 — identification du danger
+    activityType: string;
+    hazardCategory: string;
+    personsExposed: string[];
+    exposureCount: number | string;
+    // ISO 45001 §6.1.3 : exigences legales et revue planifiee
+    legalRequirements: string;
+    nextReviewDate: Date | null;
 }
 
 const EditRegisterForm = () => {
@@ -74,6 +90,12 @@ const EditRegisterForm = () => {
             ownerId: '',
             status: 'OPEN',
             reviewDate: null,
+            activityType: '',
+            hazardCategory: '',
+            personsExposed: [],
+            exposureCount: '',
+            legalRequirements: '',
+            nextReviewDate: null,
         },
         validate: {
             description: (value) => (value.trim() ? null : t('registerForm.validate.description')),
@@ -101,6 +123,12 @@ const EditRegisterForm = () => {
                     ownerId: res.ownerId ? String(res.ownerId) : '',
                     status: normalizeRiskStatus(res.status) || 'OPEN',
                     reviewDate: res.reviewDate ? new Date(res.reviewDate) : null,
+                    activityType: res.activityType || '',
+                    hazardCategory: res.hazardCategory || '',
+                    personsExposed: res.personsExposed ? res.personsExposed.split(',') : [],
+                    exposureCount: res.exposureCount ?? '',
+                    legalRequirements: res.legalRequirements || '',
+                    nextReviewDate: res.nextReviewDate ? new Date(res.nextReviewDate) : null,
                 });
             })
             .catch((error) => {
@@ -129,6 +157,12 @@ const EditRegisterForm = () => {
             ownerId: values.ownerId ? Number(values.ownerId) : null,
             status: values.status,
             reviewDate: toLocalDate(values.reviewDate),
+            activityType: values.activityType || null,
+            hazardCategory: values.hazardCategory || null,
+            personsExposed: values.personsExposed.length ? values.personsExposed.join(',') : null,
+            exposureCount: values.exposureCount === '' || values.exposureCount === null ? null : Number(values.exposureCount),
+            legalRequirements: values.legalRequirements.trim() || null,
+            nextReviewDate: toLocalDate(values.nextReviewDate),
         };
         updateRisk(payload)
             .then(() => {
@@ -145,7 +179,7 @@ const EditRegisterForm = () => {
     };
 
     return (
-        <div className="p-5 space-y-4 w-full">
+        <div className="min-h-full bg-[#FAF8F3] p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: t('common.home'), to: '/' },
@@ -191,6 +225,63 @@ const EditRegisterForm = () => {
                             size="sm"
                             {...form.getInputProps('potentialConsequences')}
                         />
+
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                            <div className="flex items-center gap-2.5 mb-3">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-700 flex-shrink-0">
+                                    <IconShieldSearch size={15} stroke={1.8} />
+                                </span>
+                                <div className="min-w-0">
+                                    <h3
+                                        className="text-slate-800 leading-tight"
+                                        style={{
+                                            fontFamily: "'Source Serif 4', Georgia, serif",
+                                            fontSize: '14px',
+                                            fontWeight: 600,
+                                            letterSpacing: '-0.01em',
+                                        }}
+                                    >
+                                        Identification du danger (ISO 45001 §6.1.2)
+                                    </h3>
+                                    <p className="text-[11.5px] text-slate-500 mt-0.5">
+                                        Nature de l'activité, catégorie de danger et population exposée
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Select
+                                    label="Type d'activité"
+                                    placeholder="Sélectionner"
+                                    data={ACTIVITY_TYPE_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('activityType')}
+                                />
+                                <Select
+                                    label="Catégorie de danger"
+                                    placeholder="Sélectionner"
+                                    data={HAZARD_CATEGORY_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('hazardCategory')}
+                                />
+                                <MultiSelect
+                                    label="Personnes exposées"
+                                    placeholder="Sélectionner"
+                                    data={PERSONS_EXPOSED_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('personsExposed')}
+                                />
+                                <NumberInput
+                                    label="Nombre de personnes exposées"
+                                    placeholder="0"
+                                    min={0}
+                                    size="sm"
+                                    {...form.getInputProps('exposureCount')}
+                                />
+                            </div>
+                        </div>
                     </SectionCard>
 
                     <div className="flex flex-col gap-4">
@@ -247,6 +338,29 @@ const EditRegisterForm = () => {
                             />
                         </SectionCard>
 
+                        <SectionCard
+                            icon={<IconGavel size={15} stroke={1.8} />}
+                            title="Conformité et revue (ISO 45001 §6.1.3)"
+                            subtitle="Exigences légales applicables et planification de la prochaine revue"
+                        >
+                            <Textarea
+                                label="Exigences légales et autres applicables (ISO 45001 §6.1.3)"
+                                placeholder="Réglementations, normes et autres exigences applicables à ce risque"
+                                minRows={2}
+                                autosize
+                                size="sm"
+                                {...form.getInputProps('legalRequirements')}
+                            />
+                            <DateInput
+                                label="Prochaine revue"
+                                placeholder="JJ/MM/AAAA"
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                clearable
+                                {...form.getInputProps('nextReviewDate')}
+                            />
+                        </SectionCard>
+
                         <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                             <p className="text-[11.5px] text-slate-600 leading-relaxed">
                                 {t('editRegisterForm.hint')}
@@ -265,10 +379,10 @@ const EditRegisterForm = () => {
                             </Button>
                             <Button
                                 type="submit"
-                                color="teal"
                                 size="sm"
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
+                                styles={{ root: { backgroundColor: '#DC2626' } }}
                             >
                                 {t('editRegisterForm.saveChanges')}
                             </Button>

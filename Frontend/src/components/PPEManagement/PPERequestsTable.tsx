@@ -212,6 +212,8 @@ const PPERequestsTable = () => {
         setLoading(true);
         const payload = {
             ...values,
+            empIds: values.empIds.map(Number),
+            ppeIds: values.ppeIds.map(Number),
             desiredDate: toLocalDate(values.desiredDate),
         };
         createPpeRequest(payload)

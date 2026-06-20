@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     IconArrowUpRight,
     IconBook,
     IconCalendarEvent,
     IconEdit,
+    IconRefresh,
     IconRotateClockwise,
     IconSearch,
     IconUser,
@@ -56,6 +58,9 @@ const STATUS_CHIP: Record<string, string> = {
 const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps: any }) => {
     const navigate = useNavigate();
     const { t } = useTranslation('incidents');
+    // Accès clavier / tactile au verso (qui porte les actions) : le survol reste,
+    // mais un bouton dédié permet aussi de retourner la carte au clic / focus.
+    const [isFlipped, setIsFlipped] = useState(false);
     // Statut bilingue : clé i18n `incidents:status.*`, repli sur le libellé FR centralisé.
     const tStatus = (code?: string | null): string =>
         code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: incidentStatusLabel(code) }) : '—';
@@ -69,13 +74,24 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
 
     return (
         <div className="group h-full min-h-[212px] [perspective:1300px]">
-            <div className="relative h-full min-h-[212px] transition-transform duration-[600ms] [transform-style:preserve-3d] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:[transform:rotateY(180deg)]">
+            <div className={`relative h-full min-h-[212px] transition-transform duration-[600ms] motion-reduce:transition-none [transform-style:preserve-3d] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:[transform:rotateY(180deg)] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
 
                 {/* ── Recto ──────────────────────────────────────────────── */}
                 <div className="absolute inset-0 flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden]">
                     <span className="pointer-events-none absolute inset-x-0 top-0 h-[3px] rounded-t-xl" style={{ background: sev.accent }} />
 
-                    <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+                    {/* Bouton de retournement — accès clavier / tactile au verso (actions). */}
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setIsFlipped((f) => !f); }}
+                        aria-label={t('card.flipCard', { defaultValue: 'Retourner la carte' })}
+                        aria-pressed={isFlipped}
+                        className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                        <IconRefresh size={15} stroke={1.9} />
+                    </button>
+
+                    <div className="mb-2.5 flex flex-wrap items-center gap-1.5 pr-8">
                         <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${sev.chip}`}>
                             {incidentData.severityLevelName || '—'}
                         </span>

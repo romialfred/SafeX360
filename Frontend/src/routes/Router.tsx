@@ -28,9 +28,7 @@ import PgiPage from '../pages/dashboard/LeadingIndicator/PGI/PgiPage';
 import AddPgiPage from '../pages/dashboard/LeadingIndicator/PGI/AddPgiPage';
 import CalenderPage from '../pages/dashboard/LeadingIndicator/PGI/CalenderPage';
 import AuditPage from '../pages/dashboard/LaggingIndicator/AuditManagement/AuditPage';
-import AddAuditPage from '../pages/dashboard/LaggingIndicator/AuditManagement/AddAuditPage';
 import EditUserPermission from '../components/NewComponents/UsersManagement/EditUserPermission';
-import EditAuditPage from '../pages/dashboard/LaggingIndicator/AuditManagement/EditAuditPage';
 import ProtectedRoute from './ProtectedRoutes';
 import IncidentCategoryPage from '../pages/dashboard/SettingFolder/IncidentCategory/IncidentCategoryPage';
 import IncidentTypePage from '../pages/dashboard/SettingFolder/IncidentType/IncidentTypePage';
@@ -111,6 +109,7 @@ import EditTourPage from '../pages/dashboard/LeadingIndicator/ManagementTour/Edi
 import PpeManagementPage from '../pages/dashboard/RiskManagement/PpeManagementPage';
 import RiskOverviewPage from '../pages/dashboard/RiskManagement/RiskOverviewPage';
 import RiskRegisterPage from '../pages/dashboard/RiskManagement/RiskRegisterPage';
+import OpportunitiesPage from '../components/RiskManagement/Opportunities/OpportunitiesPage';
 import PPECreateFormPage from '../pages/dashboard/RiskManagement/PPECreateFormPage';
 import PPEStockEntryFormPage from '../pages/dashboard/RiskManagement/PPEStockEntryFormPage';
 import PPERequestTablePage from '../pages/dashboard/RiskManagement/PPERequestTablePage';
@@ -223,6 +222,12 @@ const InspectionScheduleForm = lazy(() => import('../components/Inspection/Inspe
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
 const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
 
+// LOT — Module Gestion des Erreurs (Phase 3 Frontend). Code-splitting actif.
+const ErrorEventListPage = lazy(() => import('../components/ErrorManagement/ErrorEventListPage'));
+const ErrorEventDetailPage = lazy(() => import('../components/ErrorManagement/ErrorEventDetailPage'));
+const ErrorDashboardPage = lazy(() => import('../components/ErrorManagement/ErrorDashboardPage'));
+const ErrorDeclarationPage = lazy(() => import('../components/ErrorManagement/ErrorDeclarationPage'));
+
 // LOT — SafeX 360 Field (mobile Android Phase M0+M1+M2+M3)
 const MobileShell = lazy(() => import('../m/MobileShell'));
 const MobileHome = lazy(() => import('../m/pages/MobileHome'));
@@ -258,6 +263,16 @@ const BlastSuspense = ({ children }: { children: React.ReactNode }) => (
  */
 const DosimetrySuspense = ({ children }: { children: React.ReactNode }) => (
     <Suspense fallback={<PageLoader label="Chargement de la page…" sublabel="Module Dosimétrie" />}>
+        {children}
+    </Suspense>
+);
+
+/**
+ * Fallback Suspense pour les pages du module Gestion des Erreurs (lazy-loaded).
+ * Aligne sur les autres modules (meme bg cream + loader Mantine centre).
+ */
+const ErrorManagementSuspense = ({ children }: { children: React.ReactNode }) => (
+    <Suspense fallback={<PageLoader label="Chargement de la page…" sublabel="Gestion des erreurs" />}>
         {children}
     </Suspense>
 );
@@ -410,14 +425,15 @@ const router = createBrowserRouter([
             { path: 'risks-register/register-form', element: <ModuleGuard moduleId='risk-register'><RegisterFormPage /></ModuleGuard>, },
             { path: 'risks-register/edit/:id', element: <ModuleGuard moduleId='risk-register'><EditRegisterFormPage /></ModuleGuard>, },
             { path: "risks-register/register-details/:id", element: <ModuleGuard moduleId='risk-register'><DetailViewPage /></ModuleGuard> },
+            { path: "risk-management/opportunities", element: <ModuleGuard moduleId='risk-register'><OpportunitiesPage /></ModuleGuard> },
 
             { path: 'lesson-learn', element: <LessonLearnPage />, },
             { path: 'lesson-learn/lesson-details/:id', element: <LessonDetailsPage /> },
 
             { path: 'audit-management', element: <AuditPage />, },
-            { path: 'audit-management/schedule', element: <AddAuditPage />, },
+            { path: 'audit-management/schedule', element: <NewAuditPlanPage />, },
             { path: 'audit-management/new-audit', element: <NewAuditPlanPage />, },
-            { path: 'audit-management/edit-audit', element: <EditAuditPage />, },
+            { path: 'audit-management/edit-audit', element: <Navigate to="/audit-management" replace />, },
             { path: 'audit-management/execute/:id', element: <ExecuteAuditPage />, },
             { path: 'audit-management/details/:id', element: <AuditDetailsTabsPage />, },
             { path: 'audit-management/edit-schedule/:id', element: <EditScheduleAuditPage />, },
@@ -622,6 +638,16 @@ const router = createBrowserRouter([
             { path: 'inspections/schedule', element: <BlastSuspense><InspectionScheduleForm /></BlastSuspense> },
             { path: 'inspections/execute/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
             { path: 'inspections/detail/:id', element: <BlastSuspense><InspectionDetailPage /></BlastSuspense> },
+
+            // LOT — Module Gestion des Erreurs (Phase 3 Frontend).
+            // Registre + Déclaration + Fiche détaillée. RBAC enforcement côté
+            // backend (GET ouverts authentifiés ; POST/PUT/DELETE réservés admin).
+            { path: 'error-management', element: <ModuleGuard moduleId='error-events'><ErrorManagementSuspense><ErrorEventListPage /></ErrorManagementSuspense></ModuleGuard> },
+            { path: 'error-management/dashboard', element: <ModuleGuard moduleId='error-dashboard'><ErrorManagementSuspense><ErrorDashboardPage /></ErrorManagementSuspense></ModuleGuard> },
+            // La déclaration est désormais une action (volet de droite depuis le
+            // registre), plus une page. On redirige l'ancienne URL vers le registre.
+            { path: 'error-management/declare', element: <ModuleGuard moduleId='error-declare'><ErrorManagementSuspense><ErrorDeclarationPage /></ErrorManagementSuspense></ModuleGuard> },
+            { path: 'error-management/:id', element: <ModuleGuard moduleId='error-events'><ErrorManagementSuspense><ErrorEventDetailPage /></ErrorManagementSuspense></ModuleGuard> },
 
             // Placeholder partagé pour les sous-modules pas encore implémentés
             { path: 'coming-soon', element: <ComingSoonPage /> },

@@ -289,8 +289,12 @@ const OverexposureCaseForm = () => {
             console.info(t('overexposureCases.form.notifyLogMedical', { id: newId }));
             successNotification(t('overexposureCases.form.success'));
             navigate(`/dosimetry/overexposure/${newId}`);
-        } catch {
-            errorNotification(t('overexposureCases.form.error'));
+        } catch (err: any) {
+            errorNotification(
+                err?.response?.data?.message ??
+                    err?.response?.data?.errorMessage ??
+                    t('overexposureCases.form.error'),
+            );
         } finally {
             setSubmitting(false);
         }

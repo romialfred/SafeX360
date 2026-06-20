@@ -179,7 +179,7 @@ const UpdateTeam = () => {
         console.log("Form Values", form.values);
         dispatch(showOverlay());
         updateIncidentTeam(form.values).then((_res) => {
-            successNotification("Team created successfully");
+            successNotification("Team updated successfully");
             navigate("/team-setup");
         }).catch((err) => {
             errorNotification(err.response?.data?.errorMessage || "Something went wrong");

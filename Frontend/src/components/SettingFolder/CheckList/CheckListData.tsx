@@ -184,7 +184,7 @@ const CheckListData = () => {
                 })
                 .finally(() => setLoading(false));
         } else {
-            createCheckList(values)
+            createCheckList({ ...values, incidentCategoryId: parseInt(values.incidentCategoryId) })
                 .then((res) => {
                     successNotification("Check List added successfully");
                     const category = checklist.find(cat => cat.value === values.incidentCategoryId);
@@ -303,7 +303,7 @@ const CheckListData = () => {
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput label="Check List Title" withAsterisk placeholder='Enter title' {...form.getInputProps('name')} />
                     <Textarea label="Description" placeholder="Enter Description" {...form.getInputProps('description')} />
-                    <Select label="Category" placeholder="Select category" data={checklist} {...form.getInputProps('incidentCategoryId')} />
+                    <Select label="Category" withAsterisk placeholder="Select category" data={checklist} {...form.getInputProps('incidentCategoryId')} />
                     <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
                 </form>
             </Modal>

@@ -85,6 +85,30 @@ export const moduleConfigurations: any[] = [
         description: 'Capture and manage improvement ideas and initiatives'
     },
 
+    // Error Management (Module Gestion des Erreurs) — per-mine activation,
+    // aligned 1:1 with the sidebar sub-items (error-dashboard/events/declare).
+    {
+        id: 'error-dashboard',
+        name: 'Error Dashboard',
+        isEnabled: true,
+        category: 'Error Management',
+        description: 'Executive dashboard: safety pyramid, criticality, maturity index, recurrent causes'
+    },
+    {
+        id: 'error-events',
+        name: 'Error Register',
+        isEnabled: true,
+        category: 'Error Management',
+        description: 'Register of declared errors and undesirable events (declare, qualify, analyse, treat, capitalise)'
+    },
+    {
+        id: 'error-declare',
+        name: 'Declare an Error',
+        isEnabled: true,
+        category: 'Error Management',
+        description: 'Structured declaration form with optional anonymous mode (Just Culture)'
+    },
+
     // Risk Management
     {
         id: 'risk-overview',

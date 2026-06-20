@@ -33,4 +33,19 @@ const updateChemicalRiskStatus = async (id: number, status: "ACTIVE" | "INACTIVE
         .catch((error) => { throw error; });
 };
 
+/**
+ * DTO partiel d'un risque chimique : seuls les champs ISO 45001 §6.1.2
+ * (identification du danger) ajoutés en phase B sont typés ici, le reste
+ * du payload restant traité de façon souple par les formulaires existants.
+ */
+export interface ChemicalRiskIdentificationFields {
+    activityType?: string | null;
+    hazardCategory?: string | null;
+    personsExposed?: string | null; // CSV
+    exposureCount?: number | null;
+    // ISO 45001 §6.1.3 : exigences legales et revue planifiee
+    legalRequirements?: string | null;
+    nextReviewDate?: string | null; // yyyy-MM-dd
+}
+
 export { createChemicalRisk, updateChemicalRisk, getChemicalRiskByID, getAllChemicalRisks, updateChemicalRiskStatus };

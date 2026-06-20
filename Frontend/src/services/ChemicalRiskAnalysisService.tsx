@@ -25,4 +25,16 @@ const getChemicalAnalysisById = async (id: any) => {
         .catch((error) => { throw error; });
 }
 
+/**
+ * Champs de risque résiduel (ISO 45001 — après application des mesures de
+ * maîtrise) ajoutés au DTO d'analyse chimique en phase B. Calcul identique à
+ * la cotation initiale (probabilité × gravité → sévérité → niveau).
+ */
+export interface ChemicalRiskAnalysisResidualFields {
+    residualProbability?: number | null;
+    residualGravity?: number | null;
+    residualSeverity?: number | null;
+    residualRiskLevel?: string | null;
+}
+
 export { addChemicalRiskAnalysis, getAllChemicalRiskAnalysis, getChemicalAnalysisById, getChemicalAnalysisByRisk };

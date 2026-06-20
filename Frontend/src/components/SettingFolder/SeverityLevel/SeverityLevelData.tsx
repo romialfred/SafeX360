@@ -125,7 +125,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                 if (trimmed.length === 0) return "Name is required";
 
                 const wordCount = trimmed.length;
-                return wordCount > 5 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
             },
             level: (value) => value.trim()?.length > 0 ? null : "Level is required",
             incidentCategoryId: (value) => value ? null : "Category is required",

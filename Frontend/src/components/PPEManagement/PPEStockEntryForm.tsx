@@ -60,6 +60,7 @@ const PPEStockEntryForm = () => {
         dispatch(showOverlay());
         const payload = {
             ...values,
+            ppeId: Number(values.ppeId),
             expiryDate: toLocalDate(values.expiryDate),
         };
         createPPEStock(payload)

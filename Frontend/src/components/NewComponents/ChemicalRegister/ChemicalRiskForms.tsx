@@ -10,7 +10,7 @@ import RiskIdentification from './RiskIdentification';
 const ChemicalRiskForms = () => {
     const { t } = useTranslation('risk');
     return (
-        <div className="p-5 space-y-4 w-full">
+        <div className="min-h-full bg-[#FAF8F3] p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: t('common.home'), to: '/' },

@@ -73,6 +73,7 @@ const EditPgi = () => {
             activityId: (value) => (value ? null : "L'activité de référence est obligatoire"),
             siteId: (value) => (value?.trim().length > 0 ? null : "Le lieu d'inspection est obligatoire"),
             plannedDate: (value) => (value ? null : 'La date planifiée est obligatoire'),
+            riskTypes: (value) => (Array.isArray(value) && value.length > 0 ? null : 'Sélectionnez au moins un type de risque'),
             objectives: (value) => {
                 const trimmed = value.trim();
                 if (trimmed.length === 0) return "L'objectif est obligatoire";

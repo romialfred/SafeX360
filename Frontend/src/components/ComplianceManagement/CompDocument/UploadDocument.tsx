@@ -90,7 +90,7 @@ const UploadDocument = () => {
         try {
             const base64: any = await getBase64(values.file[0].file);
             const payload = {
-                requirementId: values.requirementId,
+                requirementId: Number(values.requirementId),
                 // Sérialisation en date locale : évite le recul d'un jour via l'ISO UTC.
                 expiryDate: values.expiryDate ? toIsoDateLocal(values.expiryDate) : null,
                 employeeId: Number(values.employeeId),

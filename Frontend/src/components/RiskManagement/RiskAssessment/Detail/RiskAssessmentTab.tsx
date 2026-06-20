@@ -11,8 +11,10 @@ import { errorNotification, successNotification } from '../../../../utility/Noti
 import { riskKeyToSeverity } from '../../../../Data/DropdownData';
 import {
     GRAVITY_OPTIONS_FR,
+    LEVEL_SCORE_LABELS_FR,
     LEVEL_SCORE_OPTIONS_FR,
     PROBABILITY_OPTIONS_FR,
+    scoreChip,
 } from '../../riskLabels';
 
 /**
@@ -37,6 +39,10 @@ type RiskAssessmentFormValues = {
     improvementsMeasures: string;
     comments: string;
     riskId: string;
+    // ISO 45001 — risque résiduel (après mesures de maîtrise)
+    residualGravity: string;
+    residualProbability: string;
+    residualSeverity: string;
 };
 
 const SectionCard = ({
@@ -50,12 +56,12 @@ const SectionCard = ({
     subtitle: string;
     children: React.ReactNode;
 }) => (
-    <section className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-slate-100">
-            <span className="inline-flex p-1.5 rounded-md bg-red-50 text-red-700">{icon}</span>
-            <div>
+    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3 border-b border-slate-100">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-700 flex-shrink-0">{icon}</span>
+            <div className="min-w-0">
                 <h3
-                    className="text-slate-800"
+                    className="text-slate-800 leading-tight"
                     style={{
                         fontFamily: "'Source Serif 4', Georgia, serif",
                         fontSize: '14px',
@@ -65,11 +71,33 @@ const SectionCard = ({
                 >
                     {title}
                 </h3>
-                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+                <p className="text-[11.5px] text-slate-500 mt-0.5">{subtitle}</p>
             </div>
         </div>
-        <div className="flex flex-col gap-3">{children}</div>
+        <div className="flex flex-col gap-3 p-5">{children}</div>
     </section>
+);
+
+/**
+ * Légende compacte de la hiérarchie des mesures de maîtrise (ISO 45001 §8.1.2).
+ * Présentation uniquement : aucun champ n'y est lié.
+ */
+const ControlHierarchyLegend = ({ t }: { t: (key: string) => string }) => (
+    <div className="rounded-lg border border-red-100 bg-red-50/40 px-3.5 py-3">
+        <p className="text-[11px] uppercase tracking-[0.14em] text-red-700/90 font-medium mb-2">
+            {t('assessmentTab.isoControl.subtitle')}
+        </p>
+        <ol className="flex flex-wrap gap-1.5">
+            {(['tier1', 'tier2', 'tier3', 'tier4', 'tier5'] as const).map((tier) => (
+                <li
+                    key={tier}
+                    className="inline-flex items-center rounded-md bg-white border border-red-100 px-2 py-1 text-[11.5px] text-slate-700 leading-tight"
+                >
+                    {t(`assessmentTab.isoControl.${tier}`)}
+                </li>
+            ))}
+        </ol>
+    </div>
 );
 
 const GUIDE_ACCENTS: Record<string, string> = {
@@ -115,6 +143,9 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
             improvementsMeasures: '',
             comments: '',
             riskId: id ?? '',
+            residualGravity: '',
+            residualProbability: '',
+            residualSeverity: '',
         },
         validate: {
             reason: (value) =>
@@ -137,10 +168,32 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.values.gravity, form.values.probability]);
 
+    // Risque résiduel : même composition que la cotation initiale.
+    useEffect(() => {
+        const { residualGravity, residualProbability } = form.values;
+        if (residualGravity && residualProbability) {
+            const key = `${residualProbability}${residualGravity}`;
+            form.setFieldValue('residualSeverity', riskKeyToSeverity[key] ?? '');
+        } else {
+            form.setFieldValue('residualSeverity', '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form.values.residualGravity, form.values.residualProbability]);
+
     const handleSubmit = (values: RiskAssessmentFormValues) => {
         setSubmitting(true);
         dispatch(showOverlay());
-        addRiskAnalysis({ ...values, riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')) })
+        const residualRiskLevel = values.residualProbability && values.residualSeverity
+            ? '' + values.residualProbability + values.residualSeverity
+            : '';
+        addRiskAnalysis({
+            ...values,
+            riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')),
+            residualGravity: values.residualGravity ? Number(values.residualGravity) : null,
+            residualProbability: values.residualProbability ? Number(values.residualProbability) : null,
+            residualSeverity: values.residualSeverity ? Number(values.residualSeverity) : null,
+            residualRiskLevel: residualRiskLevel || null,
+        })
             .then(() => {
                 successNotification(t('assessmentTab.savedToast'));
                 fetchAssessments();
@@ -200,15 +253,57 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                             {...form.getInputProps('severity')}
                         />
                     </div>
+
+                    <div className="mt-1 border-t border-slate-100 pt-3">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-red-700/90 font-medium mb-2">
+                            Risque résiduel (après mesures de maîtrise)
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <Select
+                                label={t('assessmentTab.gravityLabel')}
+                                placeholder={t('assessmentTab.gravityPlaceholder')}
+                                data={gravityOptions}
+                                size="sm"
+                                clearable
+                                {...form.getInputProps('residualGravity')}
+                            />
+                            <Select
+                                label={t('assessmentTab.probabilityLabel')}
+                                placeholder={t('assessmentTab.probabilityPlaceholder')}
+                                data={probabilityOptions}
+                                size="sm"
+                                clearable
+                                {...form.getInputProps('residualProbability')}
+                            />
+                            <div>
+                                <label className="block text-[13px] font-medium text-slate-700 mb-1">
+                                    {t('assessmentTab.computedLevelLabel')}
+                                </label>
+                                {form.values.residualSeverity ? (
+                                    <span
+                                        className={`inline-flex items-center rounded-md border px-2.5 py-1.5 text-[12.5px] ${scoreChip(form.values.residualSeverity)}`}
+                                    >
+                                        {form.values.residualSeverity} {' · '}
+                                        {LEVEL_SCORE_LABELS_FR[form.values.residualSeverity] ?? ''}
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[12.5px] text-slate-400 italic">
+                                        {t('assessmentTab.computedLevelPlaceholder')}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </SectionCard>
 
                 <SectionCard
                     icon={<IconShield size={15} stroke={1.8} />}
-                    title={t('assessmentTab.sectionControl')}
+                    title={t('assessmentTab.isoControl.title')}
                     subtitle={t('assessmentTab.sectionControlSub')}
                 >
+                    <ControlHierarchyLegend t={t} />
                     <Textarea
-                        label={t('assessmentTab.currentControlsLabel')}
+                        label={t('assessmentTab.isoControl.currentControlsLabel')}
                         placeholder={t('assessmentTab.currentControlsPlaceholder')}
                         withAsterisk
                         minRows={3}
@@ -217,7 +312,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         {...form.getInputProps('currentControls')}
                     />
                     <Textarea
-                        label={t('assessmentTab.additionalControlLabel')}
+                        label={t('assessmentTab.isoControl.additionalControlLabel')}
                         placeholder={t('assessmentTab.additionalControlPlaceholder')}
                         minRows={3}
                         autosize
@@ -225,7 +320,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         {...form.getInputProps('additionalControl')}
                     />
                     <Textarea
-                        label={t('assessmentTab.preventiveLabel')}
+                        label={t('assessmentTab.isoControl.preventiveLabel')}
                         placeholder={t('assessmentTab.preventivePlaceholder')}
                         minRows={3}
                         autosize
@@ -233,7 +328,7 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         {...form.getInputProps('preventiveMeasures')}
                     />
                     <Textarea
-                        label={t('assessmentTab.improvementsLabel')}
+                        label={t('assessmentTab.isoControl.improvementsLabel')}
                         placeholder={t('assessmentTab.improvementsPlaceholder')}
                         minRows={3}
                         autosize
@@ -248,6 +343,9 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                         size="sm"
                         {...form.getInputProps('comments')}
                     />
+                    <p className="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+                        {t('assessmentTab.isoControl.note')}
+                    </p>
                 </SectionCard>
 
                 <div className="flex justify-end gap-2">
@@ -256,10 +354,10 @@ const RiskAssessmentTab: React.FC<RiskAssessmentTabProps> = ({ onCancel, assessm
                     </Button>
                     <Button
                         type="submit"
-                        color="teal"
                         size="sm"
                         loading={submitting}
                         leftSection={<IconDeviceFloppy size={15} />}
+                        styles={{ root: { backgroundColor: '#DC2626' } }}
                     >
                         {t('assessmentTab.saveAssessment')}
                     </Button>

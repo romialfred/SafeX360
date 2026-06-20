@@ -103,7 +103,7 @@
   "dashboard": {
     "breadcrumb": "Vue d'ensemble",
     "title": "Vue d'ensemble des risques",
-    "subtitle": "Indicateurs, répartitions et matrice probabilité × gravité — cadre ISO 31000",
+    "subtitle": "Indicateurs, répartitions et matrice probabilité × gravité. Cadre ISO 45001.",
     "loadFailed": "Échec du chargement de la vue d'ensemble",
     "emptyTitle": "Aucune donnée de synthèse disponible",
     "emptyDescription": "La vue d'ensemble s'alimente automatiquement dès que des risques sont enregistrés au registre.",
@@ -254,6 +254,20 @@
     "savedToast": "Évaluation enregistrée",
     "saveFailed": "L'évaluation n'a pas pu être enregistrée",
     "guideAria": "Aide à l'évaluation",
+    "isoControl": {
+      "title": "Maîtrise du risque : hiérarchie des mesures (ISO 45001 §8.1.2)",
+      "subtitle": "Privilégiez les mesures les plus efficaces en premier, l'EPI en dernier recours",
+      "tier1": "1. Élimination",
+      "tier2": "2. Substitution",
+      "tier3": "3. Mesures d'ingénierie (protection collective)",
+      "tier4": "4. Mesures administratives (procédures, formation)",
+      "tier5": "5. EPI",
+      "currentControlsLabel": "Mesures de maîtrise en place",
+      "additionalControlLabel": "Mesures complémentaires prévues",
+      "preventiveLabel": "Mesures préventives",
+      "improvementsLabel": "Pistes d'amélioration",
+      "note": "La saisie structurée par niveau de hiérarchie et le risque résiduel arrivent dans une prochaine étape."
+    },
     "validate": {
       "reason": "Le motif de la réévaluation est obligatoire",
       "gravity": "La gravité est obligatoire",

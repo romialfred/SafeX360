@@ -450,7 +450,7 @@ const EditScheduleAudit: React.FC = () => {
                                     </Text>
                                     <Checkbox.Group {...form.getInputProps(`audit.auditTypes.${x}`)} className="flex flex-col  text-gray-600">
                                         <Group className="!grid !grid-cols-2 !gap-2">
-                                            {criteriaByLabel[x].map((item: any) => (
+                                            {(criteriaByLabel[x] ?? []).map((item: any) => (
                                                 <Checkbox size="xs"
                                                     key={item}
                                                     label={item}

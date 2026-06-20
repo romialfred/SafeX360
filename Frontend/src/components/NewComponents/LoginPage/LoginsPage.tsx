@@ -15,7 +15,6 @@ import { getUser, loginUser } from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
 import { useForm } from '@mantine/form';
-import SafeXBrandMark from '../../UtilityComp/SafeXBrandMark';
 import IsoBadge from '../../UtilityComp/IsoBadge';
 
 /**

@@ -7,9 +7,11 @@ import { useEffect, useState } from "react";
 import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
 import { useNavigate } from "react-router-dom";
-import { getAllIncidentTeams } from "../../../services/TeamService";
+import { activateIncidentTeam, deactivateIncidentTeam, getAllIncidentTeams } from "../../../services/TeamService";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
+import { modals } from "@mantine/modals";
+import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 
 const defaultFilters: DataTableFilterMeta = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -33,6 +35,46 @@ const TeamSetupData = () => {
             dispatch(hideOverlay());
         });
     }, []);
+
+    const handleStatusChange = (rowData: any) => {
+        const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+
+        modals.openConfirmModal({
+            title: <span className='text-2xl'>Are you sure?</span>,
+            centered: true,
+            children: (
+                <span className="text-md">
+                    You want to <strong>{action}</strong> the team: <strong>{rowData.name}</strong>?
+                </span>
+            ),
+            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            cancelProps: { color: 'red', variant: "filled" },
+            confirmProps: { color: 'green', variant: "filled" },
+            closeOnEscape: false,
+            closeOnClickOutside: false,
+            withCloseButton: false,
+            onConfirm: () => {
+                dispatch(showOverlay());
+                const apiCall = action === "activate" ? activateIncidentTeam : deactivateIncidentTeam;
+                apiCall(rowData.id)
+                    .then(() => {
+                        successNotification(`Team ${action}d successfully`);
+                        const updatedData = teams.map(item =>
+                            item.id === rowData.id
+                                ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
+                                : item
+                        );
+                        setTeams(updatedData);
+                    })
+                    .catch(() => {
+                        errorNotification(`Failed to ${action} team`);
+                    })
+                    .finally(() => {
+                        dispatch(hideOverlay());
+                    });
+            },
+        });
+    };
 
     const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -66,7 +108,7 @@ const TeamSetupData = () => {
             </Tooltip>
 
             <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon color={rowData.status === 'ACTIVE' ? "red" : "green"} size="sm">
+                <ActionIcon color={rowData.status === 'ACTIVE' ? "red" : "green"} onClick={() => handleStatusChange(rowData)} size="sm">
                     {rowData.status === 'ACTIVE'
                         ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
                         : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />

@@ -1,6 +1,25 @@
 import axiosInstance from "../interceptors/AxiosInterceptor";
 const url = "/hns/corrective-action";
 
+/**
+ * Action corrective (CAPA). Les sources possibles sont des FK nullables :
+ * incidentId, hsActivityId, nonConformityId, inspectionId et, depuis le
+ * Plan de maitrise (ISO 45001 §8.1.2), riskControlId.
+ */
+export interface CorrectiveAction {
+    id?: number;
+    actionName: string;
+    description?: string;
+    assignedEmployeeId?: number | string | null;
+    assignedEmployeeName?: string;
+    deadline?: string | null;
+    status?: string;
+    progress?: number;
+    departmentId?: number | string | null;
+    ownerId?: number | string | null;
+    riskControlId?: number | null;
+}
+
 
 const createCorrectiveAction = async (incidentData: any) => {
     return axiosInstance.post(`${url}/create`, incidentData)
@@ -67,6 +86,13 @@ const getCorrectiveActionsByDepartmentId = async (departmentId: string | number)
         .catch((error) => { throw error; });
 }
 
+// Plan de maitrise (RiskControl) : actions correctives rattachees a une mesure.
+const getCorrectiveActionsByRiskControl = async (riskControlId: string | number) => {
+    return axiosInstance.get(`${url}/by-risk-control/${riskControlId}`)
+        .then((response) => response.data)
+        .catch((error) => { throw error; });
+}
+
 const getActionById = async (id: any) => {
     return axiosInstance.get(`${url}/get/${id}`)
         .then((response) => response.data)
@@ -116,6 +142,7 @@ export {
     getCorrectiveActionByActivityId,
     getActionsByNonConformityId,
     getCorrectiveActionsByDepartmentId,
+    getCorrectiveActionsByRiskControl,
     getActionById,
     getPendingAdhocActions,
     getAllPending,

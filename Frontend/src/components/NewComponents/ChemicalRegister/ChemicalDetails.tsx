@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Tabs } from '@mantine/core';
-import { IconClipboardCheck, IconEye, IconFlask2, IconHistory, IconPlus } from '@tabler/icons-react';
+import { IconClipboardCheck, IconEye, IconFlask2, IconHistory, IconLayersIntersect, IconPlus } from '@tabler/icons-react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
@@ -15,6 +15,7 @@ import RiskAssesment from './RiskAssesment';
 import { getChemicalRiskByID } from '../../../services/RiskIdentificationService';
 import { getChemicalAnalysisByRisk } from '../../../services/ChemicalRiskAnalysisService';
 import { normalizeRiskStatus, riskStatusConfig } from './chemicalLabels';
+import RiskControlPanel from '../../RiskManagement/RiskControlPanel';
 
 /**
  * Fiche détaillée d'un risque chimique (LOT 50) : synthèse, historique des
@@ -117,6 +118,9 @@ const ChemicalDetails = () => {
                         <Tabs.Tab value="history" leftSection={<IconHistory size={15} />}>
                             {t('chemicalDetail.tabHistory')}
                         </Tabs.Tab>
+                        <Tabs.Tab value="controls" leftSection={<IconLayersIntersect size={15} />}>
+                            Plan de maîtrise
+                        </Tabs.Tab>
                         {showNewAssessment && (
                             <Tabs.Tab value="assessment" leftSection={<IconClipboardCheck size={15} />}>
                                 {t('chemicalDetail.tabNewAssessment')}
@@ -136,6 +140,12 @@ const ChemicalDetails = () => {
 
                     <Tabs.Panel value="history" pt="md">
                         <RiskHistoryTab revisionHistory={assessments} />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="controls" pt="md">
+                        {(risk?.id ?? id) && (
+                            <RiskControlPanel sourceType="CHEMICAL" riskId={Number(risk?.id ?? id)} />
+                        )}
                     </Tabs.Panel>
 
                     {showNewAssessment && (

@@ -20,7 +20,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Paper, Group, Button, TextInput, Select, Badge, ActionIcon, Tooltip, Modal,
-    Text, Stack, Code, CopyButton, Alert, Box, Loader, Title,
+    Text, Stack, Code, CopyButton, Alert, Box, Loader,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { useTranslation } from 'react-i18next';
@@ -312,7 +312,7 @@ export default function UsersAdminPage() {
                             onClick={() => navigate('/users-admin/new')}
                             styles={{
                                 root: {
-                                    background: 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',
+                                    background: '#0F766E',
                                     fontWeight: 600,
                                 },
                             }}
@@ -381,7 +381,33 @@ export default function UsersAdminPage() {
                         }
                         size="small"
                         stripedRows
-                        className="[&_.p-datatable-tbody]:!text-sm"
+                        rowHover
+                        className="
+                            [&_.p-datatable-thead>tr>th]:!bg-slate-50
+                            [&_.p-datatable-thead>tr>th]:!text-slate-700
+                            [&_.p-datatable-thead>tr>th]:!text-[10.5px]
+                            [&_.p-datatable-thead>tr>th]:!uppercase
+                            [&_.p-datatable-thead>tr>th]:!tracking-[0.1em]
+                            [&_.p-datatable-thead>tr>th]:!font-semibold
+                            [&_.p-datatable-thead>tr>th]:!border-b-2
+                            [&_.p-datatable-thead>tr>th]:!border-teal-600
+                            [&_.p-datatable-thead>tr>th]:!py-2.5
+                            [&_.p-datatable-thead>tr>th]:!px-5
+                            [&_.p-datatable-thead>tr>th]:!whitespace-nowrap
+                            [&_.p-datatable-tbody>tr]:!transition-colors
+                            [&_.p-datatable-tbody>tr]:hover:!bg-teal-50/50
+                            [&_.p-datatable-tbody>tr.p-row-odd]:!bg-slate-50/30
+                            [&_.p-datatable-tbody>tr>td]:!text-[12.5px]
+                            [&_.p-datatable-tbody>tr>td]:!py-3
+                            [&_.p-datatable-tbody>tr>td]:!px-5
+                            [&_.p-datatable-tbody>tr>td]:!border-b
+                            [&_.p-datatable-tbody>tr>td]:!border-slate-100
+                            [&_.p-paginator]:!bg-white
+                            [&_.p-paginator]:!border-t
+                            [&_.p-paginator]:!border-slate-100
+                            [&_.p-paginator_.p-highlight]:!bg-teal-600
+                            [&_.p-paginator_.p-highlight]:!text-white
+                        "
                         currentPageReportTemplate="{first}-{last} / {totalRecords}"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                     >

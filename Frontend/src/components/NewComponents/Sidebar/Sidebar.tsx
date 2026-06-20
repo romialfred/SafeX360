@@ -257,7 +257,8 @@ const menuItems: MenuItem[] = [
             { id: 'risk-overview', label: 'Vue d\'Ensemble', icon: IconChartBar },
             { id: 'risk-register', label: 'Registre des Risques', icon: IconFileText },
             { id: 'risk-assessment', label: 'Évaluation des Risques', icon: IconClipboardCheck },
-            { id: 'chemical-register', label: 'Registre Chimique', icon: IconFlask2 }
+            { id: 'chemical-register', label: 'Registre Chimique', icon: IconFlask2 },
+            { id: 'risk-opportunities', label: 'Opportunités SST', icon: IconBulb }
         ]
     },
     {
@@ -350,6 +351,17 @@ const menuItems: MenuItem[] = [
             { id: 'document-manager', label: 'Gestionnaire de Documents', icon: IconFolderOpen },
             { id: 'iso-documents', label: 'Standards ISO', icon: IconFileText },
             { id: 'process-docs', label: 'Processus de Travail', icon: IconFileTextSpark }
+        ]
+    },
+    // Module Gestion des Erreurs — couche fédératrice « culture de l'erreur ».
+    {
+        id: 'error-management',
+        label: 'Gestion des Erreurs',
+        icon: IconAlertTriangle,
+        color: 'text-[#1E3A5F]',
+        subItems: [
+            { id: 'error-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
+            { id: 'error-events', label: 'Registre des événements', icon: IconAlertTriangle },
         ]
     },
     // Centre d'Aide : retiré de la sidebar — désormais accessible via le menu
@@ -465,6 +477,7 @@ export const menuIdToUrl: Record<string, string> = {
     "risk-register": "/risks-register",
     "risk-assessment": "/risks-assessment",
     "chemical-register": "/chemical-register",
+    "risk-opportunities": "/risk-management/opportunities",
 
     // PPE Management
     "ppe-overview": "/ppe-management",
@@ -517,6 +530,10 @@ export const menuIdToUrl: Record<string, string> = {
     "executive-reports": "/executive-reports",
     "trend-analysis": "/trend-analysis",
 
+
+    // Module Gestion des Erreurs
+    "error-dashboard": "/error-management/dashboard",
+    "error-events": "/error-management",
 
     // Help Center
     "how-to": "/how-to",
@@ -593,11 +610,14 @@ const PERMISSION_VOCABULARY = new Set([
     'lessonsLearned', 'documentManager',
     'commDashboard', 'employeeComm', 'notifications',
     'usersManagement', 'settings',
+    'errorManagement',
 ]);
 
 /** Surcharges explicites menu-id → module de permission. */
 const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'dashboard': 'home',
+    'error-dashboard': 'errorManagement',
+    'error-events': 'errorManagement',
     'users-management-hub': 'usersManagement',
     'users-list': 'usersManagement',
     'roles-permissions': 'usersManagement',
@@ -607,6 +627,7 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'operational-references': 'settings',
     'annual-audit-plan': 'auditPlan',
     'audit-program': 'auditPlan',
+    'risk-opportunities': 'riskRegister',
 };
 
 /** Convertit un id de menu kebab-case en clé de module camelCase. */

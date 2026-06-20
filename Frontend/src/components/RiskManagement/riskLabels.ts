@@ -178,6 +178,79 @@ export const SCORE_CHIP_CLASSES: Record<string, string> = {
 export const scoreChip = (score?: string | number | null): string =>
     SCORE_CHIP_CLASSES[String(score ?? '')] ?? 'bg-slate-50 text-slate-600 border-slate-200';
 
+// ─── ISO 45001 §6.1.2 — Identification du danger (phase B) ──────────────────
+
+/** Type d'activité (codes backend conservés, libellés FR charte). */
+export const ACTIVITY_TYPE_OPTIONS = [
+    { value: 'ROUTINE', label: 'Activité routinière' },
+    { value: 'NON_ROUTINE', label: 'Activité non routinière' },
+];
+
+/** Catégorie de danger (ISO 45001). */
+export const HAZARD_CATEGORY_OPTIONS = [
+    { value: 'PHYSICAL', label: 'Physique' },
+    { value: 'CHEMICAL', label: 'Chimique' },
+    { value: 'BIOLOGICAL', label: 'Biologique' },
+    { value: 'ERGONOMIC', label: 'Ergonomique' },
+    { value: 'PSYCHOSOCIAL', label: 'Psychosocial' },
+];
+
+/** Personnes exposées (multi-sélection, sérialisé en CSV au submit). */
+export const PERSONS_EXPOSED_OPTIONS = [
+    { value: 'WORKERS', label: 'Travailleurs' },
+    { value: 'CONTRACTORS', label: 'Sous-traitants' },
+    { value: 'VISITORS', label: 'Visiteurs' },
+    { value: 'PUBLIC', label: 'Public' },
+];
+
+// ─── ISO 45001 §8.1.2 — Hiérarchie des mesures de maîtrise (phase B) ─────────
+
+export interface ControlTierConfig {
+    label: string;
+    /** Classes Tailwind du chip / bandeau du palier (rampe charte). */
+    chip: string;
+    /** Rang 1 (Élimination) → 5 (EPI). */
+    rank: number;
+}
+
+/** Les 5 paliers, du plus efficace (Élimination) au moins efficace (EPI). */
+export const CONTROL_TYPE_CONFIG: Record<string, ControlTierConfig> = {
+    ELIMINATION: { label: 'Élimination', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', rank: 1 },
+    SUBSTITUTION: { label: 'Substitution', chip: 'bg-lime-50 text-lime-700 border-lime-200', rank: 2 },
+    ENGINEERING: { label: "Mesures d'ingénierie", chip: 'bg-amber-50 text-amber-700 border-amber-200', rank: 3 },
+    ADMINISTRATIVE: { label: 'Mesures administratives', chip: 'bg-orange-50 text-orange-700 border-orange-200', rank: 4 },
+    PPE: { label: 'EPI', chip: 'bg-rose-50 text-rose-700 border-rose-200', rank: 5 },
+};
+
+/** Ordre d'affichage des paliers (Élimination → EPI). */
+export const CONTROL_TYPE_ORDER = ['ELIMINATION', 'SUBSTITUTION', 'ENGINEERING', 'ADMINISTRATIVE', 'PPE'] as const;
+
+export const CONTROL_TYPE_OPTIONS = CONTROL_TYPE_ORDER.map((value) => ({
+    value,
+    label: CONTROL_TYPE_CONFIG[value].label,
+}));
+
+export const controlTypeConfig = (code?: string | null): ControlTierConfig | null =>
+    code ? CONTROL_TYPE_CONFIG[code] ?? null : null;
+
+/** Statut d'une mesure de maîtrise. */
+export const CONTROL_STATUS_CONFIG: Record<string, ChipConfig> = {
+    PLANNED: { label: 'Planifiée', chip: 'bg-slate-50 text-slate-600 border-slate-200' },
+    IN_PROGRESS: { label: 'En cours', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+    DONE: { label: 'Réalisée', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+};
+
+export const CONTROL_STATUS_OPTIONS = Object.entries(CONTROL_STATUS_CONFIG).map(([value, cfg]) => ({
+    value,
+    label: cfg.label,
+}));
+
+export const controlStatusConfig = (status?: string | null): ChipConfig =>
+    CONTROL_STATUS_CONFIG[String(status ?? '').toUpperCase()] ?? {
+        label: status ? String(status) : '—',
+        chip: 'bg-slate-50 text-slate-600 border-slate-200',
+    };
+
 // ─── Formatage ──────────────────────────────────────────────────────────────
 
 export const formatDateFr = (value?: string | Date | null): string => {

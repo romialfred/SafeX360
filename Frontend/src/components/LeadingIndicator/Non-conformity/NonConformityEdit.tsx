@@ -206,7 +206,7 @@ const NonConformityEdit = () => {
     useEffect(() => {
         dispatch(showOverlay())
         getNonConformity(id).then((data) => {
-            form.setFieldValue("nonConformity", { ...data, date: new Date(data.date), detectionDate: new Date(data.date), reportedBy: "" + data.reportedBy, workProcessId: "" + data.workProcessId, locationId: "" + data.locationId, categoryId: "" + data.categoryId, docs: convertDocsToFiles(data.docs), evidence: convertDocsToFiles(data.evidence), validationDate: data.validationDate ? new Date(data.validationDate) : new Date(), nextCheck: data.nextCheck ? new Date(data.nextCheck) : new Date(), closingDate: data.closingDate ? new Date(data.closingDate) : new Date() });
+            form.setFieldValue("nonConformity", { ...data, date: new Date(data.date), detectionDate: data.detectionDate ? new Date(data.detectionDate) : new Date(), reportedBy: "" + data.reportedBy, workProcessId: "" + data.workProcessId, locationId: "" + data.locationId, categoryId: "" + data.categoryId, docs: convertDocsToFiles(data.docs), evidence: convertDocsToFiles(data.evidence), validationDate: data.validationDate ? new Date(data.validationDate) : new Date(), nextCheck: data.nextCheck ? new Date(data.nextCheck) : new Date(), closingDate: data.closingDate ? new Date(data.closingDate) : new Date() });
             const statusUpper = String(data?.status || '').toUpperCase();
             if (statusUpper === 'CLOSED' || statusUpper === 'REJECTED' || statusUpper === 'CANCELLED') {
                 setLockedInfo({ locked: true, status: statusUpper });

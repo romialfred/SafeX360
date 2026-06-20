@@ -69,10 +69,14 @@ const BodyPartsData = () => {
 
     const handleSubmit = async (values: any) => {
         setLoading(true);
-        const base64: any = await getBase64(values.file);
+        // En édition sans nouveau fichier (image effacée), conserver l'image existante :
+        // getBase64(null) renvoie null et .split planterait silencieusement (échec save).
+        const filePart: any = values.file
+            ? ((await getBase64(values.file)) as string)?.split(',')[1] ?? null
+            : (edit ? selectedRow?.file : null);
         if (edit) {
             // Check if at least one field has changed
-            const changed = Object.keys({ ...values, file: base64.split(',')[1] }).some((key) => {
+            const changed = Object.keys({ ...values, file: filePart }).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
                 return newValue !== oldValue;
@@ -84,7 +88,7 @@ const BodyPartsData = () => {
                 return;
             }
 
-            const payload = { ...selectedRow, ...values, file: base64.split(',')[1] };
+            const payload = { ...selectedRow, ...values, file: filePart };
 
             updateBodyParts(payload)
                 .then(() => {
@@ -105,7 +109,7 @@ const BodyPartsData = () => {
                 .finally(() => setLoading(false));
         } else {
 
-            createBodyParts({ ...values, file: base64.split(',')[1] })
+            createBodyParts({ ...values, file: filePart })
                 .then((res) => {
                     successNotification("Body Part added successfully");
 
@@ -114,7 +118,7 @@ const BodyPartsData = () => {
                         ...values,
                         status: "ACTIVE",
                         id: res,
-                        file: base64.split(',')[1]
+                        file: filePart
 
                     };
                     setData(prev => [...prev, newEntry]);

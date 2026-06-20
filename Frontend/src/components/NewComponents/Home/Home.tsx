@@ -68,6 +68,7 @@ const MODULE_ACCENT_HEX: Record<string, string> = {
     'actions-managers':          '#f97316', // orange-500
     'pending-actions-hub':       '#14b8a6', // teal-500
     'risk-management':           '#ef4444', // red-500
+    'error-management':          '#1E3A5F', // navy — signature module Gestion des Erreurs
     'ppe-management':            '#eab308', // yellow-500
     'audits-management':         '#6366f1', // indigo-500
     'compliance-management':     '#10b981', // emerald-500
@@ -112,6 +113,19 @@ export const moduleGroups: ModuleCard[] = [
         bgColor: 'bg-blue-50/70 border-blue-200/60',
         items: ['Incidents', 'Investigations', "Plans d'action"],
         url: '/incidents',
+    },
+    {
+        // Module Gestion des Erreurs — couche fédératrice « culture de l'erreur »
+        // (Just Culture, taxonomie Reason, RCA, REX). Accent signature Navy.
+        id: 'error-management',
+        requiredModuleId: 'error-dashboard',
+        title: 'Gestion des Erreurs',
+        description: "Déclaration, analyse causale (Just Culture), CAPA et capitalisation des erreurs et événements indésirables.",
+        icon: IconAlertTriangle,
+        color: 'text-[#1E3A5F]',
+        bgColor: 'bg-blue-50/70 border-blue-200/60',
+        items: ['Tableau de bord', 'Registre des événements', 'Déclarer', 'Analyse causale (RCA)'],
+        url: '/error-management/dashboard',
     },
     {
         id: 'actions-managers',
@@ -421,7 +435,7 @@ const NewHomePage = () => {
 
                                 {/* Scène 3D : recto (tuile) ↔ verso (sous-modules) au survol */}
                                 <div className="relative min-h-[150px] [perspective:1000px]">
-                                    <div className={`relative h-full min-h-[150px] [transform-style:preserve-3d] transition-transform duration-[600ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] ${moduleEnabled ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
+                                    <div className={`relative h-full min-h-[150px] [transform-style:preserve-3d] transition-transform duration-[600ms] motion-reduce:transition-none [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] ${moduleEnabled ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
 
                                         {/* ── RECTO : la tuile (identique à l'existant) ── */}
                                         <div className="absolute inset-0 p-3.5 flex flex-col [backface-visibility:hidden]">

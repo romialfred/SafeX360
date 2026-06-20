@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Select, Textarea, TextInput } from '@mantine/core';
+import { Button, MultiSelect, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDispatch } from 'react-redux';
@@ -10,7 +10,14 @@ import {
     IconBuildingFactory2,
     IconDeviceFloppy,
     IconFlask2,
+    IconGavel,
+    IconShieldSearch,
 } from '@tabler/icons-react';
+import {
+    ACTIVITY_TYPE_OPTIONS,
+    HAZARD_CATEGORY_OPTIONS,
+    PERSONS_EXPOSED_OPTIONS,
+} from '../../RiskManagement/riskLabels';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
@@ -34,6 +41,8 @@ import {
  * la création, avec mise à jour du statut de traitement.
  */
 
+const CAS_REGEX = /^\d{2,7}-\d{2}-\d$/;
+
 interface EditChemicalRiskFormValues {
     id: string;
     reviewDate: Date | null;
@@ -48,6 +57,14 @@ interface EditChemicalRiskFormValues {
     description: string;
     potentialConsequences: string;
     status: string;
+    // ISO 45001 §6.1.2 — identification du danger
+    activityType: string;
+    hazardCategory: string;
+    personsExposed: string[];
+    exposureCount: number | string;
+    // ISO 45001 §6.1.3 : exigences legales et revue planifiee
+    legalRequirements: string;
+    nextReviewDate: Date | null;
 }
 
 const EditChemicalRisk = () => {
@@ -97,12 +114,23 @@ const EditChemicalRisk = () => {
             description: '',
             potentialConsequences: '',
             status: 'OPEN',
+            activityType: '',
+            hazardCategory: '',
+            personsExposed: [],
+            exposureCount: '',
+            legalRequirements: '',
+            nextReviewDate: null,
         },
         validate: {
             reviewDate: (value) => (value ? null : t('chemicalForm.validate.identificationDate')),
             departmentId: (value) => (value ? null : t('chemicalForm.validate.department')),
             workProcessId: (value) => (value ? null : t('chemicalForm.validate.workProcess')),
             chemicalName: (value) => (value.trim() ? null : t('chemicalForm.validate.chemicalName')),
+            casNumber: (value) => {
+                const trimmed = value.trim();
+                if (!trimmed) return t('chemicalForm.validate.casRequired');
+                return CAS_REGEX.test(trimmed) ? null : t('chemicalForm.validate.casFormat');
+            },
             classification: (value) => (value ? null : t('chemicalForm.validate.classification')),
             hazardSource: (value) => (value ? null : t('chemicalForm.validate.hazardSource')),
             methodOfUse: (value) => (value.trim() ? null : t('chemicalForm.validate.methodOfUse')),
@@ -131,6 +159,12 @@ const EditChemicalRisk = () => {
                     description: res.description || '',
                     potentialConsequences: res.potentialConsequences || '',
                     status: normalizeRiskStatus(res.status) || 'OPEN',
+                    activityType: res.activityType || '',
+                    hazardCategory: res.hazardCategory || '',
+                    personsExposed: res.personsExposed ? res.personsExposed.split(',') : [],
+                    exposureCount: res.exposureCount ?? '',
+                    legalRequirements: res.legalRequirements || '',
+                    nextReviewDate: res.nextReviewDate ? new Date(res.nextReviewDate) : null,
                 });
             })
             .catch((err) => {
@@ -163,6 +197,12 @@ const EditChemicalRisk = () => {
             casNumber: values.casNumber.trim(),
             classification: values.classification,
             methodOfUse: values.methodOfUse.trim(),
+            activityType: values.activityType || null,
+            hazardCategory: values.hazardCategory || null,
+            personsExposed: values.personsExposed.length ? values.personsExposed.join(',') : null,
+            exposureCount: values.exposureCount === '' || values.exposureCount === null ? null : Number(values.exposureCount),
+            legalRequirements: values.legalRequirements.trim() || null,
+            nextReviewDate: toLocalDate(values.nextReviewDate),
         };
 
         updateChemicalRisk(payload)
@@ -180,7 +220,7 @@ const EditChemicalRisk = () => {
     };
 
     return (
-        <div className="p-5 space-y-4 w-full">
+        <div className="min-h-full bg-[#FAF8F3] p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: t('common.home'), to: '/' },
@@ -265,6 +305,7 @@ const EditChemicalRisk = () => {
                                 <TextInput
                                     label={t('chemicalForm.casLabel')}
                                     placeholder={t('chemicalForm.casPlaceholder')}
+                                    withAsterisk
                                     size="sm"
                                     {...form.getInputProps('casNumber')}
                                 />
@@ -324,6 +365,69 @@ const EditChemicalRisk = () => {
                             />
                         </SectionCard>
 
+                        <SectionCard
+                            icon={<IconShieldSearch size={15} stroke={1.8} />}
+                            title="Identification du danger (ISO 45001 §6.1.2)"
+                            subtitle="Nature de l'activité, catégorie de danger et population exposée"
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Select
+                                    label="Type d'activité"
+                                    placeholder="Sélectionner"
+                                    data={ACTIVITY_TYPE_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('activityType')}
+                                />
+                                <Select
+                                    label="Catégorie de danger"
+                                    placeholder="Sélectionner"
+                                    data={HAZARD_CATEGORY_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('hazardCategory')}
+                                />
+                                <MultiSelect
+                                    label="Personnes exposées"
+                                    placeholder="Sélectionner"
+                                    data={PERSONS_EXPOSED_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('personsExposed')}
+                                />
+                                <NumberInput
+                                    label="Nombre de personnes exposées"
+                                    placeholder="0"
+                                    min={0}
+                                    size="sm"
+                                    {...form.getInputProps('exposureCount')}
+                                />
+                            </div>
+                        </SectionCard>
+
+                        <SectionCard
+                            icon={<IconGavel size={15} stroke={1.8} />}
+                            title="Conformité et revue (ISO 45001 §6.1.3)"
+                            subtitle="Exigences légales applicables et planification de la prochaine revue"
+                        >
+                            <Textarea
+                                label="Exigences légales et autres applicables (ISO 45001 §6.1.3)"
+                                placeholder="Réglementations, normes et autres exigences applicables à ce risque chimique"
+                                minRows={2}
+                                autosize
+                                size="sm"
+                                {...form.getInputProps('legalRequirements')}
+                            />
+                            <DateInput
+                                label="Prochaine revue"
+                                placeholder="JJ/MM/AAAA"
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                clearable
+                                {...form.getInputProps('nextReviewDate')}
+                            />
+                        </SectionCard>
+
                         <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                             <p className="text-[11.5px] text-slate-600 leading-relaxed">
                                 {t('editChemicalForm.hint')}
@@ -342,10 +446,10 @@ const EditChemicalRisk = () => {
                             </Button>
                             <Button
                                 type="submit"
-                                color="teal"
                                 size="sm"
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
+                                styles={{ root: { backgroundColor: '#DC2626' } }}
                             >
                                 {t('editChemicalForm.saveChanges')}
                             </Button>

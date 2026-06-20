@@ -190,7 +190,7 @@ export default function AnnualPlanningGrid({
 
         const payload = {
             title: values.title,
-            responsibleId: values.responsibleId,
+            responsibleId: Number(values.responsibleId),
             category: values.category,
             dateTime: values.dateTime,
             month: monthStr,

@@ -14,6 +14,8 @@ import { errorNotification, successNotification } from "../../../../utility/Noti
 import TextEditor from "../../../UtilityComp/TextEditor";
 import { createCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { ACTION_STATUS_OPTIONS } from "../pgiLabels";
+import { useSelector } from "react-redux";
+import { toLocalDate } from "../../../../utility/dateConversion";
 
 /**
  * Mesures techniques relevées en cours d'inspection (brouillon) : saisie de
@@ -27,6 +29,7 @@ const Measurement = ({ form, employee }: any) => {
 
     const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
+    const user = useSelector((state: any) => state.user);
 
     useEffect(() => {
         getAllActiveMeasurement().then((res) => {
@@ -137,8 +140,17 @@ const Measurement = ({ form, employee }: any) => {
             closeOnClickOutside: false,
             withCloseButton: false,
             onConfirm: () => {
+                // Sérialiser l'échéance en LocalDate + renseigner owner/département
+                // (aligné sur CorrectiveActions.tsx ; le DTO attend ces champs).
+                const data = {
+                    ...values,
+                    deadline: toLocalDate(values.deadline),
+                    departmentId: user?.departmentId,
+                    ownerId: values.assignedEmployeeId ?? user?.id,
+                    assignedEmployeeId: values.assignedEmployeeId ?? user?.id,
+                };
                 setLoading(true);
-                createCorrectiveAction(values)
+                createCorrectiveAction(data)
                     .then(() => {
                         successNotification("Plan d'action créé");
                         close();
@@ -158,7 +170,11 @@ const Measurement = ({ form, employee }: any) => {
         <div className="flex flex-col gap-4">
             {form.values.measurements.map((x: any, index: any) => {
                 const value = form.values.measurements[index].value;
-                const isExceeded = typeof value === 'number' && (value > record[x.measurementId]?.threshold);
+                // Coercition : Mantine NumberInput peut émettre un string en cours de saisie ;
+                // le seuil doit déclencher dans les deux cas dès qu'on a un nombre valide.
+                const numericValue = typeof value === 'number' ? value : (value !== '' && value !== null && value !== undefined ? Number(value) : NaN);
+                const threshold = record[x.measurementId]?.threshold;
+                const isExceeded = Number.isFinite(numericValue) && Number.isFinite(threshold) && (numericValue > threshold);
 
                 return (
                     <div key={index} className="bg-white rounded-xl border border-slate-200 overflow-hidden">

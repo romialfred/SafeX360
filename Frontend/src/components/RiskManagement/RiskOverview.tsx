@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { IconChartBar } from '@tabler/icons-react';
+import { Button } from '@mantine/core';
+import { Link } from 'react-router-dom';
+import { IconBulb, IconChartBar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import SummaryCards from './RiskOverview/SummaryCards';
 import Charts from './RiskOverview/Charts';
+import Iso45001Band from './Iso45001Band';
+import Iso45001Guide from './Iso45001Guide';
 import PageHeader from '../UtilityComp/PageHeader';
 import EmptyState from '../UtilityComp/EmptyState';
 import { SkeletonDashboard } from '../UtilityComp/LoadingSkeleton';
@@ -94,23 +97,43 @@ const RiskOverview: React.FC = () => {
                 iconColor="red"
                 title={t('dashboard.title')}
                 subtitle={t('dashboard.subtitle')}
+                actions={
+                    <Button
+                        component={Link}
+                        to="/risk-management/opportunities"
+                        size="sm"
+                        variant="light"
+                        color="red"
+                        leftSection={<IconBulb size={15} />}
+                    >
+                        Opportunités SST
+                    </Button>
+                }
             />
 
             {loading ? (
                 <SkeletonDashboard />
             ) : overview ? (
                 <>
-                    <SummaryCards metrics={overview.metrics} />
-                    <Charts
-                        leftDonutTitle={t('dashboard.donutHazardTitle')}
-                        rightDonutTitle={t('dashboard.donutDepartmentTitle')}
-                        leftDonutData={hazardDonut}
-                        rightDonutData={departmentDonut}
-                        matrixCounts={overview.matrix.counts}
-                        probabilityLabels={probabilityLabels}
-                        severityLabels={severityLabels}
-                        frequencyChartData={frequencyChartData}
-                    />
+                    <Iso45001Band />
+
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+                        <div className="xl:col-span-2 min-w-0">
+                            <Charts
+                                leftDonutTitle={t('dashboard.donutHazardTitle')}
+                                rightDonutTitle={t('dashboard.donutDepartmentTitle')}
+                                leftDonutData={hazardDonut}
+                                rightDonutData={departmentDonut}
+                                matrixCounts={overview.matrix.counts}
+                                probabilityLabels={probabilityLabels}
+                                severityLabels={severityLabels}
+                                frequencyChartData={frequencyChartData}
+                            />
+                        </div>
+                        <div className="xl:col-span-1">
+                            <Iso45001Guide />
+                        </div>
+                    </div>
                 </>
             ) : (
                 <div className="bg-white rounded-xl border border-slate-200">

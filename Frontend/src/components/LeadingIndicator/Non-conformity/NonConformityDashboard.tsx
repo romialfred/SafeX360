@@ -23,6 +23,7 @@ import {
     IconChartPie,
     IconRotateClockwise,
     IconArrowUpRight,
+    IconRefresh,
 } from '@tabler/icons-react';
 import { NonConformity } from './NonConformity';
 import { useNavigate } from 'react-router-dom';
@@ -51,6 +52,15 @@ const NonConformityDashboard = () => {
     const { t } = useTranslation(['nonConformity', 'common', 'navigation']);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
     const [nonConformities, setNonConformities] = useState<any[]>([]);
+    // Accès clavier / tactile au verso des cartes (qui porte les actions) : le survol
+    // reste, mais un bouton dédié retourne la carte. On suit l'état par id.
+    const [flippedCards, setFlippedCards] = useState<Set<string | number>>(new Set());
+    const toggleFlip = (id: string | number) =>
+        setFlippedCards((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
     const [selectedStatus, setSelectedStatus] = useState<string | null>('All');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
     const [selectedType, setSelectedType] = useState<string>('all');
@@ -313,7 +323,7 @@ const NonConformityDashboard = () => {
 
                     return (
                         <div key={nc.id} className="group h-full min-h-[214px] [perspective:1300px]">
-                            <div className="relative h-full min-h-[214px] transition-transform duration-[600ms] [transform-style:preserve-3d] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:[transform:rotateY(180deg)]">
+                            <div className={`relative h-full min-h-[214px] transition-transform duration-[600ms] motion-reduce:transition-none [transform-style:preserve-3d] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:[transform:rotateY(180deg)] ${flippedCards.has(nc.id) ? '[transform:rotateY(180deg)]' : ''}`}>
 
                                 {/* ── Recto ──────────────────────────────────────── */}
                                 <div
@@ -325,7 +335,18 @@ const NonConformityDashboard = () => {
                                 >
                                     <span className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] rounded-t-xl ${barColor}`} aria-hidden="true" />
 
-                                    <div className="mb-2 flex items-start justify-between gap-2">
+                                    {/* Bouton de retournement — accès clavier / tactile au verso (actions). */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); toggleFlip(nc.id); }}
+                                        aria-label="Retourner la carte"
+                                        aria-pressed={flippedCards.has(nc.id)}
+                                        className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    >
+                                        <IconRefresh size={15} stroke={1.9} />
+                                    </button>
+
+                                    <div className="mb-2 flex items-start justify-between gap-2 pr-8">
                                         <span className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-slate-500">{nc.number}</span>
                                         <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${statChipColor} flex-shrink-0`}>
                                             {ncStatusLabel(nc.status)}

@@ -78,7 +78,7 @@ const PREDEFINED_ROLES = [
         value: 'SYSTEM_ADMINISTRATOR',
         color: 'red',
         defaultModules: [
-            'home', 'nonConformity', 'inspections', 'meetings', 'managementTour',
+            'home', 'errorManagement', 'nonConformity', 'inspections', 'meetings', 'managementTour',
             'ppeOverview', 'ppeMonitoring', 'ppeRequest',
             'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'actionPlan', 'recommendations', 'adhocActions',
@@ -94,7 +94,7 @@ const PREDEFINED_ROLES = [
         value: 'HEALTH_SAFETY_COORDINATOR',
         color: 'teal',
         defaultModules: [
-            'home', 'nonConformity', 'inspections', 'meetings',
+            'home', 'errorManagement', 'nonConformity', 'inspections', 'meetings',
             'ppeOverview', 'ppeMonitoring', 'ppeRequest',
             'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'actionPlan', 'recommendations',
@@ -107,7 +107,7 @@ const PREDEFINED_ROLES = [
         value: 'INCIDENT_INVESTIGATOR',
         color: 'orange',
         defaultModules: [
-            'home', 'incidentManagement', 'investigations', 'actionPlansInc',
+            'home', 'errorManagement', 'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'recommendations',
             'complianceDashboard', 'documents',
         ],
@@ -126,7 +126,7 @@ const PREDEFINED_ROLES = [
         value: 'EMPLOYEE',
         color: 'gray',
         defaultModules: [
-            'home', 'incidentManagement', 'nonConformity',
+            'home', 'errorManagement', 'incidentManagement', 'nonConformity',
             'ppeRequest', 'documents',
         ],
     },
@@ -146,6 +146,7 @@ interface ModuleCategory {
 const MODULE_CATEGORIES: ModuleCategory[] = [
     { key: 'general', color: 'gray', modules: ['home', 'notifications'] },
     { key: 'incidents', color: 'orange', modules: ['incidentManagement', 'investigations', 'actionPlansInc', 'nonConformity'] },
+    { key: 'errorManagement', color: 'indigo', modules: ['errorManagement'] },
     { key: 'preventive', color: 'teal', modules: ['inspections', 'meetings', 'managementTour'] },
     { key: 'corrective', color: 'cyan', modules: ['pendingActions', 'actionPlan', 'recommendations', 'adhocActions'] },
     { key: 'risks', color: 'red', modules: ['riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister'] },
@@ -469,25 +470,25 @@ export default function CreateUserPage() {
 
     const progressPct = createdResponse ? 100 : Math.round(((step + 1) / STEPS.length) * 100);
 
-    /** Rail latéral sticky — numéros + intitulés, état complété/actif. */
-    const stepRail = (
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-4 bg-white border border-slate-200 rounded-xl shadow-sm p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400 font-medium mb-3">
-                    {t('userMgmt.create.railTitle')}
-                </p>
-                <ol className="space-y-1">
+    /** Stepper horizontal en haut — numéros + intitulés, état complété/actif. */
+    const stepHeader = (
+        <div className="px-4 sm:px-5 lg:px-6 pt-5">
+            <nav
+                aria-label={t('userMgmt.create.railTitle')}
+                className="bg-white border border-slate-200 rounded-xl shadow-sm px-3 py-3 sm:px-4"
+            >
+                <ol className="flex items-center">
                     {STEPS.map((s, i) => {
                         const done = createdResponse ? true : i < step;
                         const active = !createdResponse && i === step;
                         const clickable = !createdResponse && !submitting && i < step;
                         return (
-                            <li key={s.title}>
+                            <li key={s.title} className={`flex items-center min-w-0 ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
                                 <button
                                     type="button"
                                     onClick={() => handleRailClick(i)}
                                     disabled={!clickable}
-                                    className={`w-full flex items-start gap-3 px-2 py-2.5 rounded-lg text-left transition ${
+                                    className={`flex items-center gap-2.5 min-w-0 rounded-lg px-2 py-1.5 text-left transition ${
                                         active ? 'bg-teal-50/70' : clickable ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-default'
                                     }`}
                                 >
@@ -503,26 +504,26 @@ export default function CreateUserPage() {
                                     >
                                         {done ? <IconCheck size={14} stroke={2.2} /> : i + 1}
                                     </span>
-                                    <span className="min-w-0 pt-0.5">
-                                        <span className={`block text-[13px] leading-snug ${
+                                    <span className="hidden min-w-0 sm:block">
+                                        <span className={`block text-[12.5px] leading-snug truncate ${
                                             active ? 'text-teal-800 font-medium' : done ? 'text-slate-700' : 'text-slate-400'
                                         }`}>
                                             {s.title}
                                         </span>
-                                        <span className="block text-[11px] text-slate-400 leading-snug mt-0.5">
+                                        <span className="block text-[10.5px] text-slate-400 leading-snug truncate">
                                             {s.hint}
                                         </span>
                                     </span>
                                 </button>
                                 {i < STEPS.length - 1 && (
-                                    <div className="ml-[21px] h-3 border-l border-slate-200" aria-hidden="true" />
+                                    <div className={`flex-1 h-px mx-2 min-w-[12px] transition-colors ${done ? 'bg-teal-300' : 'bg-slate-200'}`} aria-hidden="true" />
                                 )}
                             </li>
                         );
                     })}
                 </ol>
-            </div>
-        </aside>
+            </nav>
+        </div>
     );
 
     /** Carte sélectionnable de source d'identité (étape 1). */
@@ -904,30 +905,40 @@ export default function CreateUserPage() {
                             </Paper>
                         );
                     })}
-                </div>
 
-                {/* Modules gérés au niveau de la mine — lecture seule (activés via
-                    « Gestion des Modules », non attribuables par utilisateur). */}
-                <Paper mt="md" p="sm" radius="md" style={{ border: '1px dashed #CBD5E1', background: '#F8FAFC' }}>
-                    <Group gap={6} mb={6} wrap="nowrap">
-                        <IconBuildingFactory2 size={15} className="text-slate-500" />
-                        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
-                            {t('userMgmt.create.mineModulesTitle', { defaultValue: 'Modules gérés au niveau de la mine' })}
+                    {/* Catégorie « Modules par mine » : activés par site via
+                        « Gestion des Modules », non attribuables par utilisateur. */}
+                    <Paper p="sm" radius="md" style={{ border: '1px dashed #CBD5E1', background: '#F8FAFC' }}>
+                        <Group justify="space-between" mb={8} wrap="nowrap">
+                            <Group gap={6} wrap="nowrap">
+                                <Badge color="gray" variant="dot" size="sm">
+                                    {t('userMgmt.create.categories.mineManaged', { defaultValue: 'Modules par mine' })}
+                                </Badge>
+                                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                                    {t('userMgmt.create.mineManagedBadge', { defaultValue: 'activés par site' })}
+                                </Text>
+                            </Group>
+                            <IconBuildingFactory2 size={15} className="text-slate-400" />
+                        </Group>
+                        <Stack gap={6}>
+                            {MINE_MANAGED_MODULES.map((m) => (
+                                <Group key={m.key} justify="space-between" wrap="nowrap" gap={8}>
+                                    <Text size="sm" c="dimmed">
+                                        {t(`userMgmt.create.mineModules.${m.key}`, { defaultValue: m.fr })}
+                                    </Text>
+                                    <Badge size="xs" variant="light" color="gray" leftSection={<IconLock size={9} />}>
+                                        {t('userMgmt.create.mineManagedTag', { defaultValue: 'par mine' })}
+                                    </Badge>
+                                </Group>
+                            ))}
+                        </Stack>
+                        <Text size="xs" c="dimmed" mt={8}>
+                            {t('userMgmt.create.mineModulesHint', {
+                                defaultValue: "Activés par mine via « Gestion des Modules », non réglables par utilisateur.",
+                            })}
                         </Text>
-                    </Group>
-                    <Text size="xs" c="dimmed" mb={8}>
-                        {t('userMgmt.create.mineModulesHint', {
-                            defaultValue: "Ces modules s'activent par mine via « Gestion des Modules » et ne se règlent pas par utilisateur. Ils sont affichés ici pour information.",
-                        })}
-                    </Text>
-                    <Group gap={6}>
-                        {MINE_MANAGED_MODULES.map((m) => (
-                            <Badge key={m.key} variant="light" color="gray" size="sm">
-                                {t(`userMgmt.create.mineModules.${m.key}`, { defaultValue: m.fr })}
-                            </Badge>
-                        ))}
-                    </Group>
-                </Paper>
+                    </Paper>
+                </div>
             </div>
         </div>
     );
@@ -1134,33 +1145,12 @@ export default function CreateUserPage() {
                 </div>
             </div>
 
-            {/* ── Stepper compact mobile (le rail est masqué < lg) ── */}
-            <div className="lg:hidden px-4 sm:px-5 pt-4">
-                <div className="flex items-center gap-1.5">
-                    {STEPS.map((s, i) => {
-                        const done = createdResponse ? true : i < step;
-                        const active = !createdResponse && i === step;
-                        return (
-                            <div key={s.title} className="flex-1 flex flex-col gap-1" title={s.title}>
-                                <div className={`h-1.5 rounded-full transition ${
-                                    done ? 'bg-teal-600' : active ? 'bg-teal-400' : 'bg-slate-200'
-                                }`} />
-                                <span className={`text-[10px] leading-tight truncate ${
-                                    active ? 'text-teal-800 font-medium' : 'text-slate-400'
-                                }`}>
-                                    {i + 1}. {s.title}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+            {/* ── Stepper horizontal (toutes tailles) ── */}
+            {stepHeader}
 
-            {/* ── Corps : rail sticky + colonne principale ── */}
-            <div className="px-4 sm:px-5 lg:px-6 py-5 flex items-start gap-5">
-                {stepRail}
-
-                <div className="flex-1 min-w-0 space-y-4">
+            {/* ── Corps : colonne pleine largeur ── */}
+            <div className="px-4 sm:px-5 lg:px-6 py-5">
+                <div className="mx-auto max-w-5xl min-w-0 space-y-4">
                     {createdResponse ? renderSuccess : (
                         <>
                             {step === 0 && renderStepSource}
@@ -1202,7 +1192,7 @@ export default function CreateUserPage() {
                                             leftSection={<IconCheck size={14} />}
                                             styles={{
                                                 root: {
-                                                    background: 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',
+                                                    background: '#0F766E',
                                                     fontWeight: 500,
                                                 },
                                             }}

@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Breadcrumbs, Select, Text, Loader } from '@mantine/core';
-import { IconInfoCircle, IconEye, IconEdit, IconTrash, IconShield, IconCircleCheck } from '@tabler/icons-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Select, Switch, Loader } from '@mantine/core';
+import { modals } from '@mantine/modals';
+import {
+  IconInfoCircle, IconEye, IconEdit, IconTrash, IconShield, IconCircleCheck,
+  IconArrowLeft, IconChevronRight, IconUserShield,
+} from '@tabler/icons-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
@@ -58,52 +62,54 @@ const roleIdToApiRole = {
 const apiRoleToRoleId = Object.fromEntries(Object.entries(roleIdToApiRole).map(([k, v]) => [v, k])) as Record<string, string>;
 
 const modulesByCategory = {
-  'Leading': [
-    { id: 'non-conformity', name: 'Non-Conformity & Near Miss' },
-    { id: 'inspections', name: 'Planned General Inspections' },
-    { id: 'meetings', name: 'Meeting Managers' },
-    { id: 'management-tour', name: 'Leadership Walk (TDM)' },
-    { id: 'ppe-overview', name: 'PPE Overview' },
-    { id: 'ppe-monitoring', name: 'PPE Monitoring' },
-    { id: 'ppe-request', name: 'PPE Request' }
+  'Indicateurs avancés': [
+    { id: 'non-conformity', name: 'Non-conformités & presqu\'accidents' },
+    { id: 'inspections', name: 'Inspections planifiées' },
+    { id: 'meetings', name: 'Gestion des réunions' },
+    { id: 'management-tour', name: 'Tournée de direction (TDM)' },
+    { id: 'ppe-overview', name: 'Vue d\'ensemble EPI' },
+    { id: 'ppe-monitoring', name: 'Suivi des EPI' },
+    { id: 'ppe-request', name: 'Demande d\'EPI' }
   ],
-  'Lagging': [
-    { id: 'incident-management', name: 'Incidents Management' },
-    { id: 'investigations', name: 'Investigations' },
-    { id: 'action-plans-inc', name: 'Action Plans' },
-    { id: 'pending-actions', name: 'Pending Actions' },
-    { id: 'action-plan', name: 'Action Plan' },
-    { id: 'recommendations', name: 'Recommendations' },
-    { id: 'adhoc-actions', name: 'Improvement Ideas' }
+  'Indicateurs réactifs': [
+    { id: 'incident-management', name: 'Gestion des incidents' },
+    { id: 'investigations', name: 'Enquêtes' },
+    { id: 'action-plans-inc', name: 'Plans d\'action' },
+    { id: 'pending-actions', name: 'Actions en attente' },
+    { id: 'action-plan', name: 'Plan d\'action' },
+    { id: 'recommendations', name: 'Recommandations' },
+    { id: 'adhoc-actions', name: 'Idées d\'amélioration' }
   ],
-  'Audit': [
-    { id: 'audit-plan', name: 'Annual audit plan' },
+  'Audits': [
+    { id: 'audit-plan', name: 'Plan d\'audit annuel' },
     { id: 'audits', name: 'Audits' },
-    { id: 'audit-recommendations', name: 'Audit Recommendations' },
-    { id: 'compliance-dashboard', name: 'Compliance Dashboard' },
-    { id: 'requirements', name: 'Requirements' },
-    { id: 'position-assignments', name: 'Positions Assignments' },
-    { id: 'employee-assignments', name: 'Employee Assignments' }
+    { id: 'audit-recommendations', name: 'Recommandations d\'audit' },
+    { id: 'compliance-dashboard', name: 'Tableau de bord conformité' },
+    { id: 'requirements', name: 'Exigences réglementaires' },
+    { id: 'position-assignments', name: 'Affectations par poste' },
+    { id: 'employee-assignments', name: 'Affectations par employé' }
   ],
-  'Risk & Document': [
-    { id: 'risk-overview', name: 'Risk Overview' },
-    { id: 'risk-register', name: 'Risk Register' },
-    { id: 'risk-assessment', name: 'Risk Assessment' },
-    { id: 'chemical-register', name: 'Chemical Register' },
+  'Risques & Documents': [
+    { id: 'risk-overview', name: 'Vue d\'ensemble des risques' },
+    { id: 'risk-register', name: 'Registre des risques' },
+    { id: 'risk-assessment', name: 'Évaluation des risques' },
+    { id: 'chemical-register', name: 'Registre des produits chimiques' },
     { id: 'documents', name: 'Documents' },
-    { id: 'document-validation', name: 'Document Validation' },
-    { id: 'lessons-learned', name: 'Lesson Learned' },
-    { id: 'document-manager', name: 'Document Manager' }
+    { id: 'document-validation', name: 'Validation des documents' },
+    { id: 'lessons-learned', name: 'Leçons apprises' },
+    { id: 'document-manager', name: 'Gestionnaire de documents' }
   ],
   'Autres': [
-    { id: 'home', name: 'Home' },
-    { id: 'comm-dashboard', name: 'Communication Dashboard' },
-    { id: 'employee-comm', name: 'Employee Communications' },
-    { id: 'notifications', name: 'Notification Managers' },
-    { id: 'users-management', name: 'Users Management' },
-    { id: 'settings', name: 'Settings' }
+    { id: 'home', name: 'Accueil' },
+    { id: 'comm-dashboard', name: 'Tableau de bord communication' },
+    { id: 'employee-comm', name: 'Communications aux employés' },
+    { id: 'notifications', name: 'Gestion des notifications' },
+    { id: 'users-management', name: 'Gestion des utilisateurs' },
+    { id: 'settings', name: 'Paramètres' }
   ]
 };
+
+const SERIF = "'Source Serif 4', Georgia, serif";
 
 const EditUserPermission: React.FC = () => {
   const { id } = useParams();
@@ -116,7 +122,7 @@ const EditUserPermission: React.FC = () => {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [isActiveUser, setIsActiveUser] = useState<boolean>(true);
   const [customPermissions, setCustomPermissions] = useState<Record<string, { view: boolean; edit: boolean; delete: boolean }>>({});
-  const [activePermissionTab, setActivePermissionTab] = useState<string>('Leading');
+  const [activePermissionTab, setActivePermissionTab] = useState<string>('Indicateurs avancés');
 
   useEffect(() => {
     if (!id) return;
@@ -210,242 +216,393 @@ const EditUserPermission: React.FC = () => {
     }));
   };
 
+  // ── Initiales pour l'avatar identité ──
+  const initials = (employee?.name || '')
+    .split(' ')
+    .map((p: string) => p.charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || '?';
+
   return (
-    <div className="flex flex-col gap-8 p-5">
-      <div className="flex justify-between items-center">
-        <div>
-          {/* LOT 40 P1: page title — text-slate-900 (was text-blue-500 gradient) */}
-          <div className="text-2xl font-semibold text-slate-900">Edit User</div>
-          <Breadcrumbs mt="xs">
-            {/* LOT 40 P1: breadcrumbs — c="dimmed" non-leaf, c="teal" leaf (was gradient) */}
-            <Link className="hover:!underline" to="/"><Text c="dimmed">Home</Text></Link>
-            <Link className="hover:!underline" to="/users-management"><Text c="dimmed">Users Management</Text></Link>
-            <Text c="teal" fw={500}>Edit</Text>
-          </Breadcrumbs>
+    <div className="min-h-full bg-[#FAF8F3] pb-10">
+      {/* ── En-tête blanc premium : retour + fil + titre + identité employé ── */}
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-5 lg:px-6 py-4">
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2">
+          <button
+            type="button"
+            onClick={() => navigate('/users-management')}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-300 text-slate-600 bg-white hover:bg-slate-50 transition flex-shrink-0"
+            aria-label="Retour à la gestion des utilisateurs"
+            title="Retour à la gestion des utilisateurs"
+          >
+            <IconArrowLeft size={14} stroke={1.8} />
+          </button>
+          <span className="uppercase tracking-[0.16em] font-medium">Administration</span>
+          <IconChevronRight size={10} className="text-slate-400" />
+          <span className="uppercase tracking-[0.16em] font-medium">Gestion des utilisateurs</span>
+          <IconChevronRight size={10} className="text-slate-400" />
+          <span className="uppercase tracking-[0.16em] text-teal-700 font-medium">Modifier le profil</span>
+        </div>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex items-center gap-3">
+            <div className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100/40 ring-1 ring-teal-200/70 border-l-[3px] border-l-teal-500 shadow-sm">
+              <IconUserShield size={20} stroke={1.8} className="text-teal-700" />
+            </div>
+            <div>
+              <h1
+                className="text-slate-900 leading-tight"
+                style={{
+                  fontFamily: SERIF,
+                  fontWeight: 600,
+                  fontSize: 'clamp(18px, 1.8vw, 22px)',
+                  letterSpacing: '-0.015em',
+                }}
+              >
+                Modifier le profil
+              </h1>
+              <p className="text-[12.5px] text-slate-500 mt-0.5">
+                Ajustez le rôle, le statut et les permissions par module de l'utilisateur.
+              </p>
+            </div>
+          </div>
+
+          {/* Identité de l'employé à droite */}
+          {!loading && (
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-teal-700 text-white text-[12px] font-medium flex-shrink-0">
+                {initials}
+              </div>
+              <div className="min-w-0 text-right sm:text-left">
+                <div className="text-[13px] font-medium text-slate-800 truncate">{employee?.name || '—'}</div>
+                <div className="text-[11.5px] text-slate-500 truncate">{employee?.email || '—'}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="bg-white shadow-sm border border-gray-300 p-6 rounded-xl">
+      {/* ── Corps ── */}
+      <div className="px-4 sm:px-5 lg:px-6 py-5">
         {loading ? (
-          <div className="flex items-center gap-3 text-gray-700"><Loader size="sm" /> <span>Loading...</span></div>
+          <div className="flex items-center gap-3 text-slate-600 bg-white border border-slate-200 rounded-xl shadow-sm px-5 py-4">
+            <Loader size="sm" color="teal" /> <span className="text-[13px]">Chargement du profil…</span>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3 space-y-8">
-              {/* Employee details */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg text-gray-900 mb-4">Employee</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <div className="text-sm text-gray-600">Name</div>
-                    <div className="text-gray-900">{employee?.name || '-'}</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            {/* ── Colonne gauche ── */}
+            <div className="lg:col-span-2 space-y-4">
+
+              {/* Employé */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="px-5 py-3 border-b border-slate-100">
+                  <h2 className="text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 15 }}>
+                    Employé
+                  </h2>
+                </div>
+                <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <div className="text-[11.5px] uppercase tracking-wide text-slate-400 font-medium mb-1">Nom</div>
+                    <div className="text-[13px] text-slate-800">{employee?.name || '—'}</div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="text-gray-900">{employee?.email || '-'}</div>
+                  <div>
+                    <div className="text-[11.5px] uppercase tracking-wide text-slate-400 font-medium mb-1">Adresse e-mail</div>
+                    <div className="text-[13px] text-slate-800">{employee?.email || '—'}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Role and status */}
-              <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-6">
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-700 mb-2">Role *</label>
+              {/* Rôle & statut */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="px-5 py-3 border-b border-slate-100">
+                  <h2 className="text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 15 }}>
+                    Rôle & statut
+                  </h2>
+                </div>
+                <div className="px-5 py-4 space-y-4">
                   <Select
-                    placeholder="Select a role..."
+                    label="Rôle"
+                    placeholder="Sélectionner un rôle…"
+                    leftSection={<IconShield size={14} />}
                     data={[
-                      { value: 'system-admin', label: 'System Administrator' },
-                      { value: 'health-safety-coordinator', label: 'Health & Safety Coordinator' },
-                      { value: 'incident-investigator', label: 'Incident Investigator' },
-                      { value: 'auditor', label: 'Auditor' },
-                      { value: 'employee', label: 'Employee' },
+                      { value: 'system-admin', label: 'Administrateur système' },
+                      { value: 'health-safety-coordinator', label: 'Coordinateur santé & sécurité' },
+                      { value: 'incident-investigator', label: 'Enquêteur incidents' },
+                      { value: 'auditor', label: 'Auditeur' },
+                      { value: 'employee', label: 'Employé' },
                     ]}
                     value={selectedRoleId}
                     onChange={(val) => {
+                      const previousRoleId = selectedRoleId;
                       setSelectedRoleId(val);
                       if (val) {
                         const role = predefinedRoles.find((r) => r.id === val);
                         if (role) {
-                          // Apply the default permissions template for the selected role
-                          setCustomPermissions({ ...role.permissions });
+                          // Appliquer le modèle de permissions écrase la matrice personnalisée :
+                          // demander confirmation avant d'écraser les permissions par module existantes.
+                          modals.openConfirmModal({
+                            title: <span className="text-xl">Appliquer le modèle de rôle ?</span>,
+                            centered: true,
+                            children: (
+                              <span className="text-sm">
+                                Changer le rôle remplacera les permissions personnalisées actuelles par le modèle du rôle sélectionné. Continuer ?
+                              </span>
+                            ),
+                            labels: { confirm: 'Oui, appliquer', cancel: 'Annuler' },
+                            cancelProps: { color: 'red', variant: 'filled' },
+                            confirmProps: { color: 'green', variant: 'filled' },
+                            closeOnEscape: false,
+                            closeOnClickOutside: false,
+                            withCloseButton: false,
+                            onConfirm: () => {
+                              // Apply the default permissions template for the selected role
+                              setCustomPermissions({ ...role.permissions });
+                            },
+                            onCancel: () => {
+                              // Conserver la matrice personnalisée : revenir au rôle précédent.
+                              setSelectedRoleId(previousRoleId);
+                            },
+                          });
                         }
                       }
                     }}
                     withAsterisk
+                    styles={{ input: { borderColor: '#CBD5E1' } }}
                   />
-                </div>
 
-                <div className="flex items-center">
-                  <input type="checkbox" id="activeUser" checked={isActiveUser} onChange={handleToggleStatus} className="mr-2" />
-                  <label htmlFor="activeUser" className="text-sm text-gray-700">Active user</label>
-                </div>
-              </div>
-
-              {/* Permissions matrix */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg text-gray-900 mb-6">Permissions</h3>
-                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
-                  {permissionTabs.map((tab) => (
-                    <button key={tab} onClick={() => setActivePermissionTab(tab)} className={`px-4 py-2 rounded-md text-sm ${activePermissionTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-gray-900">Module</th>
-                        <th className="text-center py-3 px-4 text-blue-600">View/Read</th>
-                        <th className="text-center py-3 px-4 text-orange-600">Edit/Create</th>
-                        <th className="text-center py-3 px-4 text-red-600">Delete</th>
-                        <th className="text-center py-3 px-4 text-green-600">Full Access</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {modulesByCategory[activePermissionTab as keyof typeof modulesByCategory].map((module) => {
-                        const permissions = customPermissions[module.id] || { view: false, edit: false, delete: false };
-                        const hasFullAccess = permissions.view && permissions.edit && permissions.delete;
-
-                        return (
-                          <tr key={module.id} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-900">{module.name}</td>
-
-                            {/* View/Read Toggle */}
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => handlePermissionToggle(module.id, 'view')}
-                                className={`w-8 h-4 rounded-full transition-colors ${permissions.view ? 'bg-blue-500' : 'bg-gray-300'} relative`}
-                              >
-                                <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${permissions.view ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                              </button>
-                            </td>
-
-                            {/* Edit/Create Toggle */}
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => handlePermissionToggle(module.id, 'edit')}
-                                className={`w-8 h-4 rounded-full transition-colors ${permissions.edit ? 'bg-orange-500' : 'bg-gray-300'} relative`}
-                              >
-                                <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${permissions.edit ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                              </button>
-                            </td>
-
-                            {/* Delete Toggle */}
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => handlePermissionToggle(module.id, 'delete')}
-                                className={`w-8 h-4 rounded-full transition-colors ${permissions.delete ? 'bg-red-500' : 'bg-gray-300'} relative`}
-                              >
-                                <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${permissions.delete ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                              </button>
-                            </td>
-
-                            {/* Full Access Toggle */}
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => {
-                                  const newFullAccess = !hasFullAccess;
-                                  setCustomPermissions(prev => ({
-                                    ...prev,
-                                    [module.id]: { view: newFullAccess, edit: newFullAccess, delete: newFullAccess }
-                                  }));
-                                }}
-                                className={`w-8 h-4 rounded-full transition-colors ${hasFullAccess ? 'bg-green-500' : 'bg-gray-300'} relative`}
-                              >
-                                <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${hasFullAccess ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/60 px-3.5 py-2.5">
+                    <div>
+                      <div className="text-[13px] font-medium text-slate-800">Utilisateur actif</div>
+                      <div className="text-[11.5px] text-slate-500">Un utilisateur inactif ne peut plus se connecter.</div>
+                    </div>
+                    <Switch
+                      color="teal"
+                      size="md"
+                      checked={isActiveUser}
+                      onChange={handleToggleStatus}
+                      aria-label="Utilisateur actif"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4">
-                <button onClick={() => navigate('/users-management')} className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button onClick={handleSave} disabled={saving || !selectedRoleId} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">Save Changes</button>
+              {/* Permissions par module */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="px-5 py-3 border-b border-slate-100">
+                  <h2 className="text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 15 }}>
+                    Permissions par module
+                  </h2>
+                </div>
+                <div className="px-5 py-4">
+                  {/* Onglets segmentés */}
+                  <div className="inline-flex flex-wrap gap-1 bg-slate-50 p-1 rounded-lg mb-4 border border-slate-200">
+                    {permissionTabs.map((tab) => {
+                      const active = activePermissionTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setActivePermissionTab(tab)}
+                          className={`px-3 py-1.5 rounded-md text-[12.5px] transition ${
+                            active
+                              ? 'bg-white text-teal-700 shadow-sm font-medium'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="text-left py-2.5 px-4 text-[11.5px] uppercase tracking-wide font-medium text-slate-500">Module</th>
+                          <th className="text-center py-2.5 px-3 text-[11.5px] uppercase tracking-wide font-medium text-blue-600">Voir / Lire</th>
+                          <th className="text-center py-2.5 px-3 text-[11.5px] uppercase tracking-wide font-medium text-orange-600">Modifier / Créer</th>
+                          <th className="text-center py-2.5 px-3 text-[11.5px] uppercase tracking-wide font-medium text-red-600">Supprimer</th>
+                          <th className="text-center py-2.5 px-3 text-[11.5px] uppercase tracking-wide font-medium text-teal-700">Accès total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {modulesByCategory[activePermissionTab as keyof typeof modulesByCategory].map((module) => {
+                          const permissions = customPermissions[module.id] || { view: false, edit: false, delete: false };
+                          const hasFullAccess = permissions.view && permissions.edit && permissions.delete;
+
+                          return (
+                            <tr key={module.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50">
+                              <td className="py-2.5 px-4 text-[13px] text-slate-800">{module.name}</td>
+
+                              {/* Voir / Lire */}
+                              <td className="py-2.5 px-3">
+                                <div className="flex justify-center">
+                                  <Switch
+                                    size="sm"
+                                    color="blue"
+                                    checked={permissions.view}
+                                    onChange={() => handlePermissionToggle(module.id, 'view')}
+                                    aria-label={`Voir / Lire — ${module.name}`}
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Modifier / Créer */}
+                              <td className="py-2.5 px-3">
+                                <div className="flex justify-center">
+                                  <Switch
+                                    size="sm"
+                                    color="orange"
+                                    checked={permissions.edit}
+                                    onChange={() => handlePermissionToggle(module.id, 'edit')}
+                                    aria-label={`Modifier / Créer — ${module.name}`}
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Supprimer */}
+                              <td className="py-2.5 px-3">
+                                <div className="flex justify-center">
+                                  <Switch
+                                    size="sm"
+                                    color="red"
+                                    checked={permissions.delete}
+                                    onChange={() => handlePermissionToggle(module.id, 'delete')}
+                                    aria-label={`Supprimer — ${module.name}`}
+                                  />
+                                </div>
+                              </td>
+
+                              {/* Accès total */}
+                              <td className="py-2.5 px-3">
+                                <div className="flex justify-center">
+                                  <Switch
+                                    size="sm"
+                                    color="teal"
+                                    checked={hasFullAccess}
+                                    onChange={() => {
+                                      const newFullAccess = !hasFullAccess;
+                                      setCustomPermissions(prev => ({
+                                        ...prev,
+                                        [module.id]: { view: newFullAccess, edit: newFullAccess, delete: newFullAccess }
+                                      }));
+                                    }}
+                                    aria-label={`Accès total — ${module.name}`}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/users-management')}
+                  className="px-5 py-2 rounded-lg border border-slate-300 text-slate-700 text-[13px] font-medium bg-white hover:bg-slate-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !selectedRoleId}
+                  className="px-5 py-2 rounded-lg text-white text-[13px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: '#0F766E' }}
+                >
+                  Enregistrer les modifications
+                </button>
               </div>
             </div>
-            {/* Right Panel - Permissions Guide - 1 column */}
+
+            {/* ── Colonne droite : Guide des permissions ── */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-8">
-                <div className="flex items-center mb-6">
-                  <IconInfoCircle className="w-6 h-6 text-blue-600 mr-3" />
-                  <h3 className="text-lg text-gray-900">Permissions Guide</h3>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm lg:sticky lg:top-6">
+                <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                  <IconInfoCircle size={16} className="text-teal-700" />
+                  <h2 className="text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 15 }}>
+                    Guide des permissions
+                  </h2>
                 </div>
 
-                <div className="space-y-6">
-                  {/* View/Read Permission */}
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <div className="flex items-center mb-2">
-                      <IconEye className="w-5 h-5 text-blue-600 mr-2" />
-                      <h4 className="text-blue-900">View/Read</h4>
+                <div className="px-5 py-4 space-y-4">
+                  {/* Voir / Lire */}
+                  <div className="border-l-[3px] border-blue-500 pl-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IconEye size={16} className="text-blue-600" />
+                      <h3 className="text-[13px] font-medium text-blue-900">Voir / Lire</h3>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Allows users to view and read information in the module. Users can see data, reports, and content but cannot make changes.
+                    <p className="text-[12px] text-slate-600 leading-relaxed">
+                      Permet de consulter les informations du module. L'utilisateur voit les données, rapports et contenus sans pouvoir les modifier.
                     </p>
-                    <div className="mt-2 text-xs text-blue-700 bg-blue-50 p-2 rounded">
-                      <strong>Examples:</strong> View dashboards, read reports, see user lists
+                    <div className="mt-2 text-[11.5px] text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded">
+                      <strong>Exemples :</strong> consulter les tableaux de bord, lire les rapports, voir les listes d'utilisateurs.
                     </div>
                   </div>
 
-                  {/* Edit/Create Permission */}
-                  <div className="border-l-4 border-orange-500 pl-4">
-                    <div className="flex items-center mb-2">
-                      <IconEdit className="w-5 h-5 text-orange-600 mr-2" />
-                      <h4 className="text-orange-900">Edit/Create</h4>
+                  {/* Modifier / Créer */}
+                  <div className="border-l-[3px] border-orange-500 pl-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IconEdit size={16} className="text-orange-600" />
+                      <h3 className="text-[13px] font-medium text-orange-900">Modifier / Créer</h3>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Allows users to create new records and edit existing ones. Includes all View permissions plus the ability to modify data.
+                    <p className="text-[12px] text-slate-600 leading-relaxed">
+                      Permet de créer de nouveaux enregistrements et de modifier ceux qui existent. Inclut tous les droits de lecture ainsi que la modification des données.
                     </p>
-                    <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded">
-                      <strong>Examples:</strong> Create incidents, edit assessments, update user profiles
+                    <div className="mt-2 text-[11.5px] text-orange-700 bg-orange-50 px-2.5 py-1.5 rounded">
+                      <strong>Exemples :</strong> créer des incidents, modifier des évaluations, mettre à jour des profils.
                     </div>
                   </div>
 
-                  {/* Delete Permission */}
-                  <div className="border-l-4 border-red-500 pl-4">
-                    <div className="flex items-center mb-2">
-                      <IconTrash className="w-5 h-5 text-red-600 mr-2" />
-                      <h4 className="text-red-900">Delete</h4>
+                  {/* Supprimer */}
+                  <div className="border-l-[3px] border-red-500 pl-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IconTrash size={16} className="text-red-600" />
+                      <h3 className="text-[13px] font-medium text-red-900">Supprimer</h3>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Allows users to permanently remove records. This is a high-level permission that should be granted carefully.
+                    <p className="text-[12px] text-slate-600 leading-relaxed">
+                      Permet de retirer définitivement des enregistrements. C'est un droit sensible qui doit être accordé avec prudence.
                     </p>
-                    <div className="mt-2 text-xs text-red-700 bg-red-50 p-2 rounded">
-                      <strong>Examples:</strong> Delete incidents, remove users, archive documents
+                    <div className="mt-2 text-[11.5px] text-red-700 bg-red-50 px-2.5 py-1.5 rounded">
+                      <strong>Exemples :</strong> supprimer des incidents, retirer des utilisateurs, archiver des documents.
                     </div>
                   </div>
 
-                  {/* Full Access Permission */}
-                  <div className="border-l-4 border-green-500 pl-4">
-                    <div className="flex items-center mb-2">
-                      <IconShield className="w-5 h-5 text-green-600 mr-2" />
-                      <h4 className="text-green-900">Full Access</h4>
+                  {/* Accès total */}
+                  <div className="border-l-[3px] border-teal-600 pl-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <IconShield size={16} className="text-teal-700" />
+                      <h3 className="text-[13px] font-medium text-teal-900">Accès total</h3>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Grants complete control over the module. Includes View, Edit, and Delete permissions plus administrative functions.
+                    <p className="text-[12px] text-slate-600 leading-relaxed">
+                      Accorde le contrôle complet du module : lecture, modification, suppression ainsi que les fonctions d'administration.
                     </p>
-                    <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded">
-                      <strong>Examples:</strong> Module configuration, user management, system settings
+                    <div className="mt-2 text-[11.5px] text-teal-700 bg-teal-50 px-2.5 py-1.5 rounded">
+                      <strong>Exemples :</strong> configuration du module, gestion des utilisateurs, paramètres système.
                     </div>
                   </div>
                 </div>
 
-                {/* Best Practices */}
-                <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-gray-900 mb-3 flex items-center">
-                    <IconCircleCheck className="w-4 h-4 text-green-600 mr-2" />
-                    Best Practices
-                  </h4>
-                  <ul className="text-xs text-gray-600 space-y-2">
-                    <li>• Start with minimal permissions and add as needed</li>
-                    <li>• Review permissions regularly</li>
-                    <li>• Use role-based permissions when possible</li>
-                    <li>• Document permission changes</li>
-                    <li>• Test permissions before going live</li>
+                {/* Bonnes pratiques */}
+                <div className="mx-5 mb-5 p-3.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <h3 className="text-[13px] font-medium text-slate-800 mb-2 flex items-center gap-2">
+                    <IconCircleCheck size={15} className="text-teal-700" />
+                    Bonnes pratiques
+                  </h3>
+                  <ul className="text-[12px] text-slate-600 space-y-1.5">
+                    <li className="flex gap-2"><span className="text-teal-600">•</span> Commencez par des permissions minimales, puis ajoutez selon les besoins.</li>
+                    <li className="flex gap-2"><span className="text-teal-600">•</span> Réexaminez les permissions régulièrement.</li>
+                    <li className="flex gap-2"><span className="text-teal-600">•</span> Privilégiez les permissions basées sur les rôles lorsque c'est possible.</li>
+                    <li className="flex gap-2"><span className="text-teal-600">•</span> Documentez les changements de permissions.</li>
+                    <li className="flex gap-2"><span className="text-teal-600">•</span> Testez les permissions avant la mise en production.</li>
                   </ul>
                 </div>
               </div>

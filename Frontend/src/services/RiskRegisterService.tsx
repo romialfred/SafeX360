@@ -64,6 +64,14 @@ export interface RiskDto {
     updatedAt: string;
     probability?: number;
     severity?: number;
+    // ISO 45001 §6.1.2 — identification du danger
+    activityType?: string | null;
+    hazardCategory?: string | null;
+    personsExposed?: string | null; // CSV
+    exposureCount?: number | null;
+    // ISO 45001 §6.1.3 : exigences legales et revue planifiee
+    legalRequirements?: string | null;
+    nextReviewDate?: string | null; // yyyy-MM-dd
 }
 
 const searchRisks = async (params?: RiskSearchParams) => {

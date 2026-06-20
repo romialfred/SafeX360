@@ -18,6 +18,7 @@ import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { mapIdToName } from "../../../utility/OtherUtilities";
 import { addHsActivityHistory, getHsActivityHistoryById } from "../../../services/ActivityHistoryService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { toLocalDate } from "../../../utility/dateConversion";
 import ViewDetailsMeeting from "../Hs-Meetings/Hs-MeetingsDetails/ViewDetailsMeeting";
 import CorrectiveActions from "../Hs-Meetings/Hs-MeetingsDetails/CorrectiveActions";
 import ActivityHistory from "../Hs-Meetings/Hs-MeetingsDetails/ActivityHistory";
@@ -44,17 +45,30 @@ const SteeringTourDetails = () => {
         date: Date | null;
         status: string;
         comment: string;
+        evaluation: number | string;
+        closingReport: string;
     }>({
         initialValues: {
             ownerId: "",
             date: null,
             status: "",
             comment: "",
+            evaluation: "",
+            closingReport: "",
         },
         validate: {
             ownerId: (value) => value ? null : "Le responsable est requis",
             date: (value) => value ? null : "La date est requise",
             status: (value) => value ? null : "Le statut est requis",
+            comment: (value) => value && value.trim() ? null : "Un commentaire est requis",
+            evaluation: (value, values) =>
+                values.status === 'COMPLETED' && (value === '' || value === null || value === undefined)
+                    ? "L'évaluation est requise pour clôturer"
+                    : null,
+            closingReport: (value, values) =>
+                values.status === 'COMPLETED' && (!value || !value.trim())
+                    ? 'Le rapport de clôture est requis'
+                    : null,
         }
     });
 
@@ -133,6 +147,7 @@ const SteeringTourDetails = () => {
 
         const payload = {
             ...values,
+            date: toLocalDate(values.date),
             hsActivityId: parseInt(id || "")
         };
 

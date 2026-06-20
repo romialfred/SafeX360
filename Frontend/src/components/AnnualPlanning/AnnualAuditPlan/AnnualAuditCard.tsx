@@ -61,6 +61,11 @@ const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditArea
     // Seuls les plans approuvés disposent du retournement (fiche de synthèse).
     const flippable = isApproved;
     const [flipped, setFlipped] = useState(false);
+    // prefers-reduced-motion : retournement instantané (pas de transition animée).
+    const reduceMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ─── Face avant (commune) ────────────────────────────────────────────────
     const front = (
@@ -245,7 +250,7 @@ const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditArea
                     style={{
                         transformStyle: 'preserve-3d',
                         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                        transition: 'transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                        transition: reduceMotion ? 'none' : 'transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1)',
                     }}
                 >
                     {front}

@@ -172,8 +172,8 @@ const CreateDocument = () => {
                 ...values,
                 documentName: values.documentName.trim(),
                 description: values.description.trim(),
-                reviewDate: values.reviewDate ? toIsoDateLocal(values.reviewDate) : null,
-                expiryDate: values.expiryDate ? toIsoDateLocal(values.expiryDate) : null,
+                reviewDate: values.reviewDate ? `${toIsoDateLocal(values.reviewDate)}T00:00:00` : null,
+                expiryDate: values.expiryDate ? `${toIsoDateLocal(values.expiryDate)}T00:00:00` : null,
                 media,
             });
             successNotification('Document ajouté au référentiel');

@@ -131,8 +131,8 @@ const ExecuteAudit = () => {
             type: "",
             department: "",
             goal: "",
-            startDate: "",
-            endDate: "",
+            startDate: null,
+            endDate: null,
             assessment: "",
             areaId: "",
             auditId: id,
@@ -159,7 +159,13 @@ const ExecuteAudit = () => {
             contributors: [],
         },
         validate: {
-
+            // LOT audit P2 : validation des champs marqués withAsterisk côté UI
+            report: {
+                preparerName: (value: string) =>
+                    value && value.trim() ? null : 'Le rédacteur du rapport est requis',
+                validatorName: (value: string) =>
+                    value && value.trim() ? null : 'Le validateur du rapport est requis',
+            },
         },
     })
     const pickerControl = (

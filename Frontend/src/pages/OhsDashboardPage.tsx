@@ -180,6 +180,23 @@ const ALERT_TONE_MAP = {
     low:    { border: 'border-slate-200',  bg: 'bg-slate-50',  dot: 'bg-slate-500',  text: 'text-slate-700' },
 };
 
+/**
+ * Bordure de survol par tonalité — carte d'accès rapide.
+ * Tailwind JIT PURGE les classes interpolées (`hover:border-${tone}-300`),
+ * donc on déclare ici une carte STATIQUE couvrant chaque `tone` réellement
+ * utilisé dans le tableau d'accès rapides ci-dessous.
+ */
+const TONE_HOVER_BORDER: Record<string, string> = {
+    red:     'hover:border-red-300',
+    indigo:  'hover:border-indigo-300',
+    violet:  'hover:border-violet-300',
+    teal:    'hover:border-teal-300',
+    amber:   'hover:border-amber-300',
+    emerald: 'hover:border-emerald-300',
+    blue:    'hover:border-blue-300',
+    slate:   'hover:border-slate-300',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //   PAGE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,9 +229,14 @@ const OhsDashboardPage = () => {
             {/* ─── En-tête : titre + sous-titre + chrono ───────────────── */}
             <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
                 <div>
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                        Direction Santé · Sécurité · Environnement
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                            Direction Santé · Sécurité · Environnement
+                        </p>
+                        <span className="inline-flex items-center text-[11px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5">
+                            Données de démonstration
+                        </span>
+                    </div>
                     <h1
                         className="text-slate-900 mt-1.5"
                         style={{
@@ -546,7 +568,7 @@ const OhsDashboardPage = () => {
                             key={q.label}
                             type="button"
                             onClick={() => navigate(q.path)}
-                            className={`group bg-white rounded-lg border border-slate-200 hover:border-${q.tone}-300 hover:shadow-md transition-all px-3 py-2.5 flex items-center justify-between gap-2 text-left`}
+                            className={`group bg-white rounded-lg border border-slate-200 ${TONE_HOVER_BORDER[q.tone] ?? TONE_HOVER_BORDER.slate} hover:shadow-md transition-all px-3 py-2.5 flex items-center justify-between gap-2 text-left`}
                         >
                             <span className="text-[12.5px] text-slate-700 group-hover:text-slate-900">
                                 {q.label}

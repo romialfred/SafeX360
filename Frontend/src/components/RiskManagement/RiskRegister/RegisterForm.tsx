@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Select, Textarea, TextInput } from '@mantine/core';
+import { Button, MultiSelect, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import {
@@ -7,6 +7,8 @@ import {
     IconBuildingFactory2,
     IconDeviceFloppy,
     IconFileText,
+    IconGavel,
+    IconShieldSearch,
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +21,12 @@ import { createRisk } from '../../../services/RiskRegisterService';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { GetAllWorkProcess } from '../../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
-import { formatDateFr } from '../riskLabels';
+import {
+    ACTIVITY_TYPE_OPTIONS,
+    HAZARD_CATEGORY_OPTIONS,
+    PERSONS_EXPOSED_OPTIONS,
+    formatDateFr,
+} from '../riskLabels';
 
 /**
  * Identification d'un risque (LOT 50) — formulaire sectionné avec, à droite,
@@ -34,6 +41,14 @@ interface RiskFormValues {
     potentialConsequences: string;
     ownerId: string;
     reviewDate: Date | null;
+    // ISO 45001 §6.1.2 — identification du danger
+    activityType: string;
+    hazardCategory: string;
+    personsExposed: string[];
+    exposureCount: number | string;
+    // ISO 45001 §6.1.3 : exigences legales et revue planifiee
+    legalRequirements: string;
+    nextReviewDate: Date | null;
 }
 
 export const SectionCard = ({
@@ -47,12 +62,12 @@ export const SectionCard = ({
     subtitle: string;
     children: React.ReactNode;
 }) => (
-    <section className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-slate-100">
-            <span className="inline-flex p-1.5 rounded-md bg-red-50 text-red-700">{icon}</span>
-            <div>
+    <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3 border-b border-slate-100">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-700 flex-shrink-0">{icon}</span>
+            <div className="min-w-0">
                 <h3
-                    className="text-slate-800"
+                    className="text-slate-800 leading-tight"
                     style={{
                         fontFamily: "'Source Serif 4', Georgia, serif",
                         fontSize: '14px',
@@ -62,10 +77,10 @@ export const SectionCard = ({
                 >
                     {title}
                 </h3>
-                <p className="text-[11.5px] text-slate-500">{subtitle}</p>
+                <p className="text-[11.5px] text-slate-500 mt-0.5">{subtitle}</p>
             </div>
         </div>
-        <div className="flex flex-col gap-3">{children}</div>
+        <div className="flex flex-col gap-3 p-5">{children}</div>
     </section>
 );
 
@@ -100,6 +115,12 @@ const RegisterForm = () => {
             potentialConsequences: '',
             ownerId: '',
             reviewDate: null,
+            activityType: '',
+            hazardCategory: '',
+            personsExposed: [],
+            exposureCount: '',
+            legalRequirements: '',
+            nextReviewDate: null,
         },
         validate: {
             description: (value) => (value.trim() ? null : t('registerForm.validate.description')),
@@ -129,6 +150,12 @@ const RegisterForm = () => {
             ownerId: Number(values.ownerId),
             status: 'OPEN',
             reviewDate: toLocalDate(values.reviewDate),
+            activityType: values.activityType || null,
+            hazardCategory: values.hazardCategory || null,
+            personsExposed: values.personsExposed.length ? values.personsExposed.join(',') : null,
+            exposureCount: values.exposureCount === '' || values.exposureCount === null ? null : Number(values.exposureCount),
+            legalRequirements: values.legalRequirements.trim() || null,
+            nextReviewDate: toLocalDate(values.nextReviewDate),
         };
         createRisk(payload)
             .then(() => {
@@ -145,7 +172,7 @@ const RegisterForm = () => {
     };
 
     return (
-        <div className="p-5 space-y-4 w-full">
+        <div className="min-h-full bg-[#FAF8F3] p-5 space-y-4 w-full">
             <PageHeader
                 breadcrumbs={[
                     { label: t('common.home'), to: '/' },
@@ -192,6 +219,69 @@ const RegisterForm = () => {
                                 withAsterisk
                                 size="sm"
                                 {...form.getInputProps('potentialConsequences')}
+                            />
+                        </SectionCard>
+
+                        <SectionCard
+                            icon={<IconShieldSearch size={15} stroke={1.8} />}
+                            title="Identification du danger (ISO 45001 §6.1.2)"
+                            subtitle="Nature de l'activité, catégorie de danger et population exposée"
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Select
+                                    label="Type d'activité"
+                                    placeholder="Sélectionner"
+                                    data={ACTIVITY_TYPE_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('activityType')}
+                                />
+                                <Select
+                                    label="Catégorie de danger"
+                                    placeholder="Sélectionner"
+                                    data={HAZARD_CATEGORY_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('hazardCategory')}
+                                />
+                                <MultiSelect
+                                    label="Personnes exposées"
+                                    placeholder="Sélectionner"
+                                    data={PERSONS_EXPOSED_OPTIONS}
+                                    size="sm"
+                                    clearable
+                                    {...form.getInputProps('personsExposed')}
+                                />
+                                <NumberInput
+                                    label="Nombre de personnes exposées"
+                                    placeholder="0"
+                                    min={0}
+                                    size="sm"
+                                    {...form.getInputProps('exposureCount')}
+                                />
+                            </div>
+                        </SectionCard>
+
+                        <SectionCard
+                            icon={<IconGavel size={15} stroke={1.8} />}
+                            title="Conformité et revue (ISO 45001 §6.1.3)"
+                            subtitle="Exigences légales applicables et planification de la prochaine revue"
+                        >
+                            <Textarea
+                                label="Exigences légales et autres applicables (ISO 45001 §6.1.3)"
+                                placeholder="Réglementations, normes et autres exigences applicables à ce risque"
+                                minRows={2}
+                                autosize
+                                size="sm"
+                                {...form.getInputProps('legalRequirements')}
+                            />
+                            <DateInput
+                                label="Prochaine revue"
+                                placeholder="JJ/MM/AAAA"
+                                size="sm"
+                                valueFormat="DD/MM/YYYY"
+                                clearable
+                                {...form.getInputProps('nextReviewDate')}
                             />
                         </SectionCard>
 
@@ -252,10 +342,10 @@ const RegisterForm = () => {
                             </Button>
                             <Button
                                 type="submit"
-                                color="teal"
                                 size="sm"
                                 loading={submitting}
                                 leftSection={<IconDeviceFloppy size={15} />}
+                                styles={{ root: { backgroundColor: '#DC2626' } }}
                             >
                                 {t('registerForm.saveRisk')}
                             </Button>

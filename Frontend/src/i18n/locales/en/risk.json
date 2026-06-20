@@ -103,7 +103,7 @@
   "dashboard": {
     "breadcrumb": "Overview",
     "title": "Risk overview",
-    "subtitle": "Indicators, distributions and likelihood × severity matrix — ISO 31000 framework",
+    "subtitle": "Indicators, distributions and likelihood × severity matrix. ISO 45001 framework.",
     "loadFailed": "Failed to load the overview",
     "emptyTitle": "No summary data available",
     "emptyDescription": "The overview populates automatically as soon as risks are recorded in the register.",
@@ -254,6 +254,20 @@
     "savedToast": "Assessment saved",
     "saveFailed": "The assessment could not be saved",
     "guideAria": "Assessment guidance",
+    "isoControl": {
+      "title": "Risk control: hierarchy of controls (ISO 45001 §8.1.2)",
+      "subtitle": "Favour the most effective measures first, PPE as the last resort",
+      "tier1": "1. Elimination",
+      "tier2": "2. Substitution",
+      "tier3": "3. Engineering controls (collective protection)",
+      "tier4": "4. Administrative controls (procedures, training)",
+      "tier5": "5. PPE",
+      "currentControlsLabel": "Controls in place",
+      "additionalControlLabel": "Planned additional controls",
+      "preventiveLabel": "Preventive measures",
+      "improvementsLabel": "Improvement opportunities",
+      "note": "Structured entry by hierarchy level and residual risk are coming in a future step."
+    },
     "validate": {
       "reason": "The reason for reassessment is required",
       "gravity": "The severity is required",

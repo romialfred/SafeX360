@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Tabs } from '@mantine/core';
-import { IconClipboardCheck, IconEye, IconFileText, IconHistory, IconPlus } from '@tabler/icons-react';
+import { IconClipboardCheck, IconEye, IconFileText, IconHistory, IconLayersIntersect, IconPlus } from '@tabler/icons-react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../../../UtilityComp/PageHeader';
@@ -15,6 +15,7 @@ import { GetAllWorkProcess } from '../../../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../../../services/EmployeeService';
 import { getAnalysisByRisk } from '../../../../services/RiskAnalysisService';
 import { riskStatusConfig } from '../../riskLabels';
+import RiskControlPanel from '../../RiskControlPanel';
 
 /**
  * Fiche détaillée d'un risque (LOT 50) : synthèse, historique des
@@ -127,6 +128,9 @@ const DetailView = () => {
                         <Tabs.Tab value="history" leftSection={<IconHistory size={15} />}>
                             {t('detailView.tabHistory')}
                         </Tabs.Tab>
+                        <Tabs.Tab value="controls" leftSection={<IconLayersIntersect size={15} />}>
+                            Plan de maîtrise
+                        </Tabs.Tab>
                         {showNewAssessment && (
                             <Tabs.Tab value="assessment" leftSection={<IconClipboardCheck size={15} />}>
                                 {t('detailView.tabNewAssessment')}
@@ -146,6 +150,12 @@ const DetailView = () => {
 
                     <Tabs.Panel value="history" pt="md">
                         <RiskHistoryTab revisionHistory={assessments} />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="controls" pt="md">
+                        {(risk?.id ?? id) && (
+                            <RiskControlPanel sourceType="RISK" riskId={Number(risk?.id ?? id)} />
+                        )}
                     </Tabs.Panel>
 
                     {showNewAssessment && (
