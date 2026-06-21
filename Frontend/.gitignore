@@ -41,3 +41,5 @@ google-services.json
 # APK / AAB de sortie
 *.apk
 *.aab
+# Exception : APK distribue via la page login (Vercel)
+!public/downloads/SafexMobile.apk
