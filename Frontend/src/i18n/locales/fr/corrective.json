@@ -1,0 +1,44 @@
+{
+    "tabs": {
+        "all": "Toutes",
+        "incident": "Incident",
+        "inspection": "Inspection",
+        "hsActivity": "Activité HSE",
+        "nonConformity": "Non-conformité",
+        "nearMiss": "Quasi-accident",
+        "hazard": "Danger"
+    },
+    "status": {
+        "PENDING": "En attente",
+        "IN_PROGRESS": "En cours",
+        "CANCELLED": "Annulée",
+        "COMPLETED": "Réalisée"
+    },
+    "page": {
+        "title": "Plans d'actions correctives et préventives",
+        "subtitle": "Affectation, suivi et clôture des CAPA — conformité ISO 45001 §10.2.1.d",
+        "newAction": "Nouvelle action",
+        "search": "Rechercher une source, une action, un responsable…",
+        "allStatuses": "Tous statuts",
+        "exportCsv": "Exporter CSV",
+        "tableView": "Vue tableau",
+        "cardView": "Vue cartes",
+        "loadError": "Échec du chargement des actions",
+        "displayed": "{{count}} action affichée sur {{total}}",
+        "displayed_plural": "{{count}} actions affichées sur {{total}}"
+    },
+    "export": {
+        "source": "Source",
+        "actionPlan": "Plan d'action",
+        "type": "Type",
+        "assignee": "Responsable",
+        "deadline": "Échéance",
+        "progress": "Progression",
+        "status": "Statut"
+    },
+    "empty": {
+        "title": "Aucune action ne correspond aux filtres",
+        "subtitle": "Élargissez la recherche ou réinitialisez les filtres pour retrouver le registre complet.",
+        "reset": "Réinitialiser les filtres"
+    }
+}

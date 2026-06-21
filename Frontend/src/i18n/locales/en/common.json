@@ -99,5 +99,32 @@
         "label": "Language",
         "switchToFrench": "Passer au français",
         "switchToEnglish": "Switch to English"
+    },
+    "statusValues": {
+        "all": "All",
+        "pending": "Pending",
+        "inProgress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+    },
+    "planning": {
+        "allActivities": "All activities",
+        "igp": "IGP — HSE Inspections",
+        "rss": "RSS — Safety meetings",
+        "tdm": "TDM — Leadership tours",
+        "allDepartments": "All departments",
+        "production": "Production",
+        "maintenance": "Maintenance",
+        "quality": "Quality",
+        "hse": "HSE",
+        "management": "Management"
+    },
+    "search": {
+        "inspectionPlaceholder": "Search an inspection, a site…",
+        "meetingPlaceholder": "Search a meeting…"
+    },
+    "ai": {
+        "trainingTitle": "Artificial intelligence currently in training",
+        "trainingMessage": "The AI module is in its learning phase on your HSE data. During this period, the analyses provided are simulated and allow you to test the full declaration workflow."
     }
 }

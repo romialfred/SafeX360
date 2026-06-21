@@ -6,6 +6,7 @@ import { IconDownload, IconEdit, IconLayoutGrid, IconLayoutList, IconPlus, IconS
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { getAllMeetings } from '../../../services/HsActivityService';
@@ -28,6 +29,7 @@ import {
 const ALL = 'ALL';
 
 const HealthData = () => {
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -155,16 +157,16 @@ const HealthData = () => {
                     value={statusFilter}
                     onChange={setStatusFilter}
                     options={[
-                        { value: ALL, label: 'Toutes', count: data.length, color: 'teal' },
-                        { value: 'PENDING', label: ACTIVITY_STATUS_CONFIG.PENDING.label + 's', count: statusCounts.PENDING, color: 'blue' },
-                        { value: 'IN_PROGRESS', label: ACTIVITY_STATUS_CONFIG.IN_PROGRESS.label, count: statusCounts.IN_PROGRESS, color: 'amber' },
-                        { value: 'COMPLETED', label: ACTIVITY_STATUS_CONFIG.COMPLETED.label + 's', count: statusCounts.COMPLETED, color: 'green' },
-                        { value: 'CANCELLED', label: ACTIVITY_STATUS_CONFIG.CANCELLED.label + 's', count: statusCounts.CANCELLED, color: 'rose' },
+                        { value: ALL, label: t('statusValues.all'), count: data.length, color: 'teal' },
+                        { value: 'PENDING', label: t('statusValues.pending'), count: statusCounts.PENDING, color: 'blue' },
+                        { value: 'IN_PROGRESS', label: t('statusValues.inProgress'), count: statusCounts.IN_PROGRESS, color: 'amber' },
+                        { value: 'COMPLETED', label: t('statusValues.completed'), count: statusCounts.COMPLETED, color: 'green' },
+                        { value: 'CANCELLED', label: t('statusValues.cancelled'), count: statusCounts.CANCELLED, color: 'rose' },
                     ]}
                     rightElement={
                         <>
                             <TextInput
-                                placeholder="Rechercher une réunion…"
+                                placeholder={t('search.meetingPlaceholder')}
                                 leftSection={<IconSearch size={14} />}
                                 value={search}
                                 onChange={(e) => setSearch(e.currentTarget.value)}

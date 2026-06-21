@@ -7,6 +7,7 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getAllCorrectiveAction } from '../../../services/CorrectiveActionService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
@@ -29,6 +30,7 @@ import {
 const ALL = 'ALL';
 
 const CorrectiveData = () => {
+    const { t } = useTranslation('corrective');
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -49,14 +51,14 @@ const CorrectiveData = () => {
     }, []);
 
     const typeOptions = useMemo(() => ([
-        { value: ALL, label: 'Toutes', count: data.length, color: 'teal' as const },
-        { value: 'INCIDENT', label: CA_TYPE_LABELS.INCIDENT, count: data.filter((x) => x.type === 'INCIDENT').length, color: 'rose' as const },
-        { value: 'GENERAL_INSPECTION', label: 'Inspection', count: data.filter((x) => x.type === 'GENERAL_INSPECTION').length, color: 'orange' as const },
-        { value: 'HS_ACTIVITY', label: CA_TYPE_LABELS.HS_ACTIVITY, count: data.filter((x) => x.type === 'HS_ACTIVITY').length, color: 'green' as const },
-        { value: 'NON_CONFORMITY', label: CA_TYPE_LABELS.NON_CONFORMITY, count: data.filter((x) => x.type === 'NON_CONFORMITY').length, color: 'amber' as const },
-        { value: 'NEAR_MISS', label: CA_TYPE_LABELS.NEAR_MISS, count: data.filter((x) => x.type === 'NEAR_MISS').length, color: 'indigo' as const },
-        { value: 'HAZARD', label: CA_TYPE_LABELS.HAZARD, count: data.filter((x) => x.type === 'HAZARD').length, color: 'violet' as const },
-    ]), [data]);
+        { value: ALL, label: t('tabs.all'), count: data.length, color: 'teal' as const },
+        { value: 'INCIDENT', label: t('tabs.incident'), count: data.filter((x) => x.type === 'INCIDENT').length, color: 'rose' as const },
+        { value: 'GENERAL_INSPECTION', label: t('tabs.inspection'), count: data.filter((x) => x.type === 'GENERAL_INSPECTION').length, color: 'orange' as const },
+        { value: 'HS_ACTIVITY', label: t('tabs.hsActivity'), count: data.filter((x) => x.type === 'HS_ACTIVITY').length, color: 'green' as const },
+        { value: 'NON_CONFORMITY', label: t('tabs.nonConformity'), count: data.filter((x) => x.type === 'NON_CONFORMITY').length, color: 'amber' as const },
+        { value: 'NEAR_MISS', label: t('tabs.nearMiss'), count: data.filter((x) => x.type === 'NEAR_MISS').length, color: 'indigo' as const },
+        { value: 'HAZARD', label: t('tabs.hazard'), count: data.filter((x) => x.type === 'HAZARD').length, color: 'violet' as const },
+    ]), [data, t]);
 
     const filteredData = useMemo(() => {
         const q = search.trim().toLowerCase();

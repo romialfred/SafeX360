@@ -99,5 +99,32 @@
         "label": "Langue",
         "switchToFrench": "Passer au français",
         "switchToEnglish": "Switch to English"
+    },
+    "statusValues": {
+        "all": "Toutes",
+        "pending": "En attente",
+        "inProgress": "En cours",
+        "completed": "Terminées",
+        "cancelled": "Annulées"
+    },
+    "planning": {
+        "allActivities": "Toutes activités",
+        "igp": "IGP — Inspections HSE",
+        "rss": "RSS — Réunions sécurité",
+        "tdm": "TDM — Tournées Leadership",
+        "allDepartments": "Tous départements",
+        "production": "Production",
+        "maintenance": "Maintenance",
+        "quality": "Qualité",
+        "hse": "HSE",
+        "management": "Direction"
+    },
+    "search": {
+        "inspectionPlaceholder": "Rechercher une inspection, un site…",
+        "meetingPlaceholder": "Rechercher une réunion…"
+    },
+    "ai": {
+        "trainingTitle": "Intelligence artificielle en cours d'entraînement",
+        "trainingMessage": "Le module IA est en phase d'apprentissage sur vos données HSE. Pendant cette période, les analyses fournies sont simulées et vous permettent de tester l'ensemble du workflow de déclaration."
     }
 }

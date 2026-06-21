@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconCalendar, IconChartBar, IconCalendarStats, IconDownload } from '@tabler/icons-react';
 import Dashboard from './Dashboard';
 import AnnualPlanningGrid from './AnnualPlanningGrid';
@@ -24,6 +25,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function PlanningModule() {
+    const { t } = useTranslation('common');
     const [activeTab, setActiveTab] = useState('dashboard');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -37,19 +39,19 @@ export default function PlanningModule() {
     const [activities, setActivities] = useState<any[]>([]);
 
     const categories = [
-        { id: 'all', label: 'Toutes activités', color: 'slate' as const },
-        { id: 'IGP', label: 'IGP — Inspections HSE', color: 'blue' as const },
-        { id: 'HSE', label: 'RSS — Réunions sécurité', color: 'green' as const },
-        { id: 'TDM', label: 'TDM — Tournées Leadership', color: 'indigo' as const },
+        { id: 'all', label: t('planning.allActivities'), color: 'slate' as const },
+        { id: 'IGP', label: t('planning.igp'), color: 'blue' as const },
+        { id: 'HSE', label: t('planning.rss'), color: 'green' as const },
+        { id: 'TDM', label: t('planning.tdm'), color: 'indigo' as const },
     ];
 
     const departments = [
-        { value: 'all', label: 'Tous départements' },
-        { value: 'Production', label: 'Production' },
-        { value: 'Maintenance', label: 'Maintenance' },
-        { value: 'Quality', label: 'Qualité' },
-        { value: 'HSE', label: 'HSE' },
-        { value: 'Management', label: 'Direction' },
+        { value: 'all', label: t('planning.allDepartments') },
+        { value: 'Production', label: t('planning.production') },
+        { value: 'Maintenance', label: t('planning.maintenance') },
+        { value: 'Quality', label: t('planning.quality') },
+        { value: 'HSE', label: t('planning.hse') },
+        { value: 'Management', label: t('planning.management') },
     ];
 
     useEffect(() => {

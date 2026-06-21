@@ -32,6 +32,7 @@ import frAudits from './locales/fr/audits.json';
 import frPpe from './locales/fr/ppe.json';
 import frRisk from './locales/fr/risk.json';
 import frCommunications from './locales/fr/communications.json';
+import frCorrective from './locales/fr/corrective.json';
 
 // === EN ===
 import enCommon from './locales/en/common.json';
@@ -50,6 +51,7 @@ import enAudits from './locales/en/audits.json';
 import enPpe from './locales/en/ppe.json';
 import enRisk from './locales/en/risk.json';
 import enCommunications from './locales/en/communications.json';
+import enCorrective from './locales/en/corrective.json';
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -81,6 +83,7 @@ i18n
                 ppe: frPpe,
                 risk: frRisk,
                 communications: frCommunications,
+                corrective: frCorrective,
             },
             en: {
                 common: enCommon,
@@ -99,13 +102,14 @@ i18n
                 ppe: enPpe,
                 risk: enRisk,
                 communications: enCommunications,
+                corrective: enCorrective,
             },
         },
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
         defaultNS: 'common',
-        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection', 'home', 'incidents', 'adhoc', 'audits', 'ppe', 'risk', 'communications'],
+        ns: ['common', 'navigation', 'hse', 'nonConformity', 'emergency', 'moduleManager', 'dosimetry', 'blast', 'inspection', 'home', 'incidents', 'adhoc', 'audits', 'ppe', 'risk', 'communications', 'corrective'],
 
         detection: {
             // Ordre de détection : 1) localStorage, 2) navigator

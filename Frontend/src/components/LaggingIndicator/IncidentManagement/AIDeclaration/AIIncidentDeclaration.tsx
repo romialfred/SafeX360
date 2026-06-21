@@ -13,6 +13,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
     Button, Textarea, Badge, Loader, Progress, Select, Modal,
@@ -79,6 +80,7 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string 
 // ───────────────────────────────────────────────────────────────────────
 
 export default function AIIncidentDeclaration() {
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -306,18 +308,16 @@ export default function AIIncidentDeclaration() {
                 }
             />
 
-            {/* Indicateur configuration IA */}
+            {/* Indicateur IA en entraînement */}
             {aiConfigured === false && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                    <IconAlertTriangle size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                    <IconBrain size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <div className="text-[13.5px] font-semibold text-amber-900 mb-0.5">
-                            Mode démonstration activé
+                        <div className="text-[13.5px] font-semibold text-blue-900 mb-0.5">
+                            {t('ai.trainingTitle')}
                         </div>
-                        <p className="text-[12.5px] text-amber-800 leading-relaxed">
-                            La clé API Anthropic Claude n'est pas configurée. L'IA retournera une analyse simulée
-                            réaliste pour vous permettre de tester le workflow.
-                            Pour activer l'analyse réelle, ajoutez <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-[11.5px]">ANTHROPIC_API_KEY</code> dans <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-[11.5px]">Backend/.env</code>.
+                        <p className="text-[12.5px] text-blue-700 leading-relaxed">
+                            {t('ai.trainingMessage')}
                         </p>
                     </div>
                 </div>

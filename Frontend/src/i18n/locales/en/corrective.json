@@ -1,0 +1,44 @@
+{
+    "tabs": {
+        "all": "All",
+        "incident": "Incident",
+        "inspection": "Inspection",
+        "hsActivity": "HSE Activity",
+        "nonConformity": "Non-conformity",
+        "nearMiss": "Near-miss",
+        "hazard": "Hazard"
+    },
+    "status": {
+        "PENDING": "Pending",
+        "IN_PROGRESS": "In progress",
+        "CANCELLED": "Cancelled",
+        "COMPLETED": "Completed"
+    },
+    "page": {
+        "title": "Corrective and preventive action plans",
+        "subtitle": "Assignment, tracking and closure of CAPAs — ISO 45001 §10.2.1.d compliance",
+        "newAction": "New action",
+        "search": "Search a source, an action, an assignee…",
+        "allStatuses": "All statuses",
+        "exportCsv": "Export CSV",
+        "tableView": "Table view",
+        "cardView": "Card view",
+        "loadError": "Failed to load actions",
+        "displayed": "{{count}} action displayed of {{total}}",
+        "displayed_plural": "{{count}} actions displayed of {{total}}"
+    },
+    "export": {
+        "source": "Source",
+        "actionPlan": "Action plan",
+        "type": "Type",
+        "assignee": "Assignee",
+        "deadline": "Deadline",
+        "progress": "Progress",
+        "status": "Status"
+    },
+    "empty": {
+        "title": "No action matches the filters",
+        "subtitle": "Broaden the search or reset filters to view the full register.",
+        "reset": "Reset filters"
+    }
+}

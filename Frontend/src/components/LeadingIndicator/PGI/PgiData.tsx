@@ -2,6 +2,7 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActionIcon, Button, TextInput, Tooltip } from '@mantine/core';
 import { IconDownload, IconEdit, IconLayoutGrid, IconLayoutList, IconSearch } from '@tabler/icons-react';
 import { Column } from 'primereact/column';
@@ -22,6 +23,7 @@ const ALL = 'ALL';
  * tableau / cartes et export CSV.
  */
 const PgiData = () => {
+    const { t } = useTranslation('common');
     const navigate = useNavigate();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -134,16 +136,16 @@ const PgiData = () => {
                     value={statusFilter}
                     onChange={setStatusFilter}
                     options={[
-                        { value: ALL, label: 'Toutes', count: data.length, color: 'slate' },
-                        { value: 'PENDING', label: 'En attente', count: statusCounts.PENDING, color: 'violet' },
-                        { value: 'IN_PROGRESS', label: 'En cours', count: statusCounts.IN_PROGRESS, color: 'amber' },
-                        { value: 'COMPLETED', label: 'Terminées', count: statusCounts.COMPLETED, color: 'green' },
-                        { value: 'CANCELLED', label: 'Annulées', count: statusCounts.CANCELLED, color: 'rose' },
+                        { value: ALL, label: t('statusValues.all'), count: data.length, color: 'slate' },
+                        { value: 'PENDING', label: t('statusValues.pending'), count: statusCounts.PENDING, color: 'violet' },
+                        { value: 'IN_PROGRESS', label: t('statusValues.inProgress'), count: statusCounts.IN_PROGRESS, color: 'amber' },
+                        { value: 'COMPLETED', label: t('statusValues.completed'), count: statusCounts.COMPLETED, color: 'green' },
+                        { value: 'CANCELLED', label: t('statusValues.cancelled'), count: statusCounts.CANCELLED, color: 'rose' },
                     ]}
                     rightElement={
                         <div className="flex items-center gap-2 flex-wrap">
                             <TextInput
-                                placeholder="Rechercher une inspection, un site…"
+                                placeholder={t('search.inspectionPlaceholder')}
                                 leftSection={<IconSearch size={14} />}
                                 value={search}
                                 onChange={(e) => setSearch(e.currentTarget.value)}
