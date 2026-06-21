@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconShield, IconArrowLeft, IconCalendarStats, IconCircleCheck, IconAlertOctagon } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { ListSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
@@ -74,7 +75,7 @@ export default function MobilePersonalPpe() {
                     </div>
                 )}
                 {!items && !error && (
-                    <div className="text-center text-slate-400 text-[13px] py-12">…</div>
+                    <ListSkeleton count={4} />
                 )}
                 {items && items.length === 0 && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">

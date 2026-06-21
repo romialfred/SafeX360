@@ -194,8 +194,17 @@ export default function MobileSosScreen() {
                 </div>
                 <button
                     type="button"
+                    onClick={() => navigate('/m/alert')}
+                    className="w-full mt-4 inline-flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-amber-800 bg-amber-50 border border-amber-200 text-[13.5px] font-semibold active:bg-amber-100 transition"
+                    style={{ minHeight: 48 }}
+                >
+                    <IconAlertOctagon size={16} stroke={2} />
+                    Diffuser une alerte générale
+                </button>
+                <button
+                    type="button"
                     onClick={() => navigate('/m/home')}
-                    className="w-full mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 bg-white text-[13px] font-medium"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 bg-white text-[13px] font-medium"
                     style={{ minHeight: 48 }}
                 >
                     <IconArrowLeft size={14} stroke={1.8} />

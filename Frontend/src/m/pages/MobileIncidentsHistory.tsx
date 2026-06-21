@@ -13,6 +13,7 @@ import {
     IconCalendarStats,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { ListSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { getCached } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
@@ -130,7 +131,7 @@ export default function MobileIncidentsHistory() {
                 )}
 
                 {!items && !error && (
-                    <div className="text-center text-slate-400 text-[13px] py-12">…</div>
+                    <ListSkeleton count={5} />
                 )}
 
                 {items && filtered.length === 0 && (

@@ -13,6 +13,7 @@ import {
     IconCalendarStats,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { CardSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { getCached } from '../services/mobileApi';
 import BlastEvacuationAlarm from '../../components/Blast/BlastEvacuationAlarm';
@@ -101,7 +102,10 @@ export default function MobileBlastNext() {
 
             <section className="px-4 pt-4">
                 {!data && !error && (
-                    <div className="text-center text-slate-400 text-[13px] py-12">…</div>
+                    <div className="space-y-3">
+                        <CardSkeleton />
+                        <CardSkeleton />
+                    </div>
                 )}
 
                 {error && (

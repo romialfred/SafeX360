@@ -18,6 +18,7 @@ import {
     IconClockHour4,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { CardSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { getCached } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
@@ -122,7 +123,11 @@ export default function MobileIncidentDetail() {
                     accent="#B45309"
                     onBack={() => navigate(-1)}
                 />
-                <section className="px-4 pt-12 text-center text-slate-400 text-[13px]">…</section>
+                <section className="px-4 pt-4 space-y-3">
+                    <CardSkeleton />
+                    <CardSkeleton />
+                    <CardSkeleton />
+                </section>
             </>
         );
     }

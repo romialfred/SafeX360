@@ -245,6 +245,8 @@ const MobilePersonalMedical = lazy(() => import('../m/pages/MobilePersonalMedica
 // Phase M6 — detail incident + historique signalements
 const MobileIncidentDetail = lazy(() => import('../m/pages/MobileIncidentDetail'));
 const MobileIncidentsHistory = lazy(() => import('../m/pages/MobileIncidentsHistory'));
+// Phase M7 — alerte generale
+const MobileGeneralAlertScreen = lazy(() => import('../m/pages/MobileGeneralAlertScreen'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -328,6 +330,7 @@ const router = createBrowserRouter([
             // Inspection execution mobile : reutilise le composant web existant qui est deja mobile-first.
             { path: 'inspections/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
             { path: 'sos', element: <BlastSuspense><MobileSosScreen /></BlastSuspense> },
+            { path: 'alert', element: <BlastSuspense><MobileGeneralAlertScreen /></BlastSuspense> },
             { path: 'incident/new', element: <BlastSuspense><MobileIncidentQuickDeclare /></BlastSuspense> },
             { path: 'incident/:id', element: <BlastSuspense><MobileIncidentDetail /></BlastSuspense> },
             { path: 'incidents/history', element: <BlastSuspense><MobileIncidentsHistory /></BlastSuspense> },

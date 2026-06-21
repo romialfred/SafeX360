@@ -18,6 +18,7 @@ import {
     IconAlertOctagon,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { ListSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
@@ -154,7 +155,7 @@ export default function MobileInspectionsList() {
                 )}
 
                 {!items && !error && (
-                    <div className="text-center text-slate-400 text-[13px] py-12">…</div>
+                    <ListSkeleton count={5} />
                 )}
 
                 {filtered && filtered.length === 0 && (
