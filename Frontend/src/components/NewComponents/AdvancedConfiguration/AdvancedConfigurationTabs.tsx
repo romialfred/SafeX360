@@ -66,7 +66,7 @@ const AdvancedConfigurationTabs = () => {
                 >
                     <Tabs.List className="bg-white border border-slate-200 rounded-lg p-2 !flex !gap-1">
                         {Object.entries(tabData).map(([key, { label, icon: Icon, hide }]) => (
-                            !hide && <Tabs.Tab key={key} value={key} leftSection={<Icon size={15} />} className="  !text-slate-600 hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500 !rounded-lg px-3 py-1.5 text-sm transition-all duration-200">
+                            !hide && <Tabs.Tab key={key} value={key} leftSection={<Icon size={15} />} className="  !text-slate-500 hover:!text-slate-700 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-300 data-[active]:!font-medium !rounded-lg px-3 py-1.5 text-sm transition-all duration-200">
                                 {label}
                             </Tabs.Tab>
                         ))}

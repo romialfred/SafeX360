@@ -274,8 +274,8 @@ const IncidentManagementData = () => {
                                 (isAll || x.incidentCategoryName === cat),
                         ).length;
                         const colorClass = isAll
-                            ? '!text-slate-600 hover:!text-slate-800 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-400'
-                            : 'hover:!text-blue-600 data-[active]:!bg-blue-100 data-[active]:!text-blue-800 data-[active]:!border-blue-500';
+                            ? '!text-slate-500 hover:!text-slate-700 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-300 data-[active]:!font-medium'
+                            : '!text-slate-500 hover:!text-slate-700 data-[active]:!bg-slate-50 data-[active]:!text-slate-800 data-[active]:!border-slate-300 data-[active]:!font-medium';
                         return (
                             <Tabs.Tab
                                 key={cat}
@@ -447,14 +447,14 @@ const IncidentManagementData = () => {
                     onClick={() => setSelectedSource('ALL')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'ALL'
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                            ? 'bg-slate-100 text-slate-800 border-slate-300 font-medium shadow-sm'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700'
                     }`}
                 >
                     <IconUsersGroup size={14} />
                     {t('list.allSources')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                        selectedSource === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        selectedSource === 'ALL' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'
                     }`}>
                         {sourceCounts.all}
                     </span>
@@ -465,14 +465,14 @@ const IncidentManagementData = () => {
                     onClick={() => setSelectedSource('EMPLOYEE')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'EMPLOYEE'
-                            ? 'bg-teal-700 text-white border-teal-700 shadow-md'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-50 hover:border-teal-300'
+                            ? 'bg-teal-50 text-teal-700 border-teal-200 font-medium shadow-sm'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-teal-50/50 hover:text-teal-700'
                     }`}
                 >
                     <IconUser size={14} />
                     {t('list.employees')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                        selectedSource === 'EMPLOYEE' ? 'bg-white/25 text-white' : 'bg-teal-50 text-teal-700'
+                        selectedSource === 'EMPLOYEE' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'
                     }`}>
                         {sourceCounts.employee}
                     </span>
@@ -483,14 +483,14 @@ const IncidentManagementData = () => {
                     onClick={() => setSelectedSource('AI')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'AI'
-                            ? 'bg-violet-700 text-white border-violet-700 shadow-md'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-violet-50 hover:border-violet-300'
+                            ? 'bg-violet-50 text-violet-700 border-violet-200 font-medium shadow-sm'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-violet-50/50 hover:text-violet-700'
                     }`}
                 >
                     <IconSparkles size={14} />
                     {t('list.ai')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                        selectedSource === 'AI' ? 'bg-white/25 text-white' : 'bg-violet-50 text-violet-700'
+                        selectedSource === 'AI' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'
                     }`}>
                         {sourceCounts.ai}
                     </span>

@@ -411,7 +411,7 @@ const ViewDetails = () => {
                                         key={key}
                                         value={key}
                                         leftSection={<Icon size={15} />}
-                                        className="!text-slate-600 hover:!text-teal-700 hover:!bg-teal-50 data-[active]:!bg-teal-600 data-[active]:!text-white !rounded-lg !px-3 !py-2 !text-sm !transition-colors"
+                                        className="!text-slate-500 hover:!text-teal-700 hover:!bg-teal-50/50 data-[active]:!bg-teal-50 data-[active]:!text-teal-700 data-[active]:!border data-[active]:!border-teal-200 data-[active]:!font-medium !rounded-lg !px-3 !py-2 !text-sm !transition-colors"
                                     >
                                         {label}
                                     </Tabs.Tab>

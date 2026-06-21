@@ -430,7 +430,7 @@ const NonConformityDetails = () => {
                 defaultValue="overview"
                 classNames={{
                     list: '!inline-flex !flex-nowrap !gap-0.5 !p-1 !rounded-lg !bg-white !border !border-slate-200 !shadow-sm overflow-x-auto',
-                    tab: 'data-[active]:!bg-slate-900 data-[active]:!text-white data-[active]:!shadow-sm data-[active]:!border-0 !text-slate-600 hover:!text-slate-900 hover:!bg-slate-100 !border-0 !rounded-md !px-3.5 !py-1.5 !text-[12px] !font-medium !transition-colors',
+                    tab: 'data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!shadow-sm data-[active]:!border data-[active]:!border-slate-300 !text-slate-500 hover:!text-slate-700 hover:!bg-slate-50 !border-0 !rounded-md !px-3.5 !py-1.5 !text-[12px] !font-medium !transition-colors',
                 }}
             >
                 <Tabs.List>
