@@ -18,6 +18,12 @@ import {
     IconInfoCircle,
     IconShovel,
     IconTool,
+    IconCamera,
+    IconPlus,
+    IconTrash,
+    IconWifi,
+    IconWifiOff,
+    IconSettings,
 } from '@tabler/icons-react';
 import { groupByCategory, CATEGORIES } from './departmentCategories';
 import PageHeader from '../../UtilityComp/PageHeader';
@@ -26,7 +32,12 @@ import {
     createAssemblyPoint,
     updateAssemblyPoint,
     getAssemblyPoint,
+    listCameras,
+    createCamera,
+    updateCamera,
+    deleteCamera,
     type AssemblyPointDTO,
+    type CameraDTO,
 } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllDepartments } from '../../../services/HrmsService';
@@ -286,6 +297,21 @@ const AssemblyPointFormPage = () => {
     const [gpsCapturing, setGpsCapturing] = useState(false);
     const [showPickMap, setShowPickMap] = useState(false);
 
+    // ── Caméras de surveillance ──
+    interface CameraLocal {
+        id?: number;
+        name: string;
+        ipAddress: string;
+        model: string;
+        serialNumber: string;
+        manufacturer: string;
+        status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE';
+        streamUrl: string;
+    }
+    const emptyCam: CameraLocal = { name: '', ipAddress: '', model: '', serialNumber: '', manufacturer: '', status: 'OFFLINE', streamUrl: '' };
+    const [cameras, setCameras] = useState<CameraLocal[]>([]);
+    const [showCameraForm, setShowCameraForm] = useState(false);
+
     // ── Chargement référentiels ──
     useEffect(() => {
         getEmployeesWithDepartment()
@@ -334,6 +360,20 @@ const AssemblyPointFormPage = () => {
                             .filter((n) => !Number.isNaN(n))
                     )
                 );
+                if (dto.id) {
+                    listCameras(dto.id)
+                        .then((cams) => setCameras(cams.map((c) => ({
+                            id: c.id,
+                            name: c.name,
+                            ipAddress: c.ipAddress ?? '',
+                            model: c.model ?? '',
+                            serialNumber: c.serialNumber ?? '',
+                            manufacturer: c.manufacturer ?? '',
+                            status: c.status,
+                            streamUrl: c.streamUrl ?? '',
+                        }))))
+                        .catch(() => setCameras([]));
+                }
             })
             .catch(() => errorNotification(t('common:messages.errorGeneric')))
             .finally(() => setLoading(false));
@@ -766,6 +806,131 @@ const AssemblyPointFormPage = () => {
                         </div>
                     </Section>
 
+                    {/* SECTION — CAMÉRAS DE SURVEILLANCE */}
+                    <Section
+                        icon={<IconCamera size={15} stroke={1.6} />}
+                        title="Caméras de surveillance"
+                        description="Caméras IP installées sur ce point de rassemblement"
+                        accent="sky"
+                    >
+                        {cameras.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                                {cameras.map((cam, idx) => (
+                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {cam.status === 'ONLINE' ? (
+                                                    <IconWifi size={14} stroke={1.8} className="text-emerald-600 flex-shrink-0" />
+                                                ) : cam.status === 'MAINTENANCE' ? (
+                                                    <IconSettings size={14} stroke={1.8} className="text-amber-600 flex-shrink-0" />
+                                                ) : (
+                                                    <IconWifiOff size={14} stroke={1.8} className="text-red-500 flex-shrink-0" />
+                                                )}
+                                                <span className="text-[13px] font-semibold text-slate-800 truncate">{cam.name || `Caméra ${idx + 1}`}</span>
+                                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                                    cam.status === 'ONLINE' ? 'bg-emerald-100 text-emerald-700' :
+                                                    cam.status === 'MAINTENANCE' ? 'bg-amber-100 text-amber-700' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                    {cam.status === 'ONLINE' ? 'En ligne' : cam.status === 'MAINTENANCE' ? 'Maintenance' : 'Hors ligne'}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCameras((prev) => prev.filter((_, i) => i !== idx))}
+                                                className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                                                title="Supprimer cette caméra"
+                                            >
+                                                <IconTrash size={13} stroke={1.8} />
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">Nom</label>
+                                                <input
+                                                    type="text"
+                                                    value={cam.name}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, name: e.target.value } : c))}
+                                                    placeholder="Caméra Nord-Est"
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">Adresse IP</label>
+                                                <input
+                                                    type="text"
+                                                    value={cam.ipAddress}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, ipAddress: e.target.value } : c))}
+                                                    placeholder="192.168.1.100"
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400 font-mono"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">Modèle</label>
+                                                <input
+                                                    type="text"
+                                                    value={cam.model}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, model: e.target.value } : c))}
+                                                    placeholder="Hikvision DS-2CD2143"
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">N° de série</label>
+                                                <input
+                                                    type="text"
+                                                    value={cam.serialNumber}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, serialNumber: e.target.value } : c))}
+                                                    placeholder="SN-2026-0042"
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400 font-mono"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">Fabricant</label>
+                                                <input
+                                                    type="text"
+                                                    value={cam.manufacturer}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, manufacturer: e.target.value } : c))}
+                                                    placeholder="Hikvision"
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 font-medium mb-0.5">Statut</label>
+                                                <select
+                                                    value={cam.status}
+                                                    onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, status: e.target.value as CameraLocal['status'] } : c))}
+                                                    className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+                                                >
+                                                    <option value="ONLINE">En ligne</option>
+                                                    <option value="OFFLINE">Hors ligne</option>
+                                                    <option value="MAINTENANCE">Maintenance</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2">
+                                            <label className="block text-[10px] text-slate-500 font-medium mb-0.5">URL de flux vidéo (RTSP/HTTP)</label>
+                                            <input
+                                                type="text"
+                                                value={cam.streamUrl}
+                                                onChange={(e) => setCameras((prev) => prev.map((c, i) => i === idx ? { ...c, streamUrl: e.target.value } : c))}
+                                                placeholder="rtsp://192.168.1.100:554/stream1"
+                                                className="w-full px-2 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-400 font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setCameras((prev) => [...prev, { ...emptyCam }])}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 text-[12px] font-medium transition-colors"
+                        >
+                            <IconPlus size={12} stroke={2} /> Ajouter une caméra
+                        </button>
+                    </Section>
+
                     {/* Récap visuel */}
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                         <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-500 font-semibold mb-2 flex items-center gap-1.5">
@@ -794,6 +959,10 @@ const AssemblyPointFormPage = () => {
                             <li>
                                 <strong className="text-slate-800">Départements :</strong>{' '}
                                 {departmentIds.size === 0 ? <em className="text-slate-400">tous</em> : `${departmentIds.size} sélectionné(s)`}
+                            </li>
+                            <li>
+                                <strong className="text-slate-800">Caméras :</strong>{' '}
+                                {cameras.length === 0 ? <em className="text-slate-400">aucune</em> : `${cameras.length} configurée(s)`}
                             </li>
                         </ul>
                     </div>

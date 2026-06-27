@@ -1599,6 +1599,26 @@ const HERO_SLIDES: HeroSlide[] = [
         focal: '50% 35%',
     },
     {
+        src: '/hero/sos-platform.png',
+        eyebrow: 'Plateforme SOS · Alertes en temps réel',
+        title: <>Alerte critique,<br /><em>réaction immédiate.</em></>,
+        subtitle: 'Incendie, éboulement, fuite de gaz — le SOS part en un clic, la localisation GPS s\'affiche, les secours sont guidés jusqu\'au point exact.',
+        keyword: 'SOS instantané',
+        accent: '#DC2626',
+        burnsClass: 'ken-burns-2',
+        focal: '50% 40%',
+    },
+    {
+        src: '/hero/alerte-evacuation-platform.png',
+        eyebrow: 'Évacuation · Centre de commande',
+        title: <>Évacuation guidée,<br /><em>personne oublié.</em></>,
+        subtitle: 'Tableau de bord temps réel, points de rassemblement balisés, head-count automatique. Le préventeur sait où est chaque personne sur le site.',
+        keyword: 'Plateforme évacuation',
+        accent: '#DC2626',
+        burnsClass: 'ken-burns-3',
+        focal: '50% 45%',
+    },
+    {
         src: '/hero/mine-excavator.jpg',
         eyebrow: 'Opérations minières · Engins lourds',
         title: <>La sécurité<br /><em>au cœur des opérations.</em></>,
@@ -1606,7 +1626,6 @@ const HERO_SLIDES: HeroSlide[] = [
         keyword: 'Vue opérations',
         accent: '#C2410C',
         burnsClass: 'ken-burns-2',
-        // Excavatrice centrale a gauche de l'image
         focal: '40% 50%',
     },
     {

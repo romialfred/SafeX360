@@ -336,6 +336,7 @@ export interface AssemblyPointDTO {
     managerId?: number | null;
     deputyManagerId?: number | null;
     cameraId?: number | null;
+    cameras?: CameraDTO[];
     evacuationPriority?: number;
     maxCapacity?: number | null;
     status?: string;
@@ -352,6 +353,19 @@ export interface AssemblyPointHistoryDTO {
     snapshotJson?: string;
     diffSummary?: string;
     createdAt?: string;
+}
+
+export interface CameraDTO {
+    id?: number;
+    assemblyPointId: number;
+    name: string;
+    ipAddress?: string | null;
+    model?: string | null;
+    serialNumber?: string | null;
+    manufacturer?: string | null;
+    status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE';
+    streamUrl?: string | null;
+    companyId: number;
 }
 
 export const listAssemblyPoints = (
@@ -392,6 +406,41 @@ export const updateAssemblyPoint = (
 export const archiveAssemblyPoint = (id: number, actorId?: number): Promise<void> =>
     axiosInstance
         .delete(`/hns/emergency/assembly-points/${id}`, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then(() => undefined);
+
+// ── Cameras (Assembly Point surveillance) ────────────────────────────────
+
+export const listCameras = (assemblyPointId: number): Promise<CameraDTO[]> =>
+    axiosInstance
+        .get(`/hns/emergency/assembly-points/${assemblyPointId}/cameras`)
+        .then((r) => r.data);
+
+export const getCamera = (id: number): Promise<CameraDTO> =>
+    axiosInstance.get(`/hns/emergency/cameras/${id}`).then((r) => r.data);
+
+export const createCamera = (dto: CameraDTO, actorId?: number): Promise<CameraDTO> =>
+    axiosInstance
+        .post('/hns/emergency/cameras', dto, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then((r) => r.data);
+
+export const updateCamera = (
+    id: number,
+    dto: CameraDTO,
+    actorId?: number
+): Promise<CameraDTO> =>
+    axiosInstance
+        .put(`/hns/emergency/cameras/${id}`, dto, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then((r) => r.data);
+
+export const deleteCamera = (id: number, actorId?: number): Promise<void> =>
+    axiosInstance
+        .delete(`/hns/emergency/cameras/${id}`, {
             params: actorId !== undefined ? { actorId } : {},
         })
         .then(() => undefined);
