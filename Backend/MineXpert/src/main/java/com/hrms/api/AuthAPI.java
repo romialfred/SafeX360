@@ -74,10 +74,8 @@ public class AuthAPI {
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,
-            HttpServletResponse response) throws Exception {
-        String message = "Incorrect username or password";
+            HttpServletResponse response) {
         try {
-            // ─── LOT 52 : contrôles préalables sur le compte ───
             Account preAccount = accountRepository.findByLogin(request.getLogin()).orElse(null);
             boolean adAccount = preAccount != null
                     && "ACTIVE_DIRECTORY".equalsIgnoreCase(preAccount.getIdentitySource());
@@ -86,23 +84,22 @@ public class AuthAPI {
                     && Boolean.TRUE.equals(preAccount.getFirstLogin())
                     && preAccount.getInvitationExpiresAt() != null
                     && LocalDateTime.now().isAfter(preAccount.getInvitationExpiresAt())) {
-                // Invitation périmée : le mot de passe temporaire n'est plus valable.
                 try {
                     auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
                             LocalDateTime.now(), "Login refused: invitation expired"));
                 } catch (Exception ignored) { }
-                throw new Exception("INVITATION_EXPIRED");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("errorMessage", "INVITATION_EXPIRED", "errorCode", 401));
             }
 
             if (adAccount) {
-                // Authentification déléguée à l'annuaire (LDAP réel ou démo) —
-                // aucun mot de passe local n'est utilisable pour ces comptes.
                 if (!directoryService.authenticate(request.getLogin(), request.getPassword())) {
                     try {
                         auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
                                 LocalDateTime.now(), "Incorrect Password (annuaire AD)"));
                     } catch (Exception ignored) { }
-                    throw new Exception(message);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
                 }
             } else {
                 authenticationManager.authenticate(
@@ -111,27 +108,14 @@ public class AuthAPI {
 
             final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
             final String jwt = helper.generateToken(userDetails);
-            CustomUserDetails user = (CustomUserDetails) userDetails;
-            // FIX LOT 49 : on logge un audit SANS Employee attache pour eviter
-            // TransientObjectException quand un compte admin n'a pas d'employee lie.
-            // L'identite est tracee via le champ "login" (= username).
+
             try {
                 auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
                         LocalDateTime.now(), "Successfully Logged In"));
             } catch (Exception auditEx) {
-                // L'audit ne doit pas faire echouer le login. On loge mais on continue.
                 logger.warn("AuditLog non persiste pour login successful: {}", auditEx.getMessage());
             }
-            // LOT 41 P1 SECURITY: max-age cookie aligné sur JWT_EXPIRATION_HOURS (défaut 8h)
-            // au lieu de 30 jours, pour limiter la fenêtre d'exploitation d'un vol de cookie.
-            // LOT 42 hotfix : SameSite=None obligatoire car frontend (Vercel
-             // safex360.data-univers.com) et backend (Render onrender.com) sont
-             // sur des registrable-domains différents → cookie cross-site →
-             // Lax bloquerait l'envoi du cookie par le navigateur.
-            // LOT 61 SECURITY : cookie de SESSION (pas de maxAge) — le navigateur le supprime
-            // à la fermeture du navigateur, donc la session ne « survit » pas indéfiniment.
-            // Le JWT garde sa propre expiration absolue (JWT_EXPIRATION_HOURS, défaut 8h),
-            // qui borne la validité même si le navigateur restaure les cookies de session.
+
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
                     .secure(true)
@@ -141,35 +125,36 @@ public class AuthAPI {
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             return ResponseEntity.ok("Login successful");
+
         } catch (UsernameNotFoundException e) {
-            message = "User not found";
-            throw new Exception(message, e);
-        } catch (BadCredentialsException e) {
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
-            CustomUserDetails user = (CustomUserDetails) userDetails;
-            if (userDetails == null) {
+            try {
                 auditLogService.logAudit(
                         new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "LoginId not found"));
-                throw new UsernameNotFoundException(message);
+            } catch (Exception ignored) { }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
 
-            } else {
-                // FIX LOT 49 : meme correctif que pour le succes — eviter Employee transient
-                try {
-                    auditLogService.logAudit(
-                            new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Incorrect Password"));
-                } catch (Exception auditEx) {
-                    logger.warn("AuditLog non persiste pour bad credentials: {}", auditEx.getMessage());
-                }
-                throw new Exception(message, e);
-            }
+        } catch (BadCredentialsException e) {
+            try {
+                auditLogService.logAudit(
+                        new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Incorrect Password"));
+            } catch (Exception ignored) { }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
+
         } catch (AuthenticationException e) {
-            // auditLogService.log(request.getLogin(), action, e.getMessage());
-            auditLogService
-                    .logAudit(new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Internal Error"));
+            try {
+                auditLogService.logAudit(
+                        new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Authentication error"));
+            } catch (Exception ignored) { }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
 
-            throw new Exception(message, e);
+        } catch (Exception e) {
+            logger.error("Unexpected login error for {}: {}", request.getLogin(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("errorMessage", "Internal server error", "errorCode", 500));
         }
-
     }
 
     @GetMapping("/me")

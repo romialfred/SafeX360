@@ -23,6 +23,22 @@ public class ExceptionControllerAdvice {
     @Autowired
     private Environment environment;
 
+    @ExceptionHandler({ org.springframework.security.authentication.BadCredentialsException.class,
+            org.springframework.security.core.userdetails.UsernameNotFoundException.class })
+    public ResponseEntity<ErrorInfo> authenticationExceptionHandler(Exception exception) {
+        ErrorInfo error = new ErrorInfo("Incorrect username or password",
+                HttpStatus.UNAUTHORIZED.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorInfo> springAuthExceptionHandler(
+            org.springframework.security.core.AuthenticationException exception) {
+        ErrorInfo error = new ErrorInfo("Authentication failed",
+                HttpStatus.UNAUTHORIZED.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         ErrorInfo error = new ErrorInfo(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(),

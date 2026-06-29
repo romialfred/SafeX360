@@ -120,18 +120,22 @@ const LoginsPage = () => {
                 dispatch(setUser(res));
                 navigate('/');
             } catch (err: any) {
-                const isNetwork = !err?.response; // pas de réponse HTTP = problème réseau/serveur injoignable
+                const isNetwork = !err?.response;
                 const status = err?.response?.status;
-                // Cold start Render free-tier : pas de réponse OU 5xx transitoire (502/503/504/500)
-                // pendant le réveil du conteneur → on retente automatiquement.
-                const isColdStart = isNetwork || (typeof status === 'number' && status >= 500);
+
+                if (status === 401 || status === 403) {
+                    setErrorKind('credentials');
+                    return;
+                }
+
+                const isColdStart = isNetwork || status === 502 || status === 503 || status === 504;
                 if (isColdStart && retriesLeft > 0) {
                     setErrorKind('waking');
                     await new Promise((r) => setTimeout(r, 4000));
                     return attempt(retriesLeft - 1);
                 }
-                if (status === 401 || status === 403) setErrorKind('credentials');
-                else if (isNetwork) setErrorKind('network');
+
+                if (isNetwork) setErrorKind('network');
                 else setErrorKind('server');
             }
         };
