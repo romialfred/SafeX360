@@ -36,7 +36,7 @@ public class AccountAPI {
     private AccountService accountService;
 
     // LOT 53 (fix boucle login) : clé externalisée, alignee sur JwtHelper/AuthAPI.
-    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
     private String SECRET;
 
     // LOT 41 P0 SECURITY TODO: cet endpoint doit être restreint aux ADMIN/SUPER_ADMIN.

@@ -87,7 +87,7 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
             InspectionRBACConfig.INSPECTION_ADMIN
     );
 
-    @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    @Value("${INTERNAL_GATEWAY_SECRET:}")
     private String internalGatewaySecret;
 
     @Override

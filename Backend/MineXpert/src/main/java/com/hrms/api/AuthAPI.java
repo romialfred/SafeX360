@@ -19,7 +19,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,7 +42,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin
 public class AuthAPI {
 
     @Autowired
@@ -64,17 +62,25 @@ public class AuthAPI {
     @Autowired
     private DirectoryService directoryService;
 
+    @Autowired
+    private com.hrms.service.LoginAttemptService loginAttemptService;
+
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
-    // LOT 52 (remédiation GATE SEC-03) : clé JWT externalisée — repli sur la
-    // valeur historique pour ne pas casser l'existant ; ROTATION via env
-    // JWT_SECRET requise sur tous les services (ancienne valeur publique).
-    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:80f9762a858c60d6a48a940ffbe1bb2c0af7557c93030805bd10a397d2ae072d77c509aab1bd901f1115e84fb50561d1b61ceb7e99d97f1e785e0b9452e5d874}")
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
     private String SECRET;
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,
             HttpServletResponse response) {
+        if (loginAttemptService.isBlocked(request.getLogin())) {
+            long remaining = loginAttemptService.getRemainingBlockSeconds(request.getLogin());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of(
+                            "errorMessage", "Too many failed attempts. Try again in " + remaining + "s.",
+                            "errorCode", 429,
+                            "retryAfterSeconds", remaining));
+        }
         try {
             Account preAccount = accountRepository.findByLogin(request.getLogin()).orElse(null);
             boolean adAccount = preAccount != null
@@ -94,6 +100,7 @@ public class AuthAPI {
 
             if (adAccount) {
                 if (!directoryService.authenticate(request.getLogin(), request.getPassword())) {
+                    loginAttemptService.recordFailure(request.getLogin());
                     try {
                         auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
                                 LocalDateTime.now(), "Incorrect Password (annuaire AD)"));
@@ -124,9 +131,11 @@ public class AuthAPI {
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            loginAttemptService.recordSuccess(request.getLogin());
             return ResponseEntity.ok("Login successful");
 
         } catch (UsernameNotFoundException e) {
+            loginAttemptService.recordFailure(request.getLogin());
             try {
                 auditLogService.logAudit(
                         new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "LoginId not found"));
@@ -135,6 +144,7 @@ public class AuthAPI {
                     .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
 
         } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailure(request.getLogin());
             try {
                 auditLogService.logAudit(
                         new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Incorrect Password"));
@@ -143,6 +153,7 @@ public class AuthAPI {
                     .body(Map.of("errorMessage", "Incorrect username or password", "errorCode", 401));
 
         } catch (AuthenticationException e) {
+            loginAttemptService.recordFailure(request.getLogin());
             try {
                 auditLogService.logAudit(
                         new AuditLogDTO(null, null, request.getLogin(), LocalDateTime.now(), "Authentication error"));

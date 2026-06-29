@@ -17,7 +17,7 @@ public class MyConfig {
 
     // LOT 41 P0 SECURITY: secret partagé Gateway↔Microservice, externalisé via env var.
     // Toute requête atteignant directement ce microservice sans ce header sera rejetée (denyAll).
-    @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    @Value("${INTERNAL_GATEWAY_SECRET:}")
     private String internalGatewaySecret;
 
     @Bean

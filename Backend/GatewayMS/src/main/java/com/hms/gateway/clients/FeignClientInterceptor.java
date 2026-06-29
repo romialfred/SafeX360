@@ -20,7 +20,7 @@ import feign.RequestTemplate;
 @Configuration
 public class FeignClientInterceptor implements RequestInterceptor {
 
-    @Value("${INTERNAL_GATEWAY_SECRET:CHANGE_ME_IN_PROD}")
+    @Value("${INTERNAL_GATEWAY_SECRET:}")
     private String internalSecret;
 
     @Override

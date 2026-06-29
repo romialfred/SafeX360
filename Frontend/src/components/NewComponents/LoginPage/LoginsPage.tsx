@@ -40,7 +40,7 @@ const LoginsPage = () => {
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
     const [loading, setLoading] = useState(false);
     const dispatch = useAppDispatch();
-    type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | null;
+    type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
 
     const t = language === 'fr'
@@ -59,6 +59,7 @@ const LoginsPage = () => {
             errorNetwork: 'Service injoignable — réessayez dans un instant.',
             errorServer: 'Erreur serveur — réessayez.',
             errorWaking: 'Réveil du serveur… nouvelle tentative.',
+            errorRateLimit: 'Trop de tentatives échouées — réessayez dans quelques minutes.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Application mobile terrain',
             mobileSubtitle: 'Android · Hors ligne · ISO 45001',
@@ -82,6 +83,7 @@ const LoginsPage = () => {
             errorNetwork: 'Service unreachable — please retry shortly.',
             errorServer: 'Server error — please retry.',
             errorWaking: 'Server waking up… retrying.',
+            errorRateLimit: 'Too many failed attempts — please try again in a few minutes.',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Mobile application',
             mobileSubtitle: 'Android · Offline · ISO 45001',
@@ -123,6 +125,10 @@ const LoginsPage = () => {
                 const isNetwork = !err?.response;
                 const status = err?.response?.status;
 
+                if (status === 429) {
+                    setErrorKind('rateLimit');
+                    return;
+                }
                 if (status === 401 || status === 403) {
                     setErrorKind('credentials');
                     return;
@@ -366,6 +372,7 @@ const LoginsPage = () => {
                                 />
                                 <span className={`text-[12.5px] ${errorKind === 'waking' ? 'text-amber-100' : 'text-red-100'}`}>
                                     {errorKind === 'credentials' && t.errorCredentials}
+                                    {errorKind === 'rateLimit' && t.errorRateLimit}
                                     {errorKind === 'network' && t.errorNetwork}
                                     {errorKind === 'server' && t.errorServer}
                                     {errorKind === 'waking' && t.errorWaking}
