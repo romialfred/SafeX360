@@ -1,4 +1,4 @@
-import { errorNotification } from "../../../utility/NotificationUtility";
+
 import { getAllModuleFeatures, type ModuleFeatureDto } from "../../../services/ModuleManagementService";
 
 export const moduleConfigurations: any[] = [
@@ -478,7 +478,7 @@ export const loadModuleFlagsOnce = async (): Promise<void> => {
             flagsLoaded = true;
         })
         .catch(() => {
-            errorNotification('Failed to load module flags');
+            console.warn('[ModuleConfig] Failed to load module flags — using defaults');
         })
         .finally(() => {
             loadingPromise = null;
