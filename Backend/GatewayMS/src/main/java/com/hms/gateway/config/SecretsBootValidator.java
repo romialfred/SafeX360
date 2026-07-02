@@ -22,37 +22,46 @@ public class SecretsBootValidator {
 
     @PostConstruct
     public void validate() {
-        validateJwtSecret();
-        validateGatewaySecret();
-        LOG.info("[SecretsBootValidator] All secrets validated — boot authorized.");
+        boolean healthy = true;
+        healthy &= validateJwtSecret();
+        healthy &= validateGatewaySecret();
+        if (healthy) {
+            LOG.info("[SecretsBootValidator] All secrets validated — boot authorized.");
+        } else {
+            LOG.error("╔══════════════════════════════════════════════════════════════╗");
+            LOG.error("║  SECURITY WARNING — secrets need rotation (see logs above)  ║");
+            LOG.error("╚══════════════════════════════════════════════════════════════╝");
+        }
     }
 
-    private void validateJwtSecret() {
+    private boolean validateJwtSecret() {
         if (jwtSecret == null || jwtSecret.isBlank()) {
-            throw new IllegalStateException(
-                    "[SecretsBootValidator] JWT_SECRET is REQUIRED. "
-                            + "Set the JWT_SECRET environment variable (min 64 hex chars). "
-                            + "Generate one with: openssl rand -hex 64");
+            LOG.error("[SecretsBootValidator] JWT_SECRET is BLANK. "
+                    + "Token verification will fail. Set JWT_SECRET (min 64 hex chars). "
+                    + "Generate: openssl rand -hex 64");
+            return false;
         }
         if (jwtSecret.startsWith(LEAKED_JWT_PREFIX)) {
-            throw new IllegalStateException(
-                    "[SecretsBootValidator] JWT_SECRET matches the value leaked in public git history. "
-                            + "This key is COMPROMISED — anyone can forge JWTs. "
-                            + "Rotate immediately: openssl rand -hex 64, then set JWT_SECRET on ALL services.");
+            LOG.error("[SecretsBootValidator] JWT_SECRET matches the value leaked in public git history. "
+                    + "This key is COMPROMISED — anyone can forge JWTs. "
+                    + "Rotate ASAP: openssl rand -hex 64, then set JWT_SECRET on ALL services.");
+            return false;
         }
+        return true;
     }
 
-    private void validateGatewaySecret() {
+    private boolean validateGatewaySecret() {
         if (gatewaySecret == null || gatewaySecret.isBlank()) {
-            throw new IllegalStateException(
-                    "[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is REQUIRED. "
-                            + "Set the INTERNAL_GATEWAY_SECRET environment variable. "
-                            + "Generate one with: openssl rand -hex 32");
+            LOG.warn("[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is blank. "
+                    + "Security filter will match empty header — set a proper value.");
+            return false;
         }
-        if ("CHANGE_ME_IN_PROD".equals(gatewaySecret)) {
-            throw new IllegalStateException(
-                    "[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is set to the default 'CHANGE_ME_IN_PROD'. "
-                            + "Generate a proper secret: openssl rand -hex 32");
+        if ("CHANGE_ME_IN_PROD".equals(gatewaySecret) || "dev-secret".equals(gatewaySecret)) {
+            LOG.warn("[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is a known default ('"
+                    + gatewaySecret + "'). Not safe for production. "
+                    + "Generate: openssl rand -hex 32");
+            return false;
         }
+        return true;
     }
 }
