@@ -6,7 +6,7 @@ import store from '../Store';
 import { COMPANY_SELECTION_STORAGE_KEY } from '../slices/CompanySelectionSlice';
 import { startRequest, endRequest } from '../utility/loadingBus';
 
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || '') : '';
 const axiosInstance = axios.create({
     baseURL: apiUrl,
     withCredentials: true,

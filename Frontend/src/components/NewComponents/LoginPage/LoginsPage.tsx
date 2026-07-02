@@ -133,8 +133,10 @@ const LoginsPage = () => {
         setLoading(true);
 
         const attempt = async (retriesLeft: number): Promise<void> => {
+            let loginSucceeded = false;
             try {
                 await loginUser({ ...values });
+                loginSucceeded = true;
                 setWakingStep(4);
                 const res: any = await getUser();
                 dispatch(setUser(res));
@@ -152,6 +154,12 @@ const LoginsPage = () => {
                     setErrorKind('invitationExpired');
                     return;
                 }
+
+                if (loginSucceeded) {
+                    setErrorKind('server');
+                    return;
+                }
+
                 const isAuthError = status === 401 || status === 403
                     || errMsg === 'Incorrect username or password'
                     || errMsg === 'Authentication failed';
