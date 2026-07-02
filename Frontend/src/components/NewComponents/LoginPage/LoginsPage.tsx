@@ -132,6 +132,9 @@ const LoginsPage = () => {
         if (!form.isValid()) return;
         setLoading(true);
 
+        const MAX_RETRIES = 8;
+        let finalErrorKind: LoginErrorKind = null;
+
         const attempt = async (retriesLeft: number): Promise<void> => {
             let loginSucceeded = false;
             try {
@@ -147,15 +150,18 @@ const LoginsPage = () => {
                 const errMsg = err?.response?.data?.errorMessage ?? '';
 
                 if (status === 429) {
+                    finalErrorKind = 'rateLimit';
                     setErrorKind('rateLimit');
                     return;
                 }
                 if (errMsg === 'INVITATION_EXPIRED') {
+                    finalErrorKind = 'invitationExpired';
                     setErrorKind('invitationExpired');
                     return;
                 }
 
                 if (loginSucceeded) {
+                    finalErrorKind = 'server';
                     setErrorKind('server');
                     return;
                 }
@@ -164,29 +170,32 @@ const LoginsPage = () => {
                     || errMsg === 'Incorrect username or password'
                     || errMsg === 'Authentication failed';
                 if (isAuthError) {
+                    finalErrorKind = 'credentials';
                     setErrorKind('credentials');
                     return;
                 }
 
                 const isColdStart = isNetwork || status === 502 || status === 503 || status === 504;
                 if (isColdStart && retriesLeft > 0) {
-                    const step = 4 - retriesLeft;
+                    const elapsed = MAX_RETRIES - retriesLeft;
+                    const step = Math.min(Math.floor((elapsed / MAX_RETRIES) * 4) + 1, 4);
                     setWakingStep(step);
                     setErrorKind('waking');
+                    finalErrorKind = 'waking';
                     await new Promise((r) => setTimeout(r, 5000));
                     return attempt(retriesLeft - 1);
                 }
 
-                if (isNetwork) setErrorKind('network');
-                else setErrorKind('server');
+                finalErrorKind = isNetwork ? 'network' : 'server';
+                setErrorKind(finalErrorKind);
             }
         };
 
         try {
-            await attempt(3);
+            await attempt(MAX_RETRIES);
         } finally {
             setLoading(false);
-            if (errorKind !== 'waking') setWakingStep(0);
+            if (finalErrorKind !== 'waking') setWakingStep(0);
         }
     };
 
@@ -756,6 +765,11 @@ const LoginsPage = () => {
                         <h3 style={{ color: '#ffffff', fontSize: '16px', fontWeight: 600, marginTop: '16px' }}>
                             {language === 'fr' ? 'Préparation de votre espace' : 'Preparing your workspace'}
                         </h3>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12.5px', marginTop: '6px', lineHeight: 1.5 }}>
+                            {language === 'fr'
+                                ? 'Première connexion du jour — cela prend quelques instants'
+                                : 'First connection of the day — this takes a moment'}
+                        </p>
 
                         {/* Étapes avec barres de progression */}
                         <div style={{ width: '100%', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
