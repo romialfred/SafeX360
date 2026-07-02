@@ -74,18 +74,18 @@ const AuditDetailsTabs = () => {
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
         getAuditDetails(id)
             .then((res) => {
                 setAudit(res);
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
             .finally(() => {
                 dispatch(hideOverlay());
             });
         getAuditorsByAuditId(id).then((res) => {
             setAuditors(res);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
         fetchHistory();
 
     }, []);

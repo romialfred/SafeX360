@@ -52,7 +52,7 @@ const ViewDetailsPgi = ({ inspection: inspectionProp }: { inspection?: any }) =>
         if ((!inspectionProp || !inspectionProp.id) && id) {
             getPgiById(id)
                 .then(setFetched)
-                .catch((_err) => { });
+                .catch((_err) => console.error(_err));
         }
     }, [id, inspectionProp]);
 

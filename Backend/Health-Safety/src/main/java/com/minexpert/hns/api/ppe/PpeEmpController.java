@@ -11,6 +11,7 @@ import java.util.List;
 import com.minexpert.hns.dto.ppe.EmpPpeCountDTO;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/ppeEmp")
 @RequiredArgsConstructor
 public class PpeEmpController {

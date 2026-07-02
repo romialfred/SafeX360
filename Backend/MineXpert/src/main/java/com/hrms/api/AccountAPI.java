@@ -39,21 +39,18 @@ public class AccountAPI {
     @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
     private String SECRET;
 
-    // LOT 41 P0 SECURITY TODO: cet endpoint doit être restreint aux ADMIN/SUPER_ADMIN.
-    // ABORT @PreAuthorize : (1) @EnableMethodSecurity absent, (2) le flux cookie n'alimente
-    // pas le SecurityContext (JwtAuthenticationFilter ne traite que "Authorization: Bearer"),
-    // (3) CustomUserDetails.authorities = empty ArrayList. Implémentation à faire en LOT 42 :
-    // ajouter un filtre cookie-JWT qui peuple authorities depuis le claim "role".
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO> addAccount(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
+    public ResponseEntity<?> addAccount(@RequestBody @Valid AccountDTO accountDTO,
+            @CookieValue(name = "jwt", required = false) String token) throws Exception {
+        requireAdmin(token);
         accountService.addAccount(accountDTO);
         return new ResponseEntity<>(new ResponseDTO("Account added Successfully."), HttpStatus.CREATED);
     }
 
-    // LOT 41 P0 SECURITY TODO: idem addAccount — restreindre ADMIN/SUPER_ADMIN après mise en place
-    // d'un filtre cookie-JWT qui peuple le SecurityContext. Cf. commentaire au-dessus de /add.
     @PostMapping("/update")
-    public ResponseEntity<ResponseDTO> updateAccount(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
+    public ResponseEntity<?> updateAccount(@RequestBody @Valid AccountDTO accountDTO,
+            @CookieValue(name = "jwt", required = false) String token) throws Exception {
+        requireAdmin(token);
         accountService.updateAccount(accountDTO);
         return new ResponseEntity<>(new ResponseDTO("Account updated Successfully."), HttpStatus.OK);
     }
@@ -141,16 +138,39 @@ public class AccountAPI {
     }
 
     @GetMapping("/getPermissionsById/{id}")
-    public ResponseEntity<AccountDetailsDTO> getPermissionsById(@PathVariable Long id) throws HRMSException {
+    public ResponseEntity<AccountDetailsDTO> getPermissionsById(
+            @PathVariable Long id,
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        if (token == null || token.isBlank()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        Claims callerClaims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
+        Long callerId = callerClaims.get("id", Long.class);
+        String callerRole = callerClaims.get("role", String.class);
+        if (!id.equals(callerId) && !"ADMIN".equalsIgnoreCase(callerRole) && !"SUPER_ADMIN".equalsIgnoreCase(callerRole)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         return new ResponseEntity<>(accountService.getAccountPermissions(id), HttpStatus.OK);
     }
 
-    // LOT 41 P0 SECURITY TODO: endpoint critique d'élévation de privilèges — doit être restreint
-    // ADMIN/SUPER_ADMIN. ABORT @PreAuthorize même raison que /add (SecurityContext vide via cookie).
-    // Implémentation à faire en LOT 42 (filtre cookie-JWT alimentant authorities).
     @PutMapping("/updatePermissions")
-    public ResponseEntity<ResponseDTO> updatePermissions(@RequestBody AccountDTO accountDTO) throws HRMSException {
+    public ResponseEntity<?> updatePermissions(@RequestBody AccountDTO accountDTO,
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         accountService.updateAccountPermissions(accountDTO);
         return new ResponseEntity<>(new ResponseDTO("Permissions updated."), HttpStatus.OK);
+    }
+
+    private void requireAdmin(String token) {
+        if (token == null || token.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+        Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
+        String role = claims.get("role", String.class);
+        if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Admin privileges required");
+        }
     }
 }

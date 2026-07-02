@@ -86,10 +86,10 @@ const IncidentManagementData = () => {
                 setIncidents(res);
                 getEmployeesByIds(res.map((x: any) => x.reporterId)).then((emps: any) => {
                     setEmps(mapIdToName(emps));
-                }).catch((_err) => { });
+                }).catch((_err) => console.error(_err));
 
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
 
         getAllDepartments()
             .then((res) => {
@@ -98,7 +98,7 @@ const IncidentManagementData = () => {
                     label: dept.name,
                     value: "" + dept.id,
                 })));
-            }).catch((_err) => { });
+            }).catch((_err) => console.error(_err));
 
 
         getUniqueSeverityLevel()

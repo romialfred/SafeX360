@@ -227,7 +227,7 @@ const RiskControlPanel = ({ sourceType, riskId }: RiskControlPanelProps) => {
     const reloadActionsForControl = (controlId: number) => {
         getCorrectiveActionsByRiskControl(controlId)
             .then((res) => setLinkedActions((prev) => ({ ...prev, [controlId]: (res ?? []) as any[] })))
-            .catch(() => { });
+            .catch((err) => console.error(err));
     };
 
     const openCreateAction = (control: RiskControlDTO) => {

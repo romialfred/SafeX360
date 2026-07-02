@@ -87,7 +87,7 @@ const MeetingDetailsTabs = () => {
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
         getActivityById(id)
             .then((res) => {
                 setActivity(res);
@@ -105,7 +105,7 @@ const MeetingDetailsTabs = () => {
     const fetchHistory = () => {
         getHsActivityHistoryById(id).then((res) => {
             setHistory(res);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
     };
 
     const lockedMessage = locked.status === 'COMPLETED'

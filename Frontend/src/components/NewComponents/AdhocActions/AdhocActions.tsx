@@ -76,14 +76,14 @@ const AdhocActions = () => {
                 setDeptMap(mapIdToName(res));
                 setDepartments(res.map((d: any) => ({ label: d.name, value: String(d.id) })));
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         getEmployeeDropdown()
             .then((res) => {
                 setEmpMap(mapIdToName(res));
                 setOwners(res.map((e: any) => ({ label: e.name, value: String(e.id) })));
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const enrichedActions = useMemo(() => {

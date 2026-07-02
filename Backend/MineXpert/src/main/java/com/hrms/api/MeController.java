@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
@@ -40,6 +41,7 @@ import lombok.Setter;
  * - POST /change-password-first : applique le 1er changement de MDP obligatoire (validation OWASP)
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/me")
 public class MeController {
 

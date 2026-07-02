@@ -127,17 +127,17 @@ export default function AIIncidentDeclaration() {
             .then((res: any[]) => {
                 if (Array.isArray(res) && res.length > 0) setDefaultLocationId(res[0].id);
             })
-            .catch(() => {});
+            .catch((err) => console.error(err));
         getAllActiveWorkArea()
             .then((res: any[]) => {
                 if (Array.isArray(res) && res.length > 0) setDefaultWorkAreaId(res[0].id);
             })
-            .catch(() => {});
+            .catch((err) => console.error(err));
         getAllActiveWorkProcess()
             .then((res: any[]) => {
                 if (Array.isArray(res) && res.length > 0) setDefaultWorkProcessId(res[0].id);
             })
-            .catch(() => {});
+            .catch((err) => console.error(err));
     }, []);
 
     // ─── Gestion fichier ───

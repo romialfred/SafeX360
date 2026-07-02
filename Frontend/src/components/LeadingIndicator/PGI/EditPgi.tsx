@@ -107,15 +107,15 @@ const EditPgi = () => {
         getEmployeeDropdown().then((res: any) => {
             setEmpMap(mapIdToName(res));
             setEmps(res);
-        }).catch((_err: any) => { });
+        }).catch((_err: any) => console.error(_err));
 
         getAllLocations({}).then((res) => {
             setLocation(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }).catch((_err: any) => { });
+        }).catch((_err: any) => console.error(_err));
 
         getActivitiesByYearStatusAndCategory(new Date().getFullYear(), "PENDING", "IGP").then((res) => {
             setActivities(res.map((x: any) => ({ label: x.title, value: String(x.id) })));
-        }).catch(() => { });
+        }).catch((err) => console.error(err));
     }, []);
 
     const employees = emps.filter((emp: any) => !form.values.participants.some((p: any) => p.id === emp.id));

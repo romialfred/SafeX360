@@ -37,7 +37,7 @@ const ActivityReport = () => {
                 setParticipants(res.participants || []);
                 setParticipantsMap(mapIdToName(res.participants));
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
         fetchActivityReport();
     }, []);
 

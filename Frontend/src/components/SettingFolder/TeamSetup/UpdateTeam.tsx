@@ -54,7 +54,7 @@ const UpdateTeam = () => {
                 name: res.name,
             });
 
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
 
         getTeamMembers(id).then((res) => {
 
@@ -65,7 +65,7 @@ const UpdateTeam = () => {
                 notificationLevel: item.notificationLevel.map((n: any) => "" + n),
                 role: item.role,
             })));
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
 
         getAllDepartments()
             .then((res) => {
@@ -76,7 +76,7 @@ const UpdateTeam = () => {
 
 
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
     }, [])
 
 
@@ -111,7 +111,7 @@ const UpdateTeam = () => {
                     id: undefined
                 })));
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
     }, [form.values.departmentId]);
 
     const memberIds = new Set(form.values.members.map((m) => m.employeeId));

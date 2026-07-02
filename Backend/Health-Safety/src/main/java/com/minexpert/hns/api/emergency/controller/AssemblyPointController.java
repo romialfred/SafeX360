@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
  * (préserve l'historique d'évacuations passées).</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/assembly-points")
 @RequiredArgsConstructor
 public class AssemblyPointController {

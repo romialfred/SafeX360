@@ -65,7 +65,7 @@ const Inspection = () => {
                 value: "" + item.id,
                 label: item.name,
             })));
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
     }, [])
 
     useEffect(() => {

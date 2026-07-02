@@ -222,9 +222,7 @@ const NonConformityEdit = () => {
             form.setFieldValue("analysis", {
                 ...data, startDate: data.startDate ? new Date(data.startDate) : new Date(), deadline: data.deadline ? new Date(data.deadline) : new Date()
             })
-        }).catch((_error) => {
-
-        })
+        }).catch((_error) => console.error(_error))
         getActionsByNonConformityId(id).then((data) => {
             form.setFieldValue("correctiveActions", data?.map((x: any) => ({
                 ...x,
@@ -234,7 +232,7 @@ const NonConformityEdit = () => {
                 status: x.status,
                 description: x.description
             })));
-        }).catch((_error) => { });
+        }).catch((_error) => console.error(_error));
         getEmployeesWithDepartment().then((data) => {
             setEmpMap(mapIdToName(data));
             setEmployees(data.map((emp: any) => ({

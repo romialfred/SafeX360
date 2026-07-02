@@ -36,7 +36,7 @@ const AddTeam = () => {
                     label: item.name,
                 })));
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
     }, [])
 
 
@@ -69,7 +69,7 @@ const AddTeam = () => {
                     id: undefined
                 })));
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
     }, [form.values.departmentId]);
 
     const filteredUsers = employees.filter((user) =>

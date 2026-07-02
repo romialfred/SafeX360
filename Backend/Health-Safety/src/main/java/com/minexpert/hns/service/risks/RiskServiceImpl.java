@@ -82,8 +82,19 @@ public class RiskServiceImpl implements RiskService {
         public RiskDTO updateStatus(Long id, String status) throws HSException {
                 Risk risk = riskRepository.findById(id)
                                 .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+                assertRiskStatus(status);
                 risk.setStatus(status);
+                riskRepository.save(risk);
                 return risk.toDTO();
+        }
+
+        private static final Set<String> VALID_RISK_STATUSES = Set.of(
+                        "IDENTIFIED", "ASSESSED", "MITIGATED", "ACCEPTED", "CLOSED", "MONITORING");
+
+        private void assertRiskStatus(String status) throws HSException {
+                if (status == null || !VALID_RISK_STATUSES.contains(status.toUpperCase())) {
+                        throw new HSException("INVALID_RISK_STATUS");
+                }
         }
 
         @Override

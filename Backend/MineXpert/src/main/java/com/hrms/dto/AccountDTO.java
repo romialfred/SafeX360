@@ -8,6 +8,8 @@ import com.hrms.entity.Employee;
 // LOT 41 P1 SECURITY: Bean Validation pour défense en profondeur sur le mot de passe.
 // La règle métier est aussi enforced côté service (LOT 40), mais valider au niveau DTO
 // stoppe les payloads non conformes avant qu'ils n'atteignent la couche service.
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -29,13 +31,7 @@ public class AccountDTO {
     private String phoneNumber;
     private String role;
 
-    // LOT 41 P1 SECURITY: Bean Validation défense en profondeur sur le mot de passe.
-    // - @Size et @Pattern sont null-tolérants (les payloads sans password — ex. updateAccount
-    //   sans changement de mot de passe — passent toujours).
-    // - Pour un password non null : min 10 caractères + au moins 1 majuscule, 1 minuscule,
-    //   1 chiffre, 1 caractère spécial. Aligné sur la règle serveur LOT 40 (AccountServiceImpl).
-    // - Le hash bcrypt commence par "$2a$"/"$2b$"/"$2y$" (60 chars) et matche également ce regex,
-    //   donc les flux qui réinjectent un hash existant (cas legacy) ne sont pas cassés.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Size(min = 10, message = "PASSWORD_TOO_SHORT")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$",
              message = "PASSWORD_TOO_WEAK")
@@ -83,6 +79,7 @@ public class AccountDTO {
      * Placé en dernier pour préserver l'ordre positionnel du constructeur
      * @AllArgsConstructor utilisé par Account.toDTO().
      */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String oldPassword;
 
     public Account toEntity() {

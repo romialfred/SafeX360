@@ -66,14 +66,14 @@ const Measurements = ({ employee, empMap }: any) => {
         getAllActiveMeasurement().then((res) => {
             setMeasurement(res);
             setMeasurementRecord(mapIdToName(res));
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
         fetchData();
     }, []);
 
     const fetchData = () => {
         getMeasurementsByInspectionId(id).then((res) => {
             setMeasurementsData(res);
-        }).catch((_error) => { })
+        }).catch((_error) => console.error(_error))
     };
 
     useEffect(() => {

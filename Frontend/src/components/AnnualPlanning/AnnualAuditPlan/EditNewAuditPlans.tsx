@@ -139,7 +139,7 @@ const EditNewAuditPlans: React.FC = () => {
                 label: item.employeeName
             })));
             setAuditorsMap(mapIdToName(res));
-        }).catch(() => { });
+        }).catch(() => { errorNotification("Impossible de charger les auditeurs"); });
 
         dispatch(showOverlay());
         getAuditDetails(id).then((res) => {
@@ -169,7 +169,7 @@ const EditNewAuditPlans: React.FC = () => {
                     role: auditorsNameMap[item.email]?.role,
                     email: item?.email || ""
                 })));
-            }).catch(() => { });
+            }).catch(() => { errorNotification("Impossible de charger les auditeurs de cet audit"); });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auditorsNameMap]);
@@ -181,7 +181,7 @@ const EditNewAuditPlans: React.FC = () => {
                 value: "" + item.id,
                 label: item.name,
             })));
-        }).catch(() => { });
+        }).catch(() => { errorNotification("Impossible de charger les périmètres d'audit"); });
 
         getAllActiveWorkProcess().then((res) => {
             setProcesses(res.map((item: any) => ({
@@ -189,7 +189,7 @@ const EditNewAuditPlans: React.FC = () => {
                 value: "" + item.id,
                 label: item.name,
             })));
-        }).catch(() => { });
+        }).catch(() => { errorNotification("Impossible de charger les processus"); });
     }, []);
 
     const handleNext = () => {

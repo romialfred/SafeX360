@@ -78,7 +78,7 @@ const AuditInfoTabs = ({ audit, auditors }: any) => {
     useEffect(() => {
         getAllActiveWorkProcess().then((processes) => {
             setProcessMap(mapIdToName(processes));
-        }).catch(() => { });
+        }).catch((err) => console.error(err));
     }, []);
 
     if (!audit || !audit.id) {

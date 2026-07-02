@@ -22,22 +22,5 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
 
     return children;
-
-    // // if (loading || !permissions) {
-    // //     return (
-    // //         <Center h="100vh">
-    // //             <Loader />
-    // //         </Center>
-    // //     );
-    // // }
-
-    // // const isAllowed = permissions?.[permission][op] === "1";
-
-    // // if (!isAllowed) {
-    // //     errorNotification("You don't have access to this feature.", "");
-    //     return <Navigate to="/unauthorized" />;
-    // }
-
-    // return children;
 };
 export default ProtectedRoute;

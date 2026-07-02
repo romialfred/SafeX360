@@ -15,6 +15,7 @@ import com.minexpert.hns.dto.ActionProcessDTO;
 import com.minexpert.hns.dto.response.ActionProcessResponse;
 import com.minexpert.hns.entity.incident.ActionProcess;
 import com.minexpert.hns.entity.incident.CorrectiveAction;
+import com.minexpert.hns.enums.ActionStatus;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.incident.ActionProcessRepository;
 import com.minexpert.hns.repository.incident.CorrectiveActionRepository;
@@ -56,6 +57,10 @@ public class ActionProcessServiceImpl implements ActionProcessService {
                 CorrectiveAction correctiveAction = correctiveActionRepository
                                 .findById(actionProcessDTO.getCorrectiveActionId())
                                 .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+                if (correctiveAction.getStatus() == ActionStatus.COMPLETED
+                                || correctiveAction.getStatus() == ActionStatus.CANCELLED) {
+                        throw new HSException("ACTION_ALREADY_CLOSED");
+                }
                 correctiveAction.setProgress(actionProcessDTO.getProgress());
                 correctiveAction.setStatus(actionProcessDTO.getStatus());
                 correctiveActionRepository.save(correctiveAction);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -59,9 +60,19 @@ public class OpportunityServiceImpl implements OpportunityService {
     public OpportunityDTO updateStatus(Long id, String status) throws HSException {
         Opportunity opportunity = opportunityRepository.findById(id)
                 .orElseThrow(() -> new HSException("OPPORTUNITY_NOT_FOUND"));
+        assertOpportunityStatus(status);
         opportunity.setStatus(status);
         Opportunity updated = opportunityRepository.save(opportunity);
         return updated.toDTO();
+    }
+
+    private static final Set<String> VALID_OPPORTUNITY_STATUSES = Set.of(
+            "IDENTIFIED", "EVALUATED", "PLANNED", "IN_PROGRESS", "REALIZED", "CLOSED");
+
+    private void assertOpportunityStatus(String status) throws HSException {
+        if (status == null || !VALID_OPPORTUNITY_STATUSES.contains(status.toUpperCase())) {
+            throw new HSException("INVALID_OPPORTUNITY_STATUS");
+        }
     }
 
     @Override

@@ -27,7 +27,7 @@ const Details = () => {
         const getActions = type == "INCIDENT" ? getCorrectiveActionByIncidentId : type == "HS_ACTIVITY" ? getCorrectiveActionByActivityId : type == "NON_CONFORMITY" ? getActionsByNonConformityId : getCorrectiveActionByInspectionId;
         getDetails(id).then((res) => {
             setIncident(res);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
 
         getActions(id).then(async (res) => {
             setCorrectiveActions(res);
@@ -39,7 +39,7 @@ const Details = () => {
                 }))
             );
             setActionProcess(mapIdToProcess(processes));
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
     }, []);
 
     return (

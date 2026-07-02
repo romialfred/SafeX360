@@ -151,7 +151,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                 .then((res) => {
                     setRecommendationFollowups(res);
                 }
-                ).catch((_err) => { })
+                ).catch((_err) => console.error(_err))
                 .finally(() => {
                     setLoading(false);
                 }

@@ -36,7 +36,7 @@ export function usePermissions(): PermissionsAPI {
             const p = await getMyProfile();
             setProfile(p);
         } catch (e) {
-            // Ignore — l'utilisateur sera redirige par le guard
+            console.error(e);
             setProfile(null);
         } finally {
             setLoading(false);

@@ -11,8 +11,8 @@ const auditAreadata = [
     { label: "Process", value: "PROCESS" },
     { label: "System", value: "SYSTEM" },
     { label: "People", value: "PEOPLE" },
-    { label: "OPEX Acoount", value: "OPEX ACCOUNT" },
-    { label: "APEX Account", value: "Apex ACCOUNT" },
+    { label: "OPEX Account", value: "OPEX ACCOUNT" },
+    { label: "APEX Account", value: "APEX ACCOUNT" },
     { label: "Other", value: "OTHER" }
 ]
 
@@ -21,7 +21,7 @@ const inspectionTypesMap: Record<string, string> = {
     chemical: "Chemical",
     electrical: "Electrical",
     environmental: "Environmental",
-    erogonomic: "Erogonomic"
+    ergonomic: "Ergonomic"
 };
 
 const activityTypes = [{ label: "Health & Safety Meeting", value: "HSM" }, { label: "Steering Committee Tour", value: "ST" }]

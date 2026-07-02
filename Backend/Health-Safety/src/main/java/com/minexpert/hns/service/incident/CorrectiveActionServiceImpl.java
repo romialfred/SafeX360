@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -316,6 +317,7 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     })
     public void approveAction(Long companyId, Long id) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
+        assertActionTransition(correctiveAction.getStatus(), ActionStatus.IN_PROGRESS);
         correctiveAction.setStatus(ActionStatus.IN_PROGRESS);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
@@ -339,9 +341,23 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     })
     public void cancelAction(Long companyId, Long id) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
+        assertActionTransition(correctiveAction.getStatus(), ActionStatus.CANCELLED);
         correctiveAction.setStatus(ActionStatus.CANCELLED);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
+    }
+
+    private static final Map<ActionStatus, Set<ActionStatus>> ACTION_TRANSITIONS = Map.of(
+            ActionStatus.PENDING, Set.of(ActionStatus.IN_PROGRESS, ActionStatus.CANCELLED),
+            ActionStatus.IN_PROGRESS, Set.of(ActionStatus.COMPLETED, ActionStatus.CANCELLED),
+            ActionStatus.COMPLETED, Set.of(),
+            ActionStatus.CANCELLED, Set.of()
+    );
+
+    private void assertActionTransition(ActionStatus current, ActionStatus target) throws HSException {
+        if (!ACTION_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new HSException("INVALID_STATUS_TRANSITION");
+        }
     }
 
     @Override

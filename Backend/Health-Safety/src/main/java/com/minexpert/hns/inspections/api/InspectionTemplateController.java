@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -33,6 +34,7 @@ import jakarta.validation.Valid;
  * donc {@code /inspection-template}.</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/inspection-template")
 public class InspectionTemplateController {
 

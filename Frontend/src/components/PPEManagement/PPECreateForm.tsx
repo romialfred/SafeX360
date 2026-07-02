@@ -52,7 +52,7 @@ const PPECreateForm = () => {
     useEffect(() => {
         getActivePPE()
             .then(setPpe)
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const handleSubmit = () => {

@@ -155,7 +155,7 @@ const UpdateInvestigation = () => {
         // Contexte de l'incident parent (best-effort).
         const incId = res.incidentId ?? res.incident?.id;
         if (incId) {
-          getIncidentById(incId).then((inc) => setIncident(inc)).catch(() => { });
+          getIncidentById(incId).then((inc) => setIncident(inc)).catch((err) => console.error(err));
         }
       })
       .catch((err) => errorNotification(err.response?.data?.errorMessage || 'Impossible de charger l\'investigation'));

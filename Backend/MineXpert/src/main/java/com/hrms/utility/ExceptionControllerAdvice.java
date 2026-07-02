@@ -39,10 +39,13 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExceptionControllerAdvice.class);
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
-        ErrorInfo error = new ErrorInfo(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                LocalDateTime.now());
+        log.error("Unhandled exception", exception);
+        ErrorInfo error = new ErrorInfo("An internal error occurred. Please try again later.",
+                HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

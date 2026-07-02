@@ -148,13 +148,13 @@ const NonConformityDetails = () => {
                     nonConformityId,
                 });
             })
-            .catch(() => {})
+            .catch((err) => console.error(err))
             .finally(() => {
                 dispatch(hideOverlay());
             });
 
-        getEventAnalysisByNonConformityId(id).then((res) => setAnalysis(res)).catch(() => {});
-        getActionsByNonConformityId(id).then((res) => setActions(res)).catch(() => {});
+        getEventAnalysisByNonConformityId(id).then((res) => setAnalysis(res)).catch((err) => console.error(err));
+        getActionsByNonConformityId(id).then((res) => setActions(res)).catch((err) => console.error(err));
 
         getEmployeeDropdown()
             .then((res) => {
@@ -165,10 +165,10 @@ const NonConformityDetails = () => {
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
             })
-            .catch(() => {});
+            .catch((err) => console.error(err));
 
-        getAllLocations({}).then((res) => setLocationMap(mapIdToName(res))).catch(() => {});
-        GetAllWorkProcess({}).then((res) => setProcessMap(mapIdToName(res))).catch(() => {});
+        getAllLocations({}).then((res) => setLocationMap(mapIdToName(res))).catch((err) => console.error(err));
+        GetAllWorkProcess({}).then((res) => setProcessMap(mapIdToName(res))).catch((err) => console.error(err));
         fetchHistory();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -228,7 +228,7 @@ const NonConformityDetails = () => {
     const fetchHistory = () => {
         getNCHistorybyNonConformityID(id)
             .then((res) => setHistory(res))
-            .catch(() => {});
+            .catch((err) => console.error(err));
     };
 
     const handleSubmit = async (values: any) => {

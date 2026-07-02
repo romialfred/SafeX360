@@ -1,6 +1,7 @@
 package com.minexpert.hns.service.chemicalrisks;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -75,8 +76,19 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     public ChemicalRiskDTO updateStatus(Long id, String status) throws HSException {
         ChemicalRisk risk = chemicalRiskRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
+        assertChemicalRiskStatus(status);
         risk.setStatus(status);
+        chemicalRiskRepository.save(risk);
         return risk.toDTO();
+    }
+
+    private static final Set<String> VALID_CHEMICAL_RISK_STATUSES = Set.of(
+            "IDENTIFIED", "ASSESSED", "MITIGATED", "ACCEPTED", "CLOSED", "MONITORING");
+
+    private void assertChemicalRiskStatus(String status) throws HSException {
+        if (status == null || !VALID_CHEMICAL_RISK_STATUSES.contains(status.toUpperCase())) {
+            throw new HSException("INVALID_CHEMICAL_RISK_STATUS");
+        }
     }
 
     @Override

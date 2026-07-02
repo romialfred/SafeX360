@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/inspection-history")
 @RequiredArgsConstructor
+@CrossOrigin
 public class InspectionHistoryController {
     private final InspectionHistoryService inspectionHistoryService;
 

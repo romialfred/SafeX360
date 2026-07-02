@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
  * {@code PUT} crée OU met à jour selon l'existence d'une entrée pour la semaine.</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/planning")
 @RequiredArgsConstructor
 public class RescueWeeklyPlanningController {

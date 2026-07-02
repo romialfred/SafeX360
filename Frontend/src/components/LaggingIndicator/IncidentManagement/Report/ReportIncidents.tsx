@@ -167,40 +167,36 @@ const ReportIncidents = () => {
     useEffect(() => {
         getEmployeesWithDepartment().then((res: any) => {
             setEmps(res);
-        }).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les employés"); });
 
         getAllActiveIncidentCategories().then((res: any) => {
             setCategories(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les catégories d'incident"); });
         getAllActiveIncidentType().then((res: any) => {
             setIncidentTypes(res.map((item: any) => ({ label: item.name, value: "" + item.id, category: "" + item.incidentCategoryId, severityLevel: "" + item.severityLevelId })));
-        }).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les types d'incident"); });
         getAllActiveLocations().then((res: any) => {
             setLocations(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }
-        ).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les lieux"); });
         getAllActiveSeverityLevel().then((res: any) => {
             setSeverityLevelMap(mapIdToName(res))
             setSeverityLevels(res.map((item: any) => ({ label: item.name, value: "" + item.id, severityLevel: item.level })));
-        }
-        ).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les niveaux de gravité"); });
         getAllActiveWeatherConditions().then((res: any) => {
             setWeatherConditions(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }
-        ).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les conditions météo"); });
         GetAllBodyParts({}).then((res: any) => {
             setBodyParts(res.map((item: any) => ({ ...item, label: item.name, value: "" + item.id })));
-        }
-        ).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les parties du corps"); });
         getAllActiveWorkArea().then((res: any) => {
-            setWorkAreas(res.map((item: any) => ({ label: item.name, value: "" + item.id, departmentId: item.departmentId })));
-        }).catch((_err: any) => { });
+            setWorkAreas(res.map((item: any) => ({ label: item.name, value: "" + item.id, departmentId: "" + item.departmentId })));
+        }).catch(() => { errorNotification("Impossible de charger les zones de travail"); });
         getAllActiveWorkProcess().then((res: any) => {
-            setWorkProcesses(res.map((item: any) => ({ label: item.name, value: "" + item.id, departmentId: item.departmentId })));
-        }).catch((_err: any) => { });
+            setWorkProcesses(res.map((item: any) => ({ label: item.name, value: "" + item.id, departmentId: "" + item.departmentId })));
+        }).catch(() => { errorNotification("Impossible de charger les processus de travail"); });
         getAllDepartments().then((res: any) => {
             setDepartments(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }).catch((_err: any) => { });
+        }).catch(() => { errorNotification("Impossible de charger les départements"); });
     }, []);
 
     // useEffect(() => {

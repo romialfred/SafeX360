@@ -69,7 +69,7 @@ const AnnualDataFile = () => {
             .finally(() => setLoading(false));
         GetAllAuditArea({})
             .then((res) => setAuditAreaMap(mapIdToName(res)))
-            .catch(() => { });
+            .catch((err) => console.error(err));
         getLeadAuditorsForPlanning()
             .then((res) => {
                 setLeadAuditors(
@@ -79,7 +79,7 @@ const AnnualDataFile = () => {
                     }, {})
                 );
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const scopeName = (rowData: any) => {

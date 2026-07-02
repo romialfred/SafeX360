@@ -272,10 +272,10 @@ const PendingActions = () => {
     useEffect(() => {
         getAllDepartments()
             .then((res) => setDeptMap(mapIdToName(res)))
-            .catch(() => { });
+            .catch((err) => console.error(err));
         getEmployeeDropdown()
             .then((res) => setEmpMap(mapIdToName(res)))
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const mapActions = (items: any[] | undefined, fallbackDepartmentId?: number | string | null): PendingAction[] => {

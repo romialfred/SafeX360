@@ -89,7 +89,7 @@ const EditAdhocAction = () => {
     useEffect(() => {
         getEmployeeDropdown()
             .then((res) => setEmployees(res))
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         if (!id) return;
         getActionById(id)

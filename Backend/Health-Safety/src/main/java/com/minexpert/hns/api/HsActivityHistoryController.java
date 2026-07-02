@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/hs-activity-history")
 @RequiredArgsConstructor
+@CrossOrigin
 public class HsActivityHistoryController {
     private final HsActivityHistoryService hsActivityHistoryService;
 

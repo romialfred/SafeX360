@@ -135,7 +135,7 @@ const SosDetailPage = () => {
         const unsubscribe = subscribe((upd) => {
             if (upd.id === Number(id)) {
                 setAlert(upd);
-                getSosLifecycle(Number(id)).then(setLifecycle).catch(() => {});
+                getSosLifecycle(Number(id)).then(setLifecycle).catch((err) => console.error(err));
             }
         });
         return unsubscribe;
@@ -143,7 +143,7 @@ const SosDetailPage = () => {
 
     // ── Actions ──
     const refreshLifecycle = () =>
-        getSosLifecycle(Number(id)).then(setLifecycle).catch(() => {});
+        getSosLifecycle(Number(id)).then(setLifecycle).catch((err) => console.error(err));
 
     const handleAcknowledge = async () => {
         if (!alert?.id) return;

@@ -4,12 +4,11 @@ import {
     IconEyeOff,
     IconLock,
     IconUser,
-    IconAlertTriangle,
     IconWorld,
     IconArrowRight,
     IconArrowLeft,
 } from '@tabler/icons-react';
-import { Button, PasswordInput, TextInput, Loader } from '@mantine/core';
+import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { getUser, loginUser } from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
@@ -40,8 +39,9 @@ const LoginsPage = () => {
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
     const [loading, setLoading] = useState(false);
     const dispatch = useAppDispatch();
-    type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | null;
+    type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | 'invitationExpired' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
+    const [wakingStep, setWakingStep] = useState(0);
 
     const t = language === 'fr'
         ? {
@@ -60,6 +60,16 @@ const LoginsPage = () => {
             errorServer: 'Erreur serveur — réessayez.',
             errorWaking: 'Réveil du serveur… nouvelle tentative.',
             errorRateLimit: 'Trop de tentatives échouées — réessayez dans quelques minutes.',
+            popupTitleError: 'Connexion impossible',
+            popupTitleTechnical: 'Problème technique',
+            popupTitleBlocked: 'Accès temporairement bloqué',
+            popupCredentials: 'Les informations saisies ne correspondent à aucun compte. Vérifiez votre identifiant et votre mot de passe, puis réessayez.',
+            popupNetwork: 'Le serveur SafeX est actuellement injoignable. Cela ne vient pas de vos identifiants — vérifiez votre connexion internet ou réessayez dans quelques instants.',
+            popupServer: 'Le service rencontre un problème technique temporaire. Ce n\'est pas lié à vos identifiants. Veuillez réessayer dans quelques instants ou contacter votre administrateur si le problème persiste.',
+            popupWaking: 'Le serveur SafeX démarre, veuillez patienter…',
+            popupRateLimit: 'Par mesure de sécurité, votre accès a été temporairement bloqué après plusieurs tentatives infructueuses. Veuillez réessayer dans 15 minutes.',
+            popupInvitationExpired: 'Votre invitation a expiré. Veuillez contacter votre administrateur pour en recevoir une nouvelle.',
+            popupClose: 'Compris',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Application mobile terrain',
             mobileSubtitle: 'Android · Hors ligne · ISO 45001',
@@ -84,6 +94,16 @@ const LoginsPage = () => {
             errorServer: 'Server error — please retry.',
             errorWaking: 'Server waking up… retrying.',
             errorRateLimit: 'Too many failed attempts — please try again in a few minutes.',
+            popupTitleError: 'Unable to Sign In',
+            popupTitleTechnical: 'Technical Issue',
+            popupTitleBlocked: 'Access Temporarily Blocked',
+            popupCredentials: 'The credentials you entered do not match any account. Please check your user ID and password, then try again.',
+            popupNetwork: 'The SafeX server is currently unreachable. This is not related to your credentials — please check your internet connection or try again shortly.',
+            popupServer: 'The service is experiencing a temporary technical issue. This is not related to your credentials. Please try again shortly or contact your administrator if the problem persists.',
+            popupWaking: 'The SafeX server is starting up, please wait…',
+            popupRateLimit: 'For security purposes, your access has been temporarily blocked after several unsuccessful attempts. Please try again in 15 minutes.',
+            popupInvitationExpired: 'Your invitation has expired. Please contact your administrator for a new one.',
+            popupClose: 'Got it',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
             mobileTitle: 'Mobile application',
             mobileSubtitle: 'Android · Offline · ISO 45001',
@@ -107,37 +127,45 @@ const LoginsPage = () => {
 
     const handleSubmit = async (values: any) => {
         setErrorKind(null);
+        setWakingStep(0);
         form.validate();
         if (!form.isValid()) return;
         setLoading(true);
 
-        // Render free-tier : le gateway peut être en veille (cold start ~30-60 s).
-        // Une erreur RÉSEAU (aucune réponse HTTP : DNS, timeout, connexion refusée)
-        // n'est PAS une erreur d'identifiants → on le distingue clairement et on
-        // retente automatiquement quelques fois le temps que le serveur se réveille.
         const attempt = async (retriesLeft: number): Promise<void> => {
             try {
                 await loginUser({ ...values });
+                setWakingStep(4);
                 const res: any = await getUser();
                 dispatch(setUser(res));
                 navigate('/');
             } catch (err: any) {
                 const isNetwork = !err?.response;
                 const status = err?.response?.status;
+                const errMsg = err?.response?.data?.errorMessage ?? '';
 
                 if (status === 429) {
                     setErrorKind('rateLimit');
                     return;
                 }
-                if (status === 401 || status === 403) {
+                if (errMsg === 'INVITATION_EXPIRED') {
+                    setErrorKind('invitationExpired');
+                    return;
+                }
+                const isAuthError = status === 401 || status === 403
+                    || errMsg === 'Incorrect username or password'
+                    || errMsg === 'Authentication failed';
+                if (isAuthError) {
                     setErrorKind('credentials');
                     return;
                 }
 
                 const isColdStart = isNetwork || status === 502 || status === 503 || status === 504;
                 if (isColdStart && retriesLeft > 0) {
+                    const step = 4 - retriesLeft;
+                    setWakingStep(step);
                     setErrorKind('waking');
-                    await new Promise((r) => setTimeout(r, 4000));
+                    await new Promise((r) => setTimeout(r, 5000));
                     return attempt(retriesLeft - 1);
                 }
 
@@ -150,6 +178,7 @@ const LoginsPage = () => {
             await attempt(3);
         } finally {
             setLoading(false);
+            if (errorKind !== 'waking') setWakingStep(0);
         }
     };
 
@@ -354,31 +383,6 @@ const LoginsPage = () => {
                             {t.loginSubtitle}
                         </p>
 
-                        {/* Erreur / état réseau */}
-                        {errorKind && (
-                            <div
-                                className={`mt-3 p-2 rounded-lg border flex items-center gap-2 ${
-                                    errorKind === 'waking'
-                                        ? 'bg-amber-500/15 border-amber-400/40'
-                                        : 'bg-red-500/15 border-red-400/40'
-                                }`}
-                                role="alert"
-                                aria-live="assertive"
-                            >
-                                <IconAlertTriangle
-                                    size={14}
-                                    className={`flex-shrink-0 ${errorKind === 'waking' ? 'text-amber-300' : 'text-red-300'}`}
-                                    aria-hidden="true"
-                                />
-                                <span className={`text-[12.5px] ${errorKind === 'waking' ? 'text-amber-100' : 'text-red-100'}`}>
-                                    {errorKind === 'credentials' && t.errorCredentials}
-                                    {errorKind === 'rateLimit' && t.errorRateLimit}
-                                    {errorKind === 'network' && t.errorNetwork}
-                                    {errorKind === 'server' && t.errorServer}
-                                    {errorKind === 'waking' && t.errorWaking}
-                                </span>
-                            </div>
-                        )}
 
                         <form onSubmit={form.onSubmit(handleSubmit)} className="mt-6 space-y-5">
 
@@ -571,6 +575,249 @@ const LoginsPage = () => {
                 </div>
 
                 </div>
+
+                {/* ═══ Popup d'erreur SafeX — professionnelle avec logo officiel ═══ */}
+                <Modal
+                    opened={errorKind !== null && errorKind !== 'waking'}
+                    onClose={() => setErrorKind(null)}
+                    centered
+                    withCloseButton={false}
+                    radius="lg"
+                    size="sm"
+                    overlayProps={{ backgroundOpacity: 0.55, blur: 6 }}
+                    styles={{
+                        content: {
+                            backgroundColor: '#0a1f1d',
+                            border: 'none',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(20,184,166,0.08)',
+                        },
+                        body: { padding: 0 },
+                    }}
+                >
+                    <div className="flex flex-col items-center text-center px-6 py-7">
+                        {/* Logo officiel SafeX 360 — identique à la page de login */}
+                        <div style={{ filter: 'drop-shadow(0 6px 20px rgba(20,184,166,0.45))' }}>
+                            <svg
+                                width="48" height="48"
+                                viewBox="0 0 64 64"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-label="SafeX 360"
+                            >
+                                <defs>
+                                    <linearGradient id="popupShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#5EEAD4" />
+                                        <stop offset="55%" stopColor="#14B8A6" />
+                                        <stop offset="100%" stopColor="#EF4444" />
+                                    </linearGradient>
+                                    <linearGradient id="popupShieldHL" x1="0%" y1="0%" x2="0%" y2="60%">
+                                        <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+                                        <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                    fill="url(#popupShieldGrad)"
+                                    stroke="rgba(255,255,255,0.35)"
+                                    strokeWidth="0.8"
+                                />
+                                <path
+                                    d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 38, 50 42, 32 42 C14 42, 7 38, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                    fill="url(#popupShieldHL)"
+                                />
+                                <path
+                                    d="M 20 31 L 29 40 L 45 21"
+                                    stroke="white" strokeWidth="5"
+                                    strokeLinecap="round" strokeLinejoin="round"
+                                    fill="none"
+                                />
+                            </svg>
+                        </div>
+                        {/* Wordmark SafeX 360 */}
+                        <div className="flex items-baseline gap-0.5 mt-2" style={{ userSelect: 'none' }}>
+                            <span style={{ color: '#ffffff', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>Safe</span>
+                            <span style={{ color: '#5EEAD4', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>X</span>
+                            <span style={{ color: '#EF4444', fontSize: '13px', fontWeight: 600, marginLeft: '3px' }}>360</span>
+                        </div>
+
+                        <h3
+                            style={{ color: '#ffffff', fontSize: '17px', fontWeight: 600, marginTop: '14px', letterSpacing: '-0.01em' }}
+                        >
+                            {errorKind === 'rateLimit' ? t.popupTitleBlocked
+                                : (errorKind === 'server' || errorKind === 'network') ? t.popupTitleTechnical
+                                : t.popupTitleError}
+                        </h3>
+
+                        <p
+                            style={{ color: 'rgba(255,255,255,0.75)', fontSize: '13.5px', maxWidth: '300px', marginTop: '12px', lineHeight: '1.6' }}
+                        >
+                            {errorKind === 'credentials' && t.popupCredentials}
+                            {errorKind === 'rateLimit' && t.popupRateLimit}
+                            {errorKind === 'network' && t.popupNetwork}
+                            {errorKind === 'server' && t.popupServer}
+                            {errorKind === 'invitationExpired' && t.popupInvitationExpired}
+                        </p>
+
+                        <Button
+                            onClick={() => setErrorKind(null)}
+                            size="md"
+                            radius="md"
+                            mt={24}
+                            styles={{
+                                root: {
+                                    background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
+                                    border: 'none',
+                                    height: '40px',
+                                    fontSize: '13.5px',
+                                    fontWeight: 500,
+                                    paddingLeft: '32px',
+                                    paddingRight: '32px',
+                                    boxShadow: '0 4px 16px rgba(20,184,166,0.3)',
+                                },
+                            }}
+                            className="hover:brightness-110 transition-all"
+                        >
+                            {t.popupClose}
+                        </Button>
+                    </div>
+                </Modal>
+
+                {/* Popup immersif : réveil serveur avec étapes progressives */}
+                <Modal
+                    opened={errorKind === 'waking'}
+                    onClose={() => {}}
+                    centered
+                    withCloseButton={false}
+                    closeOnClickOutside={false}
+                    closeOnEscape={false}
+                    radius="lg"
+                    size="sm"
+                    overlayProps={{ backgroundOpacity: 0.6, blur: 8 }}
+                    styles={{
+                        content: {
+                            backgroundColor: '#0a1f1d',
+                            border: 'none',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(20,184,166,0.08)',
+                        },
+                        body: { padding: 0 },
+                    }}
+                >
+                    <div className="flex flex-col items-center text-center px-6 py-7">
+                        {/* Logo SafeX 360 animé */}
+                        <div className="animate-pulse">
+                            <svg
+                                width="44" height="44"
+                                viewBox="0 0 64 64"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-label="SafeX 360"
+                            >
+                                <defs>
+                                    <linearGradient id="wakingShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#5EEAD4" />
+                                        <stop offset="55%" stopColor="#14B8A6" />
+                                        <stop offset="100%" stopColor="#EF4444" />
+                                    </linearGradient>
+                                    <linearGradient id="wakingShieldHL" x1="0%" y1="0%" x2="0%" y2="60%">
+                                        <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+                                        <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                    fill="url(#wakingShieldGrad)"
+                                    stroke="rgba(255,255,255,0.35)"
+                                    strokeWidth="0.8"
+                                />
+                                <path
+                                    d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 38, 50 42, 32 42 C14 42, 7 38, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
+                                    fill="url(#wakingShieldHL)"
+                                />
+                                <path
+                                    d="M 20 31 L 29 40 L 45 21"
+                                    stroke="white" strokeWidth="5"
+                                    strokeLinecap="round" strokeLinejoin="round"
+                                    fill="none"
+                                />
+                            </svg>
+                        </div>
+                        <div className="flex items-baseline gap-0.5 mt-2" style={{ userSelect: 'none' }}>
+                            <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em' }}>Safe</span>
+                            <span style={{ color: '#5EEAD4', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em' }}>X</span>
+                            <span style={{ color: '#EF4444', fontSize: '11px', fontWeight: 600, marginLeft: '3px' }}>360</span>
+                        </div>
+
+                        <h3 style={{ color: '#ffffff', fontSize: '16px', fontWeight: 600, marginTop: '16px' }}>
+                            {language === 'fr' ? 'Préparation de votre espace' : 'Preparing your workspace'}
+                        </h3>
+
+                        {/* Étapes avec barres de progression */}
+                        <div style={{ width: '100%', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {[
+                                { fr: 'Connexion aux serveurs SafeX', en: 'Connecting to SafeX servers' },
+                                { fr: 'Initialisation des services', en: 'Initializing services' },
+                                { fr: 'Chargement des modules de sécurité', en: 'Loading security modules' },
+                                { fr: 'Préparation de votre session sécurisée', en: 'Preparing your secure session' },
+                            ].map((step, i) => {
+                                const isDone = wakingStep > i + 1;
+                                const isActive = wakingStep === i + 1;
+                                const isPending = wakingStep < i + 1;
+                                return (
+                                    <div key={i} style={{ textAlign: 'left', opacity: isPending ? 0.35 : 1, transition: 'opacity 0.5s ease' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                                            <div style={{
+                                                width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                                background: isDone ? 'linear-gradient(135deg, #14B8A6, #0D9488)' : isActive ? 'rgba(20,184,166,0.2)' : 'rgba(255,255,255,0.08)',
+                                                border: isActive ? '2px solid #14B8A6' : isDone ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                                            }}>
+                                                {isDone && (
+                                                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                                        <path d="M3 8.5L6.5 12L13 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                )}
+                                                {isActive && <Loader size={10} color="teal" />}
+                                            </div>
+                                            <span style={{ color: isDone ? '#5EEAD4' : isActive ? '#ffffff' : 'rgba(255,255,255,0.4)', fontSize: '12.5px', fontWeight: isActive ? 500 : 400 }}>
+                                                {language === 'fr' ? step.fr : step.en}
+                                            </span>
+                                        </div>
+                                        {(isActive || isDone) && (
+                                            <div style={{ marginLeft: '26px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%', borderRadius: '2px',
+                                                    background: 'linear-gradient(90deg, #14B8A6, #5EEAD4)',
+                                                    width: isDone ? '100%' : '70%',
+                                                    transition: 'width 4s ease-out',
+                                                    animation: isActive ? 'none' : 'none',
+                                                }} />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Barre de progression globale */}
+                        <div style={{ width: '100%', marginTop: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                                    {language === 'fr' ? 'Progression globale' : 'Overall progress'}
+                                </span>
+                                <span style={{ color: '#5EEAD4', fontSize: '11px', fontWeight: 500 }}>
+                                    {Math.min(Math.round((wakingStep / 4) * 100), 100)}%
+                                </span>
+                            </div>
+                            <div style={{ height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                                <div style={{
+                                    height: '100%', borderRadius: '3px',
+                                    background: 'linear-gradient(90deg, #0D9488, #14B8A6, #5EEAD4)',
+                                    width: `${Math.min((wakingStep / 4) * 100, 100)}%`,
+                                    transition: 'width 1s ease-out',
+                                    boxShadow: '0 0 12px rgba(20,184,166,0.4)',
+                                }} />
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
+
             </div>
         </div>
     );

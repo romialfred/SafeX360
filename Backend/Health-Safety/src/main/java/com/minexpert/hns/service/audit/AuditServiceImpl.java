@@ -3,6 +3,8 @@ package com.minexpert.hns.service.audit;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -153,12 +155,27 @@ public class AuditServiceImpl implements AuditService {
     public void updateAuditStatus(Long id, AuditStatus status) throws HSException {
         Audit audit = auditRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
+        assertAuditTransition(audit.getStatus(), status);
         if (status == AuditStatus.CLOSED) {
             assertReadyForClosure(id);
         }
         audit.setStatus(status);
         audit.setUpdatedAt(LocalDateTime.now());
         auditRepository.save(audit);
+    }
+
+    private static final Map<AuditStatus, Set<AuditStatus>> AUDIT_TRANSITIONS = Map.of(
+            AuditStatus.PLANNING, Set.of(AuditStatus.PREPARATION, AuditStatus.CANCELLED),
+            AuditStatus.PREPARATION, Set.of(AuditStatus.EXECUTION, AuditStatus.PLANNING, AuditStatus.CANCELLED),
+            AuditStatus.EXECUTION, Set.of(AuditStatus.CLOSED, AuditStatus.CANCELLED),
+            AuditStatus.CLOSED, Set.of(),
+            AuditStatus.CANCELLED, Set.of()
+    );
+
+    private void assertAuditTransition(AuditStatus current, AuditStatus target) throws HSException {
+        if (!AUDIT_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new HSException("INVALID_STATUS_TRANSITION");
+        }
     }
 
     /**

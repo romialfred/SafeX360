@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.hrms.dto.EmployeeDTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -94,33 +96,59 @@ public class Employee {
   private String professionalEmail;
 
   // Payment Information
+  @JsonIgnore
   private String paymentPeriod;
+  @JsonIgnore
   private String salaryCurrency;
+  @JsonIgnore
   private String basicSalary;
+  @JsonIgnore
   private String extraPay;
+  @JsonIgnore
   private String expatriationAllowance;
+  @JsonIgnore
   private String housingAllowance;
+  @JsonIgnore
   private String responsibilityAllowance;
+  @JsonIgnore
   private String rosterAllowance;
+  @JsonIgnore
   private String smearAllowance;
+  @JsonIgnore
   private String onCallAllowance;
+  @JsonIgnore
   private String exceptionalAllowance;
+  @JsonIgnore
   private String transportAllowance;
+  @JsonIgnore
   private String cashHandlingAllowance;
+  @JsonIgnore
   private String clothingAllowance;
+  @JsonIgnore
   private String individualPerformance;
+  @JsonIgnore
   private String performanceRate;
+  @JsonIgnore
   private String surcharge;
+  @JsonIgnore
   private String sujetionAllowance;
+  @JsonIgnore
   private String primeERT;
+  @JsonIgnore
   private String riskAllowance;
+  @JsonIgnore
   private String vacation;
+  @JsonIgnore
   private String securityAllowance;
 
   // Additional Information
+  @JsonIgnore
   private String cnpsNumber;
+  @JsonIgnore
   private String bank;
+  @JsonIgnore
   private String accountNumber;
+  @JsonIgnore
   private String iban;
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "employee_id")

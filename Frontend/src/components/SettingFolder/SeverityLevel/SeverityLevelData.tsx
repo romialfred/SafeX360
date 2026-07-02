@@ -171,17 +171,17 @@ const SeverityLevelData = ({ opened, close }: any) => {
         getSeverityLevels();
         GetAllIncidentType({}).then((res) => {
             setIncidentTypes(res);
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
 
         getCountBySeverityLevel().then((res) => {
             setSeverityLevelCount(res);
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
         getCountByCategory().then((res) => {
             setCategoryCount(res);
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
         getCountByCategoryAndSeverity().then((res) => {
             setCategorySeverityCount(res);
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
     }, []);
 
     const getSeverityLevels = () => {

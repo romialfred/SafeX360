@@ -14,7 +14,7 @@ const DetailsInspection = () => {
     useEffect(() => {
         getPgiById(id)
             .then(setInspection)
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
     }, []);
 
     return <ViewDetailsPgi inspection={inspection} />;

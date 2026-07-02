@@ -52,7 +52,7 @@ const PPEStockEntryForm = () => {
                 setPpe(res);
                 setPpeMap(mapIdToName(res));
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const handleSubmit = (values: any) => {

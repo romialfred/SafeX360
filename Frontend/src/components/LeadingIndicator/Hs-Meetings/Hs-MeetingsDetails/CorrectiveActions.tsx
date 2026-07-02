@@ -30,7 +30,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
     const fetch = () => {
         getCorrectiveActionByActivityId(id).then((res) => {
             setActions(res);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
     };
 
     const actionForm = useForm({

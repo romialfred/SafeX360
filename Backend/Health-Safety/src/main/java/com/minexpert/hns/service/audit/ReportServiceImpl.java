@@ -2,6 +2,8 @@ package com.minexpert.hns.service.audit;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -53,8 +55,34 @@ public class ReportServiceImpl implements ReportService {
             @CacheEvict(cacheNames = AuditCacheNames.REPORT_BY_ID, allEntries = true)
     })
     public void updateReport(ExecuteRequest request) throws HSException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateReport'");
+        ReportDTO reportDTO = request.getReport();
+        Report existing = reportRepository.findById(reportDTO.getId())
+                .orElseThrow(() -> new HSException("REPORT_NOT_FOUND"));
+        if (reportDTO.getStatus() != null && reportDTO.getStatus() != existing.getStatus()) {
+            assertReportTransition(existing.getStatus(), reportDTO.getStatus());
+        }
+        reportDTO.setUpdatedAt(LocalDateTime.now());
+        Report updated = reportDTO.toEntity();
+        updated.setId(existing.getId());
+        updated.setCreatedAt(existing.getCreatedAt());
+        updated.setDocs(mediaService.saveAllMedia(reportDTO.getDocs()));
+        if (request.getContributors() != null) {
+            contributorService.createContributors(request.getContributors());
+        }
+        reportRepository.save(updated);
+    }
+
+    private static final Map<AuditReportStatus, Set<AuditReportStatus>> REPORT_TRANSITIONS = Map.of(
+            AuditReportStatus.DRAFT, Set.of(AuditReportStatus.SUBMITTED),
+            AuditReportStatus.SUBMITTED, Set.of(AuditReportStatus.APPROVED, AuditReportStatus.REJECTED),
+            AuditReportStatus.APPROVED, Set.of(),
+            AuditReportStatus.REJECTED, Set.of(AuditReportStatus.DRAFT)
+    );
+
+    private void assertReportTransition(AuditReportStatus current, AuditReportStatus target) throws HSException {
+        if (!REPORT_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new HSException("INVALID_STATUS_TRANSITION");
+        }
     }
 
     @Override

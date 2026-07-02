@@ -28,11 +28,11 @@ const AdhocActionDetails = () => {
     useEffect(() => {
         getActionById(id)
             .then((res) => setAction(res))
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         getAllActionProcessByActionId(id)
             .then((res) => setHistory(res))
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, [id]);
 
     const cfg = adhocStatusConfig(action?.status);

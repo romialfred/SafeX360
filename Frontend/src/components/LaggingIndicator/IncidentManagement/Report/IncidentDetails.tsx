@@ -197,14 +197,14 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                                 <Select size="sm" withAsterisk renderOption={renderSelectOption} {...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Type d'incident" placeholder="Sélectionner un type" />
                                 {severityLevelMap[x.severityLevelId]?.level > 3 && <Text size="xs" c="red">Cet incident nécessitera une investigation approfondie</Text>}
                             </div>
-                            {(incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Blessure avec traitement" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Premiers soins" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "First Aid" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Injury with treatment") &&
+                            {(() => { const typeLabel = (incidentTypes.find((t: any) => t.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label || "").toLowerCase(); return typeLabel.includes("blessure") || typeLabel.includes("premiers soins") || typeLabel.includes("first aid") || typeLabel.includes("injury"); })() &&
                                 <div className="space-y-2 col-span-2 bg-red-50/60 border border-red-200 p-3 rounded-md mt-2">
                                     <h4 className="text-xs text-red-800 uppercase tracking-wider">Détails de la blessure</h4>
                                     <BodyPartSelect bodyParts={bodyParts} form={form} id={`incidentDetails.${index}.affectedBodyParts`} />
                                 </div>
                             }
                             {
-                                categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" &&
+                                (categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label || "").toLowerCase().includes("environ") &&
                                 <div className="space-y-2 col-span-2 bg-green-50/60 border border-green-200 p-3 rounded-md mt-2">
                                     <h4 className="text-xs text-green-800 uppercase tracking-wider">Détails de l'incident environnemental</h4>
                                     <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Impact environnemental" />

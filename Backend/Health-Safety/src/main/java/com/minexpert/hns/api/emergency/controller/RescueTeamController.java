@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 /** Endpoints équipes/membres/shifts (LOT 48 Phase 1.c). Base : {@code /hns/emergency/teams}. */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/teams")
 @RequiredArgsConstructor
 public class RescueTeamController {

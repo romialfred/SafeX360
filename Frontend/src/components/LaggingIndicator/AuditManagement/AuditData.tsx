@@ -60,18 +60,18 @@ const AuditData = () => {
         dispatch(showOverlay());
         getAllAudit().then((res) => {
             setAuditData(res);
-        }).catch((_err) => { }).finally(() => {
+        }).catch((_err) => console.error(_err)).finally(() => {
             dispatch(hideOverlay());
         })
         GetAllAuditArea({}).then((res) => {
             setAuditAreaMap(mapIdToName(res));
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
         getLeadAuditors().then((res) => {
             setLeadAuditors(res.reduce((acc: any, auditor: any) => {
                 acc[auditor.auditId] = auditor;
                 return acc;
             }, {}));
-        }).catch(() => { }).finally(() => { });
+        }).catch((err) => console.error(err)).finally(() => { });
     }, []);
 
 

@@ -77,9 +77,7 @@ const ViewDetails = () => {
             let emps = Array.from(new Set([...res.involvedPersons, ...res.witnesses, res.reporterId]));
             getEmployeesByIds(emps).then((res: any) => {
                 setEmployees(mapIdToName(res));
-            }).catch((_err) => {
-
-            });
+            }).catch((_err) => console.error(_err));
             getWeathersByIds(res.weatherConditions).then((weatherRes) => {
 
                 setWeatherMap(mapIdToName(weatherRes));
@@ -101,13 +99,13 @@ const ViewDetails = () => {
                 }));
                 setEmps(mappedEmployees);
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
 
         getInvestigationByIncidentId(id).then((res) => {
             setInvestigation(res);
             getAllInvestigationProcessByInvestigationId(res.id).then((processes) => {
                 setInvestigationProcesses(processes);
-            }).catch((_err) => { });
+            }).catch((_err) => console.error(_err));
 
         }).catch((err) => {
             console.log(err);

@@ -85,15 +85,15 @@ const AddNewTour = () => {
     useEffect(() => {
         getEmployeeDropdown().then((res: any) => {
             setEmps(res);
-        }).catch((_err: any) => { });
+        }).catch((_err: any) => console.error(_err));
 
         getAllLocations({}).then((res) => {
             setLocation(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
-        }).catch((_err: any) => { });
+        }).catch((_err: any) => console.error(_err));
 
         getActivitiesByYearStatusAndCategory(new Date().getFullYear(), "PENDING", "TDM").then((res) => {
             setActivities(res.map((x: any) => ({ label: x.title, value: String(x.id) })));
-        }).catch(() => { });
+        }).catch((err) => console.error(err));
     }, []);
 
     const onChange = (event: any) => {

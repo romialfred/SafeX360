@@ -37,7 +37,7 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             if (method.equalsIgnoreCase("OPTIONS")) {
                 return chain.filter(exchange);
             }
-            if (path.contains("/actuator/health") || path.contains("/services-health")) {
+            if (path.startsWith("/actuator/health") || path.startsWith("/services-health")) {
                 return chain.filter(exchange);
             }
 

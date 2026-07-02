@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 /** Endpoints médias d'urgence (LOT 48 Phase 1.e). Base : {@code /hns/emergency/media}. */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/media")
 @RequiredArgsConstructor
 public class EmergencyMediaController {

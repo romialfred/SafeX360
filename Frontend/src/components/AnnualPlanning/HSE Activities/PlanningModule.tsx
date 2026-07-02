@@ -64,7 +64,7 @@ export default function PlanningModule() {
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     useEffect(() => {
@@ -73,7 +73,7 @@ export default function PlanningModule() {
             .then((res) => {
                 setActivities(res ?? []);
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, [currentYear]);
 
     const exportCsv = () => {

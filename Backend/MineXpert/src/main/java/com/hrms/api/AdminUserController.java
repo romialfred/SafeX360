@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,6 +67,7 @@ import lombok.Setter;
  * n'authentifie que les appels service-a-service du reseau prive (seeders, init).</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/admin/users")
 public class AdminUserController {
 

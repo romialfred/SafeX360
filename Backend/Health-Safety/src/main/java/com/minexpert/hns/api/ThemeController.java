@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/theme")
 @RequiredArgsConstructor
+@CrossOrigin
 public class ThemeController {
     private final ThemeService themeService;
 

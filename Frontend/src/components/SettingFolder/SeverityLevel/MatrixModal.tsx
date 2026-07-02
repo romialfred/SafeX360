@@ -43,7 +43,7 @@ const MatrixModal = ({ opened, onClose, categories }: MatrixModalProps) => {
 
                 setTabData(summary);
 
-            }).catch((_err) => { });
+            }).catch((_err) => console.error(_err));
     }
         , [categoryMap]);
 

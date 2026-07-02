@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +42,7 @@ import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/auth")
 public class AuthAPI {
 
@@ -73,6 +75,10 @@ public class AuthAPI {
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,
             HttpServletResponse response) {
+        if (request.getLogin() == null || request.getLogin().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("errorMessage", "Login is required", "errorCode", 400));
+        }
         if (loginAttemptService.isBlocked(request.getLogin())) {
             long remaining = loginAttemptService.getRemainingBlockSeconds(request.getLogin());
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -128,6 +134,7 @@ public class AuthAPI {
                     .secure(true)
                     .path("/")
                     .sameSite("None")
+                    .maxAge(Duration.ofHours(8))
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

@@ -53,14 +53,14 @@ const ChecklistInspection = () => {
                 setChecklist(res);
                 setCheckListRecord(mapIdToName(res));
             })
-            .catch((_err) => { })
+            .catch((_err) => console.error(_err))
         fetchData();
     }, [])
 
     const fetchData = () => {
         getChecklistsByInspectionId(id).then((res) => {
             setChecklistsData(res);
-        }).catch((_error) => { })
+        }).catch((_error) => console.error(_error))
     }
 
     const handleAddChecklist = async (values: any) => {

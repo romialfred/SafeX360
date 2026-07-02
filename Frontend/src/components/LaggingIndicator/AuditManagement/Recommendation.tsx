@@ -63,7 +63,7 @@ const Recommendation = () => {
                 countStatus(res);
             }
             )
-            .catch((_err) => { }).finally(() => {
+            .catch((_err) => console.error(_err)).finally(() => {
                 dispatch(hideOverlay());
             }
             );

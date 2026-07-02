@@ -72,7 +72,7 @@ const PgiDeatailsTab = () => {
                 setEmps(mappedEmployees);
                 setEmpMap(mapIdToName(res));
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
         getPgiById(id)
             .then((res) => {
                 setInspection(res);
@@ -85,8 +85,7 @@ const PgiDeatailsTab = () => {
                     status: res.status || '',
                 });
             })
-            .catch((_err) => {
-            }).finally(() => {
+            .catch((_err) => console.error(_err)).finally(() => {
                 dispatch(hideOverlay());
             });
         fetchHistory();
@@ -113,7 +112,7 @@ const PgiDeatailsTab = () => {
     const fetchHistory = () => {
         getInspectionHistoryByInspectionId(id).then((res) => {
             setHistory(res);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
     }
 
     const handleSubmit = async (values: any) => {

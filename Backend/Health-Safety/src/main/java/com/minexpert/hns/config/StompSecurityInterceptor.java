@@ -45,11 +45,8 @@ public class StompSecurityInterceptor implements ChannelInterceptor {
                 || (cookieHeader != null && cookieHeader.contains("accessToken="));
 
             if (!hasAuth) {
-                // Politique douce : on log mais on n'interrompt pas en dev local
-                // (les tests SockJS Hartbeat ne portent pas toujours le cookie).
-                log.debug("STOMP CONNECT without auth token — connection accepted (dev mode).");
-                // En production durcie, décommenter :
-                // throw new IllegalArgumentException("Authentication required for WebSocket");
+                log.warn("STOMP CONNECT without auth token — connection rejected.");
+                throw new IllegalArgumentException("Authentication required for WebSocket");
             }
         }
 

@@ -85,7 +85,7 @@ const Lesson = ({
                 }));
                 setEmployees(mappedEmployees);
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
     }, []);
 
 

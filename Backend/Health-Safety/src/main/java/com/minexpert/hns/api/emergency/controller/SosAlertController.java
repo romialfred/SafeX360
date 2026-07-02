@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
  * close, false-alarm).</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/sos")
 @RequiredArgsConstructor
 public class SosAlertController {

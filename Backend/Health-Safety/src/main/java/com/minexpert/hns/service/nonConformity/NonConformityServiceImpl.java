@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -139,9 +140,24 @@ public class NonConformityServiceImpl implements NonConformityService {
     public void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityId)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
+        assertNcTransition(nonConformity.getStatus(), status);
         nonConformity.setStatus(status);
         nonConformity.setUpdatedAt(LocalDateTime.now());
         nonConformityRepository.save(nonConformity);
+    }
+
+    private static final Map<EventStatus, Set<EventStatus>> NC_TRANSITIONS = Map.of(
+            EventStatus.REPORTED, Set.of(EventStatus.ANALYSIS, EventStatus.CANCELLED),
+            EventStatus.ANALYSIS, Set.of(EventStatus.AC_IMPLEMENTATION, EventStatus.CANCELLED),
+            EventStatus.AC_IMPLEMENTATION, Set.of(EventStatus.CLOSED, EventStatus.CANCELLED),
+            EventStatus.CLOSED, Set.of(),
+            EventStatus.CANCELLED, Set.of()
+    );
+
+    private void assertNcTransition(EventStatus current, EventStatus target) throws HSException {
+        if (!NC_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new HSException("INVALID_STATUS_TRANSITION");
+        }
     }
 
     @Override

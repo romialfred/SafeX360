@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 /** Endpoints règles d'escalade (LOT 48 Phase 1.d). Base : {@code /hns/emergency/escalation}. */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/escalation")
 @RequiredArgsConstructor
 public class EscalationRuleController {

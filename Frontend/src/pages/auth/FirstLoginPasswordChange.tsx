@@ -36,7 +36,7 @@ export default function FirstLoginPasswordChange() {
 
     // Charge le nom au montage pour l'afficher
     useMemo(() => {
-        getMyProfile().then((p) => setUserName(p.name || p.login)).catch(() => { });
+        getMyProfile().then((p) => setUserName(p.name || p.login)).catch((err) => console.error(err));
     }, []);
 
     const form = useForm({

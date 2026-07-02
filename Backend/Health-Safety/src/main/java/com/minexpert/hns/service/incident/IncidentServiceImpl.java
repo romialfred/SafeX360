@@ -6,6 +6,7 @@ import java.time.Year;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -259,9 +260,26 @@ public class IncidentServiceImpl implements IncidentService {
     public void updateIncidentStatus(Long companyId, Long id, IncidentStatus status) throws HSException {
         Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        assertIncidentTransition(incident.getStatus(), status);
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
         incidentRepository.save(incident);
+    }
+
+    private static final Map<IncidentStatus, Set<IncidentStatus>> INCIDENT_TRANSITIONS = Map.of(
+            IncidentStatus.PENDING, Set.of(IncidentStatus.REPORTED, IncidentStatus.REJECTED),
+            IncidentStatus.REPORTED, Set.of(IncidentStatus.INVESTIGATION, IncidentStatus.CLOSED, IncidentStatus.REJECTED),
+            IncidentStatus.INVESTIGATION, Set.of(IncidentStatus.INVESTIGATION_COMPLETED),
+            IncidentStatus.INVESTIGATION_COMPLETED, Set.of(IncidentStatus.CORRECTIVE_ACTIONS, IncidentStatus.CLOSED),
+            IncidentStatus.CORRECTIVE_ACTIONS, Set.of(IncidentStatus.CLOSED),
+            IncidentStatus.CLOSED, Set.of(),
+            IncidentStatus.REJECTED, Set.of()
+    );
+
+    private void assertIncidentTransition(IncidentStatus current, IncidentStatus target) throws HSException {
+        if (!INCIDENT_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
+            throw new HSException("INVALID_STATUS_TRANSITION");
+        }
     }
 
     @Override

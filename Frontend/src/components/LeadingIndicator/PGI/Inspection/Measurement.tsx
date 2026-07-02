@@ -35,7 +35,7 @@ const Measurement = ({ form, employee }: any) => {
         getAllActiveMeasurement().then((res) => {
             setMeasurement(res);
             setMeasurementRecord(mapIdToName(res));
-        }).catch((_err) => { })
+        }).catch((_err) => console.error(_err))
     }, [])
 
     useEffect(() => {

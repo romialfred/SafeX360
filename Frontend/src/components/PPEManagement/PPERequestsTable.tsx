@@ -109,17 +109,17 @@ const PPERequestsTable = () => {
                 setEmployees(data);
                 setEmpMap(mapIdToName(data));
             })
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         // Catalogue complet (actifs + inactifs) → table de correspondance ID → nom
         getAllPPE()
             .then((data) => setPpeMap(mapIdToName(data)))
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         // EPI actifs uniquement → formulaire de demande
         getActivePPE()
             .then(setActivePpe)
-            .catch(() => { });
+            .catch((err) => console.error(err));
 
         fetchRequests();
     }, []);

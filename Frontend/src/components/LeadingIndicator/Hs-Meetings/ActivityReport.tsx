@@ -54,12 +54,12 @@ const ActivityReport = () => {
     useEffect(() => {
         getActivityById(id).then((res) => {
             setParticipants(res.participants);
-        }).catch((_err) => { });
+        }).catch((_err) => console.error(_err));
         getEmployeeDropdown()
             .then((res) => {
                 setEmployees(res.map((x: any) => ({ value: "" + x.id, label: x.name })));
             })
-            .catch((_err) => { });
+            .catch((_err) => console.error(_err));
     }, []);
 
     const handleAddActionItem = () => {

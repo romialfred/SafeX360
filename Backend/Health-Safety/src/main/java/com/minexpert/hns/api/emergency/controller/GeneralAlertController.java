@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
  * <p>Base : {@code /hns/emergency/alerts/general}.</p>
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/emergency/alerts/general")
 @RequiredArgsConstructor
 public class GeneralAlertController {

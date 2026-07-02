@@ -91,7 +91,7 @@ const AdhocActionsForm = () => {
     useEffect(() => {
         getEmployeeDropdown()
             .then((res) => setEmployees(res))
-            .catch(() => { });
+            .catch((err) => console.error(err));
     }, []);
 
     const handleSubmit = () => {

@@ -202,7 +202,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         </div>
                         {/* <Select readOnly {...form.getInputProps(`incidentDetails.${index}.severityLevelId`)} data={severityLevels} label="Severity Level" placeholder="Select severity level" /> */}
 
-                        {(incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Blessure avec traitement" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Premiers soins" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "First Aid" || incidentTypes.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label == "Injury with treatment") &&
+                        {(() => { const typeLabel = (incidentTypes.find((t: any) => t.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label || "").toLowerCase(); return typeLabel.includes("blessure") || typeLabel.includes("premiers soins") || typeLabel.includes("first aid") || typeLabel.includes("injury"); })() &&
                             <div className="space-y-4 col-span-3 bg-red-50 p-4 rounded-lg mt-4">
                                 <h3 className="text-gray-800">Détails de la blessure</h3>
 
@@ -212,7 +212,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                             </div>
                         }
                         {
-                            categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label == "Environmental" && < div className="space-y-4 col-span-3 bg-green-50 p-4 rounded-lg mt-4">
+                            (categories.find((x: any) => x.value == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)?.label || "").toLowerCase().includes("environ") && < div className="space-y-4 col-span-3 bg-green-50 p-4 rounded-lg mt-4">
                                 <h3 className="text-gray-800">Détails de l'incident environnemental</h3>
                                 <TextEditor form={form} id={`incidentDetails.${index}.environmentalImpact`} title="Impact environnemental" />
                                 <TextEditor form={form} id={`incidentDetails.${index}.containmentMeasures`} title="Mesures de confinement" />

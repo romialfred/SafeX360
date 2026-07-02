@@ -34,7 +34,7 @@ const EffectivenessPanel = ({ recommendationId }: { recommendationId: number }) 
         try {
             setChecks(await getEffectivenessChecksByRecommendation(recommendationId));
         } catch (_e) {
-            // silencieux : panneau secondaire, ne bloque pas la modale
+            console.error(_e);
         }
     }, [recommendationId]);
 

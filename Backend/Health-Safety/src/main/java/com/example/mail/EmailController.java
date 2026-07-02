@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
  * REST controller to trigger async HTML email sending.
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/api/mail")
 public class EmailController {
 
