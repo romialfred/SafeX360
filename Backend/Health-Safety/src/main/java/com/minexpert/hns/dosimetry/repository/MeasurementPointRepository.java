@@ -21,4 +21,6 @@ public interface MeasurementPointRepository extends JpaRepository<MeasurementPoi
     Optional<MeasurementPoint> findByMineIdAndCode(Long mineId, String code);
 
     boolean existsByMineIdAndCode(Long mineId, String code);
+
+    long countByMineIdAndActive(Long mineId, boolean active);
 }

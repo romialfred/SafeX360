@@ -1,5 +1,6 @@
 package com.minexpert.hns.dosimetry.repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,4 +34,10 @@ public interface AmbientMeasurementRepository extends JpaRepository<AmbientMeasu
             + "ORDER BY a.measuredAt DESC")
     List<AmbientMeasurement> findLatestByPoint(@Param("pointId") Long pointId,
             org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT AVG(a.value) FROM AmbientMeasurement a "
+            + "WHERE a.mineId = :mineId AND a.measuredAt BETWEEN :from AND :to "
+            + "AND a.value IS NOT NULL")
+    BigDecimal avgValueByMineIdAndRange(@Param("mineId") Long mineId,
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

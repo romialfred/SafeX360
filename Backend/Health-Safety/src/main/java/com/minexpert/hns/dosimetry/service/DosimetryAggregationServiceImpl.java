@@ -28,7 +28,6 @@ import com.minexpert.hns.dosimetry.dto.DosimetryKpiSnapshotDTO;
 import com.minexpert.hns.dosimetry.dto.DosimetryMineComparisonDTO;
 import com.minexpert.hns.dosimetry.dto.DosimetryTopExposedDTO;
 import com.minexpert.hns.dosimetry.dto.DosimetryTrendPointDTO;
-import com.minexpert.hns.dosimetry.entity.AmbientMeasurement;
 import com.minexpert.hns.dosimetry.entity.DoseCumulative;
 import com.minexpert.hns.dosimetry.entity.DosimetryKpiSnapshot;
 import com.minexpert.hns.dosimetry.entity.ExposedWorker;
@@ -119,12 +118,11 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
 
         Map<KpiCategory, List<ExposedWorker>> byCategory = groupByKpiCategory(activeWorkers);
 
-        // Pre-load cumulatives indexed by workerId for the year (single repo hit per worker)
-        Map<Long, DoseCumulative> cumulativesByWorker = new HashMap<>();
-        for (ExposedWorker w : activeWorkers) {
-            cumulativeRepository.findByWorkerIdAndYear(w.getId(), year)
-                    .ifPresent(c -> cumulativesByWorker.put(w.getId(), c));
-        }
+        List<Long> activeWorkerIds = activeWorkers.stream()
+                .map(ExposedWorker::getId).collect(Collectors.toList());
+        Map<Long, DoseCumulative> cumulativesByWorker = activeWorkerIds.isEmpty() ? new HashMap<>()
+                : cumulativeRepository.findByWorkerIdInAndYear(activeWorkerIds, year).stream()
+                        .collect(Collectors.toMap(DoseCumulative::getWorkerId, c -> c, (a, b) -> a));
 
         // Alerts ACTIVE (par mine, toutes categories puis ventilees) :
         List<ExposureAlert> activeAlerts = alertRepository.findByMineIdAndStatus(mineId, AlertStatus.ACTIVE);
@@ -159,7 +157,7 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
 
         // Ambient avg uSv/h sur la mine (toutes categories) :
         BigDecimal ambientAvg = computeAmbientAvg(mineId, date);
-        long measurementPointsCount = measurementPointRepository.findByMineIdAndActive(mineId, true).size();
+        long measurementPointsCount = measurementPointRepository.countByMineIdAndActive(mineId, true);
 
         int upserted = 0;
         LocalDateTime now = LocalDateTime.now();
@@ -172,12 +170,24 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
                     fitnessExpiringByCategory.getOrDefault(cat, 0L),
                     measurementPointsCount, ambientAvg, now);
 
-            // upsert : on supprime l'eventuel snapshot existant du jour pour cette mine/categorie
-            Optional<DosimetryKpiSnapshot> existing = snapshotRepository
-                    .findByMineIdAndSnapshotDateAndCategory(mineId, date, cat);
-            existing.ifPresent(snapshotRepository::delete);
-            snapshotRepository.save(snap);
-            upserted++;
+            try {
+                Optional<DosimetryKpiSnapshot> existing = snapshotRepository
+                        .findByMineIdAndSnapshotDateAndCategory(mineId, date, cat);
+                existing.ifPresent(e -> {
+                    snapshotRepository.delete(e);
+                    snapshotRepository.flush();
+                });
+                snapshotRepository.save(snap);
+                upserted++;
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                LOGGER.warn("[DosimetryAggregation] Concurrent upsert for mineId={} date={} cat={}, retrying.",
+                        mineId, date, cat);
+                snapshotRepository.findByMineIdAndSnapshotDateAndCategory(mineId, date, cat)
+                        .ifPresent(snapshotRepository::delete);
+                snapshotRepository.flush();
+                snapshotRepository.save(snap);
+                upserted++;
+            }
         }
         LOGGER.info("[DosimetryAggregation] mineId={} date={} : {} snapshots upserted.",
                 mineId, date, upserted);
@@ -193,16 +203,17 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         long workersCount = categoryWorkers.size();
         Double limit = REGULATORY_LIMITS.get(cat);
 
-        long doseRecordsCount = 0L;
         List<Double> annualDoses = new ArrayList<>();
         for (ExposedWorker w : categoryWorkers) {
             DoseCumulative dc = cumulativesByWorker.get(w.getId());
             if (dc != null && dc.getAnnualHp10() != null) {
                 annualDoses.add(dc.getAnnualHp10());
             }
-            doseRecordsCount += doseRecordRepository.findActiveByWorkerIdAndYear(
-                    w.getId(), String.valueOf(year)).size();
         }
+        List<Long> workerIds = categoryWorkers.stream()
+                .map(ExposedWorker::getId).collect(Collectors.toList());
+        long doseRecordsCount = workerIds.isEmpty() ? 0L
+                : doseRecordRepository.countActiveByWorkerIdsAndYear(workerIds, String.valueOf(year));
 
         BigDecimal avg = average(annualDoses);
         BigDecimal median = median(annualDoses);
@@ -274,10 +285,13 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
             limit = 10;
         }
         List<ExposedWorker> workers = workerRepository.findByMineIdAndActiveTrue(mineId);
+        List<Long> allWorkerIds = workers.stream().map(ExposedWorker::getId).collect(Collectors.toList());
+        Map<Long, DoseCumulative> cumulByWorker = allWorkerIds.isEmpty() ? Map.of()
+                : cumulativeRepository.findByWorkerIdInAndYear(allWorkerIds, year).stream()
+                        .collect(Collectors.toMap(DoseCumulative::getWorkerId, c -> c, (a, b) -> a));
         List<DosimetryTopExposedDTO> out = new ArrayList<>();
         for (ExposedWorker w : workers) {
-            DoseCumulative dc = cumulativeRepository.findByWorkerIdAndYear(w.getId(), year)
-                    .orElse(null);
+            DoseCumulative dc = cumulByWorker.get(w.getId());
             if (dc == null || dc.getAnnualHp10() == null) {
                 continue;
             }
@@ -344,6 +358,10 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         if (regulatoryLimit == null || regulatoryLimit <= 0) {
             regulatoryLimit = 20.0;
         }
+        List<Long> distWorkerIds = workers.stream().map(ExposedWorker::getId).collect(Collectors.toList());
+        Map<Long, DoseCumulative> distCumul = distWorkerIds.isEmpty() ? Map.of()
+                : cumulativeRepository.findByWorkerIdInAndYear(distWorkerIds, year).stream()
+                        .collect(Collectors.toMap(DoseCumulative::getWorkerId, c -> c, (a, b) -> a));
 
         long b0 = 0;
         long b25 = 0;
@@ -353,8 +371,7 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         long b100 = 0;
         long total = 0;
         for (ExposedWorker w : workers) {
-            DoseCumulative dc = cumulativeRepository.findByWorkerIdAndYear(w.getId(), year)
-                    .orElse(null);
+            DoseCumulative dc = distCumul.get(w.getId());
             double dose = dc != null && dc.getAnnualHp10() != null ? dc.getAnnualHp10() : 0d;
             double pct = (dose / regulatoryLimit) * 100d;
             total++;
@@ -671,23 +688,8 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
     private BigDecimal computeAmbientAvg(Long mineId, LocalDate date) {
         LocalDateTime from = date.minusDays(30).atStartOfDay();
         LocalDateTime to = date.plusDays(1).atStartOfDay();
-        List<AmbientMeasurement> measurements = ambientRepository
-                .findByMineIdAndMeasuredAtBetweenOrderByMeasuredAtDesc(mineId, from, to);
-        if (measurements.isEmpty()) {
-            return null;
-        }
-        BigDecimal sum = BigDecimal.ZERO;
-        int n = 0;
-        for (AmbientMeasurement m : measurements) {
-            if (m.getValue() != null) {
-                sum = sum.add(m.getValue());
-                n++;
-            }
-        }
-        if (n == 0) {
-            return null;
-        }
-        return sum.divide(BigDecimal.valueOf(n), SCALE, RoundingMode.HALF_UP);
+        BigDecimal avg = ambientRepository.avgValueByMineIdAndRange(mineId, from, to);
+        return avg != null ? avg.setScale(SCALE, RoundingMode.HALF_UP) : null;
     }
 
     private BigDecimal average(List<Double> values) {
@@ -799,7 +801,9 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
             case "fitnessExpiringSoon":
             case "measurementPointsCount":
                 long maxv = snaps.stream()
-                        .mapToLong(s -> extractMetric(s, metric).longValue())
+                        .map(s -> extractMetric(s, metric))
+                        .filter(java.util.Objects::nonNull)
+                        .mapToLong(BigDecimal::longValue)
                         .max()
                         .orElse(0L);
                 return BigDecimal.valueOf(maxv);
@@ -816,7 +820,9 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
                 return s2.divide(BigDecimal.valueOf(vals.size()), SCALE, RoundingMode.HALF_UP);
             default:
                 long sum = snaps.stream()
-                        .mapToLong(s -> extractMetric(s, metric).longValue())
+                        .map(s -> extractMetric(s, metric))
+                        .filter(java.util.Objects::nonNull)
+                        .mapToLong(BigDecimal::longValue)
                         .sum();
                 return BigDecimal.valueOf(sum);
         }

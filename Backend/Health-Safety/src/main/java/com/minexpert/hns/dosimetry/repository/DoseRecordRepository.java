@@ -62,4 +62,9 @@ public interface DoseRecordRepository extends JpaRepository<DoseRecord, Long> {
     @Modifying
     @Query("UPDATE DoseRecord d SET d.supersededRecordId = :newId WHERE d.id = :originalId AND d.supersededRecordId IS NULL")
     int updateSupersededRecordId(@Param("originalId") Long originalId, @Param("newId") Long newId);
+
+    @Query("SELECT COUNT(d) FROM DoseRecord d WHERE d.worker.id IN :workerIds "
+            + "AND d.supersededRecordId IS NULL AND d.period LIKE CONCAT(:yearPrefix, '%')")
+    long countActiveByWorkerIdsAndYear(@Param("workerIds") List<Long> workerIds,
+            @Param("yearPrefix") String yearPrefix);
 }
