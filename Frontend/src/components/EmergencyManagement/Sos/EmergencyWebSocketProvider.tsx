@@ -206,7 +206,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
             clientRef.current = null;
             setConnected(false);
         };
-    }, [selectedCompanyId]);
+    }, [effectiveCompanyId]);
 
     const value = useMemo(
         () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup }),

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,6 +24,9 @@ import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { formatReasonCode, hasCheckedIn, markCheckedIn, cleanupOldCheckIns } from './alertHelpers';
 import { enqueueCheckIn } from '../../../utility/OfflineCheckInQueue';
+
+/** Nom de l'événement CustomEvent émis par GeneralAlertButton après trigger API réussi. */
+export const GENERAL_ALERT_TRIGGERED_EVENT = 'safex:general-alert-triggered';
 
 /**
  * Listener global Alerte Générale (LOT 48 Phase 4).
@@ -67,9 +70,10 @@ class IndustrialSiren {
     private masterGain: GainNode | null = null;
     private filter: BiquadFilterNode | null = null;
     private rafId: number | null = null;
+    private keepaliveId: number | null = null;
     private playing = false;
     private startedAt = 0;
-    private currentVolume = 0.45; // Volume max plafonné pour laisser de la place à la voix
+    private currentVolume = 0.45;
     private ducked = false;
 
     async start() {
@@ -77,30 +81,22 @@ class IndustrialSiren {
         try {
             this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
 
-            // CRITIQUE : reprend explicitement le ctx pour bypass autoplay policy.
-            // Sans ça, le ctx démarre 'suspended' quand le popup apparaît via
-            // WebSocket (le navigateur ne considère plus le clic comme assez récent).
             if (this.ctx.state === 'suspended') {
                 await this.ctx.resume();
             }
 
-            // Filter low-pass pour adoucir les harmoniques du sawtooth
             this.filter = this.ctx.createBiquadFilter();
             this.filter.type = 'lowpass';
             this.filter.frequency.value = 2500;
             this.filter.Q.value = 1.0;
             this.filter.connect(this.ctx.destination);
 
-            // Master gain — CRESCENDO de 0.03 → 0.45 sur 12s puis maintien.
-            // Volume max plafonné à 0.45 (au lieu de 0.85) pour laisser de la
-            // place sonore à la voix TTS qui doit rester clairement audible.
             this.masterGain = this.ctx.createGain();
             const now = this.ctx.currentTime;
             this.masterGain.gain.setValueAtTime(0.03, now);
             this.masterGain.gain.linearRampToValueAtTime(this.currentVolume, now + 12);
             this.masterGain.connect(this.filter);
 
-            // Oscillateur principal — sawtooth pour riche en harmoniques
             this.osc = this.ctx.createOscillator();
             this.osc.type = 'sawtooth';
             this.osc.frequency.value = 800;
@@ -110,9 +106,33 @@ class IndustrialSiren {
             this.startedAt = now;
             this.playing = true;
             this.scheduleSweep();
+            this.startKeepalive();
         } catch (err) {
             console.error('[IndustrialSiren] Failed to start audio:', err);
         }
+    }
+
+    private startKeepalive() {
+        if (this.keepaliveId !== null) return;
+        this.keepaliveId = window.setInterval(() => {
+            const c = this.ctx;
+            if (!c) return;
+            if (c.state === 'suspended' || (c.state as string) === 'interrupted') {
+                c.resume().catch(() => undefined);
+            }
+            if (!this.osc && this.ctx && this.masterGain) {
+                try {
+                    const newOsc = this.ctx.createOscillator();
+                    newOsc.type = 'sawtooth';
+                    newOsc.frequency.value = 800;
+                    newOsc.connect(this.masterGain);
+                    newOsc.start();
+                    this.osc = newOsc;
+                    this.startedAt = this.ctx.currentTime;
+                    this.scheduleSweep();
+                } catch { /* ignore */ }
+            }
+        }, 2000);
     }
 
     /**
@@ -181,6 +201,10 @@ class IndustrialSiren {
 
     stop() {
         try {
+            if (this.keepaliveId !== null) {
+                clearInterval(this.keepaliveId);
+                this.keepaliveId = null;
+            }
             if (this.rafId !== null) {
                 window.cancelAnimationFrame(this.rafId);
                 this.rafId = null;
@@ -198,12 +222,16 @@ class IndustrialSiren {
 // Nettoyer les vieilles entrées localStorage au boot
 cleanupOldCheckIns();
 
+const POLL_INTERVAL_MS = 12_000;
+
 const GeneralAlertListener = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation('emergency');
-    const { subscribeGeneralAlert } = useEmergencyWebSocket();
+    const { subscribeGeneralAlert, connected: wsConnected } = useEmergencyWebSocket();
     const currentUser = useAppSelector((state: any) => state.user);
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
+    const user = useAppSelector((state: any) => state.user);
+    const effectiveCompanyId = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 0);
 
     const [activeAlert, setActiveAlert] = useState<GeneralAlertDTO | null>(null);
     const [soundEnabled, setSoundEnabled] = useState(true);
@@ -216,27 +244,48 @@ const GeneralAlertListener = () => {
     const sirenRef = useRef<IndustrialSiren | null>(null);
     if (sirenRef.current === null) sirenRef.current = new IndustrialSiren();
 
+    const tryActivate = useCallback((a: GeneralAlertDTO) => {
+        if (a.status === 'ACTIVE' && a.id && currentUser?.id) {
+            if (hasCheckedIn(Number(currentUser.id), a.id)) return;
+            setActiveAlert((prev) => (prev?.id === a.id ? prev : a));
+        }
+    }, [currentUser]);
+
     // ── Fetch alerte active au démarrage + à chaque changement de mine ──
     useEffect(() => {
-        if (!selectedCompanyId) return;
-        getActiveAlert(selectedCompanyId)
-            .then((a) => {
-                if (a && a.status === 'ACTIVE' && a.id && currentUser?.id) {
-                    // Skip si l'utilisateur a deja fait son check-in sur cette alerte
-                    if (hasCheckedIn(Number(currentUser.id), a.id)) return;
-                    setActiveAlert(a);
-                }
-            })
+        if (!effectiveCompanyId) return;
+        getActiveAlert(effectiveCompanyId)
+            .then((a) => { if (a) tryActivate(a); })
             .catch(() => {});
-    }, [selectedCompanyId, currentUser]);
+    }, [effectiveCompanyId, tryActivate]);
+
+    // ── Polling fallback : re-check toutes les 12s (filet de sécurité si WS déconnecté) ──
+    useEffect(() => {
+        if (!effectiveCompanyId) return;
+        const id = window.setInterval(() => {
+            if (activeAlert) return;
+            getActiveAlert(effectiveCompanyId)
+                .then((a) => { if (a) tryActivate(a); })
+                .catch(() => {});
+        }, POLL_INTERVAL_MS);
+        return () => clearInterval(id);
+    }, [effectiveCompanyId, activeAlert, tryActivate]);
+
+    // ── CustomEvent bridge : le bouton GeneralAlertButton émet un événement après trigger API ──
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const dto = (e as CustomEvent<GeneralAlertDTO>).detail;
+            if (dto) tryActivate(dto);
+        };
+        window.addEventListener(GENERAL_ALERT_TRIGGERED_EVENT, handler);
+        return () => window.removeEventListener(GENERAL_ALERT_TRIGGERED_EVENT, handler);
+    }, [tryActivate]);
 
     // ── Subscribe WebSocket pour push live ──
     useEffect(() => {
         const unsubscribe = subscribeGeneralAlert((alert) => {
-            if (alert.status === 'ACTIVE' && alert.id && currentUser?.id) {
-                // Skip si déjà check-in sur cette alerte
-                if (hasCheckedIn(Number(currentUser.id), alert.id)) return;
-                setActiveAlert(alert);
+            if (alert.status === 'ACTIVE') {
+                tryActivate(alert);
             } else if (alert.status === 'ENDED' && activeAlert?.id === alert.id) {
                 setActiveAlert(null);
                 setCheckedInStatus(null);
@@ -244,7 +293,7 @@ const GeneralAlertListener = () => {
             }
         });
         return unsubscribe;
-    }, [subscribeGeneralAlert, activeAlert, currentUser]);
+    }, [subscribeGeneralAlert, activeAlert, tryActivate]);
 
     // ── Load assembly points quand alerte active ──
     useEffect(() => {

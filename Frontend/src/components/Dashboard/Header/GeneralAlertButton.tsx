@@ -7,6 +7,7 @@ import { successNotification, errorNotification } from '../../../utility/Notific
 import { useAppSelector } from '../../../slices/hooks';
 import { triggerAlert } from '../../../services/GeneralAlertService';
 import { useNavigate } from 'react-router-dom';
+import { GENERAL_ALERT_TRIGGERED_EVENT } from '../../EmergencyManagement/GeneralAlert/GeneralAlertListener';
 
 /**
  * Bouton Alerte Générale : déclenche une notification multicanal (web, mobile, SMS) à tous les employés.
@@ -112,6 +113,9 @@ const GeneralAlertButton = () => {
             );
             setSent(true);
             successNotification('Alerte Générale déclenchée. Tous les employés sont notifiés en temps réel.');
+            try {
+                window.dispatchEvent(new CustomEvent(GENERAL_ALERT_TRIGGERED_EVENT, { detail: saved }));
+            } catch { /* ignore */ }
             setTimeout(() => {
                 handleClose();
                 if (saved.id) navigate(`/emergency/alerts/general/${saved.id}`);

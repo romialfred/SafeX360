@@ -79,12 +79,12 @@ public class GeneralAlertService {
 
     @Transactional
     public GeneralAlertDTO trigger(GeneralAlertRequest req, Long actorId) {
-        // Politique : si une alerte ACTIVE existe déjà pour la mine, on
-        // retourne celle-ci au lieu d'en créer une nouvelle (idempotence).
         Optional<GeneralAlert> existing = alertRepo
             .findFirstByCompanyIdAndStatusOrderByTriggeredAtDesc(req.getCompanyId(), GeneralAlertStatus.ACTIVE);
         if (existing.isPresent()) {
-            return toDto(existing.get());
+            GeneralAlertDTO existingDto = toDto(existing.get());
+            broadcast(existing.get().getCompanyId(), existingDto);
+            return existingDto;
         }
 
         GeneralAlert a = new GeneralAlert();
