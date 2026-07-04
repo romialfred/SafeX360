@@ -53,9 +53,10 @@ public class EmergencyWebSocketConfig implements WebSocketMessageBrokerConfigure
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:3000",
+                "https://safex360.vercel.app",
+                "https://*.vercel.app",
                 "https://safex360.data-univers.com",
-                "https://dev.safex360.data-univers.com",
-                "https://health-safety-eight.vercel.app"
+                "https://dev.safex360.data-univers.com"
             )
             .withSockJS();
     }

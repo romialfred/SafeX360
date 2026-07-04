@@ -3,6 +3,8 @@ package com.minexpert.hns.api.emergency.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +53,7 @@ public class RescueWeeklyPlanningController {
     /** Upsert : crée si la semaine n'existe pas, met à jour sinon. */
     @PutMapping
     public ResponseEntity<RescueWeeklyPlanningDTO> upsert(
-        @RequestBody RescueWeeklyPlanningDTO dto,
+        @Valid @RequestBody RescueWeeklyPlanningDTO dto,
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.upsert(dto, actorId));

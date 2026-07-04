@@ -4,12 +4,10 @@ const url = "/hns/media";
 
 const removeMedia = async (id: string | number) => {
     return axiosInstance.delete(`${url}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const getMedia = async (id: string | number) => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 export { removeMedia, getMedia }

@@ -3,6 +3,7 @@ package com.minexpert.hns.api.risks;
 import com.minexpert.hns.dto.risks.RiskAnalysisDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.risks.RiskAnalysisService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +18,12 @@ public class RiskAnalysisController {
     private final RiskAnalysisService analysisService;
 
     @PostMapping("/create")
-    public ResponseEntity<RiskAnalysisDTO> create(@RequestBody RiskAnalysisDTO dto) throws HSException {
+    public ResponseEntity<RiskAnalysisDTO> create(@Valid @RequestBody RiskAnalysisDTO dto) throws HSException {
         return ResponseEntity.ok(analysisService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<RiskAnalysisDTO> update(@RequestBody RiskAnalysisDTO dto) throws HSException {
+    public ResponseEntity<RiskAnalysisDTO> update(@Valid @RequestBody RiskAnalysisDTO dto) throws HSException {
         return ResponseEntity.ok(analysisService.update(dto));
     }
 

@@ -389,22 +389,19 @@ const thresholdUrl = '/hns/dosimetry/threshold';
 const getAllThresholds = async () => {
     return axiosInstance
         .get(`${thresholdUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getThresholdById = async (id: number | string) => {
     return axiosInstance
         .get(`${thresholdUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createThreshold = async (data: ThresholdDTO) => {
     return axiosInstance
         .post(`${thresholdUrl}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -414,15 +411,13 @@ const createThreshold = async (data: ThresholdDTO) => {
 const updateThreshold = async (data: ThresholdDTO) => {
     return axiosInstance
         .put(`${thresholdUrl}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteThreshold = async (id: number | string) => {
     return axiosInstance
         .delete(`${thresholdUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -435,8 +430,7 @@ const exposedWorkerUrl = '/hns/dosimetry/exposed-worker';
 const getAllExposedWorkers = async () => {
     return axiosInstance
         .get(`${exposedWorkerUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -474,36 +468,31 @@ export interface WorkerSearchFilters {
 const searchWorkers = async (filters: WorkerSearchFilters) => {
     return axiosInstance
         .post(`${exposedWorkerUrl}/search`, filters)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getExposedWorkerById = async (id: number | string) => {
     return axiosInstance
         .get(`${exposedWorkerUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createExposedWorker = async (data: ExposedWorkerDTO) => {
     return axiosInstance
         .post(`${exposedWorkerUrl}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateExposedWorker = async (data: ExposedWorkerDTO) => {
     return axiosInstance
         .put(`${exposedWorkerUrl}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteExposedWorker = async (id: number | string) => {
     return axiosInstance
         .delete(`${exposedWorkerUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -518,8 +507,7 @@ const deleteExposedWorker = async (id: number | string) => {
 const getWorkerDetail = async (id: number | string) => {
     return axiosInstance
         .get(`${exposedWorkerUrl}/detail/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -553,36 +541,31 @@ const dosimeterUrl = '/hns/dosimetry/dosimeter';
 const getAllDosimeters = async () => {
     return axiosInstance
         .get(`${dosimeterUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getDosimeterById = async (id: number | string) => {
     return axiosInstance
         .get(`${dosimeterUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createDosimeter = async (data: DosimeterDTO) => {
     return axiosInstance
         .post(`${dosimeterUrl}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateDosimeter = async (data: DosimeterDTO) => {
     return axiosInstance
         .put(`${dosimeterUrl}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteDosimeter = async (id: number | string) => {
     return axiosInstance
         .delete(`${dosimeterUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -732,8 +715,7 @@ const assignmentUrl = '/hns/dosimetry/dosimeter-assignment';
 const getAssignmentById = async (id: number | string): Promise<DosimeterAssignmentDTO> => {
     return axiosInstance
         .get(`${assignmentUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -771,8 +753,7 @@ const assignDosimeter = async (payload: DosimeterAssignmentRequest) => {
     if (userId != null) headers['X-User-Id'] = String(userId);
     return axiosInstance
         .post(`${dosimeterUrl}/assign`, payload, { headers })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -815,8 +796,7 @@ const returnDosimeter = async (payload: DosimeterReturnRequest) => {
     if (userId != null) headers['X-User-Id'] = String(userId);
     return axiosInstance
         .post(`${dosimeterUrl}/return`, payload, { headers })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -829,15 +809,13 @@ const doseRecordUrl = '/hns/dosimetry/dose-record';
 const getAllDoseRecords = async () => {
     return axiosInstance
         .get(`${doseRecordUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getDoseRecordById = async (id: number | string) => {
     return axiosInstance
         .get(`${doseRecordUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -847,15 +825,13 @@ const getDoseRecordById = async (id: number | string) => {
 const getActiveDoseRecordsByWorker = async (workerId: number | string) => {
     return axiosInstance
         .get(`${doseRecordUrl}/getActiveByWorker/${workerId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createDoseRecord = async (data: DoseRecordDTO) => {
     return axiosInstance
         .post(`${doseRecordUrl}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -865,15 +841,13 @@ const createDoseRecord = async (data: DoseRecordDTO) => {
 const updateDoseRecord = async (data: DoseRecordDTO) => {
     return axiosInstance
         .put(`${doseRecordUrl}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteDoseRecord = async (id: number | string) => {
     return axiosInstance
         .delete(`${doseRecordUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1105,8 +1079,7 @@ const exposureAlertUrl = '/hns/dosimetry/exposure-alert';
 const getAllAlerts = async () => {
     return axiosInstance
         .get(`${exposureAlertUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -1215,29 +1188,25 @@ const resolveAlert = async (alertId: number, note: string): Promise<ExposureAler
 const getAlertById = async (id: number | string) => {
     return axiosInstance
         .get(`${exposureAlertUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createAlert = async (data: ExposureAlertDTO) => {
     return axiosInstance
         .post(`${exposureAlertUrl}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateAlert = async (data: ExposureAlertDTO) => {
     return axiosInstance
         .put(`${exposureAlertUrl}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteAlert = async (id: number | string) => {
     return axiosInstance
         .delete(`${exposureAlertUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import com.minexpert.hns.dto.planning.ThemeDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.planning.ThemeService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +19,12 @@ public class ThemeController {
     private final ThemeService themeService;
 
     @PostMapping("/create")
-    public ResponseEntity<ThemeDTO> create(@RequestBody ThemeDTO dto) throws HSException {
+    public ResponseEntity<ThemeDTO> create(@Valid @RequestBody ThemeDTO dto) throws HSException {
         return ResponseEntity.ok(themeService.createTheme(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ThemeDTO> update(@RequestBody ThemeDTO dto) throws HSException {
+    public ResponseEntity<ThemeDTO> update(@Valid @RequestBody ThemeDTO dto) throws HSException {
         return ResponseEntity.ok(themeService.updateTheme(dto));
     }
 

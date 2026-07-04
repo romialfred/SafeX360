@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.validation.Valid;
+
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.nonConformity.EventRequestDTO;
 import com.minexpert.hns.dto.nonConformity.NcInfo;
@@ -33,7 +35,7 @@ public class NonConformityAPI {
 
     @PostMapping("/create")
     public ResponseEntity<Long> createNonConformity(@RequestParam("companyId") Long companyId,
-            @RequestBody EventRequestDTO request) throws HSException {
+            @Valid @RequestBody EventRequestDTO request) throws HSException {
         request.setCompanyId(companyId);
         return new ResponseEntity<>(nonConformityService.addNonConformity(companyId, request),
                 HttpStatus.CREATED);
@@ -41,7 +43,7 @@ public class NonConformityAPI {
 
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateNonConformity(@RequestParam("companyId") Long companyId,
-            @RequestBody EventRequestDTO request) throws HSException {
+            @Valid @RequestBody EventRequestDTO request) throws HSException {
         request.setCompanyId(companyId);
         nonConformityService.updateEvent(companyId, request);
         return new ResponseEntity<>(new ResponseDTO("Non-Conformity updated successfully"), HttpStatus.OK);

@@ -12,6 +12,7 @@ import { errorNotification, successNotification } from "../../../utility/Notific
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
 import { modals } from "@mantine/modals";
+import { Z } from '../../../constants/zIndex';
 import { getAllDepartments } from "../../../services/HrmsService";
 import { activateWorkProcess, createWorkProcess, deactivateWorkProcess, GetAllWorkProcess, updateWorkProcess } from "../../../services/WorkProcessService";
 
@@ -322,7 +323,7 @@ const WorkProcessData = () => {
                     {edit ? "Update" : "Create"} Work Process
                 </h1>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
                     <Select

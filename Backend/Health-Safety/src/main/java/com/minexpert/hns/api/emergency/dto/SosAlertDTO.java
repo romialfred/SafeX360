@@ -4,24 +4,22 @@ import java.time.LocalDateTime;
 
 import com.minexpert.hns.api.emergency.enums.SosStatus;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO SOS Alert (LOT 48 Phase 3.a).
- *
- * <p>Inclut les libellés résolus (nom employé, équipe, coordinateur) côté
- * service pour éviter des round-trips frontaux.</p>
- */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class SosAlertDTO {
     private Long id;
+    @NotNull(message = "companyId is required")
     private Long companyId;
+    @NotNull(message = "employeeId is required")
     private Long employeeId;
     private String employeeName;
     private Long coordinatorId;
@@ -29,7 +27,10 @@ public class SosAlertDTO {
     private Long rescueTeamId;
     private String rescueTeamName;
 
+    @NotNull(message = "reasonCode is required")
+    @Size(max = 100, message = "reasonCode must not exceed 100 characters")
     private String reasonCode;
+    @Size(max = 2000, message = "description must not exceed 2000 characters")
     private String description;
     private Double latitude;
     private Double longitude;

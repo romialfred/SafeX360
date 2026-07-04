@@ -19,6 +19,7 @@ import { checkInToAlert } from "../services/GeneralAlertService";
 import { successNotification } from "../utility/NotificationUtility";
 import DosimetryAlertsBanner from "../components/Dosimetry/DosimetryAlertsBanner";
 import MobileRedirectGuard from "../m/components/MobileRedirectGuard";
+import { Z } from "../constants/zIndex";
 
 /**
  * DashboardLayout — Coque générale post-login.
@@ -92,6 +93,13 @@ const DashboardLayout = () => {
                 les desktops. Render: null (effet de bord uniquement). */}
             <MobileRedirectGuard />
             <InactivityHandler inactivityMinutes={inactivityMinutes} />
+            {/* A11y — Skip-to-content : visible uniquement au focus clavier */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-md focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
+            >
+                Aller au contenu principal
+            </a>
             <div className="flex w-full">
                 <Sidebar />
                 <div className="flex flex-col min-h-screen w-full">
@@ -102,11 +110,13 @@ const DashboardLayout = () => {
                         desktop (sm+) : 72px ligne 1 + 56px ligne 2 = 128px
                         LOT 48 P6.j — Responsive padding-top */}
                     <main
+                        id="main-content"
+                        tabIndex={-1}
                         className={`relative flex-1 pt-[120px] sm:pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
                     >
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded}
-                            zIndex={1000}
+                            zIndex={Z.overlay}
                             overlayProps={{ radius: 'sm', blur: 2 }}
                             loaderProps={{ color: 'red', type: 'bars' }}
                         />

@@ -844,6 +844,7 @@ const Sidebar = () => {
             {mobileSidebar.open && (
                 <div
                     onClick={closeMobile}
+                    onKeyDown={(e) => { if (e.key === 'Escape') closeMobile(); }}
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] md:hidden"
                     aria-hidden="true"
                 />
@@ -919,6 +920,9 @@ const Sidebar = () => {
                                 <div key={item.id}>
                                     {/* Item principal : padding aéré, contraste renforcé */}
                                     <div
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-expanded={hasSubItems ? isExpanded : undefined}
                                         className={`
                                             mx-2 flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors duration-150
                                             ${isActive ? 'bg-slate-700 text-white shadow-sm' : isEnabled ? 'text-slate-200 hover:bg-slate-800/60 hover:text-white' : 'text-slate-500 opacity-60'}
@@ -927,9 +931,6 @@ const Sidebar = () => {
                                             ${!isEnabled ? 'cursor-not-allowed' : ''}
                                         `}
                                         onClick={(e) => {
-                                            // Rapports & Analytics : ouvre le SafeX Analytics Center dans un nouvel onglet
-                                            // LOT 41 fix : URL explicite avec index.html pour éviter la collision
-                                            // avec le SPA fallback de Vite (provoquait boucle infinie).
                                             if (item.id === 'reports') {
                                                 const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/index.html';
                                                 window.open(url, '_blank', 'noopener,noreferrer');
@@ -939,6 +940,21 @@ const Sidebar = () => {
                                                 toggleExpanded(item.id, e);
                                             } else {
                                                 handleItemClick(item.id);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                if (item.id === 'reports') {
+                                                    const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/index.html';
+                                                    window.open(url, '_blank', 'noopener,noreferrer');
+                                                    return;
+                                                }
+                                                if (hasSubItems) {
+                                                    toggleExpanded(item.id, e as unknown as React.MouseEvent);
+                                                } else {
+                                                    handleItemClick(item.id);
+                                                }
                                             }
                                         }}
                                     >
@@ -971,6 +987,8 @@ const Sidebar = () => {
                                                 return (
                                                     <div
                                                         key={subItem.id}
+                                                        role="button"
+                                                        tabIndex={0}
                                                         className={`
                                                             mx-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded cursor-pointer transition-colors duration-150
                                                             ${isSubActive ? 'bg-slate-700 text-white' :
@@ -979,6 +997,12 @@ const Sidebar = () => {
                                                             group
                                                         `}
                                                         onClick={() => handleSubItemClick(subItem.id)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                handleSubItemClick(subItem.id);
+                                                            }
+                                                        }}
                                                     >
                                                         <subItem.icon className="w-3.5 h-3.5 flex-shrink-0" stroke={1.75} />
                                                         <span className={`text-[12px] leading-snug ${!isSubEnabled ? 'italic' : ''}`}>

@@ -402,7 +402,7 @@ const Sidebar = () => {
                                         <item.icon size={collapsed ? 35 : 20} className={`text-orange-400`} />
                                         {!collapsed && <div className="text-sm">{item.name}</div>}
                                     </NavLink> :
-                                        <div key={index} onClick={() => handleMenuClick(item)} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2 cursor-pointer transition-all duration-200 !border border-transparent hover:!border-primary ${location.pathname.includes(item.name.toLowerCase()) ? "bg-neutral-900" : ""}`}>
+                                        <div key={index} role="button" tabIndex={0} onClick={() => handleMenuClick(item)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMenuClick(item); } }} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2 cursor-pointer transition-all duration-200 !border border-transparent hover:!border-primary ${location.pathname.includes(item.name.toLowerCase()) ? "bg-neutral-900" : ""}`}>
                                             <item.icon size={collapsed ? 35 : 20} className={`${item.color}`} />
                                             {!collapsed && <div className="text-sm">{item.name}</div>}
                                         </div>}
@@ -415,7 +415,7 @@ const Sidebar = () => {
                     {
                         !menu.pos && <div className="flex flex-col  gap-2">
                             <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="red" label={`Back to  main menu`}>
-                                <div onClick={() => dispatch(setMenu({ id: "dashboard", pos: true }))} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2  cursor-pointer transition-all duration-200 `}>
+                                <div role="button" tabIndex={0} onClick={() => dispatch(setMenu({ id: "dashboard", pos: true }))} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dispatch(setMenu({ id: "dashboard", pos: true })); } }} className={`flex gap-3 items-center hover:bg-neutral-950 rounded-md p-2  cursor-pointer transition-all duration-200 `}>
                                     <IconChevronLeft size={collapsed ? 35 : 20} className={`text-primary`} />
                                     {!collapsed && <div className="text-sm">Back to main menu</div>}
                                 </div>

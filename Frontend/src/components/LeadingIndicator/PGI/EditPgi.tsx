@@ -86,7 +86,7 @@ const EditPgi = () => {
 
     useEffect(() => {
         dispatch(showOverlay());
-        getPgiById(id).then((res) => {
+        getPgiById(Number(id)).then((res) => {
             form.setValues({
                 ...res,
                 id: res.id,

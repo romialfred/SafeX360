@@ -25,11 +25,11 @@ const Details = () => {
     useEffect(() => {
         const getDetails = type == "INCIDENT" ? getIncidentDetails : type == "HS_ACTIVITY" ? getActivityInfo : type == "NON_CONFORMITY" ? getInfoByNonConformityId : getPgiInfo;
         const getActions = type == "INCIDENT" ? getCorrectiveActionByIncidentId : type == "HS_ACTIVITY" ? getCorrectiveActionByActivityId : type == "NON_CONFORMITY" ? getActionsByNonConformityId : getCorrectiveActionByInspectionId;
-        getDetails(id).then((res) => {
+        getDetails(Number(id)).then((res) => {
             setIncident(res);
         }).catch((_err) => console.error(_err));
 
-        getActions(id).then(async (res) => {
+        getActions(Number(id)).then(async (res) => {
             setCorrectiveActions(res);
             const actionIds = res.map((item: any) => item.id);
             const processes = await Promise.all(

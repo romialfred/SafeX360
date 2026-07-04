@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,14 +27,14 @@ public class EscalationRuleController {
     }
 
     @PostMapping
-    public ResponseEntity<EscalationRuleDTO> create(@RequestBody EscalationRuleDTO dto,
+    public ResponseEntity<EscalationRuleDTO> create(@Valid @RequestBody EscalationRuleDTO dto,
                                                      @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.create(dto, actorId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EscalationRuleDTO> update(@PathVariable Long id,
-                                                     @RequestBody EscalationRuleDTO dto,
+                                                     @Valid @RequestBody EscalationRuleDTO dto,
                                                      @RequestParam(required = false) Long actorId) {
         return service.update(id, dto, actorId)
             .map(ResponseEntity::ok)

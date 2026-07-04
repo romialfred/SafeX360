@@ -17,6 +17,4 @@ public interface PpeRequestService {
     PpeRequestDTO getById(Long id) throws HSException;
 
     List<PpeRequestDTO> getAllRequests() throws HSException;
-
-    // List<PpeRequestDTO> getByEmpId(Long empId) throws HSException;
 }

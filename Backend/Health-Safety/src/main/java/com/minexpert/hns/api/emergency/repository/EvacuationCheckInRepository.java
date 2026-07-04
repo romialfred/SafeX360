@@ -11,5 +11,7 @@ public interface EvacuationCheckInRepository extends JpaRepository<EvacuationChe
 
     List<EvacuationCheckIn> findByGeneralAlertIdOrderByCheckedAtDesc(Long generalAlertId);
 
+    List<EvacuationCheckIn> findByGeneralAlertIdIn(List<Long> generalAlertIds);
+
     Optional<EvacuationCheckIn> findByGeneralAlertIdAndEmployeeId(Long generalAlertId, Long employeeId);
 }

@@ -14,6 +14,7 @@ import { errorNotification, successNotification } from "../../../../utility/Noti
 import { toLocalDate } from "../../../../utility/dateConversion";
 import { IconClipboardCheck, IconPlus } from "@tabler/icons-react";
 import { useSelector } from "react-redux";
+import { Z } from '../../../../constants/zIndex';
 import { ACTION_PLAN_STATUS_OPTIONS, actionPlanStatusConfig, SERIF } from "../hsMeetingsLabels";
 
 const CorrectiveActions = ({ employee, empMap }: any) => {
@@ -28,7 +29,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
     }, []);
 
     const fetch = () => {
-        getCorrectiveActionByActivityId(id).then((res) => {
+        getCorrectiveActionByActivityId(Number(id)).then((res) => {
             setActions(res);
         }).catch((_err) => console.error(_err));
     };
@@ -166,7 +167,7 @@ const CorrectiveActions = ({ employee, empMap }: any) => {
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 <form className="grid grid-cols-1 gap-4" onSubmit={actionForm.onSubmit(handleSubmit)}>

@@ -6,13 +6,11 @@ const addAuditHistory = async (incidentData: any) => {
     return axiosInstance.post(`${url}/create`, incidentData)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const getAuditHistoryByAuditId = async (auditId: any) => {
     return axiosInstance.get(`${url}/getByAuditId/${auditId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 export { addAuditHistory, getAuditHistoryByAuditId };

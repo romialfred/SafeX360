@@ -58,32 +58,31 @@ const IncidentDetailsTab = ({
     useEffect(() => {
         getAllActiveIncidentCategories().then((res: any) => {
             setCategories(mapIdToName(res));
-        }).catch((_err: any) => { });
+        }).catch((err) => console.error(err));
         getAllActiveIncidentType().then((res: any) => {
             setIncidentTypes(mapIdToName(res));
-        }).catch((_err: any) => { });
+        }).catch((err) => console.error(err));
         getAllActiveLocations().then((res: any) => {
             setLocations(mapIdToName(res));
         }
-        ).catch((_err: any) => { });
+        ).catch((err) => console.error(err));
         getAllActiveSeverityLevel().then((res: any) => {
             setSeverityLevels(mapIdToName(res));
-            console.log(res);
         }
-        ).catch((_err: any) => { });
+        ).catch((err) => console.error(err));
         getAllActiveWeatherConditions().then((res: any) => {
             setWeatherConditions(mapIdToName(res));
-        }).catch((_err: any) => { });
+        }).catch((err) => console.error(err));
         GetAllBodyParts({}).then((res: any) => {
             setBodyParts(mapIdToName(res));
         }
-        ).catch((_err: any) => { });
+        ).catch((err) => console.error(err));
         getAllActiveWorkArea().then((res: any) => {
             setWorkAreas(mapIdToName(res));
-        }).catch((_err: any) => { });
+        }).catch((err) => console.error(err));
         getAllActiveWorkProcess().then((res: any) => {
             setWorkProcesses(mapIdToName(res));
-        }).catch((_err: any) => { });
+        }).catch((err) => console.error(err));
     }, []);
 
     const isImage = (type: string) => type?.startsWith("data:image");

@@ -187,7 +187,7 @@ const GeneralAlertDetailPage = () => {
         const unsubscribe = subscribeGeneralAlert((updated) => {
             if (updated.id === Number(id)) {
                 setAlert(updated);
-                getAlertCheckIns(Number(id)).then(setCheckIns).catch(() => {});
+                getAlertCheckIns(Number(id)).then(setCheckIns).catch((e) => console.error("Failed to refresh check-ins", e));
             }
         });
         return unsubscribe;

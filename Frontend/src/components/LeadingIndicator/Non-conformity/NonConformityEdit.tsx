@@ -223,7 +223,7 @@ const NonConformityEdit = () => {
                 ...data, startDate: data.startDate ? new Date(data.startDate) : new Date(), deadline: data.deadline ? new Date(data.deadline) : new Date()
             })
         }).catch((_error) => console.error(_error))
-        getActionsByNonConformityId(id).then((data) => {
+        getActionsByNonConformityId(Number(id)).then((data) => {
             form.setFieldValue("correctiveActions", data?.map((x: any) => ({
                 ...x,
                 actionName: x.actionName,

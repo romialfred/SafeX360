@@ -10,6 +10,7 @@ import { useForm } from "@mantine/form";
 import { Tag } from "primereact/tag";
 
 import { activateLocation, createLocation, deactivateLocation, getAllLocations, updateLocation } from "../../../services/LocationService";
+import { Z } from '../../../constants/zIndex';
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
@@ -267,7 +268,7 @@ const LocationData = () => {
                     {edit ? "Update" : "Create"} Location
                 </h1>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
                     <LocationPicker label="Location" placeholder="Click to select location" form={form} id="location" required />

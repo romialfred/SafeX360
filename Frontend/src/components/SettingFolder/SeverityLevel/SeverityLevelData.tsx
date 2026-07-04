@@ -36,6 +36,7 @@ import { Tag } from "primereact/tag";
 import SummaryComponent from "./SummaryComponent";
 import MatrixModal from "./MatrixModal";
 import { GetAllIncidentType, getCountByCategory, getCountByCategoryAndSeverity, getCountBySeverityLevel } from "../../../services/IncidentTypeService";
+import { Z } from '../../../constants/zIndex';
 
 type Example = {
     desc: string;
@@ -508,7 +509,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                     Create Severity Level
                 </div>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='grid grid-cols-2 gap-4' onSubmit={form.onSubmit(handleSubmit)}>
                     <Select label="Level" withAsterisk placeholder='Select Level' data={severityLevels} {...form.getInputProps('level')} />
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
@@ -559,7 +560,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                     Update Severity Level
                 </div>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='grid grid-cols-1 gap-4' onSubmit={updateForm.onSubmit(handleUpdate)}>
                     <Select disabled label="Level" withAsterisk placeholder='Select Level' data={severityLevels} {...updateForm.getInputProps('level')} />
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...updateForm.getInputProps('name')} />
@@ -573,7 +574,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                     Add New Example
                 </div>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='grid grid-cols-1 gap-4' onSubmit={exampleForm.onSubmit(handleAddExample)}>
 
                     <TextInput label="Example" withAsterisk placeholder="Enter example" {...exampleForm.getInputProps(`example`)} />

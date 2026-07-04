@@ -14,13 +14,14 @@ import {
     IconX,
     IconFileText,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const FileDropzone = ({ title, id, form }: any) => {
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const [previewFile, setPreviewFile] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<string | null>(null);
     const theme = useMantineTheme();
+    const thumbUrlsRef = useRef<string[]>([]);
 
     const handleRemoveFile = (index: number) => {
         const newFiles = [...uploadedFiles];
@@ -35,7 +36,19 @@ const FileDropzone = ({ title, id, form }: any) => {
         }
     }, [form.values[id]]);
 
+    const thumbnailUrls = useMemo(() => {
+        thumbUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+        const urls = uploadedFiles.map(f => f?.type?.startsWith("image/") ? URL.createObjectURL(f) : "");
+        thumbUrlsRef.current = urls.filter(Boolean);
+        return urls;
+    }, [uploadedFiles]);
+
+    useEffect(() => {
+        return () => { thumbUrlsRef.current.forEach(u => URL.revokeObjectURL(u)); };
+    }, []);
+
     const handleView = (file: File) => {
+        if (previewFile) URL.revokeObjectURL(previewFile);
         const url = URL.createObjectURL(file);
         setPreviewFile(url);
         setPreviewType(file.type);
@@ -89,7 +102,7 @@ const FileDropzone = ({ title, id, form }: any) => {
                                 <div className="w-full h-[200px] flex items-center justify-center">
                                     {isImage ? (
                                         <img
-                                            src={URL.createObjectURL(file)}
+                                            src={thumbnailUrls[index]}
                                             alt={file.name}
                                             className="max-h-full max-w-full object-contain"
                                         />
@@ -134,6 +147,7 @@ const FileDropzone = ({ title, id, form }: any) => {
             <Modal
                 opened={!!previewFile}
                 onClose={() => {
+                    if (previewFile) URL.revokeObjectURL(previewFile);
                     setPreviewFile(null);
                     setPreviewType(null);
                 }}

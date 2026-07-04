@@ -46,6 +46,7 @@ import {
     GetAllMeasurement,
     updateMeasurement,
 } from "../../../services/TechMeasurementService";
+import { Z } from '../../../constants/zIndex';
 
 const defaultFilters: DataTableFilterMeta = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -371,7 +372,7 @@ const TechMeasurementData = () => {
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 <form className="flex flex-col gap-4" onSubmit={form.onSubmit(handleSubmit)}>

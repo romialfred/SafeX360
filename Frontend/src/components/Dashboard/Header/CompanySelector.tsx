@@ -6,6 +6,7 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { getAllCompanies } from "../../../services/HrmsService";
 import { useAppDispatch, useAppSelector } from "../../../slices/hooks";
 import { COMPANY_SELECTION_STORAGE_KEY, setCompanySelection } from "../../../slices/CompanySelectionSlice";
+import { Z } from "../../../constants/zIndex";
 
 type Company = {
     id: number;
@@ -33,7 +34,7 @@ const showReloadOverlay = () => {
     const o = document.createElement('div');
     o.id = 'mine-switch-overlay';
     Object.assign(o.style, {
-        position: 'fixed', inset: '0', zIndex: '99999',
+        position: 'fixed', inset: '0', zIndex: String(Z.top),
         background: '#FAF8F3',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
@@ -327,7 +328,7 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
             position="bottom-end"
             offset={8}
             withinPortal
-            zIndex={1100}
+            zIndex={Z.modal}
             shadow="xl"
             radius="xl"
             transitionProps={{ duration: 140 }}

@@ -1,22 +1,24 @@
 package com.minexpert.hns.api.emergency.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.minexpert.hns.api.emergency.entity.SosAlert;
 import com.minexpert.hns.api.emergency.enums.SosStatus;
 
 public interface SosAlertRepository extends JpaRepository<SosAlert, Long> {
 
-    /** Alertes actives (non clôturées) d'une mine, plus récentes en premier. */
     List<SosAlert> findByCompanyIdAndStatusNotInOrderByTriggeredAtDesc(
         Long companyId, List<SosStatus> excludedStatuses
     );
 
-    /** Toutes les alertes d'une mine (historique inclus). */
     List<SosAlert> findByCompanyIdOrderByTriggeredAtDesc(Long companyId);
 
-    /** Alertes d'un employé. */
     List<SosAlert> findByEmployeeIdOrderByTriggeredAtDesc(Long employeeId);
+
+    @Query("SELECT s FROM SosAlert s WHERE s.status = :status AND s.triggeredAt IS NOT NULL AND s.triggeredAt < :threshold")
+    List<SosAlert> findEscalationCandidates(SosStatus status, LocalDateTime threshold);
 }

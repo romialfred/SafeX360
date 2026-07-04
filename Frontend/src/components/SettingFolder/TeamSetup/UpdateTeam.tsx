@@ -47,7 +47,7 @@ const UpdateTeam = () => {
 
     useEffect(() => {
 
-        getIncidentTeamById(id).then((res) => {
+        getIncidentTeamById(Number(id)).then((res) => {
 
             form.setValues({
                 departmentId: "" + res.departmentId,
@@ -56,7 +56,7 @@ const UpdateTeam = () => {
 
         }).catch((_err) => console.error(_err));
 
-        getTeamMembers(id).then((res) => {
+        getTeamMembers(Number(id)).then((res) => {
 
             form.setFieldValue("members", res.map((item: any) => ({
                 ...item,

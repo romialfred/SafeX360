@@ -8,26 +8,27 @@ import com.minexpert.hns.enums.CriticalityLevel;
 import com.minexpert.hns.enums.ErrorEventStatus;
 import com.minexpert.hns.enums.ErrorSourceModule;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO d'echange (creation / lecture) d'un evenement erreur.
- *
- * Note anonymat : le client positionne {@code isAnonymous}. Si vrai, le service
- * ignore {@code declaredBy}. La reponse ne renvoie jamais {@code declaredBy}
- * lorsque l'evenement est anonyme.
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ErrorEventDTO {
     private Long id;
     private String reference;
+    @NotNull(message = "companyId is required")
     private Long companyId;
+    @NotNull(message = "eventTypeId is required")
     private Long eventTypeId;
+    @NotBlank(message = "title is required")
+    @Size(max = 255, message = "title must not exceed 255 characters")
     private String title;
+    @Size(max = 4000, message = "description must not exceed 4000 characters")
     private String description;
     private LocalDateTime occurredAt;
     private LocalDateTime declaredAt;

@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,14 +30,14 @@ public class RescueTeamController {
     }
 
     @PostMapping
-    public ResponseEntity<RescueTeamDTO> create(@RequestBody RescueTeamDTO dto,
+    public ResponseEntity<RescueTeamDTO> create(@Valid @RequestBody RescueTeamDTO dto,
                                                  @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.createTeam(dto, actorId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<RescueTeamDTO> update(@PathVariable Long id,
-                                                 @RequestBody RescueTeamDTO dto,
+                                                 @Valid @RequestBody RescueTeamDTO dto,
                                                  @RequestParam(required = false) Long actorId) {
         return service.updateTeam(id, dto, actorId)
             .map(ResponseEntity::ok)
@@ -57,7 +59,7 @@ public class RescueTeamController {
     }
 
     @PostMapping("/members")
-    public ResponseEntity<RescueTeamMemberDTO> addMember(@RequestBody RescueTeamMemberDTO dto,
+    public ResponseEntity<RescueTeamMemberDTO> addMember(@Valid @RequestBody RescueTeamMemberDTO dto,
                                                           @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.addMember(dto, actorId));
     }
@@ -77,7 +79,7 @@ public class RescueTeamController {
     }
 
     @PostMapping("/shifts")
-    public ResponseEntity<RescueShiftDTO> createShift(@RequestBody RescueShiftDTO dto,
+    public ResponseEntity<RescueShiftDTO> createShift(@Valid @RequestBody RescueShiftDTO dto,
                                                        @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.createShift(dto, actorId));
     }

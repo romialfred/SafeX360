@@ -30,6 +30,7 @@ import { errorNotification, successNotification } from "../../../../utility/Noti
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { getProgressColor, isValidRichText } from "../../../../utility/OtherUtilities";
 import { Tag } from "primereact/tag";
+import { Z } from '../../../../constants/zIndex';
 import {
     ACTION_STATUS_OPTIONS,
     REC_PRIORITY_COLORS,
@@ -78,7 +79,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
 
 
     const fetchRecommendation = () => {
-        getRecommendationByAuditId(id).then((res) => {
+        getRecommendationByAuditId(Number(id)).then((res) => {
             setRecommendations(res);
         }).catch((_err) => {
             setRecommendations([]);
@@ -374,7 +375,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 {recommendation && (
@@ -470,7 +471,7 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 <div className="space-y-4 text-sm text-gray-800">

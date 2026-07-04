@@ -4,6 +4,7 @@ import com.minexpert.hns.dto.users.PermissionManagementDTO;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.users.PermissionManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +19,12 @@ public class PermissionManagementController {
     private final PermissionManagementService permissionService;
 
     @PostMapping("/create")
-    public ResponseEntity<PermissionManagementDTO> create(@RequestBody PermissionManagementDTO dto) throws HSException {
+    public ResponseEntity<PermissionManagementDTO> create(@Valid @RequestBody PermissionManagementDTO dto) throws HSException {
         return ResponseEntity.ok(permissionService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<PermissionManagementDTO> update(@RequestBody PermissionManagementDTO dto) throws HSException {
+    public ResponseEntity<PermissionManagementDTO> update(@Valid @RequestBody PermissionManagementDTO dto) throws HSException {
         return ResponseEntity.ok(permissionService.update(dto));
     }
 

@@ -7,60 +7,42 @@ const baseUrl = "/hns/users/permissions";
 const createPermissionProfile = async (payload: any) => {
   return axiosInstance
     .post(`${baseUrl}/create`, payload)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 // Update an existing permission profile
 const updatePermissionProfile = async (payload: any) => {
   return axiosInstance
     .put(`${baseUrl}/update`, payload)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 // Update status by id
 const updatePermissionStatus = async (id: number, status: "ACTIVE" | "INACTIVE") => {
   return axiosInstance
     .put(`${baseUrl}/status/${id}`, null, { params: { status } })
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 // Get permission profile by id
 const getPermissionById = async (id: number) => {
   return axiosInstance
     .get(`${baseUrl}/get/${id}`)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 // Get permission profile by employee id
 const getPermissionByEmployeeId = async (employeeId: number) => {
   return axiosInstance
     .get(`${baseUrl}/employee/${employeeId}`)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 // List all permission profiles
 const getAllPermissions = async () => {
   return axiosInstance
     .get(`${baseUrl}/getAll`)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 export {
@@ -75,10 +57,7 @@ export {
 const getRegisteredEmployeeIds = async (): Promise<number[]> => {
   return axiosInstance
     .get(`${baseUrl}/employees/registered`)
-    .then((res) => res.data)
-    .catch((err) => {
-      throw err;
-    });
+    .then((res) => res.data);
 };
 
 export { getRegisteredEmployeeIds };

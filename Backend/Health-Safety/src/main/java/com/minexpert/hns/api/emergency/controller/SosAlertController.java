@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +57,7 @@ public class SosAlertController {
 
     @PostMapping
     public ResponseEntity<SosAlertDTO> create(
-        @RequestBody SosAlertDTO dto,
+        @Valid @RequestBody SosAlertDTO dto,
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.create(dto, actorId));

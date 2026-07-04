@@ -40,16 +40,11 @@ public class SeverityLevelAPI {
     @PostMapping("/createMultiple")
     public ResponseEntity<ResponseDTO> createMultipleSeverityLevels(@RequestBody SeverityRequest request)
             throws HSException {
-        request.getCatDesc().forEach(catDesc -> {
+        for (SeverityLevelDTO catDesc : request.getCatDesc()) {
             catDesc.setLevel(request.getLevel());
             catDesc.setName(request.getName());
-            try {
-                severityLevelService.addSeverityLevel(catDesc);
-            } catch (HSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        });
+            severityLevelService.addSeverityLevel(catDesc);
+        }
         return new ResponseEntity<>(new ResponseDTO("Severity Levels Created Successfully"), HttpStatus.CREATED);
     }
 

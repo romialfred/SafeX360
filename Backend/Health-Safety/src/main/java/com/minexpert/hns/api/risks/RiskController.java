@@ -4,6 +4,7 @@ import com.minexpert.hns.dto.risks.RiskDTO;
 import com.minexpert.hns.dto.risks.RiskOverviewResponse;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.risks.RiskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,12 +22,12 @@ public class RiskController {
     private final RiskService riskService;
 
     @PostMapping("/create")
-    public ResponseEntity<RiskDTO> create(@RequestBody RiskDTO dto) throws HSException {
+    public ResponseEntity<RiskDTO> create(@Valid @RequestBody RiskDTO dto) throws HSException {
         return ResponseEntity.ok(riskService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<RiskDTO> update(@RequestBody RiskDTO dto) throws HSException {
+    public ResponseEntity<RiskDTO> update(@Valid @RequestBody RiskDTO dto) throws HSException {
         return ResponseEntity.ok(riskService.update(dto));
     }
 

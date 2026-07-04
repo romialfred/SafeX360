@@ -21,69 +21,57 @@ export interface TeamMemberDetailsResponse {
 }
 
 // /hns/incidents-category/create
-const createIncidentTeam = async (data: any) => {
+const createIncidentTeam = async (data: Record<string, unknown>) => {
     return axiosInstance.post(`${url}/create`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
-const updateIncidentTeam = async (data: any) => {
+const updateIncidentTeam = async (data: Record<string, unknown>) => {
     return axiosInstance.put(`${url}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const deleteIncidentTeam = async (id: string | number) => {
     return axiosInstance.delete(`${url}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const getIncidentTeamDetails = async (id: string | number) => {
     return axiosInstance.get(`${url}/getTeamDetails/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const getAllIncidentTeams = async () => {
     return axiosInstance.get(`${url}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const getAllActiveIncidentTeams = async () => {
     return axiosInstance.get(`${url}/getAllActive`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
-const getIncidentTeamById = async (id: any) => {
+const getIncidentTeamById = async (id: number) => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const activateIncidentTeam = async (id: string | number) => {
     return axiosInstance.put(`${url}/activate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const deactivateIncidentTeam = async (id: string | number) => {
     return axiosInstance.put(`${url}/deactivate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
-const getTeamMembers = async (teamId: any) => {
+const getTeamMembers = async (teamId: number) => {
     return axiosInstance.get(`${url}/getTeamMembers/${teamId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
-const removeTeamMember = async (id: any) => {
+const removeTeamMember = async (id: number) => {
     return axiosInstance.delete(`${url}/removeMember/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const getMemberTeamDetails = async (employeeId: string | number) => {
     return axiosInstance.get<TeamMemberDetailsResponse>(`${url}/member/team-details/${employeeId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 export { createIncidentTeam, updateIncidentTeam, deleteIncidentTeam, getAllIncidentTeams, getAllActiveIncidentTeams, getIncidentTeamById, activateIncidentTeam, deactivateIncidentTeam, getTeamMembers, removeTeamMember, getIncidentTeamDetails, getMemberTeamDetails };

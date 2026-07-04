@@ -78,7 +78,7 @@ const ExecuteAudit = () => {
 
     useEffect(() => {
         dispatch(showOverlay());
-        reportExists(id).then((res) => {
+        reportExists(Number(id)).then((res) => {
             if (res) {
 
                 setSubmitted(true);
@@ -106,7 +106,7 @@ const ExecuteAudit = () => {
         }).catch((_err) => {
 
         })
-        getAreasByAuditId(id).then((res) => {
+        getAreasByAuditId(Number(id)).then((res) => {
             setAreas(res);
         }
         ).catch((_err) => {

@@ -6,45 +6,35 @@ const createRequirement = async (payload: any) => {
     return axiosInstance.post(`${url}/create`, payload)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const updateRequirement = async (payload: any) => {
     return axiosInstance.put(`${url}/update`, payload)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 const getAllRequirement = async (_payload: any) => {
-    try {
-        const response = await axiosInstance.get(`${url}/getAll`);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axiosInstance.get(`${url}/getAll`);
+    return response.data;
 };
 
 const getRequirementById = async (id: any) => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const getAllActiveRequirement = async () => {
     return axiosInstance.get(`${url}/getAllActive`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const activateRequirement = async (id: string | number) => {
     return axiosInstance.put(`${url}/activate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const deactivateRequirement = async (id: string | number) => {
     return axiosInstance.put(`${url}/deactivate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 export { createRequirement, updateRequirement, getAllRequirement, activateRequirement, deactivateRequirement, getAllActiveRequirement, getRequirementById };

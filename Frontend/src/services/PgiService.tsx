@@ -4,43 +4,38 @@ const url = "/hns/general-inspections";
 
 
 
-const createPgi = async (incidentData: any) => {
-    return axiosInstance.post(`${url}/create`, incidentData)
+const createPgi = async (data: Record<string, unknown>) => {
+    return axiosInstance.post(`${url}/create`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
-const updatePgi = async (incidentData: any) => {
-    return axiosInstance.put(`${url}/update`, incidentData)
+const updatePgi = async (data: Record<string, unknown>) => {
+    return axiosInstance.put(`${url}/update`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 
-const getAllPgi = async (incidentData: any) => {
-    return axiosInstance.get(`${url}/getAll`, incidentData)
+const getAllPgi = async (data: Record<string, unknown>) => {
+    return axiosInstance.get(`${url}/getAll`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
-const getPgiById = async (id: any) => {
+const getPgiById = async (id: number) => {
     return axiosInstance.get(`${url}/get/${id}`)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
-const getPgiInfo = async (id: any) => {
+const getPgiInfo = async (id: number) => {
     return axiosInstance.get(`${url}/getInfo/${id}`)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 export { createPgi, getAllPgi, getPgiById, getPgiInfo, updatePgi }

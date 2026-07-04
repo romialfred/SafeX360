@@ -12,6 +12,7 @@ import { errorNotification, successNotification } from "../../../utility/Notific
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
 import { modals } from "@mantine/modals";
+import { Z } from '../../../constants/zIndex';
 import { getAllEmployeeWithDirection } from "../../../services/EmployeeService";
 import { activateAuditors, createAuditors, deactivateAuditors, getAllAuditors, updateAuditors } from "../../../services/AuditorsService";
 import { mapIdToName } from "../../../utility/OtherUtilities";
@@ -287,7 +288,7 @@ const AuiditorData = () => {
                     {edit ? "Update" : "Add"} Auditor
                 </h1>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
 
                     {edit ? <Select searchable label="Employee" placeholder="Select employee" data={emps} withAsterisk disabled {...form.getInputProps('employeeId')} /> : <Select searchable label="Employee" placeholder="Select employee" data={emps.filter((x: any) => !data.some((y: any) => x.value == y.employeeId))} withAsterisk {...form.getInputProps('employeeId')} />}

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.minexpert.hns.api.emergency.dto.EmergencyPermissionDTO;
 import com.minexpert.hns.api.emergency.enums.EmergencyPermission;
 import com.minexpert.hns.api.emergency.service.EmergencyPermissionService;
@@ -47,7 +49,7 @@ public class EmergencyPermissionController {
 
     /** POST /hns/emergency/permissions/grant — accorde une permission. */
     @PostMapping("/grant")
-    public ResponseEntity<EmergencyPermissionDTO> grant(@RequestBody EmergencyPermissionDTO dto,
+    public ResponseEntity<EmergencyPermissionDTO> grant(@Valid @RequestBody EmergencyPermissionDTO dto,
                                                          @RequestParam Long grantedBy) {
         return ResponseEntity.ok(service.grant(dto.getUserId(), dto.getPermission(), dto.getCompanyId(), grantedBy));
     }

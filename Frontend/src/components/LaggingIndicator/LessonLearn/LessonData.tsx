@@ -22,6 +22,7 @@ import LessonLearnCard from "./LessonLearnCard";
 import EmptyState from "../../UtilityComp/EmptyState";
 import { lessonCategoryLabel, lessonStatusLabel, PAGINATOR_FR } from "../IncidentManagement/incidentLabels";
 import { formatDateShort } from "../../../utility/DateFormats";
+import { Z } from '../../../constants/zIndex';
 
 const defaultFilters: DataTableFilterMeta = {
     global: { value: "", matchMode: FilterMatchMode.CONTAINS },
@@ -330,7 +331,7 @@ const LessonData = () => {
                 size="xl"
                 centered
             >
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 8 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 8 }} />
                 {selectedLesson && (
                     <Lesson incidentId={selectedLesson.incidentId} setLoading={setLoading} />
                 )}

@@ -50,7 +50,7 @@ const ViewDetailsPgi = ({ inspection: inspectionProp }: { inspection?: any }) =>
     // Mode autonome (route PGI/viewPgi/:id) : la fiche charge elle-même le dossier.
     useEffect(() => {
         if ((!inspectionProp || !inspectionProp.id) && id) {
-            getPgiById(id)
+            getPgiById(Number(id))
                 .then(setFetched)
                 .catch((_err) => console.error(_err));
         }

@@ -12,6 +12,7 @@ import { errorNotification, successNotification } from "../../../utility/Notific
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
 import { modals } from "@mantine/modals";
+import { Z } from '../../../constants/zIndex';
 import { activateBodyParts, createBodyParts, deactivateBodyParts, GetAllBodyParts, updateBodyParts } from "../../../services/BodyPartsService";
 import { base64ToFile, getBase64 } from "../../../utility/DocumentUtility";
 
@@ -303,7 +304,7 @@ const BodyPartsData = () => {
                     </h1>
                 }
             >
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: 'sm', blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: 'sm', blur: 2 }} />
 
                 <form className="flex flex-col gap-4" onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput label="Name" withAsterisk placeholder="Enter name" {...form.getInputProps('name')} />

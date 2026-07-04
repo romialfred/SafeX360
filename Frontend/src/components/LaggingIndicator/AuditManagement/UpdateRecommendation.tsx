@@ -42,7 +42,7 @@ const UpdateRecommendation = () => {
 
   useEffect(() => {
     if (!id) return;
-    getRecommendationById(id)
+    getRecommendationById(Number(id))
       .then((res) => {
         setRec(res);
         const p = Number(res.progress ?? 0);
@@ -55,7 +55,7 @@ const UpdateRecommendation = () => {
       })
       .catch((err) => errorNotification(err.response?.data?.errorMessage || t('recommendations.loadRecommendationFailed')));
 
-    getRecommendationFollowups(id)
+    getRecommendationFollowups(Number(id))
       .then(setFollowups)
       .catch((err) => errorNotification(err.response?.data?.errorMessage || t('recommendations.loadHistoryFailed')));
   }, [id]);

@@ -11,6 +11,9 @@ import com.minexpert.hns.enums.AuditCategory;
 import com.minexpert.hns.enums.AuditStatus;
 import com.minexpert.hns.enums.PlanningStatus;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +23,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuditDTO {
     private Long id;
+    @NotBlank(message = "title is required")
+    @Size(max = 255, message = "title must not exceed 255 characters")
     private String title;
     private String refNumber;
     private List<String> objectives;
@@ -27,6 +32,7 @@ public class AuditDTO {
     private Long scopeId;
     private List<String> methods;
     private String description;
+    @NotNull(message = "category is required")
     private AuditCategory category;
     private Map<String, List<String>> auditTypes;
     private List<String> references;

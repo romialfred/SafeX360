@@ -73,7 +73,7 @@ const EditScheduleAudit: React.FC = () => {
 
         })
         dispatch(showOverlay());
-        getAuditDetails(id).then((res) => {
+        getAuditDetails(Number(id)).then((res) => {
             form.setFieldValue('audit', {
                 ...res, startDate: new Date(res.startDate),
                 endDate: new Date(res.endDate),
@@ -92,7 +92,7 @@ const EditScheduleAudit: React.FC = () => {
 
     useEffect(() => {
         if (auditorsNameMap && Object.keys(auditorsNameMap).length > 0) {
-            getAuditorsByAuditId(id).then((res) => {
+            getAuditorsByAuditId(Number(id)).then((res) => {
 
                 form.setFieldValue("auditors", res.map((item: any) => ({
                     ...item,

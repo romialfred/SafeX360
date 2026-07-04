@@ -82,7 +82,7 @@ const Header = () => {
     return (
         // LOT 48 P6.j — Responsive : sur mobile (< md), le header occupe TOUTE la largeur
         // (sidebar = drawer overlay). Sur desktop, on conserve l'offset gauche selon collapsed.
-        <div className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
+        <header role="banner" className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
             {/* LOT 43 v10 — Header dynamique + titre agrandi + h-18 pour respirer */}
             <div className="safex-header-wave relative bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-[64px] sm:h-[72px] flex justify-between items-center px-3 sm:px-6 overflow-hidden">
                 {/* Couche 1 : vague lumineuse parcourant le header (animée via CSS) */}
@@ -296,7 +296,7 @@ const Header = () => {
                     <GeneralAlertButton />
                 </div>
             </div>
-        </div >
+        </header>
     );
 };
 

@@ -35,8 +35,8 @@ const RecommendationDetails = () => {
 
         setLoading(true);
         Promise.all([
-            getRecommendationById(id),
-            getRecommendationFollowups(id),
+            getRecommendationById(Number(id)),
+            getRecommendationFollowups(Number(id)),
         ])
             .then(([rec, followup]) => {
                 setRecommendation(rec);

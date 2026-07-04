@@ -6,6 +6,7 @@ import com.minexpert.hns.enums.ActivityCategory;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.planning.ActivityService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +21,12 @@ public class ActivityController {
     private final ActivityService activityService;
 
     @PostMapping("/create")
-    public ResponseEntity<ActivityDTO> create(@RequestBody ActivityDTO dto) throws HSException {
+    public ResponseEntity<ActivityDTO> create(@Valid @RequestBody ActivityDTO dto) throws HSException {
         return ResponseEntity.ok(activityService.createActivity(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ActivityDTO> update(@RequestBody ActivityDTO dto) throws HSException {
+    public ResponseEntity<ActivityDTO> update(@Valid @RequestBody ActivityDTO dto) throws HSException {
         return ResponseEntity.ok(activityService.updateActivity(dto));
     }
 

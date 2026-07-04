@@ -28,26 +28,22 @@ export interface RiskControlDTO {
 
 const listRiskControls = async (sourceType: RiskControlSourceType, riskId: number | string) => {
     return axiosInstance.get<RiskControlDTO[]>(`${url}`, { params: { sourceType, riskId } })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createRiskControl = async (dto: RiskControlDTO) => {
     return axiosInstance.post(`${url}/create`, dto)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateRiskControl = async (dto: RiskControlDTO) => {
     return axiosInstance.put(`${url}/update`, dto)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteRiskControl = async (id: number | string) => {
     return axiosInstance.delete(`${url}/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 export { listRiskControls, createRiskControl, updateRiskControl, deleteRiskControl };

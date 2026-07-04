@@ -142,7 +142,7 @@ const UpdateAdhocAction = () => {
     const cannotUpdate = isCompleted || isCancelled || isPending;
 
     useEffect(() => {
-        getActionById(id)
+        getActionById(Number(id))
             .then((res) => {
                 setSelectedRow(res);
                 form.setValues({

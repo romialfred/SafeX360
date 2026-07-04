@@ -292,6 +292,7 @@ export default function InspectionRegistryPage() {
                                 value={filters.query}
                                 onChange={(e) => setFilters((f) => ({ ...f, query: e.target.value }))}
                                 placeholder={t('registry.filters.searchPlaceholder')}
+                                aria-label={t('registry.filters.searchPlaceholder')}
                                 className="w-full pl-8 pr-3 py-2 text-[12.5px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
                             />
                         </div>

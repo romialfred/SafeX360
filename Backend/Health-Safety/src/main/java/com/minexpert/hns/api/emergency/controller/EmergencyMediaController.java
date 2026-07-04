@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,14 +27,14 @@ public class EmergencyMediaController {
     }
 
     @PostMapping
-    public ResponseEntity<EmergencyMediaDTO> create(@RequestBody EmergencyMediaDTO dto,
+    public ResponseEntity<EmergencyMediaDTO> create(@Valid @RequestBody EmergencyMediaDTO dto,
                                                      @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.create(dto, actorId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EmergencyMediaDTO> update(@PathVariable Long id,
-                                                     @RequestBody EmergencyMediaDTO dto,
+                                                     @Valid @RequestBody EmergencyMediaDTO dto,
                                                      @RequestParam(required = false) Long actorId) {
         return service.update(id, dto, actorId)
             .map(ResponseEntity::ok)

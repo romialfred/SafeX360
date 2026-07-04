@@ -137,7 +137,7 @@ const UpdateIncidents = () => {
     useEffect(() => {
         if (!id) return;
         dispatch(showOverlay());
-        getIncidentById(id).then((res: any) => {
+        getIncidentById(Number(id)).then((res: any) => {
 
             const evidenceFiles = res?.evidence.map((x: any) => {
                 const mimeType = x?.type?.split(',')[0]?.split(':')[1]; // Extract MIME type

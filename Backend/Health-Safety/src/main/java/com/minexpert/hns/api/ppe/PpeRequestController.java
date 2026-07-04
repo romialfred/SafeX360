@@ -3,6 +3,7 @@ package com.minexpert.hns.api.ppe;
 import com.minexpert.hns.dto.ppe.PpeRequestDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.ppe.PpeRequestService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +18,12 @@ public class PpeRequestController {
     private final PpeRequestService requestService;
 
     @PostMapping("/create")
-    public ResponseEntity<PpeRequestDTO> create(@RequestBody PpeRequestDTO dto) throws HSException {
+    public ResponseEntity<PpeRequestDTO> create(@Valid @RequestBody PpeRequestDTO dto) throws HSException {
         return ResponseEntity.ok(requestService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<PpeRequestDTO> update(@RequestBody PpeRequestDTO dto) throws HSException {
+    public ResponseEntity<PpeRequestDTO> update(@Valid @RequestBody PpeRequestDTO dto) throws HSException {
         return ResponseEntity.ok(requestService.update(dto));
     }
 
@@ -50,9 +51,4 @@ public class PpeRequestController {
         return ResponseEntity.ok(requestService.getAllRequests());
     }
 
-    // @GetMapping("/getByEmp/{empId}")
-    // public ResponseEntity<List<PpeRequestDTO>> getByEmp(@PathVariable Long empId)
-    // throws HSException {
-    // return ResponseEntity.ok(requestService.getByEmpId(empId));
-    // }
 }

@@ -5,15 +5,13 @@ const url = "/hns/investigation-process";
 // Investigation process create
 const addInvestigationProcess = async (processData: any) => {
     return axiosInstance.post(`${url}/create`, processData)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 // Get all processes by investigation ID
 const getAllInvestigationProcessByInvestigationId = async (investigationId: number) => {
     return axiosInstance.get(`${url}/getByInvestigationId/${investigationId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 export {

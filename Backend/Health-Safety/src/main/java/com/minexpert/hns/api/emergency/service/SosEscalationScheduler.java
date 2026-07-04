@@ -53,6 +53,7 @@ public class SosEscalationScheduler {
     private final EscalationRuleRepository escalationRepo;
     private final EmergencyAuditService auditService;
     private final SimpMessagingTemplate messaging;
+    private final EmergencyEmailService emergencyEmailService;
 
     /**
      * Fréquence du scan : toutes les 15 secondes. Suffit pour des SOS à
@@ -62,14 +63,11 @@ public class SosEscalationScheduler {
     @Scheduled(fixedDelay = 15_000, initialDelay = 30_000)
     @Transactional
     public void escalateStaleSos() {
-        // Récupère tous les SOS encore "vivants" toutes mines confondues
-        List<SosAlert> active = sosRepo.findAll().stream()
-            .filter(s -> s.getStatus() == SosStatus.RECEIVED && s.getTriggeredAt() != null)
-            .toList();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold = now.minusSeconds(60);
+        List<SosAlert> active = sosRepo.findEscalationCandidates(SosStatus.RECEIVED, threshold);
 
         if (active.isEmpty()) return;
-
-        LocalDateTime now = LocalDateTime.now();
 
         for (SosAlert sos : active) {
             try {
@@ -161,6 +159,27 @@ public class SosEscalationScheduler {
                 "step", nextStepOrder
             )
         );
+
+        // Broadcast company-scoped pour le frontend (EmergencyWebSocketProvider)
+        java.util.HashMap<String, Object> escalationPayload = new java.util.HashMap<>();
+        escalationPayload.put("type", "ESCALATION");
+        escalationPayload.put("sosAlertId", sos.getId());
+        escalationPayload.put("reasonCode", sos.getReasonCode() != null ? sos.getReasonCode() : "");
+        escalationPayload.put("stepOrder", nextStepOrder);
+        escalationPayload.put("targetPermission", rule.getTargetPermission() != null ? rule.getTargetPermission().name() : "");
+        escalationPayload.put("companyId", sos.getCompanyId());
+        escalationPayload.put("message", rule.getName());
+        messaging.convertAndSend(
+            "/topic/emergency/escalation/company/" + sos.getCompanyId(),
+            escalationPayload
+        );
+
+        try {
+            emergencyEmailService.notifySosEscalated(
+                    sos.getId(), null, sos.getReasonCode(), nextStepOrder);
+        } catch (Exception e) {
+            log.warn("Email notification failed for SOS#{} escalation step {}: {}", sos.getId(), nextStepOrder, e.getMessage());
+        }
 
         log.info("SOS#{} escalated to step {} ({})", sos.getId(), nextStepOrder, rule.getName());
     }

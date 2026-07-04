@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +49,7 @@ public class AssemblyPointController {
 
     @PostMapping
     public ResponseEntity<AssemblyPointDTO> create(
-        @RequestBody AssemblyPointDTO dto,
+        @Valid @RequestBody AssemblyPointDTO dto,
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.create(dto, actorId));
@@ -56,7 +58,7 @@ public class AssemblyPointController {
     @PutMapping("/{id}")
     public ResponseEntity<AssemblyPointDTO> update(
         @PathVariable Long id,
-        @RequestBody AssemblyPointDTO dto,
+        @Valid @RequestBody AssemblyPointDTO dto,
         @RequestParam(required = false) Long actorId
     ) {
         return service.update(id, dto, actorId)

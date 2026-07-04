@@ -119,11 +119,4 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                                 .toList();
         }
 
-        // @Override
-        // public List<PpeRequestDTO> getByEmpId(Long empId) throws HSException {
-        // return requestRepository.findByEmpId(empId)
-        // .stream()
-        // .map(PpeRequest::toDTO)
-        // .toList();
-        // }
 }

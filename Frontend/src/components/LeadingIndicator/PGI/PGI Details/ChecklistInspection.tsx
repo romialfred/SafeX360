@@ -58,7 +58,7 @@ const ChecklistInspection = () => {
     }, [])
 
     const fetchData = () => {
-        getChecklistsByInspectionId(id).then((res) => {
+        getChecklistsByInspectionId(Number(id)).then((res) => {
             setChecklistsData(res);
         }).catch((_error) => console.error(_error))
     }

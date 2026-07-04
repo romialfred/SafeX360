@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.audit.AreaDTO;
 import com.minexpert.hns.dto.audit.AreaDetails;
@@ -53,7 +55,7 @@ public class AuditAPI {
     private final AuditorService auditorService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createAudit(@RequestBody AuditRequest request) throws HSException {
+    public ResponseEntity<Long> createAudit(@Valid @RequestBody AuditRequest request) throws HSException {
         return new ResponseEntity<>(auditService.createAudit(request), HttpStatus.CREATED);
     }
 
@@ -68,7 +70,7 @@ public class AuditAPI {
     }
 
     @PostMapping("/execute")
-    public ResponseEntity<ResponseDTO> executeAudit(@RequestBody ExecuteRequest request) throws HSException {
+    public ResponseEntity<ResponseDTO> executeAudit(@Valid @RequestBody ExecuteRequest request) throws HSException {
         auditService.executeAudit(request);
         return new ResponseEntity<>(new ResponseDTO("Audit executed successfully"), HttpStatus.OK);
     }
@@ -97,7 +99,7 @@ public class AuditAPI {
     }
 
     @PostMapping("/createRecommendation")
-    public ResponseEntity<Long> createRecommendation(@RequestBody RecommendationDTO recommendationDTO)
+    public ResponseEntity<Long> createRecommendation(@Valid @RequestBody RecommendationDTO recommendationDTO)
             throws HSException {
         Long recommendationId = recommendationService.createRecommendation(recommendationDTO);
         return new ResponseEntity<>(recommendationId, HttpStatus.CREATED);
@@ -110,7 +112,7 @@ public class AuditAPI {
     }
 
     @PostMapping("/createFollowup")
-    public ResponseEntity<ResponseDTO> createFollowup(@RequestBody FollowupDTO followupDTO) throws HSException {
+    public ResponseEntity<ResponseDTO> createFollowup(@Valid @RequestBody FollowupDTO followupDTO) throws HSException {
         System.out.println("FollowupDTO: " + followupDTO);
         recommendationFollowupService.addRecommendationFollowup(followupDTO);
         return new ResponseEntity<>(new ResponseDTO("Followup created successfully"), HttpStatus.CREATED);
@@ -178,7 +180,7 @@ public class AuditAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateAudit(@RequestBody AuditRequest request) throws HSException {
+    public ResponseEntity<ResponseDTO> updateAudit(@Valid @RequestBody AuditRequest request) throws HSException {
         auditService.updateAudit(request);
         return new ResponseEntity<>(new ResponseDTO("Audit updated successfully"), HttpStatus.OK);
     }

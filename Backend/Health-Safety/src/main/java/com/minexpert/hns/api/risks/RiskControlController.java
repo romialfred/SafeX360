@@ -4,6 +4,7 @@ import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.risks.RiskControlDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.risks.RiskControlService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class RiskControlController {
     private final RiskControlService riskControlService;
 
     @PostMapping("/create")
-    public ResponseEntity<RiskControlDTO> create(@RequestBody RiskControlDTO dto) throws HSException {
+    public ResponseEntity<RiskControlDTO> create(@Valid @RequestBody RiskControlDTO dto) throws HSException {
         return ResponseEntity.ok(riskControlService.create(dto));
     }
 
@@ -30,7 +31,7 @@ public class RiskControlController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<RiskControlDTO> update(@RequestBody RiskControlDTO dto) throws HSException {
+    public ResponseEntity<RiskControlDTO> update(@Valid @RequestBody RiskControlDTO dto) throws HSException {
         return ResponseEntity.ok(riskControlService.update(dto));
     }
 

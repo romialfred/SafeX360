@@ -28,7 +28,7 @@ const GeneralAlertButton = () => {
     const [selectedZones, setSelectedZones] = useState<string[]>([]);
 
     // Canaux de notification
-    const [channels, setChannels] = useState<string[]>(['web', 'mobile', 'sms']);
+    const [channels, setChannels] = useState<string[]>(['web']);
 
     // Message libre
     const [message, setMessage] = useState('');
@@ -54,7 +54,7 @@ const GeneralAlertButton = () => {
         setAlertType('mandatory-assembly');
         setZoneScope('all');
         setSelectedZones([]);
-        setChannels(['web', 'mobile', 'sms']);
+        setChannels(['web']);
         setMessage('');
         setSent(false);
     };
@@ -240,18 +240,18 @@ const GeneralAlertButton = () => {
                                             <span className="text-xs text-slate-800">Web</span>
                                         </Group>
                                     </Checkbox.Card>
-                                    <Checkbox.Card value="mobile" radius="md" className="p-2.5 data-[checked]:!border-teal-500 data-[checked]:!bg-teal-50">
+                                    <Checkbox.Card value="mobile" radius="md" className="p-2.5 opacity-50 cursor-not-allowed pointer-events-none" disabled>
                                         <Group wrap="nowrap" gap="xs" align="center">
-                                            <Checkbox.Indicator />
-                                            <IconDeviceMobile size={14} className="text-slate-700" />
-                                            <span className="text-xs text-slate-800">Mobile</span>
+                                            <Checkbox.Indicator disabled />
+                                            <IconDeviceMobile size={14} className="text-slate-400" />
+                                            <span className="text-xs text-slate-400">Mobile <span className="text-[10px] italic">(Bientôt)</span></span>
                                         </Group>
                                     </Checkbox.Card>
-                                    <Checkbox.Card value="sms" radius="md" className="p-2.5 data-[checked]:!border-teal-500 data-[checked]:!bg-teal-50">
+                                    <Checkbox.Card value="sms" radius="md" className="p-2.5 opacity-50 cursor-not-allowed pointer-events-none" disabled>
                                         <Group wrap="nowrap" gap="xs" align="center">
-                                            <Checkbox.Indicator />
-                                            <IconMail size={14} className="text-slate-700" />
-                                            <span className="text-xs text-slate-800">SMS</span>
+                                            <Checkbox.Indicator disabled />
+                                            <IconMail size={14} className="text-slate-400" />
+                                            <span className="text-xs text-slate-400">SMS <span className="text-[10px] italic">(Bientôt)</span></span>
                                         </Group>
                                     </Checkbox.Card>
                                 </div>

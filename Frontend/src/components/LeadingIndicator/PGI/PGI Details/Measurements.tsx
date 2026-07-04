@@ -16,6 +16,7 @@ import { createCorrectiveAction } from "../../../../services/CorrectiveActionSer
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { addInspectionMeasurement, getMeasurementsByInspectionId, removeInsMeasurement } from "../../../../services/InspectionProcessService";
 import { ACTION_STATUS_OPTIONS, SECTION_TITLE_STYLE } from "../pgiLabels";
+import { Z } from '../../../../constants/zIndex';
 
 /**
  * Mesures techniques rattachées au dossier d'inspection : valeur relevée,
@@ -71,7 +72,7 @@ const Measurements = ({ employee, empMap }: any) => {
     }, []);
 
     const fetchData = () => {
-        getMeasurementsByInspectionId(id).then((res) => {
+        getMeasurementsByInspectionId(Number(id)).then((res) => {
             setMeasurementsData(res);
         }).catch((_error) => console.error(_error))
     };
@@ -304,7 +305,7 @@ const Measurements = ({ employee, empMap }: any) => {
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 <form className="grid grid-cols-2 gap-4" onSubmit={actionForm.onSubmit(handleSubmit)}>

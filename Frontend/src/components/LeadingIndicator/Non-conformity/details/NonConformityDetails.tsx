@@ -154,7 +154,7 @@ const NonConformityDetails = () => {
             });
 
         getEventAnalysisByNonConformityId(id).then((res) => setAnalysis(res)).catch((err) => console.error(err));
-        getActionsByNonConformityId(id).then((res) => setActions(res)).catch((err) => console.error(err));
+        getActionsByNonConformityId(Number(id)).then((res) => setActions(res)).catch((err) => console.error(err));
 
         getEmployeeDropdown()
             .then((res) => {

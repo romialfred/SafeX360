@@ -6,38 +6,32 @@ const createAuditors = async (incidentData: any) => {
     return axiosInstance.post(`${url}/create`, incidentData)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const updateAuditors = async (incidentData: any) => {
     return axiosInstance.put(`${url}/update`, incidentData)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 const getAllAuditors = async () => {
     return axiosInstance.get(`${url}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getAllActiveAuditors = async () => {
     return axiosInstance.get(`${url}/getAllActive`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const activateAuditors = async (id: string | number) => {
     return axiosInstance.put(`${url}/activate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const deactivateAuditors = async (id: string | number) => {
     return axiosInstance.put(`${url}/deactivate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 

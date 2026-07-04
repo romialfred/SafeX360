@@ -26,38 +26,32 @@ export interface OpportunityDTO {
 
 const listOpportunities = async (): Promise<OpportunityDTO[]> => {
     return axiosInstance.get(`${url}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getOpportunity = async (id: number | string): Promise<OpportunityDTO> => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const createOpportunity = async (dto: OpportunityDTO) => {
     return axiosInstance.post(`${url}/create`, dto)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateOpportunity = async (dto: OpportunityDTO) => {
     return axiosInstance.put(`${url}/update`, dto)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateOpportunityStatus = async (id: number | string, status: OpportunityStatus) => {
     return axiosInstance.put(`${url}/status/${id}?status=${status}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteOpportunity = async (id: number | string) => {
     return axiosInstance.delete(`${url}/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 export {

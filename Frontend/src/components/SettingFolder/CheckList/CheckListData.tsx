@@ -10,6 +10,7 @@ import { useForm } from "@mantine/form";
 import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { modals } from '@mantine/modals';
+import { Z } from '../../../constants/zIndex';
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { activateCheckList, createCheckList, deactivateCheckList, GetAllCheckList, updateCheckList } from "../../../services/ChecklistParameterService";
@@ -299,7 +300,7 @@ const CheckListData = () => {
                     {edit ? "Update" : "Create"} Check List Management
                 </h1>
             }>
-                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput label="Check List Title" withAsterisk placeholder='Enter title' {...form.getInputProps('name')} />
                     <Textarea label="Description" placeholder="Enter Description" {...form.getInputProps('description')} />

@@ -92,7 +92,7 @@ const EditAdhocAction = () => {
             .catch((err) => console.error(err));
 
         if (!id) return;
-        getActionById(id)
+        getActionById(Number(id))
             .then((res) => {
                 const statusUpper = String(res?.status || '').toUpperCase();
                 if (statusUpper !== 'PENDING') {

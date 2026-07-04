@@ -2,44 +2,35 @@ import axiosInstance from "../interceptors/AxiosInterceptor";
 const url = "/hns/locations";
 
 // /hns/incidents-category/create
-const createLocation = async (incidentData: any) => {
-    return axiosInstance.post(`${url}/create`, incidentData)
+const createLocation = async (data: Record<string, unknown>) => {
+    return axiosInstance.post(`${url}/create`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
-const updateLocation = async (incidentData: any) => {
-    return axiosInstance.put(`${url}/update`, incidentData)
+const updateLocation = async (data: Record<string, unknown>) => {
+    return axiosInstance.put(`${url}/update`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
-const getAllLocations = async (incidentData: any) => {
-    try {
-        const response = await axiosInstance.get(`${url}/getAll`, { params: incidentData });
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+const getAllLocations = async (data: Record<string, unknown>) => {
+    const response = await axiosInstance.get(`${url}/getAll`, { params: data });
+    return response.data;
 };
 
 const getAllActiveLocations = async () => {
     return axiosInstance.get(`${url}/getAllActive`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const activateLocation = async (id: string | number) => {
     return axiosInstance.put(`${url}/activate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const deactivateLocation = async (id: string | number) => {
     return axiosInstance.put(`${url}/deactivate/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 export { createLocation, updateLocation, getAllLocations, activateLocation, deactivateLocation, getAllActiveLocations };

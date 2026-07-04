@@ -55,20 +55,6 @@ public class StringListConverter {
                 .collect(Collectors.toList());
     }
 
-    // public static List<ParticipantResponse>
-    // convertToParticipantResponseList(String input) {
-    // if (input == null || input.trim().isEmpty())
-    // return null;
-    // return Arrays.stream(input.replaceAll("[\\[\\]]", "").split(","))
-    // .map(String::trim)
-    // .filter(s -> !s.isEmpty())
-    // .map(s -> {
-    // String[] parts = s.split(":");
-    // return new ParticipantResponse(Long.valueOf(parts[0]), null, parts[1]);
-    // })
-    // .collect(Collectors.toList());
-    // }
-
     public static String convertParticipantsToString(List<ParticipantDTO> participants) {
         if (participants == null || participants.isEmpty())
             return "";

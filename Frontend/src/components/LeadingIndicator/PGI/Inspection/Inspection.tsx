@@ -69,7 +69,7 @@ const Inspection = () => {
     }, [])
 
     useEffect(() => {
-        getDraftInspectionProcess(id).then((res) => {
+        getDraftInspectionProcess(Number(id)).then((res) => {
             form.setValues({
                 checklists: res.checklists.map((item: any) => ({
                     ...item,

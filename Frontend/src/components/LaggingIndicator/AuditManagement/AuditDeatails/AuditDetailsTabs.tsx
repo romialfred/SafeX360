@@ -75,7 +75,7 @@ const AuditDetailsTabs = () => {
                 setEmpMap(mapIdToName(res));
             })
             .catch((_err) => console.error(_err));
-        getAuditDetails(id)
+        getAuditDetails(Number(id))
             .then((res) => {
                 setAudit(res);
             })
@@ -83,7 +83,7 @@ const AuditDetailsTabs = () => {
             .finally(() => {
                 dispatch(hideOverlay());
             });
-        getAuditorsByAuditId(id).then((res) => {
+        getAuditorsByAuditId(Number(id)).then((res) => {
             setAuditors(res);
         }).catch((_err) => console.error(_err));
         fetchHistory();

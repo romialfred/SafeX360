@@ -14,6 +14,7 @@ import { errorNotification, successNotification } from "../../../../utility/Noti
 import TextEditor from "../../../UtilityComp/TextEditor";
 import { createCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { ACTION_STATUS_OPTIONS } from "../pgiLabels";
+import { Z } from '../../../../constants/zIndex';
 import { useSelector } from "react-redux";
 import { toLocalDate } from "../../../../utility/dateConversion";
 
@@ -246,7 +247,7 @@ const Measurement = ({ form, employee }: any) => {
             >
                 <LoadingOverlay
                     visible={loading}
-                    zIndex={1000}
+                    zIndex={Z.overlay}
                     overlayProps={{ radius: "sm", blur: 2 }}
                 />
                 <form className="grid grid-cols-2 gap-4" onSubmit={actionForm.onSubmit(handleSubmit)}>

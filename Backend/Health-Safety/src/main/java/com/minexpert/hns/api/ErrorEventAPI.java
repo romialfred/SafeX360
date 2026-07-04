@@ -30,6 +30,7 @@ import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.error.ErrorEventService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -54,7 +55,7 @@ public class ErrorEventAPI {
 
     @PostMapping("/events")
     public ResponseEntity<ErrorEventDTO> create(@RequestParam("companyId") Long companyId,
-            @RequestBody ErrorEventDTO dto,
+            @Valid @RequestBody ErrorEventDTO dto,
             HttpServletRequest request) throws HSException {
         // §6 — Declarant = tout collaborateur : la declaration est ouverte a tout
         // utilisateur authentifie (la qualification/analyse/cloture restent admin).

@@ -142,7 +142,7 @@ const EditNewAuditPlans: React.FC = () => {
         }).catch(() => { errorNotification("Impossible de charger les auditeurs"); });
 
         dispatch(showOverlay());
-        getAuditDetails(id).then((res) => {
+        getAuditDetails(Number(id)).then((res) => {
             setPlanStatus(String(res.planningStatus || ''));
             form.setFieldValue('audit', {
                 ...res,
@@ -162,7 +162,7 @@ const EditNewAuditPlans: React.FC = () => {
 
     useEffect(() => {
         if (auditorsNameMap && Object.keys(auditorsNameMap).length > 0) {
-            getAuditorsByAuditId(id).then((res) => {
+            getAuditorsByAuditId(Number(id)).then((res) => {
                 form.setFieldValue("auditors", res.map((item: any) => ({
                     ...item,
                     name: "" + auditorsNameMap[item.email]?.id,

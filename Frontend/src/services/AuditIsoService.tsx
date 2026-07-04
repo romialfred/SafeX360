@@ -158,27 +158,23 @@ export interface EffectivenessCheckDTO {
 /** Liste des programmes — companyId injecté par l'interceptor. */
 const getAllAuditPrograms = async (): Promise<AuditProgramDTO[]> => {
     return axiosInstance.get(`${programUrl}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getAuditProgram = async (id: number): Promise<AuditProgramDTO> => {
     return axiosInstance.get(`${programUrl}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Crée un programme (statut forcé PROPOSED côté backend). Retourne l'id. */
 const createAuditProgram = async (program: AuditProgramDTO): Promise<number> => {
     return axiosInstance.post(`${programUrl}/create`, program)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateAuditProgram = async (program: AuditProgramDTO) => {
     return axiosInstance.put(`${programUrl}/update`, program)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Approbation par la direction (PROPOSED → APPROVED). */
@@ -186,28 +182,24 @@ const approveAuditProgram = async (id: number, approvedBy?: number | null) => {
     return axiosInstance.put(`${programUrl}/approve/${id}`, null, {
         params: approvedBy != null ? { approvedBy } : {},
     })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const deleteAuditProgram = async (id: number) => {
     return axiosInstance.delete(`${programUrl}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Priorisation des domaines d'audit fondée sur les risques (§5.4.2). */
 const getProgramRiskSuggestions = async (programId: number): Promise<RiskSuggestionDTO[]> => {
     return axiosInstance.get(`${programUrl}/${programId}/risk-suggestions`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Indicateurs de surveillance du programme (§5.6). */
 const getProgramKpis = async (programId: number): Promise<AuditProgramKpisDTO> => {
     return axiosInstance.get(`${programUrl}/${programId}/kpis`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─── Checklists par référentiel ISO ─────────────────────────────────────────
@@ -217,8 +209,7 @@ const getChecklistTemplates = async (referential?: string): Promise<AuditCheckli
     return axiosInstance.get(`${checklistUrl}/templates`, {
         params: referential ? { referential } : {},
     })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -229,14 +220,12 @@ const initAuditChecklist = async (auditId: number | string, referentials: string
     return axiosInstance.post(`${checklistUrl}/${auditId}/init`, null, {
         params: { referentials: referentials.join(',') },
     })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getAuditChecklist = async (auditId: number | string): Promise<AuditChecklistItemDTO[]> => {
     return axiosInstance.get(`${checklistUrl}/${auditId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -245,8 +234,7 @@ const getAuditChecklist = async (auditId: number | string): Promise<AuditCheckli
  */
 const updateChecklistItem = async (itemId: number, item: Partial<AuditChecklistItemDTO>) => {
     return axiosInstance.put(`${checklistUrl}/item/${itemId}`, item)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─── Équipe, réunions, escalade, efficacité (ISO 19011 transverse) ──────────
@@ -254,21 +242,18 @@ const updateChecklistItem = async (itemId: number, item: Partial<AuditChecklistI
 /** Validation d'équipe d'audit : lead qualifié + indépendance + certifications. */
 const validateAuditTeam = async (request: ValidateTeamRequest): Promise<ValidateTeamResponse> => {
     return axiosInstance.post(`${isoUrl}/validate-team`, request)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Crée une réunion d'ouverture / clôture / autre. Retourne l'id. */
 const createAuditMeeting = async (auditId: number | string, meeting: MeetingDTO): Promise<number> => {
     return axiosInstance.post(`${isoUrl}/${auditId}/meetings`, meeting)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getAuditMeetings = async (auditId: number | string): Promise<MeetingDTO[]> => {
     return axiosInstance.get(`${isoUrl}/${auditId}/meetings`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -277,8 +262,7 @@ const getAuditMeetings = async (auditId: number | string): Promise<MeetingDTO[]>
  */
 const escalateObservation = async (observationId: number): Promise<EscalationResult> => {
     return axiosInstance.post(`${isoUrl}/observations/${observationId}/escalate`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Planifie une vérification d'efficacité sur une recommandation COMPLETED. */
@@ -287,8 +271,7 @@ const planEffectivenessCheck = async (
     payload: { dueDate: string; evaluatorEmployeeId: number | null },
 ): Promise<number> => {
     return axiosInstance.post(`${isoUrl}/recommendations/${recommendationId}/effectiveness`, payload)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Enregistre le verdict d'une vérification d'efficacité. */
@@ -297,15 +280,13 @@ const concludeEffectivenessCheck = async (
     payload: { verdict: string; comment?: string | null },
 ) => {
     return axiosInstance.put(`${isoUrl}/effectiveness/${checkId}`, payload)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Vérifications d'efficacité encore sans verdict (toutes recommandations). */
 const getPendingEffectivenessChecks = async (): Promise<EffectivenessCheckDTO[]> => {
     return axiosInstance.get(`${isoUrl}/effectiveness/pending`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /** Vérifications d'efficacité d'une recommandation donnée. */
@@ -313,8 +294,7 @@ const getEffectivenessChecksByRecommendation = async (
     recommendationId: number,
 ): Promise<EffectivenessCheckDTO[]> => {
     return axiosInstance.get(`${isoUrl}/recommendations/${recommendationId}/effectiveness`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // ─── Rapport d'audit PDF (ISO 19011 §6.5) ───────────────────────────────────

@@ -2,7 +2,6 @@ package com.minexpert.hns.api.emergency.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +23,7 @@ import com.minexpert.hns.api.emergency.repository.SosAlertRepository;
 import com.minexpert.hns.api.emergency.repository.SosLifecycleEventRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service principal du cycle de vie d'un SOS (LOT 48 Phase 3.a).
@@ -41,6 +41,7 @@ import lombok.RequiredArgsConstructor;
  * <p>La machine à état rejette toute transition non autorisée avec
  * {@link IllegalStateException}, prévenant les races et corruptions.</p>
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SosAlertService {
@@ -50,6 +51,7 @@ public class SosAlertService {
     private final RescueTeamRepository teamRepo;
     private final EmergencyAuditService auditService;
     private final SimpMessagingTemplate messaging;
+    private final EmergencyEmailService emergencyEmailService;
 
     // ─── Transitions autorisées ──────────────────────────────────────────────
 
@@ -84,12 +86,21 @@ public class SosAlertService {
             EmergencyAuditEventType.SOS_RECEIVED,
             actorId, saved.getCompanyId(),
             "SosAlert", saved.getId(),
-            "{\"reason\":\"" + safeStr(dto.getReasonCode()) + "\",\"drill\":" + saved.getDrillMode() + "}",
+            "{\"reason\":\"" + jsonEscape(dto.getReasonCode()) + "\",\"drill\":" + saved.getDrillMode() + "}",
             null, null
         );
 
         SosAlertDTO out = toDto(saved);
         broadcast(saved.getCompanyId(), saved.getId(), out);
+
+        try {
+            emergencyEmailService.notifySosCreated(
+                    saved.getId(), null, dto.getReasonCode(),
+                    dto.getDescription(), saved.getCompanyId());
+        } catch (Exception e) {
+            log.warn("Email notification failed for SOS#{}: {}", saved.getId(), e.getMessage());
+        }
+
         return out;
     }
 
@@ -170,7 +181,7 @@ public class SosAlertService {
             auditEvent,
             actorId, saved.getCompanyId(),
             "SosAlert", saved.getId(),
-            "{\"from\":\"" + current + "\",\"to\":\"" + target + "\",\"note\":" + jsonStr(note) + "}",
+            "{\"from\":\"" + current + "\",\"to\":\"" + target + "\",\"note\":" + (note == null ? "null" : "\"" + jsonEscape(note) + "\"") + "}",
             null, null
         );
 
@@ -280,13 +291,8 @@ public class SosAlertService {
             .build();
     }
 
-    private String safeStr(String s) { return s == null ? "" : s; }
-
-    private String jsonStr(String s) {
-        if (s == null) return "null";
-        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    private String jsonEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
-
-    @SuppressWarnings("unused")
-    private Map<String, Object> emptyMap() { return new HashMap<>(); }
 }

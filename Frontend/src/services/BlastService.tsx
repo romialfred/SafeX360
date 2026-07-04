@@ -333,8 +333,7 @@ const baseUrl = '/hns/blast';
 const createBlast = async (data: BlastCreateDTO): Promise<number> => {
     return axiosInstance
         .post(`${baseUrl}/create`, data, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -350,8 +349,7 @@ const updateBlast = async (
     const qs = adminOverride ? '?adminOverride=true' : '';
     return axiosInstance
         .put(`${baseUrl}/update/${id}${qs}`, data, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -361,8 +359,7 @@ const updateBlast = async (
 const confirmBlast = async (id: number | string) => {
     return axiosInstance
         .post(`${baseUrl}/confirm/${id}`, null, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -374,8 +371,7 @@ const confirmBlast = async (id: number | string) => {
 const cancelBlast = async (id: number | string, reason: string) => {
     return axiosInstance
         .post(`${baseUrl}/cancel/${id}`, { reason }, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -394,8 +390,7 @@ const rescheduleBlast = async (
             { newScheduledAt, reason },
             writeHeaders(),
         )
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -405,8 +400,7 @@ const rescheduleBlast = async (
 const declareFired = async (id: number | string) => {
     return axiosInstance
         .post(`${baseUrl}/declare-fired/${id}`, null, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -422,8 +416,7 @@ const declareMisfire = async (id: number | string, reason: string) => {
             { reason },
             writeHeaders(),
         )
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -443,8 +436,7 @@ const resolveMisfire = async (
             { resolutionNotes: resolutionNotes ?? null },
             writeHeaders(),
         )
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -454,8 +446,7 @@ const resolveMisfire = async (
 const allClear = async (id: number | string) => {
     return axiosInstance
         .post(`${baseUrl}/all-clear/${id}`, null, writeHeaders())
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -466,8 +457,7 @@ const allClear = async (id: number | string) => {
 const searchBlasts = async (filters: BlastSearchFilters): Promise<BlastListItemDTO[]> => {
     return axiosInstance
         .post(`${baseUrl}/search`, filters)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -477,8 +467,7 @@ const searchBlasts = async (filters: BlastSearchFilters): Promise<BlastListItemD
 const getBlastDetail = async (id: number | string): Promise<BlastDetailDTO> => {
     return axiosInstance
         .get(`${baseUrl}/detail/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**
@@ -488,8 +477,7 @@ const getBlastDetail = async (id: number | string): Promise<BlastDetailDTO> => {
 const getBlastDashboardSummary = async (mineId: number): Promise<BlastDashboardDTO> => {
     return axiosInstance
         .get(`${baseUrl}/dashboard/summary`, { params: { mineId } })
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 /**

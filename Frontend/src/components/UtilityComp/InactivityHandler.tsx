@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Group, Modal, Progress, Stack, Text, Title } from '@mantine/core';
 import { useAppSelector } from '../../slices/hooks';
 import useLogout from '../../hooks/useLogout';
+import { Z } from '../../constants/zIndex';
 
 const ACTIVITY_EVENTS: Array<keyof DocumentEventMap> = [
     'mousemove',
@@ -147,7 +148,7 @@ const InactivityHandler = ({ inactivityMinutes = DEFAULT_INACTIVITY_MINUTES }: {
             centered
             overlayProps={{ blur: 6, backgroundOpacity: 0.65 }}
             radius="lg"
-            zIndex={4000}
+            zIndex={Z.critical}
         >
             <Stack gap="md" align="center">
                 <Title order={3}>Still there?</Title>

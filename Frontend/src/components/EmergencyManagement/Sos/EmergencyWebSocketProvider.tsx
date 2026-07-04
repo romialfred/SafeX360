@@ -24,6 +24,8 @@ import type { GeneralAlertDTO } from '../../../services/GeneralAlertService';
 type AlertListener = (alert: SosAlertDTO) => void;
 type GeneralAlertListener = (alert: GeneralAlertDTO) => void;
 type BlastPopupListener = (popup: BlastPopupPayload) => void;
+type EscalationListener = (event: EscalationEvent) => void;
+type MisfireListener = (event: BlastMisfirePayload) => void;
 
 /**
  * Payload d'une popup de tir diffusee par {@code BlastPopupBroadcaster}
@@ -48,6 +50,40 @@ export interface BlastPopupPayload {
     jobId?: number | null;
 }
 
+/**
+ * Payload d'un evenement d'escalade diffuse par {@code SosEscalationScheduler}.
+ * Tous les champs sont optionnels cote frontend pour rester defensif.
+ */
+export interface EscalationEvent {
+    type?: string;
+    sosAlertId?: number;
+    employeeName?: string;
+    reasonCode?: string;
+    stepOrder?: number;
+    targetPermission?: string;
+    companyId?: number;
+    message?: string;
+}
+
+/**
+ * Payload d'un misfire de tir diffuse par {@code BlastMisfireBroadcaster}.
+ * Aligne sur la spec backend ; tous les champs sont nullables cote frontend.
+ */
+export interface BlastMisfirePayload {
+    type?: 'BLAST_MISFIRE';
+    blastId?: number | null;
+    reference?: string | null;
+    zone?: string | null;
+    scheduledAt?: string | null;
+    mineId?: number | null;
+    pit?: string | null;
+    bench?: string | null;
+    exclusionRadiusM?: number | null;
+    reason?: string | null;
+    declaredAt?: string | null;
+    language?: 'FR' | 'EN' | 'BILINGUAL' | null;
+}
+
 interface EmergencyWebSocketContextValue {
     connected: boolean;
     subscribe: (listener: AlertListener) => () => void;
@@ -61,6 +97,10 @@ interface EmergencyWebSocketContextValue {
      * tous les utilisateurs connectes »).
      */
     subscribeBlastPopup: (listener: BlastPopupListener) => () => void;
+    /** Abonne un listener aux evenements d'escalade SOS. */
+    subscribeEscalation: (listener: EscalationListener) => () => void;
+    /** Abonne un listener aux misfires de tir. */
+    subscribeMisfire: (listener: MisfireListener) => () => void;
 }
 
 const EmergencyWebSocketContext = createContext<EmergencyWebSocketContextValue>({
@@ -68,6 +108,8 @@ const EmergencyWebSocketContext = createContext<EmergencyWebSocketContextValue>(
     subscribe: () => () => {},
     subscribeGeneralAlert: () => () => {},
     subscribeBlastPopup: () => () => {},
+    subscribeEscalation: () => () => {},
+    subscribeMisfire: () => () => {},
 });
 
 export const useEmergencyWebSocket = () => useContext(EmergencyWebSocketContext);
@@ -102,6 +144,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     const listenersRef = useRef<Set<AlertListener>>(new Set());
     const generalListenersRef = useRef<Set<GeneralAlertListener>>(new Set());
     const blastListenersRef = useRef<Set<BlastPopupListener>>(new Set());
+    const escalationListenersRef = useRef<Set<EscalationListener>>(new Set());
+    const misfireListenersRef = useRef<Set<MisfireListener>>(new Set());
 
     // Fonction subscribe stable (n'oblige pas les enfants à re-render)
     const subscribe = useCallback((listener: AlertListener) => {
@@ -122,6 +166,20 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
         blastListenersRef.current.add(listener);
         return () => {
             blastListenersRef.current.delete(listener);
+        };
+    }, []);
+
+    const subscribeEscalation = useCallback((listener: EscalationListener) => {
+        escalationListenersRef.current.add(listener);
+        return () => {
+            escalationListenersRef.current.delete(listener);
+        };
+    }, []);
+
+    const subscribeMisfire = useCallback((listener: MisfireListener) => {
+        misfireListenersRef.current.add(listener);
+        return () => {
+            misfireListenersRef.current.delete(listener);
         };
     }, []);
 
@@ -192,6 +250,42 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                         } catch { /* non-JSON */ }
                     }
                 );
+                // R3 — Escalade SOS (SosEscalationScheduler) : canal per-company.
+                client.subscribe(
+                    `/topic/emergency/escalation/company/${effectiveCompanyId}`,
+                    (msg: IMessage) => {
+                        try {
+                            const payload: EscalationEvent = JSON.parse(msg.body);
+                            escalationListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
+                    }
+                );
+                // R7 — Misfires de tir (BlastMisfireBroadcaster) : broadcast global
+                // + canal per-mine — meme pattern que les popups de tir.
+                client.subscribe(
+                    '/topic/blast-misfire',
+                    (msg: IMessage) => {
+                        try {
+                            const payload: BlastMisfirePayload = JSON.parse(msg.body);
+                            misfireListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
+                    }
+                );
+                client.subscribe(
+                    `/topic/blast-misfire/mine/${effectiveCompanyId}`,
+                    (msg: IMessage) => {
+                        try {
+                            const payload: BlastMisfirePayload = JSON.parse(msg.body);
+                            misfireListenersRef.current.forEach((l) => {
+                                try { l(payload); } catch { /* swallow */ }
+                            });
+                        } catch { /* non-JSON */ }
+                    }
+                );
             },
             onDisconnect: () => setConnected(false),
             onStompError: () => setConnected(false),
@@ -209,8 +303,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     }, [effectiveCompanyId]);
 
     const value = useMemo(
-        () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup }),
-        [connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup]
+        () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup, subscribeEscalation, subscribeMisfire }),
+        [connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup, subscribeEscalation, subscribeMisfire]
     );
 
     return (

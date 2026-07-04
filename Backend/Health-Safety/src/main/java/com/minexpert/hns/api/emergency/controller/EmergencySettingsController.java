@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.minexpert.hns.api.emergency.dto.EmergencySettingsDTO;
 import com.minexpert.hns.api.emergency.service.EmergencySettingsService;
 
@@ -37,7 +39,7 @@ public class EmergencySettingsController {
 
     /** PUT /hns/emergency/settings — met à jour les settings. */
     @PutMapping
-    public ResponseEntity<EmergencySettingsDTO> update(@RequestBody EmergencySettingsDTO dto,
+    public ResponseEntity<EmergencySettingsDTO> update(@Valid @RequestBody EmergencySettingsDTO dto,
                                                        @RequestParam(required = false) Long actorId) {
         return ResponseEntity.ok(service.update(dto, actorId));
     }

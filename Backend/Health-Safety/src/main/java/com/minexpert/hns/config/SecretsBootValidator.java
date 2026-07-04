@@ -22,15 +22,19 @@ public class SecretsBootValidator {
 
     @PostConstruct
     public void validate() {
-        boolean healthy = true;
-        healthy &= validateJwtSecret();
-        healthy &= validateGatewaySecret();
-        if (healthy) {
+        boolean fatal = false;
+        fatal |= !validateJwtSecret();
+        fatal |= !validateGatewaySecret();
+        if (!fatal) {
             LOG.info("[SecretsBootValidator] All secrets validated — boot authorized.");
         } else {
             LOG.error("╔══════════════════════════════════════════════════════════════╗");
-            LOG.error("║  SECURITY WARNING — secrets need rotation (see logs above)  ║");
+            LOG.error("║  FATAL — required secrets missing or compromised.           ║");
+            LOG.error("║  The application CANNOT start safely. Fix env vars above.   ║");
             LOG.error("╚══════════════════════════════════════════════════════════════╝");
+            throw new IllegalStateException(
+                    "SecretsBootValidator: required secrets are missing or compromised — refusing to start. "
+                    + "Set JWT_SECRET and INTERNAL_GATEWAY_SECRET as environment variables.");
         }
     }
 

@@ -53,7 +53,7 @@ const Investigation = () => {
 
     useEffect(() => {
         dispatch(showOverlay());
-        getIncidentDetails(id).then((res: any) => {
+        getIncidentDetails(Number(id)).then((res: any) => {
             setIncident(res);
             const statusUpper = String(res?.status || '').toUpperCase();
             if (['CLOSED', 'REJECTED'].includes(statusUpper)) {
@@ -73,7 +73,7 @@ const Investigation = () => {
         }).finally(() => {
             dispatch(hideOverlay());
         });
-        getCorrectiveActionByIncidentId(id).then((res: any) => {
+        getCorrectiveActionByIncidentId(Number(id)).then((res: any) => {
             setActions(res);
         }).catch((_err: any) => {
         });

@@ -16,6 +16,7 @@ import {
 } from "../../../services/IncidentCategory";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { modals } from '@mantine/modals';
+import { Z } from '../../../constants/zIndex';
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 
@@ -251,7 +252,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
           {edit ? "Update" : "Create"} Incident Category
         </h1>
       }>
-        <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+        <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
         <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
           <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"} </Button>

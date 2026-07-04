@@ -30,10 +30,15 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
+            // SEC 1.1 — Strip any externally-supplied X-Secret-Key to prevent spoofing.
+            // The gateway is the sole legitimate source of this header.
+            exchange = exchange.mutate()
+                    .request(r -> r.headers(h -> h.remove("X-Secret-Key")))
+                    .build();
+
             String method = exchange.getRequest().getMethod().name();
             String path = exchange.getRequest().getPath().toString();
 
-            // 🛑 Skip JWT check for preflight (CORS) requests
             if (method.equalsIgnoreCase("OPTIONS")) {
                 return chain.filter(exchange);
             }
@@ -42,7 +47,6 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             }
 
             if (path.equals("/hrms/auth/login") || path.equals("/hrms/account/reset-password")) {
-                // LOT 41 P0 SECURITY: injecte la valeur secrète externalisée plutôt que le littéral "SECRET"
                 return chain.filter(exchange.mutate()
                         .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
                         .build());
@@ -54,7 +58,6 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             }
 
             if (token == null || token.isEmpty()) {
-                // Cookie JWT manquant : 401 réactif (pas de 500).
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
@@ -65,13 +68,11 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         .parseClaimsJws(token)
                         .getBody();
 
-                // LOT 41 P0 SECURITY: injecte la valeur secrète externalisée plutôt que le littéral "SECRET"
                 exchange = exchange.mutate()
                         .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
                         .build();
 
             } catch (Exception e) {
-                // Token invalide/expiré : 401 réactif (pas de 500).
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }

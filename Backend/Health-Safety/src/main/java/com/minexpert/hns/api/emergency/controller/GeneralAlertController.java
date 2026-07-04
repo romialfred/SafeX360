@@ -2,6 +2,8 @@ package com.minexpert.hns.api.emergency.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,7 +59,7 @@ public class GeneralAlertController {
 
     @PostMapping("/trigger")
     public ResponseEntity<GeneralAlertDTO> trigger(
-        @RequestBody GeneralAlertRequest req,
+        @Valid @RequestBody GeneralAlertRequest req,
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.trigger(req, actorId));

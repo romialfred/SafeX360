@@ -66,6 +66,9 @@ export const listSosAlerts = (
         .get('/hns/emergency/sos', { params: { companyId, includeClosed } })
         .then((r) => r.data);
 
+export const getActiveSosAlerts = (companyId: number): Promise<SosAlertDTO[]> =>
+    listSosAlerts(companyId, false);
+
 export const getSosAlert = (id: number): Promise<SosAlertDTO> =>
     axiosInstance.get(`/hns/emergency/sos/${id}`).then((r) => r.data);
 

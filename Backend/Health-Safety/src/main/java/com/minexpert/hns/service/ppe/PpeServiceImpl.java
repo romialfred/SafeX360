@@ -126,10 +126,15 @@ public class PpeServiceImpl implements PpeService {
         if (quantity <= 0) {
             throw new HSException("INVALID_STOCK_QUANTITY");
         }
-        if (operation == "ADD") {
+        if ("ADD".equals(operation)) {
             ppe.setStock(ppe.getStock() + quantity);
-        } else {
+        } else if ("SUBTRACT".equals(operation)) {
+            if (ppe.getStock() < quantity) {
+                throw new HSException("INSUFFICIENT_STOCK");
+            }
             ppe.setStock(ppe.getStock() - quantity);
+        } else {
+            throw new HSException("INVALID_OPERATION");
         }
         ppe.setUpdatedAt(LocalDateTime.now());
         Ppe updated = ppeRepository.save(ppe);

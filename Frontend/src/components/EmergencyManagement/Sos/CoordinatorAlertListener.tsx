@@ -13,7 +13,7 @@ import {
     IconUrgent,
 } from '@tabler/icons-react';
 import { useEmergencyWebSocket } from './EmergencyWebSocketProvider';
-import { acknowledgeSosAlert, type SosAlertDTO } from '../../../services/SosService';
+import { acknowledgeSosAlert, getActiveSosAlerts, type SosAlertDTO } from '../../../services/SosService';
 import { useAppSelector } from '../../../slices/hooks';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 
@@ -51,6 +51,7 @@ class AmbulanceSiren {
     private gain: GainNode | null = null;
     private filter: BiquadFilterNode | null = null;
     private rafId: number | null = null;
+    private keepaliveId: number | null = null;
     private playing = false;
     private startedAt = 0;
     private currentVolume = 0.32; // Volume max plafonné pour priorité à la voix TTS
@@ -93,6 +94,7 @@ class AmbulanceSiren {
             this.startedAt = now;
             this.playing = true;
             this.scheduleSweep();
+            this.startKeepalive();
         } catch (err) {
             console.error('[AmbulanceSiren] Failed to start audio:', err);
         }
@@ -134,6 +136,29 @@ class AmbulanceSiren {
         tick();
     }
 
+    private startKeepalive() {
+        if (this.keepaliveId !== null) return;
+        this.keepaliveId = window.setInterval(() => {
+            const c = this.ctx;
+            if (!c) return;
+            if (c.state === 'suspended' || (c.state as string) === 'interrupted') {
+                c.resume().catch(() => undefined);
+            }
+            if (!this.osc && this.ctx && this.gain) {
+                try {
+                    const newOsc = this.ctx.createOscillator();
+                    newOsc.type = 'sawtooth';
+                    newOsc.frequency.value = 1000;
+                    newOsc.connect(this.gain);
+                    newOsc.start();
+                    this.osc = newOsc;
+                    this.startedAt = this.ctx.currentTime;
+                    this.scheduleSweep();
+                } catch { /* ignore */ }
+            }
+        }, 2000);
+    }
+
     /** Baisse le volume sirène à 0.06 pendant que la voix TTS parle. */
     duck() {
         if (!this.ctx || !this.gain || this.ducked) return;
@@ -160,6 +185,10 @@ class AmbulanceSiren {
 
     stop() {
         try {
+            if (this.keepaliveId !== null) {
+                clearInterval(this.keepaliveId);
+                this.keepaliveId = null;
+            }
             if (this.rafId !== null) {
                 window.cancelAnimationFrame(this.rafId);
                 this.rafId = null;
@@ -193,6 +222,8 @@ const CoordinatorAlertListener = () => {
     const { t, i18n } = useTranslation('emergency');
     const { subscribe } = useEmergencyWebSocket();
     const currentUser = useAppSelector((state: any) => state.user);
+    const selectedCompanyId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId);
+    const effectiveCompanyId = Number(selectedCompanyId ?? currentUser?.mineId ?? currentUser?.companyId ?? 0);
 
     const [activeAlert, setActiveAlert] = useState<SosAlertDTO | null>(null);
     const [soundEnabled, setSoundEnabled] = useState(true);
@@ -200,6 +231,33 @@ const CoordinatorAlertListener = () => {
 
     const sirenRef = useRef<AmbulanceSiren | null>(null);
     if (sirenRef.current === null) sirenRef.current = new AmbulanceSiren();
+
+    // ── Polling fallback (R4) — filet de sécurité si le WebSocket rate un message ──
+    const POLL_INTERVAL_MS = 12_000;
+
+    useEffect(() => {
+        if (!effectiveCompanyId) return;
+        getActiveSosAlerts(effectiveCompanyId)
+            .then((alerts) => {
+                const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode);
+                if (received) setActiveAlert(received);
+            })
+            .catch(() => {});
+    }, [effectiveCompanyId]);
+
+    useEffect(() => {
+        if (!effectiveCompanyId) return;
+        const id = window.setInterval(() => {
+            if (activeAlert) return;
+            getActiveSosAlerts(effectiveCompanyId)
+                .then((alerts) => {
+                    const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode);
+                    if (received) setActiveAlert(received);
+                })
+                .catch(() => {});
+        }, POLL_INTERVAL_MS);
+        return () => clearInterval(id);
+    }, [effectiveCompanyId, activeAlert]);
 
     // ── Abonnement ──
     useEffect(() => {

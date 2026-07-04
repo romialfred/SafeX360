@@ -27,6 +27,11 @@ spring:
     url: ${DB_URL}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL:8}
+      minimum-idle: ${HIKARI_MIN_IDLE:3}
+      idle-timeout: 300000
+      max-lifetime: 600000
 
   jpa:
     hibernate:
@@ -212,6 +217,14 @@ app:
 # empty or points to example.com, BlastEmailService logs a WARN and treats
 # jobs as SENT without actually opening a connection — keeps CI / dev local
 # green without requiring a real mail relay.
+
+# ─── Emergency email notifications (SOS + General Alert) ────────────────
+# Comma-separated list of HSE coordinator emails.
+# Leave empty to disable email notifications (graceful degradation).
+emergency:
+  email:
+    recipients: ${EMERGENCY_EMAIL_RECIPIENTS:}
+
 blast:
   email:
     from: ${BLAST_EMAIL_FROM:hse-noreply@safex360.com}

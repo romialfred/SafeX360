@@ -4,6 +4,7 @@ import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.risks.OpportunityDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.risks.OpportunityService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class OpportunityController {
     private final OpportunityService opportunityService;
 
     @PostMapping("/create")
-    public ResponseEntity<OpportunityDTO> create(@RequestBody OpportunityDTO dto) throws HSException {
+    public ResponseEntity<OpportunityDTO> create(@Valid @RequestBody OpportunityDTO dto) throws HSException {
         return ResponseEntity.ok(opportunityService.create(dto));
     }
 
@@ -33,7 +34,7 @@ public class OpportunityController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<OpportunityDTO> update(@RequestBody OpportunityDTO dto) throws HSException {
+    public ResponseEntity<OpportunityDTO> update(@Valid @RequestBody OpportunityDTO dto) throws HSException {
         return ResponseEntity.ok(opportunityService.update(dto));
     }
 

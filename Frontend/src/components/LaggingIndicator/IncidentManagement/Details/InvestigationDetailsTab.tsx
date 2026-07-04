@@ -147,7 +147,7 @@ const InvestigationDetailsTab = ({ investigation, processes }: any) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 border border-gray-300 rounded-xl p-6 bg-gray-50">
                     {[...(investigation.evidence ?? [])]?.map((image: any, index: number) => (
-                        <div key={index} className="flex gap-4 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition duration-200" onClick={() => handleImageClick(index)}>
+                        <div key={index} role="button" tabIndex={0} className="flex gap-4 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition duration-200 cursor-pointer" onClick={() => handleImageClick(index)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleImageClick(index); } }}>
                             <img
                                 src={`data:image/png;base64,${image.file}`}
                                 alt={image.name}

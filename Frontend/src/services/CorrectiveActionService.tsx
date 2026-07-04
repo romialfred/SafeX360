@@ -21,115 +21,98 @@ export interface CorrectiveAction {
 }
 
 
-const createCorrectiveAction = async (incidentData: any) => {
-    return axiosInstance.post(`${url}/create`, incidentData)
+const createCorrectiveAction = async (data: Record<string, unknown>) => {
+    return axiosInstance.post(`${url}/create`, data)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const removeCorrectiveAction = async (id: string | number) => {
     return axiosInstance.delete(`${url}/delete/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 
-const getAllCorrectiveAction = async (incidentData: any) => {
-    return axiosInstance.get(`${url}/getAll`, incidentData)
+const getAllCorrectiveAction = async (params?: Record<string, unknown>) => {
+    return axiosInstance.get(`${url}/getAll`, { params })
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const getAllAdhoc = async () => {
     return axiosInstance.get(`${url}/getAllAdhoc`)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
-const updateCorrectiveAction = async (data: any) => {
+const updateCorrectiveAction = async (data: Record<string, unknown>) => {
     return axiosInstance.put(`${url}/update`, data)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
-const getCorrectiveActionByIncidentId = async (id: any) => {
+const getCorrectiveActionByIncidentId = async (id: number) => {
     return axiosInstance.get(`${url}/getByIncidentId/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
-const getCorrectiveActionByInspectionId = async (id: any) => {
+const getCorrectiveActionByInspectionId = async (id: number) => {
     return axiosInstance.get(`${url}/getByInspectionId/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
-const getCorrectiveActionByActivityId = async (id: any) => {
+const getCorrectiveActionByActivityId = async (id: number) => {
     return axiosInstance.get(`${url}/getByActivityId/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
-const getActionsByNonConformityId = async (id: any) => {
+const getActionsByNonConformityId = async (id: number) => {
     return axiosInstance.get(`${url}/getByNonConformityId/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 const getCorrectiveActionsByDepartmentId = async (departmentId: string | number) => {
     return axiosInstance.get(`${url}/getByDepartmentId/${departmentId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 // Plan de maitrise (RiskControl) : actions correctives rattachees a une mesure.
 const getCorrectiveActionsByRiskControl = async (riskControlId: string | number) => {
     return axiosInstance.get(`${url}/by-risk-control/${riskControlId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
-const getActionById = async (id: any) => {
+const getActionById = async (id: number) => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 const getPendingAdhocActions = async () => {
     return axiosInstance.get(`${url}/getAllPendingAdhoc`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 // Get all pending corrective actions
 const getAllPending = async () => {
     return axiosInstance.get(`${url}/getAllPending`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 // Get adhoc action rich-text description by ID
 const getCorrectiveActionDescription = async (id: number | string) => {
     return axiosInstance.get(`${url}/getDescription/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 // Approve a corrective action (move to IN_PROGRESS)
 const approveCorrectiveAction = async (id: number | string) => {
     return axiosInstance.put(`${url}/approve/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 
 // Cancel a corrective action (move to CANCELLED)
 const cancelCorrectiveAction = async (id: number | string) => {
     return axiosInstance.put(`${url}/cancel/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 }
 export {
     removeCorrectiveAction,

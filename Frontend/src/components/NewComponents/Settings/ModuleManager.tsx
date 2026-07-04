@@ -10,9 +10,6 @@ import {
     IconX,
     IconAlertCircle,
     IconStack3,
-    IconBuildingFactory2,
-    IconActivity,
-    IconChartBar,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { moduleConfigurations, updateModuleStatus as updateModuleStatusLocal } from '../data/ModuleConfig';
@@ -500,10 +497,10 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     }
 
     return (
-        <div className="p-6 lg:p-8 max-w-[1600px] mx-auto bg-slate-50/30 min-h-full">
+        <div className="p-4 lg:p-6 max-w-[1600px] mx-auto bg-slate-50/30 min-h-full">
 
             {/* ─── Breadcrumb premium ─── */}
-            <div className="flex items-center gap-1.5 text-[11px] mb-3">
+            <div className="flex items-center gap-1.5 text-[11px] mb-2">
                 <button
                     type="button"
                     onClick={onBackToSettings}
@@ -523,12 +520,12 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
             </div>
 
             {/* LOT 48 P6.h — Hero card premium : logo + titre + KPI tiles + action Reset */}
-            <header className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-5 flex flex-col lg:flex-row lg:items-center gap-5">
+            <header className="mb-3 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Bloc titre */}
-                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md shadow-indigo-200 flex-shrink-0">
-                            <IconStack3 size={22} stroke={1.8} className="text-white" />
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md shadow-indigo-200 flex-shrink-0">
+                            <IconStack3 size={20} stroke={1.8} className="text-white" />
                         </div>
                         <div className="min-w-0">
                             <h1
@@ -548,111 +545,42 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                         </div>
                     </div>
 
-                    {/* KPI inline */}
-                    <div className="flex items-stretch gap-2.5 flex-wrap lg:flex-nowrap">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50/60 border border-indigo-100 min-w-[88px]">
-                            <IconLayoutGrid size={15} className="text-indigo-700" />
-                            <div>
-                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.totalModules')}</p>
-                                <p className="text-[15px] font-semibold text-slate-900 mt-0.5 leading-none font-mono">{kpis.modules}</p>
-                            </div>
+                    {/* Recherche + filtre catégorie + reset */}
+                    <div className="flex items-center gap-2 flex-1 lg:flex-initial lg:max-w-[520px]">
+                        <div className="relative flex-1 min-w-[150px]">
+                            <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder={t('toolbar.searchPlaceholder')}
+                                className="w-full pl-8 pr-3 py-1.5 text-[11.5px] bg-slate-50/60 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white transition-all"
+                            />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 min-w-[88px]">
-                            <IconBuildingFactory2 size={15} className="text-slate-700" />
-                            <div>
-                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.totalMines')}</p>
-                                <p className="text-[15px] font-semibold text-slate-900 mt-0.5 leading-none font-mono">{kpis.mines}</p>
-                            </div>
+                        <div className="inline-flex items-center gap-1 bg-slate-50/60 border border-slate-200 rounded-md pl-2 pr-0.5 hover:bg-white hover:border-slate-300 transition-colors flex-shrink-0">
+                            <span className="text-[9px] uppercase tracking-[0.12em] text-slate-500 font-medium">{t('toolbar.categoryLabel')}</span>
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="bg-transparent border-0 py-1 pr-1.5 text-[11px] text-slate-800 focus:outline-none cursor-pointer max-w-[130px]"
+                            >
+                                <option value="all">{t('toolbar.allCategories')} ({categories.length})</option>
+                                {categories.map((c) => (
+                                    <option key={c} value={c}>{tcat(c)}</option>
+                                ))}
+                            </select>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50/60 border border-emerald-100 min-w-[88px]">
-                            <IconActivity size={15} className="text-emerald-700" />
-                            <div>
-                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.activations')}</p>
-                                <p className="text-[15px] font-semibold text-emerald-800 mt-0.5 leading-none font-mono">
-                                    {kpis.active}<span className="text-slate-400 text-[11px]">/{kpis.totalCells}</span>
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-teal-50/60 border border-teal-100 min-w-[100px]">
-                            <div className="relative w-8 h-8 flex-shrink-0">
-                                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                                    <circle cx="18" cy="18" r="14" fill="none" stroke="#14b8a6" strokeWidth="3"
-                                        strokeDasharray={`${(kpis.coverage / 100) * 87.96} 87.96`}
-                                        strokeLinecap="round" />
-                                </svg>
-                                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono font-bold text-teal-700">{kpis.coverage}%</span>
-                            </div>
-                            <div>
-                                <p className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 leading-none">{t('kpi.coverage')}</p>
-                                <p className="text-[10.5px] text-slate-600 mt-0.5 leading-none"><IconChartBar size={10} className="inline" /> {t('kpi.coverage')}</p>
-                            </div>
-                        </div>
-                        {/* Bouton Reset compact */}
                         <button
                             type="button"
                             onClick={handleResetMatrix}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12px] font-medium hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700 transition-all flex-shrink-0"
                             title={t('toolbar.reset')}
                         >
-                            <IconRefresh size={13} stroke={1.6} />
-                            <span className="hidden sm:inline">{t('toolbar.reset')}</span>
+                            <IconRefresh size={14} stroke={1.6} />
                         </button>
                     </div>
                 </div>
             </header>
-
-            {/* LOT 47 — Tuiles KPI retirées (redondantes avec le footer matrice + col headers) */}
-
-            {/* ─── Barre d'outils : recherche + filtres compacts raffinés ─── */}
-            <div className="bg-white border border-slate-200 rounded-xl p-2.5 mb-4 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative flex-1 min-w-[220px]">
-                        <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder={t('toolbar.searchPlaceholder')}
-                            className="w-full pl-8 pr-3 py-1.5 text-[12px] bg-slate-50/60 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white transition-all"
-                        />
-                    </div>
-
-                    {/* Filtre catégorie — compact, label inline */}
-                    <div className="inline-flex items-center gap-1.5 bg-slate-50/60 border border-slate-200 rounded-md pl-2.5 pr-1 hover:bg-white hover:border-slate-300 transition-colors">
-                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">{t('toolbar.categoryLabel')}</span>
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="bg-transparent border-0 py-1.5 pr-2 text-[12px] text-slate-800 focus:outline-none cursor-pointer max-w-[160px]"
-                        >
-                            <option value="all">{t('toolbar.allCategories')} ({categories.length})</option>
-                            {categories.map((c) => (
-                                <option key={c} value={c}>
-                                    {tcat(c)}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Filtre mine — compact, label inline */}
-                    <div className="inline-flex items-center gap-1.5 bg-slate-50/60 border border-slate-200 rounded-md pl-2.5 pr-1 hover:bg-white hover:border-slate-300 transition-colors">
-                        <span className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-medium">{t('toolbar.mineLabel')}</span>
-                        <select
-                            value={selectedMineFilter}
-                            onChange={(e) => setSelectedMineFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                            className="bg-transparent border-0 py-1.5 pr-2 text-[12px] text-slate-800 focus:outline-none cursor-pointer max-w-[160px]"
-                        >
-                            <option value="all">{t('toolbar.allMines')} ({mines.length})</option>
-                            {mines.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {resolveMineName(m)}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             {/* ─── MATRICE ─── */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -704,6 +632,9 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                     <span className="text-emerald-700 font-bold">{stats.active}</span>
                                                     <span className="text-slate-400 mx-0.5">/</span>
                                                     <span className="text-slate-600">{stats.total}</span>
+                                                </span>
+                                                <span className="text-[9.5px] font-semibold text-teal-700 bg-teal-50/80 px-1.5 py-0.5 rounded border border-teal-200/60 flex-shrink-0">
+                                                    {stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% Couvert.
                                                 </span>
                                                 {/* Mini-actions inline */}
                                                 <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -885,7 +816,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
             </div>
 
             {/* ─── Note explicative ─── */}
-            <div className="mt-5 bg-sky-50/60 border border-sky-100 rounded-xl p-4 flex items-start gap-3">
+            <div className="mt-3 bg-sky-50/60 border border-sky-100 rounded-lg p-3 flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-sky-100 text-sky-600 flex-shrink-0">
                     <IconAlertCircle size={14} stroke={1.6} />
                 </span>

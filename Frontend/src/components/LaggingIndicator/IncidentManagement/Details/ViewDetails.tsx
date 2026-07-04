@@ -66,7 +66,7 @@ const ViewDetails = () => {
 
     useEffect(() => {
         dispatch(showOverlay());
-        getIncidentById(id).then((res) => {
+        getIncidentById(Number(id)).then((res) => {
             setIncident(res);
             console.log(res);
             const statusUpper = String(res?.status || '').toUpperCase();
@@ -101,7 +101,7 @@ const ViewDetails = () => {
             })
             .catch((_err) => console.error(_err));
 
-        getInvestigationByIncidentId(id).then((res) => {
+        getInvestigationByIncidentId(Number(id)).then((res) => {
             setInvestigation(res);
             getAllInvestigationProcessByInvestigationId(res.id).then((processes) => {
                 setInvestigationProcesses(processes);
@@ -111,7 +111,7 @@ const ViewDetails = () => {
             console.log(err);
         })
 
-        getCorrectiveActionByIncidentId(id).then((res) => {
+        getCorrectiveActionByIncidentId(Number(id)).then((res) => {
             setActions(res);
         }).catch((err) => {
             console.log(err);

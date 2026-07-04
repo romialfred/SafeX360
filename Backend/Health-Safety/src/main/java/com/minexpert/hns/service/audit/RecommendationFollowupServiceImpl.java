@@ -12,6 +12,7 @@ import com.minexpert.hns.config.AuditCacheNames;
 import com.minexpert.hns.dto.audit.FollowupDTO;
 import com.minexpert.hns.entity.audit.FollowupResponse;
 import com.minexpert.hns.entity.audit.Recommendation;
+import com.minexpert.hns.entity.audit.RecommendationFollowup;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.audit.RecommendationFollowupRepository;
 import com.minexpert.hns.repository.audit.RecommendationRepository;
@@ -47,9 +48,16 @@ public class RecommendationFollowupServiceImpl implements RecommendationFollowup
 
     @Override
     public FollowupDTO getRecommendationFollowupById(Long id) throws HSException {
-        // return recommendationFollowupRepository.findById(id)
-        // .orElseThrow(() -> new HSException("FOLLOWUP_NOT_FOUND"));
-        return null;
+        RecommendationFollowup entity = recommendationFollowupRepository.findById(id)
+                .orElseThrow(() -> new HSException("FOLLOWUP_NOT_FOUND"));
+        FollowupDTO dto = new FollowupDTO();
+        dto.setId(entity.getId());
+        dto.setStatus(entity.getStatus());
+        dto.setComment(entity.getComment());
+        dto.setProgress(entity.getProgress());
+        dto.setRecommendationId(entity.getRecommendation().getId());
+        dto.setCreatedAt(entity.getCreatedAt());
+        return dto;
     }
 
     @Override

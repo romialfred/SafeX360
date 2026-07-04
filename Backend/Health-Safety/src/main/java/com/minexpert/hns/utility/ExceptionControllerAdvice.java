@@ -52,6 +52,20 @@ public class ExceptionControllerAdvice {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExceptionControllerAdvice.class);
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorInfo> illegalArgumentHandler(IllegalArgumentException exception) {
+        ErrorInfo error = new ErrorInfo(exception.getMessage(),
+                HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorInfo> illegalStateHandler(IllegalStateException exception) {
+        ErrorInfo error = new ErrorInfo(exception.getMessage(),
+                HttpStatus.CONFLICT.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         log.error("Unhandled exception", exception);

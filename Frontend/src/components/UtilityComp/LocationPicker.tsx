@@ -3,6 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { useState, useRef, useEffect } from 'react';
 import { IconGps } from '@tabler/icons-react';
+import { Z } from '../../constants/zIndex';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -130,7 +131,7 @@ const LocationPicker = ({ label, placeholder, form, id, required }: any) => {
                             position: 'absolute',
                             top: 10,
                             right: 10,
-                            zIndex: 1000,
+                            zIndex: Z.overlay,
                         }}
                     >
                         <IconGps size={20} />

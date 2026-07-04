@@ -67,7 +67,7 @@ const AuditDashPlanned = () => {
                     { name: 'Annulés', value: counts.CANCELLED, color: '#64748B' },
                 ]);
             })
-            .catch(() => { /* noop */ });
+            .catch((e) => console.error("Failed to load audit stats", e));
 
         getPendingRecommendations()
             .then((res) => setPendingRecs(res || []))

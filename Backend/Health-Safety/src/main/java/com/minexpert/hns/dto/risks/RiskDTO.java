@@ -2,8 +2,10 @@ package com.minexpert.hns.dto.risks;
 
 import com.minexpert.hns.entity.parameters.WorkProcess;
 import com.minexpert.hns.entity.risks.Risk;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,8 +17,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class RiskDTO {
     private Long id;
+    @NotBlank(message = "title is required")
+    @Size(max = 255, message = "title must not exceed 255 characters")
     private String title;
+    @Size(max = 4000, message = "description must not exceed 4000 characters")
     private String description;
+    @NotNull(message = "departmentId is required")
     private Long departmentId;
     private Long workProcessId;
     private String hazardSource;

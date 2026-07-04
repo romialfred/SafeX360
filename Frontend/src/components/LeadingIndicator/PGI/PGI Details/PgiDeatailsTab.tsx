@@ -73,7 +73,7 @@ const PgiDeatailsTab = () => {
                 setEmpMap(mapIdToName(res));
             })
             .catch((_err) => console.error(_err));
-        getPgiById(id)
+        getPgiById(Number(id))
             .then((res) => {
                 setInspection(res);
                 const statusUpper = String(res?.status || '').toUpperCase();

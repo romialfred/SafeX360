@@ -21,8 +21,7 @@ export interface UpcomingEventDTO {
 const getUpcomingEvents = async (): Promise<UpcomingEventDTO[]> => {
     return axiosInstance
         .get("/hns/events/upcoming")
-        .then((response) => response.data as UpcomingEventDTO[])
-        .catch((error) => { throw error; });
+        .then((response) => response.data as UpcomingEventDTO[]);
 };
 
 export { getUpcomingEvents };

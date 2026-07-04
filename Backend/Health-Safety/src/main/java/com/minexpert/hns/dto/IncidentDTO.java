@@ -11,6 +11,9 @@ import com.minexpert.hns.entity.parameters.WorkArea;
 import com.minexpert.hns.entity.parameters.WorkProcess;
 import com.minexpert.hns.enums.IncidentStatus;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,11 +24,15 @@ import lombok.NoArgsConstructor;
 public class IncidentDTO {
     private Long id;
     private String number;
+    @NotBlank(message = "title is required")
+    @Size(max = 255, message = "title must not exceed 255 characters")
     private String title;
     private List<String> ppe;
     private Long locationId;
     private List<Long> weatherConditions;
+    @NotNull(message = "departmentId is required")
     private Long departmentId;
+    @NotNull(message = "companyId is required")
     private Long companyId;
     private IncidentStatus status;
     private LocalDateTime occurredAt;

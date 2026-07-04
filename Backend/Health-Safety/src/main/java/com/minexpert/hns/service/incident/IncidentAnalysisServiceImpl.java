@@ -1,7 +1,5 @@
 package com.minexpert.hns.service.incident;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -24,8 +22,9 @@ public class IncidentAnalysisServiceImpl implements IncidentAnalysisService {
     @Override
     @Cacheable(cacheNames = CACHE_INCIDENT_ANALYSIS_BY_INCIDENT, key = "#incidentId")
     public IncidentDTO getIncidentAnalysisByIncidentId(Long incidentId) throws HSException {
-        Optional<IncidentAnalysis> optional = incidentAnalysisRepository.findByIncidentId(incidentId);
-        return null;
+        IncidentAnalysis analysis = incidentAnalysisRepository.findByIncidentId(incidentId)
+                .orElseThrow(() -> new HSException("INCIDENT_ANALYSIS_NOT_FOUND"));
+        return analysis.toIncidentDTO(new IncidentDTO());
     }
 
 }

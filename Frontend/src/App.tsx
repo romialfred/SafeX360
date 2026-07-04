@@ -17,6 +17,7 @@ import { PrimeReactProvider } from "primereact/api";
 import { NavigationProgress } from '@mantine/nprogress';
 import { Notifications } from '@mantine/notifications';
 import GlobalLoadingIndicator from './components/UtilityComp/GlobalLoadingIndicator';
+import { Z } from './constants/zIndex';
 
 
 
@@ -34,7 +35,7 @@ function App() {
       <PrimeReactProvider>
         <MantineProvider theme={theme}>
           <NavigationProgress color="red" />
-          <Notifications position="bottom-right" zIndex={2000} />
+          <Notifications position="bottom-right" zIndex={Z.toast} />
           <GlobalLoadingIndicator />
           <Router />
         </MantineProvider>

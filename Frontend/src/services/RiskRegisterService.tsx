@@ -4,39 +4,33 @@ const url = "/hns/risks";
 
 const createRisk = async (risksData: any) => {
     return axiosInstance.post(`${url}/create`, risksData)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateRisk = async (risksData: any) => {
     return axiosInstance.put(`${url}/update`, risksData)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getAllRisk = async () => {
     return axiosInstance.get(`${url}/getAll`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const getRisksWithRiskLevel = async () => {
     return axiosInstance.get(`${url}/withRiskLevel`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 
 const getRiskById = async (id: any) => {
     return axiosInstance.get(`${url}/get/${id}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 const updateRiskStatus = async (id: number | string, status: string) => {
     return axiosInstance.put(`${url}/status/${id}?status=${status}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 export interface RiskSearchParams {
@@ -76,14 +70,12 @@ export interface RiskDto {
 
 const searchRisks = async (params?: RiskSearchParams) => {
     return axiosInstance.get<RiskDto[]>(`${url}/search`, { params })
-        .then((res) => res.data)
-        .catch((err) => { throw err; });
+        .then((res) => res.data);
 };
 
 const getRiskOverview = async (params?: Record<string, any>) => {
     return axiosInstance.get(`${url}/overview`, { params })
-        .then((res) => res.data)
-        .catch((err) => { throw err; });
+        .then((res) => res.data);
 }
 
 

@@ -5,14 +5,12 @@ const addInspectionHistory = async (incidentData: any) => {
     return axiosInstance.post(`${url}/create`, incidentData)
         .then((response) => {
             return response.data;
-        })
-        .catch((error) => { throw error; });
+        });
 }
 
 const getInspectionHistoryByInspectionId = async (inspectionId: any) => {
     return axiosInstance.get(`${url}/get/${inspectionId}`)
-        .then((response) => response.data)
-        .catch((error) => { throw error; });
+        .then((response) => response.data);
 };
 
 export { addInspectionHistory, getInspectionHistoryByInspectionId };

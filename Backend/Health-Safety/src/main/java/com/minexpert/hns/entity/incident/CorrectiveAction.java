@@ -97,18 +97,4 @@ public class CorrectiveAction {
     }
 
     // Add logic to ensure only one FK is set
-    // @PrePersist
-    // @PreUpdate
-    // private void validateOnlyOneParent() {
-    // int count = 0;
-    // if (incident != null) count++;
-    // if (meeting != null) count++;
-    // if (steeringTour != null) count++;
-
-    // if (count != 1) {
-    // throw new IllegalStateException("ActionPlan must be linked to exactly one
-    // parent (Incident, Meeting, or SteeringTour)");
-    // }
-    // }
-
 }

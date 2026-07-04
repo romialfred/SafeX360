@@ -26,11 +26,11 @@ const AdhocActionDetails = () => {
     const [history, setHistory] = useState<any[]>([]);
 
     useEffect(() => {
-        getActionById(id)
+        getActionById(Number(id))
             .then((res) => setAction(res))
             .catch((err) => console.error(err));
 
-        getAllActionProcessByActionId(id)
+        getAllActionProcessByActionId(Number(id))
             .then((res) => setHistory(res))
             .catch((err) => console.error(err));
     }, [id]);

@@ -48,6 +48,7 @@ import {
     IconAlertOctagon,
     IconShieldCheck,
 } from '@tabler/icons-react';
+import { Z } from '../../constants/zIndex';
 import { useAppSelector } from '../../slices/hooks';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
 import {
@@ -349,7 +350,7 @@ const AmbientMeasurementForm = ({
                 }
                 size="lg"
                 centered
-                zIndex={4000}
+                zIndex={Z.critical}
             >
                 {lockedCampaignId && (
                     <Alert
@@ -517,7 +518,7 @@ const AmbientMeasurementForm = ({
                 }
                 size="md"
                 centered
-                zIndex={4100}
+                zIndex={Z.criticalNested}
             >
                 <Alert
                     color="red"

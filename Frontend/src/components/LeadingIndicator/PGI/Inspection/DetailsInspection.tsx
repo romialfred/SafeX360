@@ -12,7 +12,7 @@ const DetailsInspection = () => {
     const [inspection, setInspection] = useState<any>({});
 
     useEffect(() => {
-        getPgiById(id)
+        getPgiById(Number(id))
             .then(setInspection)
             .catch((_err) => console.error(_err))
     }, []);
