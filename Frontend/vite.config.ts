@@ -118,6 +118,10 @@ export default defineConfig({
           /^\/api/,
           /^\/hns/,
           /^\/hrms/,
+          // Le mockup HTML monofichier Analytics est autonome : le SW ne
+          // doit PAS le remplacer par la SPA SafeX (sinon Babel standalone
+          // essaie de transformer le HTML de la SPA et crashe).
+          /^\/safex-analytics/,
         ],
         runtimeCaching: [
           // App shell : Cache First avec revalidation
