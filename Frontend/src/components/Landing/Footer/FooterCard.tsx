@@ -27,7 +27,7 @@ const footerLinks = [
 
 const contactInfo = [
     { icon: <IconPhoneCall size={20} className="text-primary" />, text: "+756 235 9043" },
-    { icon: <IconMail size={20} className="text-primary" />, text: "info@minexpert.com" },
+    { icon: <IconMail size={20} className="text-primary" />, text: "contact@datauniverse.bf" },
     { icon: <IconMapPin size={20} className="text-primary" />, text: "KESWICK, South Australia (SA)" }
 ];
 

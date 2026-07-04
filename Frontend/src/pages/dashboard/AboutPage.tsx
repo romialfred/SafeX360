@@ -253,13 +253,13 @@ export default function AboutPage() {
 
                     <div className="space-y-3">
                         <a
-                            href="mailto:support@safex360.com"
+                            href="mailto:contact@datauniverse.bf"
                             className="flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
                         >
                             <IconMail size={16} className="text-teal-700" />
                             <div className="flex-1">
                                 <p className="text-[13px] text-slate-900">Support technique</p>
-                                <p className="text-[12px] text-slate-500">support@safex360.com</p>
+                                <p className="text-[12px] text-slate-500">contact@datauniverse.bf</p>
                             </div>
                             <IconExternalLink size={14} className="text-slate-400" />
                         </a>

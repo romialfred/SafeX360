@@ -693,7 +693,7 @@ const ResourcesTab = () => (
                     Réponse sous 1 jour ouvré.
                 </p>
                 <a
-                    href="mailto:support@safex360.com"
+                    href="mailto:contact@datauniverse.bf"
                     className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:border-teal-200 hover:bg-teal-50/40 transition-colors group"
                 >
                     <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-50 text-teal-700 ring-1 ring-slate-200">
@@ -701,7 +701,7 @@ const ResourcesTab = () => (
                     </span>
                     <span className="min-w-0">
                         <span className="block text-[13px] font-medium text-slate-800 group-hover:text-teal-700 transition-colors">
-                            support@safex360.com
+                            contact@datauniverse.bf
                         </span>
                         <span className="block text-[11.5px] text-slate-500">
                             Assistance fonctionnelle &amp; technique

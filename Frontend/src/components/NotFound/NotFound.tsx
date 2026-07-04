@@ -83,10 +83,10 @@ const NotFound = () => {
                         <p className="text-[13.5px] text-slate-600 leading-relaxed">
                             Si vous pensez qu'il s'agit d'un bug, contactez le support à&nbsp;
                             <a
-                                href="mailto:support@safex360.com"
+                                href="mailto:contact@datauniverse.bf"
                                 className="text-teal-700 hover:text-teal-900 hover:underline"
                             >
-                                support@safex360.com
+                                contact@datauniverse.bf
                             </a>
                             &nbsp;ou consultez le&nbsp;
                             <Link to="/how-to" className="text-teal-700 hover:text-teal-900 hover:underline">

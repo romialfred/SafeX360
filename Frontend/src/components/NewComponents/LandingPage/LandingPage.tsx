@@ -855,13 +855,13 @@ export default function LandingPage() {
                                 Conçue et éditée au Burkina Faso par Data Universe.
                             </p>
                             <a
-                                href="https://data-univers.com"
+                                href="https://datauniverse.bf/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="cursor-pointer mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-[12px] text-slate-700 transition-colors"
                             >
                                 <IconGlobe size={13} />
-                                data-univers.com
+                                datauniverse.bf
                             </a>
                         </div>
 
@@ -3558,7 +3558,7 @@ function SavingsLine({ icon: Icon, color, label, sub, value }: {
 /**
  * ContactModal — Formulaire de demande de démo / contact commercial.
  *
- * Email destinataire : r.tiegnan@data-univers.com (jamais affiché à l'écran
+ * Email destinataire : contact@datauniverse.bf (jamais affiché à l'écran
  * pour éviter le scraping). À la soumission, ouvre le client email de
  * l'utilisateur avec un mailto pré-rempli (sujet + corps formaté).
  *
@@ -3623,7 +3623,7 @@ function ContactModal({ opened, onClose }: { opened: boolean; onClose: () => voi
         setSending(true);
 
         // Construit l'email — destinataire caché du DOM via concaténation runtime
-        const recipient = ['r.tiegnan', '@', 'data-univers.com'].join('');
+        const recipient = ['contact', '@', 'datauniverse.bf'].join('');
         const subject = `[SafeX 360] Demande d'information — ${form.company || form.lastName}`;
         const body = [
             `Bonjour,`,

@@ -31,7 +31,7 @@ const Directions = () => {
 
                         <div className="flex gap-2 cursor-pointer">
                             <IconMail size={30} className="text-primary" />
-                            <span className="text-lg">info@minexpert.com</span>
+                            <span className="text-lg">contact@datauniverse.bf</span>
                         </div>
                     </div>
                     <div>

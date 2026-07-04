@@ -559,7 +559,7 @@ const Sidebar = () => {
                     menu.pos && <div className={`flex ${collapsed ? "gap-5" : "gap-2"}  flex-col`}>
                         <Divider size="xs" color="gray.6" className="!text-neutral-900" />
                         <Tooltip position="right" disabled={!collapsed} zIndex={1001} color="red" label="Go to MINE XPERT">
-                            <a href="https://mine-xpert.data-univers.com/" target="_blank" className={`flex gap-3 items-center hover:bg-red-500/20 rounded-md p-2 py-3 cursor-pointer transition-all duration-200 hover:text-red-500 !border border-transparent hover:!border-red-500`}>
+                            <a href="https://datauniverse.bf/" target="_blank" rel="noopener noreferrer" className={`flex gap-3 items-center hover:bg-red-500/20 rounded-md p-2 py-3 cursor-pointer transition-all duration-200 hover:text-red-500 !border border-transparent hover:!border-red-500`}>
                                 <IconLogout2 size={collapsed ? 32 : 20} className="text-red-500" />
                                 {!collapsed && <div className="text-xs">Go to MINE XPERT</div>}
                             </a>

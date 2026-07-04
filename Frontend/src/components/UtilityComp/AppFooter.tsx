@@ -68,7 +68,7 @@ const AppFooter = () => {
                         <Link to="/technical-docs" className="text-slate-400 hover:text-white transition-colors">
                             {t('footer.technicalDocs')}
                         </Link>
-                        <a href="mailto:support@safex360.com" className="text-slate-400 hover:text-white transition-colors">
+                        <a href="mailto:contact@datauniverse.bf" className="text-slate-400 hover:text-white transition-colors">
                             {t('footer.support')}
                         </a>
                     </nav>
@@ -85,12 +85,12 @@ const AppFooter = () => {
                         À droite du footer : adresse maintainer pour équilibrer la ligne. */}
                     <div className="text-[11px] text-slate-500 whitespace-nowrap">
                         <a
-                            href="https://data-univers.com"
+                            href="https://datauniverse.bf/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-slate-300 transition-colors"
                         >
-                            data-univers.com
+                            datauniverse.bf
                         </a>
                     </div>
                 </div>
