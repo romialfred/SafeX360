@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { SosAlertDTO, SosStatus } from '../../../services/SosService';
+import { SOS_REASON_LABELS } from './sosLabels';
 
 /**
  * Carte live des SOS actifs (LOT 48 Phase 3.c).
@@ -61,15 +62,7 @@ const buildSvgIcon = (status: SosStatus) => {
     });
 };
 
-const REASON_LABELS: Record<string, string> = {
-    MEDICAL: 'Urgence médicale',
-    ACCIDENT_TRAVAIL: 'Accident du travail',
-    INCENDIE: 'Incendie',
-    AGRESSION: 'Agression',
-    FUITE_CHIMIQUE: 'Fuite chimique',
-    EFFONDREMENT: 'Effondrement',
-    AUTRE: 'Autre urgence',
-};
+const REASON_LABELS = SOS_REASON_LABELS;
 
 function FitToAlerts({ alerts }: { alerts: SosAlertDTO[] }) {
     const map = useMap();

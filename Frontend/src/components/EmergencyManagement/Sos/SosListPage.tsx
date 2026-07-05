@@ -18,6 +18,7 @@ import PageHeader from '../../UtilityComp/PageHeader';
 import { useAppSelector } from '../../../slices/hooks';
 import { listSosAlerts, type SosAlertDTO, type SosStatus } from '../../../services/SosService';
 import { useEmergencyWebSocket } from './EmergencyWebSocketProvider';
+import { SOS_REASON_LABELS } from './sosLabels';
 
 /**
  * Page Liste / Tableau de bord SOS (LOT 48 Phase 3.b).
@@ -36,15 +37,7 @@ const STATUS_META: Record<SosStatus, { bg: string; text: string; ring: string; l
     FALSE_ALARM:  { bg: 'bg-slate-500',   text: 'text-white', ring: 'ring-slate-200',   label: 'FAUSSE ALERTE', pulse: false },
 };
 
-const REASON_LABELS: Record<string, string> = {
-    MEDICAL: 'Urgence médicale',
-    ACCIDENT_TRAVAIL: 'Accident du travail',
-    INCENDIE: 'Incendie',
-    AGRESSION: 'Agression',
-    FUITE_CHIMIQUE: 'Fuite chimique',
-    EFFONDREMENT: 'Effondrement',
-    AUTRE: 'Autre',
-};
+const REASON_LABELS = SOS_REASON_LABELS;
 
 const formatDateTime = (iso?: string | null) => {
     if (!iso) return '—';

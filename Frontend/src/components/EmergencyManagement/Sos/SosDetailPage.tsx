@@ -35,6 +35,7 @@ import {
 import { listRescueTeams, type RescueTeamDTO } from '../../../services/EmergencyService';
 import { useEmergencyWebSocket } from './EmergencyWebSocketProvider';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { SOS_REASON_LABELS } from './sosLabels';
 
 /**
  * Page Détail SOS (LOT 48 Phase 3.b).
@@ -53,15 +54,7 @@ const STATUS_META: Record<SosStatus, { bg: string; text: string; label: string; 
     FALSE_ALARM:  { bg: 'bg-slate-500',   text: 'text-white', label: 'FAUSSE ALERTE',   pulse: false, iconColor: 'text-slate-600' },
 };
 
-const REASON_LABELS: Record<string, string> = {
-    MEDICAL: 'Urgence médicale',
-    ACCIDENT_TRAVAIL: 'Accident du travail',
-    INCENDIE: 'Incendie',
-    AGRESSION: 'Agression',
-    FUITE_CHIMIQUE: 'Fuite chimique',
-    EFFONDREMENT: 'Effondrement',
-    AUTRE: 'Autre',
-};
+const REASON_LABELS = SOS_REASON_LABELS;
 
 const formatTime = (iso?: string | null) => {
     if (!iso) return '—';

@@ -41,6 +41,7 @@ import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
 import SosLiveMap from '../Sos/SosLiveMap';
 import { listSosAlerts, type SosAlertDTO } from '../../../services/SosService';
 import { formatReasonCode } from '../GeneralAlert/alertHelpers';
+import { SOS_REASON_LABELS, SOS_STATUS_COLORS } from '../Sos/sosLabels';
 
 /**
  * Page Tableau de bord Emergency (LOT 48 Phase 5).
@@ -59,24 +60,8 @@ import { formatReasonCode } from '../GeneralAlert/alertHelpers';
  * on rafraîchit le summary backend (debounce 2s pour éviter les rafales).</p>
  */
 
-const REASON_LABELS_SOS: Record<string, string> = {
-    MEDICAL: 'Médical',
-    ACCIDENT_TRAVAIL: 'Accident du travail',
-    INCENDIE: 'Incendie',
-    AGRESSION: 'Agression',
-    FUITE_CHIMIQUE: 'Fuite chimique',
-    EFFONDREMENT: 'Effondrement',
-    AUTRE: 'Autre',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-    RECEIVED: '#dc2626',
-    ACKNOWLEDGED: '#f97316',
-    DISPATCHED: '#eab308',
-    ON_SITE: '#0ea5e9',
-    CLOSED: '#10b981',
-    FALSE_ALARM: '#64748b',
-};
+const REASON_LABELS_SOS = SOS_REASON_LABELS;
+const STATUS_COLORS = SOS_STATUS_COLORS;
 
 const STATUS_LABELS: Record<string, string> = {
     RECEIVED: 'Nouveau',
