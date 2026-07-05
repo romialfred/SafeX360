@@ -932,7 +932,7 @@ const Sidebar = () => {
                                         `}
                                         onClick={(e) => {
                                             if (item.id === 'reports') {
-                                                const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/index.html';
+                                                const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics';
                                                 window.open(url, '_blank', 'noopener,noreferrer');
                                                 return;
                                             }
@@ -946,7 +946,7 @@ const Sidebar = () => {
                                             if (e.key === 'Enter' || e.key === ' ') {
                                                 e.preventDefault();
                                                 if (item.id === 'reports') {
-                                                    const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics/index.html';
+                                                    const url = (import.meta as any).env?.VITE_SAFEX_ANALYTICS_URL || '/safex-analytics';
                                                     window.open(url, '_blank', 'noopener,noreferrer');
                                                     return;
                                                 }

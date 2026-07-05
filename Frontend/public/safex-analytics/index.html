@@ -45,48 +45,83 @@
   <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <style>
-    html, body { background:#F6F7F9; font-family:'Inter',system-ui,sans-serif; color:#0F172A; }
+    html, body { background:#F6F7F9; font-family:'Inter',system-ui,sans-serif; color:#0F172A; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .font-display { font-family: 'Fraunces', serif; letter-spacing: -0.02em; }
     .font-mono    { font-family: 'JetBrains Mono', monospace; }
-    .scrollbar-thin::-webkit-scrollbar { width:6px; height:6px; }
+
+    /* Premium scrollbars */
+    .scrollbar-thin::-webkit-scrollbar { width:5px; height:5px; }
     .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius: 3px; }
-    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background:#94A3B8; }
-    .scrollbar-dark::-webkit-scrollbar { width:6px; }
-    .scrollbar-dark::-webkit-scrollbar-thumb { background:#1E293B; border-radius:3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background:rgba(148,163,184,.45); border-radius: 10px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background:rgba(100,116,139,.6); }
+    .scrollbar-dark::-webkit-scrollbar { width:5px; }
+    .scrollbar-dark::-webkit-scrollbar-thumb { background:rgba(30,41,59,.7); border-radius:10px; }
     .scrollbar-dark::-webkit-scrollbar-thumb:hover { background:#334155; }
-    @keyframes fadeInUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
-    .anim-fadeup { animation: fadeInUp .35s ease-out both; }
-    @keyframes pulseSafe { 0%,100% { opacity:1; } 50% { opacity:.5; } }
-    .anim-pulse { animation: pulseSafe 2s ease-in-out infinite; }
-    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    .anim-slidein { animation: slideIn .25s cubic-bezier(.4,0,.2,1) both; }
-    .card-hover { transition: all .2s; }
-    .card-hover:hover { box-shadow: 0 6px 16px rgba(15,23,42,.08); transform: translateY(-1px); }
+
+    /* Animations */
+    @keyframes fadeInUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+    .anim-fadeup { animation: fadeInUp .4s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes pulseSafe { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+    .anim-pulse { animation: pulseSafe 2.4s ease-in-out infinite; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity:.8; } to { transform: translateX(0); opacity:1; } }
+    .anim-slidein { animation: slideIn .3s cubic-bezier(.22,1,.36,1) both; }
+
+    /* Premium card system */
+    .card-hover {
+      transition: transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease;
+      box-shadow: 0 1px 3px rgba(15,23,42,.04), 0 1px 2px rgba(15,23,42,.02);
+    }
+    .card-hover:hover {
+      box-shadow: 0 8px 25px -5px rgba(15,23,42,.08), 0 4px 10px -4px rgba(15,23,42,.04);
+      transform: translateY(-2px);
+    }
+
+    /* Print / PDF export — premium A4 formatting */
     @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
       .no-print { display:none !important; }
-      body { background:white; }
-      .a4-page { box-shadow: none !important; border: none !important; margin: 0; page-break-after: always; }
-      .a4-page:last-child { page-break-after: auto; }
-      .print-only { display: block !important; }
+      html, body { background:white !important; font-size:10pt; }
+      aside, header, footer { display:none !important; }
+      main { margin:0 !important; padding:0 !important; }
+      main > div { padding:0 !important; }
+      .a4-page { box-shadow:none !important; border:none !important; margin:0; page-break-after:always; }
+      .a4-page:last-child { page-break-after:auto; }
+      .print-only { display:block !important; }
+      h1, h2, h3 { page-break-after:avoid; }
+      table, figure, .recharts-responsive-container { page-break-inside:avoid; }
+      @page {
+        size: A4 portrait;
+        margin: 12mm 10mm 14mm 10mm;
+      }
+      @page:first { margin-top: 8mm; }
     }
     .print-only { display: none; }
     .a4-page {
       width: 100%; max-width: none; padding: 32px 40px; background: white;
-      box-shadow: 0 4px 16px rgba(0,0,0,.06); border: 1px solid #E5E7EB; border-radius: 12px; margin: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px -4px rgba(0,0,0,.06);
+      border: 1px solid rgba(229,231,235,.8); border-radius: 16px; margin: 0;
     }
     @media print {
       .a4-page {
-        width: 210mm !important; min-height: 297mm !important;
-        padding: 16mm 14mm !important; box-shadow: none !important;
+        width: 210mm !important; min-height: auto !important;
+        padding: 14mm 12mm !important; box-shadow: none !important;
         border: none !important; border-radius: 0 !important; margin: 0 auto !important;
         page-break-after: always !important;
       }
     }
+    /* PDF report header watermark */
+    .print-header {
+      display: none;
+      padding: 8mm 0 4mm;
+      border-bottom: 2px solid #0F766E;
+      margin-bottom: 6mm;
+    }
+    @media print { .print-header { display: flex !important; align-items: center; justify-content: space-between; } }
+
     /* Body map glow */
     .body-glow { filter: drop-shadow(0 0 8px rgba(20,184,166,.4)); }
-    .body-zone { transition: all .25s cubic-bezier(.4,0,.2,1); cursor: pointer; }
+    .body-zone { transition: all .25s cubic-bezier(.22,1,.36,1); cursor: pointer; }
     .body-zone:hover { transform: scale(1.08); }
     .body-pulse-strong { animation: bodyPulse 1.8s ease-in-out infinite; }
     @keyframes bodyPulse {
@@ -105,17 +140,70 @@
       90% { opacity: 0.6; }
       100% { top: 100%; opacity: 0; }
     }
-    .risk-cell { transition: transform .15s; }
-    .risk-cell:hover { transform: scale(1.04); cursor: pointer; z-index: 5; }
-    .nav-item-dark.active { background: linear-gradient(90deg, rgba(20,184,166,.15) 0%, transparent 100%); color:#5EEAD4; border-left:2px solid #14B8A6; }
-    .nav-item-dark { border-left: 2px solid transparent; }
-    .recharts-default-tooltip { border-radius: 8px !important; border: 1px solid #E5E7EB !important; box-shadow: 0 4px 12px rgba(0,0,0,.06) !important; font-size: 12px !important; }
-    .filter-drawer { box-shadow: -8px 0 24px rgba(0,0,0,.12); }
-    .table-row-hover:hover { background: #F8FAFC; }
-    .grad-teal { background: linear-gradient(135deg, #0F766E 0%, #134E4A 100%); }
-    .grad-danger { background: linear-gradient(135deg, #DC2626 0%, #7F1D1D 100%); }
-    .grad-warn { background: linear-gradient(135deg, #EA580C 0%, #7C2D12 100%); }
-    .grad-safe { background: linear-gradient(135deg, #16A34A 0%, #14532D 100%); }
+
+    /* Risk matrix cells */
+    .risk-cell { transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .18s ease; }
+    .risk-cell:hover { transform: scale(1.06); cursor: pointer; z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+    /* Sidebar nav */
+    .nav-item-dark.active {
+      background: linear-gradient(90deg, rgba(20,184,166,.18) 0%, rgba(20,184,166,.03) 100%);
+      color:#5EEAD4; border-left:2.5px solid #14B8A6;
+      box-shadow: inset 3px 0 12px -4px rgba(20,184,166,.2);
+    }
+    .nav-item-dark { border-left: 2.5px solid transparent; transition: all .15s ease; }
+    .nav-item-dark:hover { padding-left: 18px; }
+
+    /* Recharts tooltip override */
+    .recharts-default-tooltip {
+      border-radius: 10px !important; border: 1px solid rgba(229,231,235,.8) !important;
+      box-shadow: 0 8px 24px -4px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.04) !important;
+      font-size: 12px !important; backdrop-filter: blur(8px);
+    }
+
+    /* Filter drawer */
+    .filter-drawer { box-shadow: -12px 0 40px rgba(0,0,0,.15); }
+    .table-row-hover { transition: background .12s ease; }
+    .table-row-hover:hover { background: rgba(248,250,252,.8); }
+
+    /* Gradients */
+    .grad-teal { background: linear-gradient(135deg, #0F766E 0%, #115E59 100%); }
+    .grad-danger { background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%); }
+    .grad-warn { background: linear-gradient(135deg, #EA580C 0%, #9A3412 100%); }
+    .grad-safe { background: linear-gradient(135deg, #16A34A 0%, #166534 100%); }
+
+    /* Premium KPI tiles */
+    .kpi-tile {
+      position: relative; overflow: hidden;
+      background: white;
+      border: 1px solid rgba(229,231,235,.7);
+      border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(15,23,42,.03), 0 4px 12px -2px rgba(15,23,42,.04);
+      transition: all .22s cubic-bezier(.22,1,.36,1);
+    }
+    .kpi-tile::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background: var(--kpi-accent, #14B8A6);
+      border-radius: 14px 14px 0 0;
+      opacity: 0.85;
+    }
+    .kpi-tile:hover {
+      box-shadow: 0 6px 20px -4px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.03);
+      transform: translateY(-1px);
+      border-color: rgba(20,184,166,.3);
+    }
+
+    /* Section headers refined */
+    .section-premium {
+      border: 1px solid rgba(229,231,235,.7);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 1px 2px rgba(15,23,42,.02), 0 4px 16px -4px rgba(15,23,42,.04);
+      overflow: hidden;
+    }
+
+    /* Glass effect utility */
+    .glass { background: rgba(255,255,255,.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   </style>
 </head>
 <body>
@@ -551,24 +639,27 @@ const Icon = ({ name, size=18, className='', stroke=1.75 }) => {
    PRIMITIVES — Card / Section / Badge / Delta / Sparkline
    =================================================================== */
 const Card = ({ children, className='', padding='p-5', noBorder=false }) => (
-  <div className={`bg-white rounded-xl ${noBorder ? '' : 'border border-line'} ${padding} ${className}`}>{children}</div>
+  <div className={`bg-white rounded-2xl ${noBorder ? '' : 'border border-line/70'} ${padding} shadow-[0_1px_3px_rgba(15,23,42,.03),0_4px_14px_-3px_rgba(15,23,42,.04)] ${className}`}>{children}</div>
 );
 const Section = ({ title, action, children, sub, className='', padding='p-5', icon, tone='ink' }) => {
   const tones = { ink:'text-ink-500', teal:'text-teal-600', red:'text-hred-600', orange:'text-horange-600', blue:'text-hblue-600', green:'text-hgreen-600' };
+  const accentColors = { ink:'#64748B', teal:'#0D9488', red:'#DC2626', orange:'#EA580C', blue:'#2563EB', green:'#16A34A' };
   return (
-    <Card className={`anim-fadeup ${className}`} padding={padding}>
-      <div className="flex items-start justify-between mb-4 gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            {icon && <Icon name={icon} size={15} className={tones[tone]}/>}
-            <h3 className="text-[14px] font-semibold text-ink-900 leading-tight">{title}</h3>
+    <div className={`section-premium anim-fadeup ${className}`} style={{'--section-accent': accentColors[tone]}}>
+      <div className={padding}>
+        <div className="flex items-start justify-between mb-4 gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              {icon && <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg" style={{background:`${accentColors[tone]}12`}}><Icon name={icon} size={14} className={tones[tone]}/></span>}
+              <h3 className="text-[14px] font-semibold text-ink-900 leading-tight">{title}</h3>
+            </div>
+            {sub && <p className="text-[11.5px] text-ink-500 mt-1.5 leading-relaxed">{sub}</p>}
           </div>
-          {sub && <p className="text-[11.5px] text-ink-500 mt-1">{sub}</p>}
+          {action && <div className="flex-shrink-0">{action}</div>}
         </div>
-        {action && <div className="flex-shrink-0">{action}</div>}
+        {children}
       </div>
-      {children}
-    </Card>
+    </div>
   );
 };
 const Badge = ({ tone='ink', children, dot=false, className='', size='sm' }) => {
@@ -928,29 +1019,30 @@ const CTooltip = ({ active, payload, label, formatter }) => {
 
 // KPI Tile compact
 const KPI = ({ label, value, unit='', delta, deltaInvert=false, icon, tone='teal', spark, sparkType='line', sub }) => {
+  const toneAccent = { teal:C.teal, green:C.green, red:C.red, orange:C.orange, yellow:C.yellow, blue:C.blue, purple:C.purple||'#A855F7', ink:C.ink500 }[tone] || C.teal;
   const toneBg = {
     teal:'bg-teal-50 text-teal-700', green:'bg-hgreen-50 text-hgreen-700', red:'bg-hred-50 text-hred-700',
     orange:'bg-horange-50 text-horange-700', yellow:'bg-hyellow-50 text-hyellow-600', blue:'bg-hblue-50 text-hblue-700', purple:'bg-hpurple-50 text-hpurple-700', ink:'bg-ink-100 text-ink-700'
   }[tone];
-  const sparkColor = { teal:C.teal, green:C.green, red:C.red, orange:C.orange, yellow:C.yellow, blue:C.blue, purple:C.purple, ink:C.ink500 }[tone];
+  const sparkColor = toneAccent;
   return (
-    <Card className="card-hover" padding="p-4">
+    <div className="kpi-tile p-4" style={{'--kpi-accent': toneAccent}}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {icon && (
-              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${toneBg} flex-shrink-0`}>
-                <Icon name={icon} size={14}/>
+              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl ${toneBg} flex-shrink-0`}>
+                <Icon name={icon} size={15}/>
               </span>
             )}
             <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ink-500 truncate">{label}</span>
           </div>
-          <div className="mt-2.5 flex items-baseline gap-1">
-            <span className="font-display text-[24px] font-bold text-ink-900 leading-none tabular-nums">{value}</span>
+          <div className="mt-3 flex items-baseline gap-1">
+            <span className="font-display text-[26px] font-bold text-ink-900 leading-none tabular-nums">{value}</span>
             {unit && <span className="text-[12px] text-ink-500 font-medium">{unit}</span>}
           </div>
           {(delta !== undefined || sub) && (
-            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
               {delta !== undefined && <Delta value={delta} invert={deltaInvert}/>}
               {sub && <span className="text-[10.5px] text-ink-500 truncate">{sub}</span>}
             </div>
@@ -960,7 +1052,7 @@ const KPI = ({ label, value, unit='', delta, deltaInvert=false, icon, tone='teal
           ? <SparkBar data={spark} color={sparkColor} width={72} height={32}/>
           : <Sparkline data={spark} color={sparkColor} width={72} height={32}/>)}
       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -1413,11 +1505,12 @@ const PageIncidents = () => {
   ];
 
   // Scatter quadrants : Dept (Fréquence × Sévérité)
-  const deptScatter = DEPARTMENTS.map((d,i) => {
-    const freq = Math.round(20 + 60*Math.abs(Math.sin(i*1.3)) + Math.random()*30);
-    const sev  = +(1 + 4*Math.abs(Math.cos(i*0.9)) + Math.random()).toFixed(1);
+  const deptScatter = useMemo(() => DEPARTMENTS.map((d,i) => {
+    const seed = (i*7 + 13) % 30;
+    const freq = Math.round(20 + 60*Math.abs(Math.sin(i*1.3)) + seed);
+    const sev  = +(1 + 4*Math.abs(Math.cos(i*0.9)) + ((i*11+3)%10)/10).toFixed(1);
     return { dept: d, freq, sev, score: freq*sev };
-  });
+  }), []);
   const fMed = deptScatter.reduce((a,d)=>a+d.freq,0)/deptScatter.length;
   const sMed = deptScatter.reduce((a,d)=>a+d.sev,0)/deptScatter.length;
 
@@ -2611,7 +2704,7 @@ const PagePPE = () => {
             <div className="text-[11px] text-ink-500 uppercase tracking-wider font-semibold mb-2">Tendance demandes</div>
             <div style={{ height: 100 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MONTHLY.slice(-12).map(m=>({ ...m, demande: Math.round(280 + 80*Math.sin(m.idx*0.6) + 40*Math.random()) }))}
+                <AreaChart data={MONTHLY.slice(-12).map(m=>({ ...m, demande: Math.round(280 + 80*Math.sin(m.idx*0.6) + 40*Math.abs(Math.sin(m.idx*2.3))) }))}
                            margin={{ top:0, right:0, bottom:0, left:0 }}>
                   <defs>
                     <linearGradient id="gDem" x1="0" y1="0" x2="0" y2="1">
@@ -5629,36 +5722,38 @@ const FilterDrawer = ({ open, onClose, filters, onApply }) => {
 const Header = ({ pageLabel, period, onPeriodChange, onOpenFilters, activeFilters }) => {
   const filterCount = activeFilters.sites.length + activeFilters.severities.length + activeFilters.depts.length + (activeFilters.from?1:0) + (activeFilters.to?1:0);
   return (
-    <header className="bg-white border-b border-line px-6 py-3 sticky top-0 z-10 no-print">
+    <header className="bg-white/80 backdrop-blur-md border-b border-line/60 px-6 py-3.5 sticky top-0 z-10 no-print">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] text-ink-500 flex items-center gap-1.5">
-            <span>Analytics</span><Icon name="chevron" size={10}/>
-            <span className="text-ink-700 font-medium">{pageLabel}</span>
+          <div className="text-[10.5px] text-ink-400 flex items-center gap-1.5 uppercase tracking-wider font-medium">
+            <span>Analytics</span><Icon name="chevron" size={9}/><span className="text-ink-600">{pageLabel}</span>
           </div>
-          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-            <h1 className="text-[19px] font-display font-bold text-ink-900 leading-tight">{pageLabel}</h1>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <h1 className="text-[20px] font-display font-bold text-ink-900 leading-tight tracking-tight">{pageLabel}</h1>
             <Badge tone="green" dot>Données à jour</Badge>
-            <span className="text-[11px] text-ink-500 font-mono">MAJ 21/05/2026 09:54</span>
+            <span className="text-[10.5px] text-ink-400 font-mono tabular-nums">MAJ 21/05/2026 09:54</span>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-0 border border-line rounded-lg overflow-hidden">
+          <div className="flex items-center gap-0 border border-line/70 rounded-xl overflow-hidden bg-ink-50/40">
             {['7j','30j','90j','YTD','12m','24m'].map(p => (
               <button key={p} onClick={()=>onPeriodChange(p)}
-                      className={`px-3 py-1.5 text-[11.5px] font-semibold transition ${period===p?'bg-teal-600 text-white':'text-ink-600 hover:bg-ink-50'}`}>
+                      className={`px-3 py-1.5 text-[11px] font-semibold transition-all ${period===p?'bg-teal-600 text-white shadow-sm rounded-lg mx-0.5':'text-ink-600 hover:bg-white hover:text-ink-900'}`}>
                 {p}
               </button>
             ))}
           </div>
-          <button onClick={onOpenFilters} className="px-3 py-1.5 rounded-lg border border-line text-ink-700 hover:bg-ink-50 flex items-center gap-1.5 text-[12px] font-semibold relative">
+          <button onClick={onOpenFilters} className="px-3 py-1.5 rounded-xl border border-line/70 text-ink-700 hover:bg-white hover:border-teal-200 flex items-center gap-1.5 text-[11.5px] font-semibold relative transition">
             <Icon name="filter" size={13}/> Filtres
-            {filterCount > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-teal-600 text-white text-[10px] font-bold tabular-nums">{filterCount}</span>}
+            {filterCount > 0 && <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-teal-600 text-white text-[9.5px] font-bold tabular-nums">{filterCount}</span>}
           </button>
-          <button className="p-2 rounded-lg border border-line text-ink-600 hover:bg-ink-50" title="Actualiser"><Icon name="refresh" size={14}/></button>
-          <button className="relative p-2 rounded-lg border border-line text-ink-600 hover:bg-ink-50" title="Notifications">
+          <button onClick={()=>window.print()} className="px-3 py-1.5 rounded-xl border border-line/70 text-ink-700 hover:bg-white hover:border-teal-200 flex items-center gap-1.5 text-[11.5px] font-semibold transition" title="Exporter PDF">
+            <Icon name="print" size={13}/> PDF
+          </button>
+          <button className="p-2 rounded-xl border border-line/70 text-ink-500 hover:bg-white hover:text-ink-700 transition" title="Actualiser"><Icon name="refresh" size={14}/></button>
+          <button className="relative p-2 rounded-xl border border-line/70 text-ink-500 hover:bg-white hover:text-ink-700 transition" title="Notifications">
             <Icon name="bell" size={14}/>
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-hred-500"></span>
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-hred-500 ring-2 ring-white"></span>
           </button>
         </div>
       </div>
@@ -5700,15 +5795,28 @@ const App = () => {
       <div className="flex">
         <SidebarDark active={active} onChange={setActive} collapsed={collapsed} onToggle={()=>setCollapsed(c=>!c)}/>
         <main className="flex-1 min-w-0 bg-bg">
+          {/* Print-only header for PDF exports */}
+          <div className="print-header px-6">
+            <div>
+              <div className="text-[18px] font-bold text-ink-900" style={{fontFamily:'Inter,sans-serif'}}>
+                SafeX<span className="tabular-nums"><span style={{color:'#22C55E'}}>3</span><span style={{color:'#2563EB'}}>6</span><span style={{color:'#EF4444'}}>0</span></span>
+                <span className="text-[13px] font-medium text-ink-500 ml-2">Analytics Platform</span>
+              </div>
+              <div className="text-[11px] text-ink-500 mt-1">{pageLabel} — Rapport généré le {new Date().toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'})}</div>
+            </div>
+            <div className="text-right text-[10px] text-ink-400">
+              <div>© {new Date().getFullYear()} Data Universe</div>
+              <div className="font-mono">datauniverse.bf</div>
+            </div>
+          </div>
           <Header pageLabel={pageLabel} period={period} onPeriodChange={setPeriod}
                   onOpenFilters={()=>setDrawerOpen(true)} activeFilters={filters}/>
           <div className="p-6">{page}</div>
-          <footer className="px-6 py-4 text-center text-[10.5px] text-ink-400 border-t border-line bg-white no-print">
+          <footer className="px-6 py-5 text-center text-[10.5px] text-ink-400 border-t border-line/60 bg-white/60 backdrop-blur-sm no-print">
             <span className="font-semibold text-ink-700">SafeX<span className="tabular-nums"><span style={{ color:'#22C55E' }}>3</span><span style={{ color:'#2563EB' }}>6</span><span style={{ color:'#EF4444' }}>0</span></span></span>
-            <span className="mx-1.5">·</span>Analytics Platform
-            <span className="mx-1.5">·</span>v1.0
-            <span className="mx-1.5">·</span>Données fictives
-            <span className="mx-1.5">·</span>© {new Date().getFullYear()} Data Universe
+            <span className="mx-2 text-ink-300">|</span>Analytics Platform v1.0
+            <span className="mx-2 text-ink-300">|</span>Données fictives de démonstration
+            <span className="mx-2 text-ink-300">|</span>© {new Date().getFullYear()} Data Universe
           </footer>
         </main>
         <FilterDrawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} filters={filters} onApply={setFilters}/>
