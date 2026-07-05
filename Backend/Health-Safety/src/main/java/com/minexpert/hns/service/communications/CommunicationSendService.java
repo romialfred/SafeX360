@@ -14,6 +14,9 @@ import jakarta.validation.constraints.Email;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +31,8 @@ import java.util.Set;
  */
 @Service
 public class CommunicationSendService {
+
+    private static final Logger log = LoggerFactory.getLogger(CommunicationSendService.class);
 
     private final MessageSender messageSender;
     private final HrmsClient hrmsClient;
@@ -61,7 +66,7 @@ public class CommunicationSendService {
                     try {
                         return t.toFile();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error("Failed to resolve attachment: {}", e.getMessage());
                     }
                     return null;
                 })

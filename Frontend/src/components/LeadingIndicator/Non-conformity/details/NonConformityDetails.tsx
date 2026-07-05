@@ -590,6 +590,7 @@ const NonConformityDetails = () => {
 
                     <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-slate-100">
                         <Button
+                            size="sm"
                             variant="default"
                             onClick={close}
                             className="!border-slate-200 !text-slate-700 hover:!bg-slate-50"
@@ -597,6 +598,7 @@ const NonConformityDetails = () => {
                             Annuler
                         </Button>
                         <Button
+                            size="sm"
                             type="submit"
                             className="!bg-slate-900 hover:!bg-slate-800 !text-white"
                         >

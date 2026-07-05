@@ -28,12 +28,17 @@ import com.minexpert.hns.repository.nonConformity.NonConformityRepository;
 import com.minexpert.hns.service.MediaService;
 import com.minexpert.hns.service.incident.CorrectiveActionService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class NonConformityServiceImpl implements NonConformityService {
+
+    private static final Logger log = LoggerFactory.getLogger(NonConformityServiceImpl.class);
 
     private final NonConformityRepository nonConformityRepository;
     private final EventAnalysisService eventAnalysisService;
@@ -60,7 +65,7 @@ public class NonConformityServiceImpl implements NonConformityService {
                     action.setCompanyId(companyId);
                     correctiveActionService.addCorrectiveAction(companyId, action);
                 } catch (HSException e) {
-
+                    log.error("Failed to add corrective action for NC#{}: {}", id, e.getMessage());
                 }
             });
         }

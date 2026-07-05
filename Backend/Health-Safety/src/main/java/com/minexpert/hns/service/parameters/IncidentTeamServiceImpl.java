@@ -23,12 +23,18 @@ import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.parameters.IncidentTeamRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class IncidentTeamServiceImpl implements IncidentTeamService {
+
+    private static final Logger log = LoggerFactory.getLogger(IncidentTeamServiceImpl.class);
+
     private final IncidentTeamRepository incidentTeamRepository;
 
     private final TeamMemberService teamMemberService;
@@ -73,7 +79,7 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
                 try {
                     teamMemberService.addTeamMember(companyId, member);
                 } catch (HSException e) {
-                    e.printStackTrace();
+                    log.error("Failed to process team member: {}", e.getMessage());
                 }
             });
         }
@@ -118,7 +124,7 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
                 try {
                     teamMemberService.updateOrAddMember(companyId, member);
                 } catch (HSException e) {
-                    e.printStackTrace();
+                    log.error("Failed to process team member: {}", e.getMessage());
                 }
             });
         }

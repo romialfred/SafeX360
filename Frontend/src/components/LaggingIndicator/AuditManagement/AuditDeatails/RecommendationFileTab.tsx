@@ -398,8 +398,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                             <TextEditor form={updateForm} id="comment" title="Commentaire de suivi" />
                             <Divider size="xs" />
                             <div className="flex justify-center gap-2">
-                                <Button type="button" onClick={() => setOpened(null)} variant="outline">Fermer</Button>
-                                <Button type="submit" color="indigo">Enregistrer</Button>
+                                <Button size="sm" type="button" onClick={() => setOpened(null)} variant="outline">Fermer</Button>
+                                <Button size="sm" type="submit" color="indigo">Enregistrer</Button>
                             </div>
                         </form>
                         {recommendationFollowups && recommendationFollowups.length > 0 && (

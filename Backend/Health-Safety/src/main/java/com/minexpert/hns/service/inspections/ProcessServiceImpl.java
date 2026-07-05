@@ -10,9 +10,14 @@ import com.minexpert.hns.dto.inspections.InspectionInterviewsDTO;
 import com.minexpert.hns.dto.inspections.ProcessDTO;
 import com.minexpert.hns.exception.HSException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @Transactional
 public class ProcessServiceImpl implements ProcessService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessServiceImpl.class);
 
     @Autowired
     private InspectionChecklistService inspectionChecklistService;
@@ -31,14 +36,14 @@ public class ProcessServiceImpl implements ProcessService {
             try {
                 checklist.setId(inspectionChecklistService.createChecklist(checklist));
             } catch (HSException e) {
-                System.out.println("Error creating checklist: " + e.getMessage());
+                log.error("Error creating checklist: {}", e.getMessage());
             }
         });
         processDTO.getMeasurements().parallelStream().forEach(measurement -> {
             try {
                 measurement.setId(inspectionMeasurementService.createMeasurement(measurement));
             } catch (HSException e) {
-                System.out.println("Error creating measurement: " + e.getMessage());
+                log.error("Error creating measurement: {}", e.getMessage());
             }
         });
 

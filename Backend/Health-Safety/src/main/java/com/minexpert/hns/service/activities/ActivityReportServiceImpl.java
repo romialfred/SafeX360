@@ -19,12 +19,17 @@ import com.minexpert.hns.service.MediaService;
 import com.minexpert.hns.service.incident.CorrectiveActionService;
 import com.minexpert.hns.config.ActivityCacheNames;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ActivityReportServiceImpl implements ActivityReportService {
+
+    private static final Logger log = LoggerFactory.getLogger(ActivityReportServiceImpl.class);
 
     private final ActivityReportRepository activityReportRepository;
     private final MediaService mediaService;
@@ -60,7 +65,7 @@ public class ActivityReportServiceImpl implements ActivityReportService {
                     action.setCompanyId(companyId);
                     correctiveActionService.addCorrectiveAction(companyId, action);
                 } catch (HSException e) {
-                    e.printStackTrace();
+                    log.error("Failed to add corrective action: {}", e.getMessage());
                 }
             });
         }

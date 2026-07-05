@@ -21,7 +21,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getIncidentById } from '../../../../services/IncidentService';
 import { mapIdToName } from '../../../../utility/OtherUtilities';
-import { formatDate } from '../../../../utility/DateFormats';
 import { getEmployeeDropdown, getEmployeesByIds } from '../../../../services/EmployeeService';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../../slices/OverlaySlice';
@@ -559,6 +558,7 @@ const ViewDetails = () => {
                         withAsterisk
                     />
                     <Textarea
+                        size="sm"
                         label="Commentaire justificatif"
                         placeholder="Justifier le changement de statut (visible dans l'audit trail)"
                         {...form.getInputProps("comment")}
@@ -566,10 +566,10 @@ const ViewDetails = () => {
                     />
 
                     <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-slate-200">
-                        <Button variant="default" onClick={close}>
+                        <Button size="sm" variant="default" onClick={close}>
                             Annuler
                         </Button>
-                        <Button color="teal" type="submit" disabled={locked.locked}>
+                        <Button size="sm" color="teal" type="submit" disabled={locked.locked}>
                             Valider le changement
                         </Button>
                     </div>
