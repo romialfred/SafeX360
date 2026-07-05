@@ -173,7 +173,6 @@ const AdhocActionsForm = () => {
                                 <DateInput
                                     label={t('form.deadlineLabel')}
                                     placeholder={t('form.deadlinePlaceholder')}
-                                    minDate={new Date()}
                                     size="sm"
                                     withAsterisk
                                     leftSection={<IconCalendarDue size={14} />}

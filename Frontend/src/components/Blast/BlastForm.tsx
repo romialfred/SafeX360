@@ -441,8 +441,6 @@ const BlastForm = () => {
         const e: Record<string, string> = {};
         if (!state.scheduledAt) {
             e.scheduledAt = t('form.validation.scheduledAtRequired');
-        } else if (!isEdit && state.scheduledAt.getTime() < Date.now()) {
-            e.scheduledAt = t('form.validation.scheduledAtPast');
         }
         if (!state.type) e.type = t('form.validation.typeRequired');
         if (

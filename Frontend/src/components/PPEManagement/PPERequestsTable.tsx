@@ -467,7 +467,6 @@ const PPERequestsTable = () => {
                             size="sm"
                             valueFormat="DD/MM/YYYY"
                             {...requestForm.getInputProps('desiredDate')}
-                            minDate={new Date()}
                         />
                         <Select
                             label={t('requests.fieldPriority')}

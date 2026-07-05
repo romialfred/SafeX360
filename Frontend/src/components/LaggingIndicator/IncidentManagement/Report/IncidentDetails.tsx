@@ -116,7 +116,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                     <TextInput size="sm" {...form.getInputProps("title")} label="Titre de l'incident" placeholder="Description courte et factuelle" withAsterisk />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <DateTimePicker size="sm" maxDate={form.values.discoveryTime} {...form.getInputProps("occurredAt")} label="Date et heure de survenance" placeholder="Sélectionner la date et l'heure" withAsterisk />
-                        <DateTimePicker size="sm" minDate={form.values.occurredAt} maxDate={new Date()} {...form.getInputProps("discoveryTime")} label="Date et heure de découverte" placeholder="Sélectionner la date et l'heure" withAsterisk />
+                        <DateTimePicker size="sm" minDate={form.values.occurredAt} {...form.getInputProps("discoveryTime")} label="Date et heure de découverte" placeholder="Sélectionner la date et l'heure" withAsterisk />
                     </div>
                 </div>
             </section>

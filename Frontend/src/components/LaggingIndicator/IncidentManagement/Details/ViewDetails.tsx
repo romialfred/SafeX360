@@ -515,7 +515,6 @@ const ViewDetails = () => {
                     />
 
                     <DateInput
-                        maxDate={new Date()}
                         label="Date effective"
                         placeholder="Sélectionner la date"
                         minDate={history?.length > 0

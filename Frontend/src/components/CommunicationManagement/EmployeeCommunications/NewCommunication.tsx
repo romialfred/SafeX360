@@ -635,7 +635,6 @@ const NewCommunication = () => {
                                     size="sm"
                                     value={form.values.expiresAt ?? null}
                                     onChange={(value) => form.setFieldValue('expiresAt', value || undefined)}
-                                    minDate={new Date()}
                                     error={form.errors.expiresAt}
                                 />
                                 <Switch
@@ -662,7 +661,6 @@ const NewCommunication = () => {
                                                 size="sm"
                                                 value={form.values.oneTimeAt ?? null}
                                                 onChange={(value) => form.setFieldValue('oneTimeAt', value || undefined)}
-                                                minDate={new Date()}
                                                 error={form.errors.oneTimeAt}
                                             />
                                         )}

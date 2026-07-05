@@ -321,7 +321,6 @@ const RegisterForm = () => {
                                 <DateInput
                                     label={t('registerForm.reviewDateLabel')}
                                     placeholder={t('registerForm.reviewDatePlaceholder')}
-                                    minDate={new Date()}
                                     size="sm"
                                     valueFormat="DD/MM/YYYY"
                                     clearable

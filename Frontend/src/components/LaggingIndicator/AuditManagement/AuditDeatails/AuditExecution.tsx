@@ -490,7 +490,7 @@ const AuditExecution = ({ employees, empMap, audit, onObservationAdded }: any) =
 
                                         {...empForm.getInputProps('id')}
                                     />
-                                    <DateInput label="Date de l'entretien" placeholder="Sélectionner la date" {...empForm.getInputProps('date')} maxDate={new Date()} />
+                                    <DateInput label="Date de l'entretien" placeholder="Sélectionner la date" {...empForm.getInputProps('date')} />
                                 </div>
 
                                 <div className="">

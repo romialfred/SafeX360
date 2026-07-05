@@ -199,7 +199,6 @@ const EditAdhocAction = () => {
                                 <DateInput
                                     label={t('edit.deadlineLabel')}
                                     placeholder={t('edit.deadlinePlaceholder')}
-                                    minDate={new Date()}
                                     size="sm"
                                     withAsterisk
                                     leftSection={<IconCalendarDue size={14} />}

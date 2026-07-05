@@ -562,7 +562,6 @@ const NonConformityDetails = () => {
                     />
 
                     <DateInput
-                        maxDate={new Date()}
                         label="Date d'effet"
                         placeholder="Sélectionner la date"
                         {...form.getInputProps('date')}

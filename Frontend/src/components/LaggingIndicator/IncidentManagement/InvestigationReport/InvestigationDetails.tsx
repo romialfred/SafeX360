@@ -139,8 +139,8 @@ const InvestigationDetails = ({ incident, form, employees }: any) => {
             {/* Calendrier */}
             <SectionCard band="bg-blue-50/60 border-blue-200/70" icon={IconCalendarEvent} title={t('investigation.details.scheduleSection')}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <DateInput minDate={incident.discoveryDate ? new Date(incident.discoveryDate) : undefined} {...form.getInputProps("startDate")} label={t('investigation.details.startDateLabel')} maxDate={form.values.endDate ?? new Date()} placeholder={t('investigation.details.startDatePlaceholder')} withAsterisk />
-                    <DateInput {...form.getInputProps("endDate")} minDate={form.values.startDate} maxDate={new Date()} label={t('investigation.details.endDateLabel')} placeholder={t('investigation.details.endDatePlaceholder')} />
+                    <DateInput minDate={incident.discoveryDate ? new Date(incident.discoveryDate) : undefined} maxDate={form.values.endDate ?? undefined} {...form.getInputProps("startDate")} label={t('investigation.details.startDateLabel')} placeholder={t('investigation.details.startDatePlaceholder')} withAsterisk />
+                    <DateInput {...form.getInputProps("endDate")} minDate={form.values.startDate} label={t('investigation.details.endDateLabel')} placeholder={t('investigation.details.endDatePlaceholder')} />
                 </div>
                 {(form.values.startDate && form.values.endDate) && (
                     <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">

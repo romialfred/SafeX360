@@ -331,7 +331,6 @@ const SteeringTourDetails = () => {
 
                         <DateInput
                             size="sm"
-                            maxDate={new Date()}
                             label="Date"
                             placeholder="Sélectionner la date"
                             {...form.getInputProps("date")}

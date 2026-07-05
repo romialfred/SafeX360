@@ -201,7 +201,6 @@ const EmpTable = ({ requirements, fetchData, docMap }: EmpTableProps) => {
                         />
                         <PdfDropzone title="Document (PDF)" id="file" form={form} withAsterisk single />
                         <DateInput
-                            minDate={new Date()}
                             withAsterisk
                             label="Date d'expiration du justificatif"
                             placeholder="jj/mm/aaaa"

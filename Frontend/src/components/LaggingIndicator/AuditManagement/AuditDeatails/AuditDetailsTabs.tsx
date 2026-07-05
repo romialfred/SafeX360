@@ -334,7 +334,6 @@ const AuditDetailsTabs = () => {
                         />
 
                         <DateInput
-                            maxDate={new Date()}
                             label="Date"
                             placeholder="Sélectionner la date"
                             {...form.getInputProps("date")}

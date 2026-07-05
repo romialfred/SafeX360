@@ -190,7 +190,6 @@ const UploadDocument = () => {
                             <DateInput
                                 label="Date d'expiration du justificatif"
                                 placeholder="jj/mm/aaaa"
-                                minDate={new Date()}
                                 withAsterisk
                                 size="sm"
                                 valueFormat="DD/MM/YYYY"
