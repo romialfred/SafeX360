@@ -142,15 +142,10 @@ const ViewDetails = () => {
 
 
 
-    const handleStatusChange = () => {
-        if (locked.locked) return;
-        open();
-
-    }
     const form = useForm({
         initialValues: {
             ownerId: "",
-            date: "",
+            date: null as Date | null,
             status: "",
             comment: "",
             incidentId: incidentId
@@ -161,6 +156,18 @@ const ViewDetails = () => {
             status: (value) => value ? null : "Le statut est requis",
         }
     });
+
+    const handleStatusChange = () => {
+        if (locked.locked) return;
+
+        form.setValues((prev) => ({
+            ...prev,
+            status: statusSelectOptions[0]?.value || '',
+            date: prev.date || new Date(),
+        }));
+
+        open();
+    };
 
     const handleSubmit = async (values: any) => {
         if (locked.locked) {
@@ -257,6 +264,22 @@ const ViewDetails = () => {
         'REJECTED': 'red',
     };
     const currentStatusKey = String(incident?.status || '').toUpperCase();
+
+    // ─── Machine à état incidents — transitions autorisées (miroir backend) ──
+    const INCIDENT_TRANSITIONS: Record<string, string[]> = {
+        PENDING: ['REPORTED', 'REJECTED'],
+        REPORTED: ['INVESTIGATION', 'CLOSED', 'REJECTED'],
+        INVESTIGATION: ['INVESTIGATION_COMPLETED'],
+        INVESTIGATION_COMPLETED: ['CORRECTIVE_ACTIONS', 'CLOSED'],
+        CORRECTIVE_ACTIONS: ['CLOSED'],
+        CLOSED: [],
+        REJECTED: [],
+    };
+    const allowedNextStatuses = INCIDENT_TRANSITIONS[currentStatusKey] || [];
+    const statusSelectOptions = INCIDENT_STATUS_OPTIONS.filter(
+        (opt) => allowedNextStatuses.includes(opt.value)
+    );
+
     const statusColor = statusColorMap[currentStatusKey] || 'gray';
     const statusLabel = incidentStatusLabel(incident?.status);
     const reporterName = employees[incident?.reporterId]?.name || 'Inconnu';
@@ -506,6 +529,7 @@ const ViewDetails = () => {
                     </Text>
 
                     <Select
+                        size="sm"
                         label="Responsable du changement"
                         placeholder="Sélectionner le responsable"
                         data={emps}
@@ -515,6 +539,7 @@ const ViewDetails = () => {
                     />
 
                     <DateInput
+                        size="sm"
                         label="Date effective"
                         placeholder="Sélectionner la date"
                         minDate={history?.length > 0
@@ -526,9 +551,10 @@ const ViewDetails = () => {
                         withAsterisk
                     />
                     <Select
+                        size="sm"
                         label="Nouveau statut"
                         placeholder="Sélectionner le statut"
-                        data={INCIDENT_STATUS_OPTIONS.slice(INCIDENT_STATUS_OPTIONS.findIndex((item) => item.value === (history.length > 0 ? history[history.length - 1]?.status : incident.status)))}
+                        data={statusSelectOptions}
                         {...form.getInputProps("status")}
                         withAsterisk
                     />

@@ -392,8 +392,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
 
                             <div className="grid grid-cols-2 gap-4">
 
-                                <NumberInput {...updateForm.getInputProps('progress')} label="Avancement (%)" max={100} clampBehavior="blur" min={recommendation.progress} />
-                                <Select {...updateForm.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={REC_STATUS_OPTIONS.slice(REC_STATUS_OPTIONS.findIndex((item) => item.value === (recommendationFollowups?.length > 0 ? recommendationFollowups[recommendationFollowups.length - 1]?.status : recommendation?.status)))} />
+                                <NumberInput size="sm" {...updateForm.getInputProps('progress')} label="Avancement (%)" max={100} clampBehavior="blur" min={recommendation.progress} />
+                                <Select size="sm" {...updateForm.getInputProps('status')} label="Statut" placeholder="Sélectionner le statut" data={REC_STATUS_OPTIONS.slice(REC_STATUS_OPTIONS.findIndex((item) => item.value === (recommendationFollowups?.length > 0 ? recommendationFollowups[recommendationFollowups.length - 1]?.status : recommendation?.status)))} />
                             </div>
                             <TextEditor form={updateForm} id="comment" title="Commentaire de suivi" />
                             <Divider size="xs" />

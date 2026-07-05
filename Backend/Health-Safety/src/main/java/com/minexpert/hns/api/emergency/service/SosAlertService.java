@@ -229,16 +229,18 @@ public class SosAlertService {
     // ─── Broadcast STOMP ─────────────────────────────────────────────────────
 
     private void broadcast(Long companyId, Long alertId, SosAlertDTO payload) {
-        // Topic global mine — pour tableau de bord coordinateur
-        messaging.convertAndSend(
-            "/topic/emergency/sos/company/" + companyId,
-            payload
-        );
-        // Topic spécifique alerte — pour page détail
-        messaging.convertAndSend(
-            "/topic/emergency/sos/" + alertId,
-            payload
-        );
+        try {
+            messaging.convertAndSend(
+                "/topic/emergency/sos/company/" + companyId,
+                payload
+            );
+            messaging.convertAndSend(
+                "/topic/emergency/sos/" + alertId,
+                payload
+            );
+        } catch (Exception e) {
+            log.error("[SosAlertService] WebSocket broadcast failed for SOS#{}: {}", alertId, e.getMessage(), e);
+        }
     }
 
     // ─── Mappers ─────────────────────────────────────────────────────────────
@@ -252,8 +254,13 @@ public class SosAlertService {
                 .orElse(null);
         }
         // Calcul durée écoulée (jusqu'à clôture si fermé, sinon jusqu'à maintenant)
-        LocalDateTime end = a.getClosedAt() != null ? a.getClosedAt() : LocalDateTime.now();
-        long elapsed = Duration.between(a.getTriggeredAt(), end).getSeconds();
+        long elapsed = 0;
+        if (a.getTriggeredAt() != null) {
+            LocalDateTime end = a.getClosedAt() != null ? a.getClosedAt() : LocalDateTime.now();
+            elapsed = Duration.between(a.getTriggeredAt(), end).getSeconds();
+        } else {
+            log.warn("SOS#{} has null triggeredAt — elapsed set to 0", a.getId());
+        }
 
         return SosAlertDTO.builder()
             .id(a.getId())

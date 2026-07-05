@@ -73,13 +73,17 @@ public class SosEscalationScheduler {
             try {
                 processOne(sos, now);
             } catch (Exception e) {
-                // Ne fait pas tomber la boucle pour les autres SOS
-                log.warn("Escalation failed for SOS#{}: {}", sos.getId(), e.getMessage());
+                log.error("Escalation failed for SOS#{}: {}", sos.getId(), e.getMessage(), e);
             }
         }
     }
 
     private void processOne(SosAlert sos, LocalDateTime now) {
+        if (sos.getTriggeredAt() == null) {
+            log.warn("SOS#{} has null triggeredAt — skipping escalation", sos.getId());
+            return;
+        }
+
         // Settings de la mine (defaults si absent)
         EmergencySettings settings = settingsRepo.findByCompanyId(sos.getCompanyId())
             .orElse(null);
@@ -138,41 +142,43 @@ public class SosEscalationScheduler {
             null, null
         );
 
-        // Broadcast WebSocket spécifique escalade
-        String topic = rule.getTargetPermission() != null
-            ? "/topic/emergency/escalation/" + rule.getTargetPermission().name()
-            : "/topic/emergency/escalation/user/" + rule.getTargetUserId();
-        messaging.convertAndSend(topic, java.util.Map.of(
-            "sosAlertId", sos.getId(),
-            "step", nextStepOrder,
-            "ruleName", rule.getName(),
-            "companyId", sos.getCompanyId(),
-            "triggeredAt", sos.getTriggeredAt().toString()
-        ));
-
-        // Notifie aussi le topic général de la mine pour mise à jour UI
-        messaging.convertAndSend(
-            "/topic/emergency/sos/company/" + sos.getCompanyId(),
-            java.util.Map.of(
-                "escalated", true,
+        // Broadcast WebSocket — isolé pour ne pas perdre le save DB en cas d'erreur STOMP
+        try {
+            String topic = rule.getTargetPermission() != null
+                ? "/topic/emergency/escalation/" + rule.getTargetPermission().name()
+                : "/topic/emergency/escalation/user/" + rule.getTargetUserId();
+            messaging.convertAndSend(topic, java.util.Map.of(
                 "sosAlertId", sos.getId(),
-                "step", nextStepOrder
-            )
-        );
+                "step", nextStepOrder,
+                "ruleName", rule.getName(),
+                "companyId", sos.getCompanyId(),
+                "triggeredAt", sos.getTriggeredAt().toString()
+            ));
 
-        // Broadcast company-scoped pour le frontend (EmergencyWebSocketProvider)
-        java.util.HashMap<String, Object> escalationPayload = new java.util.HashMap<>();
-        escalationPayload.put("type", "ESCALATION");
-        escalationPayload.put("sosAlertId", sos.getId());
-        escalationPayload.put("reasonCode", sos.getReasonCode() != null ? sos.getReasonCode() : "");
-        escalationPayload.put("stepOrder", nextStepOrder);
-        escalationPayload.put("targetPermission", rule.getTargetPermission() != null ? rule.getTargetPermission().name() : "");
-        escalationPayload.put("companyId", sos.getCompanyId());
-        escalationPayload.put("message", rule.getName());
-        messaging.convertAndSend(
-            "/topic/emergency/escalation/company/" + sos.getCompanyId(),
-            escalationPayload
-        );
+            messaging.convertAndSend(
+                "/topic/emergency/sos/company/" + sos.getCompanyId(),
+                java.util.Map.of(
+                    "escalated", true,
+                    "sosAlertId", sos.getId(),
+                    "step", nextStepOrder
+                )
+            );
+
+            java.util.HashMap<String, Object> escalationPayload = new java.util.HashMap<>();
+            escalationPayload.put("type", "ESCALATION");
+            escalationPayload.put("sosAlertId", sos.getId());
+            escalationPayload.put("reasonCode", sos.getReasonCode() != null ? sos.getReasonCode() : "");
+            escalationPayload.put("stepOrder", nextStepOrder);
+            escalationPayload.put("targetPermission", rule.getTargetPermission() != null ? rule.getTargetPermission().name() : "");
+            escalationPayload.put("companyId", sos.getCompanyId());
+            escalationPayload.put("message", rule.getName());
+            messaging.convertAndSend(
+                "/topic/emergency/escalation/company/" + sos.getCompanyId(),
+                escalationPayload
+            );
+        } catch (Exception e) {
+            log.error("[SosEscalationScheduler] WebSocket broadcast failed for SOS#{} step {}: {}", sos.getId(), nextStepOrder, e.getMessage(), e);
+        }
 
         try {
             emergencyEmailService.notifySosEscalated(

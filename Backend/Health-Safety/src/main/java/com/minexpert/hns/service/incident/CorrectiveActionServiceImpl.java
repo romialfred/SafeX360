@@ -287,6 +287,12 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     })
     public void updateCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, correctiveActionDTO.getId());
+
+        if (correctiveActionDTO.getStatus() != null
+                && correctiveActionDTO.getStatus() != correctiveAction.getStatus()) {
+            assertActionTransition(correctiveAction.getStatus(), correctiveActionDTO.getStatus());
+        }
+
         correctiveAction.setActionName(correctiveActionDTO.getActionName());
         correctiveAction.setDescription(correctiveActionDTO.getDescription());
         correctiveAction.setAssignedEmployeeId(correctiveActionDTO.getAssignedEmployeeId());

@@ -326,6 +326,7 @@ const AuditDetailsTabs = () => {
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-4">
                     <div className="grid grid-cols-2 gap-4">
                         <Select
+                            size="sm"
                             label="Responsable"
                             placeholder="Sélectionner le responsable"
                             data={emps}
@@ -334,6 +335,7 @@ const AuditDetailsTabs = () => {
                         />
 
                         <DateInput
+                            size="sm"
                             label="Date"
                             placeholder="Sélectionner la date"
                             {...form.getInputProps("date")}
@@ -342,6 +344,7 @@ const AuditDetailsTabs = () => {
                     </div>
 
                     <Select
+                        size="sm"
                         label="Statut"
                         placeholder="Sélectionner le statut"
                         data={statusOptions}
@@ -352,6 +355,7 @@ const AuditDetailsTabs = () => {
                     {form.values.status === 'CLOSED' ? (
                         <>
                             <NumberInput
+                                size="sm"
                                 label="Évaluation qualité (1-10)"
                                 placeholder="Note de qualité de l'audit"
                                 withAsterisk
@@ -359,6 +363,7 @@ const AuditDetailsTabs = () => {
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Rapport de clôture"
                                 placeholder="Synthèse de clôture, validation des actions, commentaires finaux..."
                                 withAsterisk
@@ -367,6 +372,7 @@ const AuditDetailsTabs = () => {
                             />
 
                             <Textarea
+                                size="sm"
                                 label="Leçons apprises"
                                 withAsterisk
                                 placeholder="Points d'amélioration pour les futurs audits, bonnes pratiques identifiées, recommandations pour l'organisation"
@@ -376,6 +382,7 @@ const AuditDetailsTabs = () => {
                         </>
                     ) : (
                         <Textarea
+                            size="sm"
                             label="Commentaire"
                             withAsterisk
                             placeholder="Saisir votre commentaire"
@@ -385,10 +392,10 @@ const AuditDetailsTabs = () => {
                     )}
 
                     <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="default" onClick={close}>
+                        <Button variant="default" size="sm" onClick={close}>
                             Annuler
                         </Button>
-                        <Button color="teal" type="submit">
+                        <Button color="teal" size="sm" type="submit">
                             Soumettre
                         </Button>
                     </div>

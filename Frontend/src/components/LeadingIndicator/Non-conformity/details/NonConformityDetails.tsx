@@ -553,6 +553,7 @@ const NonConformityDetails = () => {
             >
                 <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-4 mt-2">
                     <Select
+                        size="sm"
                         label="Responsable du changement"
                         placeholder="Sélectionner un employé"
                         data={emps}
@@ -562,6 +563,7 @@ const NonConformityDetails = () => {
                     />
 
                     <DateInput
+                        size="sm"
                         label="Date d'effet"
                         placeholder="Sélectionner la date"
                         {...form.getInputProps('date')}
@@ -569,6 +571,7 @@ const NonConformityDetails = () => {
                     />
 
                     <Select
+                        size="sm"
                         label="Nouveau statut"
                         placeholder="Sélectionner un statut"
                         data={statusSelectOptions}
@@ -577,6 +580,7 @@ const NonConformityDetails = () => {
                     />
 
                     <Textarea
+                        size="sm"
                         label="Commentaire"
                         placeholder="Justifier le changement de statut (recommandé)"
                         {...form.getInputProps('comment')}

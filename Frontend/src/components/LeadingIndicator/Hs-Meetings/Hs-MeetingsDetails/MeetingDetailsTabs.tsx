@@ -28,6 +28,7 @@ import { useForm } from "@mantine/form";
 import { getEmployeesWithDepartment } from "../../../../services/EmployeeService";
 
 import { mapIdToName } from "../../../../utility/OtherUtilities";
+import { toLocalDate } from "../../../../utility/dateConversion";
 
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -54,17 +55,35 @@ const MeetingDetailsTabs = () => {
     const [activity, setActivity] = useState<any>({});
     const [locked, setLocked] = useState<{ locked: boolean; status: string }>({ locked: false, status: '' });
 
-    const form = useForm({
+    const form = useForm<{
+        ownerId: string;
+        date: Date | null;
+        status: string;
+        comment: string;
+        evaluation: number | string;
+        closingReport: string;
+    }>({
         initialValues: {
             ownerId: "",
-            date: "",
+            date: null,
             status: "",
             comment: "",
+            evaluation: "",
+            closingReport: "",
         },
         validate: {
             ownerId: (value) => value ? null : "Le responsable est requis",
             date: (value) => value ? null : "La date est requise",
             status: (value) => value ? null : "Le statut est requis",
+            comment: (value) => value && value.trim() ? null : "Un commentaire est requis",
+            evaluation: (value, values) =>
+                values.status === 'COMPLETED' && (value === '' || value === null || value === undefined)
+                    ? "L'évaluation est requise pour clôturer"
+                    : null,
+            closingReport: (value, values) =>
+                values.status === 'COMPLETED' && (!value || !value.trim())
+                    ? 'Le rapport de clôture est requis'
+                    : null,
         }
     });
 
@@ -102,6 +121,22 @@ const MeetingDetailsTabs = () => {
         fetchHistory();
     }, []);
 
+    const normalizedStatus = String(activity?.status || '').toUpperCase();
+    const statusSequence = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
+    const currentStatusIndex = statusSequence.indexOf(normalizedStatus);
+    const isFinalStatus = normalizedStatus === 'COMPLETED' || normalizedStatus === 'CANCELLED';
+
+    const progressionStatuses = currentStatusIndex >= 0
+        ? statusSequence.slice(currentStatusIndex)
+        : statusSequence;
+
+    const allowedStatusSet = new Set(progressionStatuses);
+    if (!isFinalStatus && normalizedStatus !== 'CANCELLED') {
+        allowedStatusSet.add('CANCELLED');
+    }
+
+    const statusSelectOptions = ACTIVITY_STATUS_OPTIONS.filter((option) => allowedStatusSet.has(option.value));
+
     const fetchHistory = () => {
         getHsActivityHistoryById(id).then((res) => {
             setHistory(res);
@@ -121,6 +156,7 @@ const MeetingDetailsTabs = () => {
 
         const payload = {
             ...values,
+            date: toLocalDate(values.date),
             hsActivityId: parseInt(id || "")
         };
 
@@ -138,6 +174,8 @@ const MeetingDetailsTabs = () => {
                 }));
                 if (['COMPLETED', 'CANCELLED'].includes(String(values.status || '').toUpperCase())) {
                     setLocked({ locked: true, status: String(values.status || '').toUpperCase() });
+                } else {
+                    setLocked({ locked: false, status: '' });
                 }
                 fetchHistory();
             })
@@ -177,7 +215,18 @@ const MeetingDetailsTabs = () => {
     };
 
     const handleStatusChange = () => {
-        if (locked.locked) return;
+        if (locked.locked || isFinalStatus) return;
+
+        const defaultStatus = statusSelectOptions.find((option) => option.value === normalizedStatus)?.value
+            || statusSelectOptions[0]?.value
+            || '';
+
+        form.setValues({
+            ...form.values,
+            status: defaultStatus,
+            date: form.values.date || new Date(),
+        });
+
         open();
     };
 
@@ -210,13 +259,13 @@ const MeetingDetailsTabs = () => {
                     </div>
 
                     <div className="flex items-end gap-2 flex-col">
-                        <Tooltip label={locked.locked ? (locked.status === 'COMPLETED' ? 'Réunion clôturée : statut non modifiable' : 'Réunion annulée : statut non modifiable') : 'Changer le statut'} withArrow>
+                        <Tooltip label={(locked.locked || isFinalStatus) ? ((locked.status || normalizedStatus) === 'COMPLETED' ? 'Réunion clôturée : statut non modifiable' : 'Réunion annulée : statut non modifiable') : 'Changer le statut'} withArrow>
                             <span className="inline-flex">
                                 <Button
                                     size="sm"
                                     leftSection={<IconClock size={15} />}
                                     onClick={handleStatusChange}
-                                    disabled={locked.locked}
+                                    disabled={locked.locked || isFinalStatus}
                                     className="!bg-white !text-green-700 hover:!bg-green-50"
                                 >
                                     Changer le statut
@@ -308,7 +357,7 @@ const MeetingDetailsTabs = () => {
                         size="sm"
                         label="Statut"
                         placeholder="Sélectionner le statut"
-                        data={ACTIVITY_STATUS_OPTIONS}
+                        data={statusSelectOptions}
                         {...form.getInputProps("status")}
                         withAsterisk
                     />

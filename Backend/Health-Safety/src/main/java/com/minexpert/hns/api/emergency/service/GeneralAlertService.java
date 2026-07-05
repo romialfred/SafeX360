@@ -215,9 +215,13 @@ public class GeneralAlertService {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void broadcast(Long companyId, GeneralAlertDTO payload) {
-        messaging.convertAndSend("/topic/emergency/alert/company/" + companyId, payload);
-        if (payload.getId() != null) {
-            messaging.convertAndSend("/topic/emergency/alert/" + payload.getId(), payload);
+        try {
+            messaging.convertAndSend("/topic/emergency/alert/company/" + companyId, payload);
+            if (payload.getId() != null) {
+                messaging.convertAndSend("/topic/emergency/alert/" + payload.getId(), payload);
+            }
+        } catch (Exception e) {
+            log.error("[GeneralAlertService] WebSocket broadcast failed for company {}: {}", companyId, e.getMessage(), e);
         }
     }
 
