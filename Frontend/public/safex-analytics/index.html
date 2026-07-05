@@ -43,7 +43,7 @@
   <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <style>
     html, body { background:#F6F7F9; font-family:'Inter',system-ui,sans-serif; color:#0F172A; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
@@ -120,7 +120,7 @@
 </head>
 <body>
   <div id="root"></div>
-<script type="text/babel" data-presets="env,react">
+<script type="text/babel" data-presets="react">
 const { useState, useMemo, useEffect, useRef, Fragment, createContext, useContext } = React;
 const {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area, ComposedChart,
@@ -5708,7 +5708,7 @@ const App = () => {
             <span className="mx-1.5">·</span>Analytics Platform
             <span className="mx-1.5">·</span>v1.0
             <span className="mx-1.5">·</span>Données fictives
-            <span className="mx-1.5">·</span>© {new Date().getFullYear()} MineXpert
+            <span className="mx-1.5">·</span>© {new Date().getFullYear()} Data Universe
           </footer>
         </main>
         <FilterDrawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} filters={filters} onApply={setFilters}/>
