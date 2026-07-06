@@ -5,7 +5,7 @@ import { Affix, LoadingOverlay } from "@mantine/core";
 import Sidebar from "../components/NewComponents/Sidebar/Sidebar";
 import FloatingAIAssistant from "../components/NewComponents/AiAssistant/FloatingAiAssistant";
 import AppFooter from "../components/UtilityComp/AppFooter";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConfig";
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
 import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
@@ -31,7 +31,19 @@ import { Z } from "../constants/zIndex";
  */
 const DashboardLayout = () => {
     const overlay = useAppSelector((state) => state.overlay);
+    const selectedCompanyId = useAppSelector((s) => s.companySelection?.selectedCompanyId ?? null);
     const [flagsLoaded, setFlagsLoaded] = useState(false);
+    const [switching, setSwitching] = useState(false);
+    const prevCompanyRef = useRef(selectedCompanyId);
+
+    useEffect(() => {
+        if (prevCompanyRef.current !== selectedCompanyId) {
+            prevCompanyRef.current = selectedCompanyId;
+            setSwitching(true);
+            const id = window.setTimeout(() => setSwitching(false), 600);
+            return () => window.clearTimeout(id);
+        }
+    }, [selectedCompanyId]);
     const inactivityMinutes = useMemo(() => {
         const inactivityEnv = import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES as string | undefined;
         const parsedInactivity = Number(inactivityEnv);
@@ -115,10 +127,10 @@ const DashboardLayout = () => {
                         className={`relative flex-1 pt-[120px] sm:pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
                     >
                         <LoadingOverlay
-                            visible={overlay || !flagsLoaded}
+                            visible={overlay || !flagsLoaded || switching}
                             zIndex={Z.overlay}
                             overlayProps={{ radius: 'sm', blur: 2 }}
-                            loaderProps={{ color: 'red', type: 'bars' }}
+                            loaderProps={{ color: 'teal', type: 'bars' }}
                         />
                         {/* LOT Dosimetrie Phase 5 — Bandeau global d'alertes critiques.
                             Auto-masque hors routes /dosimetry/* et sur /dosimetry/alerts. */}

@@ -26,24 +26,6 @@ interface CompanySelectorProps {
 const UNKNOWN_COMPANY_NAME = "Toutes les Mines";
 const ADMIN_ROLES = new Set(["administrator", "admin", "hse_manager", "manager"]);
 
-const showReloadOverlay = () => {
-    if (document.getElementById('mine-switch-overlay')) return;
-    const s = document.createElement('style');
-    s.textContent = '@keyframes safex-spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-    const o = document.createElement('div');
-    o.id = 'mine-switch-overlay';
-    Object.assign(o.style, {
-        position: 'fixed', inset: '0', zIndex: String(Z.top),
-        background: '#FAF8F3',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-    });
-    o.innerHTML =
-        '<div style="width:44px;height:44px;border:3px solid #e2e8f0;border-top-color:#0F766E;border-radius:50%;animation:safex-spin .7s linear infinite"></div>' +
-        '<p style="margin-top:14px;color:#475569;font-size:13px;font-family:system-ui,sans-serif">Changement de mine en cours…</p>';
-    document.body.appendChild(o);
-};
 
 const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) => {
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -294,10 +276,6 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         dispatch(setCompanySelection(null));
         setSelectedLabel(UNKNOWN_COMPANY_NAME);
         setDropdownOpen(false);
-        if (typeof window !== "undefined") {
-            showReloadOverlay();
-            window.location.reload();
-        }
     };
 
     const handleSelectCompany = (company: Company) => {
@@ -306,10 +284,6 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         dispatch(setCompanySelection(company.id));
         setSelectedLabel(name);
         setDropdownOpen(false);
-        if (typeof window !== "undefined") {
-            showReloadOverlay();
-            window.location.reload();
-        }
     };
 
     const isAllSelected = selectedCompanyId === null;
