@@ -67,6 +67,7 @@ export default function MobileDashboardOhs() {
 
     const [dashboard, setDashboard] = useState<OhsDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -80,7 +81,10 @@ export default function MobileDashboardOhs() {
                 });
                 if (!cancelled) setDashboard(res.data);
             } catch {
-                if (!cancelled) setDashboard(MOCK_DASHBOARD);
+                if (!cancelled) {
+                    setDashboard(MOCK_DASHBOARD);
+                    setFetchError(true);
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -107,7 +111,14 @@ export default function MobileDashboardOhs() {
                 title="Tableau de bord HSE"
                 subtitle="Vue synthétique terrain"
                 accent="#0E7490"
+                onBack={() => navigate('/m/home')}
             />
+
+            {fetchError && (
+                <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-[12px] px-4 py-1.5 flex items-center gap-1.5">
+                    <span>Données de démonstration — connexion au serveur indisponible.</span>
+                </div>
+            )}
 
             {/* Safety Score — jauge circulaire */}
             <section className="px-4 pt-4">

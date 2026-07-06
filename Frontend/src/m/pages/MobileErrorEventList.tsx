@@ -106,36 +106,6 @@ const STATUS_TONE: Record<ErrorEventStatus, string> = {
     REOPENED: 'bg-orange-50 text-orange-800',
 };
 
-const MOCK_EVENTS: ErrorEventSummary[] = [
-    {
-        id: 1,
-        reference: 'ERR-2026-014',
-        type: 'HUMAN_ERROR',
-        severity: 'MEDIUM',
-        occurredAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-        status: 'DECLARED',
-        title: 'Consigne de verrouillage non appliquée',
-    },
-    {
-        id: 2,
-        reference: 'ERR-2026-013',
-        type: 'PROCEDURAL',
-        severity: 'HIGH',
-        occurredAt: new Date(Date.now() - 26 * 3600000).toISOString(),
-        status: 'ANALYZING',
-        title: 'Procédure de consignation obsolète',
-    },
-    {
-        id: 3,
-        reference: 'ERR-2026-011',
-        type: 'TECHNICAL',
-        severity: 'LOW',
-        occurredAt: new Date(Date.now() - 4 * 86400000).toISOString(),
-        status: 'CLOSED',
-        title: 'Capteur de gaz mal calibré',
-    },
-];
-
 function formatEventDate(iso: string): string {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
@@ -177,8 +147,8 @@ export default function MobileErrorEventList() {
                 }
             } catch {
                 if (!cancelled) {
-                    setItems(MOCK_EVENTS);
-                    setError(null);
+                    setItems([]);
+                    setError('Impossible de charger les événements. Vérifiez votre connexion.');
                 }
             }
         })();
@@ -201,6 +171,7 @@ export default function MobileErrorEventList() {
                 title="Gestion des erreurs"
                 subtitle="Registre des événements"
                 accent="#BE185D"
+                onBack={() => navigate('/m/home')}
             />
 
             {stale && (
