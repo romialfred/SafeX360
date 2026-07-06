@@ -506,7 +506,7 @@ const LoginsPage = () => {
                 {/* Bouton "Télécharger l'app Android" — Phase M6 */}
                 <a
                     href="/downloads/SafexMobile.apk"
-                    download="SafexMobile.apk"
+                    download="SafeX 360 HSE.apk"
                     className="flex items-center gap-3 px-3.5 py-2.5 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[320px]"
                     style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
                     aria-label={t.mobileDownloadAria}
