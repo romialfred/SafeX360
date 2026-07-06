@@ -8,7 +8,7 @@ import {
     planEffectivenessCheck,
     concludeEffectivenessCheck,
 } from '../../../services/AuditIsoService';
-import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
 /**
  * LOT 52 — Vérification d'efficacité d'une recommandation d'audit
@@ -82,8 +82,8 @@ const EffectivenessPanel = ({ recommendationId }: { recommendationId: number }) 
             setVerdict(null);
             setComment('');
             await reload();
-        } catch (_e) {
-            errorNotification('Échec de l\'enregistrement du verdict');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de l\'enregistrement du verdict'));
         } finally {
             setLoading(false);
         }
