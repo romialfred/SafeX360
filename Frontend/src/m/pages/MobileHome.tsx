@@ -63,8 +63,8 @@ export default function MobileHome() {
 
     const displayName = user?.firstName
         ? `${user.firstName} ${user.familyName || ''}`.trim()
-        : user?.name || 'Personnel';
-    const role = user?.role || 'Personnel HSE';
+        : user?.name || user?.sub || 'Personnel';
+    const role = user?.role || user?.position || 'Personnel HSE';
     const initials = displayName
         .split(' ')
         .map((w: string) => w[0])

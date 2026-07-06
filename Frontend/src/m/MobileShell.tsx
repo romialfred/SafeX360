@@ -45,7 +45,7 @@ export default function MobileShell() {
     };
     return (
         <div
-            className="min-h-screen bg-[#FAF8F3] flex flex-col"
+            className="min-h-screen bg-[#FAF8F3] flex flex-col overflow-x-hidden"
             style={{ overscrollBehaviorX: 'none' }}
         >
             {/* Banner offline global (uniquement quand la detection a abouti) */}

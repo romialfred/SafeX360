@@ -1,7 +1,9 @@
 import { Center, Loader } from '@mantine/core';
 import { JSX } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import LandingPage from '../components/NewComponents/LandingPage/LandingPage';
+import { isNativePlatform } from '../m/utils/capacitorBridge';
 
 /**
  * RootGate — Gate pour la route racine '/'.
@@ -9,11 +11,9 @@ import LandingPage from '../components/NewComponents/LandingPage/LandingPage';
  * Comportement :
  *   - loading : affiche un loader centre
  *   - user authentifie : affiche les enfants (DashboardLayout)
- *   - user non authentifie : affiche la LandingPage (vitrine commerciale)
- *
- * Ce composant remplace ProtectedRoute uniquement pour '/' afin que les
- * visiteurs non connectes voient la vitrine plutot qu'une redirection
- * automatique vers /login. Toutes les autres routes app restent protegees.
+ *   - user non authentifie :
+ *       - APK Capacitor : redirige vers /login (pas de vitrine)
+ *       - Web : affiche la LandingPage (vitrine commerciale)
  */
 interface RootGateProps {
     children: JSX.Element;
@@ -31,6 +31,9 @@ const RootGate: React.FC<RootGateProps> = ({ children }) => {
     }
 
     if (!user) {
+        if (isNativePlatform()) {
+            return <Navigate to="/login" replace />;
+        }
         return <LandingPage />;
     }
 

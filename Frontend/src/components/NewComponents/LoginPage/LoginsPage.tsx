@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react';
 import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
+import { isNativePlatform } from '../../../m/utils/capacitorBridge';
 import { getUser, loginUser } from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
@@ -153,7 +154,7 @@ const LoginsPage = () => {
                 setWakingStep(4);
                 const res: any = await getUser();
                 dispatch(setUser(res));
-                navigate('/');
+                navigate(isNativePlatform() ? '/m/home' : '/');
             } catch (err: any) {
                 const isNetwork = !err?.response;
                 const status = err?.response?.status;
@@ -513,8 +514,8 @@ const LoginsPage = () => {
                 {/* Pied : bouton Google Play + badges ISO sur une même ligne horizontale */}
                 <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px]">
 
-                {/* Carte téléchargement APK — design professionnel */}
-                <a
+                {/* Carte téléchargement APK — masquée dans l'APK Capacitor */}
+                {!isNativePlatform() && <a
                     href="/downloads/SafexMobile.apk"
                     download="SafeX 360 HSE.apk"
                     className="group flex items-stretch gap-0 bg-black/60 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-teal-400/30 rounded-2xl transition-all duration-300 overflow-hidden"
@@ -574,7 +575,7 @@ const LoginsPage = () => {
                         </div>
                         <div className="text-[8.5px] text-white/30 mt-1.5">{t.mobileCompat}</div>
                     </div>
-                </a>
+                </a>}
 
                 {/* Badges officiels des normes ISO (règle plateforme : jamais de norme en texte nu) */}
                 <div className="flex items-center gap-2.5">

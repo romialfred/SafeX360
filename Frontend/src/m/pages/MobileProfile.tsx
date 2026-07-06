@@ -6,6 +6,7 @@
  * version desktop via localStorage flag.
  */
 
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconShield,
@@ -18,11 +19,13 @@ import {
     IconChevronRight,
     IconUserCircle,
     IconAlertOctagon,
+    IconLoader2,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAppSelector } from '../../slices/hooks';
+import { logoutUser } from '../../services/LoginService';
 
 interface ProfileTile {
     label: string;
@@ -45,11 +48,12 @@ export default function MobileProfile() {
     const navigate = useNavigate();
     const haptic = useHaptics();
     const user = useAppSelector((state: any) => state.user);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const displayName = user?.firstName
         ? `${user.firstName} ${user.familyName || ''}`.trim()
-        : user?.name || 'Utilisateur';
-    const role = user?.role || '—';
+        : user?.name || user?.username || 'Utilisateur';
+    const role = user?.role || user?.position || '—';
 
     const go = (path: string) => {
         haptic('light');
@@ -135,18 +139,24 @@ export default function MobileProfile() {
                 </button>
                 <button
                     type="button"
-                    onClick={() => {
+                    disabled={loggingOut}
+                    onClick={async () => {
                         haptic('warning');
+                        setLoggingOut(true);
                         try {
-                            localStorage.removeItem('token');
-                        } catch { /* ignore */ }
+                            await logoutUser();
+                        } catch {
+                            // session déjà expirée — on redirige quand même
+                        }
                         window.location.assign('/login');
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-[13px] text-rose-700 bg-white border border-rose-200 rounded-xl"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-[13px] text-rose-700 bg-white border border-rose-200 rounded-xl disabled:opacity-50"
                     style={{ minHeight: 44 }}
                 >
-                    <IconLogout size={15} stroke={1.8} />
-                    Se déconnecter
+                    {loggingOut
+                        ? <IconLoader2 size={15} stroke={1.8} className="animate-spin" />
+                        : <IconLogout size={15} stroke={1.8} />}
+                    {loggingOut ? 'Déconnexion…' : 'Se déconnecter'}
                 </button>
             </section>
 
