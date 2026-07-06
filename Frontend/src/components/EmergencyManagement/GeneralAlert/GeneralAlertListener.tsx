@@ -21,7 +21,7 @@ import {
 } from '../../../services/GeneralAlertService';
 import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { formatReasonCode, hasCheckedIn, markCheckedIn, cleanupOldCheckIns } from './alertHelpers';
 import { enqueueCheckIn } from '../../../utility/OfflineCheckInQueue';
 
@@ -433,8 +433,8 @@ const GeneralAlertListener = () => {
                 setCheckedInStatus(null);
                 setPickedApId(null);
             }, 5000);
-        } catch {
-            errorNotification('Échec du pointage. Réessayez.');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec du pointage. Réessayez.'));
         } finally {
             setCheckingIn(false);
         }

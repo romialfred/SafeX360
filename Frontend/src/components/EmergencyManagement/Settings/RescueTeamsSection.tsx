@@ -26,7 +26,7 @@ import {
 } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
@@ -176,8 +176,8 @@ const RescueTeamsSection = ({ companyId }: Props) => {
                 successNotification('Équipe créée');
             }
             setTeamModalOpen(false);
-        } catch {
-            errorNotification("Échec de l'enregistrement");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de l'enregistrement"));
         } finally {
             setSavingTeam(false);
         }
@@ -192,8 +192,8 @@ const RescueTeamsSection = ({ companyId }: Props) => {
             if (expandedTeamId === pendingDeleteTeamId) setExpandedTeamId(null);
             successNotification('Équipe désactivée');
             setPendingDeleteTeamId(null);
-        } catch {
-            errorNotification('Échec de la suppression');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la suppression'));
         } finally {
             setDeletingTeam(false);
         }
@@ -226,8 +226,8 @@ const RescueTeamsSection = ({ companyId }: Props) => {
             }));
             setAddMemberModalFor(null);
             successNotification('Membre ajouté');
-        } catch {
-            errorNotification("Échec de l'ajout du membre");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de l'ajout du membre"));
         }
     };
 
@@ -244,8 +244,8 @@ const RescueTeamsSection = ({ companyId }: Props) => {
             }));
             successNotification('Membre retiré');
             setPendingRemoveMember(null);
-        } catch {
-            errorNotification('Échec du retrait');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec du retrait'));
         } finally {
             setRemovingMember(false);
         }

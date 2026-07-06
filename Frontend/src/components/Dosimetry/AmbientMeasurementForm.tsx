@@ -50,7 +50,7 @@ import {
 } from '@tabler/icons-react';
 import { Z } from '../../constants/zIndex';
 import { useAppSelector } from '../../slices/hooks';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     recordAmbientMeasurement,
     listMeasurementPoints,
@@ -284,8 +284,8 @@ const AmbientMeasurementForm = ({
                 successNotification(t('ambient.measurement.queuedOffline'));
                 if (onSuccess) onSuccess();
                 onClose();
-            } catch {
-                errorNotification(t('ambient.measurement.error'));
+            } catch (err) {
+                errorNotification(extractErrorMessage(err, t('ambient.measurement.error')));
             } finally {
                 setSubmitting(false);
                 setConfirmOverModal(false);

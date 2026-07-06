@@ -22,7 +22,7 @@ import {
     IconMail,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONSTANTES PROD
@@ -230,8 +230,8 @@ export default function WelcomeMessageModal({
                 return;
             }
             throw new Error('execCommand copy returned false');
-        } catch {
-            errorNotification(t('userMgmt.welcome.copyError'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('userMgmt.welcome.copyError')));
         }
     };
 

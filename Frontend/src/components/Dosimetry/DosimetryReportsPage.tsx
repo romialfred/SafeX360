@@ -47,6 +47,7 @@ import { useAppSelector } from '../../slices/hooks';
 import {
     successNotification,
     errorNotification,
+    extractErrorMessage,
 } from '../../utility/NotificationUtility';
 import {
     searchWorkers,
@@ -161,8 +162,8 @@ const DosimetryReportsPage = () => {
             if (casesRes.status === 'fulfilled') {
                 setCases(casesRes.value as OverexposureCaseDTO[]);
             }
-        } catch {
-            errorNotification(t('reports.loadError'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('reports.loadError')));
         } finally {
             setLoadingData(false);
         }

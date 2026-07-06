@@ -17,7 +17,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { createSosAlert } from '../../../services/SosService';
 import { enqueueSos } from '../../../utility/OfflineSosQueue';
 
@@ -268,8 +268,8 @@ const SosButton = () => {
                 setSent(true);
                 successNotification(t('emergency:sos.notifications.offlineQueued'));
                 setTimeout(handleClose, 2500);
-            } catch {
-                errorNotification(t('emergency:sos.notifications.criticalFailure'));
+            } catch (err) {
+                errorNotification(extractErrorMessage(err, t('emergency:sos.notifications.criticalFailure')));
             }
         } finally {
             setSending(false);

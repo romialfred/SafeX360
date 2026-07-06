@@ -78,7 +78,7 @@ import {
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../slices/hooks';
 import { hideOverlay, showOverlay } from '../../slices/OverlaySlice';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     searchWorkers,
     createDoseRecord,
@@ -528,8 +528,8 @@ const DoseEntryForm = () => {
                 successNotification(t('doseEntryForm.success.queuedOffline'));
                 const workerId = form.values.workerId;
                 navigate(`/dosimetry/doses/by-worker/${workerId}`);
-            } catch {
-                errorNotification(t('doseEntryForm.errors.queueFailed'));
+            } catch (err) {
+                errorNotification(extractErrorMessage(err, t('doseEntryForm.errors.queueFailed')));
             }
             return;
         }

@@ -16,7 +16,7 @@ import {
     updateEmergencySettings,
     type EmergencySettingsDTO,
 } from '../../../services/EmergencyService';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import EmergencyPermissionsSection from './EmergencyPermissionsSection';
 import RescueTeamsSection from './RescueTeamsSection';
 import EscalationRulesSection from './EscalationRulesSection';
@@ -206,8 +206,8 @@ const EmergencySettingsPage = () => {
             setSettings(saved);
             setDraft(saved);
             successNotification(t('emergency:settings.actions.savedSuccess'));
-        } catch {
-            errorNotification(t('common:messages.errorGeneric'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('common:messages.errorGeneric')));
         } finally {
             setSaving(false);
         }

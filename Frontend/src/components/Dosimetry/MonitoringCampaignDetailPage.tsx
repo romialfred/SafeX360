@@ -75,7 +75,7 @@ import {
     IconActivity,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     getMonitoringCampaign,
     listMeasurementsByCampaign,
@@ -348,8 +348,8 @@ const MonitoringCampaignDetailPage = () => {
             const txt = await generateMonitoringCampaignReport(campaignId);
             setReportText(txt);
             successNotification(t('campaigns.detail.report.success'));
-        } catch {
-            errorNotification(t('campaigns.detail.report.error'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('campaigns.detail.report.error')));
         } finally {
             setReportLoading(false);
         }

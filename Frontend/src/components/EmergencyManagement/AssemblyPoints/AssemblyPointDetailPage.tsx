@@ -37,7 +37,7 @@ import {
 } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllDepartments } from '../../../services/HrmsService';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import AssemblyPointsMap from './AssemblyPointsMap';
 
 /**
@@ -223,8 +223,8 @@ const AssemblyPointDetailPage = () => {
             successNotification(t('emergency:assemblyPoints.archived'));
             setArchiveOpen(false);
             navigate('/emergency/assembly-points');
-        } catch {
-            errorNotification(t('common:messages.errorGeneric'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('common:messages.errorGeneric')));
         } finally {
             setArchiving(false);
         }

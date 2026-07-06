@@ -70,7 +70,7 @@ import {
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../slices/hooks';
 import { hideOverlay, showOverlay } from '../../slices/OverlaySlice';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     searchDosimeters,
     findDosimeterByQr,
@@ -534,8 +534,8 @@ const DosimeterAssignmentForm = ({ mode: modeProp }: DosimeterAssignmentFormProp
             successNotification(t('assignmentForm.scanner.matched', { serial: dto.serial }));
             setScannerOpen(false);
             setScannerInput('');
-        } catch {
-            errorNotification(t('assignmentForm.scanner.searchFailed'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('assignmentForm.scanner.searchFailed')));
         }
     };
 

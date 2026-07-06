@@ -10,7 +10,7 @@ import {
     type EmergencyMediaType,
 } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
@@ -74,8 +74,8 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
             setFilePath('');
             setTtsText('');
             successNotification('Média ajouté');
-        } catch {
-            errorNotification("Échec de l'ajout du média");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de l'ajout du média"));
         } finally {
             setSaving(false);
         }
@@ -89,8 +89,8 @@ const EmergencyMediaSection = ({ companyId }: Props) => {
             setItems((prev) => prev.filter((m) => m.id !== pendingDeleteId));
             successNotification('Média supprimé');
             setPendingDeleteId(null);
-        } catch {
-            errorNotification('Échec de la suppression');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la suppression'));
         } finally {
             setDeleting(false);
         }

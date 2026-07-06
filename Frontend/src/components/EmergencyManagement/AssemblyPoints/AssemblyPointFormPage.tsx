@@ -41,7 +41,7 @@ import {
 } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllDepartments } from '../../../services/HrmsService';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import AssemblyPointsMap from './AssemblyPointsMap';
 
 /**
@@ -448,8 +448,8 @@ const AssemblyPointFormPage = () => {
                 : await createAssemblyPoint(dto, currentUser?.id);
             successNotification(t('emergency:assemblyPoints.saved'));
             navigate(`/emergency/assembly-points/${saved.id}`);
-        } catch {
-            errorNotification(t('common:messages.errorGeneric'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('common:messages.errorGeneric')));
         } finally {
             setSaving(false);
         }

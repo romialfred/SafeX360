@@ -34,7 +34,7 @@ import {
 } from '../../../services/SosService';
 import { listRescueTeams, type RescueTeamDTO } from '../../../services/EmergencyService';
 import { useEmergencyWebSocket } from './EmergencyWebSocketProvider';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { SOS_REASON_LABELS } from './sosLabels';
 
 /**
@@ -146,8 +146,9 @@ const SosDetailPage = () => {
             setAlert(upd);
             await refreshLifecycle();
             successNotification('Alerte prise en charge');
-        } catch {
-            errorNotification('Échec — vérifiez l\'état actuel');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la prise en charge'));
+            getSosAlert(alert.id).then(setAlert).catch(() => {});
         } finally {
             setActing(false);
         }
@@ -166,8 +167,9 @@ const SosDetailPage = () => {
             await refreshLifecycle();
             successNotification('Équipe dispatchée');
             setDispatchOpen(false);
-        } catch {
-            errorNotification('Échec du dispatch');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec du dispatch'));
+            getSosAlert(alert.id).then(setAlert).catch(() => {});
         } finally {
             setActing(false);
         }
@@ -181,8 +183,9 @@ const SosDetailPage = () => {
             setAlert(upd);
             await refreshLifecycle();
             successNotification('Équipe sur place');
-        } catch {
-            errorNotification('Échec de la transition');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la transition'));
+            getSosAlert(alert.id).then(setAlert).catch(() => {});
         } finally {
             setActing(false);
         }
@@ -197,8 +200,9 @@ const SosDetailPage = () => {
             await refreshLifecycle();
             successNotification('Alerte clôturée');
             setConfirmCloseOpen(false);
-        } catch {
-            errorNotification('Échec de la clôture');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la clôture'));
+            getSosAlert(alert.id).then(setAlert).catch(() => {});
         } finally {
             setActing(false);
         }
@@ -217,8 +221,9 @@ const SosDetailPage = () => {
             await refreshLifecycle();
             successNotification('Alerte marquée comme fausse alerte');
             setFalseAlarmOpen(false);
-        } catch {
-            errorNotification('Échec — vérifiez l\'état actuel');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec du marquage fausse alerte'));
+            getSosAlert(alert.id).then(setAlert).catch(() => {});
         } finally {
             setActing(false);
         }

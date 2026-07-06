@@ -21,7 +21,7 @@ import {
     type ModuleFeatureDto,
 } from '../../../services/ModuleManagementService';
 import { getAllCompanies } from '../../../services/HrmsService';
-import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
 interface ModuleManagerProps {
     onBackToSettings: () => void;
@@ -264,8 +264,8 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                     saveMatrixToStorage(init);
                     return init;
                 });
-            } catch {
-                errorNotification(t('messages.updateFailed'));
+            } catch (err) {
+                errorNotification(extractErrorMessage(err, t('messages.updateFailed')));
             } finally {
                 setLoading(false);
             }

@@ -18,7 +18,7 @@ import {
     type RescueWeeklyPlanningDTO,
 } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
 /**
  * Section « Planification hebdomadaire » (LOT 48 Phase 1.c.2).
@@ -175,8 +175,8 @@ const WeeklyPlanningSection = ({ companyId }: Props) => {
             setPlannings((prev) => ({ ...prev, [editingWeek]: saved }));
             setEditingWeek(null);
             successNotification('Planning enregistré');
-        } catch {
-            errorNotification("Échec de l'enregistrement du planning");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de l'enregistrement du planning"));
         } finally {
             setSaving(false);
         }

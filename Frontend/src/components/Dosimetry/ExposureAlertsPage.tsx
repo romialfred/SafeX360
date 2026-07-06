@@ -65,7 +65,7 @@ import {
     IconActivity,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
-import { successNotification, errorNotification } from '../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     getActiveAlerts,
     getAllAlerts,
@@ -410,8 +410,8 @@ const ExposureAlertsPage = () => {
             setActionNote('');
             setSelectedAlert(null);
             await fetchAll();
-        } catch {
-            errorNotification(t('alerts.modal.actionError'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('alerts.modal.actionError')));
         } finally {
             setSubmittingAction(false);
         }

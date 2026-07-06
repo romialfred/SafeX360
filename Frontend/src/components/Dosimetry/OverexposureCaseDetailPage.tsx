@@ -68,7 +68,7 @@ import {
     IconFileCertificate,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
-import { successNotification, errorNotification } from '../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     getOverexposureCaseById,
     investigateOverexposureCase,
@@ -304,8 +304,8 @@ const OverexposureCaseDetailPage = () => {
             successNotification(t('overexposureCases.detail.investigation.success'));
             setInvestigationModal(false);
             await fetchAll();
-        } catch {
-            errorNotification(t('overexposureCases.detail.investigation.error'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('overexposureCases.detail.investigation.error')));
         } finally {
             setInvSubmitting(false);
         }
@@ -336,8 +336,8 @@ const OverexposureCaseDetailPage = () => {
             setClosureNote('');
             setClosureAuthority(false);
             await fetchAll();
-        } catch {
-            errorNotification(t('overexposureCases.detail.closure.error'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('overexposureCases.detail.closure.error')));
         } finally {
             setCloseSubmitting(false);
         }
@@ -358,8 +358,8 @@ const OverexposureCaseDetailPage = () => {
             });
             successNotification(t('overexposureCases.detail.investigation.success'));
             await fetchAll();
-        } catch {
-            errorNotification(t('overexposureCases.detail.investigation.error'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('overexposureCases.detail.investigation.error')));
         } finally {
             setAuthSavingState(false);
         }

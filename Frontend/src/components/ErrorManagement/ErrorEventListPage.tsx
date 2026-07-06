@@ -33,7 +33,7 @@ import {
     type ErrorEventType,
     type ErrorKpiDTO,
 } from '../../services/ErrorManagementService';
-import { errorNotification } from '../../utility/NotificationUtility';
+import { errorNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     AMBER,
     CRITICALITY_LABELS,
@@ -111,8 +111,8 @@ const ErrorEventListPage = () => {
             if (types.status === 'fulfilled') setEventTypes(types.value);
             if (mtx.status === 'fulfilled') setMatrix(mtx.value);
             if (kpi.status === 'fulfilled') setKpis(kpi.value);
-        } catch {
-            errorNotification('Une erreur est survenue lors du chargement du registre.');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Une erreur est survenue lors du chargement du registre.'));
         }
     }, [statusFilter, typeFilter]);
 

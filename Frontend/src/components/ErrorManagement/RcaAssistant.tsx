@@ -32,7 +32,7 @@ import {
     type CauseDTO,
     type CauseLevel,
 } from '../../services/ErrorManagementService';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { errorNotification, successNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     CAUSAL_METHOD_HELP,
     CAUSAL_METHOD_LABELS,
@@ -89,8 +89,8 @@ const RcaAssistant = ({ eventId, canEdit }: RcaAssistantProps) => {
             if (list.length > 0 && list[0].id != null) {
                 setActiveId((prev) => prev ?? (list[0].id as number));
             }
-        } catch {
-            errorNotification("Impossible de charger l'analyse causale.");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Impossible de charger l'analyse causale."));
         }
     }, [eventId]);
 
@@ -149,8 +149,8 @@ const RcaAssistant = ({ eventId, canEdit }: RcaAssistantProps) => {
                     ...prev,
                     [analysisId]: (prev[analysisId] ?? []).filter((c) => c.id !== causeId),
                 }));
-            } catch {
-                errorNotification('La suppression de la cause a échoué.');
+            } catch (err) {
+                errorNotification(extractErrorMessage(err, 'La suppression de la cause a échoué.'));
             }
         },
         [],

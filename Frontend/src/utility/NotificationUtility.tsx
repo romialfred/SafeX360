@@ -26,4 +26,14 @@ const errorNotification = (message: string) => {
   })
 }
 
-export { successNotification, errorNotification };
+function extractErrorMessage(error: unknown, fallback: string): string {
+  const err = error as any;
+  return (
+    err?.response?.data?.errorMessage ||
+    err?.response?.data?.message ||
+    err?.message ||
+    fallback
+  );
+}
+
+export { successNotification, errorNotification, extractErrorMessage };

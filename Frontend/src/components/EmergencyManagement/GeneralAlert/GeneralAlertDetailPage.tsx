@@ -45,7 +45,7 @@ import {
 import { formatReasonCode } from './alertHelpers';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { groupByCategory, CATEGORIES } from '../AssemblyPoints/departmentCategories';
 import {
     listAssemblyPoints,
@@ -265,8 +265,8 @@ const GeneralAlertDetailPage = () => {
             setAlert(updatedAlert);
             successNotification(`Statut de ${editingEmployee.name} mis à jour : ${editStatus}`);
             closeEditStatus();
-        } catch {
-            errorNotification('Échec de la mise à jour du statut');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la mise à jour du statut'));
         } finally {
             setEditSaving(false);
         }
@@ -280,8 +280,8 @@ const GeneralAlertDetailPage = () => {
             setAlert(updated);
             setEndOpen(false);
             successNotification('Alerte Générale terminée');
-        } catch {
-            errorNotification('Échec de la fin d\'alerte');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de la fin d'alerte"));
         } finally {
             setEnding(false);
         }

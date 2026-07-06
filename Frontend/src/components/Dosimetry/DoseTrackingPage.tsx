@@ -74,7 +74,7 @@ import {
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useAppSelector } from '../../slices/hooks';
-import { successNotification, errorNotification } from '../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     getActiveDoseRecordsByWorker,
     getWorkerDetail,
@@ -427,8 +427,8 @@ const DoseTrackingPage = () => {
             await updateAlert(payload);
             setLocalAlerts((prev) => prev.map((a) => (a.id === alert.id ? payload : a)));
             successNotification(t('doseTracking.alerts.ackSuccess'));
-        } catch {
-            errorNotification(t('doseTracking.alerts.ackError'));
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, t('doseTracking.alerts.ackError')));
         } finally {
             setAcking(null);
         }

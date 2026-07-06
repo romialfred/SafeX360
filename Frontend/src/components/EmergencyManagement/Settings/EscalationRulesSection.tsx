@@ -10,7 +10,7 @@ import {
     type EmergencyPermissionKey,
 } from '../../../services/EmergencyService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import ConfirmModal from '../../UtilityComp/ConfirmModal';
 
 /**
@@ -71,8 +71,8 @@ const EscalationRulesSection = ({ companyId }: Props) => {
             setNewStepOrder(rules.length + 1);
             setNewDelay(60);
             successNotification('Règle créée');
-        } catch {
-            errorNotification('Échec de la création');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la création'));
         } finally {
             setSaving(false);
         }
@@ -86,8 +86,8 @@ const EscalationRulesSection = ({ companyId }: Props) => {
             setRules((prev) => prev.filter((r) => r.id !== pendingDeleteId));
             successNotification('Règle supprimée');
             setPendingDeleteId(null);
-        } catch {
-            errorNotification('Échec de la suppression');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la suppression'));
         } finally {
             setDeleting(false);
         }

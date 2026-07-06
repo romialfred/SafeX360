@@ -15,7 +15,7 @@ import {
 import { useEmergencyWebSocket } from './EmergencyWebSocketProvider';
 import { acknowledgeSosAlert, getActiveSosAlerts, type SosAlertDTO } from '../../../services/SosService';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
 /**
  * Listener coordinateur SOS avec popup full-screen style sirène ambulance
@@ -357,8 +357,8 @@ const CoordinatorAlertListener = () => {
             const id = activeAlert.id;
             setActiveAlert(null);
             navigate(`/emergency/sos/${id}`);
-        } catch {
-            errorNotification('Échec de la prise en charge');
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, 'Échec de la prise en charge'));
         } finally {
             setAcknowledging(false);
         }

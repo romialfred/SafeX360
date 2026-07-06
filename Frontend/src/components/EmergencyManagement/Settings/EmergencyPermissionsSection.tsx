@@ -21,7 +21,7 @@ import {
     type EmergencyPermissionKey,
 } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
-import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { useAppSelector } from '../../../slices/hooks';
 
 /**
@@ -321,9 +321,9 @@ const EmergencyPermissionsSection = ({ companyId }: Props) => {
         try {
             await revokeEmergencyPermission(permissionId, currentUser?.id);
             successNotification('Permission révoquée');
-        } catch {
+        } catch (err) {
             setState((prev) => ({ ...prev, [key!]: { ...prev[key!], holders: previousHolders } }));
-            errorNotification('Échec de la révocation');
+            errorNotification(extractErrorMessage(err, 'Échec de la révocation'));
         } finally {
             setBusyIds((prev) => {
                 const next = new Set(prev);
@@ -376,8 +376,8 @@ const EmergencyPermissionsSection = ({ companyId }: Props) => {
             }));
             successNotification(`${created.length} permission(s) accordée(s)`);
             closeAddModal();
-        } catch {
-            errorNotification("Échec de l'ajout des permissions");
+        } catch (err) {
+            errorNotification(extractErrorMessage(err, "Échec de l'ajout des permissions"));
         } finally {
             setModalSaving(false);
         }
