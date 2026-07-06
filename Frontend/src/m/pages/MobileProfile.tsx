@@ -160,7 +160,10 @@ export default function MobileProfile() {
                     Retour à l'accueil
                 </button>
                 <p className="text-[10.5px] text-slate-400 mt-2">
-                    SafeX 360 Field · v1.0.0 · ISO 45001
+                    SafeX 360 : HSE · v1.0.0 · ISO 45001
+                </p>
+                <p className="text-[9.5px] text-slate-300 mt-1">
+                    Data Universe · contact@datauniverse.bf · +226 77963525
                 </p>
             </section>
         </>

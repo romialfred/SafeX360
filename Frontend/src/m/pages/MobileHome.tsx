@@ -13,6 +13,12 @@ import {
     IconCircleDot,
     IconCircleCheck,
     IconTrendingUp,
+    IconBrain,
+    IconAlertCircle,
+    IconFileAlert,
+    IconUsers,
+    IconShieldCheck,
+    IconChecklist,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import MobileTopBar from '../components/MobileTopBar';
@@ -317,14 +323,35 @@ export default function MobileHome() {
                 </div>
             </section>
 
+            {/* Tous les modules */}
+            <section className="px-4 pt-4">
+                <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-[0.08em] mb-2">
+                    Tous les modules
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                    <ModuleTile icon={<IconBrain size={18} stroke={1.8} />} label="Incident IA" accent="bg-violet-50 text-violet-700" onClick={() => go('/m/incident/ai')} />
+                    <ModuleTile icon={<IconFileAlert size={18} stroke={1.8} />} label="Événements" accent="bg-pink-50 text-pink-700" onClick={() => go('/m/errors')} />
+                    <ModuleTile icon={<IconAlertCircle size={18} stroke={1.8} />} label="Non-conformités" accent="bg-red-50 text-red-700" onClick={() => go('/m/non-conformities')} />
+                    <ModuleTile icon={<IconShieldCheck size={18} stroke={1.8} />} label="Risques" accent="bg-purple-50 text-purple-700" onClick={() => go('/m/risks')} />
+                    <ModuleTile icon={<IconChecklist size={18} stroke={1.8} />} label="Audits" accent="bg-sky-50 text-sky-700" onClick={() => go('/m/audits')} />
+                    <ModuleTile icon={<IconUsers size={18} stroke={1.8} />} label="Réunions HSE" accent="bg-emerald-50 text-emerald-700" onClick={() => go('/m/meetings')} />
+                    <ModuleTile icon={<IconAlertTriangle size={18} stroke={1.8} />} label="Alerte Générale" accent="bg-orange-50 text-orange-700" onClick={() => go('/m/alert')} />
+                    <ModuleTile icon={<IconCircleDot size={18} stroke={1.8} />} label="Actions corr." accent="bg-amber-50 text-amber-700" onClick={() => go('/m/corrective-actions')} />
+                    <ModuleTile icon={<IconTrendingUp size={18} stroke={1.8} />} label="Dashboard" accent="bg-cyan-50 text-cyan-700" onClick={() => go('/m/dashboard')} />
+                </div>
+            </section>
+
             {/* Compliance footer */}
-            <section className="px-4 pb-4">
+            <section className="px-4 pt-4 pb-4">
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-2.5">
                     <IconCircleCheck size={16} stroke={1.8} className="text-emerald-600 flex-shrink-0" />
                     <p className="text-[11.5px] text-slate-600 leading-snug">
                         Conforme ISO 45001 · Données synchronisées en temps réel
                     </p>
                 </div>
+                <p className="text-[9.5px] text-slate-400 mt-2 text-center">
+                    SafeX 360 : HSE · Data Universe · contact@datauniverse.bf
+                </p>
             </section>
         </>
     );
@@ -393,6 +420,30 @@ function ShortcutTile({
             <div className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
                 {sublabel}
             </div>
+        </button>
+    );
+}
+
+function ModuleTile({
+    icon,
+    label,
+    accent,
+    onClick,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    accent: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`${accent} rounded-xl p-2.5 text-center active:scale-[0.97] transition`}
+            style={{ minHeight: 64 }}
+        >
+            <div className="flex items-center justify-center mb-1">{icon}</div>
+            <div className="text-[10.5px] font-medium leading-tight">{label}</div>
         </button>
     );
 }

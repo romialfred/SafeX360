@@ -131,7 +131,7 @@ export function getDB(): Promise<IDBPDatabase<SafeXFieldDB>> {
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
 export async function cacheGet<T>(
-    store: 'inspectionCache' | 'templateCache' | 'blastCache' | 'userProfileCache',
+    store: string,
     id: number | string,
 ): Promise<T | null> {
     const db = await getDB();
@@ -147,7 +147,7 @@ export async function cacheGet<T>(
 }
 
 export async function cachePut<T>(
-    store: 'inspectionCache' | 'templateCache' | 'blastCache' | 'userProfileCache',
+    store: string,
     id: number | string,
     payload: T,
     ttlMs?: number,
@@ -162,7 +162,7 @@ export async function cachePut<T>(
 }
 
 export async function cacheClear(
-    store: 'inspectionCache' | 'templateCache' | 'blastCache' | 'userProfileCache',
+    store: string,
 ): Promise<void> {
     const db = await getDB();
     await db.clear(store as any);

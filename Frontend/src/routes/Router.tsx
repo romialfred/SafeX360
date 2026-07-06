@@ -247,6 +247,17 @@ const MobileIncidentDetail = lazy(() => import('../m/pages/MobileIncidentDetail'
 const MobileIncidentsHistory = lazy(() => import('../m/pages/MobileIncidentsHistory'));
 // Phase M7 — alerte generale
 const MobileGeneralAlertScreen = lazy(() => import('../m/pages/MobileGeneralAlertScreen'));
+// Phase M8 — declaration IA (photo) + declaration evenement Juste Culture
+const MobileAIIncidentDeclare = lazy(() => import('../m/pages/MobileAIIncidentDeclare'));
+const MobileErrorEventDeclare = lazy(() => import('../m/pages/MobileErrorEventDeclare'));
+// Phase M9 — pages liste/registre modules complets
+const MobileErrorEventList = lazy(() => import('../m/pages/MobileErrorEventList'));
+const MobileNonConformityList = lazy(() => import('../m/pages/MobileNonConformityList'));
+const MobileRiskOverview = lazy(() => import('../m/pages/MobileRiskOverview'));
+const MobileAuditList = lazy(() => import('../m/pages/MobileAuditList'));
+const MobileMeetingsList = lazy(() => import('../m/pages/MobileMeetingsList'));
+const MobileCorrectiveActionsList = lazy(() => import('../m/pages/MobileCorrectiveActionsList'));
+const MobileDashboardOhs = lazy(() => import('../m/pages/MobileDashboardOhs'));
 
 /**
  * Fallback Suspense pour les pages Blast Management lazy-loaded.
@@ -332,7 +343,17 @@ const router = createBrowserRouter([
             { path: 'sos', element: <BlastSuspense><MobileSosScreen /></BlastSuspense> },
             { path: 'alert', element: <BlastSuspense><MobileGeneralAlertScreen /></BlastSuspense> },
             { path: 'incident/new', element: <BlastSuspense><MobileIncidentQuickDeclare /></BlastSuspense> },
+            { path: 'incident/new-ai', element: <BlastSuspense><MobileAIIncidentDeclare /></BlastSuspense> },
             { path: 'incident/:id', element: <BlastSuspense><MobileIncidentDetail /></BlastSuspense> },
+            { path: 'error-event/new', element: <BlastSuspense><MobileErrorEventDeclare /></BlastSuspense> },
+            { path: 'incident/ai', element: <BlastSuspense><MobileAIIncidentDeclare /></BlastSuspense> },
+            { path: 'errors', element: <BlastSuspense><MobileErrorEventList /></BlastSuspense> },
+            { path: 'non-conformities', element: <BlastSuspense><MobileNonConformityList /></BlastSuspense> },
+            { path: 'risks', element: <BlastSuspense><MobileRiskOverview /></BlastSuspense> },
+            { path: 'audits', element: <BlastSuspense><MobileAuditList /></BlastSuspense> },
+            { path: 'meetings', element: <BlastSuspense><MobileMeetingsList /></BlastSuspense> },
+            { path: 'corrective-actions', element: <BlastSuspense><MobileCorrectiveActionsList /></BlastSuspense> },
+            { path: 'dashboard', element: <BlastSuspense><MobileDashboardOhs /></BlastSuspense> },
             { path: 'incidents/history', element: <BlastSuspense><MobileIncidentsHistory /></BlastSuspense> },
             { path: 'blast/next', element: <BlastSuspense><MobileBlastNext /></BlastSuspense> },
             { path: 'profile', element: <BlastSuspense><MobileProfile /></BlastSuspense> },

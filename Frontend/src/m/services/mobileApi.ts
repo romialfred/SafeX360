@@ -39,7 +39,19 @@ export interface MobileMutationResult<T = unknown> {
     queuedId?: number;
 }
 
-type CacheStore = 'inspectionCache' | 'templateCache' | 'blastCache' | 'userProfileCache';
+type CacheStore =
+    | 'inspectionCache'
+    | 'templateCache'
+    | 'blastCache'
+    | 'userProfileCache'
+    | 'incidentCache'
+    | 'errorCache'
+    | 'nonConformityCache'
+    | 'riskCache'
+    | 'auditCache'
+    | 'meetingCache'
+    | 'correctiveActionCache'
+    | 'dashboardCache';
 
 /**
  * GET cache-aware. Tente reseau, fallback cache si timeout/erreur.

@@ -14,8 +14,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-    appId: 'com.safex360.field',
-    appName: 'SafeX 360 Field',
+    appId: 'com.safex360.hse',
+    appName: 'SafeX 360 : HSE',
     webDir: 'dist',
     // Ne pas inclure le bundler de developpement dans l'APK
     bundledWebRuntime: false,
