@@ -217,6 +217,14 @@ class AmbulanceSiren {
     }
 }
 
+const MAX_SIREN_AGE_MS = 20 * 60 * 1000;
+const SIREN_AUTO_STOP_MS = 20 * 60 * 1000;
+
+const isAlertFresh = (alert: SosAlertDTO): boolean => {
+    if (!alert.triggeredAt) return false;
+    return Date.now() - new Date(alert.triggeredAt).getTime() < MAX_SIREN_AGE_MS;
+};
+
 const CoordinatorAlertListener = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation('emergency');
@@ -239,7 +247,7 @@ const CoordinatorAlertListener = () => {
         if (!effectiveCompanyId) return;
         getActiveSosAlerts(effectiveCompanyId)
             .then((alerts) => {
-                const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode);
+                const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode && isAlertFresh(a));
                 if (received) setActiveAlert(received);
             })
             .catch(() => {});
@@ -251,7 +259,7 @@ const CoordinatorAlertListener = () => {
             if (activeAlert) return;
             getActiveSosAlerts(effectiveCompanyId)
                 .then((alerts) => {
-                    const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode);
+                    const received = alerts.find((a: any) => a.status === 'RECEIVED' && !a.drillMode && isAlertFresh(a));
                     if (received) setActiveAlert(received);
                 })
                 .catch(() => {});
@@ -262,7 +270,7 @@ const CoordinatorAlertListener = () => {
     // ── Abonnement ──
     useEffect(() => {
         const unsubscribe = subscribe((alert) => {
-            if (alert.status === 'RECEIVED' && !alert.drillMode) {
+            if (alert.status === 'RECEIVED' && !alert.drillMode && isAlertFresh(alert)) {
                 setActiveAlert(alert);
             } else if (activeAlert && activeAlert.id === alert.id) {
                 if (alert.status !== 'RECEIVED') {
@@ -273,7 +281,7 @@ const CoordinatorAlertListener = () => {
         return unsubscribe;
     }, [subscribe, activeAlert]);
 
-    // ── Sirène + lock scroll ──
+    // ── Sirène + lock scroll + auto-stop après 20 min ──
     useEffect(() => {
         if (activeAlert) {
             if (soundEnabled) { void sirenRef.current?.start(); }
@@ -282,7 +290,14 @@ const CoordinatorAlertListener = () => {
             sirenRef.current?.stop();
             document.body.style.overflow = '';
         }
+        const autoStopTimer = activeAlert && soundEnabled
+            ? window.setTimeout(() => {
+                sirenRef.current?.stop();
+                setSoundEnabled(false);
+            }, SIREN_AUTO_STOP_MS)
+            : undefined;
         return () => {
+            if (autoStopTimer) window.clearTimeout(autoStopTimer);
             sirenRef.current?.stop();
             document.body.style.overflow = '';
         };

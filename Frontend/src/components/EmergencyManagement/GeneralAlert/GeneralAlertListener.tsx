@@ -223,6 +223,13 @@ class IndustrialSiren {
 cleanupOldCheckIns();
 
 const POLL_INTERVAL_MS = 12_000;
+const MAX_SIREN_AGE_MS = 10 * 60 * 1000;
+const SIREN_AUTO_STOP_MS = 10 * 60 * 1000;
+
+const isAlertFresh = (a: GeneralAlertDTO): boolean => {
+    if (!a.triggeredAt) return false;
+    return Date.now() - new Date(a.triggeredAt).getTime() < MAX_SIREN_AGE_MS;
+};
 
 const GeneralAlertListener = () => {
     const navigate = useNavigate();
@@ -247,6 +254,7 @@ const GeneralAlertListener = () => {
     const tryActivate = useCallback((a: GeneralAlertDTO) => {
         if (a.status === 'ACTIVE' && a.id && currentUser?.id) {
             if (hasCheckedIn(Number(currentUser.id), a.id)) return;
+            if (!isAlertFresh(a)) return;
             setActiveAlert((prev) => (prev?.id === a.id ? prev : a));
         }
     }, [currentUser]);
@@ -312,7 +320,7 @@ const GeneralAlertListener = () => {
         );
     }, [activeAlert]);
 
-    // ── Sirène + lock scroll ──
+    // ── Sirène + lock scroll + auto-stop après 10 min ──
     useEffect(() => {
         if (activeAlert) {
             if (soundEnabled) { void sirenRef.current?.start(); }
@@ -321,7 +329,14 @@ const GeneralAlertListener = () => {
             sirenRef.current?.stop();
             document.body.style.overflow = '';
         }
+        const autoStopTimer = activeAlert && soundEnabled
+            ? window.setTimeout(() => {
+                sirenRef.current?.stop();
+                setSoundEnabled(false);
+            }, SIREN_AUTO_STOP_MS)
+            : undefined;
         return () => {
+            if (autoStopTimer) window.clearTimeout(autoStopTimer);
             sirenRef.current?.stop();
             document.body.style.overflow = '';
         };
