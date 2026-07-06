@@ -71,12 +71,16 @@ const LoginsPage = () => {
             popupInvitationExpired: 'Votre invitation a expiré. Veuillez contacter votre administrateur pour en recevoir une nouvelle.',
             popupClose: 'Compris',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileTitle: 'Application mobile terrain',
-            mobileSubtitle: 'Android · Hors ligne · ISO 45001',
-            // LOT — Suppression de "Field", texte raccourci a "Telecharger SafeX 360"
-            // SafeX 360 sera stylise comme le logo (X teal, 360 rouge) dans le JSX.
-            mobileDownloadPrefix: 'Télécharger',
-            mobileDownloadAria: 'Télécharger SafeX 360',
+            mobileEyebrow: 'APPLICATION MOBILE',
+            mobileTitle: 'SafeX 360 HSE',
+            mobileVersion: 'v2.0',
+            mobileSizeLabel: '83 Mo',
+            mobileFeature1: 'Mode hors ligne',
+            mobileFeature2: 'Caméra IA',
+            mobileFeature3: 'GPS terrain',
+            mobileDownloadCta: 'Installer sur Android',
+            mobileDownloadAria: 'Télécharger SafeX 360 HSE pour Android',
+            mobileCompat: 'Android 7.0+ requis',
         }
         : {
             tagline: 'HSE platform for mining operations',
@@ -105,10 +109,16 @@ const LoginsPage = () => {
             popupInvitationExpired: 'Your invitation has expired. Please contact your administrator for a new one.',
             popupClose: 'Got it',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileTitle: 'Mobile application',
-            mobileSubtitle: 'Android · Offline · ISO 45001',
-            mobileDownloadPrefix: 'Download',
-            mobileDownloadAria: 'Download SafeX 360',
+            mobileEyebrow: 'MOBILE APP',
+            mobileTitle: 'SafeX 360 HSE',
+            mobileVersion: 'v2.0',
+            mobileSizeLabel: '83 MB',
+            mobileFeature1: 'Offline mode',
+            mobileFeature2: 'AI Camera',
+            mobileFeature3: 'Field GPS',
+            mobileDownloadCta: 'Install on Android',
+            mobileDownloadAria: 'Download SafeX 360 HSE for Android',
+            mobileCompat: 'Android 7.0+ required',
         };
 
     const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
@@ -503,84 +513,66 @@ const LoginsPage = () => {
                 {/* Pied : bouton Google Play + badges ISO sur une même ligne horizontale */}
                 <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px]">
 
-                {/* Bouton "Télécharger l'app Android" — Phase M6 */}
+                {/* Carte téléchargement APK — design professionnel */}
                 <a
                     href="/downloads/SafexMobile.apk"
                     download="SafeX 360 HSE.apk"
-                    className="flex items-center gap-3 px-3.5 py-2.5 bg-black/70 hover:bg-black/85 backdrop-blur-sm border border-white/15 rounded-xl transition-colors max-w-[320px]"
-                    style={{ boxShadow: '0 4px 18px rgba(0,0,0,0.35)' }}
+                    className="group flex items-stretch gap-0 bg-black/60 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-teal-400/30 rounded-2xl transition-all duration-300 overflow-hidden"
+                    style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', maxWidth: 380 }}
                     aria-label={t.mobileDownloadAria}
                 >
-                    {/* Icône Google Play officielle (SVG triangle quadricolore) */}
-                    <svg
-                        viewBox="0 0 24 24"
-                        className="w-7 h-7 flex-shrink-0"
-                        aria-hidden="true"
+                    {/* Colonne gauche — icône bouclier SafeX */}
+                    <div
+                        className="flex items-center justify-center px-4 py-3 flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg, rgba(15,118,110,0.35), rgba(13,148,136,0.15))' }}
                     >
-                        <defs>
-                            <linearGradient id="gp-blue" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#00D2FF" />
-                                <stop offset="100%" stopColor="#3A7BD5" />
-                            </linearGradient>
-                            <linearGradient id="gp-red" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#FF3A44" />
-                                <stop offset="100%" stopColor="#C31162" />
-                            </linearGradient>
-                            <linearGradient id="gp-yellow" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#FFD43B" />
-                                <stop offset="100%" stopColor="#FF8800" />
-                            </linearGradient>
-                            <linearGradient id="gp-green" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#00F076" />
-                                <stop offset="100%" stopColor="#00B96B" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a.996.996 0 01.61-.92z" fill="url(#gp-blue)" />
-                        <path d="M16.61 8.819L5.51 1.86l9.89 9.89 1.21-2.93z" fill="url(#gp-green)" />
-                        <path d="M16.61 15.181L5.51 22.14l9.89-9.89 1.21 2.93z" fill="url(#gp-red)" />
-                        <path d="M20.16 10.81l-3.43-2.05L13.79 12l2.94 3.24 3.43-2.05a1.379 1.379 0 000-2.38z" fill="url(#gp-yellow)" />
-                    </svg>
-                    <div className="flex-1 min-w-0 text-left">
-                        <div className="text-[9.5px] uppercase tracking-[0.14em] text-white/70">
-                            {t.mobileTitle}
+                        <svg viewBox="0 0 64 64" fill="none" className="w-10 h-10" aria-hidden="true">
+                            <path d="M32 3L56 11C56.5 11.2 57 11.6 57 12.3L57 30C57 44 36 60 32.7 61.6C32.3 61.8 31.7 61.8 31.3 61.6C28 60 7 44 7 30L7 12.3C7 11.6 7.5 11.2 8 11Z" fill="url(#dl-shield)" />
+                            <path d="M19 33L32 20L45 33" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M22 43L32 33L42 43" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+                            <defs>
+                                <linearGradient id="dl-shield" x1="32" y1="3" x2="32" y2="62" gradientUnits="userSpaceOnUse">
+                                    <stop stopColor="#14B8A6" />
+                                    <stop offset="1" stopColor="#0F766E" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    {/* Colonne droite — infos + CTA */}
+                    <div className="flex-1 min-w-0 py-3 pr-4">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] uppercase tracking-[0.16em] text-teal-400/80 font-semibold">{t.mobileEyebrow}</span>
+                            <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/20 text-teal-300 font-medium">{t.mobileVersion}</span>
                         </div>
-                        {/* LOT — Wordmark stylise comme le logo de marque : "Safe" + X teal + 360 rouge */}
                         <div
-                            className="text-[14px] font-medium leading-tight mt-0.5 flex items-baseline gap-1"
-                            aria-label={t.mobileDownloadAria}
+                            className="text-[15px] font-bold leading-tight text-white flex items-baseline gap-0.5"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.01em' }}
                         >
-                            <span className="text-white">{t.mobileDownloadPrefix}</span>
+                            <span>Safe</span>
+                            <span style={{ color: '#2DD4BF' }}>X</span>
+                            <span style={{ color: '#EF4444', marginLeft: '0.18rem' }}>360</span>
+                            <span className="text-white/60 ml-1 text-[13px] font-semibold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>HSE</span>
+                        </div>
+                        {/* Feature chips */}
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {[t.mobileFeature1, t.mobileFeature2, t.mobileFeature3].map((f) => (
+                                <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/8 text-white/60 border border-white/6">{f}</span>
+                            ))}
+                        </div>
+                        {/* Bouton CTA */}
+                        <div className="flex items-center gap-2 mt-2.5">
                             <span
-                                className="inline-flex items-baseline"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 700,
-                                    letterSpacing: '-0.01em',
-                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-white transition-colors"
+                                style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)' }}
                             >
-                                <span className="text-white">Safe</span>
-                                <span
-                                    style={{
-                                        color: '#2DD4BF',
-                                        textShadow: '0 0 10px rgba(45,212,191,0.55)',
-                                    }}
-                                >
-                                    X
-                                </span>
-                                <span
-                                    style={{
-                                        color: '#EF4444',
-                                        marginLeft: '0.2rem',
-                                        textShadow: '0 0 10px rgba(239,68,68,0.55)',
-                                    }}
-                                >
-                                    360
-                                </span>
+                                <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                                {t.mobileDownloadCta}
                             </span>
+                            <span className="text-[9.5px] text-white/40">{t.mobileSizeLabel}</span>
                         </div>
-                        <div className="text-[10px] text-white/55 mt-0.5">
-                            {t.mobileSubtitle}
-                        </div>
+                        <div className="text-[8.5px] text-white/30 mt-1.5">{t.mobileCompat}</div>
                     </div>
                 </a>
 
