@@ -15,7 +15,9 @@ public interface ComplianceDocsRepository extends CrudRepository<ComplianceDocs,
     @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d ")
     List<DocResponse> findAllDocs();
 
-    @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d ")
+    // Le WHERE est vital : sans lui, chaque employé voyait les documents de
+    // conformité de TOUS les autres (fuite de données inter-employés).
+    @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d WHERE d.employeeId = ?1")
     List<DocResponse> findAllDocsByEmpId(Long employeeId);
 
     @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d WHERE d.id = ?1")
