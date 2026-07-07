@@ -95,3 +95,4 @@ $RECYCLE.BIN/
 # Bytecode Python (peut embarquer des constantes sensibles des scripts)
 __pycache__/
 *.pyc
+secure/
