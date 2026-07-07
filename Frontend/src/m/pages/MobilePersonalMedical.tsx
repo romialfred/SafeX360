@@ -60,7 +60,7 @@ export default function MobilePersonalMedical() {
                     cacheKey: `medical-${userId}`,
                     ttlMs: 6 * 60 * 60 * 1000,
                 });
-                if (!cancelled) setItems(res.data);
+                if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
                     setError('Dossier medical indisponible. Verifiez votre connexion.');

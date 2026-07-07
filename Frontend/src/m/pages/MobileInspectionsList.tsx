@@ -6,7 +6,7 @@
  * Pull-to-refresh deja fourni par MobileShell.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconClipboardList,
@@ -16,6 +16,7 @@ import {
     IconCircleCheck,
     IconCircleX,
     IconAlertOctagon,
+    IconRefresh,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { ListSkeleton } from '../components/MobileSkeleton';
@@ -63,7 +64,9 @@ export default function MobileInspectionsList() {
     const [filter, setFilter] = useState<Filter>('all');
     const [stale, setStale] = useState<boolean>(false);
 
-    useEffect(() => {
+    const fetchInspections = useCallback(() => {
+        setError(null);
+        setItems(null);
         let cancelled = false;
         (async () => {
             try {
@@ -74,17 +77,17 @@ export default function MobileInspectionsList() {
                     ttlMs: 5 * 60 * 1000,
                 });
                 if (!cancelled) {
-                    setItems(res.data);
+                    setItems(Array.isArray(res.data) ? res.data : []);
                     setStale(res.stale);
                 }
             } catch (e: any) {
                 if (!cancelled) setError("Impossible de charger les inspections.");
             }
         })();
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, []);
+
+    useEffect(fetchInspections, [fetchInspections]);
 
     const filtered = useMemo(() => {
         if (!items) return null;
@@ -149,8 +152,11 @@ export default function MobileInspectionsList() {
             {/* Liste */}
             <section className="px-4 pt-2 space-y-2.5">
                 {error && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3">
-                        {error}
+                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
+                        <span className="flex-1">{error}</span>
+                        <button type="button" onClick={fetchInspections} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        </button>
                     </div>
                 )}
 

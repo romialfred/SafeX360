@@ -9,13 +9,14 @@
  * (type) réutilise la palette de correctiveLabels.ts (charte R7).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconClipboardCheck,
     IconChevronRight,
     IconCalendarStats,
     IconAlertOctagon,
+    IconRefresh,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { ListSkeleton } from '../components/MobileSkeleton';
@@ -117,7 +118,9 @@ export default function MobileCorrectiveActionsList() {
     const [filter, setFilter] = useState<Filter>('ALL');
     const [stale, setStale] = useState<boolean>(false);
 
-    useEffect(() => {
+    const fetchData = useCallback(() => {
+        setError(null);
+        setItems(null);
         let cancelled = false;
         (async () => {
             try {
@@ -128,7 +131,7 @@ export default function MobileCorrectiveActionsList() {
                     ttlMs: 2 * 60 * 1000,
                 });
                 if (!cancelled) {
-                    setItems(res.data ?? []);
+                    setItems(Array.isArray(res.data) ? res.data : []);
                     setStale(res.stale);
                 }
             } catch {
@@ -140,6 +143,8 @@ export default function MobileCorrectiveActionsList() {
         })();
         return () => { cancelled = true; };
     }, [companyId]);
+
+    useEffect(fetchData, [fetchData]);
 
     const filtered = useMemo(() => {
         if (!items) return [];
@@ -189,8 +194,11 @@ export default function MobileCorrectiveActionsList() {
 
             <section className="px-4 pt-2 space-y-2.5">
                 {error && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3">
-                        {error}
+                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
+                        <span className="flex-1">{error}</span>
+                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        </button>
                     </div>
                 )}
 

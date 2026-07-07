@@ -43,7 +43,7 @@ export default function MobilePersonalPpe() {
                     cacheKey: `ppe-${userId}`,
                     ttlMs: 24 * 60 * 60 * 1000,
                 });
-                if (!cancelled) setItems(res.data);
+                if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
                     setError("Données EPI indisponibles. Vérifiez votre connexion.");

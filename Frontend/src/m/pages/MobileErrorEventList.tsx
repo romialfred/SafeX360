@@ -6,7 +6,7 @@
  * démarrer une nouvelle déclaration.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconShieldExclamation,
@@ -14,6 +14,7 @@ import {
     IconCalendarStats,
     IconPlus,
     IconAlertOctagon,
+    IconRefresh,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { ListSkeleton } from '../components/MobileSkeleton';
@@ -128,7 +129,9 @@ export default function MobileErrorEventList() {
     const [error, setError] = useState<string | null>(null);
     const [stale, setStale] = useState(false);
 
-    useEffect(() => {
+    const fetchEvents = useCallback(() => {
+        setError(null);
+        setItems(null);
         let cancelled = false;
         (async () => {
             try {
@@ -139,7 +142,7 @@ export default function MobileErrorEventList() {
                     ttlMs: 10 * 60 * 1000,
                 });
                 if (!cancelled) {
-                    const sorted = (res.data ?? []).slice().sort((a, b) =>
+                    const sorted = (Array.isArray(res.data) ? res.data : []).slice().sort((a, b) =>
                         new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
                     );
                     setItems(sorted);
@@ -155,6 +158,8 @@ export default function MobileErrorEventList() {
         return () => { cancelled = true; };
     }, [companyId]);
 
+    useEffect(fetchEvents, [fetchEvents]);
+
     const openDetail = (id: number) => {
         haptic('light');
         navigate(`/error-management/${id}`);
@@ -162,7 +167,7 @@ export default function MobileErrorEventList() {
 
     const openDeclare = () => {
         haptic('medium');
-        navigate('/m/error/new');
+        navigate('/m/error-event/new');
     };
 
     return (
@@ -183,8 +188,11 @@ export default function MobileErrorEventList() {
 
             <section className="px-4 pt-3 pb-2">
                 {error && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 mb-3">
-                        {error}
+                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <span className="flex-1">{error}</span>
+                        <button type="button" onClick={fetchEvents} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        </button>
                     </div>
                 )}
 

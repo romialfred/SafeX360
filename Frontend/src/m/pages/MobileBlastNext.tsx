@@ -157,7 +157,7 @@ export default function MobileBlastNext() {
                     </div>
                 )}
 
-                {data && data.upcomingThisWeek.length > 1 && (
+                {data && Array.isArray(data.upcomingThisWeek) && data.upcomingThisWeek.length > 1 && (
                     <div className="mt-5">
                         <h3 className="text-[12px] uppercase tracking-[0.1em] text-slate-500 mb-2">
                             Cette semaine

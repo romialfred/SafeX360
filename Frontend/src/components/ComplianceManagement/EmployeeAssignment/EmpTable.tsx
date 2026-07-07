@@ -69,7 +69,7 @@ const EmpTable = ({ requirements, fetchData, docMap }: EmpTableProps) => {
                 expiryDate: values.expiryDate ? toIsoDateLocal(values.expiryDate) : null,
                 media: {
                     name: values.file[0].file?.name,
-                    file: base64.split(',')[1],
+                    file: base64.includes(',') ? base64.split(',')[1] : base64,
                 },
                 employeeId: Number(employeeId),
             });

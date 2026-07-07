@@ -62,7 +62,7 @@ export default function MobilePersonalDosimetry() {
                     cacheKey: `dosimetry-${userId}`,
                     ttlMs: 12 * 60 * 60 * 1000, // 12h car donnees sensibles
                 });
-                if (!cancelled) setItems(res.data);
+                if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
                     setError('Dosimetrie indisponible. Verifiez votre connexion.');
@@ -163,7 +163,7 @@ export default function MobilePersonalDosimetry() {
                                             </div>
                                             <div className="flex items-baseline gap-2 mt-1.5">
                                                 <span className="text-[18px] font-semibold text-slate-900">
-                                                    {d.cumulativeDoseMSv.toFixed(2)}
+                                                    {Number(d.cumulativeDoseMSv ?? 0).toFixed(2)}
                                                 </span>
                                                 <span className="text-[11.5px] text-slate-500">
                                                     / {d.annualLimitMSv} mSv annuel

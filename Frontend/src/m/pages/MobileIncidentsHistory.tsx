@@ -4,13 +4,14 @@
  * pour ouvrir le détail.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconArrowLeft,
     IconAlertOctagon,
     IconChevronRight,
     IconCalendarStats,
+    IconRefresh,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { ListSkeleton } from '../components/MobileSkeleton';
@@ -61,8 +62,10 @@ export default function MobileIncidentsHistory() {
     const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<FilterStatus>('ALL');
 
-    useEffect(() => {
+    const fetchHistory = useCallback(() => {
         if (!userId) return;
+        setError(null);
+        setItems(null);
         let cancelled = false;
         (async () => {
             try {
@@ -73,8 +76,7 @@ export default function MobileIncidentsHistory() {
                     ttlMs: 30 * 60 * 1000,
                 });
                 if (!cancelled) {
-                    // Tri par date desc (plus récent en premier)
-                    const sorted = res.data.slice().sort((a, b) =>
+                    const sorted = (Array.isArray(res.data) ? res.data : []).slice().sort((a, b) =>
                         new Date(b.declaredAt).getTime() - new Date(a.declaredAt).getTime()
                     );
                     setItems(sorted);
@@ -88,6 +90,8 @@ export default function MobileIncidentsHistory() {
         })();
         return () => { cancelled = true; };
     }, [userId]);
+
+    useEffect(fetchHistory, [fetchHistory]);
 
     const filtered = useMemo(() => {
         if (!items) return [];
@@ -124,9 +128,12 @@ export default function MobileIncidentsHistory() {
                 </div>
 
                 {error && (
-                    <div className="bg-amber-50 border border-amber-200 text-amber-900 text-[12.5px] rounded-xl p-3 mb-3 flex items-start gap-2">
-                        <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                        <span>{error}</span>
+                    <div className="bg-amber-50 border border-amber-200 text-amber-900 text-[12.5px] rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <IconAlertOctagon size={14} stroke={1.8} className="flex-shrink-0" />
+                        <span className="flex-1">{error}</span>
+                        <button type="button" onClick={fetchHistory} className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        </button>
                     </div>
                 )}
 

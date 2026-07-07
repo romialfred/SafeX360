@@ -96,7 +96,7 @@ const UploadDocument = () => {
                 employeeId: Number(values.employeeId),
                 media: {
                     name: values.file[0].file?.name,
-                    file: base64.split(',')[1],
+                    file: base64.includes(',') ? base64.split(',')[1] : base64,
                 },
             };
             await createComplianceDocument(payload);

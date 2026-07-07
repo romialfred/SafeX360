@@ -50,10 +50,13 @@ export default function MobileProfile() {
     const user = useAppSelector((state: any) => state.user);
     const [loggingOut, setLoggingOut] = useState(false);
 
-    const displayName = user?.firstName
+    const rawName = user?.firstName
         ? `${user.firstName} ${user.familyName || ''}`.trim()
-        : user?.name || user?.username || 'Utilisateur';
-    const role = user?.role || user?.position || '—';
+        : user?.name || user?.username || '';
+    const displayName = (typeof rawName === 'string' && rawName) ? rawName : 'Utilisateur';
+    const role = (typeof user?.role === 'string' && user.role) ? user.role
+        : (typeof user?.position === 'string' && user.position) ? user.position
+        : '—';
 
     const go = (path: string) => {
         haptic('light');

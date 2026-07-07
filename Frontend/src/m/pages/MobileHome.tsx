@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconClipboardList,
@@ -19,6 +19,7 @@ import {
     IconUsers,
     IconShieldCheck,
     IconChecklist,
+    IconRefresh,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import MobileTopBar from '../components/MobileTopBar';
@@ -60,19 +61,26 @@ export default function MobileHome() {
     const user = useAppSelector((state: any) => state.user);
     const [dashboard, setDashboard] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
 
-    const displayName = user?.firstName
+    const rawName = user?.firstName
         ? `${user.firstName} ${user.familyName || ''}`.trim()
-        : user?.name || user?.sub || 'Personnel';
-    const role = user?.role || user?.position || 'Personnel HSE';
+        : user?.name || user?.sub || '';
+    const displayName = (typeof rawName === 'string' && rawName) ? rawName : 'Personnel';
+    const role = (typeof user?.role === 'string' && user.role) ? user.role
+        : (typeof user?.position === 'string' && user.position) ? user.position
+        : 'Personnel HSE';
     const initials = displayName
         .split(' ')
+        .filter((w: string) => w.length > 0)
         .map((w: string) => w[0])
         .join('')
         .slice(0, 2)
-        .toUpperCase();
+        .toUpperCase() || 'SX';
 
-    useEffect(() => {
+    const fetchDashboard = useCallback(() => {
+        setLoading(true);
+        setFetchError(false);
         let cancelled = false;
         (async () => {
             try {
@@ -84,18 +92,23 @@ export default function MobileHome() {
                 });
                 if (!cancelled) setDashboard(res.data);
             } catch {
-                if (!cancelled) setDashboard({
-                    inspectionsToday: 0,
-                    inspectionsOverdue: 0,
-                    pendingActions: 0,
-                    openIncidents: 0,
-                });
+                if (!cancelled) {
+                    setFetchError(true);
+                    setDashboard({
+                        inspectionsToday: 0,
+                        inspectionsOverdue: 0,
+                        pendingActions: 0,
+                        openIncidents: 0,
+                    });
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
         })();
         return () => { cancelled = true; };
     }, []);
+
+    useEffect(fetchDashboard, [fetchDashboard]);
 
     const go = (path: string) => {
         haptic('light');
@@ -184,6 +197,23 @@ export default function MobileHome() {
                     />
                 </div>
             </section>
+
+            {/* Erreur de chargement */}
+            {fetchError && !loading && (
+                <section className="px-4 pt-2">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2.5">
+                        <IconAlertTriangle size={14} stroke={1.8} className="text-amber-600 flex-shrink-0" />
+                        <p className="text-[12px] text-amber-900 flex-1">Données hors ligne — les chiffres affichés peuvent être incomplets.</p>
+                        <button
+                            type="button"
+                            onClick={fetchDashboard}
+                            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-medium flex-shrink-0"
+                        >
+                            <IconRefresh size={12} stroke={2} />
+                        </button>
+                    </div>
+                </section>
+            )}
 
             {/* Overdue alert banner */}
             {dashboard && dashboard.inspectionsOverdue > 0 && (

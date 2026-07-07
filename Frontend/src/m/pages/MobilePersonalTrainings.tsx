@@ -41,7 +41,7 @@ export default function MobilePersonalTrainings() {
                     cacheKey: `trainings-${userId}`,
                     ttlMs: 24 * 60 * 60 * 1000,
                 });
-                if (!cancelled) setItems(res.data);
+                if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
                     setError('Formations indisponibles. Vérifiez votre connexion.');

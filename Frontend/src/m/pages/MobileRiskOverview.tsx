@@ -11,13 +11,14 @@
  * ici en 3 familles Faible / Modéré / Élevé-Critique pour les chips de tête.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconShieldExclamation,
     IconChevronRight,
     IconMapPin,
     IconAlertOctagon,
+    IconRefresh,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { ListSkeleton } from '../components/MobileSkeleton';
@@ -76,7 +77,9 @@ export default function MobileRiskOverview() {
     const [error, setError] = useState<string | null>(null);
     const [stale, setStale] = useState<boolean>(false);
 
-    useEffect(() => {
+    const fetchData = useCallback(() => {
+        setError(null);
+        setItems(null);
         let cancelled = false;
         (async () => {
             try {
@@ -86,9 +89,6 @@ export default function MobileRiskOverview() {
                     cacheKey: `risks-overview-${companyId}`,
                     ttlMs: 2 * 60 * 1000,
                 });
-                // L'endpoint /overview retourne surtout des agrégats (metrics/matrix/
-                // distributions) pour les dashboards web. S'il n'expose pas de liste
-                // de risques individuels, on retombe sur /getAll pour peupler les cards.
                 const raw: any = res.data;
                 let data: RiskSummary[] = Array.isArray(raw) ? raw : (raw?.risks ?? []);
                 if (!cancelled && data.length === 0) {
@@ -101,7 +101,7 @@ export default function MobileRiskOverview() {
                         });
                         data = Array.isArray(fallback.data) ? fallback.data : [];
                     } catch {
-                        // pas de repli disponible — on garde la liste vide
+                        // pas de repli disponible
                     }
                 }
                 if (!cancelled) {
@@ -117,6 +117,8 @@ export default function MobileRiskOverview() {
         })();
         return () => { cancelled = true; };
     }, [companyId]);
+
+    useEffect(fetchData, [fetchData]);
 
     const counts = useMemo(() => {
         const c = { LOW: 0, MEDIUM: 0, HIGH: 0 };
@@ -163,8 +165,11 @@ export default function MobileRiskOverview() {
 
             <section className="px-4 pt-2 space-y-2.5">
                 {error && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3">
-                        {error}
+                    <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
+                        <span className="flex-1">{error}</span>
+                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        </button>
                     </div>
                 )}
 

@@ -384,7 +384,7 @@ const SosButton = () => {
                         {/* Identité utilisateur */}
                         <div className="bg-slate-50 border border-slate-200 rounded-md p-3 flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-sm">
-                                {user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                                {(typeof user?.name === 'string' && user.name.trim()) ? user.name.trim().split(' ').filter((w: string) => w).map((n: string) => n[0]).join('').slice(0, 2) : 'U'}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm text-slate-900 truncate">{user?.name || t('emergency:sos.user.fallbackName')}</p>

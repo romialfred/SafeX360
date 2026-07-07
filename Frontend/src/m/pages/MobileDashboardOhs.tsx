@@ -103,7 +103,8 @@ export default function MobileDashboardOhs() {
     const radius = 62;
     const circumference = 2 * Math.PI * radius;
     const dashOffset = circumference * (1 - scoreClamped / 100);
-    const trendMax = Math.max(1, ...data.incidentsTrend);
+    const trend = Array.isArray(data.incidentsTrend) ? data.incidentsTrend : MOCK_DASHBOARD.incidentsTrend;
+    const trendMax = Math.max(1, ...trend);
 
     return (
         <>
@@ -254,9 +255,9 @@ export default function MobileDashboardOhs() {
                         <div className="h-24 bg-slate-100 rounded-lg animate-pulse" />
                     ) : (
                         <div className="flex items-end justify-between gap-2" style={{ height: 96 }}>
-                            {data.incidentsTrend.map((v, i) => {
+                            {trend.map((v, i) => {
                                 const heightPct = Math.max(6, (v / trendMax) * 100);
-                                const isLast = i === data.incidentsTrend.length - 1;
+                                const isLast = i === trend.length - 1;
                                 return (
                                     <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
                                         <span className="text-[10.5px] text-slate-500 tabular-nums">{v}</span>
