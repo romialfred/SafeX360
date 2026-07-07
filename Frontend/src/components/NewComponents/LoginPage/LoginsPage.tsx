@@ -272,11 +272,11 @@ const LoginsPage = () => {
                 <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
 
-            {/* LOT — Container : le bloc complet (logo + formulaire + badge) est decale
-                de 200px vers la GAUCHE par rapport au centre de la page, MAIS chaque element
-                reste centre HORIZONTALEMENT par rapport aux autres (alignement interne).
-                Sur mobile (< md), pas de decalage pour rester lisible. */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-5 overflow-y-auto md:-translate-x-[100px] lg:-translate-x-[200px]">
+            {/* LOT — Container : bloc decale vers la GAUCHE pour laisser la photo
+                (les 2 mineurs, a droite) respirer. Decalage reduit depuis l'ajout de
+                la colonne APK a gauche de la carte (bloc plus large). Sur mobile
+                (< md), pas de decalage pour rester lisible. */}
+            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-4 overflow-y-auto md:-translate-x-[60px] lg:-translate-x-[80px] xl:-translate-x-[140px]">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
                 <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md shrink-0">
@@ -286,9 +286,9 @@ const LoginsPage = () => {
                         style={{ filter: 'drop-shadow(0 10px 30px rgba(20,184,166,0.6))' }}
                     >
                         <svg
-                            width="64"
-                            height="64"
-                            className="md:w-[76px] md:h-[76px]"
+                            width="52"
+                            height="52"
+                            className="md:w-[60px] md:h-[60px]"
                             viewBox="0 0 64 64"
                             xmlns="http://www.w3.org/2000/svg"
                             aria-label="SafeX 360"
@@ -334,7 +334,7 @@ const LoginsPage = () => {
                         style={{
                             fontFamily: "'Source Serif 4', Georgia, serif",
                             fontWeight: 600,
-                            fontSize: 'clamp(32px, 4.5vw, 44px)',
+                            fontSize: 'clamp(28px, 3.6vw, 38px)',
                             letterSpacing: '-0.022em',
                             lineHeight: 1,
                             textShadow: '0 4px 28px rgba(0,0,0,0.7)',
@@ -368,14 +368,74 @@ const LoginsPage = () => {
                     </p>
                 </div>
 
+                {/* ═══ Rangée principale : [tuile APK | carte de connexion] ═══
+                    La tuile est à GAUCHE (desktop) : la droite de la photo porte les
+                    visages des deux mineurs — un panneau les masquerait ; la gauche
+                    (ciel/carrière) est calme et le verre sombre y contraste bien.
+                    Sur mobile, la tuile passe SOUS la carte (order). Zéro scroll
+                    vertical desktop : tout tient dans la hauteur du viewport. */}
+                <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-5 shrink-0">
+
+                {/* Tuile téléchargement APK — compacte, verticale (240px), masquée dans l'APK Capacitor */}
+                {!isNativePlatform() && <a
+                    href="/downloads/SafexMobile.apk"
+                    download="SafeX 360 HSE.apk"
+                    className="group order-2 lg:order-1 self-center w-full max-w-[400px] lg:w-[240px] lg:max-w-[240px] bg-black/60 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-teal-400/30 rounded-2xl transition-all duration-300 p-4 flex flex-col gap-2.5"
+                    style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset' }}
+                    aria-label={t.mobileDownloadAria}
+                >
+                    <div className="flex items-center gap-2.5">
+                        <svg viewBox="0 0 64 64" fill="none" className="w-9 h-9 flex-shrink-0" aria-hidden="true">
+                            <path d="M32 3L56 11C56.5 11.2 57 11.6 57 12.3L57 30C57 44 36 60 32.7 61.6C32.3 61.8 31.7 61.8 31.3 61.6C28 60 7 44 7 30L7 12.3C7 11.6 7.5 11.2 8 11Z" fill="url(#dl-shield)" />
+                            <path d="M19 33L32 20L45 33" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M22 43L32 33L42 43" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+                            <defs>
+                                <linearGradient id="dl-shield" x1="32" y1="3" x2="32" y2="62" gradientUnits="userSpaceOnUse">
+                                    <stop stopColor="#14B8A6" />
+                                    <stop offset="1" stopColor="#0F766E" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] uppercase tracking-[0.16em] text-teal-400/80 font-semibold">{t.mobileEyebrow}</span>
+                                <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/20 text-teal-300 font-medium">{t.mobileVersion}</span>
+                            </div>
+                            <div
+                                className="text-[14px] font-bold leading-tight text-white flex items-baseline gap-0.5"
+                                style={{ fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.01em' }}
+                            >
+                                <span>Safe</span>
+                                <span style={{ color: '#2DD4BF' }}>X</span>
+                                <span style={{ color: '#EF4444', marginLeft: '0.18rem' }}>360</span>
+                                <span className="text-white/60 ml-1 text-[12px] font-semibold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>HSE</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Feature chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {[t.mobileFeature1, t.mobileFeature2, t.mobileFeature3].map((f) => (
+                            <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/8 text-white/60 border border-white/6">{f}</span>
+                        ))}
+                    </div>
+                    {/* CTA pleine largeur */}
+                    <span
+                        className="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg text-[11.5px] font-semibold text-white transition-all group-hover:brightness-110"
+                        style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)' }}
+                    >
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        {t.mobileDownloadCta}
+                    </span>
+                    <div className="text-[9.5px] text-white/40 text-center">{t.mobileSizeLabel} · {t.mobileCompat}</div>
+                </a>}
+
                 {/* Carte de connexion compacte
-                    LOT 48 P6.d : changement de couleur
-                    - Avant : bleu marine slate (rgba(15, 23, 42, 0.62)) → trop sombre, peu identitaire
-                    - Après : verre teal profond (rgba(6, 78, 70, 0.55)) avec bordure teal lumineuse
-                      → cohérent avec l'identité HSE SafeX (bouclier teal→rouge), plus chaleureux,
-                      et plus transparent pour laisser respirer l'image de fond. */}
+                    LOT 48 P6.d : verre teal profond avec bordure teal lumineuse —
+                    cohérent avec l'identité HSE SafeX (bouclier teal→rouge). */}
                 <div
-                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0"
+                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0 order-1 lg:order-2"
                     style={{
                         background: 'linear-gradient(135deg, rgba(6, 78, 70, 0.58) 0%, rgba(4, 47, 46, 0.62) 100%)',
                         backdropFilter: 'blur(22px) saturate(160%)',
@@ -384,7 +444,7 @@ const LoginsPage = () => {
                         boxShadow: '0 20px 60px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(94,234,212,0.08) inset',
                     }}
                 >
-                    <div className="px-6 py-8 sm:px-7 sm:py-10">
+                    <div className="px-6 py-6 sm:px-7 sm:py-7">
 
                         {/* Titre Connexion — BLANC PUR, gros, sans décorations qui le rendent illisible */}
                         <h2
@@ -414,7 +474,7 @@ const LoginsPage = () => {
                         </p>
 
 
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-6 space-y-5">
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-5 space-y-4">
 
                             <TextInput
                                 label={
@@ -514,79 +574,14 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
-                {/* Pied : bouton Google Play + badges ISO sur une même ligne horizontale */}
-                <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px] shrink-0">
-
-                {/* Carte téléchargement APK — masquée dans l'APK Capacitor */}
-                {!isNativePlatform() && <a
-                    href="/downloads/SafexMobile.apk"
-                    download="SafeX 360 HSE.apk"
-                    className="group flex items-stretch gap-0 bg-black/60 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-teal-400/30 rounded-2xl transition-all duration-300 overflow-hidden"
-                    style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset', maxWidth: 380 }}
-                    aria-label={t.mobileDownloadAria}
-                >
-                    {/* Colonne gauche — icône bouclier SafeX */}
-                    <div
-                        className="flex items-center justify-center px-4 py-3 flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg, rgba(15,118,110,0.35), rgba(13,148,136,0.15))' }}
-                    >
-                        <svg viewBox="0 0 64 64" fill="none" className="w-10 h-10" aria-hidden="true">
-                            <path d="M32 3L56 11C56.5 11.2 57 11.6 57 12.3L57 30C57 44 36 60 32.7 61.6C32.3 61.8 31.7 61.8 31.3 61.6C28 60 7 44 7 30L7 12.3C7 11.6 7.5 11.2 8 11Z" fill="url(#dl-shield)" />
-                            <path d="M19 33L32 20L45 33" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M22 43L32 33L42 43" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
-                            <defs>
-                                <linearGradient id="dl-shield" x1="32" y1="3" x2="32" y2="62" gradientUnits="userSpaceOnUse">
-                                    <stop stopColor="#14B8A6" />
-                                    <stop offset="1" stopColor="#0F766E" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                    </div>
-                    {/* Colonne droite — infos + CTA */}
-                    <div className="flex-1 min-w-0 py-3 pr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] uppercase tracking-[0.16em] text-teal-400/80 font-semibold">{t.mobileEyebrow}</span>
-                            <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/20 text-teal-300 font-medium">{t.mobileVersion}</span>
-                        </div>
-                        <div
-                            className="text-[15px] font-bold leading-tight text-white flex items-baseline gap-0.5"
-                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.01em' }}
-                        >
-                            <span>Safe</span>
-                            <span style={{ color: '#2DD4BF' }}>X</span>
-                            <span style={{ color: '#EF4444', marginLeft: '0.18rem' }}>360</span>
-                            <span className="text-white/60 ml-1 text-[13px] font-semibold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>HSE</span>
-                        </div>
-                        {/* Feature chips */}
-                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                            {[t.mobileFeature1, t.mobileFeature2, t.mobileFeature3].map((f) => (
-                                <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/8 text-white/60 border border-white/6">{f}</span>
-                            ))}
-                        </div>
-                        {/* Bouton CTA */}
-                        <div className="flex items-center gap-2 mt-2.5">
-                            <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-white transition-colors"
-                                style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)' }}
-                            >
-                                <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
-                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                                {t.mobileDownloadCta}
-                            </span>
-                            <span className="text-[9.5px] text-white/40">{t.mobileSizeLabel}</span>
-                        </div>
-                        <div className="text-[8.5px] text-white/30 mt-1.5">{t.mobileCompat}</div>
-                    </div>
-                </a>}
+                {/* ═══ Fin de la rangée [tuile APK | carte] ═══ */}
+                </div>
 
                 {/* Badges officiels des normes ISO (règle plateforme : jamais de norme en texte nu) */}
-                <div className="flex items-center gap-2.5">
+                <div className="mt-3 md:mt-4 flex items-center justify-center gap-2.5 shrink-0">
                     {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
                         <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
                     ))}
-                </div>
-
                 </div>
 
                 {/* ═══ Popup d'erreur SafeX — professionnelle avec logo officiel ═══ */}
