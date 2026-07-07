@@ -40,7 +40,7 @@ public class CheckListAPI {
     public ResponseEntity<String> updateCheckList(@RequestParam Long companyId,
             @RequestBody CheckListDTO checkListDTO) throws HSException {
         checkListService.updateCheckList(companyId, checkListDTO);
-        return new ResponseEntity<>("Incident Type Updated Successfully", HttpStatus.OK);
+        return new ResponseEntity<>("CheckList Updated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
@@ -53,14 +53,14 @@ public class CheckListAPI {
     public ResponseEntity<String> activateCheckList(@RequestParam Long companyId, @PathVariable Long id)
             throws HSException {
         checkListService.activateCheckList(companyId, id);
-        return new ResponseEntity<>("Incident Type Activated Successfully", HttpStatus.OK);
+        return new ResponseEntity<>("CheckList Activated Successfully", HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
     public ResponseEntity<String> deactivateCheckList(@RequestParam Long companyId, @PathVariable Long id)
             throws HSException {
         checkListService.deactivateCheckList(companyId, id);
-        return new ResponseEntity<>("Incident Type Deactivated Successfully", HttpStatus.OK);
+        return new ResponseEntity<>("CheckList Deactivated Successfully", HttpStatus.OK);
     }
 
     @GetMapping("/getAll")

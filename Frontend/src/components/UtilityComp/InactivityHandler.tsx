@@ -151,26 +151,26 @@ const InactivityHandler = ({ inactivityMinutes = DEFAULT_INACTIVITY_MINUTES }: {
             zIndex={Z.critical}
         >
             <Stack gap="md" align="center">
-                <Title order={3}>Still there?</Title>
+                <Title order={3}>Toujours là ?</Title>
                 <Text ta="center" size="sm" c="dimmed">
-                    For your security, you will be logged out soon due to inactivity.
+                    Pour votre sécurité, vous serez déconnecté sous peu pour cause d'inactivité.
                 </Text>
                 <Stack gap={4} w="100%">
                     <Group justify="space-between">
-                        <Text size="sm">Auto logout in</Text>
+                        <Text size="sm">Déconnexion automatique dans</Text>
                         <Text size="sm" c="red">{countdown}s</Text>
                     </Group>
                     <Progress value={Math.max(0, (countdown / WARNING_DURATION_SECONDS) * 100)} color="red" radius="xl" size="lg" animated={false} />
                 </Stack>
                 <Text size="sm" ta="center">
-                    Click <Text span>Stay Logged In</Text> to keep working.
+                    Cliquez sur <Text span fw={600}>Rester connecté</Text> pour continuer à travailler.
                 </Text>
                 <Group w="100%">
                     <Button variant="light" color="gray" fullWidth onClick={handleLogoutNow}>
-                        Logout now
+                        Se déconnecter
                     </Button>
                     <Button variant="filled" color="red" fullWidth onClick={handleStayLoggedIn}>
-                        Stay logged in
+                        Rester connecté
                     </Button>
                 </Group>
             </Stack>

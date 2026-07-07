@@ -84,10 +84,10 @@ const getSeverityForInspection = (status: any) => {
     }
 }
 function isValidRichText(content: any) {
-    const temp = document.createElement("div");
-    temp.innerHTML = content;
-
-    const text = temp.textContent || temp.innerText || "";
+    // DOMParser : contrairement à innerHTML sur un élément (même détaché),
+    // aucun handler (onerror, onload…) ne peut s'exécuter pendant le parsing.
+    const doc = new DOMParser().parseFromString(String(content ?? ''), 'text/html');
+    const text = doc.body.textContent || "";
     return text.trim().length > 0;
 }
 const getColorForSeverityLevel = (level: any) => {

@@ -24,8 +24,10 @@ const ModuleSubscriptionModal: React.FC<ModuleSubscriptionModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+        // z-[1100] = Z.modal : à z-50 la modale passait sous le header fixe (z-200).
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1100] p-4">
+            {/* max-h + scroll : les boutons du bas restent atteignables sur écran court */}
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[85vh] overflow-y-auto transform transition-all duration-300 scale-100">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center">

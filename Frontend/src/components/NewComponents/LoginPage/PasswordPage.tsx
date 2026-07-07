@@ -98,7 +98,10 @@ const PasswordPage = () => {
 
     return (
         // LOT 40 P1: cream background — sober editorial layout matching LoginsPage typographic system
-        <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ background: '#faf7f2' }}>
+        // overflow-x-hidden seulement : le halo décoratif déborde en largeur, mais un
+        // overflow-hidden total bloquait le scroll vertical (bouton hors d'atteinte
+        // sur petit écran avec clavier ouvert).
+        <div className="min-h-screen relative overflow-x-hidden flex flex-col" style={{ background: '#faf7f2' }}>
             {/* Subtle teal halo for visual warmth */}
             <div
                 className="absolute pointer-events-none"

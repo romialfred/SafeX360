@@ -63,10 +63,20 @@ export default function WelcomeMessageModal({
 
     const pwd = temporaryPassword || '';
 
+    // Échappement HTML : name/login/pwd sont interpolés dans du HTML qui passe
+    // par innerHTML (fallback copie) — un nom contenant <img onerror=…> saisi
+    // par un admin s'exécuterait sinon.
+    const escapeHtml = (v: string) => String(v ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const safeName = escapeHtml(name);
+    const safeLogin = escapeHtml(login);
+    const safePwd = escapeHtml(pwd);
+
     const buildEmailHtml = useMemo(() => () => {
         // Pre-traduit toutes les chaines (le HTML est autoporteur).
         const subject = t('userMgmt.welcome.emailSubject');
-        const hello = t('userMgmt.welcome.hello', { name });
+        const hello = t('userMgmt.welcome.hello', { name: safeName });
         const intro = t('userMgmt.welcome.intro');
         const credsTitle = t('userMgmt.welcome.credentialsTitle');
         const loginLabel = t('userMgmt.welcome.loginLabel');
@@ -100,11 +110,11 @@ export default function WelcomeMessageModal({
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
               <tr>
                 <td style="padding:6px 0;font-size:14px;color:#475569;width:160px;">${loginLabel}</td>
-                <td style="padding:6px 0;font-size:15px;font-weight:700;color:#0f172a;font-family:Consolas,Courier New,monospace;">${login}</td>
+                <td style="padding:6px 0;font-size:15px;font-weight:700;color:#0f172a;font-family:Consolas,Courier New,monospace;">${safeLogin}</td>
               </tr>
               <tr>
                 <td style="padding:6px 0;font-size:14px;color:#475569;width:160px;">${pwdLabel}</td>
-                <td style="padding:6px 0;font-size:15px;font-weight:700;color:#0f172a;font-family:Consolas,Courier New,monospace;letter-spacing:.04em;">${pwd}</td>
+                <td style="padding:6px 0;font-size:15px;font-weight:700;color:#0f172a;font-family:Consolas,Courier New,monospace;letter-spacing:.04em;">${safePwd}</td>
               </tr>
             </table>
           </td>
@@ -249,7 +259,9 @@ export default function WelcomeMessageModal({
             radius="lg"
             padding={0}
             overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
-            styles={{ content: { overflow: 'hidden' } }}
+            // overflow-y auto (et non hidden) : sur écran court, les boutons
+            // « Copier » / « Fermer » du bas restaient hors d'atteinte.
+            styles={{ content: { overflowY: 'auto' } }}
         >
             {/* En-tete premium teal + logo */}
             <Box

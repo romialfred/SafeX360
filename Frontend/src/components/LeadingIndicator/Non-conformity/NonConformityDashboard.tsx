@@ -388,7 +388,7 @@ const NonConformityDashboard = () => {
 
                                 {/* ── Verso (au survol) : panneau teinté par la sévérité ── */}
                                 <div
-                                    className="absolute inset-0 flex flex-col overflow-hidden rounded-xl p-4 text-white shadow-sm [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                                    className="absolute inset-0 flex flex-col overflow-y-auto rounded-xl p-4 text-white shadow-sm [backface-visibility:hidden] [transform:rotateY(180deg)]"
                                     style={{ background: grad }}
                                 >
                                     <div className="mb-2 flex items-center justify-between gap-2">

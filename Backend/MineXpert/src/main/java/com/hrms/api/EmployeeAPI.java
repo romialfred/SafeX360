@@ -47,6 +47,28 @@ public class EmployeeAPI {
     @Autowired
     private EmployeeService employeeService;
 
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
+    private String jwtSecret;
+
+    /**
+     * Garde admin sur cookie JWT — même pattern qu'AccountAPI.requireAdmin.
+     * Le SecurityContext n'étant pas alimenté par le cookie, la vérification
+     * du rôle se fait directement sur le claim "role" du token.
+     */
+    private void requireAdmin(String token) {
+        if (token == null || token.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+        io.jsonwebtoken.Claims claims = io.jsonwebtoken.Jwts.parser()
+                .setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
+        String role = claims.get("role", String.class);
+        if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Admin privileges required");
+        }
+    }
+
     @PostMapping("/add")
     public ResponseEntity<ResponseDTO> addEmployee(@RequestBody @Valid EmployeeDTO employeeDTO) throws HRMSException {
         employeeService.addEmployee(employeeDTO);
@@ -205,14 +227,16 @@ public class EmployeeAPI {
         return new ResponseEntity<>(new ResponseDTO("Profile Picture deleted Successfully."), HttpStatus.OK);
     }
 
-    // LOT 41 P0 SECURITY TODO: promotion = action sensible RH ; doit être restreinte ADMIN/SUPER_ADMIN.
-    // ABORT @PreAuthorize : SecurityContext non alimenté via cookie JWT (cf. AccountAPI). Implémentation
-    // à faire en LOT 42 après ajout d'un filtre cookie-JWT qui peuple authorities depuis claim "role".
+    // Promotion = action RH sensible : restreinte ADMIN/SUPER_ADMIN via le
+    // cookie JWT (le TODO LOT 41 est soldé par requireAdmin ci-dessus).
     @PostMapping("/promote")
     public ResponseEntity<ResponseDTO> promoteEmployee(@RequestBody EmployeeDTO employeeDTO,
             @RequestParam(name = "recommendedBy", required = false) Long recommendedBy,
             @RequestParam("approvedBy") Long approvedBy, @RequestParam("reason") String reason,
-            @RequestParam("endDate") LocalDate endDate) throws HRMSException {
+            @RequestParam("endDate") LocalDate endDate,
+            @org.springframework.web.bind.annotation.CookieValue(name = "jwt", required = false) String token)
+            throws HRMSException {
+        requireAdmin(token);
         employeeService.promoteEmployee(employeeDTO, recommendedBy, approvedBy, reason, endDate);
         return new ResponseEntity<>(new ResponseDTO("Employee promoted Successfully."), HttpStatus.OK);
     }

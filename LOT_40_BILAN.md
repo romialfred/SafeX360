@@ -263,8 +263,8 @@ Tests E2E à faire au réveil :
    ```
 
 3. **Comptes de test** :
-   - `KMINATA` / `Admin123456&` (admin)
-   - `SAFEX360DEMO` / `Demo123456&` (démo, modules limités)
+   - Compte admin : voir gestionnaire de mots de passe interne (jamais dans le dépôt public)
+   - Compte démo : voir gestionnaire de mots de passe interne
 
 4. **Pages à voir** :
    - `/login` — page de connexion finale (mine + flou + brand mark)

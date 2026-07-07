@@ -11,7 +11,6 @@ import SosDetailPage from '../components/EmergencyManagement/Sos/SosDetailPage';
 import GeneralAlertDetailPage from '../components/EmergencyManagement/GeneralAlert/GeneralAlertDetailPage';
 import EmergencyDashboardPage from '../components/EmergencyManagement/Dashboard/EmergencyDashboardPage';
 
-import DashboardPage from '../pages/dashboard/DashboardPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
 import NotFound from '../pages/NotFoundPage';
 import AboutPage from '../pages/dashboard/AboutPage';
@@ -231,7 +230,6 @@ const ErrorDeclarationPage = lazy(() => import('../components/ErrorManagement/Er
 // LOT — SafeX 360 Field (mobile Android Phase M0+M1+M2+M3)
 const MobileShell = lazy(() => import('../m/MobileShell'));
 const MobileHome = lazy(() => import('../m/pages/MobileHome'));
-const MobilePlaceholder = lazy(() => import('../m/pages/MobilePlaceholder'));
 const MobileInspectionsList = lazy(() => import('../m/pages/MobileInspectionsList'));
 const MobileSosScreen = lazy(() => import('../m/pages/MobileSosScreen'));
 const MobileIncidentQuickDeclare = lazy(() => import('../m/pages/MobileIncidentQuickDeclare'));
@@ -343,7 +341,6 @@ const router = createBrowserRouter([
             { path: 'sos', element: <BlastSuspense><MobileSosScreen /></BlastSuspense> },
             { path: 'alert', element: <BlastSuspense><MobileGeneralAlertScreen /></BlastSuspense> },
             { path: 'incident/new', element: <BlastSuspense><MobileIncidentQuickDeclare /></BlastSuspense> },
-            { path: 'incident/new-ai', element: <BlastSuspense><MobileAIIncidentDeclare /></BlastSuspense> },
             { path: 'incident/:id', element: <BlastSuspense><MobileIncidentDetail /></BlastSuspense> },
             { path: 'error-event/new', element: <BlastSuspense><MobileErrorEventDeclare /></BlastSuspense> },
             { path: 'incident/ai', element: <BlastSuspense><MobileAIIncidentDeclare /></BlastSuspense> },
@@ -374,7 +371,6 @@ const router = createBrowserRouter([
         children: [
             { path: '', element: <HomePage /> },
             { path: 'module-not-found', element: <ModuleNotFoundPage /> },
-            { path: 'old', element: <DashboardPage /> },
             { path: 'dashboard', element: <OhsDashboardPage /> },
             { path: 'profile', element: <ProfilePage /> },
             { path: 'about', element: <AboutPage /> },
@@ -532,7 +528,6 @@ const router = createBrowserRouter([
             { path: 'employee-assignment/employee-details/:id', element: <ModuleGuard moduleId='employee-assignments'><EmployeeDetailsPage /></ModuleGuard>, },
             { path: 'document-validation', element: <ModuleGuard moduleId='document-validation'><DocumentValidationPage /></ModuleGuard>, },
 
-            { path: 'new-dashboard', element: <OhsDashboardPage />, },
 
 
 

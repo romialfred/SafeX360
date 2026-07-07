@@ -402,8 +402,11 @@ How can I assist more precisely?`,
     // Chat Window
     return (
         <div className="fixed bottom-6 right-6 z-50">
+            {/* max-h + flex-col : sans plafond, sur écran court (< ~630px) l'en-tête
+                (fermer/réduire) sortait du viewport et l'utilisateur était piégé. */}
             <div className={`
         bg-white rounded-2xl shadow-2xl border border-gray-200 transition-all duration-300
+        max-h-[calc(100vh-3rem)] flex flex-col
         ${isMinimized ? 'w-80 h-16' : 'w-96 '}
       `}>
                 {/* Header */}
@@ -482,7 +485,7 @@ How can I assist more precisely?`,
                 {!isMinimized && (
                     <>
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-4 h-96 bg-gradient-to-b from-gray-50 to-white">
+                        <div className="flex-1 overflow-y-auto p-4 max-h-96 min-h-0 bg-gradient-to-b from-gray-50 to-white">
                             {messages.length === 0 && (
                                 <div className="text-center py-8">
                                     <div className="w-16 h-16 bg-gradient-to-r from-teal-100 to-sky-100 rounded-full mx-auto mb-4 flex items-center justify-center">

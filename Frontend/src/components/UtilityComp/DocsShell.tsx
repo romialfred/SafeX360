@@ -365,7 +365,8 @@ export default function DocsShell({
 
             {/* ═══ Drawer mobile pour la sidebar ═══ */}
             {isMobile && mobileNavOpen && (
-                <div className="fixed inset-0 z-50 lg:hidden">
+                // z-[1100] = Z.modal : à z-50 le drawer passait sous le header fixe (z-200).
+                <div className="fixed inset-0 z-[1100] lg:hidden">
                     <button
                         type="button"
                         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"

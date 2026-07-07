@@ -28,10 +28,7 @@ Tu interviens sur **SafeX360**, plateforme HSE en cours de développement, desti
 **Stack technologique connue :**
 
 - Base de données : **MySQL Server local (conteneurisé via Docker)**
-- Identifiants de connexion :
-  - Database : `SafeX360`
-  - User : `SafeX`
-  - Password : `Admin123456&`
+- Identifiants de connexion : voir `Backend/.env` local (jamais dans le dépôt public)
 - Frontend, Backend, ORM, framework de build : **à analyser et à documenter**
 - Conteneurisation : Docker / Docker Compose — **à analyser**
 

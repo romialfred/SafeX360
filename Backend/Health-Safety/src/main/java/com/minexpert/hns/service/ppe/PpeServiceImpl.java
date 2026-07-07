@@ -143,8 +143,17 @@ public class PpeServiceImpl implements PpeService {
 
     @Override
     public List<PpeDTO> getLowStock() throws HSException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getLowStock'");
+        // EPI actifs dont le stock est passé sous le seuil minimal — les EPI
+        // sans seuil défini sont exclus (pas d'alerte pertinente possible).
+        // (Remplace l'ancien stub UnsupportedOperationException : l'endpoint
+        // GET /ppe/getLowStock est exposé et renvoyait systématiquement 500.)
+        return ppeRepository.findByStatus(PpeStatus.ACTIVE)
+                .stream()
+                .filter(ppe -> ppe.getMinStock() != null
+                        && ppe.getStock() != null
+                        && ppe.getStock() <= ppe.getMinStock())
+                .map(Ppe::toDTO)
+                .toList();
     }
 
     @Override

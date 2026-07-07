@@ -918,7 +918,8 @@ function DosimeterDetailModal({ row, canWrite, onClose, onNavigateWorker, onEdit
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+            // z-[1100] = Z.modal : à z-50 la modale passait sous le header fixe (z-200).
+            className="fixed inset-0 z-[1100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-labelledby="dosimeter-modal-title"

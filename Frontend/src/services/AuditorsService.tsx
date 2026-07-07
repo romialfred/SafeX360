@@ -20,9 +20,12 @@ const getAllAuditors = async () => {
         .then((response) => response.data);
 };
 
+// InternalAuditorAPI n'expose pas /getAllActive (contrairement aux autres
+// paramètres) : on filtre côté client pour éviter un 404.
 const getAllActiveAuditors = async () => {
-    return axiosInstance.get(`${url}/getAllActive`)
-        .then((response) => response.data);
+    return axiosInstance.get(`${url}/getAll`)
+        .then((response) => (Array.isArray(response.data) ? response.data : [])
+            .filter((a: any) => String(a?.status ?? '').toUpperCase() === 'ACTIVE'));
 }
 const activateAuditors = async (id: string | number) => {
     return axiosInstance.put(`${url}/activate/${id}`)

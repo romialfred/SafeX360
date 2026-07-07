@@ -966,8 +966,11 @@ const previewCsvImport = async (
     form.append('file', file, file.name);
     form.append('mineId', String(resolvedMineId));
     try {
+        // CsvImportController est monté sur /dosimetry/import (PAS sous
+        // /dose-record) — l'ancien chemin renvoyait 404 et le wizard affichait
+        // « 0 lignes » au lieu d'importer.
         const res = await axiosInstance.post(
-            `${doseRecordUrl}/import/preview`,
+            '/hns/dosimetry/import/preview',
             form,
             { headers: { 'Content-Type': 'multipart/form-data' } },
         );
@@ -1053,8 +1056,9 @@ const executeCsvImport = async (
     form.append('skipDuplicates', String(options.skipDuplicates));
     form.append('continueOnWarnings', String(options.continueOnWarnings));
 
+    // Même correctif que preview : contrôleur monté sur /dosimetry/import.
     const res = await axiosInstance.post(
-        `${doseRecordUrl}/import/execute`,
+        '/hns/dosimetry/import/execute',
         form,
         { headers },
     );

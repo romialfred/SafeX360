@@ -76,7 +76,7 @@ const MbaData = () => {
                 </Button>
                 <Button
                     size="sm"
-                    onClick={() => navigate('calendar')}
+                    onClick={() => navigate('/PGI/calendar')}
                     leftSection={<IconSettings />}
                     variant="gradient"
                 >
@@ -100,11 +100,11 @@ const MbaData = () => {
             <div className='flex gap-3 '>
                 {/* LOT 40 P1: aria-label descriptifs ajoutés */}
                 <Tooltip label="View Deatils">
-                    <ActionIcon onClick={() => navigate(`viewPgi/${id}`)} variant="filled" size="sm" color="yellow" aria-label="Voir détails">
+                    <ActionIcon onClick={() => navigate(`/PGI/viewPgi/${id}`)} variant="filled" size="sm" color="yellow" aria-label="Voir détails">
                         <IconEye style={{ width: '90%', height: '90%' }} stroke={1.5} /></ActionIcon>
                 </Tooltip>
                 {rowData.status != "COMPLETED" && rowData.status != "CANCELLED" && <Tooltip label="Start Inspection">
-                    <ActionIcon onClick={() => navigate(`inspection/${id}`)} variant="filled" size="sm" color="blue" aria-label="Démarrer l'inspection">
+                    <ActionIcon onClick={() => navigate(`/PGI/inspection/${id}`)} variant="filled" size="sm" color="blue" aria-label="Démarrer l'inspection">
                         <IconChecklist stroke={1.5} style={{ width: '90%', height: '90%' }} /></ActionIcon>
                 </Tooltip>}
                 {/* <Tooltip label="Edit">

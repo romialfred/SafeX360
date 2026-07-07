@@ -160,7 +160,7 @@ const AnnualAuditCard = ({ audit, onEdit, onView, onApprove, onReject, auditArea
     // ─── Face arrière (design distinct : dégradé teal sombre) ────────────────
     const back = (
         <div
-            className="absolute inset-0 flex flex-col rounded-xl border border-teal-900/40 p-4 text-slate-100 shadow-sm overflow-hidden"
+            className="absolute inset-0 flex flex-col rounded-xl border border-teal-900/40 p-4 text-slate-100 shadow-sm overflow-y-auto"
             style={{
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',

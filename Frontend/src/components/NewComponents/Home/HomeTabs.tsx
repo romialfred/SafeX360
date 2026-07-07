@@ -384,7 +384,9 @@ export default function HomeTabs() {
                 const subs = modItems(flipped);
                 return (
                     <div
-                        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                        // z-[1100] = Z.modal : à z-[60] la modale passait SOUS le
+                        // header fixe (z-200) — croix et boutons masqués/incliquables.
+                        className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
                         role="dialog"
                         aria-modal="true"
                         aria-label={`${t('flip.summary')} — ${modTitle(flipped)}`}
@@ -406,7 +408,9 @@ export default function HomeTabs() {
 
                         <div
                             onClick={(e) => e.stopPropagation()}
-                            className="relative w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+                            // max-h + scroll : sur écran court, les boutons « Ouvrir le
+                            // module » / « Retour » étaient clippés par overflow-hidden.
+                            className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-3xl bg-white shadow-2xl"
                             style={{
                                 animation: 'safexFlipIn .55s cubic-bezier(.2,.7,.2,1) both',
                                 transformOrigin: 'center',

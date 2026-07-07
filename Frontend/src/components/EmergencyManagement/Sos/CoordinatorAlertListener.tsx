@@ -401,7 +401,9 @@ const CoordinatorAlertListener = () => {
     if (!activeAlert) return null;
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
+        // overflow-y-auto : sur écran court, le bouton « PRENDRE EN CHARGE »
+        // (accusé de réception SOS, critique sécurité) était clippé.
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto overflow-x-hidden py-4">
             {/* Styles globaux pour l'effet "pierre jetée dans l'eau" + animations */}
             <style>{`
                 @keyframes sosRipple {

@@ -10,6 +10,8 @@ import io.jsonwebtoken.Jwts;
 
 @Component
 public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config> {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(TokenFilter.class);
+
     // LOT 52 (remédiation GATE SEC-03) : clé JWT externalisée — la valeur par
     // défaut historique reste en repli pour ne pas casser les déploiements
     // existants ; LA ROTATION (nouvelle valeur via env JWT_SECRET sur tous les
@@ -73,6 +75,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         .build();
 
             } catch (Exception e) {
+                // Trace indispensable au diagnostic : sans elle, impossible de
+                // distinguer token expiré / signature invalide / token malformé.
+                LOG.warn("JWT rejeté sur {} {} : {}", method, path, e.getMessage());
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }

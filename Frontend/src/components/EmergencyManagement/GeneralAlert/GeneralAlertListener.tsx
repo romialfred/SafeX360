@@ -461,7 +461,9 @@ const GeneralAlertListener = () => {
     const isDrill = Boolean(activeAlert.drillMode);
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden">
+        // overflow-y-auto : sur écran court, les boutons « JE SUIS EN SÉCURITÉ » /
+        // « BLESSÉ » (seul moyen de se signaler en évacuation) étaient clippés.
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto overflow-x-hidden py-4">
             <style>{`
                 @keyframes gaRipple {
                     0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.85; }
