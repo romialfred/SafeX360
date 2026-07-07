@@ -69,15 +69,21 @@ export default function MobileIncidentsHistory() {
         let cancelled = false;
         (async () => {
             try {
+                // « /findbyreporter » n'existe pas côté backend (404) : on liste tout
+                // puis on filtre localement sur le déclarant.
                 const res = await getCached<IncidentSummary[]>({
-                    endpoint: `/hns/incidents/findbyreporter/${userId}`,
+                    endpoint: '/hns/incidents/getAll',
                     cacheStore: 'inspectionCache',
                     cacheKey: `incidents-${userId}`,
                     ttlMs: 30 * 60 * 1000,
                 });
                 if (!cancelled) {
-                    const sorted = (Array.isArray(res.data) ? res.data : []).slice().sort((a, b) =>
-                        new Date(b.declaredAt).getTime() - new Date(a.declaredAt).getTime()
+                    const mine = (Array.isArray(res.data) ? res.data : []).filter((i: any) =>
+                        Number(i.reporterId ?? i.reporter ?? i.declaredBy ?? -1) === userId
+                    );
+                    const sorted = mine.slice().sort((a: any, b: any) =>
+                        new Date(b.declaredAt ?? b.incidentDate ?? 0).getTime()
+                        - new Date(a.declaredAt ?? a.incidentDate ?? 0).getTime()
                     );
                     setItems(sorted);
                 }

@@ -77,7 +77,8 @@ export default function FirstLoginPasswordChange() {
             await changePasswordFirst(values.oldPassword, values.newPassword);
             successNotification(t('userMgmt.firstLogin.successChanged'));
             // Petit delai pour que la notif s'affiche avant la redirection
-            setTimeout(() => navigate('/home'), 600);
+            // « /home » n'existe pas (page blanche 404) — la racine « / » mène au dashboard.
+            setTimeout(() => navigate('/'), 600);
         } catch (e: any) {
             const code = e?.response?.data?.error;
             const message = e?.response?.data?.message;

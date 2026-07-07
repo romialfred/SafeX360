@@ -25,8 +25,12 @@ import type { Page } from '@playwright/test';
 
 /** Identifiant utilisateur PCR pour tous les tests. */
 export const PW_USER = process.env.PW_USER ?? 'pcr.test@safex.local';
-/** Mot de passe utilisateur PCR. */
-export const PW_PASS = process.env.PW_PASS ?? 'Pcr-Test!2026';
+/** Mot de passe utilisateur PCR — OBLIGATOIREMENT via variable
+ *  d'environnement : aucun mot de passe par défaut ne doit vivre dans un
+ *  dépôt public. */
+export const PW_PASS = process.env.PW_PASS ?? (() => {
+    throw new Error('PW_PASS non défini — exportez la variable d\'environnement avant de lancer les tests e2e.');
+})();
 /** Mine selectionnee pour les operations multi-tenant. */
 export const PW_MINE_ID = Number(process.env.PW_MINE_ID ?? 1);
 

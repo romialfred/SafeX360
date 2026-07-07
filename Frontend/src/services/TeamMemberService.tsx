@@ -33,13 +33,17 @@ const getTeamMemberByEmployeeId = async (employeeId: string | number) => {
         .then((response) => response.data);
 }
 
+// Le backend (TeamMemberAPI) attend l'id dans le BODY (@RequestBody Long),
+// pas en path variable — /activate/{id} renvoyait un 404 silencieux.
 const activateTeamMember = async (id: string | number) => {
-    return axiosInstance.put(`${url}/activate/${id}`)
-        .then((response) => response.data);
+    return axiosInstance.put(`${url}/activate`, Number(id), {
+        headers: { 'Content-Type': 'application/json' },
+    }).then((response) => response.data);
 }
 const deactivateTeamMember = async (id: string | number) => {
-    return axiosInstance.put(`${url}/deactivate/${id}`)
-        .then((response) => response.data);
+    return axiosInstance.put(`${url}/deactivate`, Number(id), {
+        headers: { 'Content-Type': 'application/json' },
+    }).then((response) => response.data);
 }
 
 export { addTeamMember, updateTeamMember, deleteTeamMember, getAllTeamMembers, getAllActiveTeamMembers, getTeamMemberById, getTeamMemberByEmployeeId, activateTeamMember, deactivateTeamMember };

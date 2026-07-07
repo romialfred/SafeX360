@@ -1,6 +1,6 @@
 import axiosInstance from "../interceptors/AxiosInterceptor";
 
-const url = "hns/ppe-request";
+const url = "/hns/ppe-request";
 const createPpeRequest = async (ppeData: any) => {
     return axiosInstance.post(`${url}/create`, ppeData)
         .then((response) => response.data);

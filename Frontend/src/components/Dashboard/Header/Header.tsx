@@ -35,7 +35,9 @@ const Header = () => {
     // false karoge to sirf site name dikhega
 
     useEffect(() => {
-        if (user) {
+        // user vaut {} avant la fin de l'auth : sans le check empId on tirait
+        // une requête getProfilePicture(undefined) à chaque chargement.
+        if (user?.empId) {
             getProfilePicture(user.empId).then((res) => {
                 dispatch(setProfile(res));
             }).catch((_err) => {
@@ -82,7 +84,9 @@ const Header = () => {
     return (
         // LOT 48 P6.j — Responsive : sur mobile (< md), le header occupe TOUTE la largeur
         // (sidebar = drawer overlay). Sur desktop, on conserve l'offset gauche selon collapsed.
-        <header role="banner" className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[100] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
+        // z-[200] = Z.header (constants/zIndex.ts) : à z-[100] le header partageait
+        // le niveau de la sidebar — empilement fragile dépendant de l'ordre DOM.
+        <header role="banner" className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[200] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
             {/* LOT 43 v10 — Header dynamique + titre agrandi + h-18 pour respirer */}
             <div className="safex-header-wave relative bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-[64px] sm:h-[72px] flex justify-between items-center px-3 sm:px-6 overflow-hidden">
                 {/* Couche 1 : vague lumineuse parcourant le header (animée via CSS) */}

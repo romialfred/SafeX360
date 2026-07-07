@@ -324,7 +324,7 @@ const router = createBrowserRouter([
     // Pas de layout dashboard : on isole completement l'utilisateur de l'app.
     {
         path: '/first-login',
-        element: <FirstLoginPasswordChange />,
+        element: <ProtectedRoute><FirstLoginPasswordChange /></ProtectedRoute>,
     },
 
     // ── SafeX 360 Field — version mobile Android (Phase M0) ─────────────

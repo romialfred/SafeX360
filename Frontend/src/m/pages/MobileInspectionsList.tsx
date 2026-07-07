@@ -125,7 +125,8 @@ export default function MobileInspectionsList() {
             )}
 
             {/* Filtres */}
-            <div className="px-4 pt-3 pb-2 sticky top-0 z-10 bg-[#FAF8F3]">
+            {/* top = hauteur TopBar (56px + safe-area) : avec top-0 la barre glissait DERRIÈRE la TopBar (z-40) au scroll et devenait incliquable */}
+            <div className="px-4 pt-3 pb-2 sticky z-10 bg-[#FAF8F3]" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}>
                 <div className="grid grid-cols-3 gap-1.5 bg-white border border-slate-200 rounded-full p-1">
                     {([
                         ['all', 'Toutes'],

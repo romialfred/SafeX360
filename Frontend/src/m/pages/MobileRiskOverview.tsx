@@ -131,7 +131,9 @@ export default function MobileRiskOverview() {
 
     const openRisk = () => {
         haptic('light');
-        navigate('/risk-management');
+        // « /risk-management » n'existe pas dans le Router — la vraie route web
+        // du module Gestion des Risques est /risks-overview.
+        navigate('/risks-overview');
     };
 
     return (
@@ -146,7 +148,8 @@ export default function MobileRiskOverview() {
             )}
 
             {/* Synthèse par niveau */}
-            <div className="px-4 pt-3 pb-2 sticky top-0 z-10 bg-[#FAF8F3]">
+            {/* top = hauteur TopBar (56px + safe-area) : avec top-0 la barre glissait DERRIÈRE la TopBar (z-40) au scroll et devenait incliquable */}
+            <div className="px-4 pt-3 pb-2 sticky z-10 bg-[#FAF8F3]" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}>
                 <div className="grid grid-cols-3 gap-2">
                     <div className="bg-white border border-slate-200 rounded-xl p-2.5 text-center">
                         <p className="text-[18px] font-semibold text-emerald-700 leading-none">{counts.LOW}</p>

@@ -1,6 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialToken = JSON.parse(localStorage.getItem("menu") ?? '{ "id": "dashboard", "pos": "true" }')
+const DEFAULT_MENU = { id: "dashboard", pos: "true" };
+
+// Un JSON corrompu dans localStorage ne doit jamais empêcher le store de se
+// créer (écran blanc sans recours) — repli silencieux sur le menu par défaut.
+let initialToken: { id: string; pos: string };
+try {
+    const parsed = JSON.parse(localStorage.getItem("menu") ?? "null");
+    initialToken = parsed && typeof parsed === "object" && parsed.id ? parsed : DEFAULT_MENU;
+} catch {
+    initialToken = DEFAULT_MENU;
+}
 
 const MenuSlice = createSlice({
     name: 'menu',
@@ -12,7 +22,7 @@ const MenuSlice = createSlice({
         },
         removeMenu: () => {
             localStorage.removeItem("menu");
-            return "";
+            return DEFAULT_MENU;
         }
     }
 });

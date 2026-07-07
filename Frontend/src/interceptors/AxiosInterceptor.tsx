@@ -103,8 +103,16 @@ const AUTH_PROBE_PATHS = ['/hrms/auth/me', '/hrms/me/profile', '/hns/users/permi
 const isAuthProbe = (url?: string): boolean =>
     !!url && AUTH_PROBE_PATHS.some((p) => url.includes(p));
 
+// Id de l'intercepteur 401 déjà enregistré : sans éjection préalable, chaque
+// re-montage (StrictMode, navigation) empilerait un doublon → notifications
+// et redirections multiples sur un seul 401.
+let responseInterceptorId: number | null = null;
+
 export const setupResponseInterceptor = (navigate: any, dispatch: any) => {
-    axiosInstance.interceptors.response.use(
+    if (responseInterceptorId !== null) {
+        axiosInstance.interceptors.response.eject(responseInterceptorId);
+    }
+    responseInterceptorId = axiosInstance.interceptors.response.use(
         (response: AxiosResponse) => {
             return response;
         },

@@ -99,8 +99,10 @@ export default function MobileSosScreen() {
                 status: 'RECEIVED' as const,
                 drillMode: false,
             };
+            // Endpoint réel du backend : POST /hns/emergency/sos (SosAlertController)
+            // — « /hns/sos/create » n'existe pas et renvoyait 404.
             const result = await mutateOffline({
-                endpoint: '/hns/sos/create',
+                endpoint: `/hns/emergency/sos?actorId=${userId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },

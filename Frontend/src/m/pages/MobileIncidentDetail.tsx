@@ -75,8 +75,9 @@ export default function MobileIncidentDetail() {
         let cancelled = false;
         (async () => {
             try {
+                // Endpoint réel : /hns/incidents/getDetails/{id} — « findbyid » n'existe pas (404).
                 const res = await getCached<IncidentDetail>({
-                    endpoint: `/hns/incidents/findbyid/${id}`,
+                    endpoint: `/hns/incidents/getDetails/${id}`,
                     cacheStore: 'inspectionCache', // partage le store cache
                     cacheKey: Number(id),
                     ttlMs: 60 * 60 * 1000,

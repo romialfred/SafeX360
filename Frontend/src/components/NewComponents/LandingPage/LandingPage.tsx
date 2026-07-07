@@ -315,7 +315,8 @@ export default function LandingPage() {
     const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
     useEffect(() => {
-        if (user) navigate('/home', { replace: true });
+        // « /home » n'existe pas — RootGate sert le dashboard sur « / ».
+        if (user) navigate('/', { replace: true });
     }, [user, navigate]);
 
     useEffect(() => {
@@ -2360,9 +2361,11 @@ function GalleryCard({ item, onOpen }: { item: GalleryItem; onOpen?: () => void 
 
     return (
         <div className="group h-full">
-            <button
-                type="button"
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={onOpen}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(); } }}
                 className={`${aspectClass} relative rounded-3xl overflow-hidden mb-5 transition-all hover:-translate-y-1 w-full cursor-pointer block`}
                 style={{
                     background: item.bg,
@@ -2398,7 +2401,7 @@ function GalleryCard({ item, onOpen }: { item: GalleryItem; onOpen?: () => void 
                 >
                     {item.label}
                 </div>
-            </button>
+            </div>
 
             {/* Caption sous l'image */}
             <div className="px-2 text-left">

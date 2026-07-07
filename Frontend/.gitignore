@@ -35,6 +35,12 @@ keystore.properties
 key.properties
 google-services.json
 
+# Fichiers d'environnement — jamais dans un dépôt public.
+# (.env.example reste versionné comme modèle.)
+.env
+.env.*
+!.env.example
+
 # Caches Capacitor
 .capacitor/
 

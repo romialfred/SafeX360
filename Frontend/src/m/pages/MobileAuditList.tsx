@@ -130,7 +130,8 @@ export default function MobileAuditList() {
                 </div>
             )}
 
-            <div className="px-4 pt-3 pb-2 sticky top-0 z-10 bg-[#FAF8F3]">
+            {/* top = hauteur TopBar (56px + safe-area) : avec top-0 la barre glissait DERRIÈRE la TopBar (z-40) au scroll et devenait incliquable */}
+            <div className="px-4 pt-3 pb-2 sticky z-10 bg-[#FAF8F3]" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}>
                 <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
                     {FILTERS.map((f) => (
                         <button

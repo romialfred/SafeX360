@@ -1,7 +1,7 @@
 import axiosInstance from "../interceptors/AxiosInterceptor";
 
 
-const url = "hns/ppeEmp";
+const url = "/hns/ppeEmp";
 
 const getPpeById = async (id: number) => {
     return axiosInstance.get(`${url}/get/${id}`)

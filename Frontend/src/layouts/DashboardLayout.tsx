@@ -1,6 +1,7 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Header from "../components/Dashboard/Header/Header";
-import { useAppSelector } from "../slices/hooks";
+import { useAppSelector, useAppDispatch } from "../slices/hooks";
+import { setupResponseInterceptor } from "../interceptors/AxiosInterceptor";
 import { Affix, LoadingOverlay } from "@mantine/core";
 import Sidebar from "../components/NewComponents/Sidebar/Sidebar";
 import FloatingAIAssistant from "../components/NewComponents/AiAssistant/FloatingAiAssistant";
@@ -35,6 +36,15 @@ const DashboardLayout = () => {
     const [flagsLoaded, setFlagsLoaded] = useState(false);
     const [switching, setSwitching] = useState(false);
     const prevCompanyRef = useRef(selectedCompanyId);
+    const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+
+    // Gestion globale des sessions expirées : sans cet enregistrement, un 401
+    // sur un appel applicatif laissait l'utilisateur sur un dashboard cassé
+    // sans aucune notification ni redirection vers /login.
+    useEffect(() => {
+        setupResponseInterceptor(navigate, dispatch);
+    }, [navigate, dispatch]);
 
     useEffect(() => {
         if (prevCompanyRef.current !== selectedCompanyId) {

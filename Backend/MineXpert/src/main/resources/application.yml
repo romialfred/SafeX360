@@ -26,11 +26,10 @@ spring:
     show-sql: true
 
   mail:
-    # Uncomment to use environment-based config
+    # Credentials exclusivement via variables d'environnement (fichier public —
+    # aucun secret, même commenté, ne doit apparaître ici).
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
-    # username: no-replay@data-univers.com
-    # password: Connex@ted001$
     host: mail.data-univers.com
     port: 465
     protocol: smtp

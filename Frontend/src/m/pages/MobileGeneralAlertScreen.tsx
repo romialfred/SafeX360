@@ -93,17 +93,19 @@ export default function MobileGeneralAlertScreen() {
 
         try {
             const fingerprint = `alert-general-${userId}-${selectedType}-${Math.floor(Date.now() / 10000)}`;
+            // Contrat backend (GeneralAlertController.trigger) : GeneralAlertRequest
+            // = { companyId, reasonCode, message, drillMode } — l'ancien payload
+            // (alertType/description) et l'ancien endpoint « /hns/alerts/general »
+            // renvoyaient 404.
             const payload = {
                 companyId,
-                employeeId: userId,
-                alertType: selectedType,
-                description: description.trim(),
-                urgencyLevel: urgency,
-                status: 'BROADCAST' as const,
+                reasonCode: selectedType,
+                message: `[${urgency}] ${description.trim()}`,
+                drillMode: false,
             };
 
             const result = await mutateOffline({
-                endpoint: '/hns/alerts/general',
+                endpoint: `/hns/emergency/alerts/general/trigger?actorId=${userId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },

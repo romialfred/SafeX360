@@ -88,8 +88,10 @@ export default function MobileIncidentQuickDeclare() {
                 photoFilename: photoName,
                 quickDeclare: true,
             };
+            // Endpoint réel : POST /hns/incidents/report (comme la déclaration IA)
+            // — « /hns/incidents/create » n'existe pas côté backend (404).
             const result = await mutateOffline({
-                endpoint: '/hns/incidents/create',
+                endpoint: '/hns/incidents/report',
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },

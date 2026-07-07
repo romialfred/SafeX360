@@ -2,17 +2,29 @@ const capitalizeFirstLetter = (string: any) => {
     if (!string) return '';
     return string?.charAt(0).toUpperCase() + string?.slice(1).toLowerCase();
 }
+// Garde Array.isArray : appelée sur 60+ sites avec des réponses API brutes —
+// un null/objet inattendu ne doit jamais faire crasher la page entière.
 const mapIdToName = (items: any): Record<number, any> => {
+    if (!Array.isArray(items)) return {};
     return items.reduce((acc: any, item: any) => {
         acc[item.id] = item;
         return acc;
     }, {} as Record<number, any>);
 }
 const mapIdToProcess = (items: any): Record<number, any> => {
+    if (!Array.isArray(items)) return {};
     return items.reduce((acc: any, item: any) => {
         acc[item.id] = item.process;
         return acc;
     }, {} as Record<number, any>);
+}
+
+// Générateur cryptographiquement sûr (crypto.getRandomValues) : ces mots de
+// passe temporaires protègent des comptes réels — Math.random() est prévisible.
+function secureRandomInt(maxExclusive: number): number {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] % maxExclusive;
 }
 
 function generatePassword() {
@@ -21,19 +33,23 @@ function generatePassword() {
     const numbers = "0123456789";
     const specialChars = "!@#$%^&*()-_+=";
 
-    let password = [
-        uppercase[Math.floor(Math.random() * uppercase.length)],
-        lowercase[Math.floor(Math.random() * lowercase.length)],
-        numbers[Math.floor(Math.random() * numbers.length)],
-        specialChars[Math.floor(Math.random() * specialChars.length)]
+    const password = [
+        uppercase[secureRandomInt(uppercase.length)],
+        lowercase[secureRandomInt(lowercase.length)],
+        numbers[secureRandomInt(numbers.length)],
+        specialChars[secureRandomInt(specialChars.length)]
     ];
 
     const allChars = uppercase + lowercase + numbers + specialChars;
     for (let i = password.length; i < 12; i++) {
-        password.push(allChars[Math.floor(Math.random() * allChars.length)]);
+        password.push(allChars[secureRandomInt(allChars.length)]);
     }
 
-    password = password.sort(() => Math.random() - 0.5);
+    // Mélange de Fisher-Yates (le sort(random) est biaisé)
+    for (let i = password.length - 1; i > 0; i--) {
+        const j = secureRandomInt(i + 1);
+        [password[i], password[j]] = [password[j], password[i]];
+    }
 
     return password.join('');
 }

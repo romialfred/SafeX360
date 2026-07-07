@@ -16,6 +16,7 @@ import MobileTopBar from '../components/MobileTopBar';
 import { CardSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { getCached } from '../services/mobileApi';
+import { useAppSelector } from '../../slices/hooks';
 import BlastEvacuationAlarm from '../../components/Blast/BlastEvacuationAlarm';
 import { formatZoneScope } from '../../components/Blast/formatZone';
 
@@ -47,6 +48,10 @@ function formatCountdown(secondsUntil: number): string {
 export default function MobileBlastNext() {
     useStatusBarColor('#B45309', 'LIGHT');
     const navigate = useNavigate();
+    const user = useAppSelector((state: any) => state.user);
+    // Le backend exige mineId en query param (@RequestParam obligatoire) —
+    // sans lui la requête renvoyait 400.
+    const mineId = Number(user?.mineId ?? user?.companyId ?? 1);
     const [data, setData] = useState<DashboardSummary | null>(null);
     const [now, setNow] = useState<number>(() => Date.now());
     const [error, setError] = useState<string | null>(null);
@@ -56,7 +61,7 @@ export default function MobileBlastNext() {
         (async () => {
             try {
                 const res = await getCached<DashboardSummary>({
-                    endpoint: '/hns/blast/dashboard/summary',
+                    endpoint: `/hns/blast/dashboard/summary?mineId=${mineId}`,
                     cacheStore: 'blastCache',
                     cacheKey: 'dashboard',
                     ttlMs: 30 * 1000,

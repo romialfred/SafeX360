@@ -211,8 +211,10 @@ const LoginsPage = () => {
     };
 
     return (
-        // Refonte 2026-06-09 : h-screen + overflow-hidden pour ZERO scroll vertical
-        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-slate-950 text-white">
+        // Refonte 2026-06-09 : plein écran + overflow-hidden pour ZERO scroll vertical.
+        // h-dvh (viewport dynamique) : sur mobile, le clavier virtuel réduit le
+        // viewport — h-screen (100vh statique) masquait le bas du formulaire.
+        <div className="h-screen h-dvh w-screen fixed inset-0 overflow-hidden bg-slate-950 text-white">
 
             {/* ═══ Image plein écran — flou minimal pour rendre la scene mine bien visible ═══ */}
             <div
@@ -277,7 +279,7 @@ const LoginsPage = () => {
             <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-5 overflow-y-auto md:-translate-x-[100px] lg:-translate-x-[200px]">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
-                <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md">
+                <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md shrink-0">
                     {/* Bouclier coloré (gradient teal → rouge — identité HSE forte) */}
                     <div
                         className="mb-2 md:mb-3"
@@ -373,7 +375,7 @@ const LoginsPage = () => {
                       → cohérent avec l'identité HSE SafeX (bouclier teal→rouge), plus chaleureux,
                       et plus transparent pour laisser respirer l'image de fond. */}
                 <div
-                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden"
+                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0"
                     style={{
                         background: 'linear-gradient(135deg, rgba(6, 78, 70, 0.58) 0%, rgba(4, 47, 46, 0.62) 100%)',
                         backdropFilter: 'blur(22px) saturate(160%)',
@@ -481,6 +483,7 @@ const LoginsPage = () => {
                                 type="submit"
                                 fullWidth
                                 loading={loading}
+                                disabled={loading}
                                 size="md"
                                 radius="md"
                                 rightSection={loading
@@ -512,7 +515,7 @@ const LoginsPage = () => {
                 </div>
 
                 {/* Pied : bouton Google Play + badges ISO sur une même ligne horizontale */}
-                <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px]">
+                <div className="mt-5 md:mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 w-full max-w-[620px] shrink-0">
 
                 {/* Carte téléchargement APK — masquée dans l'APK Capacitor */}
                 {!isNativePlatform() && <a
