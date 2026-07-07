@@ -6,7 +6,22 @@ import store from '../Store';
 import { COMPANY_SELECTION_STORAGE_KEY } from '../slices/CompanySelectionSlice';
 import { startRequest, endRequest } from '../utility/loadingBus';
 
-const apiUrl = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || '') : '';
+// Détection Capacitor natif SANS import applicatif (le bridge injecte
+// window.Capacitor avant l'exécution du bundle).
+const isNativeApp = typeof window !== 'undefined'
+    && Boolean((window as any).Capacitor?.isNativePlatform?.());
+
+// APK : le WebView est servi depuis https://localhost — un baseURL vide y
+// renvoyait le index.html local avec un statut 200 sur TOUS les appels API.
+// Conséquences observées : « utilisateur fantôme » connecté d'office,
+// déconnexion impossible (la sonde /auth/me re-répondait 200), listes en
+// v.map crash (HTML au lieu de tableaux). En natif, on vise donc TOUJOURS
+// le gateway (VITE_API_URL du build --mode mobile, sinon URL de prod).
+const NATIVE_GATEWAY_URL = 'https://safex360-gateway.onrender.com';
+
+const apiUrl = import.meta.env.DEV
+    ? (import.meta.env.VITE_API_URL || '')
+    : (isNativeApp ? (import.meta.env.VITE_API_URL || NATIVE_GATEWAY_URL) : '');
 const axiosInstance = axios.create({
     baseURL: apiUrl,
     withCredentials: true,

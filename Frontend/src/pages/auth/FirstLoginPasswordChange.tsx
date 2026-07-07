@@ -24,6 +24,7 @@ import {
 import {
     changePasswordFirst, getMyProfile, validatePassword, passwordStrengthScore,
 } from '../../services/UserManagementService';
+import { logoutUser } from '../../services/LoginService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 
 const STRENGTH_COLORS = ['gray', 'red', 'orange', 'yellow', 'teal'];
@@ -93,8 +94,10 @@ export default function FirstLoginPasswordChange() {
     };
 
     const handleLogout = () => {
-        // On nettoie le cookie côté serveur via /hrms/auth/logout
-        fetch('/hrms/auth/logout', { credentials: 'include' }).finally(() => {
+        // logoutUser passe par axiosInstance : indispensable dans l'APK où un
+        // fetch relatif partirait vers le serveur local Capacitor (localhost)
+        // au lieu du gateway — le cookie ne serait jamais invalidé.
+        logoutUser().finally(() => {
             window.location.href = '/login';
         });
     };

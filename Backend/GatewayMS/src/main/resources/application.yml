@@ -19,6 +19,10 @@ spring:
               - http://localhost:5174
               - http://localhost:5474
               - http://localhost:5475
+              # APK Capacitor : le WebView Android sert l'app depuis
+              # https://localhost (sans port) et appelle le gateway en direct.
+              - https://localhost
+              - capacitor://localhost
               - https://health-safety-eight.vercel.app
               - http://host.docker.internal:3000
               - https://safex360.data-univers.com
@@ -30,6 +34,7 @@ spring:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
             allowedHeaders:

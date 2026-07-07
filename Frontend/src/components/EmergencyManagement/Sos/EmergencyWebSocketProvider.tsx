@@ -122,11 +122,16 @@ interface Props {
 const resolveWsBaseUrl = (): string => {
     const envBase = (import.meta as any).env?.VITE_HS_WS_URL as string | undefined;
     if (envBase) return envBase.replace(/\/+$/, '');
-    // Heuristique : si on est en localhost, viser HS direct (8081)
+    // APK Capacitor : hostname vaut « localhost » MAIS il faut viser le
+    // gateway de prod — sinon le WebSocket tentait le poste de dev (8081).
+    const isNativeApp = typeof window !== 'undefined'
+        && Boolean((window as any).Capacitor?.isNativePlatform?.());
+    if (isNativeApp) return 'https://safex360-gateway.onrender.com/hns';
+    // Heuristique dev web : si on est en localhost, viser HS direct (8081)
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         return 'http://localhost:8081/hns';
     }
-    // Prod : passer par gateway (le sock-js sera proxifié si tout va bien)
+    // Prod web : passer par gateway (le sock-js sera proxifié si tout va bien)
     return 'https://safex360-gateway.onrender.com/hns';
 };
 

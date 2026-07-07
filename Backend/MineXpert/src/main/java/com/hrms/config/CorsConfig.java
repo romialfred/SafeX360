@@ -17,10 +17,12 @@ public class CorsConfig {
                                 "http://localhost:3000",
                                 "http://localhost:5173", "http://localhost:5174",
                                 "http://localhost:5474", "http://localhost:5475",
+                                // APK Capacitor (WebView Android/iOS) — appels directs au gateway
+                                "https://localhost", "capacitor://localhost",
                                 "http://app1.localtest.me:3000",
                                 "http://app2.localtest.me:5173", "https://mine-xpert.data-univers.com",
                                 "https://dev.safex360.data-univers.com")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }
