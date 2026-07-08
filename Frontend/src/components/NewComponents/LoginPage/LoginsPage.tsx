@@ -308,15 +308,17 @@ const LoginsPage = () => {
                 }}
             />
 
-            {/* ═══ Retour au site vitrine (haut gauche) — discret, texte bleu ═══ */}
+            {/* ═══ Retour au site vitrine (haut gauche) — texte bleu sur pastille
+                sombre : le fond blanc translucide rendait le lien illisible sur
+                le ciel clair de la photo ═══ */}
             <button
                 onClick={() => navigate('/')}
-                className="absolute top-5 left-5 z-30 flex items-center gap-1.5 px-2.5 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md transition-all"
-                style={{ color: '#60A5FA', fontSize: '11px' }}
+                className="absolute top-5 left-5 z-30 flex items-center gap-1.5 px-3 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 border border-white/20 backdrop-blur-md transition-all"
+                style={{ color: '#7CB8FF', fontSize: '12px', textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}
                 aria-label={language === 'fr' ? 'Retourner sur le site SafeX 360' : 'Back to the SafeX 360 website'}
             >
-                <IconArrowLeft size={12} aria-hidden="true" />
-                <span className="tracking-wide">{language === 'fr' ? 'Retour au site' : 'Back to site'}</span>
+                <IconArrowLeft size={13} aria-hidden="true" />
+                <span className="tracking-wide font-medium">{language === 'fr' ? 'Retour au site' : 'Back to site'}</span>
             </button>
 
             {/* ═══ Toggle langue (haut droit) ═══ */}
@@ -338,7 +340,11 @@ const LoginsPage = () => {
                 inline sous les badges ISO, dans le flux scrollable). */}
             {!isNativePlatform() && (
                 <div
-                    className="absolute bottom-5 left-5 z-30 hidden md:flex flex-row items-center gap-2.5"
+                    className="absolute left-5 z-30 hidden md:flex flex-row items-center gap-2.5"
+                    // Alignées sur la ligne du bouton « Se connecter » : le bloc central
+                    // est centré verticalement, le centre du bouton est à +203px du
+                    // centre du viewport (mesuré) — écart constant quel que soit l'écran.
+                    style={{ top: 'calc(50% + 203px)', transform: 'translateY(-50%)' }}
                     role="group"
                     aria-label={t.storeGroupLabel}
                 >
