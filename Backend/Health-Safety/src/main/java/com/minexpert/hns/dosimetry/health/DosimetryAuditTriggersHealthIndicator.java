@@ -17,12 +17,12 @@ import org.springframework.stereotype.Component;
  *
  * <p>Verifie que les triggers garantissant l'append-only sur
  * {@code dosimetry_audit_log} et {@code dosimetry_dose_record} sont bien installes
- * (au moins 4 triggers attendus : 2 NO_UPDATE / NO_DELETE sur l'audit log + au minimum
- * 1 trigger d'append-only sur dose_record + 1 trigger complementaire prevu phase 2).
+ * (3 triggers livres par V004 : NO_UPDATE + NO_DELETE sur l'audit log,
+ * APPEND_ONLY sur dose_record).
  *
- * <p>Le seuil de 4 est volontairement defensif : si moins de 4 triggers sont presents,
- * la base risque de tolerer des UPDATE/DELETE sur des tables censees etre immuables,
- * ce qui briserait la chaine d'audit AIEA GSR Part 3 §3.106.
+ * <p>Si moins de 3 triggers sont presents, la base risque de tolerer des
+ * UPDATE/DELETE sur des tables censees etre immuables, ce qui briserait la
+ * chaine d'audit AIEA GSR Part 3 §3.106.
  *
  * <p>Exposition : {@code GET /actuator/health/dosimetryAuditTriggers}.
  *
@@ -34,8 +34,13 @@ public class DosimetryAuditTriggersHealthIndicator implements HealthIndicator {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(DosimetryAuditTriggersHealthIndicator.class);
 
-    /** Seuil minimal de triggers attendus pour considerer le module sain. */
-    static final int EXPECTED_MIN_TRIGGERS = 4;
+    /**
+     * Seuil minimal de triggers attendus pour considerer le module sain.
+     * ALIGNE sur ce que V004 cree REELLEMENT (3) : l'ancien seuil de 4
+     * comptait un « trigger complementaire phase 2 » jamais livre, rendant
+     * le health DOWN meme apres application complete des migrations.
+     */
+    static final int EXPECTED_MIN_TRIGGERS = 3;
 
     /** Tables auditees par les triggers d'immutabilite. */
     private static final List<String> AUDITED_TABLES =
