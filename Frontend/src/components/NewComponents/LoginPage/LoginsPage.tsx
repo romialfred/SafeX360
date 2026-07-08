@@ -35,6 +35,63 @@ import IsoBadge from '../../UtilityComp/IsoBadge';
 const HERO_IMAGE_FALLBACK =
     'https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?auto=format&fit=crop&w=3840&q=85';
 
+/* ── Tuiles de téléchargement — style « badge store » compact ─────────────
+   Android : télécharge l'APK signé. iOS : annonce (pas encore de build IPA).
+   Réutilisées en bas à gauche (desktop) et sous les badges ISO (mobile). */
+
+type StoreT = { mobileVersion: string; storeAndroidTop: string; storeAndroidBottom: string; storeAndroidMeta: string; storeIosTop: string; storeIosBottom: string; mobileDownloadAria: string; iosSoonAria: string };
+
+const StoreTileAndroid = ({ t }: { t: StoreT }) => (
+    <a
+        href="/downloads/SafexMobile.apk"
+        download="SafeX 360 HSE.apk"
+        aria-label={t.mobileDownloadAria}
+        title={t.storeAndroidMeta}
+        className="group flex items-center gap-2.5 pl-3 pr-3.5 h-[52px] rounded-xl bg-black/65 hover:bg-black/80 border border-white/15 hover:border-teal-400/45 backdrop-blur-md transition-all"
+        style={{ boxShadow: '0 6px 24px rgba(0,0,0,0.4)' }}
+    >
+        {/* Robot Android (Material) */}
+        <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="#3DDC84" aria-hidden="true">
+            <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-2.86-1.21-6.08-1.21-8.94 0L5.65 5.67c-.19-.29-.58-.38-.87-.2-.28.18-.37.54-.22.83L6.4 9.48C3.3 11.25 1.28 14.44 1 18h22c-.28-3.56-2.3-6.75-5.4-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
+        </svg>
+        <div className="leading-tight text-left">
+            <div className="text-[8.5px] uppercase tracking-[0.14em] text-white/60">
+                {t.storeAndroidTop}
+            </div>
+            <div className="text-[14px] font-semibold text-white flex items-center gap-1.5">
+                {t.storeAndroidBottom}
+                <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/25 text-teal-300 font-medium">{t.mobileVersion}</span>
+            </div>
+        </div>
+        <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1 text-teal-300/80 group-hover:text-teal-200 transition-colors" aria-hidden="true">
+            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+    </a>
+);
+
+const StoreTileIos = ({ t }: { t: StoreT }) => (
+    <div
+        role="img"
+        aria-label={t.iosSoonAria}
+        title={t.iosSoonAria}
+        className="flex items-center gap-2.5 pl-3 pr-3.5 h-[52px] rounded-xl bg-black/45 border border-white/10 backdrop-blur-md opacity-80 cursor-default select-none"
+        style={{ boxShadow: '0 6px 24px rgba(0,0,0,0.3)' }}
+    >
+        {/* Pomme Apple */}
+        <svg viewBox="0 0 384 512" className="w-5 h-6 flex-shrink-0" fill="#E2E8F0" aria-hidden="true">
+            <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+        </svg>
+        <div className="leading-tight text-left">
+            <div className="text-[8.5px] uppercase tracking-[0.14em] text-white/55">
+                {t.storeIosTop}
+            </div>
+            <div className="text-[14px] font-semibold text-white/85">
+                {t.storeIosBottom}
+            </div>
+        </div>
+    </div>
+);
+
 const LoginsPage = () => {
     const navigate = useNavigate();
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
@@ -72,16 +129,15 @@ const LoginsPage = () => {
             popupInvitationExpired: 'Votre invitation a expiré. Veuillez contacter votre administrateur pour en recevoir une nouvelle.',
             popupClose: 'Compris',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileEyebrow: 'APPLICATION MOBILE',
-            mobileTitle: 'SafeX 360 HSE',
-            mobileVersion: 'v2.4',
-            mobileSizeLabel: '44 Mo',
-            mobileFeature1: 'Mode hors ligne',
-            mobileFeature2: 'Caméra IA',
-            mobileFeature3: 'GPS terrain',
-            mobileDownloadCta: 'Installer sur Android',
-            mobileDownloadAria: 'Télécharger SafeX 360 HSE pour Android',
-            mobileCompat: 'Android 7.0+ requis',
+            mobileVersion: 'v3.0',
+            storeGroupLabel: 'Application mobile SafeX 360 HSE',
+            storeAndroidTop: 'Télécharger pour',
+            storeAndroidBottom: 'Android',
+            storeAndroidMeta: '86 Mo · Android 7.0+',
+            storeIosTop: 'Bientôt disponible',
+            storeIosBottom: 'iOS',
+            mobileDownloadAria: 'Télécharger SafeX 360 HSE pour Android (APK, 86 Mo)',
+            iosSoonAria: 'Application iOS bientôt disponible',
         }
         : {
             tagline: 'HSE platform for mining operations',
@@ -110,16 +166,15 @@ const LoginsPage = () => {
             popupInvitationExpired: 'Your invitation has expired. Please contact your administrator for a new one.',
             popupClose: 'Got it',
             standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileEyebrow: 'MOBILE APP',
-            mobileTitle: 'SafeX 360 HSE',
-            mobileVersion: 'v2.4',
-            mobileSizeLabel: '44 MB',
-            mobileFeature1: 'Offline mode',
-            mobileFeature2: 'AI Camera',
-            mobileFeature3: 'Field GPS',
-            mobileDownloadCta: 'Install on Android',
-            mobileDownloadAria: 'Download SafeX 360 HSE for Android',
-            mobileCompat: 'Android 7.0+ required',
+            mobileVersion: 'v3.0',
+            storeGroupLabel: 'SafeX 360 HSE mobile app',
+            storeAndroidTop: 'Download for',
+            storeAndroidBottom: 'Android',
+            storeAndroidMeta: '86 MB · Android 7.0+',
+            storeIosTop: 'Coming soon',
+            storeIosBottom: 'iOS',
+            mobileDownloadAria: 'Download SafeX 360 HSE for Android (APK, 86 MB)',
+            iosSoonAria: 'iOS app coming soon',
         };
 
     const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
@@ -272,11 +327,27 @@ const LoginsPage = () => {
                 <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
 
-            {/* LOT — Container : bloc decale vers la GAUCHE pour laisser la photo
-                (les 2 mineurs, a droite) respirer. Decalage reduit depuis l'ajout de
-                la colonne APK a gauche de la carte (bloc plus large). Sur mobile
-                (< md), pas de decalage pour rester lisible. */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-4 overflow-y-auto md:-translate-x-[60px] lg:-translate-x-[80px] xl:-translate-x-[140px]">
+            {/* ═══ Tuiles de téléchargement (bas gauche, desktop) ═══
+                Compactes façon badges de store, hors du flux central : le logo,
+                la carte et les badges ISO restent parfaitement centrés.
+                Masquées dans l'APK Capacitor et sur mobile (< md : version
+                inline sous les badges ISO, dans le flux scrollable). */}
+            {!isNativePlatform() && (
+                <div
+                    className="absolute bottom-5 left-5 z-30 hidden md:flex flex-col gap-2"
+                    role="group"
+                    aria-label={t.storeGroupLabel}
+                >
+                    <StoreTileAndroid t={t} />
+                    <StoreTileIos t={t} />
+                </div>
+            )}
+
+            {/* Refonte centrage 2026-07-08 : PLUS AUCUN décalage horizontal — le
+                logo, la carte de connexion et les badges ISO partagent le même
+                axe vertical, parfaitement centrés dans le viewport. Les tuiles
+                de téléchargement vivent désormais en bas à gauche (hors flux). */}
+            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-4 overflow-y-auto">
 
                 {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
                 <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md shrink-0">
@@ -368,74 +439,11 @@ const LoginsPage = () => {
                     </p>
                 </div>
 
-                {/* ═══ Rangée principale : [tuile APK | carte de connexion] ═══
-                    La tuile est à GAUCHE (desktop) : la droite de la photo porte les
-                    visages des deux mineurs — un panneau les masquerait ; la gauche
-                    (ciel/carrière) est calme et le verre sombre y contraste bien.
-                    Sur mobile, la tuile passe SOUS la carte (order). Zéro scroll
-                    vertical desktop : tout tient dans la hauteur du viewport. */}
-                <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-5 shrink-0">
-
-                {/* Tuile téléchargement APK — compacte, verticale (240px), masquée dans l'APK Capacitor */}
-                {!isNativePlatform() && <a
-                    href="/downloads/SafexMobile.apk"
-                    download="SafeX 360 HSE.apk"
-                    className="group order-2 lg:order-1 self-center w-full max-w-[400px] lg:w-[240px] lg:max-w-[240px] bg-black/60 hover:bg-black/75 backdrop-blur-md border border-white/10 hover:border-teal-400/30 rounded-2xl transition-all duration-300 p-4 flex flex-col gap-2.5"
-                    style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset' }}
-                    aria-label={t.mobileDownloadAria}
-                >
-                    <div className="flex items-center gap-2.5">
-                        <svg viewBox="0 0 64 64" fill="none" className="w-9 h-9 flex-shrink-0" aria-hidden="true">
-                            <path d="M32 3L56 11C56.5 11.2 57 11.6 57 12.3L57 30C57 44 36 60 32.7 61.6C32.3 61.8 31.7 61.8 31.3 61.6C28 60 7 44 7 30L7 12.3C7 11.6 7.5 11.2 8 11Z" fill="url(#dl-shield)" />
-                            <path d="M19 33L32 20L45 33" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M22 43L32 33L42 43" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
-                            <defs>
-                                <linearGradient id="dl-shield" x1="32" y1="3" x2="32" y2="62" gradientUnits="userSpaceOnUse">
-                                    <stop stopColor="#14B8A6" />
-                                    <stop offset="1" stopColor="#0F766E" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] uppercase tracking-[0.16em] text-teal-400/80 font-semibold">{t.mobileEyebrow}</span>
-                                <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/20 text-teal-300 font-medium">{t.mobileVersion}</span>
-                            </div>
-                            <div
-                                className="text-[14px] font-bold leading-tight text-white flex items-baseline gap-0.5"
-                                style={{ fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.01em' }}
-                            >
-                                <span>Safe</span>
-                                <span style={{ color: '#2DD4BF' }}>X</span>
-                                <span style={{ color: '#EF4444', marginLeft: '0.18rem' }}>360</span>
-                                <span className="text-white/60 ml-1 text-[12px] font-semibold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>HSE</span>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Feature chips */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        {[t.mobileFeature1, t.mobileFeature2, t.mobileFeature3].map((f) => (
-                            <span key={f} className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/8 text-white/60 border border-white/6">{f}</span>
-                        ))}
-                    </div>
-                    {/* CTA pleine largeur */}
-                    <span
-                        className="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg text-[11.5px] font-semibold text-white transition-all group-hover:brightness-110"
-                        style={{ background: 'linear-gradient(135deg, #0D9488, #0F766E)' }}
-                    >
-                        <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
-                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        {t.mobileDownloadCta}
-                    </span>
-                    <div className="text-[9.5px] text-white/40 text-center">{t.mobileSizeLabel} · {t.mobileCompat}</div>
-                </a>}
-
-                {/* Carte de connexion compacte
+                {/* Carte de connexion compacte — seule au centre, sous le logo.
                     LOT 48 P6.d : verre teal profond avec bordure teal lumineuse —
                     cohérent avec l'identité HSE SafeX (bouclier teal→rouge). */}
                 <div
-                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0 order-1 lg:order-2"
+                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0"
                     style={{
                         background: 'linear-gradient(135deg, rgba(6, 78, 70, 0.58) 0%, rgba(4, 47, 46, 0.62) 100%)',
                         backdropFilter: 'blur(22px) saturate(160%)',
@@ -574,15 +582,22 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
-                {/* ═══ Fin de la rangée [tuile APK | carte] ═══ */}
-                </div>
-
-                {/* Badges officiels des normes ISO (règle plateforme : jamais de norme en texte nu) */}
+                {/* Badges officiels des normes ISO — même axe centré que le logo
+                    et la carte (règle plateforme : jamais de norme en texte nu) */}
                 <div className="mt-3 md:mt-4 flex items-center justify-center gap-2.5 shrink-0">
                     {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
                         <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
                     ))}
                 </div>
+
+                {/* Tuiles de téléchargement — version mobile (< md) : dans le flux,
+                    sous les badges ISO. Sur desktop elles vivent en bas à gauche. */}
+                {!isNativePlatform() && (
+                    <div className="mt-4 flex md:hidden items-center justify-center gap-2.5 shrink-0" role="group" aria-label={t.storeGroupLabel}>
+                        <StoreTileAndroid t={t} />
+                        <StoreTileIos t={t} />
+                    </div>
+                )}
 
                 {/* ═══ Popup d'erreur SafeX — professionnelle avec logo officiel ═══ */}
                 <Modal
