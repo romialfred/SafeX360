@@ -21,6 +21,7 @@ import {
     IconAlertTriangle,
     IconBulb,
 } from '@tabler/icons-react';
+import { matchDemoProcedure, WorkflowDiagram, type WorkflowStep } from './demoProcedures';
 
 interface Message {
     id: string;
@@ -28,6 +29,11 @@ interface Message {
     content: string;
     timestamp: string;
     isTyping?: boolean;
+    /** Workflow d'étapes colorées rendu sous le markdown (procédures HSE). */
+    workflow?: WorkflowStep[];
+    workflowTitle?: string;
+    /** Résumé court lu par la synthèse vocale (à la place du markdown complet). */
+    speechSummary?: string;
 }
 
 interface QuickAction {
@@ -39,6 +45,20 @@ interface QuickAction {
 }
 
 const quickActions: QuickAction[] = [
+    {
+        id: 'proc-hauteur',
+        label: 'Travail en hauteur',
+        icon: IconHelmet,
+        prompt: 'Quelle est la procédure de travail en hauteur ?',
+        color: 'text-cyan-700'
+    },
+    {
+        id: 'proc-evac',
+        label: 'Évacuation toxique',
+        icon: IconAlertTriangle,
+        prompt: "Quelle est la procédure d'évacuation en cas de contamination toxique de l'air ?",
+        color: 'text-rose-600'
+    },
     {
         id: 'analyze-kpis',
         label: 'Analyze KPIs',
@@ -189,13 +209,27 @@ const FloatingAIAssistant: React.FC = () => {
             setMessages(prev => [...prev, aiResponse]);
             setIsLoading(false);
 
-            // Speak the AI response
-            speak(aiResponse.content);
+            // Speak the AI response (résumé court pour les procédures longues)
+            speak(aiResponse.speechSummary ?? aiResponse.content);
         }, 1500);
     };
 
     const generateAIResponse = (userInput: string): Message => {
         const input = userInput.toLowerCase();
+
+        // Procédures HSE complètes (base de connaissances) — prioritaire
+        const procedure = matchDemoProcedure(userInput);
+        if (procedure) {
+            return {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                content: procedure.markdown,
+                timestamp: new Date().toISOString(),
+                workflow: procedure.workflow,
+                workflowTitle: procedure.workflowTitle,
+                speechSummary: procedure.speechSummary,
+            };
+        }
 
         if (input.includes('kpi') || input.includes('analyser') || input.includes('analyze') || input.includes('performance')) {
             return {
@@ -548,12 +582,21 @@ How can I assist more precisely?`,
                                                                     )
                                                                 ),
                                                                 hr: (props: any) => <hr className="my-3 border-gray-200" {...props} />,
+                                                                table: (props: any) => <div className="overflow-x-auto mb-3"><table className="min-w-full text-[13px] border border-gray-200 rounded-lg" {...props} /></div>,
+                                                                thead: (props: any) => <thead className="bg-gray-50" {...props} />,
+                                                                th: (props: any) => <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b border-gray-200" {...props} />,
+                                                                td: (props: any) => <td className="px-3 py-2 text-gray-700 border-b border-gray-100 align-top" {...props} />,
                                                             } as any}
                                                         >
                                                             {preprocessContent(message.content)}
                                                         </ReactMarkdown>
                                                     ) : (
                                                         <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                                                    )}
+
+                                                    {/* Workflow coloré (procédures HSE) */}
+                                                    {message.type === 'ai' && message.workflow && (
+                                                        <WorkflowDiagram title={message.workflowTitle ?? 'Workflow'} steps={message.workflow} />
                                                     )}
                                                 </div>
 

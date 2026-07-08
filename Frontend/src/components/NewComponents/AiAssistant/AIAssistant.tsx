@@ -29,6 +29,7 @@ import {
     IconFlask,
 } from '@tabler/icons-react';
 import { Button } from '@mantine/core';
+import { matchDemoProcedure, WorkflowDiagram, type WorkflowStep } from './demoProcedures';
 
 
 interface Message {
@@ -39,6 +40,9 @@ interface Message {
     category?: 'analysis' | 'report' | 'definition' | 'status' | 'general';
     attachments?: Attachment[];
     actions?: QuickAction[];
+    /** Workflow d'étapes colorées rendu sous le markdown (procédures HSE). */
+    workflow?: WorkflowStep[];
+    workflowTitle?: string;
 }
 
 interface Attachment {
@@ -65,6 +69,20 @@ interface SuggestedPrompt {
 
 
 const suggestedPrompts: SuggestedPrompt[] = [
+    {
+        id: 'proc-hauteur',
+        text: 'Quelle est la procédure de travail en hauteur ?',
+        category: 'Procédures',
+        icon: IconHelmet,
+        color: 'text-cyan-700'
+    },
+    {
+        id: 'proc-evac',
+        text: "Quelle est la procédure d'évacuation en cas de contamination toxique de l'air ?",
+        category: 'Urgences',
+        icon: IconAlertTriangle,
+        color: 'text-rose-600'
+    },
     {
         id: '1',
         text: 'Analyze our safety KPIs for this month',
@@ -198,6 +216,21 @@ const AIAssistant = () => {
 
     const generateAIResponse = (userInput: string): Message => {
         const input = userInput.toLowerCase();
+
+        // Procédures HSE complètes (base de connaissances) — prioritaire :
+        // « travail en hauteur », « évacuation contamination toxique »…
+        const procedure = matchDemoProcedure(userInput);
+        if (procedure) {
+            return {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                content: procedure.markdown,
+                timestamp: new Date().toISOString(),
+                category: 'definition',
+                workflow: procedure.workflow,
+                workflowTitle: procedure.workflowTitle,
+            };
+        }
 
         // Work Process queries
         if (input.includes('work process') || input.includes('processus') || input.includes('procedure')) {
@@ -830,12 +863,21 @@ Could you be more specific about what you'd like me to help you with? For exampl
                                                         )
                                                     ),
                                                     hr: (props: any) => <hr className="my-3 border-gray-200" {...props} />,
+                                                    table: (props: any) => <div className="overflow-x-auto mb-3"><table className="min-w-full text-[13px] border border-gray-200 rounded-lg" {...props} /></div>,
+                                                    thead: (props: any) => <thead className="bg-gray-50" {...props} />,
+                                                    th: (props: any) => <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b border-gray-200" {...props} />,
+                                                    td: (props: any) => <td className="px-3 py-2 text-gray-700 border-b border-gray-100 align-top" {...props} />,
                                                 } as any}
                                             >
                                                 {preprocessContent(message.content)}
                                             </ReactMarkdown>
                                         ) : (
                                             <div className="whitespace-pre-wrap">{message.content}</div>
+                                        )}
+
+                                        {/* Workflow coloré (procédures HSE) */}
+                                        {message.type === 'ai' && message.workflow && (
+                                            <WorkflowDiagram title={message.workflowTitle ?? 'Workflow'} steps={message.workflow} />
                                         )}
 
                                         {/* Quick Actions */}
