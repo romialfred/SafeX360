@@ -50,9 +50,12 @@ const StoreTileAndroid = ({ t }: { t: StoreT }) => (
         className="group flex items-center gap-2.5 pl-3 pr-3.5 h-[52px] rounded-xl bg-black/65 hover:bg-black/80 border border-white/15 hover:border-teal-400/45 backdrop-blur-md transition-all"
         style={{ boxShadow: '0 6px 24px rgba(0,0,0,0.4)' }}
     >
-        {/* Robot Android (Material) */}
-        <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="#3DDC84" aria-hidden="true">
-            <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-2.86-1.21-6.08-1.21-8.94 0L5.65 5.67c-.19-.29-.58-.38-.87-.2-.28.18-.37.54-.22.83L6.4 9.48C3.3 11.25 1.28 14.44 1 18h22c-.28-3.56-2.3-6.75-5.4-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
+        {/* Logo officiel Google Play (triangle quadricolore) */}
+        <svg viewBox="0 0 512 512" className="w-6 h-6 flex-shrink-0" aria-hidden="true">
+            <path fill="#4285F4" d="M47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0z" />
+            <path fill="#34A853" d="M325.3 234.3 104.6 13l280.8 161.2-60.1 60.1z" />
+            <path fill="#FBBC04" d="m472.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8z" />
+            <path fill="#EA4335" d="m104.6 499 280.8-161.2-60.1-60.1L104.6 499z" />
         </svg>
         <div className="leading-tight text-left">
             <div className="text-[8.5px] uppercase tracking-[0.14em] text-white/60">
@@ -305,13 +308,14 @@ const LoginsPage = () => {
                 }}
             />
 
-            {/* ═══ Retour au site vitrine (haut gauche) ═══ */}
+            {/* ═══ Retour au site vitrine (haut gauche) — discret, texte bleu ═══ */}
             <button
                 onClick={() => navigate('/')}
-                className="absolute top-5 left-5 z-30 flex items-center gap-2 px-3 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-[12.5px] text-white"
+                className="absolute top-5 left-5 z-30 flex items-center gap-1.5 px-2.5 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md transition-all"
+                style={{ color: '#60A5FA', fontSize: '11px' }}
                 aria-label={language === 'fr' ? 'Retourner sur le site SafeX 360' : 'Back to the SafeX 360 website'}
             >
-                <IconArrowLeft size={14} aria-hidden="true" />
+                <IconArrowLeft size={12} aria-hidden="true" />
                 <span className="tracking-wide">{language === 'fr' ? 'Retour au site' : 'Back to site'}</span>
             </button>
 
@@ -334,7 +338,7 @@ const LoginsPage = () => {
                 inline sous les badges ISO, dans le flux scrollable). */}
             {!isNativePlatform() && (
                 <div
-                    className="absolute bottom-5 left-5 z-30 hidden md:flex flex-col gap-2"
+                    className="absolute bottom-5 left-5 z-30 hidden md:flex flex-row items-center gap-2.5"
                     role="group"
                     aria-label={t.storeGroupLabel}
                 >
