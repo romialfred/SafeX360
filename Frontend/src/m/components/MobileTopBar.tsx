@@ -43,7 +43,8 @@ export function MobileTopBar({
                         type="button"
                         onClick={onBack ?? (() => navigate(-1))}
                         aria-label="Retour"
-                        className="w-10 h-10 -ml-1 rounded-full flex items-center justify-center hover:bg-black/10 transition"
+                        className="-ml-1 rounded-full flex items-center justify-center hover:bg-black/10 transition"
+                        style={{ minWidth: 44, minHeight: 44 }}
                     >
                         <IconArrowLeft size={20} stroke={2} />
                     </button>

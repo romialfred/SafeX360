@@ -125,9 +125,11 @@ export default function AppUpdateBanner() {
                 <button
                     type="button"
                     onClick={handleDismiss}
-                    className="p-0.5 flex-shrink-0 opacity-60"
+                    // Zone tactile 44x44 (WCAG) ; marges negatives pour ne pas
+                    // gonfler visuellement le bandeau (py-2 du parent).
+                    className="flex-shrink-0 opacity-60 flex items-center justify-center -my-2 -mr-3"
                     aria-label="Fermer"
-                    style={{ minWidth: 24, minHeight: 24 }}
+                    style={{ minWidth: 44, minHeight: 44 }}
                 >
                     <IconX size={14} stroke={1.8} />
                 </button>

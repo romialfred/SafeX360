@@ -6,7 +6,7 @@
  * optionnelle. Submit offline-aware via mutateOffline.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconExclamationCircle,
@@ -15,9 +15,11 @@ import {
     IconArrowLeft,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { toIsoDateTimeLocal } from '../components/MobileUI';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
-import { mutateOffline } from '../services/mobileApi';
+import { useRedirectTimer } from '../hooks/useRedirectTimer';
+import { getCached, mutateOffline } from '../services/mobileApi';
 import { capturePhoto } from '../services/cameraService';
 import { useAppSelector } from '../../slices/hooks';
 
@@ -42,6 +44,7 @@ export default function MobileIncidentQuickDeclare() {
     useStatusBarColor('#B45309', 'LIGHT');
     const navigate = useNavigate();
     const haptic = useHaptics();
+    const redirectAfter = useRedirectTimer();
     const user = useAppSelector((state: any) => state.user);
 
     const [type, setType] = useState<IncidentType | null>(null);
@@ -53,9 +56,34 @@ export default function MobileIncidentQuickDeclare() {
     const [done, setDone] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14);
+    // Le backend attribue l'incident à un EMPLOYÉ : empId prioritaire sur l'id
+    // de compte. Repli 0 (bloqué au submit) — plus jamais d'attribution
+    // fantôme à l'employé 14.
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 0);
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
     const canSubmit = !!type && !!severity && description.trim().length >= 10 && !sending;
+
+    // FK nullable=false côté backend (Incident.location/workArea/workProcess) :
+    // premiers éléments des référentiels pré-chargés, même stratégie que le
+    // wizard IA web (AIIncidentDeclaration). Cache IndexedDB → dispo hors ligne.
+    const [defaultIds, setDefaultIds] = useState<{ locationId?: number; workAreaId?: number; workProcessId?: number }>({});
+    useEffect(() => {
+        let cancelled = false;
+        const first = (r: any): number | undefined =>
+            Array.isArray(r?.data) && r.data.length > 0 ? Number(r.data[0].id) : undefined;
+        (async () => {
+            const g = (endpoint: string, cacheKey: string) => getCached<any[]>({
+                endpoint, cacheStore: 'inspectionCache', cacheKey, ttlMs: 30 * 60 * 1000,
+            }).catch(() => null);
+            const [loc, wa, wp] = await Promise.all([
+                g('/hns/locations/getAllActive', `nc-locations-${companyId}`),
+                g('/hns/work-area/getAllActive', `incident-workareas-${companyId}`),
+                g('/hns/work-process/getAllActive', `nc-processes-${companyId}`),
+            ]);
+            if (!cancelled) setDefaultIds({ locationId: first(loc), workAreaId: first(wa), workProcessId: first(wp) });
+        })();
+        return () => { cancelled = true; };
+    }, [companyId]);
 
     const handleTakePhoto = async () => {
         haptic('light');
@@ -75,27 +103,61 @@ export default function MobileIncidentQuickDeclare() {
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
+        // Identité obligatoire : sans employé résolu, l'incident serait
+        // attribué à un fantôme (reporterId 0 → 500 ou mauvaise personne).
+        if (userId === 0) {
+            haptic('error');
+            setError('Utilisateur non identifié. Reconnectez-vous puis réessayez.');
+            return;
+        }
+        // FK nullable=false backend : un payload à locationId/workAreaId/
+        // workProcessId null partirait en file hors ligne et rejouerait en 500
+        // pour toujours, avec une confirmation trompeuse à l'écran.
+        if (defaultIds.locationId == null || defaultIds.workAreaId == null || defaultIds.workProcessId == null) {
+            haptic('error');
+            setError('Référentiels indisponibles — connectez-vous une première fois au réseau puis réessayez.');
+            return;
+        }
         setSending(true);
         setError(null);
         haptic('medium');
         try {
+            const typeLabel = TYPES.find((t) => t.code === type)?.label ?? 'Incident';
+            const desc = description.trim();
+            // Contrat IncidentDTO backend (vérifié IncidentApi.java + wizard IA web) :
+            // severity = Integer 1..4, title/factualDescription/occurredAt, FK
+            // locationId/workAreaId/workProcessId nullable=false (défauts référentiels),
+            // departmentId @NotNull, status enum IncidentStatus (NULL → 'UNKNOWN' en liste).
             const payload = {
                 companyId,
                 reporterId: userId,
-                type,
-                severity,
-                description: description.trim(),
-                photoFilename: photoName,
-                quickDeclare: true,
+                departmentId: Number(user?.departmentId ?? user?.deptId ?? 0) || null,
+                title: `${typeLabel} — ${desc.slice(0, 80)}`,
+                factualDescription: desc,
+                occurredAt: toIsoDateTimeLocal(),
+                discoveryTime: toIsoDateTimeLocal(),
+                locationId: defaultIds.locationId,
+                workAreaId: defaultIds.workAreaId,
+                workProcessId: defaultIds.workProcessId,
+                severity: severity === 'CRITICAL' ? 4 : severity === 'HIGH' ? 3 : severity === 'MEDIUM' ? 2 : 1,
+                probability: 3,
+                status: 'PENDING',
+                source: 'EMPLOYEE',
+                involvedPersons: [],
+                witnesses: [],
+                evidence: [],
+                ppe: [],
+                weatherConditions: [],
             };
-            // Endpoint réel : POST /hns/incidents/report (comme la déclaration IA)
-            // — « /hns/incidents/create » n'existe pas côté backend (404).
+            // companyId AUSSI en query param : @RequestParam obligatoire côté
+            // backend et l'injection de l'intercepteur peut être vide dans l'APK.
             const result = await mutateOffline({
-                endpoint: '/hns/incidents/report',
+                endpoint: `/hns/incidents/report?companyId=${companyId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },
                 kind: 'incident',
+                fingerprint: `incident:${userId}:${desc.slice(0, 40)}`,
             });
             haptic('success');
             setDone(
@@ -103,7 +165,7 @@ export default function MobileIncidentQuickDeclare() {
                     ? "Incident déclaré. Le coordinateur HSE est notifié."
                     : "Incident sauvegardé hors ligne. Sera transmis au retour du réseau.",
             );
-            setTimeout(() => navigate('/m/home'), 2500);
+            redirectAfter(() => navigate('/m/home'), 2500);
         } catch (e: any) {
             haptic('error');
             setError("Échec de la déclaration. Réessayez.");

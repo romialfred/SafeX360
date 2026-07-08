@@ -95,27 +95,32 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
-            String permissionsHeader = request.getHeader(HEADER_PERMISSIONS);
-            String userIdHeader = request.getHeader(HEADER_USER_ID);
             String secretKey = request.getHeader(HEADER_SECRET_KEY);
 
-            List<GrantedAuthority> authorities = new ArrayList<>(parsePermissions(permissionsHeader));
+            // SEC 2.1 — Fail-closed : les headers d'identite/permissions ne sont
+            // honores QUE si la requete prouve qu'elle vient de la Gateway via le
+            // secret partage. Le service etant joignable directement (URL publique
+            // Render), un client forgeant X-Permissions obtiendrait sinon toutes
+            // les permissions SANS JWT. Secret non configure = aucun trust.
+            boolean fromGateway = internalGatewaySecret != null
+                    && !internalGatewaySecret.isBlank()
+                    && internalGatewaySecret.equals(secretKey);
 
-            // Phase 10-A : compat ascendante - si le secret partage Gateway est present mais
-            // aucune permission n'est envoyee (Gateway non encore mise a jour pour relayer
-            // X-Permissions), on accorde le set complet de permissions Dosimetry car la
-            // trust frontiere est garantie par le secret pre-partage (R-003).
-            // Pour transitionner vers du JWT propage, retirer cette compat des que la Gateway
-            // envoie systematiquement X-Permissions.
-            if (authorities.isEmpty()
-                    && secretKey != null
-                    && secretKey.equals(internalGatewaySecret)) {
-                authorities = SYSTEM_TRUST_PERMISSIONS.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toCollection(ArrayList::new));
-            }
+            if (fromGateway) {
+                String permissionsHeader = request.getHeader(HEADER_PERMISSIONS);
+                String userIdHeader = request.getHeader(HEADER_USER_ID);
 
-            if (!authorities.isEmpty() || userIdHeader != null) {
+                List<GrantedAuthority> authorities = new ArrayList<>(parsePermissions(permissionsHeader));
+
+                // Phase 10-A : compat ascendante - si aucune permission n'est envoyee
+                // (Gateway non encore mise a jour pour relayer X-Permissions), on accorde
+                // le set complet car la trust frontiere est garantie par le secret (R-003).
+                if (authorities.isEmpty()) {
+                    authorities = SYSTEM_TRUST_PERMISSIONS.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toCollection(ArrayList::new));
+                }
+
                 PreAuthenticatedAuthorityToken auth = new PreAuthenticatedAuthorityToken(
                         userIdHeader != null ? userIdHeader : "anonymous-gateway",
                         authorities);

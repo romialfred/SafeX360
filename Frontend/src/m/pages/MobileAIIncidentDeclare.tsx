@@ -3,14 +3,14 @@
  *
  * Flux en 4 etapes :
  *   1. Capture photo (grande cible tactile)
- *   2. Analyse IA de la photo (/hns/ai-incidents/analyze-photo) avec
+ *   2. Analyse IA de la photo (POST /hns/ai-incidents/analyze, multipart) avec
  *      squelette de chargement — bascule en saisie manuelle si echec/refus.
  *   3. Formulaire editable pre-rempli par les suggestions IA (type, gravite,
  *      description, localisation) — l'utilisateur valide ou corrige.
  *   4. Ecran de confirmation (offline-aware via mutateOffline).
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     IconCamera,
@@ -23,9 +23,11 @@ import {
     IconRotate,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { toIsoDateTimeLocal } from '../components/MobileUI';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
-import { mutateOffline } from '../services/mobileApi';
+import { useRedirectTimer } from '../hooks/useRedirectTimer';
+import { getCached, mutateOffline } from '../services/mobileApi';
 import { capturePhoto } from '../services/cameraService';
 import axiosInstance from '../../interceptors/AxiosInterceptor';
 import { useAppSelector } from '../../slices/hooks';
@@ -61,21 +63,19 @@ const SEVERITIES: { code: Severity; label: string; classes: string }[] = [
 
 const ACCENT = '#7C3AED';
 
-/* ─── Helpers ───────────────────────────────────────────────────────── */
+/**
+ * Correspondance types IA → codes UI : le backend (HsePromptBuilder) classe en
+ * ACCIDENT / QUASI_ACCIDENT / DANGER / NON_CONFORMITY / NEAR_MISS, l'écran ne
+ * connaît que les 4 tuiles NEAR_MISS / INJURY / PROPERTY / ENVIRONMENTAL.
+ */
+const AI_TYPE_TO_UI: Record<string, IncidentType> = {
+    ACCIDENT: 'INJURY',
+    QUASI_ACCIDENT: 'NEAR_MISS',
+    DANGER: 'NEAR_MISS',
+    NON_CONFORMITY: 'PROPERTY',
+    NEAR_MISS: 'NEAR_MISS',
+};
 
-/** Convertit un Blob en base64 brut (sans prefixe data:...;base64,). */
-function blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const result = reader.result as string;
-            const base64 = result.includes(',') ? result.split(',')[1] : result;
-            resolve(base64);
-        };
-        reader.onerror = () => reject(new Error('Lecture de la photo impossible'));
-        reader.readAsDataURL(blob);
-    });
-}
 
 /* ─── Component ─────────────────────────────────────────────────────── */
 
@@ -83,10 +83,33 @@ export default function MobileAIIncidentDeclare() {
     useStatusBarColor('#7C3AED', 'LIGHT');
     const navigate = useNavigate();
     const haptic = useHaptics();
+    const redirectAfter = useRedirectTimer();
     const user = useAppSelector((state: any) => state.user);
 
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14);
+    // Attribution employé : empId prioritaire sur l'id de compte. Repli 0
+    // (bloqué au submit) — plus jamais d'attribution fantôme à l'employé 14.
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 0);
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+
+    // FK nullable=false backend — mêmes défauts référentiels que le wizard IA web
+    const [defaultIds, setDefaultIds] = useState<{ locationId?: number; workAreaId?: number; workProcessId?: number }>({});
+    useEffect(() => {
+        let cancelled = false;
+        const first = (r: any): number | undefined =>
+            Array.isArray(r?.data) && r.data.length > 0 ? Number(r.data[0].id) : undefined;
+        (async () => {
+            const g = (endpoint: string, cacheKey: string) => getCached<any[]>({
+                endpoint, cacheStore: 'inspectionCache', cacheKey, ttlMs: 30 * 60 * 1000,
+            }).catch(() => null);
+            const [loc, wa, wp] = await Promise.all([
+                g('/hns/locations/getAllActive', `nc-locations-${companyId}`),
+                g('/hns/work-area/getAllActive', `incident-workareas-${companyId}`),
+                g('/hns/work-process/getAllActive', `nc-processes-${companyId}`),
+            ]);
+            if (!cancelled) setDefaultIds({ locationId: first(loc), workAreaId: first(wa), workProcessId: first(wp) });
+        })();
+        return () => { cancelled = true; };
+    }, [companyId]);
 
     const [step, setStep] = useState<Step>('CAPTURE');
     const [photoName, setPhotoName] = useState<string | null>(null);
@@ -114,7 +137,11 @@ export default function MobileAIIncidentDeclare() {
             const photo = await capturePhoto({ label: 'ai-incident' });
             setPhotoName(photo.filename);
             setPhotoSizeKb(Math.round(photo.sizeBytes / 1024));
-            setPhotoPreviewUrl(URL.createObjectURL(photo.blob));
+            // Révoque l'ancienne URL avant d'en créer une nouvelle (fuite mémoire sinon)
+            setPhotoPreviewUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return URL.createObjectURL(photo.blob);
+            });
             haptic('light');
             await analyzePhoto(photo.blob);
         } catch (e) {
@@ -130,18 +157,35 @@ export default function MobileAIIncidentDeclare() {
         setAiError(null);
         haptic('light');
         try {
-            const base64Image = await blobToBase64(blob);
-            const res = await axiosInstance.post(
-                '/hns/ai-incidents/analyze-photo',
-                { companyId, reporterId: userId, imageBase64: base64Image },
-                { timeout: 20000 },
-            );
+            // Endpoint réel : POST /hns/ai-incidents/analyze en multipart/form-data
+            // (@RequestParam image) — « analyze-photo » n'existe pas (404).
+            const form = new FormData();
+            form.append('image', blob, 'incident.jpg');
+            form.append('language', 'fr');
+            const res = await axiosInstance.post('/hns/ai-incidents/analyze', form, {
+                timeout: 45000,
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
             const data = res.data ?? {};
+            // Photo hors sujet HSE : ne rien pré-remplir, expliquer pourquoi
+            // et inviter à reprendre une photo (le finally bascule en REVIEW).
+            if (data.isHseRelevant === false) {
+                setAiUsed(false);
+                setAiError(
+                    `${String(data.irrelevanceReason || "La photo ne semble pas montrer une situation HSE.").trim()} `
+                    + 'Reprenez une photo de la situation ou renseignez les informations manuellement.',
+                );
+                haptic('warning');
+                return;
+            }
+            // AIAnalysisResponse : title/description/severity(LOW..CRITICAL)/confidence.
+            // incidentType arrive dans le vocabulaire backend → table AI_TYPE_TO_UI.
+            const sevUpper = String(data.severity ?? '').toUpperCase();
             const suggestion: AiSuggestion = {
-                type: TYPES.some((t) => t.code === data.type) ? data.type : null,
-                severity: SEVERITIES.some((s) => s.code === data.severity) ? data.severity : null,
-                description: typeof data.description === 'string' ? data.description : '',
-                location: typeof data.location === 'string' ? data.location : '',
+                type: AI_TYPE_TO_UI[String(data.incidentType ?? '').toUpperCase()] ?? null,
+                severity: SEVERITIES.some((s) => s.code === sevUpper) ? sevUpper as Severity : null,
+                description: [data.title, data.description].filter(Boolean).join(' — '),
+                location: '',
                 confidence: typeof data.confidence === 'number' ? data.confidence : null,
             };
             setType(suggestion.type);
@@ -166,12 +210,22 @@ export default function MobileAIIncidentDeclare() {
     const handleRetakePhoto = async () => {
         setPhotoName(null);
         setPhotoSizeKb(null);
-        setPhotoPreviewUrl(null);
+        setPhotoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+        });
         setAiUsed(false);
         setAiError(null);
         setStep('CAPTURE');
         await handleTakePhoto();
     };
+
+    // Révocation au démontage — setState y serait un no-op, on passe par un ref
+    const previewUrlRef = useRef<string | null>(null);
+    useEffect(() => { previewUrlRef.current = photoPreviewUrl; }, [photoPreviewUrl]);
+    useEffect(() => () => {
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    }, []);
 
     const handleSkipPhoto = () => {
         haptic('light');
@@ -182,28 +236,59 @@ export default function MobileAIIncidentDeclare() {
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
+        // Identité obligatoire : sans employé résolu, l'incident serait
+        // attribué à un fantôme (reporterId 0 → 500 ou mauvaise personne).
+        if (userId === 0) {
+            haptic('error');
+            setSubmitError('Utilisateur non identifié. Reconnectez-vous puis réessayez.');
+            return;
+        }
+        // FK nullable=false backend : un payload à locationId/workAreaId/
+        // workProcessId null partirait en file hors ligne et rejouerait en 500
+        // pour toujours, avec une confirmation trompeuse à l'écran.
+        if (defaultIds.locationId == null || defaultIds.workAreaId == null || defaultIds.workProcessId == null) {
+            haptic('error');
+            setSubmitError('Référentiels indisponibles — connectez-vous une première fois au réseau puis réessayez.');
+            return;
+        }
         setSending(true);
         setSubmitError(null);
         haptic('medium');
         try {
-            const cacheKey = 'ai-incident-' + Date.now();
+            const typeLabel = TYPES.find((t) => t.code === type)?.label ?? 'Incident';
+            const desc = description.trim();
+            // Contrat IncidentDTO backend (cf. wizard IA web) : severity Integer 1..4,
+            // title/factualDescription/occurredAt, FK location/workArea/workProcess,
+            // departmentId @NotNull, status enum IncidentStatus (NULL → 'UNKNOWN' en liste).
             const payload = {
                 companyId,
                 reporterId: userId,
-                type,
-                severity,
-                description: description.trim(),
-                location: location.trim() || null,
-                photoFilename: photoName,
-                aiAssisted: aiUsed,
+                departmentId: Number(user?.departmentId ?? user?.deptId ?? 0) || null,
+                title: `${typeLabel} — ${desc.slice(0, 80)}`,
+                factualDescription: location.trim() ? `${desc}\nLocalisation indiquée : ${location.trim()}` : desc,
+                occurredAt: toIsoDateTimeLocal(),
+                discoveryTime: toIsoDateTimeLocal(),
+                locationId: defaultIds.locationId,
+                workAreaId: defaultIds.workAreaId,
+                workProcessId: defaultIds.workProcessId,
+                severity: severity === 'CRITICAL' ? 4 : severity === 'HIGH' ? 3 : severity === 'MEDIUM' ? 2 : 1,
+                probability: 3,
+                status: 'PENDING',
+                source: aiUsed ? 'AI' : 'EMPLOYEE',
+                involvedPersons: [],
+                witnesses: [],
+                evidence: [],
+                ppe: [],
+                weatherConditions: [],
             };
+            // Fingerprint déterministe : Date.now() rendait la dédup inopérante
             const result = await mutateOffline({
-                endpoint: '/hns/incidents/report',
+                endpoint: `/hns/incidents/report?companyId=${companyId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },
                 kind: 'incident',
-                fingerprint: cacheKey,
+                fingerprint: `ai-incident:${userId}:${desc.slice(0, 40)}`,
             });
             haptic('success');
             setDone(
@@ -212,7 +297,7 @@ export default function MobileAIIncidentDeclare() {
                     : "Incident sauvegardé hors ligne. Sera transmis au retour du réseau.",
             );
             setStep('DONE');
-            setTimeout(() => navigate('/m/home'), 2500);
+            redirectAfter(() => navigate('/m/home'), 2500);
         } catch (e: any) {
             haptic('error');
             setSubmitError(extractErrorMessage(e, 'Échec de la déclaration. Réessayez.'));
@@ -367,6 +452,7 @@ export default function MobileAIIncidentDeclare() {
                                 type="button"
                                 onClick={handleRetakePhoto}
                                 className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/60 text-white text-[11.5px] font-medium backdrop-blur-sm"
+                                style={{ minHeight: 44 }}
                             >
                                 <IconRotate size={13} stroke={2} />
                                 Reprendre

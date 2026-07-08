@@ -38,10 +38,10 @@ export default function MobilePersonalMedical() {
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const res = await requireBiometric('Acces dossier medical');
+            const res = await requireBiometric('Accès dossier médical');
             if (cancelled) return;
             if (!res.granted) {
-                setAuthError(res.error ?? 'Authentification refusee');
+                setAuthError(res.error ?? 'Authentification refusée');
                 return;
             }
             setUnlocked(true);
@@ -63,7 +63,7 @@ export default function MobilePersonalMedical() {
                 if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
-                    setError('Dossier medical indisponible. Verifiez votre connexion.');
+                    setError('Dossier médical indisponible. Vérifiez votre connexion.');
                     setItems([]);
                 }
             }
@@ -74,10 +74,10 @@ export default function MobilePersonalMedical() {
     if (authError) {
         return (
             <>
-                <MobileTopBar title="Dossier medical" accent="#0EA5E9" onBack={() => navigate('/m/profile')} />
+                <MobileTopBar title="Dossier médical" accent="#0EA5E9" onBack={() => navigate('/m/profile')} />
                 <section className="px-4 pt-8 text-center">
                     <IconLockOpen size={32} stroke={1.6} className="text-sky-500 mx-auto mb-2" />
-                    <p className="text-[14px] font-semibold text-slate-800 mb-1">Acces verrouille</p>
+                    <p className="text-[14px] font-semibold text-slate-800 mb-1">Accès verrouillé</p>
                     <p className="text-[12.5px] text-slate-500 mb-4">{authError}</p>
                     <button
                         type="button"
@@ -85,7 +85,7 @@ export default function MobilePersonalMedical() {
                         className="px-4 py-2 rounded-lg bg-sky-600 text-white text-[13px] font-medium"
                         style={{ minHeight: 44 }}
                     >
-                        Reessayer
+                        Réessayer
                     </button>
                 </section>
             </>
@@ -95,7 +95,7 @@ export default function MobilePersonalMedical() {
     if (!unlocked) {
         return (
             <>
-                <MobileTopBar title="Dossier medical" accent="#0EA5E9" />
+                <MobileTopBar title="Dossier médical" accent="#0EA5E9" />
                 <section className="px-4 pt-12 text-center text-slate-400 text-[13px]">
                     Authentification en cours…
                 </section>
@@ -116,8 +116,8 @@ export default function MobilePersonalMedical() {
     return (
         <>
             <MobileTopBar
-                title="Mon suivi medical"
-                subtitle="Donnees confidentielles RGPD"
+                title="Mon suivi médical"
+                subtitle="Données confidentielles RGPD"
                 accent="#0EA5E9"
                 onBack={() => navigate('/m/profile')}
             />
@@ -134,9 +134,9 @@ export default function MobilePersonalMedical() {
                 {items && items.length === 0 && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <IconStethoscope size={28} stroke={1.6} className="text-slate-300 mx-auto mb-2" />
-                        <p className="text-[14px] font-semibold text-slate-800 mb-1">Aucune visite medicale enregistree</p>
+                        <p className="text-[14px] font-semibold text-slate-800 mb-1">Aucune visite médicale enregistrée</p>
                         <p className="text-[12.5px] text-slate-500">
-                            La premiere visite d'embauche n'a pas encore ete consignee.
+                            La première visite d'embauche n'a pas encore été consignée.
                         </p>
                     </div>
                 )}

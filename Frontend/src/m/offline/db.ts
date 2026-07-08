@@ -32,7 +32,8 @@ export interface MutationRecord {
     lastError?: string;
     status: MutationStatus;
     /** Type metier pour les statistiques + display indicateur. */
-    kind: 'inspection.finding' | 'inspection.submit' | 'sos' | 'alert.general' | 'incident' | 'other';
+    kind: 'inspection.finding' | 'inspection.submit' | 'sos' | 'alert.general' | 'incident'
+        | 'nonconformity' | 'ppe.request' | 'action.update' | 'other';
     /** Empreinte pour la deduplication (eviter d'enqueue 2x la meme action). */
     fingerprint?: string;
 }
@@ -227,6 +228,31 @@ export async function queueCleanupDone(olderThanMs = 7 * 24 * 3600 * 1000): Prom
     }
     await tx.done;
     return toDelete.length;
+}
+
+/**
+ * Requalifie les mutations restees en 'syncing' en 'pending'.
+ * A appeler au boot : si l'app est tuee en plein envoi, la mutation reste
+ * orpheline en 'syncing' pour toujours et n'est jamais rejouee (queuePending
+ * ne remonte que les 'pending'). Retourne le nombre de mutations requalifiees.
+ *
+ * Garde-fou anti-doublon : seules les mutations 'syncing' de plus de
+ * 60 secondes (createdAt) sont requalifiees — une mutation plus recente
+ * est probablement encore reellement en vol dans un autre contexte
+ * (autre onglet, run concurrent) et la re-passer en 'pending' pourrait
+ * la rejouer deux fois cote serveur.
+ */
+export async function queueResetSyncing(): Promise<number> {
+    const db = await getDB();
+    const orphans = await db.getAllFromIndex('mutationQueue', 'by-status', 'syncing');
+    const cutoff = Date.now() - 60_000;
+    const stale = orphans.filter((m) => m.createdAt < cutoff);
+    const tx = db.transaction('mutationQueue', 'readwrite');
+    for (const m of stale) {
+        if (m.id !== undefined) await tx.store.put({ ...m, status: 'pending' });
+    }
+    await tx.done;
+    return stale.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

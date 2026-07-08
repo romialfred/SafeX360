@@ -39,10 +39,10 @@ export default function MobilePersonalDosimetry() {
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const res = await requireBiometric('Acces dosimetrie personnelle');
+            const res = await requireBiometric('Accès dosimétrie personnelle');
             if (cancelled) return;
             if (!res.granted) {
-                setAuthError(res.error ?? 'Authentification refusee');
+                setAuthError(res.error ?? 'Authentification refusée');
                 return;
             }
             setUnlocked(true);
@@ -65,7 +65,7 @@ export default function MobilePersonalDosimetry() {
                 if (!cancelled) setItems(Array.isArray(res.data) ? res.data : []);
             } catch (_e) {
                 if (!cancelled) {
-                    setError('Dosimetrie indisponible. Verifiez votre connexion.');
+                    setError('Dosimétrie indisponible. Vérifiez votre connexion.');
                     setItems([]);
                 }
             }
@@ -76,10 +76,10 @@ export default function MobilePersonalDosimetry() {
     if (authError) {
         return (
             <>
-                <MobileTopBar title="Dosimetrie" accent="#B45309" onBack={() => navigate('/m/profile')} />
+                <MobileTopBar title="Dosimétrie" accent="#B45309" onBack={() => navigate('/m/profile')} />
                 <section className="px-4 pt-8 text-center">
                     <IconLockOpen size={32} stroke={1.6} className="text-amber-500 mx-auto mb-2" />
-                    <p className="text-[14px] font-semibold text-slate-800 mb-1">Acces verrouille</p>
+                    <p className="text-[14px] font-semibold text-slate-800 mb-1">Accès verrouillé</p>
                     <p className="text-[12.5px] text-slate-500 mb-4">{authError}</p>
                     <button
                         type="button"
@@ -87,7 +87,7 @@ export default function MobilePersonalDosimetry() {
                         className="px-4 py-2 rounded-lg bg-amber-600 text-white text-[13px] font-medium"
                         style={{ minHeight: 44 }}
                     >
-                        Reessayer
+                        Réessayer
                     </button>
                 </section>
             </>
@@ -97,7 +97,7 @@ export default function MobilePersonalDosimetry() {
     if (!unlocked) {
         return (
             <>
-                <MobileTopBar title="Dosimetrie" accent="#B45309" />
+                <MobileTopBar title="Dosimétrie" accent="#B45309" />
                 <section className="px-4 pt-12 text-center text-slate-400 text-[13px]">
                     Authentification en cours…
                 </section>
@@ -108,8 +108,8 @@ export default function MobilePersonalDosimetry() {
     return (
         <>
             <MobileTopBar
-                title="Ma dosimetrie"
-                subtitle="Donnees confidentielles ISO 45001"
+                title="Ma dosimétrie"
+                subtitle="Données confidentielles ISO 45001"
                 accent="#B45309"
                 onBack={() => navigate('/m/profile')}
             />
@@ -126,9 +126,9 @@ export default function MobilePersonalDosimetry() {
                 {items && items.length === 0 && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <IconRadioactive size={28} stroke={1.6} className="text-slate-300 mx-auto mb-2" />
-                        <p className="text-[14px] font-semibold text-slate-800 mb-1">Aucune mesure enregistree</p>
+                        <p className="text-[14px] font-semibold text-slate-800 mb-1">Aucune mesure enregistrée</p>
                         <p className="text-[12.5px] text-slate-500">
-                            Vous n'etes pas affecte a une zone surveillee.
+                            Vous n'êtes pas affecté à une zone surveillée.
                         </p>
                     </div>
                 )}
@@ -177,7 +177,7 @@ export default function MobilePersonalDosimetry() {
                                             </div>
                                             <div className="flex items-center gap-3 text-[11.5px] text-slate-500 mt-1.5">
                                                 {d.measuredAt && (
-                                                    <span>Mesure {new Date(d.measuredAt).toLocaleDateString('fr-FR')}</span>
+                                                    <span>Mesuré le {new Date(d.measuredAt).toLocaleDateString('fr-FR')}</span>
                                                 )}
                                                 {d.badge && <span>Badge {d.badge}</span>}
                                             </div>
@@ -189,7 +189,7 @@ export default function MobilePersonalDosimetry() {
                     </ul>
                 )}
                 <p className="text-[11px] text-slate-400 mt-4 text-center px-2">
-                    Reference ISO 45001 — limite reglementaire 20 mSv/an personnel expose
+                    Référence ISO 45001 — limite réglementaire 20 mSv/an personnel exposé
                 </p>
                 <button
                     type="button"

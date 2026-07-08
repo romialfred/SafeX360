@@ -20,6 +20,8 @@ import {
     queuePending,
     queueUpdate,
     queueCountByStatus,
+    queueResetSyncing,
+    queueCleanupDone,
     photoPending,
     photoMarkUploaded,
     photoPendingCount,
@@ -50,7 +52,20 @@ type Listener = (stats: SyncStats) => void;
 class SyncEngine {
     private listeners: Map<SyncEvent, Set<Listener>> = new Map();
     private isRunning = false;
+    private started = false;
     private pollTimer: number | null = null;
+    // Bootstrap memoise en promesse : le TOUT PREMIER run() (quel que soit
+    // son declencheur — pull-to-refresh, event online, runNow) attend la
+    // maintenance de la queue avant de rejouer quoi que ce soit. Sans cela,
+    // queueResetSyncing pouvait requalifier en 'pending' une mutation
+    // reellement en vol -> doublon serveur.
+    private ready: Promise<void> | null = null;
+    // Timers de backoff planifies par processOne, a annuler dans stop().
+    private retryTimers: Set<number> = new Set();
+    // Handlers conserves en champs prives pour pouvoir les retirer dans stop()
+    // (des fonctions anonymes seraient impossibles a removeEventListener).
+    private onlineHandler: (() => void) | null = null;
+    private visibilityHandler: (() => void) | null = null;
 
     on(event: SyncEvent, fn: Listener) {
         if (!this.listeners.has(event)) this.listeners.set(event, new Set());
@@ -87,6 +102,15 @@ class SyncEngine {
             // Pas de tentative offline — on attend l'event reseau.
             return;
         }
+        // Bootstrap bloquant et memoise : execute une seule fois, tous les
+        // run() concurrents attendent sa resolution avant de toucher la queue.
+        if (!this.ready) this.ready = this.bootstrap();
+        await this.ready;
+        // Moteur arrete pendant l'attente (stop()) : on ne rejoue rien.
+        if (!this.started) return;
+        // Re-verification apres le await : un autre run() a pu demarrer
+        // pendant que celui-ci attendait le bootstrap.
+        if (this.isRunning) return;
         this.isRunning = true;
         await this.emit('started');
         try {
@@ -155,10 +179,15 @@ class SyncEngine {
                 retryCount: next,
                 lastError: e?.message,
             });
-            // Planifier un re-run apres le backoff sans bloquer cette boucle
+            // Planifier un re-run apres le backoff sans bloquer cette boucle.
+            // Le timer est suivi dans retryTimers pour etre annulable par stop().
             const delay = RETRY_BACKOFF_MS[Math.min(next, RETRY_BACKOFF_MS.length - 1)];
             if (typeof window !== 'undefined') {
-                window.setTimeout(() => void this.run(), delay);
+                const timer = window.setTimeout(() => {
+                    this.retryTimers.delete(timer);
+                    void this.run();
+                }, delay);
+                this.retryTimers.add(timer);
             }
         }
     }
@@ -196,27 +225,55 @@ class SyncEngine {
     }
 
     /**
+     * Maintenance au boot, AVANT le premier run :
+     *   - requalifie les mutations orphelines 'syncing' -> 'pending'
+     *     (app tuee en plein envoi : sans cela elles ne sont jamais rejouees)
+     *   - purge les mutations 'done' de plus de 7 jours
+     *     (sinon croissance IndexedDB illimitee)
+     *
+     * N'appelle PAS run() : c'est run() qui attend bootstrap() via la
+     * promesse memoisee `ready` (sinon recursion + course au demarrage).
+     */
+    private async bootstrap(): Promise<void> {
+        try {
+            const reset = await queueResetSyncing();
+            if (reset > 0) {
+                console.info(`[SyncEngine] ${reset} mutation(s) orpheline(s) requalifiee(s) en pending`);
+            }
+            await queueCleanupDone();
+        } catch (e) {
+            console.warn('[SyncEngine] bootstrap() exception', e);
+        }
+    }
+
+    /**
      * Demarre l'auto-start : reconnexion reseau + visibilitychange + polling.
      * A appeler une seule fois au boot de l'app (depuis MobileShell).
+     * Idempotent : un second appel sans stop() prealable est ignore.
      */
     start(): void {
-        // Auto-run au retour online
-        if (typeof window !== 'undefined') {
-            window.addEventListener('online', () => void this.run());
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') void this.run();
-            });
-        }
+        if (this.started) return; // garde anti-double-start (listeners dupliques sinon)
+        if (typeof window === 'undefined') return;
+        this.started = true;
+
+        // Auto-run au retour online + retour au premier plan
+        this.onlineHandler = () => void this.run();
+        this.visibilityHandler = () => {
+            if (document.visibilityState === 'visible') void this.run();
+        };
+        window.addEventListener('online', this.onlineHandler);
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+
         // Polling regulier si online
-        if (this.pollTimer === null && typeof window !== 'undefined') {
+        if (this.pollTimer === null) {
             this.pollTimer = window.setInterval(() => {
                 if (navigator.onLine) void this.run();
             }, POLL_INTERVAL_MS);
         }
-        // Run initial (apres 1s, le temps que React monte)
-        if (typeof window !== 'undefined') {
-            window.setTimeout(() => void this.run(), 1000);
-        }
+
+        // Run initial : run() attend lui-meme le bootstrap (promesse `ready`
+        // memoisee), pas besoin de timer intermediaire.
+        void this.run();
     }
 
     stop(): void {
@@ -224,6 +281,23 @@ class SyncEngine {
             clearInterval(this.pollTimer);
             this.pollTimer = null;
         }
+        // Annule les re-runs de backoff planifies par processOne : sans cela
+        // un setTimeout peut relancer run() apres l'arret du moteur.
+        for (const timer of this.retryTimers) {
+            clearTimeout(timer);
+        }
+        this.retryTimers.clear();
+        if (typeof window !== 'undefined') {
+            if (this.onlineHandler) {
+                window.removeEventListener('online', this.onlineHandler);
+            }
+            if (this.visibilityHandler) {
+                document.removeEventListener('visibilitychange', this.visibilityHandler);
+            }
+        }
+        this.onlineHandler = null;
+        this.visibilityHandler = null;
+        this.started = false;
     }
 }
 

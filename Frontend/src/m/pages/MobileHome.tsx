@@ -9,7 +9,7 @@ import {
     IconChevronRight,
     IconCalendarStats,
     IconAlertTriangle,
-    IconBell,
+    IconUserCircle,
     IconCircleDot,
     IconCircleCheck,
     IconTrendingUp,
@@ -26,6 +26,7 @@ import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
+import { toIsoDateLocal } from '../components/MobileUI';
 
 interface DashboardData {
     inspectionsToday: number;
@@ -35,6 +36,7 @@ interface DashboardData {
     nextBlastRef?: string;
     nextBlastAt?: string;
     complianceRate?: number;
+    todayList: any[];
 }
 
 function getGreeting(): string {
@@ -62,6 +64,9 @@ export default function MobileHome() {
     const [dashboard, setDashboard] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState(false);
+    // « Réessayer » relance le useEffect (cleanup respecté — pas d'appel direct
+    // de fetchDashboard en onClick, qui ignorait le cleanup et créait une course)
+    const [retryTick, setRetryTick] = useState(0);
 
     const rawName = user?.firstName
         ? `${user.firstName} ${user.familyName || ''}`.trim()
@@ -78,35 +83,72 @@ export default function MobileHome() {
         .slice(0, 2)
         .toUpperCase() || 'SX';
 
+    // KPIs agrégés côté client depuis les VRAIS endpoints métier (Aiven) :
+    // « /hns/mobile/dashboard » n'a jamais existé côté backend — la page
+    // affichait des zéros en permanence. Chaque flux est tolérant à l'échec
+    // (Promise.allSettled) pour ne pas sacrifier les autres indicateurs.
     const fetchDashboard = useCallback(() => {
         setLoading(true);
         setFetchError(false);
         let cancelled = false;
         (async () => {
-            try {
-                const res = await getCached<DashboardData>({
-                    endpoint: '/hns/mobile/dashboard',
-                    cacheStore: 'inspectionCache',
-                    cacheKey: 'mobile-dashboard',
-                    ttlMs: 2 * 60 * 1000,
-                });
-                if (!cancelled) setDashboard(res.data);
-            } catch {
-                if (!cancelled) {
-                    setFetchError(true);
-                    setDashboard({
-                        inspectionsToday: 0,
-                        inspectionsOverdue: 0,
-                        pendingActions: 0,
-                        openIncidents: 0,
-                    });
+            const mineId = Number(user?.mineId ?? user?.companyId ?? 1);
+            const g = <T,>(endpoint: string, cacheKey: string) => getCached<T>({
+                endpoint, cacheStore: 'inspectionCache', cacheKey, ttlMs: 2 * 60 * 1000,
+            });
+            const [inspections, incidents, actions, blast] = await Promise.allSettled([
+                g<any[]>('/hns/inspection/list', 'dash-inspections'),
+                g<any[]>('/hns/incidents/getAll', 'dash-incidents'),
+                g<any[]>('/hns/corrective-action/getAllPending', 'dash-actions'),
+                // cacheKey par mine : sinon un changement de site sert le tir de l'ancienne mine
+                g<any>(`/hns/blast/dashboard/summary?mineId=${mineId}`, `dash-blast-${mineId}`),
+            ]);
+            if (cancelled) return;
+
+            const arr = (r: PromiseSettledResult<any>): any[] =>
+                r.status === 'fulfilled' && Array.isArray(r.value?.data) ? r.value.data : [];
+
+            const inspList = arr(inspections);
+            const today = toIsoDateLocal();
+            // InspectionSummaryDTO expose plannedDate (pas scheduledDate)
+            const todayList = inspList.filter((i) =>
+                String(i.plannedDate ?? '').slice(0, 10) === today
+                || i.status === 'IN_PROGRESS');
+            const inspectionsToday = todayList.length;
+            const inspectionsOverdue = inspList.filter((i) =>
+                i.status === 'SCHEDULED' && String(i.plannedDate ?? '9999').slice(0, 10) < today).length;
+
+            const incList = arr(incidents);
+            const openIncidents = incList.filter((i) => {
+                const s = String(i.status ?? '').toUpperCase();
+                return s !== 'CLOSED' && s !== 'REJECTED' && s !== 'CANCELLED';
+            }).length;
+
+            const pendingActions = arr(actions).length;
+            const closedIncidents = incList.length - openIncidents;
+            const complianceRate = incList.length > 0
+                ? Math.round((closedIncidents / incList.length) * 100)
+                : undefined;
+
+            let nextBlastRef: string | undefined;
+            let nextBlastAt: string | undefined;
+            if (blast.status === 'fulfilled' && blast.value?.data && typeof blast.value.data === 'object') {
+                // Le DTO backend s'appelle nextConfirmedBlast (nextBlast n'existe pas)
+                const raw = blast.value.data as any;
+                const nb = raw.nextConfirmedBlast ?? raw.nextBlast ?? raw;
+                if (nb?.scheduledAt) {
+                    nextBlastRef = nb.reference ?? undefined;
+                    nextBlastAt = nb.scheduledAt;
                 }
-            } finally {
-                if (!cancelled) setLoading(false);
             }
+
+            const allFailed = [inspections, incidents, actions].every((r) => r.status === 'rejected');
+            setFetchError(allFailed);
+            setDashboard({ inspectionsToday, inspectionsOverdue, pendingActions, openIncidents, nextBlastRef, nextBlastAt, complianceRate, todayList });
+            setLoading(false);
         })();
         return () => { cancelled = true; };
-    }, []);
+    }, [user?.mineId, user?.companyId, retryTick]);
 
     useEffect(fetchDashboard, [fetchDashboard]);
 
@@ -125,10 +167,11 @@ export default function MobileHome() {
                     <button
                         type="button"
                         onClick={() => go('/m/profile')}
-                        className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center"
+                        className="rounded-full bg-white/20 flex items-center justify-center"
+                        style={{ minWidth: 44, minHeight: 44 }}
                         aria-label="Mon profil"
                     >
-                        <IconBell size={18} stroke={2} />
+                        <IconUserCircle size={18} stroke={2} />
                     </button>
                 }
             />
@@ -158,7 +201,8 @@ export default function MobileHome() {
                     <button
                         type="button"
                         onClick={() => go('/m/profile')}
-                        className="p-2 -mr-1 rounded-full hover:bg-slate-50"
+                        className="p-2 -mr-1 rounded-full hover:bg-slate-50 inline-flex items-center justify-center"
+                        style={{ minHeight: 44, minWidth: 44 }}
                         aria-label="Mon profil"
                     >
                         <IconChevronRight size={18} stroke={1.8} className="text-slate-400" />
@@ -188,12 +232,14 @@ export default function MobileHome() {
                         label="Actions"
                         icon={<IconCircleDot size={16} stroke={1.8} />}
                         accent="bg-violet-50 text-violet-700"
+                        onClick={() => go('/m/corrective-actions')}
                     />
                     <KpiCard
-                        value={loading ? '—' : `${dashboard?.complianceRate ?? 0}%`}
+                        value={loading ? '—' : dashboard?.complianceRate === undefined ? '—' : `${dashboard.complianceRate}%`}
                         label="Conformité"
                         icon={<IconTrendingUp size={16} stroke={1.8} />}
                         accent="bg-emerald-50 text-emerald-700"
+                        onClick={() => go('/m/compliance')}
                     />
                 </div>
             </section>
@@ -206,10 +252,12 @@ export default function MobileHome() {
                         <p className="text-[12px] text-amber-900 flex-1">Données hors ligne — les chiffres affichés peuvent être incomplets.</p>
                         <button
                             type="button"
-                            onClick={fetchDashboard}
-                            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-medium flex-shrink-0"
+                            onClick={() => { haptic('light'); setRetryTick((t) => t + 1); }}
+                            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center justify-center"
+                            style={{ minHeight: 44, minWidth: 44 }}
+                            aria-label="Actualiser les indicateurs"
                         >
-                            <IconRefresh size={12} stroke={2} />
+                            <IconRefresh size={14} stroke={2} />
                         </button>
                     </div>
                 </section>
@@ -268,6 +316,7 @@ export default function MobileHome() {
                         type="button"
                         onClick={() => go('/m/blast/next')}
                         className="text-[12.5px] text-amber-800 font-medium inline-flex items-center gap-1 active:text-amber-900"
+                        style={{ minHeight: 44 }}
                     >
                         Voir le planning des tirs
                         <IconChevronRight size={14} stroke={1.8} />
@@ -285,6 +334,7 @@ export default function MobileHome() {
                         type="button"
                         onClick={() => go('/m/inspections')}
                         className="text-[12px] text-cyan-700 font-medium"
+                        style={{ minHeight: 44 }}
                     >
                         Tout voir
                     </button>
@@ -301,6 +351,39 @@ export default function MobileHome() {
                                     </div>
                                 </div>
                             </div>
+                        ))}
+                    </div>
+                ) : dashboard && dashboard.todayList.length > 0 ? (
+                    <div className="space-y-2">
+                        {dashboard.todayList.slice(0, 3).map((it: any) => (
+                            <button
+                                key={it.id}
+                                type="button"
+                                onClick={() => go(
+                                    it.status === 'SCHEDULED' || it.status === 'IN_PROGRESS' || it.status === 'REJECTED'
+                                        ? `/m/inspections/${it.id}`
+                                        : `/m/inspection-detail/${it.id}`,
+                                )}
+                                className="w-full text-left bg-white border border-slate-200 rounded-2xl p-3.5 active:scale-[0.99] transition shadow-sm flex items-center gap-3"
+                                style={{ minHeight: 64 }}
+                            >
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                    it.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700' : 'bg-cyan-50 text-cyan-700'
+                                }`}>
+                                    <IconClipboardList size={17} stroke={1.8} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[13.5px] font-semibold text-slate-900 truncate"
+                                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                                        {it.templateName ?? 'Inspection'}
+                                    </p>
+                                    <p className="text-[11.5px] text-slate-500 truncate">
+                                        {it.targetLabel ?? '—'}
+                                        {it.status === 'IN_PROGRESS' ? ' · En cours' : ''}
+                                    </p>
+                                </div>
+                                <IconChevronRight size={16} stroke={1.8} className="text-slate-300 flex-shrink-0" />
+                            </button>
                         ))}
                     </div>
                 ) : (
@@ -355,9 +438,19 @@ export default function MobileHome() {
 
             {/* Tous les modules */}
             <section className="px-4 pt-4">
-                <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-[0.08em] mb-2">
-                    Tous les modules
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-[0.08em]">
+                        Tous les modules
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={() => go('/m/modules')}
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-teal-700"
+                        style={{ minHeight: 44 }}
+                    >
+                        Tout voir <IconChevronRight size={13} stroke={2.2} />
+                    </button>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                     <ModuleTile icon={<IconBrain size={18} stroke={1.8} />} label="Incident IA" accent="bg-violet-50 text-violet-700" onClick={() => go('/m/incident/ai')} />
                     <ModuleTile icon={<IconFileAlert size={18} stroke={1.8} />} label="Événements" accent="bg-pink-50 text-pink-700" onClick={() => go('/m/errors')} />
@@ -365,9 +458,12 @@ export default function MobileHome() {
                     <ModuleTile icon={<IconShieldCheck size={18} stroke={1.8} />} label="Risques" accent="bg-purple-50 text-purple-700" onClick={() => go('/m/risks')} />
                     <ModuleTile icon={<IconChecklist size={18} stroke={1.8} />} label="Audits" accent="bg-sky-50 text-sky-700" onClick={() => go('/m/audits')} />
                     <ModuleTile icon={<IconUsers size={18} stroke={1.8} />} label="Réunions HSE" accent="bg-emerald-50 text-emerald-700" onClick={() => go('/m/meetings')} />
-                    <ModuleTile icon={<IconAlertTriangle size={18} stroke={1.8} />} label="Alerte Générale" accent="bg-orange-50 text-orange-700" onClick={() => go('/m/alert')} />
+                    <ModuleTile icon={<IconAlertTriangle size={18} stroke={1.8} />} label="Alerte générale" accent="bg-orange-50 text-orange-700" onClick={() => go('/m/alert')} />
+                    <ModuleTile icon={<IconShield size={18} stroke={1.8} />} label="EPI" accent="bg-emerald-50 text-emerald-700" onClick={() => go('/m/ppe/catalog')} />
                     <ModuleTile icon={<IconCircleDot size={18} stroke={1.8} />} label="Actions corr." accent="bg-amber-50 text-amber-700" onClick={() => go('/m/corrective-actions')} />
-                    <ModuleTile icon={<IconTrendingUp size={18} stroke={1.8} />} label="Dashboard" accent="bg-cyan-50 text-cyan-700" onClick={() => go('/m/dashboard')} />
+                    <ModuleTile icon={<IconChecklist size={18} stroke={1.8} />} label="Conformité" accent="bg-violet-50 text-violet-700" onClick={() => go('/m/compliance')} />
+                    <ModuleTile icon={<IconFileAlert size={18} stroke={1.8} />} label="Documents" accent="bg-sky-50 text-sky-700" onClick={() => go('/m/documents')} />
+                    <ModuleTile icon={<IconTrendingUp size={18} stroke={1.8} />} label="Tableau de bord" accent="bg-cyan-50 text-cyan-700" onClick={() => go('/m/dashboard')} />
                 </div>
             </section>
 

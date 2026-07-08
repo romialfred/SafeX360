@@ -26,6 +26,7 @@ import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAppSelector } from '../../slices/hooks';
 import { logoutUser } from '../../services/LoginService';
+import { cacheClear } from '../offline/db';
 
 interface ProfileTile {
     label: string;
@@ -144,12 +145,36 @@ export default function MobileProfile() {
                     type="button"
                     disabled={loggingOut}
                     onClick={async () => {
+                        // Confirmation explicite : la déconnexion purge les
+                        // caches offline — un tap accidentel ne doit pas
+                        // effacer les données consultables hors ligne.
+                        const ok = window.confirm(
+                            'Se déconnecter ? Les données consultables hors ligne seront effacées de cet appareil.',
+                        );
+                        if (!ok) return;
                         haptic('warning');
                         setLoggingOut(true);
                         try {
                             await logoutUser();
                         } catch {
                             // session déjà expirée — on redirige quand même
+                        }
+                        // Purge des caches personnels IndexedDB (dossier médical,
+                        // dosimétrie, EPI, tirs…) : rien ne doit rester lisible
+                        // sur l'appareil après déconnexion.
+                        // NB : on ne purge volontairement PAS mutationQueue ni
+                        // photoQueue — les déclarations faites hors ligne et pas
+                        // encore synchronisées (SOS, incidents, photos) doivent
+                        // survivre au logout pour être transmises au retour réseau.
+                        try {
+                            await Promise.all([
+                                cacheClear('inspectionCache'),
+                                cacheClear('templateCache'),
+                                cacheClear('blastCache'),
+                                cacheClear('userProfileCache'),
+                            ]);
+                        } catch {
+                            // purge best-effort — ne doit pas bloquer la déconnexion
                         }
                         window.location.assign('/login');
                     }}
@@ -168,6 +193,7 @@ export default function MobileProfile() {
                     type="button"
                     onClick={() => navigate('/m/home')}
                     className="inline-flex items-center gap-1.5 px-3 py-2 text-[12.5px] text-slate-500"
+                    style={{ minHeight: 44 }}
                 >
                     <IconArrowLeft size={13} stroke={1.8} />
                     Retour à l'accueil

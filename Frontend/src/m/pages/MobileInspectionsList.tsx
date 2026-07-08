@@ -48,7 +48,7 @@ const STATUS_LABEL: Record<InspectionStatus, string> = {
     ARCHIVED: 'Archivée',
     REJECTED: 'Rejetée',
     PENDING: 'En attente',
-    COMPLETED: 'Terminée',
+    COMPLETED: 'Réalisée',
     CANCELLED: 'Annulée',
 };
 
@@ -103,12 +103,12 @@ export default function MobileInspectionsList() {
 
     const openInspection = (it: InspectionSummaryDTO) => {
         haptic('light');
-        // Routes mobile : on garde execute pour SCHEDULED/IN_PROGRESS/REJECTED,
-        // detail pour les statuts en lecture seule.
+        // Exécution pour les statuts actionnables (cœur de métier terrain),
+        // fiche lecture seule pour les statuts figés.
         if (it.status === 'SCHEDULED' || it.status === 'IN_PROGRESS' || it.status === 'REJECTED') {
             navigate(`/m/inspections/${it.id}`);
         } else {
-            navigate(`/m/inspections/${it.id}`);
+            navigate(`/m/inspection-detail/${it.id}`);
         }
     };
 
@@ -142,7 +142,7 @@ export default function MobileInspectionsList() {
                                     ? 'bg-cyan-700 text-white font-medium'
                                     : 'text-slate-600'
                             }`}
-                            style={{ minHeight: 36 }}
+                            style={{ minHeight: 44 }}
                         >
                             {label}
                         </button>
@@ -155,7 +155,7 @@ export default function MobileInspectionsList() {
                 {error && (
                     <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
                         <span className="flex-1">{error}</span>
-                        <button type="button" onClick={fetchInspections} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                        <button type="button" onClick={fetchInspections} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center justify-center gap-1" style={{ minHeight: 44 }}>
                             <IconRefresh size={12} stroke={2} /> Réessayer
                         </button>
                     </div>
@@ -165,7 +165,7 @@ export default function MobileInspectionsList() {
                     <ListSkeleton count={5} />
                 )}
 
-                {filtered && filtered.length === 0 && (
+                {filtered && filtered.length === 0 && !error && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center mb-2">
                             <IconClipboardList size={24} stroke={1.6} className="text-slate-400" />
@@ -182,7 +182,8 @@ export default function MobileInspectionsList() {
                 )}
 
                 {filtered && filtered.map((it) => {
-                    const s = STATUS_STYLES[it.status];
+                    // Repli statut inconnu/null : sans lui, s.bg crashe tout l'écran
+                    const s = STATUS_STYLES[it.status] ?? { bg: 'bg-slate-50', text: 'text-slate-600', icon: <IconCircleDot size={14} stroke={1.8} /> };
                     return (
                         <button
                             key={it.id}
@@ -195,7 +196,7 @@ export default function MobileInspectionsList() {
                                 <div className="min-w-0 flex-1">
                                     <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${s.bg} ${s.text} text-[11px] font-medium mb-1`}>
                                         {s.icon}
-                                        {STATUS_LABEL[it.status]}
+                                        {STATUS_LABEL[it.status] ?? String(it.status ?? '—')}
                                     </div>
                                     <h3 className="text-[14.5px] font-semibold text-slate-900 leading-tight truncate"
                                         style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>

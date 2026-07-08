@@ -70,6 +70,7 @@ export default function SyncIndicator() {
                 disabled={running}
                 className={`w-full border-b text-[12.5px] px-4 py-2 flex items-center justify-between gap-2 transition ${tone}`}
                 aria-label={failed > 0 ? 'Ouvrir la resolution des echecs' : 'Synchronisation des donnees'}
+                style={{ minHeight: 44 }}
             >
                 <div className="flex items-center gap-2 min-w-0">
                     {running ? (

@@ -22,10 +22,13 @@ import {
     IconArrowLeft,
     IconCheck,
     IconSend,
+    IconRefresh,
+    IconWifiOff,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
+import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { mutateOffline } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
 
@@ -67,13 +70,23 @@ export default function MobileGeneralAlertScreen() {
     const haptic = useHaptics();
     const user = useAppSelector((state: any) => state.user);
 
+    const redirectAfter = useRedirectTimer();
+
     const [selectedType, setSelectedType] = useState<AlertTypeCode | null>(null);
     const [description, setDescription] = useState('');
     const [urgency, setUrgency] = useState<UrgencyLevel>('URGENT');
     const [sending, setSending] = useState(false);
+    // Etats succes / echec SEPARES : un echec ne doit jamais s'afficher
+    // dans l'ecran « Alerte transmise » avec la coche de succes.
     const [sentMessage, setSentMessage] = useState<string | null>(null);
+    // Distingue « diffusée » (vert, serveur atteint) de « enregistrée hors
+    // ligne, en attente de réseau » (ambre) — l'utilisateur ne doit pas
+    // croire le personnel notifié quand l'alerte est seulement en queue.
+    const [pendingOffline, setPendingOffline] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14);
+    // empId en priorité : le backend attend l'ID EMPLOYÉ, pas l'ID de compte.
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 14);
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
 
     const descriptionValid = description.trim().length >= MIN_DESCRIPTION_LENGTH;
@@ -89,6 +102,8 @@ export default function MobileGeneralAlertScreen() {
     const handleSubmit = async () => {
         if (!canSubmit) return;
         setSending(true);
+        setErrorMessage(null);
+        setPendingOffline(false);
         haptic('warning');
 
         try {
@@ -114,31 +129,105 @@ export default function MobileGeneralAlertScreen() {
             });
 
             if (result.online) {
+                setPendingOffline(false);
                 setSentMessage('Alerte diffusée — Tous les employés sur site sont notifiés.');
             } else {
+                setPendingOffline(true);
                 setSentMessage('Alerte sauvegardée hors ligne. Sera diffusée au retour du réseau.');
             }
             haptic('success');
-            setTimeout(() => {
+            redirectAfter(() => {
                 setSentMessage(null);
+                setPendingOffline(false);
                 navigate('/m/home');
             }, 3000);
         } catch {
-            setSentMessage('Échec de la diffusion. Réessayez ou contactez la salle de contrôle.');
+            setErrorMessage('Échec de la diffusion. Réessayez ou contactez la salle de contrôle.');
             haptic('error');
         } finally {
             setSending(false);
         }
     };
 
-    /* ── Success screen ────────────────────────────────────────────── */
+    /* ── Failure screen — jamais confondu avec le succes ──────────── */
 
-    if (sentMessage) {
+    if (errorMessage) {
         return (
             <div className="min-h-[80vh] flex items-center justify-center px-6">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-lg ring-2 ring-amber-200 p-6 text-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-100 mx-auto flex items-center justify-center mb-3">
-                        <IconCheck size={28} stroke={2.4} className="text-amber-700" />
+                <div className="w-full max-w-md bg-rose-50 rounded-2xl shadow-lg ring-2 ring-rose-300 p-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-rose-100 mx-auto flex items-center justify-center mb-3">
+                        <IconAlertTriangle size={28} stroke={2.4} className="text-rose-700" />
+                    </div>
+                    <h2
+                        className="text-rose-900 mb-2"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 600,
+                            fontSize: '18px',
+                        }}
+                    >
+                        Alerte non diffusée
+                    </h2>
+                    <p className="text-[13px] text-rose-900 leading-relaxed">{errorMessage}</p>
+                    <button
+                        type="button"
+                        disabled={sending}
+                        onClick={() => {
+                            setErrorMessage(null);
+                            void handleSubmit();
+                        }}
+                        className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-rose-700 text-white text-[14px] font-semibold shadow-md active:scale-[0.97] transition disabled:opacity-50"
+                        style={{ minHeight: 44 }}
+                    >
+                        <IconRefresh size={16} stroke={2.2} />
+                        Réessayer
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setErrorMessage(null)}
+                        className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 text-rose-800 bg-white text-[13px] font-medium"
+                        style={{ minHeight: 44 }}
+                    >
+                        <IconArrowLeft size={14} stroke={1.8} />
+                        Revenir au formulaire
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    /* ── Confirmation screen ───────────────────────────────────────── */
+    /* AMBRE si l'alerte n'est qu'enregistree hors ligne (en attente de
+       reseau), VERT « transmise » uniquement si le serveur a bien recu. */
+
+    if (sentMessage) {
+        if (pendingOffline) {
+            return (
+                <div className="min-h-[80vh] flex items-center justify-center px-6">
+                    <div className="w-full max-w-md bg-amber-50 rounded-2xl shadow-lg ring-2 ring-amber-300 p-6 text-center">
+                        <div className="w-16 h-16 rounded-full bg-amber-100 mx-auto flex items-center justify-center mb-3">
+                            <IconWifiOff size={28} stroke={2.4} className="text-amber-700" />
+                        </div>
+                        <h2
+                            className="text-amber-900 mb-2"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 600,
+                                fontSize: '18px',
+                            }}
+                        >
+                            Alerte enregistrée — en attente de réseau
+                        </h2>
+                        <p className="text-[13px] text-amber-900 leading-relaxed">{sentMessage}</p>
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center px-6">
+                <div className="w-full max-w-md bg-white rounded-2xl shadow-lg ring-2 ring-emerald-200 p-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 mx-auto flex items-center justify-center mb-3">
+                        <IconCheck size={28} stroke={2.4} className="text-emerald-700" />
                     </div>
                     <h2
                         className="text-slate-900 mb-2"

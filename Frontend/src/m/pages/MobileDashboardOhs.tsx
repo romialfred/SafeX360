@@ -27,6 +27,7 @@ import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
+import { toIsoDateLocal } from '../components/MobileUI';
 
 interface OhsDashboardData {
     complianceScore: number;
@@ -39,18 +40,29 @@ interface OhsDashboardData {
     incidentsTrend: number[];
 }
 
-const MOCK_DASHBOARD: OhsDashboardData = {
-    complianceScore: 78,
-    openIncidents: 5,
-    overdueInspections: 3,
-    pendingActions: 12,
-    activeRisks: 9,
-    daysSinceLastLti: 46,
-    trainingCompliance: 84,
-    incidentsTrend: [4, 6, 3, 7, 5, 2],
+/** Valeurs neutres affichées quand AUCUNE donnée n'est joignable — jamais
+ *  de chiffres inventés : un indicateur SST factice est pire qu'un zéro. */
+const EMPTY_DASHBOARD: OhsDashboardData = {
+    complianceScore: 0,
+    openIncidents: 0,
+    overdueInspections: 0,
+    pendingActions: 0,
+    activeRisks: 0,
+    daysSinceLastLti: 0,
+    trainingCompliance: 0,
+    incidentsTrend: [0, 0, 0, 0, 0, 0],
 };
 
-const TREND_MONTHS = ['Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil'];
+/** 6 derniers mois glissants (libellés courts FR) pour la mini-tendance. */
+const TREND_MONTHS = (() => {
+    const labels: string[] = [];
+    const d = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+        labels.push(m.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''));
+    }
+    return labels;
+})();
 
 function scoreColor(score: number): { stroke: string; text: string } {
     if (score >= 80) return { stroke: '#059669', text: 'text-emerald-700' };
@@ -68,42 +80,98 @@ export default function MobileDashboardOhs() {
     const [dashboard, setDashboard] = useState<OhsDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState(false);
+    // Incrémenté par « Réessayer » pour relancer l'agrégation
+    const [retryTick, setRetryTick] = useState(0);
 
+    // Agrégation client depuis les VRAIS endpoints métier (Aiven) —
+    // « /hns/mobile/dashboard » n'existe pas côté backend, et l'ancien repli
+    // affichait des KPI SST INVENTÉS (5 incidents, 78 %…) : inacceptable.
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            try {
-                const res = await getCached<OhsDashboardData>({
-                    endpoint: `/hns/mobile/dashboard?companyId=${companyId}`,
-                    cacheStore: 'inspectionCache',
-                    cacheKey: `ohs-dashboard-${companyId}`,
-                    ttlMs: 2 * 60 * 1000,
-                });
-                if (!cancelled) setDashboard(res.data);
-            } catch {
-                if (!cancelled) {
-                    setDashboard(MOCK_DASHBOARD);
-                    setFetchError(true);
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
+            const g = <T,>(endpoint: string, cacheKey: string) => getCached<T>({
+                endpoint, cacheStore: 'inspectionCache', cacheKey, ttlMs: 2 * 60 * 1000,
+            });
+            const [incidents, inspections, actions, risks] = await Promise.allSettled([
+                g<any[]>('/hns/incidents/getAll', 'dash-incidents'),
+                g<any[]>('/hns/inspection/list', 'dash-inspections'),
+                g<any[]>('/hns/corrective-action/getAllPending', 'dash-actions'),
+                g<any[]>('/hns/risks/getAll', 'dash-risks'),
+            ]);
+            if (cancelled) return;
+
+            const arr = (r: PromiseSettledResult<any>): any[] =>
+                r.status === 'fulfilled' && Array.isArray(r.value?.data) ? r.value.data : [];
+
+            const incList = arr(incidents);
+            const openIncidents = incList.filter((i) => {
+                const s = String(i.status ?? '').toUpperCase();
+                return s !== 'CLOSED' && s !== 'REJECTED' && s !== 'CANCELLED';
+            }).length;
+
+            // Tendance : incidents des 6 derniers mois par mois de déclaration.
+            const trend = [0, 0, 0, 0, 0, 0];
+            const now = new Date();
+            incList.forEach((i) => {
+                const raw = i.date ?? i.incidentDate ?? i.declaredAt ?? i.createdAt;
+                if (!raw) return;
+                const d = new Date(raw);
+                if (Number.isNaN(d.getTime())) return;
+                const diff = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+                if (diff >= 0 && diff <= 5) trend[5 - diff] += 1;
+            });
+
+            const today = toIsoDateLocal();
+            const inspList = arr(inspections);
+            // InspectionSummaryDTO expose plannedDate (scheduledDate n'existe pas)
+            const overdueInspections = inspList.filter((i) =>
+                i.status === 'SCHEDULED' && String(i.plannedDate ?? '9999').slice(0, 10) < today).length;
+
+            const riskList = arr(risks);
+            const activeRisks = riskList.filter((r) =>
+                String(r.status ?? 'OPEN').toUpperCase() !== 'CLOSED').length;
+
+            const closed = incList.length - openIncidents;
+            const complianceScore = incList.length > 0 ? Math.round((closed / incList.length) * 100) : 100;
+
+            // Jours depuis le dernier incident déclaré (proxy LTI terrain).
+            const lastIncidentAt = incList
+                .map((i) => new Date(i.date ?? i.incidentDate ?? i.createdAt ?? 0).getTime())
+                .filter((t) => Number.isFinite(t) && t > 0)
+                .sort((a, b) => b - a)[0];
+            const daysSinceLastLti = lastIncidentAt
+                ? Math.max(0, Math.floor((Date.now() - lastIncidentAt) / 86400000))
+                : 0;
+
+            const allFailed = [incidents, inspections, actions, risks].every((r) => r.status === 'rejected');
+            setFetchError(allFailed);
+            setDashboard(allFailed ? EMPTY_DASHBOARD : {
+                complianceScore,
+                openIncidents,
+                overdueInspections,
+                pendingActions: arr(actions).length,
+                activeRisks,
+                daysSinceLastLti,
+                trainingCompliance: complianceScore,
+                incidentsTrend: trend,
+            });
+            setLoading(false);
         })();
         return () => { cancelled = true; };
-    }, [companyId]);
+    }, [companyId, retryTick]);
 
     const go = (path: string) => {
         haptic('light');
         navigate(path);
     };
 
-    const data = dashboard ?? MOCK_DASHBOARD;
+    const data = dashboard ?? EMPTY_DASHBOARD;
     const scoreClamped = Math.max(0, Math.min(100, data.complianceScore));
     const colors = scoreColor(scoreClamped);
     const radius = 62;
     const circumference = 2 * Math.PI * radius;
     const dashOffset = circumference * (1 - scoreClamped / 100);
-    const trend = Array.isArray(data.incidentsTrend) ? data.incidentsTrend : MOCK_DASHBOARD.incidentsTrend;
+    const trend = Array.isArray(data.incidentsTrend) ? data.incidentsTrend : EMPTY_DASHBOARD.incidentsTrend;
     const trendMax = Math.max(1, ...trend);
 
     return (
@@ -117,7 +185,15 @@ export default function MobileDashboardOhs() {
 
             {fetchError && (
                 <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-[12px] px-4 py-1.5 flex items-center gap-1.5">
-                    <span>Données de démonstration — connexion au serveur indisponible.</span>
+                    <span className="flex-1">Serveur injoignable — indicateurs momentanément indisponibles.</span>
+                    <button
+                        type="button"
+                        onClick={() => { haptic('light'); setLoading(true); setRetryTick((t) => t + 1); }}
+                        className="px-3 py-1 rounded-lg bg-amber-600 text-white text-[11.5px] font-medium flex-shrink-0"
+                        style={{ minHeight: 44 }}
+                    >
+                        Réessayer
+                    </button>
                 </div>
             )}
 
@@ -230,13 +306,15 @@ export default function MobileDashboardOhs() {
                             accentBorder="border-l-emerald-500"
                             iconBg="bg-emerald-50 text-emerald-600"
                         />
+                        {/* Le score est le taux de clôture des incidents — le libellé
+                            « Conformité formations » était trompeur (donnée non disponible) */}
                         <KpiTile
                             value={`${data.trainingCompliance}%`}
-                            label="Conformité formations"
+                            label="Taux de clôture incidents"
                             icon={<IconSchool size={18} stroke={1.8} />}
                             accentBorder="border-l-cyan-500"
                             iconBg="bg-cyan-50 text-cyan-600"
-                            onClick={() => go('/m/profile/trainings')}
+                            onClick={() => go('/m/incidents/history')}
                         />
                     </div>
                 )}

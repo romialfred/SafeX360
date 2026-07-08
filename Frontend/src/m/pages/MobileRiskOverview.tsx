@@ -26,6 +26,7 @@ import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
+import { resolveRiskLevel, riskLevelFamily, RISK_LEVEL_LABEL_FR } from '../utils/riskLevel';
 
 interface RiskSummary {
     id: number | string;
@@ -37,33 +38,14 @@ interface RiskSummary {
     workProcessId?: number | string | null;
 }
 
-// Paliers backend historiques -> familles d'affichage (charte R7).
-const LEVEL_FAMILY: Record<string, 'LOW' | 'MEDIUM' | 'HIGH'> = {
-    Low: 'LOW',
-    'Low Med': 'LOW',
-    Medium: 'MEDIUM',
-    'Med High': 'HIGH',
-    High: 'HIGH',
-    LOW: 'LOW',
-    MEDIUM: 'MEDIUM',
-    HIGH: 'HIGH',
-};
-
-const LEVEL_LABEL: Record<string, string> = {
-    Low: 'Faible',
-    'Low Med': 'Faible à modéré',
-    Medium: 'Modéré',
-    'Med High': 'Élevé',
-    High: 'Critique',
-    LOW: 'Faible',
-    MEDIUM: 'Modéré',
-    HIGH: 'Critique',
-};
-
+// Le backend émet riskLevel comme CLÉ MATRICE « pg » (« 11 »…« 55 ») : la
+// résolution en palier passe par la matrice 5×5 partagée (utils/riskLevel).
 const LEVEL_CHIP: Record<string, string> = {
-    LOW: 'bg-emerald-50 text-emerald-700',
-    MEDIUM: 'bg-amber-50 text-amber-700',
-    HIGH: 'bg-rose-50 text-rose-700',
+    Low: 'bg-emerald-50 text-emerald-700',
+    'Low Med': 'bg-emerald-50 text-emerald-700',
+    Medium: 'bg-amber-50 text-amber-700',
+    'Med High': 'bg-orange-50 text-orange-700',
+    High: 'bg-rose-50 text-rose-700',
 };
 
 export default function MobileRiskOverview() {
@@ -90,7 +72,8 @@ export default function MobileRiskOverview() {
                     ttlMs: 2 * 60 * 1000,
                 });
                 const raw: any = res.data;
-                let data: RiskSummary[] = Array.isArray(raw) ? raw : (raw?.risks ?? []);
+                // raw.risks peut être absent ou non-tableau selon la version du DTO
+                let data: RiskSummary[] = Array.isArray(raw) ? raw : (Array.isArray(raw?.risks) ? raw.risks : []);
                 if (!cancelled && data.length === 0) {
                     try {
                         const fallback = await getCached<RiskSummary[]>({
@@ -123,17 +106,16 @@ export default function MobileRiskOverview() {
     const counts = useMemo(() => {
         const c = { LOW: 0, MEDIUM: 0, HIGH: 0 };
         (items ?? []).forEach((r) => {
-            const family = LEVEL_FAMILY[String(r.riskLevel ?? '')] ?? 'LOW';
-            c[family] += 1;
+            // Pas de repli silencieux : un niveau irrésoluble n'est compté nulle part
+            const family = riskLevelFamily(resolveRiskLevel(r.riskLevel));
+            if (family) c[family] += 1;
         });
         return c;
     }, [items]);
 
-    const openRisk = () => {
+    const openRisk = (riskId: number | string) => {
         haptic('light');
-        // « /risk-management » n'existe pas dans le Router — la vraie route web
-        // du module Gestion des Risques est /risks-overview.
-        navigate('/risks-overview');
+        navigate(`/m/risk/${riskId}`);
     };
 
     return (
@@ -170,8 +152,8 @@ export default function MobileRiskOverview() {
                 {error && (
                     <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
                         <span className="flex-1">{error}</span>
-                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
-                            <IconRefresh size={12} stroke={2} /> Réessayer
+                        <button type="button" onClick={fetchData} className="px-3 py-1 rounded-lg bg-rose-600 text-white text-[12px] font-medium flex-shrink-0 inline-flex items-center justify-center gap-1" style={{ minHeight: 44 }}>
+                            <IconRefresh size={13} stroke={2} /> Réessayer
                         </button>
                     </div>
                 )}
@@ -180,7 +162,7 @@ export default function MobileRiskOverview() {
                     <ListSkeleton count={5} />
                 )}
 
-                {items && items.length === 0 && (
+                {items && items.length === 0 && !error && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center mb-2">
                             <IconShieldExclamation size={24} stroke={1.6} className="text-slate-400" />
@@ -195,15 +177,15 @@ export default function MobileRiskOverview() {
                 )}
 
                 {items && items.map((risk) => {
-                    const family = LEVEL_FAMILY[String(risk.riskLevel ?? '')] ?? 'LOW';
-                    const chip = LEVEL_CHIP[family];
-                    const levelLabel = LEVEL_LABEL[String(risk.riskLevel ?? '')] ?? (risk.riskLevel || '—');
+                    const level = resolveRiskLevel(risk.riskLevel);
+                    const chip = level ? LEVEL_CHIP[level] : 'bg-slate-100 text-slate-600';
+                    const levelLabel = level ? RISK_LEVEL_LABEL_FR[level] : 'Non coté';
                     const location = risk.departmentName ?? (risk.departmentId != null ? `Département #${risk.departmentId}` : '—');
                     return (
                         <button
                             key={risk.id}
                             type="button"
-                            onClick={openRisk}
+                            onClick={() => openRisk(risk.id)}
                             className="w-full text-left bg-white border border-slate-200 rounded-2xl p-3.5 active:scale-[0.99] transition shadow-sm"
                             style={{ minHeight: 88 }}
                         >

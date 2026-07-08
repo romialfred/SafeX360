@@ -63,7 +63,9 @@ export default function MobileBlastNext() {
                 const res = await getCached<DashboardSummary>({
                     endpoint: `/hns/blast/dashboard/summary?mineId=${mineId}`,
                     cacheStore: 'blastCache',
-                    cacheKey: 'dashboard',
+                    // Clé par mine : une clé constante servait le tir de
+                    // l'ancienne mine après changement de site (repli hors ligne)
+                    cacheKey: `dashboard-${mineId}`,
                     ttlMs: 30 * 1000,
                 });
                 if (!cancelled) setData(res.data);
@@ -74,7 +76,7 @@ export default function MobileBlastNext() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [mineId]);
 
     useEffect(() => {
         const id = window.setInterval(() => setNow(Date.now()), 1000);

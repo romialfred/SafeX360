@@ -39,19 +39,14 @@ export interface MobileMutationResult<T = unknown> {
     queuedId?: number;
 }
 
+// STRICTEMENT les object stores créés dans db.ts (upgrade v1) : un store
+// absent du schéma IndexedDB ferait échouer cachePut/cacheGet (NotFoundError)
+// et casserait silencieusement le repli hors ligne.
 type CacheStore =
     | 'inspectionCache'
     | 'templateCache'
     | 'blastCache'
-    | 'userProfileCache'
-    | 'incidentCache'
-    | 'errorCache'
-    | 'nonConformityCache'
-    | 'riskCache'
-    | 'auditCache'
-    | 'meetingCache'
-    | 'correctiveActionCache'
-    | 'dashboardCache';
+    | 'userProfileCache';
 
 /**
  * GET cache-aware. Tente reseau, fallback cache si timeout/erreur.

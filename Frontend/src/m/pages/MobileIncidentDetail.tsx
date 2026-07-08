@@ -1,9 +1,11 @@
 /**
  * MobileIncidentDetail — Vue détail d'un incident déclaré.
  *
- * Affiche le type, la gravité, la description, la photo (si présente),
- * le déclarant, la date, le statut de traitement. Accessible depuis
- * MobileIncidentsHistory ou par deep link depuis une notification push.
+ * Consomme GET /hns/incidents/getDetails/{id} (projection IncidentResponse
+ * enrichie : titre, numéro, lieu, dates, statut, gravité max, catégorie,
+ * source/aiConfidence — champs affichés conditionnellement si null).
+ * Accessible depuis MobileIncidentsHistory ou par deep link depuis
+ * une notification push.
  */
 
 import { useEffect, useState } from 'react';
@@ -12,62 +14,82 @@ import {
     IconArrowLeft,
     IconAlertOctagon,
     IconCalendarStats,
-    IconUser,
-    IconMapPin,
-    IconCircleCheck,
+    IconCategory,
     IconClockHour4,
+    IconHash,
+    IconMapPin,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { CardSkeleton } from '../components/MobileSkeleton';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { getCached } from '../services/mobileApi';
-import { useAppSelector } from '../../slices/hooks';
 
+/** Statuts réels de l'enum backend IncidentStatus (Health-Safety). */
+type IncidentStatusKey =
+    | 'PENDING'
+    | 'REPORTED'
+    | 'INVESTIGATION'
+    | 'INVESTIGATION_COMPLETED'
+    | 'CORRECTIVE_ACTIONS'
+    | 'CLOSED'
+    | 'REJECTED';
+
+/** Projection IncidentResponse (backend HNS). Certains champs peuvent être null. */
 interface IncidentDetail {
     id: number;
-    reference?: string;
-    type: string;
-    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    description: string;
-    declaredAt: string;
-    declarantName?: string;
-    location?: string;
-    photoUrl?: string;
-    status?: 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
-    investigatorName?: string;
-    resolutionNotes?: string;
-    resolvedAt?: string;
+    title?: string | null;
+    location?: string | null;
+    incidentDate?: string | null;
+    discoveryDate?: string | null;
+    status?: IncidentStatusKey | string | null;
+    maxSeverityLevel?: number | null;
+    severityLevelName?: string | null;
+    incidentCategoryName?: string | null;
+    number?: string | null;
+    reporterId?: number | null;
+    departmentId?: number | null;
+    /** "EMPLOYEE" (saisie directe) ou "AI" (wizard Déclaration par IA). */
+    source?: string | null;
+    aiConfidence?: number | null;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-    NEAR_MISS: 'Presqu\'accident',
-    INJURY: 'Blessure',
-    PROPERTY: 'Dommage matériel',
-    ENVIRONMENTAL: 'Environnement',
+/** Charte statuts R7 : violet=attente, cyan=étape franchie, amber=en cours, emerald=clôturé, rose=rejeté. */
+const STATUS_LABELS: Record<string, { txt: string; tone: string }> = {
+    PENDING: { txt: 'En attente', tone: 'bg-violet-50 border-violet-200 text-violet-800' },
+    REPORTED: { txt: 'Déclaré', tone: 'bg-cyan-50 border-cyan-200 text-cyan-800' },
+    /** Repli statut NULL/'UNKNOWN' : l'incident existe donc il a été déclaré. */
+    UNKNOWN: { txt: 'Déclaré', tone: 'bg-cyan-50 border-cyan-200 text-cyan-800' },
+    INVESTIGATION: { txt: 'Enquête en cours', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
+    INVESTIGATION_COMPLETED: { txt: 'Enquête terminée', tone: 'bg-cyan-50 border-cyan-200 text-cyan-800' },
+    CORRECTIVE_ACTIONS: { txt: 'Actions correctives', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
+    CLOSED: { txt: 'Clôturé', tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
+    REJECTED: { txt: 'Rejeté', tone: 'bg-rose-50 border-rose-200 text-rose-800' },
 };
 
-const SEVERITY_TONES: Record<IncidentDetail['severity'], string> = {
-    LOW: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-    MEDIUM: 'bg-amber-50 border-amber-200 text-amber-800',
-    HIGH: 'bg-orange-50 border-orange-200 text-orange-800',
-    CRITICAL: 'bg-rose-50 border-rose-300 text-rose-800',
-};
+/** Ton du badge gravité selon le niveau (1=faible … 5=critique). */
+function severityTone(level?: number | null): string {
+    if (level == null) return 'bg-slate-50 border-slate-200 text-slate-700';
+    if (level >= 4) return 'bg-rose-50 border-rose-300 text-rose-800';
+    if (level === 3) return 'bg-orange-50 border-orange-200 text-orange-800';
+    if (level === 2) return 'bg-amber-50 border-amber-200 text-amber-800';
+    return 'bg-emerald-50 border-emerald-200 text-emerald-800';
+}
 
-const STATUS_LABELS: Record<NonNullable<IncidentDetail['status']>, { txt: string; tone: string }> = {
-    OPEN: { txt: 'Ouvert', tone: 'bg-rose-50 border-rose-200 text-rose-800' },
-    IN_REVIEW: { txt: 'En analyse', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
-    RESOLVED: { txt: 'Résolu', tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
-    CLOSED: { txt: 'Clôturé', tone: 'bg-slate-50 border-slate-200 text-slate-700' },
-};
+/** Formate une date ISO backend ; '—' si absente ou invalide. */
+function formatDateTime(value?: string | null): string {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+}
 
 export default function MobileIncidentDetail() {
     useStatusBarColor('#B45309', 'LIGHT');
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const user = useAppSelector((state: any) => state.user);
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 0);
 
     const [incident, setIncident] = useState<IncidentDetail | null>(null);
+    const [stale, setStale] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -79,10 +101,15 @@ export default function MobileIncidentDetail() {
                 const res = await getCached<IncidentDetail>({
                     endpoint: `/hns/incidents/getDetails/${id}`,
                     cacheStore: 'inspectionCache', // partage le store cache
-                    cacheKey: Number(id),
+                    // Clé préfixée : Number(id) nu entrait en collision avec les
+                    // autres entrées numériques du même store (inspections).
+                    cacheKey: `incident-${id}`,
                     ttlMs: 60 * 60 * 1000,
                 });
-                if (!cancelled) setIncident(res.data);
+                if (!cancelled) {
+                    setIncident(res.data);
+                    setStale(res.stale);
+                }
             } catch (_e) {
                 if (!cancelled) {
                     setError('Détail indisponible. Vérifiez votre connexion.');
@@ -90,7 +117,7 @@ export default function MobileIncidentDetail() {
             }
         })();
         return () => { cancelled = true; };
-    }, [id, userId]);
+    }, [id]);
 
     if (error) {
         return (
@@ -133,34 +160,45 @@ export default function MobileIncidentDetail() {
         );
     }
 
-    const sevTone = SEVERITY_TONES[incident.severity];
-    const statusLabel = incident.status ? STATUS_LABELS[incident.status] : null;
+    // Repli 'UNKNOWN' : statut NULL ou hors enum → badge « Déclaré ».
+    const statusLabel = STATUS_LABELS[incident.status ?? 'UNKNOWN'] ?? STATUS_LABELS.UNKNOWN;
+    const severityText = incident.severityLevelName
+        ?? (incident.maxSeverityLevel != null ? `Niveau ${incident.maxSeverityLevel}` : null);
 
     return (
         <>
             <MobileTopBar
-                title={incident.reference ?? `Incident #${incident.id}`}
-                subtitle={TYPE_LABELS[incident.type] ?? incident.type}
+                title={incident.number ? `Incident ${incident.number}` : `Incident #${incident.id}`}
+                subtitle={incident.incidentCategoryName ?? undefined}
                 accent="#B45309"
                 onBack={() => navigate(-1)}
             />
+            {stale && (
+                <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-[12px] px-4 py-1.5">
+                    Données du cache local — synchronisation au retour du réseau.
+                </div>
+            )}
             <section className="px-4 pt-4 space-y-3">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className={`text-[11.5px] font-medium px-2 py-0.5 rounded-full border ${sevTone}`}>
-                            Gravité {incident.severity === 'LOW' && 'faible'}
-                            {incident.severity === 'MEDIUM' && 'moyenne'}
-                            {incident.severity === 'HIGH' && 'élevée'}
-                            {incident.severity === 'CRITICAL' && 'critique'}
-                        </span>
                         {statusLabel && (
                             <span className={`text-[11.5px] font-medium px-2 py-0.5 rounded-full border ${statusLabel.tone}`}>
                                 {statusLabel.txt}
                             </span>
                         )}
+                        {severityText && (
+                            <span className={`text-[11.5px] font-medium px-2 py-0.5 rounded-full border ${severityTone(incident.maxSeverityLevel)}`}>
+                                Gravité : {severityText}
+                            </span>
+                        )}
+                        {incident.source === 'AI' && (
+                            <span className="text-[11.5px] font-medium px-2 py-0.5 rounded-full border bg-indigo-50 border-indigo-200 text-indigo-800">
+                                Déclaré via IA
+                            </span>
+                        )}
                     </div>
-                    <p className="text-[13.5px] text-slate-800 leading-relaxed whitespace-pre-wrap">
-                        {incident.description}
+                    <p className="text-[14px] font-semibold text-slate-900 leading-relaxed whitespace-pre-wrap">
+                        {incident.title ?? 'Incident sans titre'}
                     </p>
                 </div>
 
@@ -170,81 +208,44 @@ export default function MobileIncidentDetail() {
                     </h3>
                     <dl className="space-y-2 text-[12.5px]">
                         <div className="flex items-start gap-2">
-                            <IconCalendarStats size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                            <IconHash size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
                             <div className="min-w-0">
-                                <dt className="text-slate-500">Déclaration</dt>
-                                <dd className="text-slate-800">
-                                    {new Date(incident.declaredAt).toLocaleString('fr-FR', {
-                                        dateStyle: 'long',
-                                        timeStyle: 'short',
-                                    })}
-                                </dd>
+                                <dt className="text-slate-500">N° incident</dt>
+                                <dd className="text-slate-800">{incident.number ?? '—'}</dd>
                             </div>
                         </div>
-                        {incident.declarantName && (
-                            <div className="flex items-start gap-2">
-                                <IconUser size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <dt className="text-slate-500">Déclarant</dt>
-                                    <dd className="text-slate-800">{incident.declarantName}</dd>
-                                </div>
+                        <div className="flex items-start gap-2">
+                            <IconCalendarStats size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <dt className="text-slate-500">Date de l'incident</dt>
+                                <dd className="text-slate-800">{formatDateTime(incident.incidentDate)}</dd>
                             </div>
-                        )}
-                        {incident.location && (
-                            <div className="flex items-start gap-2">
-                                <IconMapPin size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <dt className="text-slate-500">Lieu</dt>
-                                    <dd className="text-slate-800">{incident.location}</dd>
-                                </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <IconClockHour4 size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <dt className="text-slate-500">Date de découverte</dt>
+                                <dd className="text-slate-800">{formatDateTime(incident.discoveryDate)}</dd>
                             </div>
-                        )}
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <IconMapPin size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <dt className="text-slate-500">Lieu</dt>
+                                <dd className="text-slate-800">{incident.location ?? '—'}</dd>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <IconCategory size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <dt className="text-slate-500">Catégorie</dt>
+                                <dd className="text-slate-800">{incident.incidentCategoryName ?? '—'}</dd>
+                            </div>
+                        </div>
                     </dl>
                 </div>
 
-                {incident.photoUrl && (
-                    <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
-                        <h3 className="text-[11px] uppercase tracking-[0.1em] text-slate-500 mb-2">
-                            Photo preuve
-                        </h3>
-                        <img
-                            src={incident.photoUrl}
-                            alt="Preuve photo"
-                            className="w-full rounded-lg border border-slate-200"
-                            loading="lazy"
-                        />
-                    </div>
-                )}
-
-                {(incident.investigatorName || incident.resolutionNotes) && (
-                    <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
-                        <h3 className="text-[11px] uppercase tracking-[0.1em] text-slate-500 mb-2">
-                            Traitement
-                        </h3>
-                        {incident.investigatorName && (
-                            <div className="flex items-start gap-2 text-[12.5px] mb-2">
-                                <IconUser size={14} stroke={1.7} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <dt className="text-slate-500">Enquêteur</dt>
-                                    <dd className="text-slate-800">{incident.investigatorName}</dd>
-                                </div>
-                            </div>
-                        )}
-                        {incident.resolutionNotes && (
-                            <div className="text-[12.5px] text-slate-700 whitespace-pre-wrap">
-                                {incident.resolutionNotes}
-                            </div>
-                        )}
-                        {incident.resolvedAt && (
-                            <div className="flex items-center gap-1.5 text-[11.5px] text-emerald-700 mt-2">
-                                <IconCircleCheck size={12} stroke={1.8} />
-                                Résolu le {new Date(incident.resolvedAt).toLocaleDateString('fr-FR')}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {!incident.status && (
+                {incident.status === 'PENDING' && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[12px] text-amber-900 flex items-start gap-2">
                         <IconClockHour4 size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
                         En attente de prise en charge par le coordinateur HSE.

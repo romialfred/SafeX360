@@ -23,14 +23,7 @@ import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
 
-type ErrorEventTypeCode =
-    | 'HUMAN_ERROR'
-    | 'PROCEDURAL'
-    | 'ORGANIZATIONAL'
-    | 'TECHNICAL'
-    | 'ENVIRONMENTAL';
-
-type ErrorEventSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+type ErrorEventCriticality = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 type ErrorEventStatus =
     | 'DECLARED'
@@ -43,40 +36,25 @@ type ErrorEventStatus =
     | 'CAPITALIZED'
     | 'REOPENED';
 
+// ErrorEventDTO backend : criticalityLevel + eventTypeId (pas de severity/type).
 interface ErrorEventSummary {
     id: number;
     reference?: string;
-    type: ErrorEventTypeCode;
-    severity: ErrorEventSeverity;
+    eventTypeId?: number | null;
+    criticalityLevel?: ErrorEventCriticality | string | null;
     occurredAt: string;
     status: ErrorEventStatus;
     title?: string;
 }
 
-const TYPE_LABELS: Record<ErrorEventTypeCode, string> = {
-    HUMAN_ERROR: 'Erreur humaine',
-    PROCEDURAL: 'Procédural',
-    ORGANIZATIONAL: 'Organisationnel',
-    TECHNICAL: 'Technique',
-    ENVIRONMENTAL: 'Environnemental',
-};
-
-const TYPE_BADGE: Record<ErrorEventTypeCode, string> = {
-    HUMAN_ERROR: 'bg-amber-50 text-amber-800 border-amber-200',
-    PROCEDURAL: 'bg-blue-50 text-blue-800 border-blue-200',
-    ORGANIZATIONAL: 'bg-violet-50 text-violet-800 border-violet-200',
-    TECHNICAL: 'bg-slate-100 text-slate-700 border-slate-300',
-    ENVIRONMENTAL: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-};
-
-const SEVERITY_LABELS: Record<ErrorEventSeverity, string> = {
+const CRITICALITY_LABELS: Record<string, string> = {
     LOW: 'Faible',
     MEDIUM: 'Modérée',
     HIGH: 'Élevée',
     CRITICAL: 'Critique',
 };
 
-const SEVERITY_DOTS: Record<ErrorEventSeverity, string> = {
+const CRITICALITY_DOTS: Record<string, string> = {
     LOW: 'bg-emerald-500',
     MEDIUM: 'bg-amber-500',
     HIGH: 'bg-orange-500',
@@ -88,7 +66,7 @@ const STATUS_LABELS: Record<ErrorEventStatus, string> = {
     TRIAGED: 'Trié',
     ANALYZING: 'En analyse',
     ACTION_PLAN: "Plan d'action",
-    IMPLEMENTING: 'En traitement',
+    IMPLEMENTING: 'Mise en œuvre',
     VERIFYING: 'Vérification',
     CLOSED: 'Clôturé',
     CAPITALIZED: 'Capitalisé',
@@ -98,7 +76,7 @@ const STATUS_LABELS: Record<ErrorEventStatus, string> = {
 const STATUS_TONE: Record<ErrorEventStatus, string> = {
     DECLARED: 'bg-slate-50 text-slate-700',
     TRIAGED: 'bg-sky-50 text-sky-800',
-    ANALYZING: 'bg-indigo-50 text-indigo-800',
+    ANALYZING: 'bg-violet-50 text-violet-800',
     ACTION_PLAN: 'bg-cyan-50 text-cyan-800',
     IMPLEMENTING: 'bg-amber-50 text-amber-800',
     VERIFYING: 'bg-violet-50 text-violet-800',
@@ -126,6 +104,7 @@ export default function MobileErrorEventList() {
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
 
     const [items, setItems] = useState<ErrorEventSummary[] | null>(null);
+    const [eventTypes, setEventTypes] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [stale, setStale] = useState(false);
 
@@ -135,17 +114,27 @@ export default function MobileErrorEventList() {
         let cancelled = false;
         (async () => {
             try {
-                const res = await getCached<ErrorEventSummary[]>({
-                    endpoint: `/hns/error/events?companyId=${companyId}`,
-                    cacheStore: 'inspectionCache',
-                    cacheKey: `error-events-${companyId}`,
-                    ttlMs: 10 * 60 * 1000,
-                });
+                const [res, typesRes] = await Promise.all([
+                    getCached<ErrorEventSummary[]>({
+                        endpoint: `/hns/error/events?companyId=${companyId}`,
+                        cacheStore: 'inspectionCache',
+                        cacheKey: `error-events-${companyId}`,
+                        ttlMs: 10 * 60 * 1000,
+                    }),
+                    // Référentiel des types : le DTO événement ne porte qu'un eventTypeId
+                    getCached<any[]>({
+                        endpoint: '/hns/error/referentials/event-types',
+                        cacheStore: 'inspectionCache',
+                        cacheKey: 'error-event-types',
+                        ttlMs: 30 * 60 * 1000,
+                    }).catch(() => null),
+                ]);
                 if (!cancelled) {
                     const sorted = (Array.isArray(res.data) ? res.data : []).slice().sort((a, b) =>
                         new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
                     );
                     setItems(sorted);
+                    setEventTypes(Array.isArray(typesRes?.data) ? typesRes!.data : []);
                     setStale(res.stale);
                 }
             } catch {
@@ -162,7 +151,7 @@ export default function MobileErrorEventList() {
 
     const openDetail = (id: number) => {
         haptic('light');
-        navigate(`/error-management/${id}`);
+        navigate(`/m/error-event/${id}`);
     };
 
     const openDeclare = () => {
@@ -190,7 +179,7 @@ export default function MobileErrorEventList() {
                 {error && (
                     <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 mb-3 flex items-center gap-2">
                         <span className="flex-1">{error}</span>
-                        <button type="button" onClick={fetchEvents} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                        <button type="button" onClick={fetchEvents} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center justify-center gap-1" style={{ minHeight: 44 }}>
                             <IconRefresh size={12} stroke={2} /> Réessayer
                         </button>
                     </div>
@@ -200,7 +189,7 @@ export default function MobileErrorEventList() {
                     <ListSkeleton count={5} />
                 )}
 
-                {items && items.length === 0 && (
+                {items && items.length === 0 && !error && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center mt-2">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center mb-3">
                             <IconShieldExclamation size={24} stroke={1.6} className="text-slate-400" />
@@ -224,7 +213,13 @@ export default function MobileErrorEventList() {
 
                 {items && items.length > 0 && (
                     <ul className="space-y-2 mt-1">
-                        {items.map((ev) => (
+                        {items.map((ev) => {
+                            const crit = String(ev.criticalityLevel ?? '').toUpperCase();
+                            const critLabel = CRITICALITY_LABELS[crit] ?? (ev.criticalityLevel || '—');
+                            const typeLabel = ev.eventTypeId != null
+                                ? (eventTypes.find((t) => t.id === ev.eventTypeId)?.label ?? `Type #${ev.eventTypeId}`)
+                                : null;
+                            return (
                             <li key={ev.id}>
                                 <button
                                     type="button"
@@ -234,8 +229,8 @@ export default function MobileErrorEventList() {
                                 >
                                     <div className="flex items-start gap-2.5">
                                         <span
-                                            className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${SEVERITY_DOTS[ev.severity]}`}
-                                            aria-label={`Gravité ${SEVERITY_LABELS[ev.severity]}`}
+                                            className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${CRITICALITY_DOTS[crit] ?? 'bg-slate-300'}`}
+                                            aria-label={`Gravité ${critLabel}`}
                                         />
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -244,11 +239,13 @@ export default function MobileErrorEventList() {
                                                         {ev.reference}
                                                     </span>
                                                 )}
-                                                <span
-                                                    className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10.5px] font-medium ${TYPE_BADGE[ev.type]}`}
-                                                >
-                                                    {TYPE_LABELS[ev.type] ?? ev.type}
-                                                </span>
+                                                {typeLabel && (
+                                                    <span
+                                                        className="inline-flex items-center px-2 py-0.5 rounded-full border text-[10.5px] font-medium bg-slate-100 text-slate-700 border-slate-300"
+                                                    >
+                                                        {typeLabel}
+                                                    </span>
+                                                )}
                                             </div>
                                             {ev.title && (
                                                 <h3
@@ -260,7 +257,7 @@ export default function MobileErrorEventList() {
                                             )}
                                             <div className="flex items-center gap-2 flex-wrap mt-1.5">
                                                 <span className="text-[11px] text-slate-600">
-                                                    {SEVERITY_LABELS[ev.severity]}
+                                                    {critLabel}
                                                 </span>
                                                 <span className="text-slate-300">·</span>
                                                 <span
@@ -278,7 +275,8 @@ export default function MobileErrorEventList() {
                                     </div>
                                 </button>
                             </li>
-                        ))}
+                            );
+                        })}
                     </ul>
                 )}
             </section>

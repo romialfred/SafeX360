@@ -117,7 +117,7 @@ export default function MobileMeetingsList() {
 
     const openMeeting = (meeting: MeetingSummary) => {
         haptic('light');
-        navigate(`/hs-Meetings/details-meeting/${meeting.id}`);
+        navigate(`/m/meeting/${meeting.id}`);
     };
 
     return (
@@ -144,7 +144,7 @@ export default function MobileMeetingsList() {
                                     ? 'bg-emerald-700 text-white border-emerald-700'
                                     : 'bg-white text-slate-700 border-slate-200'
                             }`}
-                            style={{ minHeight: 32 }}
+                            style={{ minHeight: 44 }}
                         >
                             {f.label}
                         </button>
@@ -156,7 +156,7 @@ export default function MobileMeetingsList() {
                 {error && (
                     <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
                         <span className="flex-1">{error}</span>
-                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center justify-center gap-1" style={{ minHeight: 44 }}>
                             <IconRefresh size={12} stroke={2} /> Réessayer
                         </button>
                     </div>
@@ -166,7 +166,7 @@ export default function MobileMeetingsList() {
                     <ListSkeleton count={5} />
                 )}
 
-                {items && filtered.length === 0 && (
+                {items && filtered.length === 0 && !error && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center mb-2">
                             <IconUsersGroup size={24} stroke={1.6} className="text-slate-400" />

@@ -33,9 +33,14 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             // SEC 1.1 — Strip any externally-supplied X-Secret-Key to prevent spoofing.
-            // The gateway is the sole legitimate source of this header.
+            // SEC 2.1 — Strip X-Permissions as well: no legitimate client sends it,
+            // and downstream services grant authorities from it. X-User-Id is kept
+            // (attribution only, sent legitimately by the mobile app).
             exchange = exchange.mutate()
-                    .request(r -> r.headers(h -> h.remove("X-Secret-Key")))
+                    .request(r -> r.headers(h -> {
+                        h.remove("X-Secret-Key");
+                        h.remove("X-Permissions");
+                    }))
                     .build();
 
             String method = exchange.getRequest().getMethod().name();

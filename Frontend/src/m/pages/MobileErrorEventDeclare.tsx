@@ -7,59 +7,58 @@
  * Submit offline-aware via mutateOffline (queue IndexedDB si hors reseau).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    IconUserExclamation,
-    IconListCheck,
-    IconBuildingFactory2,
-    IconSettingsCog,
-    IconLeaf,
+    IconAlertTriangle,
+    IconHandStop,
+    IconActivityHeartbeat,
+    IconFlame,
+    IconUrgent,
     IconCamera,
     IconCheck,
     IconArrowLeft,
     IconSend,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
+import { toIsoDateTimeLocal } from '../components/MobileUI';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
-import { mutateOffline } from '../services/mobileApi';
+import { useRedirectTimer } from '../hooks/useRedirectTimer';
+import { getCached, mutateOffline } from '../services/mobileApi';
 import { capturePhoto } from '../services/cameraService';
 import { useAppSelector } from '../../slices/hooks';
 import { extractErrorMessage } from '../../utility/NotificationUtility';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
-type EventTypeCode =
-    | 'HUMAN_ERROR'
-    | 'PROCEDURAL'
-    | 'ORGANIZATIONAL'
-    | 'TECHNICAL'
-    | 'ENVIRONMENTAL';
-
-type SeverityCode = 'MINOR' | 'MODERATE' | 'SIGNIFICANT' | 'MAJOR';
+// Codes ALIGNÉS sur le référentiel BDD error_event_type
+// (ErrorReferentialSeeder.java) : le backend attend un eventTypeId résolu
+// depuis GET /hns/error/referentials/event-types via ces codes.
+type EventTypeCode = 'unsafe_condition' | 'unsafe_act' | 'near_miss' | 'incident' | 'hipo_sif';
 
 interface EventTile {
     code: EventTypeCode;
     label: string;
     sublabel: string;
-    Icon: typeof IconUserExclamation;
+    Icon: typeof IconAlertTriangle;
     bgClass: string;
 }
 
 const EVENT_TILES: EventTile[] = [
-    { code: 'HUMAN_ERROR', label: 'Erreur humaine', sublabel: 'Geste, oubli, inattention', Icon: IconUserExclamation, bgClass: 'bg-pink-700' },
-    { code: 'PROCEDURAL', label: 'Procédure', sublabel: 'Non respectée ou inadaptée', Icon: IconListCheck, bgClass: 'bg-rose-700' },
-    { code: 'ORGANIZATIONAL', label: 'Organisationnel', sublabel: 'Charge, planning, moyens', Icon: IconBuildingFactory2, bgClass: 'bg-fuchsia-700' },
-    { code: 'TECHNICAL', label: 'Technique', sublabel: 'Panne, défaut matériel', Icon: IconSettingsCog, bgClass: 'bg-purple-700' },
-    { code: 'ENVIRONMENTAL', label: 'Environnemental', sublabel: 'Conditions, ambiance', Icon: IconLeaf, bgClass: 'bg-emerald-700' },
+    { code: 'unsafe_condition', label: 'Situation dangereuse', sublabel: 'Condition à risque observée', Icon: IconAlertTriangle, bgClass: 'bg-amber-600' },
+    { code: 'unsafe_act', label: 'Acte dangereux', sublabel: 'Comportement à risque', Icon: IconHandStop, bgClass: 'bg-orange-700' },
+    { code: 'near_miss', label: 'Presqu\'accident', sublabel: 'Sans dommage cette fois', Icon: IconActivityHeartbeat, bgClass: 'bg-rose-700' },
+    { code: 'incident', label: 'Incident', sublabel: 'Événement avec impact', Icon: IconFlame, bgClass: 'bg-pink-700' },
+    { code: 'hipo_sif', label: 'Potentiel grave', sublabel: 'HiPo / SIF', Icon: IconUrgent, bgClass: 'bg-red-800' },
 ];
 
-const SEVERITIES: { code: SeverityCode; label: string; classes: string }[] = [
-    { code: 'MINOR', label: 'Mineure', classes: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
-    { code: 'MODERATE', label: 'Modérée', classes: 'bg-amber-50 border-amber-200 text-amber-800' },
-    { code: 'SIGNIFICANT', label: 'Significative', classes: 'bg-orange-50 border-orange-200 text-orange-800' },
-    { code: 'MAJOR', label: 'Majeure', classes: 'bg-rose-50 border-rose-300 text-rose-800' },
+// Niveaux du référentiel error_severity (level 1..5) — on expose les 4 premiers
+const SEVERITIES: { level: number; label: string; classes: string }[] = [
+    { level: 1, label: 'Mineur', classes: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
+    { level: 2, label: 'Significatif', classes: 'bg-amber-50 border-amber-200 text-amber-800' },
+    { level: 3, label: 'Grave', classes: 'bg-orange-50 border-orange-200 text-orange-800' },
+    { level: 4, label: 'Critique', classes: 'bg-rose-50 border-rose-300 text-rose-800' },
 ];
 
 const MIN_DESCRIPTION_LENGTH = 20;
@@ -71,13 +70,16 @@ export default function MobileErrorEventDeclare() {
     useStatusBarColor('#BE185D', 'LIGHT');
     const navigate = useNavigate();
     const haptic = useHaptics();
+    const redirectAfter = useRedirectTimer();
     const user = useAppSelector((state: any) => state.user);
 
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14);
+    // Attribution employé : empId prioritaire sur l'id de compte. Repli 0
+    // (bloqué au submit) — plus jamais d'attribution fantôme à l'employé 14.
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 0);
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
 
     const [type, setType] = useState<EventTypeCode | null>(null);
-    const [severity, setSeverity] = useState<SeverityCode | null>(null);
+    const [severity, setSeverity] = useState<number | null>(null);
     const [description, setDescription] = useState('');
     const [photoName, setPhotoName] = useState<string | null>(null);
     const [photoSizeKb, setPhotoSizeKb] = useState<number | null>(null);
@@ -86,8 +88,30 @@ export default function MobileErrorEventDeclare() {
     const [error, setError] = useState<string | null>(null);
     const [done, setDone] = useState<string | null>(null);
 
+    // Référentiels chargés au mount (cache IndexedDB → dispo hors ligne) : le
+    // backend exige eventTypeId (@NotNull), résolu par code, et actualSeverityId.
+    const [eventTypes, setEventTypes] = useState<any[]>([]);
+    const [severityRefs, setSeverityRefs] = useState<any[]>([]);
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const g = (endpoint: string, cacheKey: string) => getCached<any[]>({
+                endpoint, cacheStore: 'inspectionCache', cacheKey, ttlMs: 30 * 60 * 1000,
+            }).catch(() => null);
+            const [types, sevs] = await Promise.all([
+                g('/hns/error/referentials/event-types', 'error-event-types'),
+                g('/hns/error/referentials/severities', 'error-severities'),
+            ]);
+            if (!cancelled) {
+                setEventTypes(Array.isArray(types?.data) ? types!.data : []);
+                setSeverityRefs(Array.isArray(sevs?.data) ? sevs!.data : []);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
     const descriptionValid = description.trim().length >= MIN_DESCRIPTION_LENGTH;
-    const canSubmit = !!type && !!severity && descriptionValid && !sending;
+    const canSubmit = !!type && severity != null && descriptionValid && !sending;
 
     /* ── Handlers ──────────────────────────────────────────────────── */
 
@@ -111,26 +135,54 @@ export default function MobileErrorEventDeclare() {
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
+        // Identité obligatoire : sans employé résolu, l'événement serait
+        // attribué à un fantôme (declaredBy 0 → 500 ou mauvaise personne).
+        if (userId === 0) {
+            haptic('error');
+            setError('Utilisateur non identifié. Reconnectez-vous puis réessayez.');
+            return;
+        }
         setSending(true);
         setError(null);
         haptic('medium');
         try {
-            const cacheKey = 'error-event-' + Date.now();
+            // Résolution code → id : ErrorEventDTO impose eventTypeId @NotNull
+            const matched = eventTypes.find((t) => String(t.code) === type);
+            if (!matched) {
+                setError('Référentiel des types indisponible — connectez-vous une première fois au réseau puis réessayez.');
+                setSending(false);
+                haptic('error');
+                return;
+            }
+            const desc = description.trim();
+            const tile = EVENT_TILES.find((t) => t.code === type);
+            const sevId = severityRefs.find((s) => Number(s.level) === severity)?.id ?? null;
+            // Gravité choisie mais référentiel non résolu : envoyer un
+            // actualSeverityId null perdrait silencieusement la gravité saisie.
+            if (sevId == null) {
+                setError('Référentiel des gravités indisponible — réessayez en réseau.');
+                setSending(false);
+                haptic('error');
+                return;
+            }
+            // Contrat ErrorEventAPI : @RequestParam companyId + @Valid ErrorEventDTO
+            // (title @NotBlank ≤255, eventTypeId @NotNull, occurredAt LocalDateTime sans Z)
             const payload = {
                 companyId,
-                reporterId: userId,
-                eventType: type,
-                severity,
-                description: description.trim(),
-                photoFilename: photoName,
+                eventTypeId: matched.id,
+                title: `${tile?.label ?? 'Événement'} — ${desc.slice(0, 200)}`.slice(0, 255),
+                description: desc,
+                declaredBy: userId,
+                occurredAt: toIsoDateTimeLocal(),
+                actualSeverityId: sevId,
             };
             const result = await mutateOffline({
-                endpoint: '/hns/error/events',
+                endpoint: `/hns/error/events?companyId=${companyId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },
                 kind: 'other',
-                fingerprint: cacheKey,
+                fingerprint: `error:${userId}:${desc.slice(0, 40)}`,
             });
             haptic('success');
             setDone(
@@ -138,7 +190,7 @@ export default function MobileErrorEventDeclare() {
                     ? "Événement déclaré. L'équipe Juste Culture est notifiée."
                     : "Événement sauvegardé hors ligne. Sera transmis au retour du réseau.",
             );
-            setTimeout(() => navigate('/m/home'), 2500);
+            redirectAfter(() => navigate('/m/home'), 2500);
         } catch (e: any) {
             haptic('error');
             setError(extractErrorMessage(e, 'Échec de la déclaration. Réessayez.'));
@@ -185,7 +237,7 @@ export default function MobileErrorEventDeclare() {
 
             <section className="px-3 pt-3 pb-4 space-y-4">
                 <div className="bg-pink-50 border border-pink-200 rounded-xl p-3 text-[12.5px] text-pink-900 flex items-start gap-2">
-                    <IconUserExclamation size={16} stroke={2} className="text-pink-700 mt-0.5 flex-shrink-0" />
+                    <IconHandStop size={16} stroke={2} className="text-pink-700 mt-0.5 flex-shrink-0" />
                     <span>
                         La Juste Culture distingue l&apos;erreur du manquement volontaire : décrivez les faits,
                         pas les responsabilités.
@@ -250,11 +302,11 @@ export default function MobileErrorEventDeclare() {
                     <div className="grid grid-cols-4 gap-2">
                         {SEVERITIES.map((s) => (
                             <button
-                                key={s.code}
+                                key={s.level}
                                 type="button"
-                                onClick={() => { haptic('light'); setSeverity(s.code); }}
+                                onClick={() => { haptic('light'); setSeverity(s.level); }}
                                 className={`p-2 rounded-xl border-2 text-[12px] font-medium ${
-                                    severity === s.code
+                                    severity === s.level
                                         ? s.classes + ' ring-2 ring-offset-1'
                                         : 'border-slate-200 bg-white text-slate-700'
                                 }`}

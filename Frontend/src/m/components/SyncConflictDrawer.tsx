@@ -23,8 +23,11 @@ const KIND_LABELS: Record<MutationRecord['kind'], string> = {
     'inspection.finding': 'Constat inspection',
     'inspection.submit': 'Soumission inspection',
     sos: 'Alerte SOS',
-    'alert.general': 'Alerte generale',
-    incident: 'Declaration incident',
+    'alert.general': 'Alerte générale',
+    incident: 'Déclaration incident',
+    nonconformity: 'Déclaration non-conformité',
+    'ppe.request': 'Demande d\'EPI',
+    'action.update': 'Mise à jour action corrective',
     other: 'Action HSE',
 };
 
@@ -59,7 +62,7 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
     const handleDelete = async (id?: number) => {
         if (id === undefined) return;
         const confirmed = window.confirm(
-            'Supprimer cette declaration de la file ? Les donnees seront perdues.',
+            'Supprimer cette déclaration de la file ? Les données seront perdues.',
         );
         if (!confirmed) return;
         setBusy(id);
@@ -83,14 +86,14 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
                     <div className="flex items-center gap-2">
                         <IconAlertOctagon size={18} stroke={1.8} className="text-rose-600" />
                         <h2 className="text-[14px] font-semibold text-slate-900">
-                            Synchronisations en echec
+                            Synchronisations en échec
                         </h2>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 rounded-lg text-slate-500"
-                        style={{ minWidth: 36, minHeight: 36 }}
+                        className="p-1.5 rounded-lg text-slate-500 inline-flex items-center justify-center"
+                        style={{ minWidth: 44, minHeight: 44 }}
                         aria-label="Fermer"
                     >
                         <IconX size={18} stroke={1.8} />
@@ -100,7 +103,7 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
                 <div className="flex-1 overflow-y-auto px-4 py-3">
                     {items.length === 0 ? (
                         <p className="text-center text-[13px] text-slate-500 py-8">
-                            Aucune synchronisation en echec.
+                            Aucune synchronisation en échec.
                         </p>
                     ) : (
                         <ul className="space-y-2.5">
@@ -123,7 +126,7 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
                                                 </div>
                                             )}
                                             <div className="text-[10.5px] text-rose-600 mt-1">
-                                                Cree le{' '}
+                                                Créé le{' '}
                                                 {new Date(m.createdAt).toLocaleString('fr-FR', {
                                                     dateStyle: 'short',
                                                     timeStyle: 'short',
@@ -139,17 +142,17 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
                                             onClick={() => handleRetry(m.id)}
                                             disabled={busy === m.id}
                                             className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 text-white text-[12.5px] font-medium disabled:opacity-50"
-                                            style={{ minHeight: 36 }}
+                                            style={{ minHeight: 44 }}
                                         >
                                             <IconRefresh size={13} stroke={1.8} />
-                                            Reessayer
+                                            Réessayer
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDelete(m.id)}
                                             disabled={busy === m.id}
                                             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 text-[12.5px] disabled:opacity-50"
-                                            style={{ minHeight: 36 }}
+                                            style={{ minHeight: 44 }}
                                         >
                                             <IconTrash size={13} stroke={1.8} />
                                             Abandonner
@@ -162,8 +165,8 @@ export default function SyncConflictDrawer({ open, onClose }: Props) {
                 </div>
 
                 <footer className="px-4 py-3 border-t border-slate-100 text-[11px] text-slate-500 text-center">
-                    Les conflits de version (HTTP 409) necessitent generalement de
-                    recreer la declaration avec les donnees a jour.
+                    Les conflits de version (HTTP 409) nécessitent généralement de
+                    recréer la déclaration avec les données à jour.
                 </footer>
             </div>
         </div>

@@ -231,6 +231,27 @@ const ErrorDeclarationPage = lazy(() => import('../components/ErrorManagement/Er
 const MobileShell = lazy(() => import('../m/MobileShell'));
 const MobileHome = lazy(() => import('../m/pages/MobileHome'));
 const MobileInspectionsList = lazy(() => import('../m/pages/MobileInspectionsList'));
+// SafeX 360 Field V3 — modules métier complets
+const MobileModulesHub = lazy(() => import('../m/pages/MobileModulesHub'));
+const MobilePpeCatalog = lazy(() => import('../m/pages/MobilePpeCatalog'));
+const MobilePpeRequests = lazy(() => import('../m/pages/MobilePpeRequests'));
+const MobilePpeRequestNew = lazy(() => import('../m/pages/MobilePpeRequestNew'));
+const MobileDocumentsList = lazy(() => import('../m/pages/MobileDocumentsList'));
+const MobileCommunicationsList = lazy(() => import('../m/pages/MobileCommunicationsList'));
+const MobileCommunicationDetail = lazy(() => import('../m/pages/MobileCommunicationDetail'));
+const MobileComplianceMine = lazy(() => import('../m/pages/MobileComplianceMine'));
+const MobileBlastRegistry = lazy(() => import('../m/pages/MobileBlastRegistry'));
+const MobileBlastDetail = lazy(() => import('../m/pages/MobileBlastDetail'));
+const MobileAuditDetail = lazy(() => import('../m/pages/MobileAuditDetail'));
+const MobileMeetingDetail = lazy(() => import('../m/pages/MobileMeetingDetail'));
+const MobileNonConformityDeclare = lazy(() => import('../m/pages/MobileNonConformityDeclare'));
+const MobileNonConformityDetail = lazy(() => import('../m/pages/MobileNonConformityDetail'));
+const MobileCorrectiveActionDetail = lazy(() => import('../m/pages/MobileCorrectiveActionDetail'));
+const MobileRiskDetail = lazy(() => import('../m/pages/MobileRiskDetail'));
+const MobileOpportunities = lazy(() => import('../m/pages/MobileOpportunities'));
+const MobileAnnualPlanning = lazy(() => import('../m/pages/MobileAnnualPlanning'));
+const MobileErrorEventDetail = lazy(() => import('../m/pages/MobileErrorEventDetail'));
+const MobileInspectionDetail = lazy(() => import('../m/pages/MobileInspectionDetail'));
 const MobileSosScreen = lazy(() => import('../m/pages/MobileSosScreen'));
 const MobileIncidentQuickDeclare = lazy(() => import('../m/pages/MobileIncidentQuickDeclare'));
 const MobileBlastNext = lazy(() => import('../m/pages/MobileBlastNext'));
@@ -353,6 +374,27 @@ const router = createBrowserRouter([
             { path: 'dashboard', element: <BlastSuspense><MobileDashboardOhs /></BlastSuspense> },
             { path: 'incidents/history', element: <BlastSuspense><MobileIncidentsHistory /></BlastSuspense> },
             { path: 'blast/next', element: <BlastSuspense><MobileBlastNext /></BlastSuspense> },
+            // ── SafeX 360 Field V3 — couverture complète des modules métier ──
+            { path: 'modules', element: <BlastSuspense><MobileModulesHub /></BlastSuspense> },
+            { path: 'ppe/catalog', element: <BlastSuspense><MobilePpeCatalog /></BlastSuspense> },
+            { path: 'ppe/requests', element: <BlastSuspense><MobilePpeRequests /></BlastSuspense> },
+            { path: 'ppe/requests/new', element: <BlastSuspense><MobilePpeRequestNew /></BlastSuspense> },
+            { path: 'documents', element: <BlastSuspense><MobileDocumentsList /></BlastSuspense> },
+            { path: 'communications', element: <BlastSuspense><MobileCommunicationsList /></BlastSuspense> },
+            { path: 'communications/:id', element: <BlastSuspense><MobileCommunicationDetail /></BlastSuspense> },
+            { path: 'compliance', element: <BlastSuspense><MobileComplianceMine /></BlastSuspense> },
+            { path: 'blast/registry', element: <BlastSuspense><MobileBlastRegistry /></BlastSuspense> },
+            { path: 'blast/:id', element: <BlastSuspense><MobileBlastDetail /></BlastSuspense> },
+            { path: 'audit/:id', element: <BlastSuspense><MobileAuditDetail /></BlastSuspense> },
+            { path: 'meeting/:id', element: <BlastSuspense><MobileMeetingDetail /></BlastSuspense> },
+            { path: 'non-conformities/new', element: <BlastSuspense><MobileNonConformityDeclare /></BlastSuspense> },
+            { path: 'non-conformities/:id', element: <BlastSuspense><MobileNonConformityDetail /></BlastSuspense> },
+            { path: 'action/:id', element: <BlastSuspense><MobileCorrectiveActionDetail /></BlastSuspense> },
+            { path: 'risk/:id', element: <BlastSuspense><MobileRiskDetail /></BlastSuspense> },
+            { path: 'opportunities', element: <BlastSuspense><MobileOpportunities /></BlastSuspense> },
+            { path: 'planning', element: <BlastSuspense><MobileAnnualPlanning /></BlastSuspense> },
+            { path: 'error-event/:id', element: <BlastSuspense><MobileErrorEventDetail /></BlastSuspense> },
+            { path: 'inspection-detail/:id', element: <BlastSuspense><MobileInspectionDetail /></BlastSuspense> },
             { path: 'profile', element: <BlastSuspense><MobileProfile /></BlastSuspense> },
             { path: 'profile/ppe', element: <BlastSuspense><MobilePersonalPpe /></BlastSuspense> },
             { path: 'profile/trainings', element: <BlastSuspense><MobilePersonalTrainings /></BlastSuspense> },

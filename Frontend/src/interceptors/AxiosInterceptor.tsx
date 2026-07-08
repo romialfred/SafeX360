@@ -92,7 +92,12 @@ axiosInstance.interceptors.request.use(
             }
         }
 
-        if (companyId !== null && companyId !== undefined && !Number.isNaN(Number(companyId))) {
+        // N'injecte QUE si l'appelant n'a pas déjà fixé companyId (params ou
+        // query inline) : sinon l'URL porterait DEUX companyId et Spring
+        // résoudrait le premier — divergence création/lecture selon la source.
+        const alreadySet = (config.params && config.params.companyId !== undefined)
+            || url.includes('companyId=');
+        if (!alreadySet && companyId !== null && companyId !== undefined && !Number.isNaN(Number(companyId))) {
             const numericCompanyId = Number(companyId);
             config.params = {
                 ...(config.params || {}),

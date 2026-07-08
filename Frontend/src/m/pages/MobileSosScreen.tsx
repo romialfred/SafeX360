@@ -18,10 +18,13 @@ import {
     IconShieldX,
     IconCheck,
     IconArrowLeft,
+    IconRefresh,
+    IconWifiOff,
 } from '@tabler/icons-react';
 import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
+import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { mutateOffline } from '../services/mobileApi';
 import { getCapacitorPlugin } from '../utils/capacitorBridge';
 import { useAppSelector } from '../../slices/hooks';
@@ -75,15 +78,29 @@ export default function MobileSosScreen() {
     const haptic = useHaptics();
     const user = useAppSelector((state: any) => state.user);
 
-    const [sending, setSending] = useState<ReasonCode | null>(null);
-    const [sentMessage, setSentMessage] = useState<string | null>(null);
+    const redirectAfter = useRedirectTimer();
 
-    const userId = Number(user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14);
+    const [sending, setSending] = useState<ReasonCode | null>(null);
+    // Etats succes / echec SEPARES : afficher un echec dans l'ecran de succes
+    // (« Alerte transmise » + cercle vert) serait dramatique pour un SOS.
+    const [sentMessage, setSentMessage] = useState<string | null>(null);
+    // Distingue « transmis au serveur » (vert) de « enregistré hors ligne,
+    // en attente de réseau » (ambre) — l'utilisateur ne doit jamais croire
+    // que le coordinateur est déjà alerté quand le SOS est seulement en queue.
+    const [pendingOffline, setPendingOffline] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [failedTile, setFailedTile] = useState<Tile | null>(null);
+
+    // empId en priorité : le backend attend l'ID EMPLOYÉ, pas l'ID de compte.
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 14);
     const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
 
     const handleSendSos = async (tile: Tile) => {
         if (sending) return;
         setSending(tile.code);
+        setErrorMessage(null);
+        setFailedTile(null);
+        setPendingOffline(false);
         haptic('sos');
         try {
             const position = await getGeolocation();
@@ -110,22 +127,104 @@ export default function MobileSosScreen() {
                 fingerprint,
             });
             if (result.online) {
+                setPendingOffline(false);
                 setSentMessage(`SOS envoyé. Coordinateur HSE alerté. (${tile.label})`);
             } else {
+                setPendingOffline(true);
                 setSentMessage(`SOS sauvegardé hors ligne. Sera transmis au retour du réseau. (${tile.label})`);
             }
-            setTimeout(() => {
+            redirectAfter(() => {
                 setSentMessage(null);
+                setPendingOffline(false);
                 navigate('/m/home');
             }, 3000);
-        } catch (e: any) {
-            setSentMessage("Échec de l'envoi. Réessayez ou contactez la salle de contrôle.");
+        } catch {
+            haptic('error');
+            setFailedTile(tile);
+            setErrorMessage("Échec de l'envoi du SOS. Réessayez ou contactez la salle de contrôle.");
         } finally {
             setSending(null);
         }
     };
 
+    /* ── Ecran d'echec — JAMAIS confondu avec le succes ─────────────── */
+    if (errorMessage) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center px-6">
+                <div className="w-full max-w-md bg-rose-50 rounded-2xl shadow-lg ring-2 ring-rose-300 p-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-rose-100 mx-auto flex items-center justify-center mb-3">
+                        <IconAlertOctagon size={28} stroke={2.4} className="text-rose-700" />
+                    </div>
+                    <h2
+                        className="text-rose-900 mb-2"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 600,
+                            fontSize: '18px',
+                        }}
+                    >
+                        SOS non transmis
+                    </h2>
+                    <p className="text-[13px] text-rose-900 leading-relaxed">{errorMessage}</p>
+                    {failedTile && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const tile = failedTile;
+                                setErrorMessage(null);
+                                setFailedTile(null);
+                                void handleSendSos(tile);
+                            }}
+                            className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-rose-700 text-white text-[14px] font-semibold shadow-md active:scale-[0.97] transition"
+                            style={{ minHeight: 44 }}
+                        >
+                            <IconRefresh size={16} stroke={2.2} />
+                            Réessayer ({failedTile.label})
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setErrorMessage(null);
+                            setFailedTile(null);
+                        }}
+                        className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 text-rose-800 bg-white text-[13px] font-medium"
+                        style={{ minHeight: 44 }}
+                    >
+                        <IconArrowLeft size={14} stroke={1.8} />
+                        Retour aux tuiles SOS
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    /* ── Ecran de confirmation ──────────────────────────────────────── */
+    /* AMBRE si le SOS n'est qu'enregistre hors ligne (en attente de reseau),
+       VERT « transmise » uniquement si le serveur a bien recu l'envoi. */
     if (sentMessage) {
+        if (pendingOffline) {
+            return (
+                <div className="min-h-[80vh] flex items-center justify-center px-6">
+                    <div className="w-full max-w-md bg-amber-50 rounded-2xl shadow-lg ring-2 ring-amber-300 p-6 text-center">
+                        <div className="w-16 h-16 rounded-full bg-amber-100 mx-auto flex items-center justify-center mb-3">
+                            <IconWifiOff size={28} stroke={2.4} className="text-amber-700" />
+                        </div>
+                        <h2
+                            className="text-amber-900 mb-2"
+                            style={{
+                                fontFamily: "'Source Serif 4', Georgia, serif",
+                                fontWeight: 600,
+                                fontSize: '18px',
+                            }}
+                        >
+                            SOS enregistré — en attente de réseau
+                        </h2>
+                        <p className="text-[13px] text-amber-900 leading-relaxed">{sentMessage}</p>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="min-h-[80vh] flex items-center justify-center px-6">
                 <div className="w-full max-w-md bg-white rounded-2xl shadow-lg ring-2 ring-emerald-200 p-6 text-center">

@@ -96,7 +96,11 @@ public class IncidentServiceImpl implements IncidentService {
         if (companyId == null) {
             throw new HSException("COMPANY_ID_REQUIRED");
         }
-        // incidentDTO.setStatus(IncidentStatus.REPORTED);
+        // Statut initial par défaut : un incident sans statut sort en 'UNKNOWN'
+        // dans les projections (CASE ... ELSE) et échappe à tous les filtres.
+        if (incidentDTO.getStatus() == null) {
+            incidentDTO.setStatus(IncidentStatus.PENDING);
+        }
 
         incidentDTO.setCompanyId(companyId);
         Incident incident = incidentDTO.toIncident();

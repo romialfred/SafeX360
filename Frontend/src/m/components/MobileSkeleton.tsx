@@ -72,23 +72,31 @@ export function HomeSkeleton() {
     );
 }
 
-export function ListSkeleton({ count = 4 }: { count?: number }) {
+/**
+ * Squelette de liste. `withFilters` n'affiche le faux segment de filtres que
+ * sur demande — la plupart des écrans qui l'utilisent sont DÉJÀ sous leur
+ * vraie barre de filtres et à l'intérieur d'un conteneur px-4 (le px-4 interne
+ * doublait le retrait horizontal).
+ */
+export function ListSkeleton({ count = 4, withFilters = false }: { count?: number; withFilters?: boolean }) {
     return (
         <div>
-            <div className="px-4 pt-3 pb-2">
-                <div className="bg-white border border-slate-200 rounded-full p-1">
-                    <div className="grid grid-cols-3 gap-1.5">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="h-9 bg-slate-200 rounded-full animate-pulse"
-                            />
-                        ))}
+            {withFilters && (
+                <div className="pb-2">
+                    <div className="bg-white border border-slate-200 rounded-full p-1">
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="h-9 bg-slate-200 rounded-full animate-pulse"
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className="px-4 pt-2 space-y-2.5">
+            <div className="space-y-2.5">
                 {Array.from({ length: count }).map((_, i) => (
                     <CardSkeleton key={i} badge />
                 ))}

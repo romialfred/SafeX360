@@ -24,6 +24,7 @@ import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
 import { getCached } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
+import { MobileButton } from '../components/MobileUI';
 
 interface NonConformitySummary {
     id: number | string;
@@ -58,7 +59,7 @@ const STATUS_CHIP: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
     REPORTED: 'Déclaré',
-    ANALYSIS: 'Analyse',
+    ANALYSIS: 'En analyse',
     AC_IMPLEMENTATION: 'Traitement',
     OPEN: 'Ouvert',
     IN_PROGRESS: 'En cours',
@@ -123,7 +124,7 @@ export default function MobileNonConformityList() {
 
     const openDetail = (item: NonConformitySummary) => {
         haptic('light');
-        navigate(`/non-conformity/${item.id}`);
+        navigate(`/m/non-conformities/${item.id}`);
     };
 
     return (
@@ -150,7 +151,7 @@ export default function MobileNonConformityList() {
                                     ? 'bg-red-600 text-white border-red-600'
                                     : 'bg-white text-slate-700 border-slate-200'
                             }`}
-                            style={{ minHeight: 32 }}
+                            style={{ minHeight: 44 }}
                         >
                             {f.label}
                         </button>
@@ -159,10 +160,19 @@ export default function MobileNonConformityList() {
             </div>
 
             <section className="px-4 pt-2 space-y-2.5">
+                {/* CTA de déclaration terrain — sans lui l'écran /m/non-conformities/new est orphelin */}
+                <MobileButton
+                    accent="#DC2626"
+                    onClick={() => { haptic('light'); navigate('/m/non-conformities/new'); }}
+                    icon={<IconAlertTriangle size={16} stroke={2} />}
+                >
+                    Déclarer un événement
+                </MobileButton>
+
                 {error && (
                     <div className="bg-rose-50 border border-rose-200 text-rose-800 text-[13px] rounded-xl p-3 flex items-center gap-2">
                         <span className="flex-1">{error}</span>
-                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center gap-1">
+                        <button type="button" onClick={fetchData} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium flex-shrink-0 inline-flex items-center justify-center gap-1" style={{ minHeight: 44 }}>
                             <IconRefresh size={12} stroke={2} /> Réessayer
                         </button>
                     </div>
@@ -172,7 +182,7 @@ export default function MobileNonConformityList() {
                     <ListSkeleton count={5} />
                 )}
 
-                {items && filtered.length === 0 && (
+                {items && filtered.length === 0 && !error && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center mb-2">
                             <IconAlertTriangle size={24} stroke={1.6} className="text-slate-400" />
