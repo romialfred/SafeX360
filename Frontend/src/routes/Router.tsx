@@ -464,7 +464,7 @@ const router = createBrowserRouter([
             { path: "ppe-management/ppe-details/:id", element: <ModuleGuard moduleId='ppe-overview'><PPEEmployeeDetailsPage /></ModuleGuard> },
 
             { path: 'notifications', element: <ModuleGuard moduleId='notifications'><NotificationsManagement /></ModuleGuard>, },
-            { path: "notifications/notifications-details/:id", element: <NotificationTabsPage /> },
+            { path: "notifications/notifications-details/:id", element: <ModuleGuard moduleId='notifications'><NotificationTabsPage /></ModuleGuard> },
 
             { path: 'communications', element: <ModuleGuard moduleId='employee-comm'><EmployeeCommunications /></ModuleGuard>, },
             { path: 'communications/create-communications', element: <ModuleGuard moduleId='employee-comm'><NewCommunicationPage /></ModuleGuard>, },
@@ -621,10 +621,10 @@ const router = createBrowserRouter([
 
             { path: "pending-actions", element: <PendingActions /> },
 
-            { path: "chemical-register", element: <ChemicalRegister /> },
-            { path: 'chemical-register/create-chemical', element: <ChemicalRiskForms />, },
-            { path: 'chemical-register/edit/:id', element: <EditChemicalRisk />, },
-            { path: 'chemical-register/chemicalRegister-details/:id', element: <ChemicalDetails />, },
+            { path: "chemical-register", element: <ModuleGuard moduleId='chemical-register'><ChemicalRegister /></ModuleGuard> },
+            { path: 'chemical-register/create-chemical', element: <ModuleGuard moduleId='chemical-register'><ChemicalRiskForms /></ModuleGuard>, },
+            { path: 'chemical-register/edit/:id', element: <ModuleGuard moduleId='chemical-register'><EditChemicalRisk /></ModuleGuard>, },
+            { path: 'chemical-register/chemicalRegister-details/:id', element: <ModuleGuard moduleId='chemical-register'><ChemicalDetails /></ModuleGuard>, },
 
             { path: "monthly-reports", element: <MonthlyReports /> },
             { path: "KPI-reports", element: <KpiReview /> },
