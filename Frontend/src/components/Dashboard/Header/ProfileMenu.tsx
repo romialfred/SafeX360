@@ -58,7 +58,7 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                 <Menu.Target>
                     <button
                         type="button"
-                        className="flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/25 px-2 py-1 rounded-lg transition cursor-pointer"
+                        className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-2 py-1 rounded-lg transition cursor-pointer"
                         aria-label={t('profileMenu.userMenu')}
                     >
                         <Avatar
@@ -71,14 +71,14 @@ const ProfileMenu = ({ drawerOpened, setDrawerOpened }: any) => {
                             autoContrast
                         />
                         <div className="hidden lg:flex flex-col items-start leading-tight pr-1">
-                            <span className="text-xs text-white max-w-[120px] truncate">
+                            <span className="text-xs font-medium text-slate-800 max-w-[140px] truncate">
                                 {user?.name || t('profileMenu.userFallback')}
                             </span>
-                            <span className="text-[10px] text-white/70 uppercase tracking-wider">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">
                                 {user?.role || t('profileMenu.roleFallback')}
                             </span>
                         </div>
-                        <IconChevronDown size={14} className="text-white/80 hidden lg:block" />
+                        <IconChevronDown size={14} className="text-slate-400 hidden lg:block" />
                     </button>
                 </Menu.Target>
 

@@ -129,12 +129,12 @@ const DashboardLayout = () => {
 
                     {/* Contenu principal — pt aligné sur la hauteur du header :
                         mobile (< sm) : 64px ligne 1 + 56px ligne 2 = 120px
-                        desktop (sm+) : 72px ligne 1 + 56px ligne 2 = 128px
+                        desktop (sm+) : 92px ligne 1 + 56px ligne 2 = 148px
                         LOT 48 P6.j — Responsive padding-top */}
                     <main
                         id="main-content"
                         tabIndex={-1}
-                        className={`relative flex-1 pt-[120px] sm:pt-[128px] ${overlay ? "overflow-y-hidden" : ""}`}
+                        className={`relative flex-1 pt-[120px] sm:pt-[148px] ${overlay ? "overflow-y-hidden" : ""}`}
                     >
                         <LoadingOverlay
                             visible={overlay || !flagsLoaded || switching}

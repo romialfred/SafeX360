@@ -87,49 +87,56 @@ const Header = () => {
         // z-[200] = Z.header (constants/zIndex.ts) : à z-[100] le header partageait
         // le niveau de la sidebar — empilement fragile dépendant de l'ordre DOM.
         <header role="banner" className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[200] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
-            {/* LOT 43 v10 — Header dynamique + titre agrandi + h-18 pour respirer */}
-            <div className="safex-header-wave relative bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 h-[64px] sm:h-[72px] flex justify-between items-center px-3 sm:px-6 overflow-hidden">
-                {/* Couche 1 : vague lumineuse parcourant le header (animée via CSS) */}
-                <span aria-hidden className="safex-header-wave__shine"></span>
-                {/* Couche 2 : second voile décalé pour effet de profondeur */}
-                <span aria-hidden className="safex-header-wave__shine safex-header-wave__shine--delay"></span>
-                {/* Couche 3 : grain subtil (radial gradient noise simulé) */}
-                <span aria-hidden className="safex-header-wave__grain"></span>
+            {/* Header clair — image montagne minière à droite, fondu vers le blanc à gauche */}
+            <div className="relative bg-white h-[64px] sm:h-[92px] flex justify-between items-center px-3 sm:px-8 overflow-hidden border-b border-slate-100">
+                {/* Image de fond (paysage minier), cadrée à droite */}
+                <span
+                    aria-hidden
+                    className="absolute inset-0 bg-cover"
+                    style={{ backgroundImage: "url('/hero/mine-aerial.jpg')", backgroundPosition: 'right 30%', opacity: 0.55 }}
+                ></span>
+                {/* Voile blanc dégradé : opaque à gauche (lisibilité du titre) → transparent à droite */}
+                <span
+                    aria-hidden
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(90deg, #ffffff 32%, rgba(255,255,255,0.82) 52%, rgba(255,255,255,0.35) 78%, rgba(255,255,255,0.08) 100%)' }}
+                ></span>
 
                 <div className="flex items-center gap-2 sm:gap-4 relative min-w-0 z-10 flex-1">
                     {/* Hamburger : MOBILE uniquement (< md) - ouvre le drawer sidebar */}
                     <button
                         type="button"
                         onClick={() => dispatch(toggleMobileSidebar())}
-                        className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur transition-colors flex-shrink-0"
+                        className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors flex-shrink-0"
                         aria-label="Open navigation menu"
                     >
-                        <IconMenu2 size={20} stroke={2} className="text-white" />
+                        <IconMenu2 size={20} stroke={2} className="text-slate-700" />
                     </button>
 
                     <div className="leading-tight min-w-0">
                         {/* Titre principal : clamp + truncate sur mobile */}
                         <h1
-                            className="text-white tracking-tight truncate"
+                            className="tracking-tight truncate"
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(15px, 2vw, 26px)',
+                                fontWeight: 700,
+                                fontSize: 'clamp(16px, 2.1vw, 29px)',
                                 letterSpacing: '-0.022em',
                                 lineHeight: 1.05,
-                                textShadow: '0 1px 2px rgba(0,0,0,0.22)',
+                                color: '#0f172a',
                             }}
                         >
                             {t('navigation:header.platformTitle')}
                         </h1>
                         {/* Sous-titre : MASQUÉ sur mobile (< sm) pour libérer de l'espace */}
                         <p
-                            className="hidden sm:block mt-1 text-teal-50/95 truncate italic"
+                            className="hidden sm:block mt-1 truncate italic"
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontSize: '13.5px',
+                                fontSize: '14px',
                                 fontWeight: 400,
                                 letterSpacing: '0.005em',
+                                color: '#64748b',
                             }}
                         >
                             {t('navigation:header.platformSlogan')}
@@ -140,17 +147,18 @@ const Header = () => {
                 <div className="relative z-10 flex gap-1 sm:gap-2 items-center flex-shrink-0">
                     {/* LOT 44 — Sélecteur de langue (masqué sur très petits écrans pour gagner de l'espace) */}
                     <div className="hidden sm:block">
-                        <LanguageSwitcher tone="light" />
+                        <LanguageSwitcher tone="dark" />
                     </div>
 
-                    <Indicator inline color="red" label="4" offset={15} size={15}>
-                        <div
-                            className="flex items-center cursor-pointer transition duration-300 justify-center rounded-full group p-1.5 sm:p-2"
+                    <Indicator inline color="red" label="4" offset={6} size={16}>
+                        <button
+                            type="button"
+                            className="flex items-center cursor-pointer transition-colors duration-200 justify-center rounded-full hover:bg-slate-100 p-2"
                             onClick={() => setNotificationDrawerOpened(true)}
+                            aria-label={t('navigation:notifications.title')}
                         >
-                            {/* Icone plus petite sur mobile pour gagner de la place */}
-                            <IconBellRinging stroke={2} width={36} height={36} strokeLinecap="round" strokeLinejoin="round" className="text-white hover:text-amber-200 rounded-4xl p-2 cursor-pointer sm:w-[42px] sm:h-[42px]" />
-                        </div>
+                            <IconBellRinging stroke={1.8} size={22} strokeLinecap="round" strokeLinejoin="round" className="text-slate-600" />
+                        </button>
                     </Indicator>
 
                     <ProfileMenu drawerOpened={drawerOpened} setDrawerOpened={setDrawerOpened} />
@@ -268,7 +276,16 @@ const Header = () => {
                 par les anneaux pulses des boutons SOS / Alerte. */}
             <div className="bg-white border-b border-slate-200 h-14 min-h-14 flex items-center justify-between px-3 sm:px-6 gap-2 sm:gap-3 overflow-hidden" style={{ contain: 'layout style paint' }}>
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                    {/* LOT 45 — Boutons CTA pleins (vrai look "bouton d'action", plus "onglet") */}
+                    {/* LOT 45 — Boutons CTA pleins. Ordre design : New Event puis Report Incident. */}
+                    <Tooltip label={t('navigation:header.newEvent')}>
+                        <button
+                            onClick={() => navigate("/non-conformity/create")}
+                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:brightness-110 transition-[filter,box-shadow,background-color] flex-shrink-0"
+                        >
+                            <IconClipboardData stroke={2.2} size={14} className="text-white drop-shadow-sm" />
+                            <span className="hidden sm:inline">{t('navigation:header.newEvent')}</span>
+                        </button>
+                    </Tooltip>
                     <Tooltip label={t('navigation:header.reportIncident')}>
                         <button
                             onClick={() => navigate("/incidents/report")}
@@ -277,15 +294,6 @@ const Header = () => {
                             <IconAlertTriangle stroke={2.2} size={14} className="text-white drop-shadow-sm" />
                             {/* Label masqué sur mobile (< sm) */}
                             <span className="hidden sm:inline">{t('navigation:header.reportIncident')}</span>
-                        </button>
-                    </Tooltip>
-                    <Tooltip label={t('navigation:header.newEvent')}>
-                        <button
-                            onClick={() => navigate("/non-conformity/create")}
-                            className="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-md bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white text-[12.5px] font-semibold shadow-[0_2px_8px_rgba(13,148,136,0.35)] hover:shadow-[0_3px_12px_rgba(13,148,136,0.5)] ring-1 ring-teal-500/40 hover:brightness-110 transition-[filter,box-shadow,background-color] flex-shrink-0"
-                        >
-                            <IconClipboardData stroke={2.2} size={14} className="text-white drop-shadow-sm" />
-                            <span className="hidden sm:inline">{t('navigation:header.newEvent')}</span>
                         </button>
                     </Tooltip>
                     <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
