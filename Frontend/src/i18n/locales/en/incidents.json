@@ -125,6 +125,7 @@
         "submit": "Submit",
         "updateSuccess": "Investigation updated successfully",
         "createSuccess": "Investigation saved successfully",
+        "saveError": "Could not save the investigation. Please retry or contact support.",
         "validation": {
             "methodRequired": "An investigation method is required",
             "startDateRequired": "The investigation start date is required",

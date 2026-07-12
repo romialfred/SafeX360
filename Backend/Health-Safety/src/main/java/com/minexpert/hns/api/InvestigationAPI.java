@@ -32,14 +32,19 @@ import lombok.RequiredArgsConstructor;
 public class InvestigationAPI {
     private final InvestigationService investigationService;
 
+    // companyId optionnel : quand l'UI est en vue consolidee « Toutes les Mines »,
+    // l'intercepteur n'injecte pas companyId ; le service le derive alors de
+    // l'incident (source de verite). Evite le 400 « parametre companyId manquant ».
     @PostMapping("/create")
-    public ResponseEntity<Long> createInvestigation(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<Long> createInvestigation(
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestBody InvestActionDTO request) throws HSException {
         return new ResponseEntity<>(investigationService.addInvestigation(companyId, request), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateInvestigation(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<ResponseDTO> updateInvestigation(
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestBody InvestActionDTO request) throws HSException {
         investigationService.updateInvestigation(companyId, request);
         return new ResponseEntity<>(new ResponseDTO("Investigation updated successfully."), HttpStatus.OK);

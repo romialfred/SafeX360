@@ -43,9 +43,19 @@ public class InvestigationDTO {
 
     public Investigation toEntity() {
         return new Investigation(id, method, startDate, endDate, StringListConverter.convertParticipantsToString(team),
-                humanCauses.toString(), humanAnalysis,
-                taskCauses.toString(), taskAnalysis, workingCauses.toString(), workingAnalysis,
-                organizationCauses.toString(), organizationAnalysis,
+                asStored(humanCauses), humanAnalysis,
+                asStored(taskCauses), taskAnalysis, asStored(workingCauses), workingAnalysis,
+                asStored(organizationCauses), organizationAnalysis,
                 null, report, progress, status, new Incident(incidentId), companyId, createdAt, updatedAt);
+    }
+
+    /**
+     * Serialise une liste de causes au format stocke (repr. Java List, ex.
+     * « [cause1, cause2] »). Garde null : une section de causes laissee vide
+     * par l'utilisateur donnait un NullPointerException -> 500 « erreur
+     * generique » a la soumission. Une liste absente est stockee « [] ».
+     */
+    private static String asStored(List<String> causes) {
+        return (causes != null ? causes : List.<String>of()).toString();
     }
 }

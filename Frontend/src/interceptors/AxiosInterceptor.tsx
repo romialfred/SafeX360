@@ -25,6 +25,11 @@ const apiUrl = import.meta.env.DEV
 const axiosInstance = axios.create({
     baseURL: apiUrl,
     withCredentials: true,
+    // Plafond de securite a 20 minutes (le defaut axios est 0 = illimite).
+    // Utile pour les soumissions lourdes (investigation + preuves base64) et
+    // les cold starts Render : au-dela, notifyError affiche « delai depasse »
+    // plutot qu'un blocage indefini.
+    timeout: 20 * 60 * 1000,
 });
 
 

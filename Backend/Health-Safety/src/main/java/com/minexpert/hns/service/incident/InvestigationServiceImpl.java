@@ -21,6 +21,8 @@ import com.minexpert.hns.dto.response.ParticipantResponse;
 import com.minexpert.hns.entity.incident.Investigation;
 import com.minexpert.hns.enums.InvestigationStatus;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.entity.incident.Incident;
+import com.minexpert.hns.repository.incident.IncidentRepository;
 import com.minexpert.hns.repository.incident.InvestigationRepository;
 import com.minexpert.hns.service.MediaService;
 import com.minexpert.hns.utility.StringListConverter;
@@ -33,34 +35,63 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class InvestigationServiceImpl implements InvestigationService {
 
+    private static final org.slf4j.Logger LOGGER =
+            org.slf4j.LoggerFactory.getLogger(InvestigationServiceImpl.class);
+
     public static final String CACHE_INVESTIGATION_BY_INCIDENT = "investigationByIncident";
     public static final String CACHE_INVESTIGATION_BY_ID = "investigationById";
     public static final String CACHE_INVESTIGATIONS_ALL = "investigationsAll";
 
     private final InvestigationRepository investigationRepository;
+    private final IncidentRepository incidentRepository;
 
     private final CorrectiveActionService correctiveActionService;
     private final MediaService mediaService;
     private final HrmsClient hrmsClient;
 
+    /**
+     * Resout le companyId d'une investigation. Une investigation appartient
+     * TOUJOURS a un incident, donc a une mine precise : quand le companyId n'est
+     * pas fourni par la requete (ex. UI en vue consolidee « Toutes les Mines »
+     * ou selectedCompanyId null), on le derive de l'incident lui-meme. Cela rend
+     * l'operation independante du selecteur de vue et evite le 400
+     * « parametre companyId manquant » qui remontait en erreur generique.
+     */
+    private Long resolveCompanyId(Long companyId, Long incidentId) throws HSException {
+        if (companyId != null) {
+            return companyId;
+        }
+        if (incidentId == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        Incident incident = incidentRepository
+                .findByIdWithCompanyContext(incidentId, null)
+                .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        if (incident.getCompanyId() == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        return incident.getCompanyId();
+    }
+
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #request.investigation.incidentId) : 'ALL-' + #request.investigation.incidentId"),
-            // @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, allEntries = true),
+            // Eviction large : le companyId du parametre peut etre null (derive
+            // ensuite de l'incident), une cle SpEL par companyId serait donc fausse.
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, allEntries = true),
             @CacheEvict(cacheNames = CACHE_INVESTIGATIONS_ALL, allEntries = true),
             @CacheEvict(cacheNames = IncidentServiceImpl.CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
     })
     public Long addInvestigation(Long companyId, InvestActionDTO request) throws HSException {
-        if (companyId == null) {
-            throw new HSException("COMPANY_ID_REQUIRED");
-        }
         InvestigationDTO investigationDTO = request.getInvestigation();
         if (investigationDTO == null) {
             throw new HSException("INVESTIGATION_DETAILS_REQUIRED");
         }
-        investigationDTO.setCompanyId(companyId);
+        // Derive du companyId depuis l'incident si absent (vue consolidee).
+        // Variable finale distincte : requise pour la capture dans le lambda.
+        final Long resolvedCompanyId = resolveCompanyId(companyId, investigationDTO.getIncidentId());
+        investigationDTO.setCompanyId(resolvedCompanyId);
         Optional<Investigation> optional = investigationRepository
-                .findByIncidentIdWithCompanyContext(investigationDTO.getIncidentId(), companyId);
+                .findByIncidentIdWithCompanyContext(investigationDTO.getIncidentId(), resolvedCompanyId);
 
         if (optional.isPresent()) {
             throw new HSException("INVESTIGATION_ALREADY_EXISTS");
@@ -70,10 +101,13 @@ public class InvestigationServiceImpl implements InvestigationService {
             request.getCorrectiveActions().forEach(action -> {
                 try {
                     action.setIncidentId(investigationDTO.getIncidentId());
-                    action.setCompanyId(companyId);
-                    correctiveActionService.addCorrectiveAction(companyId, action);
+                    action.setCompanyId(resolvedCompanyId);
+                    correctiveActionService.addCorrectiveAction(resolvedCompanyId, action);
                 } catch (HSException e) {
-
+                    // Une action corrective en echec ne doit pas casser toute
+                    // l'investigation, mais on trace pour ne pas la perdre en silence.
+                    LOGGER.warn("[Investigation] Action corrective ignoree (incident {}): {}",
+                            investigationDTO.getIncidentId(), e.getMessage());
                 }
             });
         }
@@ -139,34 +173,36 @@ public class InvestigationServiceImpl implements InvestigationService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, key = "#companyId != null ? (#companyId + '-' + #request.investigation.incidentId) : 'ALL-' + #request.investigation.incidentId"),
-            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #request.investigation.id) : 'ALL-' + #request.investigation.id"),
+            // Eviction large : companyId du parametre peut etre null (derive ensuite)
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = CACHE_INVESTIGATIONS_ALL, allEntries = true),
             @CacheEvict(cacheNames = IncidentServiceImpl.CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
     })
     public void updateInvestigation(Long companyId, InvestActionDTO request) throws HSException {
-        if (companyId == null) {
-            throw new HSException("COMPANY_ID_REQUIRED");
-        }
         InvestigationDTO dto = request.getInvestigation();
         if (dto == null) {
             throw new HSException("INVESTIGATION_DETAILS_REQUIRED");
         }
-        dto.setCompanyId(companyId);
+        // Derive du companyId depuis l'incident si absent (vue consolidee)
+        final Long resolvedCompanyId = resolveCompanyId(companyId, dto.getIncidentId());
+        dto.setCompanyId(resolvedCompanyId);
         Investigation investigation = investigationRepository
-                .findByIdWithCompanyContext(dto.getId(), companyId)
+                .findByIdWithCompanyContext(dto.getId(), resolvedCompanyId)
                 .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
         if (request.getCorrectiveActions() != null) {
             request.getCorrectiveActions().forEach(action -> {
                 try {
                     action.setIncidentId(dto.getIncidentId());
-                    action.setCompanyId(companyId);
+                    action.setCompanyId(resolvedCompanyId);
                     if (action.getId() != null) {
-                        correctiveActionService.updateCorrectiveAction(companyId, action);
+                        correctiveActionService.updateCorrectiveAction(resolvedCompanyId, action);
                     } else {
-                        correctiveActionService.addCorrectiveAction(companyId, action);
+                        correctiveActionService.addCorrectiveAction(resolvedCompanyId, action);
                     }
                 } catch (HSException e) {
+                    LOGGER.warn("[Investigation] Action corrective ignoree (incident {}): {}",
+                            dto.getIncidentId(), e.getMessage());
                 }
             });
         }

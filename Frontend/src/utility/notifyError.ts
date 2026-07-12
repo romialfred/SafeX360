@@ -39,13 +39,45 @@ import { errorNotification } from "./NotificationUtility";
  *     notifyError(err, "Impossible d'enregistrer l'incident");
  *   }
  */
+/**
+ * Codes d'erreur metier SafeX (HSException) -> message francais lisible.
+ * Evite d'exposer les codes techniques bruts a l'utilisateur.
+ */
+const CODE_MESSAGES: Record<string, string> = {
+  COMPANY_ID_REQUIRED:
+    "Aucune mine sélectionnée. Choisissez une mine spécifique (au lieu de « Toutes les Mines ») puis réessayez.",
+  INCIDENT_NOT_FOUND: "L'incident lié est introuvable. Rechargez la page puis réessayez.",
+  INVESTIGATION_NOT_FOUND: "L'investigation est introuvable. Rechargez la page puis réessayez.",
+  INVESTIGATION_ALREADY_EXISTS: "Une investigation existe déjà pour cet incident.",
+  INVESTIGATION_DETAILS_REQUIRED: "Les informations de l'investigation sont incomplètes.",
+};
+
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {
-  // Extraction du message le plus parlant pour l'utilisateur final
-  const message: string =
+  // 1) Erreur reseau / timeout : aucune reponse HTTP recue.
+  //    On ne renvoie PAS un message vide (l'ancien code affichait alors
+  //    « Une erreur est survenue » sans indication actionnable).
+  if (!err?.response) {
+    const isTimeout =
+      err?.code === "ECONNABORTED" || /timeout/i.test(err?.message ?? "");
+    errorNotification(
+      isTimeout
+        ? "Le serveur met trop de temps à répondre (délai dépassé). Vérifiez votre connexion et réessayez."
+        : "Service momentanément injoignable. Vérifiez votre connexion internet et réessayez."
+    );
+    if (import.meta.env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.error(`[notifyError] network/timeout code=${err?.code ?? "n/a"}`, err);
+    }
+    return;
+  }
+
+  // 2) Reponse HTTP recue : privilegie le code metier connu, sinon le message brut.
+  const raw: string =
     err?.response?.data?.errorMessage ||
     err?.response?.data?.message ||
     err?.message ||
     fallback;
+  const message = CODE_MESSAGES[raw] ?? raw ?? fallback;
 
   // Affichage de la notification Mantine (rouge)
   errorNotification(message);

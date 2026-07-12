@@ -125,6 +125,7 @@
         "submit": "Soumettre",
         "updateSuccess": "Investigation mise à jour avec succès",
         "createSuccess": "Investigation enregistrée avec succès",
+        "saveError": "Impossible d'enregistrer l'investigation. Réessayez ou contactez le support.",
         "validation": {
             "methodRequired": "La méthode d'investigation est requise",
             "startDateRequired": "La date de début de l'investigation est requise",

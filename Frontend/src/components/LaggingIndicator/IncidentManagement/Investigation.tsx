@@ -14,6 +14,7 @@ import { getEmployeesWithDepartment } from "../../../services/EmployeeService";
 import { isValidRichText, mapIdToName } from "../../../utility/OtherUtilities";
 import { getInvestigationByIncidentId, reportInvestigation, updateInvestigation } from "../../../services/InvestigationService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { notifyError } from "../../../utility/notifyError";
 import { useDispatch, useSelector } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { base64ToFileWithNameNew, convertFilesToBase64New } from "../../../utility/DocumentUtility";
@@ -188,7 +189,7 @@ const Investigation = () => {
                     form.reset();
                     navigate("/incidents")
                 }).catch((err: any) => {
-                    errorNotification(err.response?.data?.errorMessage);
+                    notifyError(err, t('investigation.saveError'));
                 }).finally(() => {
                     dispatch(hideOverlay());
                 });
@@ -200,7 +201,7 @@ const Investigation = () => {
                     form.reset();
                     navigate("/incidents")
                 }).catch((err: any) => {
-                    errorNotification(err.response?.data?.errorMessage);
+                    notifyError(err, t('investigation.saveError'));
                 }).finally(() => {
                     dispatch(hideOverlay());
                 });
