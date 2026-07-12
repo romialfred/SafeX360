@@ -75,8 +75,16 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         .parseClaimsJws(token)
                         .getBody();
 
+                // RBAC : retraduit le claim `role` du JWT en autorités RBAC et les
+                // injecte en X-Permissions (CSV). Le header est TOUJOURS présent pour
+                // une requête utilisateur authentifiée (même vide si rôle inconnu) —
+                // c'est ce qui permet au downstream de distinguer « requête utilisateur
+                // (RBAC strict) » de « appel système sans JWT (fallback de confiance) ».
+                final String role = claims.get("role", String.class);
+                final String permissions = permissionsForRole(role);
                 exchange = exchange.mutate()
-                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
+                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET)
+                                .header("X-Permissions", permissions))
                         .build();
 
             } catch (Exception e) {
@@ -89,6 +97,43 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
 
             return chain.filter(exchange);
         };
+    }
+
+    // ==== RBAC : mapping rôle (claim JWT) -> autorités RBAC downstream ====
+    // Source de vérité côté périmètre (gateway). Les autorités doivent
+    // correspondre EXACTEMENT aux constantes des *RBACConfig HNS (hasAuthority).
+    // Rôles ultra-sensibles (DOSIMETRY_MEDICAL/_EXPORT_MEDICAL/_ADMIN, BLAST_ADMIN,
+    // BLAST_ALARM, INSPECTION_ADMIN) réservés à SYSTEM_ADMINISTRATOR faute de
+    // rôles médecin/RPO dédiés dans l'enum (dette : enrichir UserRole plus tard).
+    private static final java.util.Map<String, String> ROLE_PERMISSIONS = java.util.Map.of(
+            "SYSTEM_ADMINISTRATOR", String.join(",",
+                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE",
+                    "DOSIMETRY_MEDICAL", "DOSIMETRY_PCR_RPO", "DOSIMETRY_ADMIN", "DOSIMETRY_EXPORT_MEDICAL",
+                    "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_ALARM", "BLAST_REPORT", "BLAST_ADMIN",
+                    "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
+                    "INSPECTION_TEMPLATE_MANAGE", "INSPECTION_ADMIN"),
+            "HEALTH_SAFETY_COORDINATOR", String.join(",",
+                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE", "DOSIMETRY_PCR_RPO",
+                    "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_REPORT",
+                    "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
+                    "INSPECTION_TEMPLATE_MANAGE"),
+            "INCIDENT_INVESTIGATOR", String.join(",",
+                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW"),
+            "AUDITOR", String.join(",",
+                    "INSPECTION_VIEW", "INSPECTION_VALIDATE", "DOSIMETRY_READ_AGGREGATE", "BLAST_VIEW"),
+            "EMPLOYEE", String.join(",",
+                    "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW"));
+
+    /**
+     * Autorités CSV pour un rôle. Rôle inconnu/null -> chaîne vide : le header
+     * X-Permissions reste présent (requête utilisateur) mais n'accorde aucune
+     * autorité RBAC downstream (fail-closed côté HNS).
+     */
+    private static String permissionsForRole(String role) {
+        if (role == null) {
+            return "";
+        }
+        return ROLE_PERMISSIONS.getOrDefault(role.trim(), "");
     }
 
     public static class Config {

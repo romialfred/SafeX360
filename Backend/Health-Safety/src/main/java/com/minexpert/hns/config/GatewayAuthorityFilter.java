@@ -112,10 +112,17 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
 
                 List<GrantedAuthority> authorities = new ArrayList<>(parsePermissions(permissionsHeader));
 
-                // Phase 10-A : compat ascendante - si aucune permission n'est envoyee
-                // (Gateway non encore mise a jour pour relayer X-Permissions), on accorde
-                // le set complet car la trust frontiere est garantie par le secret (R-003).
-                if (authorities.isEmpty()) {
+                // RBAC réel (remplace l'ancien fail-open Phase 10-A).
+                // La Gateway injecte TOUJOURS X-Permissions pour une requête utilisateur
+                // authentifiée (même vide si le rôle n'a aucune autorité) : sa PRÉSENCE
+                // signale « requête utilisateur, RBAC strict ».
+                //  - header présent (même vide) + aucune autorité -> fail-CLOSED :
+                //    on n'accorde rien, les @PreAuthorize renverront 403 (comportement voulu).
+                //  - header ABSENT -> appel système-à-système direct (jobs internes, pas de
+                //    JWT) : on conserve le fallback de confiance (secret partagé garant),
+                //    sinon on casserait le trafic interne légitime.
+                boolean permissionsHeaderPresent = permissionsHeader != null;
+                if (authorities.isEmpty() && !permissionsHeaderPresent) {
                     authorities = SYSTEM_TRUST_PERMISSIONS.stream()
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toCollection(ArrayList::new));
