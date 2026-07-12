@@ -20,7 +20,6 @@ import {
     IconLayoutDashboard,
     IconShield,
     IconHeartbeat,
-    IconLeaf,
     IconCertificate,
     IconSettings,
 } from '@tabler/icons-react';
@@ -29,14 +28,13 @@ export type HomeTabId =
     | 'pilotage'
     | 'securite'
     | 'sante'
-    | 'environnement'
     | 'iso'
     | 'admin';
 
 export interface HomeTab {
     id: HomeTabId;
     label: string;
-    icon: React.ComponentType<{ size?: number; stroke?: number; className?: string }>;
+    icon: React.ComponentType<{ size?: number; stroke?: number; className?: string; style?: React.CSSProperties }>;
     description: string;
     accentHex: string;
     /** IDs des modules visibles dans cet onglet. */
@@ -81,18 +79,8 @@ export const HOME_TABS: HomeTab[] = [
         moduleIds: ['dosimetry'],
     },
     {
-        id: 'environnement',
-        label: 'Environnement',
-        icon: IconLeaf,
-        description: 'Aspects environnementaux, déchets, émissions (ISO 14001)',
-        accentHex: '#15803D', // green-700
-        moduleIds: [
-            // Phase 9 prévue : créer module Environnement
-        ],
-    },
-    {
         id: 'iso',
-        label: 'Système ISO',
+        label: 'Normes ISO',
         icon: IconCertificate,
         description: 'Audits, non-conformités, actions correctives et documentation',
         accentHex: '#5B21B6', // violet-800

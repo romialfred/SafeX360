@@ -89,17 +89,19 @@ const Header = () => {
         <header role="banner" className={`fixed right-0 left-0 ${collapsed ? "md:left-20" : "md:left-72"} z-[200] transition-all duration-500 ${scrolled ? "shadow-lg" : "shadow-sm"}`}>
             {/* Header clair — image montagne minière à droite, fondu vers le blanc à gauche */}
             <div className="relative bg-white h-[64px] sm:h-[92px] flex justify-between items-center px-3 sm:px-8 overflow-hidden border-b border-slate-100">
-                {/* Image de fond (paysage minier), cadrée à droite */}
+                {/* Image de fond (paysage minier), pleine largeur, visible à travers le voile */}
                 <span
                     aria-hidden
                     className="absolute inset-0 bg-cover"
-                    style={{ backgroundImage: "url('/hero/mine-aerial.jpg')", backgroundPosition: 'right 30%', opacity: 0.55 }}
+                    style={{ backgroundImage: "url('/hero/mine-aerial.jpg')", backgroundPosition: 'center 28%', opacity: 0.9 }}
                 ></span>
-                {/* Voile blanc dégradé : opaque à gauche (lisibilité du titre) → transparent à droite */}
+                {/* Voile blanc SEMI-TRANSPARENT : translucide sur tout le header (l'image
+                    reste visible derrière) ; un peu plus dense à gauche pour la lisibilité
+                    du titre, plus léger à droite. */}
                 <span
                     aria-hidden
                     className="absolute inset-0"
-                    style={{ background: 'linear-gradient(90deg, #ffffff 32%, rgba(255,255,255,0.82) 52%, rgba(255,255,255,0.35) 78%, rgba(255,255,255,0.08) 100%)' }}
+                    style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.74) 0%, rgba(255,255,255,0.58) 42%, rgba(255,255,255,0.34) 74%, rgba(255,255,255,0.12) 100%)' }}
                 ></span>
 
                 <div className="flex items-center gap-2 sm:gap-4 relative min-w-0 z-10 flex-1">
@@ -124,6 +126,7 @@ const Header = () => {
                                 letterSpacing: '-0.022em',
                                 lineHeight: 1.05,
                                 color: '#0f172a',
+                                textShadow: '0 1px 3px rgba(255,255,255,0.85), 0 0 1px rgba(255,255,255,0.9)',
                             }}
                         >
                             {t('navigation:header.platformTitle')}
@@ -134,9 +137,10 @@ const Header = () => {
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
                                 fontSize: '14px',
-                                fontWeight: 400,
+                                fontWeight: 500,
                                 letterSpacing: '0.005em',
-                                color: '#64748b',
+                                color: '#475569',
+                                textShadow: '0 1px 2px rgba(255,255,255,0.85)',
                             }}
                         >
                             {t('navigation:header.platformSlogan')}

@@ -9,7 +9,7 @@
     "securite": { "label": "Sécurité", "description": "Prévention, risques, EPI, communication et intervention d'urgence" },
     "sante": { "label": "Santé", "description": "Dosimétrie, surveillance médicale, aptitudes professionnelles" },
     "environnement": { "label": "Environnement", "description": "Aspects environnementaux, déchets, émissions (ISO 14001)" },
-    "iso": { "label": "Système ISO", "description": "Audits, non-conformités, actions correctives et documentation" },
+    "iso": { "label": "Normes ISO", "description": "Audits, non-conformités, actions correctives et documentation" },
     "admin": { "label": "Administration", "description": "Utilisateurs, modules, paramètres et centre d'aide" }
   },
   "card": {

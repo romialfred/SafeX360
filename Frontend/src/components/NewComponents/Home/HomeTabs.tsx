@@ -192,9 +192,10 @@ export default function HomeTabs() {
                                 style={isActive ? { borderColor: tab.accentHex } : undefined}
                             >
                                 <Icon
-                                    size={16}
-                                    stroke={isActive ? 2 : 1.7}
-                                    className={isActive ? '' : 'opacity-70'}
+                                    size={17}
+                                    stroke={isActive ? 2.1 : 1.9}
+                                    className={isActive ? '' : 'opacity-90'}
+                                    style={{ color: tab.accentHex }}
                                 />
                                 <span
                                     className="text-[13.5px]"

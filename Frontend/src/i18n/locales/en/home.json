@@ -9,7 +9,7 @@
     "securite": { "label": "Safety", "description": "Prevention, risks, PPE, communication and emergency response" },
     "sante": { "label": "Health", "description": "Dosimetry, medical surveillance, fitness for work" },
     "environnement": { "label": "Environment", "description": "Environmental aspects, waste, emissions (ISO 14001)" },
-    "iso": { "label": "ISO System", "description": "Audits, non-conformities, corrective actions and documentation" },
+    "iso": { "label": "ISO Standards", "description": "Audits, non-conformities, corrective actions and documentation" },
     "admin": { "label": "Administration", "description": "Users, modules, settings and help center" }
   },
   "card": {

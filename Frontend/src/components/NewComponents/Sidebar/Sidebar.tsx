@@ -857,7 +857,7 @@ const Sidebar = () => {
                 - Desktop (md+) : fixed left-0 toujours visible, largeur 20 (collapsed) ou 72 (etendue)
                 - Mobile (< md) : fixed off-canvas, slide-in via translate-x ; largeur fixe 72 */}
             <div className={`
-      bg-blackbg text-white h-screen scrollbar-hide fixed top-0 left-0 shadow-2xl
+      bg-slate-800 text-white h-screen scrollbar-hide fixed top-0 left-0 shadow-2xl
       transition-transform duration-300 ease-in-out
       z-[100] w-72 flex flex-col
       ${collapsed ? 'md:w-20' : 'md:w-72'}
