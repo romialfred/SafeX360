@@ -50,7 +50,11 @@ public class ChemicalRiskDTO {
                 this.title,
                 this.description,
                 this.departmentId,
-                new WorkProcess(workProcessId),
+                // Garde null : un work process laisse vide donnait une association
+                // @ManyToOne vers une entite au @Id null -> a la sauvegarde Hibernate
+                // levait « unsaved transient instance » (500 a l'enregistrement).
+                // On stocke null si aucun process n'est selectionne.
+                workProcessId != null ? new WorkProcess(workProcessId) : null,
                 this.hazardSource,
                 this.riskLevel,
                 this.potentialConsequences,

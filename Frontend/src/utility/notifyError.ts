@@ -50,6 +50,7 @@ const CODE_MESSAGES: Record<string, string> = {
   INVESTIGATION_NOT_FOUND: "L'investigation est introuvable. Rechargez la page puis réessayez.",
   INVESTIGATION_ALREADY_EXISTS: "Une investigation existe déjà pour cet incident.",
   INVESTIGATION_DETAILS_REQUIRED: "Les informations de l'investigation sont incomplètes.",
+  WORK_PROCESS_REQUIRED: "Le processus de travail est obligatoire. Sélectionnez-en un puis réessayez.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {

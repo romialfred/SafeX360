@@ -21,6 +21,7 @@ import {
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { createChemicalRisk } from '../../../services/RiskIdentificationService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { notifyError } from '../../../utility/notifyError';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { GetAllWorkProcess } from '../../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
@@ -202,7 +203,7 @@ const RiskIdentification = () => {
                 navigate('/chemical-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
+                notifyError(err, t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);

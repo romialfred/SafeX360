@@ -21,6 +21,7 @@ import {
 import PageHeader from '../../UtilityComp/PageHeader';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { notifyError } from '../../../utility/notifyError';
 import { getAllDepartments } from '../../../services/HrmsService';
 import { GetAllWorkProcess } from '../../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../../services/EmployeeService';
@@ -211,7 +212,7 @@ const EditChemicalRisk = () => {
                 navigate('/chemical-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
+                notifyError(err, t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);

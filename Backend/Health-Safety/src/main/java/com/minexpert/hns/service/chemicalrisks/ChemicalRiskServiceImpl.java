@@ -32,9 +32,22 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#result.id")
     })
     public ChemicalRiskDTO create(ChemicalRiskDTO dto) throws HSException {
+        requireWorkProcess(dto.getWorkProcessId());
         ChemicalRisk risk = dto.toEntity();
         ChemicalRisk saved = chemicalRiskRepository.save(risk);
         return saved.toDTO();
+    }
+
+    /**
+     * work_process_id est NOT NULL en base : un risque chimique sans processus
+     * de travail declenchait un 500 brut (« unsaved transient instance » /
+     * violation de contrainte) a l'enregistrement. On leve ici une erreur
+     * metier explicite, transformee en message clair cote UI.
+     */
+    private void requireWorkProcess(Long workProcessId) throws HSException {
+        if (workProcessId == null) {
+            throw new HSException("WORK_PROCESS_REQUIRED");
+        }
     }
 
     @Override
@@ -43,6 +56,7 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true)
     })
     public ChemicalRiskDTO update(ChemicalRiskDTO dto) throws HSException {
+        requireWorkProcess(dto.getWorkProcessId());
         ChemicalRisk existing = chemicalRiskRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
         existing.setTitle(dto.getTitle());
