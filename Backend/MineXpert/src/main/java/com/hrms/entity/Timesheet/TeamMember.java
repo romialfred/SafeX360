@@ -7,6 +7,8 @@ import com.hrms.entity.Employee;
 import com.hrms.enums.Shifts;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,7 +36,9 @@ public class TeamMember {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+    @Enumerated(EnumType.STRING)
     private Shifts shift;
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     public TeamMember(Long id) {

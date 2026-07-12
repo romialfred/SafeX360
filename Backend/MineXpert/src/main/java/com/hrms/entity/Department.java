@@ -8,6 +8,8 @@ import com.hrms.dto.Status;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +33,7 @@ public class Department {
     private String shortName;
     private String sector;
     private String direction;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private LocalDate creationDate;
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

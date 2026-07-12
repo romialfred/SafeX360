@@ -5,6 +5,8 @@ import com.hrms.enums.CodeStatus;
 import com.hrms.enums.CodeType;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +23,9 @@ public class WorkHourCode {
     private String name;
     private Integer rate;
     private String color;
+    @Enumerated(EnumType.STRING)
     private CodeType type;
+    @Enumerated(EnumType.STRING)
     private CodeStatus status;
 
     public WorkHourCodeDTO toDTO() {

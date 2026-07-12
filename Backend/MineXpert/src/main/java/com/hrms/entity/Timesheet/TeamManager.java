@@ -41,6 +41,7 @@ public class TeamManager {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     public TeamManager(Long id) {

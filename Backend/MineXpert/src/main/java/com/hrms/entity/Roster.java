@@ -4,6 +4,8 @@ import com.hrms.dto.RosterDTO;
 import com.hrms.dto.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,6 +24,7 @@ public class Roster {
     private String name;
     private String description;
     private String category;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private String creationDate;
 
