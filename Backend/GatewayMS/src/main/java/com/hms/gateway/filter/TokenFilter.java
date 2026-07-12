@@ -33,13 +33,15 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             // SEC 1.1 — Strip any externally-supplied X-Secret-Key to prevent spoofing.
-            // SEC 2.1 — Strip X-Permissions as well: no legitimate client sends it,
-            // and downstream services grant authorities from it. X-User-Id is kept
-            // (attribution only, sent legitimately by the mobile app).
+            // SEC 2.1 — Strip X-Permissions as well: no legitimate client sends it.
+            // RBAC — Strip X-User-Id too: il est désormais RÉINJECTÉ depuis le claim
+            // `id` du JWT (autoritaire), pour empêcher l'usurpation d'identité et
+            // alimenter les gardes SELF downstream (accès à SES propres données).
             exchange = exchange.mutate()
                     .request(r -> r.headers(h -> {
                         h.remove("X-Secret-Key");
                         h.remove("X-Permissions");
+                        h.remove("X-User-Id");
                     }))
                     .build();
 
@@ -82,9 +84,17 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 // (RBAC strict) » de « appel système sans JWT (fallback de confiance) ».
                 final String role = claims.get("role", String.class);
                 final String permissions = permissionsForRole(role);
+                // Identité autoritaire depuis le JWT (claim `id`) pour les gardes SELF.
+                final Object idClaim = claims.get("id");
+                final String userId = idClaim != null ? String.valueOf(idClaim) : "";
                 exchange = exchange.mutate()
-                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET)
-                                .header("X-Permissions", permissions))
+                        .request(r -> {
+                            r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET);
+                            r.header("X-Permissions", permissions);
+                            if (!userId.isBlank()) {
+                                r.header("X-User-Id", userId);
+                            }
+                        })
                         .build();
 
             } catch (Exception e) {
@@ -100,40 +110,57 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     }
 
     // ==== RBAC : mapping rôle (claim JWT) -> autorités RBAC downstream ====
-    // Source de vérité côté périmètre (gateway). Les autorités doivent
-    // correspondre EXACTEMENT aux constantes des *RBACConfig HNS (hasAuthority).
-    // Rôles ultra-sensibles (DOSIMETRY_MEDICAL/_EXPORT_MEDICAL/_ADMIN, BLAST_ADMIN,
-    // BLAST_ALARM, INSPECTION_ADMIN) réservés à SYSTEM_ADMINISTRATOR faute de
-    // rôles médecin/RPO dédiés dans l'enum (dette : enrichir UserRole plus tard).
-    private static final java.util.Map<String, String> ROLE_PERMISSIONS = java.util.Map.of(
-            "SYSTEM_ADMINISTRATOR", String.join(",",
-                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE",
-                    "DOSIMETRY_MEDICAL", "DOSIMETRY_PCR_RPO", "DOSIMETRY_ADMIN", "DOSIMETRY_EXPORT_MEDICAL",
-                    "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_ALARM", "BLAST_REPORT", "BLAST_ADMIN",
-                    "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
-                    "INSPECTION_TEMPLATE_MANAGE", "INSPECTION_ADMIN"),
-            "HEALTH_SAFETY_COORDINATOR", String.join(",",
-                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE", "DOSIMETRY_PCR_RPO",
-                    "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_REPORT",
-                    "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
-                    "INSPECTION_TEMPLATE_MANAGE"),
-            "INCIDENT_INVESTIGATOR", String.join(",",
-                    "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW"),
-            "AUDITOR", String.join(",",
-                    "INSPECTION_VIEW", "INSPECTION_VALIDATE", "DOSIMETRY_READ_AGGREGATE", "BLAST_VIEW"),
-            "EMPLOYEE", String.join(",",
-                    "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW"));
+    // Les autorités doivent correspondre EXACTEMENT aux constantes des *RBACConfig
+    // HNS (hasAuthority). Rôles ultra-sensibles (DOSIMETRY_MEDICAL/_EXPORT_MEDICAL/
+    // _ADMIN, BLAST_ADMIN, BLAST_ALARM, INSPECTION_ADMIN) réservés aux admins faute
+    // de rôles médecin/RPO dédiés (dette : enrichir UserRole).
+    private static final String ADMIN_PERMS = String.join(",",
+            "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE",
+            "DOSIMETRY_MEDICAL", "DOSIMETRY_PCR_RPO", "DOSIMETRY_ADMIN", "DOSIMETRY_EXPORT_MEDICAL",
+            "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_ALARM", "BLAST_REPORT", "BLAST_ADMIN",
+            "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
+            "INSPECTION_TEMPLATE_MANAGE", "INSPECTION_ADMIN");
+    private static final String COORDINATOR_PERMS = String.join(",",
+            "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE", "DOSIMETRY_PCR_RPO",
+            "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_REPORT",
+            "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
+            "INSPECTION_TEMPLATE_MANAGE");
+    private static final String INVESTIGATOR_PERMS = String.join(",",
+            "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW");
+    private static final String AUDITOR_PERMS = String.join(",",
+            "INSPECTION_VIEW", "INSPECTION_VALIDATE", "DOSIMETRY_READ_AGGREGATE", "BLAST_VIEW");
+    // EMPLOYEE : PAS de DOSIMETRY_READ_NOMINATIVE (donnerait accès nominatif à TOUS
+    // les travailleurs via /dose-record/getAll sans garde SELF — fuite RGPD). Lecture
+    // inspections/tirs uniquement ; l'accès à SES propres doses relèvera d'une garde
+    // SELF dédiée (X-User-Id injecté ci-dessous).
+    private static final String EMPLOYEE_PERMS = String.join(",",
+            "INSPECTION_VIEW", "BLAST_VIEW");
+
+    // Clés en MAJUSCULES. Alias inclus car account.role stocke des valeurs libres
+    // en base (« Administrator », « HSE_MANAGER »/« HSE_OFFICER » seedés) qui ne
+    // correspondent pas 1:1 à l'enum -> sans alias, ces comptes (dont l'admin PROD)
+    // seraient verrouillés hors de tout HNS (fail-closed).
+    private static final java.util.Map<String, String> ROLE_PERMISSIONS = java.util.Map.ofEntries(
+            java.util.Map.entry("SYSTEM_ADMINISTRATOR", ADMIN_PERMS),
+            java.util.Map.entry("ADMINISTRATOR", ADMIN_PERMS),
+            java.util.Map.entry("ADMIN", ADMIN_PERMS),
+            java.util.Map.entry("HEALTH_SAFETY_COORDINATOR", COORDINATOR_PERMS),
+            java.util.Map.entry("HSE_MANAGER", COORDINATOR_PERMS),
+            java.util.Map.entry("HSE_OFFICER", COORDINATOR_PERMS),
+            java.util.Map.entry("INCIDENT_INVESTIGATOR", INVESTIGATOR_PERMS),
+            java.util.Map.entry("AUDITOR", AUDITOR_PERMS),
+            java.util.Map.entry("EMPLOYEE", EMPLOYEE_PERMS));
 
     /**
-     * Autorités CSV pour un rôle. Rôle inconnu/null -> chaîne vide : le header
-     * X-Permissions reste présent (requête utilisateur) mais n'accorde aucune
-     * autorité RBAC downstream (fail-closed côté HNS).
+     * Autorités CSV pour un rôle (normalisé MAJUSCULES + trim). Rôle inconnu/null
+     * -> chaîne vide : le header X-Permissions reste présent (requête utilisateur)
+     * mais n'accorde aucune autorité downstream (fail-closed côté HNS).
      */
     private static String permissionsForRole(String role) {
-        if (role == null) {
+        if (role == null || role.isBlank()) {
             return "";
         }
-        return ROLE_PERMISSIONS.getOrDefault(role.trim(), "");
+        return ROLE_PERMISSIONS.getOrDefault(role.trim().toUpperCase(), "");
     }
 
     public static class Config {
