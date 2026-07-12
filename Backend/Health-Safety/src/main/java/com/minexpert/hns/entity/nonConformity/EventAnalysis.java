@@ -53,6 +53,11 @@ public class EventAnalysis {
     private String summary;
     @Lob
     private String conclusion;
+    // Données spécifiques à la méthode d'analyse non-ICAM (5 Pourquoi, Ishikawa,
+    // AMDEC, Arbre des causes, Brainstorming, Autre), sérialisées en JSON par le
+    // frontend. ICAM continue d'utiliser les colonnes dédiées ci-dessus.
+    @Lob
+    private String methodData;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -60,7 +65,7 @@ public class EventAnalysis {
         return new EventAnalysisDTO(id, method, origin, description, individualFactors, technicalFactors,
                 organizationalFactors, rootCauses, nonConformity != null ? nonConformity.getId() : null,
                 StringListConverter.convertStringToParticipantsDTO(team), startDate, deadline, priority,
-                severityLevel, analysisStatus, summary, conclusion, createdAt, updatedAt);
+                severityLevel, analysisStatus, summary, conclusion, methodData, createdAt, updatedAt);
     }
 
     public void updateFromDTO(EventAnalysisDTO dto) {
@@ -79,5 +84,6 @@ public class EventAnalysis {
         this.analysisStatus = dto.getStatus();
         this.summary = dto.getSummary();
         this.conclusion = dto.getConclusion();
+        this.methodData = dto.getMethodData();
     }
 }

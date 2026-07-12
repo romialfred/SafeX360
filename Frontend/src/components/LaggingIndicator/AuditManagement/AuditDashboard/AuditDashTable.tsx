@@ -3,6 +3,8 @@ import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
 import { useEffect, useState } from "react";
 import { getInProgressRecommendations, getPendingRecommendations } from "../../../../services/AuditService";
+import { getEmployeeDropdown } from "../../../../services/EmployeeService";
+import { mapIdToName } from "../../../../utility/OtherUtilities";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { recPriorityLabel, recStatusLabel } from "../auditLabels";
 
@@ -60,10 +62,15 @@ const getStatusTag = (status: string) => {
 const AuditDashTable = () => {
     const [_pending, setPending] = useState<any[]>([]);
     const [active, setActive] = useState<any[]>([]);
+    // Résolution id → nom du responsable : les noms d'employés vivent dans
+    // MineXpert (defaultdb), la projection HNS n'expose que actionManagerId.
+    // On charge la map une fois, comme le reste du module audit.
+    const [empMap, setEmpMap] = useState<Record<string, any>>({});
 
     useEffect(() => {
         getPendingRecommendations().then(setPending).catch(() => setPending([]));
         getInProgressRecommendations().then(setActive).catch(() => setActive([]));
+        getEmployeeDropdown().then((res) => setEmpMap(mapIdToName(res))).catch(() => setEmpMap({}));
     }, []);
 
     return (
@@ -88,7 +95,7 @@ const AuditDashTable = () => {
                 <Column field="title" header="Recommandation" sortable />
                 <Column field="auditTitle" header="Audit" />
                 <Column field="priority" header="Priorité" body={(rowData) => getPriorityTag(rowData.priority)} />
-                <Column field="actionManagerId" header="Responsable" />
+                <Column header="Responsable" body={(rowData) => empMap[rowData.actionManagerId]?.name || rowData.actionManagerId || '-'} />
                 <Column field="deadline" header="Échéance" body={(rowData) => formatDateShort(rowData.deadline)} />
                 <Column field="status" header="Statut" body={(rowData) => getStatusTag(rowData.status)} />
             </DataTable>

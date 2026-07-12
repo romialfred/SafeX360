@@ -37,6 +37,8 @@ public class EventAnalysisDTO {
     private String status;
     private String summary;
     private String conclusion;
+    // JSON des champs spécifiques à la méthode d'analyse (voir EventAnalysis).
+    private String methodData;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -45,6 +47,6 @@ public class EventAnalysisDTO {
         return new EventAnalysis(id, method, origin, description, individualFactors, technicalFactors,
                 organizationalFactors, rootCauses, new NonConformity(nonConformityId),
                 StringListConverter.convertParticipantsToString(team), startDate, deadline,
-                priority, severityLevel, status, summary, conclusion, createdAt, updatedAt);
+                priority, severityLevel, status, summary, conclusion, methodData, createdAt, updatedAt);
     }
 }

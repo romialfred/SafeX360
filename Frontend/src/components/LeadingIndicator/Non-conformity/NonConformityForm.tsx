@@ -111,7 +111,11 @@ const NonConformityForm = () => {
                 severityLevel: '',
                 status: '',
                 summary: '',
-                conclusion: ''
+                conclusion: '',
+                // Données spécifiques à la méthode d'analyse non-ICAM (5 Pourquoi,
+                // Ishikawa, AMDEC, Arbre, Brainstorming, Autre). Objet libre
+                // sérialisé en JSON à la soumission (colonne methodData côté HNS).
+                methodData: {} as Record<string, any>
             },
 
 
@@ -177,11 +181,14 @@ const NonConformityForm = () => {
             analysis: {
                 method: (value) => value || activeStep < 1 ? null : "La méthode d'analyse est requise",
                 origin: (value) => value || activeStep < 1 ? null : "L'origine est requise",
-                description: (value) => value || activeStep < 1 ? null : "La description est requise",
-                individualFactors: (value) => value || activeStep < 1 ? null : "Les facteurs individuels sont requis",
-                technicalFactors: (value) => value || activeStep < 1 ? null : "Les facteurs techniques sont requis",
-                organizationalFactors: (value) => value || activeStep < 1 ? null : "Les facteurs organisationnels sont requis",
-                rootCauses: (value) => value || activeStep < 1 ? null : "Les causes profondes sont requises",
+                // Champs propres à la méthode ICAM : requis uniquement quand la
+                // méthode choisie est ICAM (les autres méthodes ont leurs propres
+                // champs dans analysis.methodData, sinon on bloquait toute méthode ≠ ICAM).
+                description: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "La description est requise",
+                individualFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs individuels sont requis",
+                technicalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs techniques sont requis",
+                organizationalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs organisationnels sont requis",
+                rootCauses: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les causes profondes sont requises",
                 startDate: (value) => value || activeStep < 1 ? null : "La date de début est requise",
                 deadline: (value) => value || activeStep < 1 ? null : "L'échéance est requise",
                 priority: (value) => value || activeStep < 1 ? null : "La priorité est requise",
@@ -368,7 +375,9 @@ const NonConformityForm = () => {
         delete ncPayload.archiveManager;
         reportNonConformity({
             nonConformity: ncPayload,
-            analysis: values.analysis,
+            // methodData (objet libre par méthode d'analyse) sérialisé en JSON :
+            // la colonne HNS methodData est un String/@Lob.
+            analysis: { ...values.analysis, methodData: JSON.stringify(values.analysis.methodData || {}) },
             correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id })),
         }).then((_response) => {
             successNotification("Constat central déclaré avec succès !");

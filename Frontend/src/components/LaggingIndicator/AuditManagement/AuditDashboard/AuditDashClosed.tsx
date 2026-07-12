@@ -2,9 +2,14 @@ import { Card, Text, Group, Badge, Divider } from "@mantine/core";
 import { IconCircleCheck, IconUser, IconCalendar } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getAllRecommendations } from "../../../../services/AuditService";
+import { getEmployeeDropdown } from "../../../../services/EmployeeService";
+import { mapIdToName } from "../../../../utility/OtherUtilities";
 
 const AuditDashClosed = () => {
   const [items, setItems] = useState<any[]>([]);
+  // actionManagerName n'existe pas dans la projection : on résout le nom
+  // depuis MineXpert via empMap, comme le reste du module audit.
+  const [empMap, setEmpMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     getAllRecommendations()
@@ -16,6 +21,7 @@ const AuditDashClosed = () => {
         setItems(closed);
       })
       .catch(() => setItems([]));
+    getEmployeeDropdown().then((res) => setEmpMap(mapIdToName(res))).catch(() => setEmpMap({}));
   }, []);
 
   return (
@@ -32,7 +38,7 @@ const AuditDashClosed = () => {
           <Card key={rec.id} shadow="xs" p="sm" radius="md" withBorder className="bg-green-50/40 border-green-100">
             <Text c="dark" className="!mb-1">{rec.title || rec.description || '-'}</Text>
             <Group gap="md" className="text-xs text-gray-600">
-              <span className="inline-flex items-center gap-1"><IconUser size={14} /> {rec.actionManagerName || rec.actionManagerId || '-'}</span>
+              <span className="inline-flex items-center gap-1"><IconUser size={14} /> {empMap[rec.actionManagerId]?.name || rec.actionManagerName || rec.actionManagerId || '-'}</span>
               <span className="inline-flex items-center gap-1"><IconCalendar size={14} /> {rec.updatedAt ? new Date(rec.updatedAt).toLocaleDateString() : (rec.deadline ? new Date(rec.deadline).toLocaleDateString() : '-')}</span>
             </Group>
           </Card>

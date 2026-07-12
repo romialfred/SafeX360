@@ -1,0 +1,40 @@
+name: Keep Render services warm
+
+# Les services SafeX tournent sur l'offre gratuite Render : ils s'endorment
+# apres ~15 min d'inactivite et mettent 50-60 s a se reveiller (renvoyant des
+# 500 pendant ce laps). Ce workflow les ping toutes les 10 min pour les garder
+# chauds. Meme une reponse non-200 reveille le dyno (le conteneur doit demarrer
+# pour repondre). Declenchable aussi a la main juste avant une demo.
+
+on:
+  schedule:
+    # Toutes les 10 min. Note : le planificateur GitHub peut retarder de
+    # quelques minutes en periode de forte charge ; la marge 10 min vs 15 min
+    # d'endormissement absorbe ce delai.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping des services SafeX
+        run: |
+          set +e
+          urls=(
+            "https://safex360-gateway.onrender.com/actuator/health"
+            "https://safex360-hns.onrender.com/actuator/health"
+            "https://safex360-minexpert.onrender.com/actuator/health"
+            "https://safex360-eureka.onrender.com/"
+          )
+          fail=0
+          for url in "${urls[@]}"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$url")
+            echo "$url -> ${code:-timeout}"
+            # 000 = pas de reponse du tout (service injoignable) : on le signale
+            # mais on ne fait PAS echouer le job pour un simple reveil lent.
+            if [ "$code" = "000" ]; then fail=$((fail+1)); fi
+          done
+          echo "Services injoignables : $fail/${#urls[@]}"
+          # Le job reste vert : le but est de reveiller, pas de monitorer.
+          exit 0

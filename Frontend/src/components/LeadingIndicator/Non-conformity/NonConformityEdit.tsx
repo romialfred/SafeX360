@@ -107,7 +107,8 @@ const NonConformityEdit = () => {
                 severityLevel: '',
                 status: '',
                 summary: '',
-                conclusion: ''
+                conclusion: '',
+                methodData: {} as Record<string, any>
             },
 
 
@@ -167,11 +168,11 @@ const NonConformityEdit = () => {
             analysis: {
                 method: (value) => value || activeStep < 1 ? null : "La méthode d'analyse est requise",
                 origin: (value) => value || activeStep < 1 ? null : "L'origine est requise",
-                description: (value) => value || activeStep < 1 ? null : 'La description est requise',
-                individualFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs individuels sont requis',
-                technicalFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs techniques sont requis',
-                organizationalFactors: (value) => value || activeStep < 1 ? null : 'Les facteurs organisationnels sont requis',
-                rootCauses: (value) => value || activeStep < 1 ? null : 'Les causes profondes sont requises',
+                description: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : 'La description est requise',
+                individualFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : 'Les facteurs individuels sont requis',
+                technicalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : 'Les facteurs techniques sont requis',
+                organizationalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : 'Les facteurs organisationnels sont requis',
+                rootCauses: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : 'Les causes profondes sont requises',
                 startDate: (value) => value || activeStep < 1 ? null : 'La date de début est requise',
                 deadline: (value) => value || activeStep < 1 ? null : "L'échéance est requise",
                 priority: (value) => value || activeStep < 1 ? null : 'La priorité est requise',
@@ -219,8 +220,12 @@ const NonConformityEdit = () => {
             dispatch(hideOverlay());
         })
         getEventAnalysisByNonConformityId(id).then((data) => {
+            // methodData est stocké en JSON (String) côté HNS : on le reparse en
+            // objet pour réalimenter les champs des méthodes non-ICAM.
+            let parsedMethodData: Record<string, any> = {};
+            try { parsedMethodData = data.methodData ? JSON.parse(data.methodData) : {}; } catch { parsedMethodData = {}; }
             form.setFieldValue("analysis", {
-                ...data, startDate: data.startDate ? new Date(data.startDate) : new Date(), deadline: data.deadline ? new Date(data.deadline) : new Date()
+                ...data, methodData: parsedMethodData, startDate: data.startDate ? new Date(data.startDate) : new Date(), deadline: data.deadline ? new Date(data.deadline) : new Date()
             })
         }).catch((_error) => console.error(_error))
         getActionsByNonConformityId(Number(id)).then((data) => {
@@ -415,7 +420,8 @@ const NonConformityEdit = () => {
         delete ncPayload.archiveManager;
         updateNonConformity({
             nonConformity: ncPayload,
-            analysis: values.analysis,
+            // methodData (objet) resérialisé en JSON pour la colonne HNS.
+            analysis: { ...values.analysis, methodData: typeof values.analysis.methodData === 'string' ? values.analysis.methodData : JSON.stringify(values.analysis.methodData || {}) },
             correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id }))
         }).then((_response) => {
             successNotification("Constat central mis à jour");

@@ -16,7 +16,10 @@ import { IconUsers, IconPlus, IconCalendar, IconTarget, IconSearch } from '@tabl
 import TextEditor from '../../../UtilityComp/TextEditor';
 
 const AnalysisStep = ({ form, employees, empMap }: any) => {
-    const [selectedMethod, _setSelectedMethod] = React.useState<string>('ICAM');
+    // La méthode d'analyse est pilotée par le form (analysis.method) : l'ancien
+    // état local n'était jamais mis à jour (setter inutilisé) → le switch restait
+    // bloqué sur ICAM et la méthode choisie n'était jamais soumise.
+    const selectedMethod = form.values?.analysis?.method || 'ICAM';
     const [employee, setEmployee] = useState<string | null>(null);
     const [role, setRole] = useState<string | null>(null);
 
@@ -60,7 +63,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                 <Textarea
                                     placeholder={`Réponse au pourquoi ${num}`}
                                     minRows={2}
-
+                                    {...form.getInputProps(`analysis.methodData.why${num}`)}
                                 />
                             </div>
                         ))}
@@ -79,7 +82,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Main d'œuvre (Personnel)"
                                     placeholder="Causes liées au personnel"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaPersonnel')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -87,7 +90,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Matière (Matériaux)"
                                     placeholder="Causes liées aux matériaux"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaMatiere')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -95,7 +98,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Machine (Équipement)"
                                     placeholder="Causes liées aux équipements"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaMachine')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -103,7 +106,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Méthode (Procédures)"
                                     placeholder="Causes liées aux méthodes"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaMethode')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -111,7 +114,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Milieu (Environnement)"
                                     placeholder="Causes liées à l'environnement"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaMilieu')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -119,7 +122,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Mesure (Contrôle)"
                                     placeholder="Causes liées aux mesures/contrôles"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.ishikawaMesure')}
                                 />
                             </Grid.Col>
                         </Grid>
@@ -198,7 +201,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Mode de défaillance"
                                     placeholder="Description du mode de défaillance"
                                     minRows={2}
-
+                                    {...form.getInputProps('analysis.methodData.amdecMode')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -206,7 +209,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Effets de la défaillance"
                                     placeholder="Conséquences de la défaillance"
                                     minRows={2}
-
+                                    {...form.getInputProps('analysis.methodData.amdecEffets')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={4}>
@@ -214,7 +217,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Gravité (G)"
                                     placeholder="1-10"
                                     data={Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-
+                                    {...form.getInputProps('analysis.methodData.amdecGravite')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={4}>
@@ -222,7 +225,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Occurrence (O)"
                                     placeholder="1-10"
                                     data={Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-
+                                    {...form.getInputProps('analysis.methodData.amdecOccurrence')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={4}>
@@ -230,7 +233,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Détection (D)"
                                     placeholder="1-10"
                                     data={Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-
+                                    {...form.getInputProps('analysis.methodData.amdecDetection')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -238,7 +241,11 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Criticité (G × O × D)"
                                     placeholder="Calcul automatique"
                                     readOnly
-
+                                    value={String(
+                                        (Number(form.values?.analysis?.methodData?.amdecGravite) || 0) *
+                                        (Number(form.values?.analysis?.methodData?.amdecOccurrence) || 0) *
+                                        (Number(form.values?.analysis?.methodData?.amdecDetection) || 0) || ''
+                                    )}
                                 />
                             </Grid.Col>
                         </Grid>
@@ -257,7 +264,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Événement indésirable"
                                     placeholder="Description de l'événement à analyser"
                                     minRows={2}
-
+                                    {...form.getInputProps('analysis.methodData.arbreEvenement')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -265,7 +272,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Causes immédiates"
                                     placeholder="Causes directes de l'événement"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.arbreImmediate')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
@@ -273,7 +280,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Causes sous-jacentes"
                                     placeholder="Causes profondes"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.arbreSousJacentes')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -281,7 +288,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Causes racines"
                                     placeholder="Causes fondamentales à traiter"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.arbreRacines')}
                                 />
                             </Grid.Col>
                         </Grid>
@@ -300,7 +307,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Idées générées"
                                     placeholder="Toutes les idées et causes potentielles identifiées"
                                     minRows={5}
-
+                                    {...form.getInputProps('analysis.methodData.brainstormGenerees')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -308,7 +315,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Idées retenues"
                                     placeholder="Idées sélectionnées après tri et priorisation"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.brainstormRetenues')}
                                 />
                             </Grid.Col>
                         </Grid>
@@ -323,7 +330,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                 <TextInput
                                     label="Nom de la méthode"
                                     placeholder="Spécifier la méthode utilisée"
-
+                                    {...form.getInputProps('analysis.methodData.autreNom')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -331,7 +338,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Description de la méthode"
                                     placeholder="Décrire la méthode d'analyse utilisée"
                                     minRows={3}
-
+                                    {...form.getInputProps('analysis.methodData.autreDescription')}
                                 />
                             </Grid.Col>
                             <Grid.Col span={12}>
@@ -339,7 +346,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                     label="Résultats de l'analyse"
                                     placeholder="Résultats obtenus avec cette méthode"
                                     minRows={4}
-
+                                    {...form.getInputProps('analysis.methodData.autreResultats')}
                                 />
                             </Grid.Col>
                         </Grid>
@@ -575,7 +582,6 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                             size="sm"
                             label="Méthode d'analyse"
                             placeholder="Sélectionner la méthode"
-                            defaultValue={selectedMethod}
                             data={[
                                 { value: '5 Pourquoi', label: '5 Pourquoi' },
                                 { value: 'Ishikawa', label: 'Diagramme d\'Ishikawa' },
@@ -586,6 +592,7 @@ const AnalysisStep = ({ form, employees, empMap }: any) => {
                                 { value: 'Autre', label: 'Autre méthode' }
                             ]}
                             withAsterisk
+                            {...form.getInputProps('analysis.method')}
                         />
                     </Grid.Col>
 
