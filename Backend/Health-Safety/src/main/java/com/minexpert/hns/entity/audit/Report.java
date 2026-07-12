@@ -8,6 +8,8 @@ import com.minexpert.hns.dto.audit.ReportDTO;
 import com.minexpert.hns.enums.AuditReportStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,6 +42,7 @@ public class Report {
     private String rejectionComment;
     @Lob
     private String description;
+    @Enumerated(EnumType.STRING)
     private AuditReportStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

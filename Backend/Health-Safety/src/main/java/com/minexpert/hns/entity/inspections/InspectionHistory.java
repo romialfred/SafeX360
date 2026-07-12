@@ -8,6 +8,8 @@ import com.minexpert.hns.enums.InspectionStatus;
 import com.minexpert.hns.entity.GeneralInspection;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,6 +30,7 @@ public class InspectionHistory {
     private Long id;
     private Long ownerId;
     private LocalDate date;
+    @Enumerated(EnumType.STRING)
     private InspectionStatus status;
     private String comment;
     @ManyToOne(fetch = FetchType.LAZY)

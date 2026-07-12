@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.enums.IncidentStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,6 +28,7 @@ public class IncidentHistory {
     private Long id;
     private Long ownerId;
     private LocalDate date;
+    @Enumerated(EnumType.STRING)
     private IncidentStatus status;
     private String comment;
     @ManyToOne(fetch = FetchType.LAZY)

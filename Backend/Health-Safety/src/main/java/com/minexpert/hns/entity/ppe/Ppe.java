@@ -2,6 +2,8 @@ package com.minexpert.hns.entity.ppe;
 
 import lombok.*;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,6 +30,7 @@ public class Ppe {
     private Integer minStock;
     private Integer stock;
     private String certificationStandard;
+    @Enumerated(EnumType.STRING)
     private PpeStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

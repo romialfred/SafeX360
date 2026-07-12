@@ -9,6 +9,8 @@ import com.minexpert.hns.enums.AuditStatus;
 import com.minexpert.hns.enums.IncidentStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,6 +32,7 @@ public class AuditHistory {
     private Long id;
     private Long ownerId;
     private LocalDate date;
+    @Enumerated(EnumType.STRING)
     private AuditStatus status;
     private String comment;
     @Lob

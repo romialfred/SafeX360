@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.enums.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,6 +29,7 @@ public class PositionAssignment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requirement_id", nullable = false)
     private Requirement requirement;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

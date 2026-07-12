@@ -34,6 +34,7 @@ public class HsActivity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false, unique = true)
     private Activity activity;
+    @Enumerated(EnumType.STRING)
     private ActivityType type;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id", nullable = false)

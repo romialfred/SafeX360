@@ -7,6 +7,8 @@ import com.minexpert.hns.entity.Media;
 import com.minexpert.hns.enums.DocStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,6 +36,7 @@ public class ComplianceDocs {
     private Long employeeId;
     private LocalDate expiryDate;
     private String comment;
+    @Enumerated(EnumType.STRING)
     private DocStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

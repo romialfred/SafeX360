@@ -6,6 +6,8 @@ import com.minexpert.hns.dto.parameters.WeatherConditionDTO;
 import com.minexpert.hns.enums.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,6 +26,7 @@ public class WeatherCondition {
     private String name;
     private String description;
     private Long companyId;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

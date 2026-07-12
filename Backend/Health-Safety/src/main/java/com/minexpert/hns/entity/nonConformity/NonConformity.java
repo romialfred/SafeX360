@@ -34,6 +34,7 @@ public class NonConformity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Enumerated(EnumType.STRING)
     private EventType type;
     @Column(unique = true)
     private String number;

@@ -6,6 +6,8 @@ import com.minexpert.hns.dto.parameters.MeasurementDTO;
 import com.minexpert.hns.enums.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,6 +29,7 @@ public class Measurement {
     private Double threshold;
     private String description;
     private Long companyId;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
