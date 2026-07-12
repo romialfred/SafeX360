@@ -14,7 +14,7 @@ import {
     TextInput,
     Tooltip,
 } from '@mantine/core';
-import { IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
+import { IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconTruckDelivery, IconX } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { DateInput } from '@mantine/dates';
 import { DataTable } from 'primereact/datatable';
@@ -24,9 +24,11 @@ import { getEmployeesWithDepartment } from '../../services/EmployeeService';
 import {
     approvePpeRequest,
     createPpeRequest,
+    deliverPpeRequest,
     getAllPpeRequests,
     rejectPpeRequest,
 } from '../../services/PpeRequestService';
+import { notifyError } from '../../utility/notifyError';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
 import { toLocalDate } from '../../utility/dateConversion';
 import { mapIdToName } from '../../utility/OtherUtilities';
@@ -192,6 +194,21 @@ const PPERequestsTable = () => {
         }
     };
 
+    // Livraison EPI : passe une demande APPROVED en DELIVERED (garde d'état côté
+    // backend). Message clair si l'état n'est pas APPROVED (REQUEST_NOT_APPROVED).
+    const handleDeliver = async (row: any) => {
+        try {
+            setLoading(true);
+            await deliverPpeRequest(row.id);
+            successNotification(t('requests.deliverSuccess', 'Demande marquée comme livrée'));
+            fetchRequests();
+        } catch (err: any) {
+            notifyError(err, t('requests.deliverError', 'Échec de la livraison'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmitRequest = (values: typeof requestForm.values) => {
         const empSize = values.empIds?.length || 0;
         let error = '';
@@ -310,6 +327,19 @@ const PPERequestsTable = () => {
                         </ActionIcon>
                     </Tooltip>
                 </>
+            )}
+            {String(rowData.status).toUpperCase() === 'APPROVED' && (
+                <Tooltip label={t('requests.tooltipDeliver', 'Marquer comme livré')} withArrow>
+                    <ActionIcon
+                        variant="light"
+                        color="grape"
+                        size="sm"
+                        onClick={() => handleDeliver(rowData)}
+                        aria-label={t('requests.ariaDeliver', 'Marquer la demande comme livrée')}
+                    >
+                        <IconTruckDelivery size={14} stroke={1.5} />
+                    </ActionIcon>
+                </Tooltip>
             )}
             <Tooltip label={t('requests.tooltipView')} withArrow>
                 <ActionIcon
