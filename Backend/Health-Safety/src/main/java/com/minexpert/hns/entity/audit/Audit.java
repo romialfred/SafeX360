@@ -15,6 +15,8 @@ import com.minexpert.hns.utility.StringListConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -44,6 +46,7 @@ public class Audit {
     private String methods;
     @Lob
     private String description;
+    @Enumerated(EnumType.STRING)
     private AuditCategory category;
 
     @Column(columnDefinition = "json")
@@ -53,7 +56,9 @@ public class Audit {
     private String references;
     private LocalDate startDate;
     private LocalDate endDate;
+    @Enumerated(EnumType.STRING)
     private AuditStatus status;
+    @Enumerated(EnumType.STRING)
     private PlanningStatus planningStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

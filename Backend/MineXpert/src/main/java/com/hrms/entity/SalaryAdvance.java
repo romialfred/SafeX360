@@ -7,6 +7,8 @@ import com.hrms.dto.ReimbursementStatus;
 import com.hrms.dto.SalaryAdvanceDTO;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,7 +45,9 @@ public class SalaryAdvance {
     private Boolean secondPayment;
     private Boolean thirdPayment;
     private Long requestedBy;
+    @Enumerated(EnumType.STRING)
     private LeaveStatus status;
+    @Enumerated(EnumType.STRING)
     private ReimbursementStatus reimbursement;
 
     public SalaryAdvanceDTO toDTO() {

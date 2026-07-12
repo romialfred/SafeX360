@@ -8,6 +8,8 @@ import com.hrms.dto.LeaveDTO;
 import com.hrms.dto.LeaveStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,6 +32,7 @@ public class Leave {
     private Long empId;
     private Long type;
     private String reason;
+    @Enumerated(EnumType.STRING)
     private LeaveStatus status;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

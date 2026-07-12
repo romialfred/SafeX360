@@ -7,6 +7,8 @@ import com.minexpert.hns.enums.ActivityReportStatus;
 import com.minexpert.hns.utility.StringListConverter;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,6 +34,7 @@ public class ActivityReport {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)
     private HsActivity activity;
+    @Enumerated(EnumType.STRING)
     private ActivityReportStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -7,6 +7,8 @@ import com.hrms.dto.Status;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,6 +29,7 @@ public class PositionCategory {
     private String grade;
       @Column(name = "`range`")
     private String range;
+    @Enumerated(EnumType.STRING)
     private Status status;
     private LocalDateTime creationDate;
 

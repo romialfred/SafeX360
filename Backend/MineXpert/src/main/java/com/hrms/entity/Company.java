@@ -8,6 +8,8 @@ import com.hrms.dto.CompanyStatus;
 
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +35,7 @@ public class Company {
     private LocalDateTime endDate;
     private LocalDateTime creationDate;
     private LocalDateTime statusDate;
+    @Enumerated(EnumType.STRING)
     private CompanyStatus status;
 
     public CompanyDTO toDTO(){

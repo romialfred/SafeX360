@@ -4,6 +4,8 @@ import com.hrms.dto.Status;
 import com.hrms.dto.Timesheet.ConstraintsDTO;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +19,7 @@ public class Constraints {
 
     @Id
     private String flag;
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     public ConstraintsDTO toDTO() {

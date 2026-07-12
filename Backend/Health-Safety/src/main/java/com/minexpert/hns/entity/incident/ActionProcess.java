@@ -6,6 +6,8 @@ import com.minexpert.hns.dto.response.ActionProcessResponse;
 import com.minexpert.hns.enums.ActionStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +26,7 @@ public class ActionProcess {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Enumerated(EnumType.STRING)
     private ActionStatus status;
     private String description;
     private Integer progress;

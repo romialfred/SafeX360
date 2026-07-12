@@ -13,6 +13,8 @@ import com.hrms.enums.TeamType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -43,14 +45,17 @@ public class Team {
     @JoinColumn(name = "department_id")
     private Department department;
 
+    @Enumerated(EnumType.STRING)
     private Day weekStartDay;
     private LocalDate nextWeekStartDate;
 
     private Integer workingHours;
     private Integer maxWorkingHours;
     private String color;
+    @Enumerated(EnumType.STRING)
     private TeamType type;
     private String description;
+    @Enumerated(EnumType.STRING)
     private Rotations rotation;
     private Integer remainingWorkingDays;
     private Integer remainingRestDays;
@@ -61,6 +66,7 @@ public class Team {
     @JsonManagedReference
     private List<TeamManager> teamManagers;
 
+    @Enumerated(EnumType.STRING)
     private TeamStatus status;
 
     public TeamDTO toDTO() {

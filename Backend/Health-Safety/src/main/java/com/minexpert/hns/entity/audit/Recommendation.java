@@ -7,6 +7,8 @@ import com.minexpert.hns.dto.audit.RecommendationDTO;
 import com.minexpert.hns.enums.RecommendationStatus;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -41,6 +43,7 @@ public class Recommendation {
     private String correctiveAction;
     private LocalDate deadline;
     private Integer progress;
+    @Enumerated(EnumType.STRING)
     private RecommendationStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

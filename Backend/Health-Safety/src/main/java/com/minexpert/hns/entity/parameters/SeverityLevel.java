@@ -7,6 +7,8 @@ import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.utility.StringListConverter;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,6 +32,7 @@ public class SeverityLevel {
     private String description;
     private Integer level;
     private String examples;
+    @Enumerated(EnumType.STRING)
     private Status status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_category_id", nullable = false)

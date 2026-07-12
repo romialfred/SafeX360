@@ -6,6 +6,8 @@ import com.minexpert.hns.dto.parameters.IncidentTypeDTO;
 import com.minexpert.hns.enums.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,6 +29,7 @@ public class IncidentType {
     private String name;
     private String description;
     private Long companyId;
+    @Enumerated(EnumType.STRING)
     private Status status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_category_id", nullable = false)

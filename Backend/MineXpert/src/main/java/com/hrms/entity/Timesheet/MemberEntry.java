@@ -10,6 +10,8 @@ import com.hrms.enums.EntryStatus;
 import com.hrms.enums.EntryType;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -51,7 +53,9 @@ public class MemberEntry {
     @Lob
     private String comments;
 
+    @Enumerated(EnumType.STRING)
     private EntryStatus status;
+    @Enumerated(EnumType.STRING)
     private EntryType type;
 
     public MemberEntry(Long id) {

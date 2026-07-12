@@ -6,6 +6,8 @@ import com.hrms.dto.PositionDTO;
 import com.hrms.dto.Status;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,6 +40,7 @@ public class Position {
     private Long transportAllowance;
     private Long cashHandlingAllowance;
     private LocalDateTime   creationDate;
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     @ManyToOne

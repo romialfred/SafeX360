@@ -6,6 +6,8 @@ import com.hrms.enums.SignType;
 import com.hrms.utility.Base64Util;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,6 +36,7 @@ public class Signature {
     private String signedBy;
     @Lob
     private byte[] signature;
+    @Enumerated(EnumType.STRING)
     private SignType signType;
 
     public SignatureDTO toDTO() {
