@@ -49,8 +49,9 @@ public class DocumentController {
 
     @PutMapping("/status/{id}")
     public ResponseEntity<DocumentDTO> changeStatus(@PathVariable Long id,
-            @RequestParam DocumentStatus status) throws HSException {
-        return ResponseEntity.ok(documentService.changeStatus(id, status));
+            @RequestParam DocumentStatus status,
+            @RequestParam(required = false) String reason) throws HSException {
+        return ResponseEntity.ok(documentService.changeStatus(id, status, reason));
     }
 
     @GetMapping("/latest")

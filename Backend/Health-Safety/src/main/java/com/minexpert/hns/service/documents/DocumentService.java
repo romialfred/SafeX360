@@ -17,7 +17,7 @@ public interface DocumentService {
 
     List<DocumentDTO> getActive() throws HSException;
 
-    DocumentDTO changeStatus(Long id, DocumentStatus status) throws HSException;
+    DocumentDTO changeStatus(Long id, DocumentStatus status, String reason) throws HSException;
 
     // Retrieve last 5 uploaded documents
     List<DocumentDTO> getLatest() throws HSException;

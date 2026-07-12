@@ -41,6 +41,14 @@ public class PpeRequestController {
         return ResponseEntity.ok(requestService.rejectRequest(id, comment));
     }
 
+    // Livraison effective d'une demande EPI APPROVED (passage -> DELIVERED, horodaté).
+    @PutMapping("/deliver/{id}")
+    public ResponseEntity<PpeRequestDTO> deliver(
+            @PathVariable Long id,
+            @RequestParam(required = false) String comment) throws HSException {
+        return ResponseEntity.ok(requestService.deliverRequest(id, comment));
+    }
+
     @GetMapping("/get/{id}")
     public ResponseEntity<PpeRequestDTO> getById(@PathVariable Long id) throws HSException {
         return ResponseEntity.ok(requestService.getById(id));

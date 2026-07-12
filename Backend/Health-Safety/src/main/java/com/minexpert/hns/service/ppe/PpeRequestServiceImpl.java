@@ -103,6 +103,27 @@ public class PpeRequestServiceImpl implements PpeRequestService {
         }
 
         @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "ppeRequestById", key = "#id"),
+                        @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
+        })
+        public PpeRequestDTO deliverRequest(Long id, String comment) throws HSException {
+                PpeRequest req = requestRepository.findById(id)
+                                .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                // Garde de machine à états : seule une demande APPROVED peut être livrée.
+                if (req.getStatus() != PpeRequestStatus.APPROVED) {
+                        throw new HSException("REQUEST_NOT_APPROVED");
+                }
+                req.setStatus(PpeRequestStatus.DELIVERED);
+                req.setDeliveredAt(java.time.LocalDateTime.now());
+                if (comment != null && !comment.isBlank()) {
+                        req.setComment(comment);
+                }
+                PpeRequest delivered = requestRepository.save(req);
+                return delivered.toDTO();
+        }
+
+        @Override
         @Cacheable(cacheNames = "ppeRequestById", key = "#id")
         public PpeRequestDTO getById(Long id) throws HSException {
                 PpeRequest req = requestRepository.findById(id)

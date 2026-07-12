@@ -31,6 +31,7 @@ public class DocumentDTO {
     private MediaDTO media;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String statusReason;
 
     public Document toEntity() {
         return new Document(
@@ -48,7 +49,8 @@ public class DocumentDTO {
                 expiryDate,
 
                 createdAt,
-                updatedAt);
+                updatedAt,
+                statusReason);
     }
 
 }

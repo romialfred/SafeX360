@@ -33,6 +33,8 @@ public class PpeRequest {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // Traçabilité de la livraison EPI : horodatage du passage APPROVED -> DELIVERED.
+    private LocalDateTime deliveredAt;
 
     public PpeRequest(Long id) {
         this.id = id;
@@ -52,6 +54,6 @@ public class PpeRequest {
     public PpeRequestDTO toDTO() {
         return new PpeRequestDTO(id, StringListConverter.convertToLongList(empIds),
                 StringListConverter.convertToLongList(ppeIds), desiredDate, priority, reason, comment,
-                status, createdAt, updatedAt);
+                status, createdAt, updatedAt, deliveredAt);
     }
 }

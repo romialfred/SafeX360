@@ -49,6 +49,11 @@ public class Document {
 
     private LocalDateTime updatedAt;
 
+    // Traçabilité ISO : motif du dernier changement de statut (approbation,
+    // archivage, rejet...). Renseigné via /documents/status/{id}?reason=...
+    @Column(length = 1000)
+    private String statusReason;
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
@@ -90,7 +95,8 @@ public class Document {
                 expiryDate,
                 null,
                 createdAt,
-                updatedAt);
+                updatedAt,
+                statusReason);
     }
 
     public Document(Long id) {

@@ -14,6 +14,8 @@ public interface PpeRequestService {
 
     PpeRequestDTO rejectRequest(Long id, String comment) throws HSException;
 
+    PpeRequestDTO deliverRequest(Long id, String comment) throws HSException;
+
     PpeRequestDTO getById(Long id) throws HSException;
 
     List<PpeRequestDTO> getAllRequests() throws HSException;

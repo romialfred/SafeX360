@@ -98,11 +98,15 @@ public class DocumentServiceImpl implements DocumentService {
                         @CacheEvict(cacheNames = CACHE_DOCUMENTS_LATEST, allEntries = true),
                         @CacheEvict(cacheNames = CACHE_DOCUMENTS_APPROVED, allEntries = true)
         })
-        public DocumentDTO changeStatus(Long id, DocumentStatus status)
+        public DocumentDTO changeStatus(Long id, DocumentStatus status, String reason)
                         throws HSException {
                 Document doc = documentRepository.findById(id)
                                 .orElseThrow(() -> new HSException("DOCUMENT_NOT_FOUND"));
                 doc.setStatus(status);
+                // Traçabilité ISO : conserve le motif du changement de statut (peut être null).
+                if (reason != null && !reason.isBlank()) {
+                        doc.setStatusReason(reason);
+                }
                 Document saved = documentRepository.save(doc);
                 return saved.toDTO();
         }

@@ -29,11 +29,12 @@ public class PpeRequestDTO {
     private PpeRequestStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime deliveredAt;
 
     public PpeRequest toEntity() {
         return new PpeRequest(id, empIds.toString(), ppeIds.toString(), desiredDate, priority, reason, comment, status,
                 createdAt,
-                updatedAt);
+                updatedAt, deliveredAt);
     }
 
 }
