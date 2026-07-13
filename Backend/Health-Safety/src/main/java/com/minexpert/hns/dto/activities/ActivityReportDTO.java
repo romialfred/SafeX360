@@ -28,7 +28,8 @@ public class ActivityReportDTO {
     private LocalDateTime updatedAt;
 
     public ActivityReport toEntity() {
-        return new ActivityReport(this.id, this.summary, this.findings, null, signOff.toString(),
+        return new ActivityReport(this.id, this.summary, this.findings, null,
+                com.minexpert.hns.utility.StringListConverter.listToString(signOff),
                 activityId != null ? new HsActivity(activityId) : null, status, this.createdAt,
                 this.updatedAt);
     }

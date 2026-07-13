@@ -44,7 +44,7 @@ public class DocumentDTO {
                 ownerId,
                 departmentId,
                 allowDownload,
-                tags.toString(),
+                com.minexpert.hns.utility.StringListConverter.listToString(tags),
                 reviewDate,
                 expiryDate,
 

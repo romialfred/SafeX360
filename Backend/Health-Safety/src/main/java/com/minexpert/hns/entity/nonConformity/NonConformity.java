@@ -198,9 +198,9 @@ public class NonConformity {
         this.actionTaken = dto.getActionTaken();
         this.severityLevel = dto.getSeverityLevel();
         this.nearMissType = dto.getNearMissType();
-        this.factors = dto.getFactors().toString();
+        this.factors = com.minexpert.hns.utility.StringListConverter.listToString(dto.getFactors());
         this.improvement = dto.getImprovement();
-        this.events = dto.getEvents().toString();
+        this.events = com.minexpert.hns.utility.StringListConverter.listToString(dto.getEvents());
         this.preventiveAction = dto.getPreventiveAction();
         this.currency = dto.getCurrency();
         this.materialCost = dto.getMaterialCost();
@@ -208,7 +208,7 @@ public class NonConformity {
         this.adminFees = dto.getAdminFees();
         this.expenses = dto.getExpenses();
         this.details = dto.getDetails();
-        this.indirectImpacts = dto.getIndirectImpacts().toString();
+        this.indirectImpacts = com.minexpert.hns.utility.StringListConverter.listToString(dto.getIndirectImpacts());
         this.comments = dto.getComments();
         this.supportComments = dto.getSupportComments();
         this.lessonLearned = dto.getLessonLearned();

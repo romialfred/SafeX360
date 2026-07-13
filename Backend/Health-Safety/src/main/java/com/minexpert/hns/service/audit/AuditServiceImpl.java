@@ -1,5 +1,7 @@
 package com.minexpert.hns.service.audit;
 
+import java.util.Optional;
+
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
@@ -126,23 +128,27 @@ public class AuditServiceImpl implements AuditService {
 
     private String generateAuditRefNumber() {
         int currentYear = Year.now().getValue();
+        String prefix = "AUD-" + currentYear + "-";
 
-        // Fetch last incident for the current year
-        Pageable limitOne = PageRequest.of(0, 1);
-        List<Audit> latestAudits = auditRepository.findTopByYearOrderByIdDesc(currentYear, limitOne);
-
+        // Reprend depuis le dernier numéro du format standard de l'année (parse
+        // robuste : dernier segment numérique, tolère un préfixe à 4 segments) +
+        // boucle anti-collision -> numéros uniques garantis (voir bug incident).
         int nextNumber = 1;
-        if (!latestAudits.isEmpty()) {
-            String lastNumber = latestAudits.get(0).getRefNumber(); // INC-2025-000123
-            if (lastNumber != null) {
-                String[] parts = lastNumber.split("-");
-                if (parts.length == 3) {
-                    nextNumber = Integer.parseInt(parts[2]) + 1;
-                }
+        Optional<Audit> last = auditRepository.findFirstByRefNumberStartingWithOrderByRefNumberDesc(prefix);
+        if (last.isPresent() && last.get().getRefNumber() != null) {
+            String[] parts = last.get().getRefNumber().split("-");
+            try {
+                nextNumber = Integer.parseInt(parts[parts.length - 1].trim()) + 1;
+            } catch (NumberFormatException e) {
+                nextNumber = 1;
             }
         }
-
-        return String.format("AUD-%d-%03d", currentYear, nextNumber);
+        String candidate = String.format("%s%03d", prefix, nextNumber);
+        while (auditRepository.existsByRefNumber(candidate)) {
+            nextNumber++;
+            candidate = String.format("%s%03d", prefix, nextNumber);
+        }
+        return candidate;
     }
 
     @Override

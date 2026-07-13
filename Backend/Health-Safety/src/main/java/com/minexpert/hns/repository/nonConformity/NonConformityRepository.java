@@ -15,6 +15,8 @@ import com.minexpert.hns.enums.EventStatus;
 import com.minexpert.hns.enums.EventType;
 
 public interface NonConformityRepository extends CrudRepository<NonConformity, Long> {
+    // Génération robuste du numéro : garde anti-collision (contrainte UNIQUE globale).
+    boolean existsByNumber(String number);
     @Query("SELECT i FROM NonConformity i WHERE FUNCTION('YEAR', i.createdAt) = :year ORDER BY i.id DESC")
     List<NonConformity> findTopByYearOrderByIdDesc(@Param("year") int year, Pageable pageable);
 

@@ -33,6 +33,10 @@ public class PpeRequestServiceImpl implements PpeRequestService {
         })
         public PpeRequestDTO create(PpeRequestDTO dto) throws HSException {
 
+                if (dto.getEmpIds() == null || dto.getEmpIds().isEmpty()
+                                || dto.getPpeIds() == null || dto.getPpeIds().isEmpty()) {
+                        throw new HSException("PPE_REQUEST_EMPTY");
+                }
                 dto.setStatus(PpeRequestStatus.PENDING);
                 PpeRequest req = dto.toEntity();
                 PpeRequest saved = requestRepository.save(req);

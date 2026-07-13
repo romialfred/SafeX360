@@ -36,6 +36,16 @@ public class StringListConverter {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Rendu null-safe d'une liste en chaîne pour stockage colonne texte.
+     * Évite le NPE `list.toString()` quand un champ optionnel du formulaire
+     * (parties du corps, facteurs, objectifs, tags, signataires…) est absent.
+     * Convention alignée sur les DTO déjà gardés : null -> null.
+     */
+    public static String listToString(List<?> list) {
+        return list != null ? list.toString() : null;
+    }
+
     public static List<String> convertToStringList(String input) {
         if (input == null || input.trim().isEmpty())
             return null;
@@ -72,7 +82,7 @@ public class StringListConverter {
                 .map(entry -> {
                     String[] parts = entry.split(":");
                     Long id = Long.parseLong(parts[0].trim());
-                    String role = parts[1].trim();
+                    String role = parts.length > 1 ? parts[1].trim() : null;
                     return new ParticipantResponse(id, null, role, null);
                 })
                 .collect(Collectors.toList());

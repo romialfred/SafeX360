@@ -50,7 +50,8 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     public void updateInterview(InspectionInterviewsDTO interviewDTO) throws HSException {
         InspectionInterviews existingInterview = inspectionInterviewsRepository.findById(interviewDTO.getId())
                 .orElseThrow(() -> new HSException("INTERVIEW_NOT_FOUND"));
-        existingInterview.setEmployees(interviewDTO.getEmployees().toString());
+        existingInterview.setEmployees(
+                com.minexpert.hns.utility.StringListConverter.listToString(interviewDTO.getEmployees()));
         existingInterview.setInterviewDate(interviewDTO.getInterviewDate());
         existingInterview.setDescription(interviewDTO.getDescription());
         existingInterview.setUpdatedAt(LocalDateTime.now());

@@ -32,7 +32,8 @@ public class PpeRequestDTO {
     private LocalDateTime deliveredAt;
 
     public PpeRequest toEntity() {
-        return new PpeRequest(id, empIds.toString(), ppeIds.toString(), desiredDate, priority, reason, comment, status,
+        return new PpeRequest(id, StringListConverter.listToString(empIds), StringListConverter.listToString(ppeIds),
+                desiredDate, priority, reason, comment, status,
                 createdAt,
                 updatedAt, deliveredAt);
     }

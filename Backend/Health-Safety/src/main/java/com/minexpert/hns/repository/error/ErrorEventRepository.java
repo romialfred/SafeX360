@@ -11,6 +11,9 @@ import com.minexpert.hns.entity.error.ErrorEvent;
 import com.minexpert.hns.enums.ErrorEventStatus;
 
 public interface ErrorEventRepository extends CrudRepository<ErrorEvent, Long> {
+    // Génération robuste de la référence : garde anti-collision (UNIQUE global,
+    // alors que le compteur était par-société -> 2 mines pouvaient collisionner).
+    boolean existsByReference(String reference);
 
     @Query("""
             SELECT e FROM ErrorEvent e

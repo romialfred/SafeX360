@@ -13,6 +13,10 @@ import com.minexpert.hns.entity.audit.Audit;
 import com.minexpert.hns.enums.AuditStatus;
 
 public interface AuditRepository extends CrudRepository<Audit, Long> {
+    // Génération robuste du numéro : garde anti-collision + reprise de séquence.
+    boolean existsByRefNumber(String refNumber);
+
+    java.util.Optional<Audit> findFirstByRefNumberStartingWithOrderByRefNumberDesc(String prefix);
 
     @Query("SELECT i FROM Audit i WHERE FUNCTION('YEAR', i.createdAt) = :year ORDER BY i.id DESC")
     List<Audit> findTopByYearOrderByIdDesc(@Param("year") int year, Pageable pageable);

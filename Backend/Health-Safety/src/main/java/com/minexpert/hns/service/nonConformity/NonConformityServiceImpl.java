@@ -70,8 +70,10 @@ public class NonConformityServiceImpl implements NonConformityService {
             });
         }
         EventAnalysisDTO eventAnalysisDTO = request.getAnalysis();
-        eventAnalysisDTO.setNonConformityId(id);
-        eventAnalysisService.createEventAnalysis(eventAnalysisDTO);
+        if (eventAnalysisDTO != null) {
+            eventAnalysisDTO.setNonConformityId(id);
+            eventAnalysisService.createEventAnalysis(eventAnalysisDTO);
+        }
         return id;
 
     }
@@ -111,17 +113,24 @@ public class NonConformityServiceImpl implements NonConformityService {
             String lastNumber = latestConformities.get(0).getNumber();
             if (lastNumber != null) {
                 String[] parts = lastNumber.split("-");
-                if (parts.length == 3) {
-                    try {
-                        nextNumber = Integer.parseInt(parts[2]) + 1;
-                    } catch (NumberFormatException e) {
-                        nextNumber = 1;
-                    }
+                // Parse robuste : dernier segment numérique (tolère un format à 4
+                // segments type PREF-XXX-2026-0007 qui cassait le compteur -> 1).
+                try {
+                    nextNumber = Integer.parseInt(parts[parts.length - 1].trim()) + 1;
+                } catch (NumberFormatException e) {
+                    nextNumber = 1;
                 }
             }
         }
 
-        return String.format("%s-%d-%03d", prefix, currentYear, nextNumber);
+        // Contrainte UNIQUE globale sur number : boucle anti-collision -> plus de
+        // DataIntegrityViolation -> 500 à la déclaration.
+        String candidate = String.format("%s-%d-%03d", prefix, currentYear, nextNumber);
+        while (nonConformityRepository.existsByNumber(candidate)) {
+            nextNumber++;
+            candidate = String.format("%s-%d-%03d", prefix, currentYear, nextNumber);
+        }
+        return candidate;
     }
 
     @Override

@@ -77,7 +77,8 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         if (!companyId.equals(teamMember.getCompanyId())) {
             throw new HSException("TEAM_MEMBER_NOT_FOUND");
         }
-        teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel().toString());
+        teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel() != null
+                ? teamMemberDTO.getNotificationLevel().toString() : null);
         teamMember.setRole(teamMemberDTO.getRole());
         teamMember.setUpdatedAt(LocalDateTime.now());
         teamMemberRepository.save(teamMember);
@@ -101,7 +102,8 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             if (!companyId.equals(teamMember.getCompanyId())) {
                 throw new HSException("TEAM_MEMBER_ALREADY_EXISTS");
             }
-            teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel().toString());
+            teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel() != null
+                    ? teamMemberDTO.getNotificationLevel().toString() : null);
             teamMember.setRole(teamMemberDTO.getRole());
             teamMember.setUpdatedAt(LocalDateTime.now());
             teamMemberRepository.save(teamMember);

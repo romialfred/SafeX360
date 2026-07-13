@@ -40,9 +40,7 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
         checklistDTO.setCreatedAt(LocalDateTime.now());
         checklistDTO.setUpdatedAt(LocalDateTime.now());
         InspectionChecklist checklist = checklistDTO.toEntity();
-        checklist.setDocs(checklistDTO.getDocs().stream()
-                .map(media -> mediaRepository.save(media.toEntity()).getId())
-                .toList().toString());
+        checklist.setDocs(persistDocIds(checklistDTO.getDocs()));
         return inspectionChecklistRepository.save(checklist).getId();
     }
 
@@ -67,9 +65,7 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
                 .orElseThrow(() -> new HSException("CHECKLIST_NOT_FOUND"));
         existingChecklist.setNonConformityLevel(checklistDTO.getNonConformityLevel());
         existingChecklist.setObservation(checklistDTO.getObservation());
-        existingChecklist.setDocs(checklistDTO.getDocs().stream()
-                .map(media -> mediaRepository.save(media.toEntity()).getId())
-                .toList().toString());
+        existingChecklist.setDocs(persistDocIds(checklistDTO.getDocs()));
         existingChecklist.setStatus(checklistDTO.getStatus());
         existingChecklist.setUpdatedAt(LocalDateTime.now());
         inspectionChecklistRepository.save(existingChecklist);
@@ -107,6 +103,20 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
                     return checklistDTO;
                 }).toList();
         return checklists;
+    }
+
+    /**
+     * Persiste les pièces jointes d'un point de checklist et renvoie la liste de
+     * leurs ids sous forme de chaîne. Garde null/vide : une checklist enregistrée
+     * sans photo (cas majoritaire) ne doit pas provoquer de NPE.
+     */
+    private String persistDocIds(List<com.minexpert.hns.dto.MediaDTO> docs) {
+        if (docs == null || docs.isEmpty()) {
+            return java.util.List.of().toString();
+        }
+        return docs.stream()
+                .map(media -> mediaRepository.save(media.toEntity()).getId())
+                .toList().toString();
     }
 
 }

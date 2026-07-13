@@ -80,6 +80,35 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    // Filet de sécurité GLOBAL : toute violation d'intégrité en base (NOT NULL,
+    // UNIQUE, clé étrangère orpheline — ex. dropdown référentiel vide sur une mine
+    // non seedée, ou collision de numéro généré) tombait dans le catch-all et
+    // devenait un 500 opaque « An internal error occurred ». On renvoie désormais
+    // un 409 avec un code métier que le frontend traduit, au lieu d'un 500 muet.
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorInfo> dataIntegrityHandler(
+            org.springframework.dao.DataIntegrityViolationException exception) {
+        log.warn("Data integrity violation", exception);
+        String root = exception.getMostSpecificCause() != null
+                ? exception.getMostSpecificCause().getMessage()
+                : String.valueOf(exception.getMessage());
+        String lower = root == null ? "" : root.toLowerCase();
+        String code;
+        if (lower.contains("foreign key") || lower.contains("a foreign key constraint fails")) {
+            // FK orpheline : la référence choisie (lieu, processus, catégorie…)
+            // n'existe pas pour cette mine → référentiel non renseigné.
+            code = "REFERENCE_DATA_MISSING";
+        } else if (lower.contains("duplicate") || lower.contains("unique")) {
+            code = "DUPLICATE_ENTRY";
+        } else if (lower.contains("cannot be null") || lower.contains("null")) {
+            code = "REQUIRED_FIELD_MISSING";
+        } else {
+            code = "DATA_INTEGRITY_ERROR";
+        }
+        ErrorInfo error = new ErrorInfo(code, HttpStatus.CONFLICT.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         log.error("Unhandled exception", exception);
@@ -90,9 +119,16 @@ public class ExceptionControllerAdvice {
 
     @ExceptionHandler(HSException.class)
     public ResponseEntity<ErrorInfo> HSExceptionHandler(HSException exception) {
-        String msg = environment.getProperty(exception.getMessage());
-        ErrorInfo error = new ErrorInfo(msg, HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        // COMPANY_ID_REQUIRED est une erreur CLIENT (mine non sélectionnée) : on
+        // l'aligne sur le handler param-manquant (400) au lieu d'un 500, pour les
+        // controllers en @RequestParam(required=false) qui délèguent au service
+        // (ex. Investigation) — cohérence avec MissingServletRequestParameterException.
+        boolean isClientError = "COMPANY_ID_REQUIRED".equals(exception.getMessage());
+        HttpStatus status = isClientError ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR;
+        String resolved = environment.getProperty(exception.getMessage());
+        String msg = resolved != null ? resolved : exception.getMessage();
+        ErrorInfo error = new ErrorInfo(msg, status.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, status);
     }
 
     @ExceptionHandler({ MethodArgumentNotValidException.class, ConstraintViolationException.class })

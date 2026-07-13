@@ -429,8 +429,17 @@ public class ErrorEventServiceImpl implements ErrorEventService {
     private String generateReference(Long companyId) {
         int year = Year.now().getValue();
         String prefix = "ERR-" + year + "-";
-        long count = errorEventRepository.countByReferencePrefix(companyId, prefix + "%");
-        return String.format("%s%04d", prefix, count + 1);
+        // Le compteur est par-société mais la contrainte UNIQUE sur reference est
+        // GLOBALE : deux mines généraient toutes deux ERR-AAAA-0001 -> collision
+        // -> 500. On part du compteur société (indice) puis on avance jusqu'à une
+        // référence réellement libre (unicité garantie).
+        long n = errorEventRepository.countByReferencePrefix(companyId, prefix + "%") + 1;
+        String candidate = String.format("%s%04d", prefix, n);
+        while (errorEventRepository.existsByReference(candidate)) {
+            n++;
+            candidate = String.format("%s%04d", prefix, n);
+        }
+        return candidate;
     }
 
     /** Croise gravite et probabilite via la matrice ; defaut MEDIUM si non resolu. */

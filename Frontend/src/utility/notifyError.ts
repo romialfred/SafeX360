@@ -51,6 +51,14 @@ const CODE_MESSAGES: Record<string, string> = {
   INVESTIGATION_ALREADY_EXISTS: "Une investigation existe déjà pour cet incident.",
   INVESTIGATION_DETAILS_REQUIRED: "Les informations de l'investigation sont incomplètes.",
   WORK_PROCESS_REQUIRED: "Le processus de travail est obligatoire. Sélectionnez-en un puis réessayez.",
+  // Violations d'intégrité base traduites par le handler global HNS (409).
+  REFERENCE_DATA_MISSING:
+    "Une référence sélectionnée (lieu, processus, catégorie…) n'existe pas pour cette mine. Vérifiez que les données de référence de la mine sont bien renseignées.",
+  DUPLICATE_ENTRY: "Cet enregistrement existe déjà (doublon détecté). Vérifiez les données saisies.",
+  REQUIRED_FIELD_MISSING: "Un champ obligatoire est manquant. Complétez le formulaire puis réessayez.",
+  DATA_INTEGRITY_ERROR: "Les données saisies ne respectent pas une contrainte. Vérifiez le formulaire puis réessayez.",
+  PPE_REQUEST_EMPTY: "Sélectionnez au moins un employé et un équipement (EPI) avant d'enregistrer la demande.",
+  EXAMPLE_REQUIRED: "Aucun exemple fourni. Saisissez un exemple avant de l'ajouter.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {

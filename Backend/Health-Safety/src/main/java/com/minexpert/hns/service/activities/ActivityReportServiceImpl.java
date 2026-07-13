@@ -103,7 +103,8 @@ public class ActivityReportServiceImpl implements ActivityReportService {
         activityReport.setSummary(activityReportDTO.getSummary());
         activityReport.setFindings(activityReportDTO.getFindings());
         activityReport.setDocs(mediaService.saveAllMedia(activityReportDTO.getDocs()));
-        activityReport.setSignOff(activityReportDTO.getSignOff().toString());
+        activityReport.setSignOff(
+                com.minexpert.hns.utility.StringListConverter.listToString(activityReportDTO.getSignOff()));
         activityReport.setUpdatedAt(LocalDateTime.now());
         activityReport.setDocs(mediaService.saveAllMedia(activityReportDTO.getDocs()));
         activityReportRepository.save(activityReport);

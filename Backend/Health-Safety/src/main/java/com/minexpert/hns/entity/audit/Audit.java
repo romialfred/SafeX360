@@ -85,14 +85,14 @@ public class Audit {
 
     public Audit update(AuditDTO auditDTO) {
         this.title = auditDTO.getTitle();
-        this.objectives = auditDTO.getObjectives().toString();
-        this.processes = auditDTO.getProcesses().toString();
+        this.objectives = StringListConverter.listToString(auditDTO.getObjectives());
+        this.processes = StringListConverter.listToString(auditDTO.getProcesses());
         this.scope = auditDTO.getScopeId() != null ? new AuditAreas(auditDTO.getScopeId()) : null;
-        this.methods = auditDTO.getMethods().toString();
+        this.methods = StringListConverter.listToString(auditDTO.getMethods());
         this.description = auditDTO.getDescription();
         this.category = auditDTO.getCategory();
         this.auditTypes = auditDTO.getAuditTypes();
-        this.references = auditDTO.getReferences().toString();
+        this.references = StringListConverter.listToString(auditDTO.getReferences());
         this.startDate = auditDTO.getStartDate();
         this.endDate = auditDTO.getEndDate();
         // LOT 52 : champs additifs — mis à jour seulement si fournis pour ne pas

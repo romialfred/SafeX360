@@ -577,11 +577,19 @@ public class BlastServiceImpl implements BlastService {
     }
 
     private String generateReference() {
-        // Reference simple {@code BLT-YYYY-NNNN} sur la base du nombre total
-        // de tirs deja crees + 1. Ce comportement est suffisant pour P1 ;
-        // un sequencer dedie par mine sera introduit si necessaire.
+        // Reference {@code BLT-YYYY-NNNN} basee sur le nombre total de tirs + 1,
+        // AVEC boucle anti-collision : la contrainte UNIQUE est globale et le
+        // compteur pouvait retomber sur une reference existante (ex. apres une
+        // suppression) -> auparavant IllegalStateException/409. On avance
+        // desormais jusqu'a une reference libre.
+        int year = Year.now().getValue();
         long count = blastRepository.count() + 1L;
-        return String.format("BLT-%d-%04d", Year.now().getValue(), count);
+        String candidate = String.format("BLT-%d-%04d", year, count);
+        while (blastRepository.existsByReference(candidate)) {
+            count++;
+            candidate = String.format("BLT-%d-%04d", year, count);
+        }
+        return candidate;
     }
 
     private void applyUpdatableFields(Blast blast, BlastUpdateDTO dto) {

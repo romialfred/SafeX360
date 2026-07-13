@@ -50,9 +50,12 @@ public class AuditDTO {
     private Integer riskScore;
 
     public Audit toEntity() {
-        return new Audit(this.id, this.title, this.refNumber, objectives.toString(), processes.toString(),
-                new AuditAreas(scopeId), methods.toString(), description, this.category, auditTypes,
-                this.references.toString(),
+        return new Audit(this.id, this.title, this.refNumber,
+                com.minexpert.hns.utility.StringListConverter.listToString(objectives),
+                com.minexpert.hns.utility.StringListConverter.listToString(processes),
+                new AuditAreas(scopeId), com.minexpert.hns.utility.StringListConverter.listToString(methods),
+                description, this.category, auditTypes,
+                com.minexpert.hns.utility.StringListConverter.listToString(this.references),
                 this.startDate,
                 this.endDate, this.status, this.planningStatus, this.createdAt, this.updatedAt,
                 this.programId, this.riskScore);

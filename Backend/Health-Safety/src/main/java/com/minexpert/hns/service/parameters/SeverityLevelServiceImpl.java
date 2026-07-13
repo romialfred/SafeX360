@@ -145,6 +145,9 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
         if (examples == null) {
             examples = new ArrayList<>();
         }
+        if (request.getExamples() == null || request.getExamples().isEmpty()) {
+            throw new HSException("EXAMPLE_REQUIRED");
+        }
         examples.add(request.getExamples().get(0));
         severityLevel.setExamples(examples);
         severityLevel.setUpdatedAt(LocalDateTime.now());

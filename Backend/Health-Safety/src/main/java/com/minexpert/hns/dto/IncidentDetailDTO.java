@@ -31,6 +31,7 @@ public class IncidentDetailDTO {
     public IncidentDetail toEntity() {
         return new IncidentDetail(id, new IncidentCategory(this.incidentCategoryId), new IncidentType(incidentTypeId),
                 new SeverityLevel(severityLevelId), incidentId != null ? new Incident(incidentId) : null,
-                affectedBodyParts.toString(), environmentalImpact, containmentMeasures, createdAt, updatedAt);
+                com.minexpert.hns.utility.StringListConverter.listToString(affectedBodyParts),
+                environmentalImpact, containmentMeasures, createdAt, updatedAt);
     }
 }
