@@ -25,6 +25,10 @@ public class ExceptionControllerAdvice {
     @Autowired
     private Environment environment;
 
+    /** Codes HSException qui sont des erreurs de validation client -> HTTP 400. */
+    private static final java.util.Set<String> CLIENT_ERROR_CODES = java.util.Set.of(
+            "COMPANY_ID_REQUIRED", "PPE_REQUEST_EMPTY", "EXAMPLE_REQUIRED");
+
     /**
      * Phase 10-A : AccessDeniedException levee depuis un controller (ex.
      * DosimetrySelfAccessGuard.verifySelfAccess) doit aboutir a un 403 explicite et non
@@ -119,11 +123,10 @@ public class ExceptionControllerAdvice {
 
     @ExceptionHandler(HSException.class)
     public ResponseEntity<ErrorInfo> HSExceptionHandler(HSException exception) {
-        // COMPANY_ID_REQUIRED est une erreur CLIENT (mine non sélectionnée) : on
-        // l'aligne sur le handler param-manquant (400) au lieu d'un 500, pour les
-        // controllers en @RequestParam(required=false) qui délèguent au service
-        // (ex. Investigation) — cohérence avec MissingServletRequestParameterException.
-        boolean isClientError = "COMPANY_ID_REQUIRED".equals(exception.getMessage());
+        // Codes d'erreur CLIENT (validation / saisie) : renvoyés en 400 au lieu de
+        // 500, pour ne pas polluer le monitoring et aligner sur le handler
+        // param-manquant. Le frontend mappe déjà chaque code en message FR.
+        boolean isClientError = CLIENT_ERROR_CODES.contains(exception.getMessage());
         HttpStatus status = isClientError ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR;
         String resolved = environment.getProperty(exception.getMessage());
         String msg = resolved != null ? resolved : exception.getMessage();

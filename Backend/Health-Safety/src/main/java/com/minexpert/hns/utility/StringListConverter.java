@@ -96,7 +96,7 @@ public class StringListConverter {
                 .map(entry -> {
                     String[] parts = entry.split(":");
                     Long id = Long.parseLong(parts[0].trim());
-                    String role = parts[1].trim();
+                    String role = parts.length > 1 ? parts[1].trim() : null;
                     return new ParticipantDTO(id, role);
                 })
                 .collect(Collectors.toList());
