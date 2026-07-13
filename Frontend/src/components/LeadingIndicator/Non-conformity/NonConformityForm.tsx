@@ -151,61 +151,19 @@ const NonConformityForm = () => {
                 improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'opportunité d'amélioration est requise" : null,
                 events: (value) => value.length === 0 ? "Au moins une nature d'événement est requise" : null,
 
-                //troisième page
-                details: (value) => isValidRichText(value) || activeStep < 2 ? null : "Les détails sont requis",
-                comments: (value) => isValidRichText(value) || activeStep < 2 ? null : "Les commentaires sont requis",
-
-                //quatrième page
-                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : "Les leçons apprises sont requises",
-                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : "Le plan de diffusion est requis",
-                closingDate: (value) => value || activeStep < 3 ? null : "La date de clôture est requise",
-                finalStatus: (value) => value || activeStep < 3 ? null : "Le statut final est requis",
-                validator: (value) => value || activeStep < 3 ? null : "Le validateur est requis",
-                validationDate: (value) => value || activeStep < 3 ? null : "La date de validation est requise",
-                // validationComment: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Validation comment is required',
-                // effectiveness: (value) => value || activeStep < 3 ? null : 'Effectiveness is required',
-                // rating: (value) => value || activeStep < 3 ? null : 'Rating is required',
-                // risk: (value) => value || activeStep < 3 ? null : 'Risk is required',
-
-                // nextCheck: (value) => value || activeStep < 3 ? null : 'Next check is required',
-                // feedback: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Feedback is required',
-
-                // archiveNumber: (value) => value || activeStep < 3 ? null : 'Archive number is required',
-                // retentionPeriod: (value) => value || activeStep < 3 ? null : 'Retention period is required',
-                // archiveLocationId: (value) => value || activeStep < 3 ? null : 'Archive location is required',
-                // archiveManager: (value) => value || activeStep < 3 ? null : 'Archive manager is required',
-
-
-
+                // Étapes 2 à 4 (Analyse, Traitement, Clôture & Diffusion) :
+                // OPTIONNELLES. Règle métier : seule l'étape 1 (Déclaration) est
+                // obligatoire. Un événement est enregistrable dès que les
+                // informations principales sont saisies ; l'analyse causale, les
+                // actions correctives et la clôture se complètent plus tard.
+                // (Les anciennes règles verrouillées sur `activeStep` bloquaient
+                //  la soumission une fois arrivé à l'étape 4.)
             },
-            analysis: {
-                method: (value) => value || activeStep < 1 ? null : "La méthode d'analyse est requise",
-                origin: (value) => value || activeStep < 1 ? null : "L'origine est requise",
-                // Champs propres à la méthode ICAM : requis uniquement quand la
-                // méthode choisie est ICAM (les autres méthodes ont leurs propres
-                // champs dans analysis.methodData, sinon on bloquait toute méthode ≠ ICAM).
-                description: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "La description est requise",
-                individualFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs individuels sont requis",
-                technicalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs techniques sont requis",
-                organizationalFactors: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les facteurs organisationnels sont requis",
-                rootCauses: (value, values) => values.analysis.method !== 'ICAM' || value || activeStep < 1 ? null : "Les causes profondes sont requises",
-                startDate: (value) => value || activeStep < 1 ? null : "La date de début est requise",
-                deadline: (value) => value || activeStep < 1 ? null : "L'échéance est requise",
-                priority: (value) => value || activeStep < 1 ? null : "La priorité est requise",
-                severityLevel: (value) => value || activeStep < 1 ? null : "Le niveau de gravité est requis",
-                status: (value) => value || activeStep < 1 ? null : "Le statut est requis",
-                summary: (value) => isValidRichText(value) || activeStep < 1 ? null : "Le résumé est requis",
-                conclusion: (value) => isValidRichText(value) || activeStep < 1 ? null : "La conclusion est requise",
-            },
-            correctiveActions: {
-                actionName: (value) => value || activeStep < 2 ? null : "Le nom de l'action est requis",
-                deadline: (value) => value || activeStep < 2 ? null : "L'échéance est requise",
-                assignedEmployeeId: (value) => value || activeStep < 2 ? null : "L'employé assigné est requis",
-                status: (value) => value || activeStep < 2 ? null : "Le statut est requis",
-                description: (value) => value || activeStep < 2 ? null : "La description est requise",
-            }
-
-        }, // No validation yet
+            // Analyse causale — optionnelle (différable après l'étape 1).
+            analysis: {},
+            // Actions correctives — optionnelles (ajoutables ultérieurement).
+            correctiveActions: {},
+        },
     });
 
     useEffect(() => {
@@ -315,7 +273,12 @@ const NonConformityForm = () => {
     const handleFirstSubmit = () => {
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
+            // Tous les champs obligatoires restants sont à l'étape 1 : on y ramène
+            // l'utilisateur pour qu'il voie les erreurs inline (sinon, depuis
+            // l'étape 4, seul un toast générique s'affichait).
+            setActiveStep(0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            errorNotification("Veuillez compléter les champs obligatoires de l'étape 1 (Déclaration) avant de soumettre.");
             return;
         }
 
@@ -342,7 +305,9 @@ const NonConformityForm = () => {
     const handleSubmit = async () => {
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
+            setActiveStep(0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            errorNotification("Veuillez compléter les champs obligatoires de l'étape 1 (Déclaration) avant de soumettre.");
             return;
         }
         const values = form.values;
