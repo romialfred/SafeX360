@@ -359,23 +359,32 @@ public class IncidentServiceImpl implements IncidentService {
 
     private String generateIncidentNumber(Long companyId) {
         int currentYear = Year.now().getValue();
+        String prefix = "INC-" + currentYear + "-";
 
-        // Fetch last incident for the current year
-        Pageable limitOne = PageRequest.of(0, 1);
-        // Generate numbers globally, so fetch without company filter
-        List<Incident> latestIncidents = incidentRepository.findTopByYearOrderByIdDesc(currentYear, null,
-                limitOne);
-
+        // Repart de la séquence du format standard de l'année (INC-YYYY-NNNNNN).
+        // On NE se base PLUS sur « le dernier incident de l'année par id » : ce
+        // dernier peut porter un autre format (ex. INC-SYR-2026-0014, 4 segments),
+        // ce qui cassait le parsing et réinitialisait le compteur à 1 -> doublon
+        // sur INC-YYYY-000001 -> 500 (aucune mine « neuve » ne pouvait déclarer).
         int nextNumber = 1;
-        if (!latestIncidents.isEmpty()) {
-            String lastNumber = latestIncidents.get(0).getNumber(); // INC-2025-000123
-            String[] parts = lastNumber.split("-");
-            if (parts.length == 3) {
-                nextNumber = Integer.parseInt(parts[2]) + 1;
+        Optional<Incident> last = incidentRepository.findFirstByNumberStartingWithOrderByNumberDesc(prefix);
+        if (last.isPresent()) {
+            String[] parts = last.get().getNumber().split("-");
+            try {
+                nextNumber = Integer.parseInt(parts[parts.length - 1].trim()) + 1;
+            } catch (NumberFormatException ex) {
+                nextNumber = 1;
             }
         }
 
-        return String.format("INC-%d-%06d", currentYear, nextNumber);
+        // Garantie d'unicité (contrainte UNIQUE globale) : on avance jusqu'à un
+        // numéro réellement libre — plus jamais de DataIntegrityViolation.
+        String candidate = String.format("%s%06d", prefix, nextNumber);
+        while (incidentRepository.existsByNumber(candidate)) {
+            nextNumber++;
+            candidate = String.format("%s%06d", prefix, nextNumber);
+        }
+        return candidate;
     }
 
 }

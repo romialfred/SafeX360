@@ -16,6 +16,15 @@ import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
 public interface IncidentRepository extends CrudRepository<Incident, Long> {
     Optional<Incident> findByIdAndCompanyId(Long id, Long companyId);
 
+    // Génération robuste du numéro d'incident : la contrainte UNIQUE est GLOBALE
+    // et des formats de numéro hétérogènes coexistent (INC-2026-000001 sur 3
+    // segments ET INC-SYR-2026-0014 sur 4 segments). existsByNumber garantit
+    // l'absence de collision ; findFirst...StartingWith récupère le dernier
+    // numéro du format standard de l'année pour repartir de la bonne séquence.
+    boolean existsByNumber(String number);
+
+    Optional<Incident> findFirstByNumberStartingWithOrderByNumberDesc(String prefix);
+
     @Query("SELECT i FROM Incident i WHERE i.id = :id AND (:companyId IS NULL OR i.companyId = :companyId)")
     Optional<Incident> findByIdWithCompanyContext(@Param("id") Long id, @Param("companyId") Long companyId);
 

@@ -66,6 +66,20 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    // Paramètre de requête obligatoire manquant (ex. companyId absent en vue
+    // « Toutes les Mines ») : renvoie un 400 CLAIR au lieu de cascader en 500
+    // générique via le catch-all. Pour companyId, on renvoie le code métier
+    // COMPANY_ID_REQUIRED que le frontend traduit (« sélectionnez une mine »).
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorInfo> missingParamHandler(
+            org.springframework.web.bind.MissingServletRequestParameterException exception) {
+        String msg = "companyId".equals(exception.getParameterName())
+                ? "COMPANY_ID_REQUIRED"
+                : "Paramètre requis manquant : " + exception.getParameterName();
+        ErrorInfo error = new ErrorInfo(msg, HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         log.error("Unhandled exception", exception);

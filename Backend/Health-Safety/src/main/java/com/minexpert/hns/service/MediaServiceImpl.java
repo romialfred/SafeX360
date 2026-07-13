@@ -45,6 +45,11 @@ public class MediaServiceImpl implements MediaService {
     // @CacheEvict(cacheNames = { "mediaById", "mediaByIdsArray" }, allEntries =
     // true)
     public String saveAllMedia(List<MediaDTO> mediaDTOs) {
+        // Garde null/vide : un incident/évènement sans pièce jointe transmettait
+        // une liste null -> NullPointerException -> 500 à l'enregistrement.
+        if (mediaDTOs == null || mediaDTOs.isEmpty()) {
+            return java.util.List.of().toString();
+        }
         List<Media> mediaList = mediaDTOs.stream().map(MediaDTO::toEntity).toList();
         List<Long> savedMediaIds = ((List<Media>) mediaRepository.saveAll(mediaList)).stream().map(Media::getId)
                 .toList();
