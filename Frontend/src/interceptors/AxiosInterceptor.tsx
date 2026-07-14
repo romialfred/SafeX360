@@ -63,8 +63,20 @@ axiosInstance.interceptors.response.use(
         endRequest();
         return response;
     },
-    (error) => {
+    async (error) => {
         endRequest();
+        // Cold-start Render : au tout premier chargement, la gateway/HRMS peut
+        // renvoyer un 5xx transitoire le temps de se réveiller — observé sur les
+        // sondes d'auth (/hrms/auth/me) qui échouent puis repassent au 2e essai.
+        // On retente UNE fois, après un court délai, uniquement pour ces sondes.
+        const cfg: any = error.config;
+        const status = error.response?.status;
+        if (cfg && typeof status === 'number' && status >= 500
+            && isAuthProbe(cfg.url) && !cfg.__authProbeRetried) {
+            cfg.__authProbeRetried = true;
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            return axiosInstance.request(cfg);
+        }
         return Promise.reject(error);
     }
 );
