@@ -31,9 +31,7 @@ import {
     type ScheduleInspectionDTO,
 } from '../../services/InspectionService';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
-import { getAllActiveLocations } from '../../services/LocationService';
-
-interface SiteOption { id: number; name: string; }
+import { useAppSelector } from '../../slices/hooks';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -87,16 +85,16 @@ export default function InspectionScheduleForm() {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
-    const [sites, setSites] = useState<SiteOption[]>([]);
 
-    // Charge les sites/lieux actifs pour alimenter le Select « Site (mine) » de
-    // l'étape Cible (auparavant un <input type=number> sans source de données :
-    // impossible de choisir un site ni de taper son nom).
+    // Principe plateforme : AUCUN formulaire ne demande la mine. La mine active
+    // vient du header (sélecteur global) ; toute création y est rattachée. Le
+    // « site » de l'inspection = la mine active, résolue automatiquement ici.
+    const activeMineId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId ?? null);
+
+    // Aligne en continu le site de l'inspection sur la mine active du header.
     useEffect(() => {
-        getAllActiveLocations()
-            .then((rows: any[]) => setSites((rows || []).map((r) => ({ id: r.id, name: r.name }))))
-            .catch(() => setSites([]));
-    }, []);
+        setForm((f) => (f.siteId === activeMineId ? f : { ...f, siteId: activeMineId }));
+    }, [activeMineId]);
 
     // Charge la liste des templates filtres par type quand l'utilisateur arrive a l'etape 3
     useEffect(() => {
@@ -116,7 +114,10 @@ export default function InspectionScheduleForm() {
         const errs: string[] = [];
         if (s >= 1 && !form.type) errs.push(t('schedule.errors.typeRequired'));
         if (s >= 2) {
-            if (!form.siteId) errs.push(t('schedule.errors.siteRequired'));
+            // La mine (site) n'est PLUS saisie dans le formulaire : elle vient du
+            // header. On vérifie seulement qu'une mine active est bien sélectionnée
+            // (sinon, l'admin en « Toutes les mines » doit en choisir une en haut).
+            if (!form.siteId) errs.push(t('schedule.errors.mineNotActive', { defaultValue: 'Sélectionnez une mine active dans l\'en-tête avant de planifier.' }));
             if (!form.targetRefId) errs.push(t('schedule.errors.targetIdRequired'));
             if (!form.targetLabel.trim()) errs.push(t('schedule.errors.targetLabelRequired'));
         }
@@ -276,7 +277,6 @@ export default function InspectionScheduleForm() {
                         <StepTarget
                             form={form}
                             setField={set}
-                            sites={sites}
                         />
                     )}
                     {step === 3 && (
@@ -393,11 +393,9 @@ function StepType({
 function StepTarget({
     form,
     setField,
-    sites,
 }: {
     form: FormState;
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
-    sites: SiteOption[];
 }) {
     const { t } = useTranslation('inspection');
     return (
@@ -406,28 +404,14 @@ function StepTarget({
                 {t('schedule.targetStep.heading')}
             </h2>
             <div className="space-y-3">
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                        {t('schedule.targetStep.siteLabel')}
-                    </label>
-                    {/* Vrai Select alimenté par les sites/lieux actifs (avant : input
-                        numérique sans source → aucun site sélectionnable). */}
-                    <select
-                        value={form.siteId ?? ''}
-                        onChange={(e) => setField('siteId', e.target.value ? Number(e.target.value) : null)}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                    >
-                        <option value="">{t('schedule.targetStep.sitePlaceholder')}</option>
-                        {sites.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* Principe plateforme : la mine (site) N'est PAS demandée ici — elle
+                    est celle active dans l'en-tête. On rappelle juste où sera rattachée
+                    l'inspection ; aucune sélection de site dans le formulaire. */}
                 <div>
                     <label className="block text-[12px] font-medium text-slate-700 mb-1">
                         {t('schedule.targetStep.targetIdLabel')}
                     </label>
-                    {/* Saisie numérique mais en input texte (inputMode numeric) : un
+                    {/* Saisie numérique en input texte (inputMode numeric) : un
                         <input type=number> bloquait la frappe de façon déroutante.
                         La valeur reste numérique (targetRefId = Long côté backend). */}
                     <input
