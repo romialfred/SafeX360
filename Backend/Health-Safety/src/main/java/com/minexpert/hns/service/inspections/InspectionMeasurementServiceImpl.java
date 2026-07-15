@@ -61,7 +61,18 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
             @CacheEvict(cacheNames = "inspectionMeasurementsAll", allEntries = true),
             @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", allEntries = true)
     })
-    public void deleteMeasurement(Long id) throws HSException {
+    public void deleteMeasurement(Long id, Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de supprimer une mesure rattachée à une
+        // inspection d'une autre mine (le companyId réel est porté par l'inspection).
+        InspectionMeasurement measurement = inspectionMeasurementRepository.findById(id)
+                .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
+        if (companyId != null) {
+            Long owner = measurement.getGeneralInspection() != null
+                    ? measurement.getGeneralInspection().getCompanyId() : null;
+            if (owner == null || !companyId.equals(owner)) {
+                throw new HSException("MEASUREMENT_NOT_FOUND");
+            }
+        }
         inspectionMeasurementRepository.deleteById(id);
     }
 

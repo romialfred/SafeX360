@@ -79,8 +79,9 @@ public class AuditProgramServiceImpl implements AuditProgramService {
     }
 
     @Override
-    public void updateProgram(AuditProgramDTO programDTO) throws HSException {
+    public void updateProgram(AuditProgramDTO programDTO, Long companyId) throws HSException {
         AuditProgram program = loadProgram(programDTO.getId());
+        assertSameCompany(companyId, program.getCompanyId());
         program.setYear(programDTO.getYear());
         program.setTitle(programDTO.getTitle());
         program.setObjectives(programDTO.getObjectives());
@@ -109,8 +110,9 @@ public class AuditProgramServiceImpl implements AuditProgramService {
     }
 
     @Override
-    public void approveProgram(Long id, Long approvedBy) throws HSException {
+    public void approveProgram(Long id, Long approvedBy, Long companyId) throws HSException {
         AuditProgram program = loadProgram(id);
+        assertSameCompany(companyId, program.getCompanyId());
         program.setStatus(AuditProgramStatus.APPROVED);
         program.setApprovedBy(approvedBy);
         program.setApprovedAt(LocalDateTime.now());
@@ -119,8 +121,9 @@ public class AuditProgramServiceImpl implements AuditProgramService {
     }
 
     @Override
-    public void deleteProgram(Long id) throws HSException {
+    public void deleteProgram(Long id, Long companyId) throws HSException {
         AuditProgram program = loadProgram(id);
+        assertSameCompany(companyId, program.getCompanyId());
         auditProgramRepository.delete(program);
     }
 
@@ -235,6 +238,16 @@ public class AuditProgramServiceImpl implements AuditProgramService {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Cloisonnement par mine : si un companyId est fourni (appel utilisateur),
+     * le programme doit lui appartenir. companyId null = appel système / toutes mines.
+     */
+    private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+        if (companyId != null && !companyId.equals(entityCompanyId)) {
+            throw new HSException("AUDIT_PROGRAM_NOT_FOUND");
+        }
+    }
 
     private AuditProgram loadProgram(Long id) throws HSException {
         if (id == null) {

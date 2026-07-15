@@ -12,9 +12,9 @@ import java.util.List;
  * (appel systeme / allMines).
  */
 public interface NotificationService {
-    NotificationDTO create(NotificationDTO dto) throws HSException;
+    NotificationDTO create(NotificationDTO dto, Long companyId) throws HSException;
 
-    NotificationDTO update(NotificationDTO dto) throws HSException;
+    NotificationDTO update(NotificationDTO dto, Long companyId) throws HSException;
 
     NotificationDTO getById(Long id, Long companyId) throws HSException;
 

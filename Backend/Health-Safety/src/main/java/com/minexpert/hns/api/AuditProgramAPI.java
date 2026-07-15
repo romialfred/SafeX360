@@ -55,8 +55,10 @@ public class AuditProgramAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateProgram(@RequestBody AuditProgramDTO programDTO) throws HSException {
-        auditProgramService.updateProgram(programDTO);
+    public ResponseEntity<ResponseDTO> updateProgram(@RequestBody AuditProgramDTO programDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de modifier un programme d'une autre mine.
+        auditProgramService.updateProgram(programDTO, companyId);
         return new ResponseEntity<>(new ResponseDTO("Programme d'audit mis à jour"), HttpStatus.OK);
     }
 
@@ -73,14 +75,18 @@ public class AuditProgramAPI {
 
     @PutMapping("/approve/{id}")
     public ResponseEntity<ResponseDTO> approveProgram(@PathVariable Long id,
-            @RequestParam(required = false) Long approvedBy) throws HSException {
-        auditProgramService.approveProgram(id, approvedBy);
+            @RequestParam(required = false) Long approvedBy,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse d'approuver un programme d'une autre mine.
+        auditProgramService.approveProgram(id, approvedBy, companyId);
         return new ResponseEntity<>(new ResponseDTO("Programme d'audit approuvé"), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteProgram(@PathVariable Long id) throws HSException {
-        auditProgramService.deleteProgram(id);
+    public ResponseEntity<ResponseDTO> deleteProgram(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de supprimer un programme d'une autre mine.
+        auditProgramService.deleteProgram(id, companyId);
         return new ResponseEntity<>(new ResponseDTO("Programme d'audit supprimé"), HttpStatus.OK);
     }
 

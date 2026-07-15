@@ -9,6 +9,6 @@ public interface EventAnalysisService {
 
     public EventAnalysisDTO getEventAnalysisByNonConformityId(Long nonConformityId, Long companyId) throws HSException;
 
-    public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException;
+    public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO, Long companyId) throws HSException;
 
 }

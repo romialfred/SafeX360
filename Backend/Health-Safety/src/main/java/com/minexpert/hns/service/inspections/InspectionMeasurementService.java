@@ -12,7 +12,7 @@ public interface InspectionMeasurementService {
 
     void updateMeasurement(InspectionMeasurementDTO measurementDTO) throws HSException;
 
-    void deleteMeasurement(Long id) throws HSException;
+    void deleteMeasurement(Long id, Long companyId) throws HSException;
 
     List<InspectionMeasurementDTO> getAllMeasurement() throws HSException;
 

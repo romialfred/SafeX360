@@ -57,9 +57,18 @@ public class EventAnalysisServiceImpl implements EventAnalysisService {
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
-    public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException {
+    public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO, Long companyId) throws HSException {
         EventAnalysis eventAnalysis = eventAnalysisRepository.findById(eventAnalysisDTO.getId())
                 .orElseThrow(() -> new HSException("EVENT_ANALYSIS_NOT_FOUND"));
+        // Cloisonnement par mine : l'analyse (id issu du body, spoofable) doit être
+        // rattachée à une NC de la mine appelante. companyId null = système / toutes mines.
+        if (companyId != null) {
+            Long owner = eventAnalysis.getNonConformity() != null
+                    ? eventAnalysis.getNonConformity().getCompanyId() : null;
+            if (owner == null || !companyId.equals(owner)) {
+                throw new HSException("EVENT_ANALYSIS_NOT_FOUND");
+            }
+        }
         eventAnalysis.updateFromDTO(eventAnalysisDTO);
         eventAnalysis.setUpdatedAt(LocalDateTime.now());
         eventAnalysisRepository.save(eventAnalysis);

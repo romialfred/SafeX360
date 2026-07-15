@@ -7,7 +7,7 @@ import com.minexpert.hns.dto.response.ActionProcessResponse;
 import com.minexpert.hns.exception.HSException;
 
 public interface ActionProcessService {
-    public Long addActionProcess(ActionProcessDTO actionProcessDTO) throws HSException;
+    public Long addActionProcess(ActionProcessDTO actionProcessDTO, Long companyId) throws HSException;
 
     public List<ActionProcessResponse> getActionProcessByActionId(Long actionId) throws HSException;
 

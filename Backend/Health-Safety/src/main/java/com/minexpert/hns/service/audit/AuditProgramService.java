@@ -14,15 +14,15 @@ public interface AuditProgramService {
 
     Long createProgram(AuditProgramDTO programDTO) throws HSException;
 
-    void updateProgram(AuditProgramDTO programDTO) throws HSException;
+    void updateProgram(AuditProgramDTO programDTO, Long companyId) throws HSException;
 
     AuditProgramDTO getProgram(Long id) throws HSException;
 
     List<AuditProgramDTO> getAllPrograms(Long companyId) throws HSException;
 
-    void approveProgram(Long id, Long approvedBy) throws HSException;
+    void approveProgram(Long id, Long approvedBy, Long companyId) throws HSException;
 
-    void deleteProgram(Long id) throws HSException;
+    void deleteProgram(Long id, Long companyId) throws HSException;
 
     /**
      * Priorisation basée risques (ISO 19011 §5.4.2) : pour chaque domaine

@@ -256,7 +256,9 @@ public class NonConformityServiceImpl implements NonConformityService {
                         return action;
                     }).toList());
         }
-        eventAnalysisService.updateEventAnalysis(request.getAnalysis());
+        if (request.getAnalysis() != null && request.getAnalysis().getId() != null) {
+            eventAnalysisService.updateEventAnalysis(request.getAnalysis(), companyId);
+        }
     }
 
 }

@@ -8,11 +8,11 @@ import com.minexpert.hns.dto.MediaDTO;
 import java.util.List;
 
 public interface DocumentVersionService {
-    DocumentVersionDTO create(DocumentVersionDTO dto) throws HSException;
+    DocumentVersionDTO create(DocumentVersionDTO dto, Long companyId) throws HSException;
 
     public DocumentVersionDTO create(Long documentId, String description, MediaDTO media) throws HSException;
 
-    DocumentVersionDTO update(DocumentVersionDTO dto) throws HSException;
+    DocumentVersionDTO update(DocumentVersionDTO dto, Long companyId) throws HSException;
 
     DocumentVersionDTO getById(Long id) throws HSException;
 

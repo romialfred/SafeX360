@@ -77,7 +77,18 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
             @CacheEvict(cacheNames = "inspectionChecklistsAll", allEntries = true),
             @CacheEvict(cacheNames = "inspectionChecklistsByInspection", allEntries = true)
     })
-    public void deleteChecklist(Long id) {
+    public void deleteChecklist(Long id, Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de supprimer un point de checklist rattaché
+        // à une inspection d'une autre mine (le companyId réel est porté par l'inspection).
+        InspectionChecklist checklist = inspectionChecklistRepository.findById(id)
+                .orElseThrow(() -> new HSException("CHECKLIST_NOT_FOUND"));
+        if (companyId != null) {
+            Long owner = checklist.getGeneralInspection() != null
+                    ? checklist.getGeneralInspection().getCompanyId() : null;
+            if (owner == null || !companyId.equals(owner)) {
+                throw new HSException("CHECKLIST_NOT_FOUND");
+            }
+        }
         inspectionChecklistRepository.deleteById(id);
     }
 

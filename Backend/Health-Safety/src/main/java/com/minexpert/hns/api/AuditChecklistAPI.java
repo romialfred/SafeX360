@@ -55,7 +55,11 @@ public class AuditChecklistAPI {
      */
     @PostMapping("/{auditId}/init")
     public ResponseEntity<ResponseDTO> initChecklist(@PathVariable Long auditId,
-            @RequestParam String referentials) throws HSException {
+            @RequestParam String referentials,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : interdit d'initialiser la checklist d'un audit
+        // appartenant à une autre mine (écriture — gap signalé testeur).
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         int created = auditChecklistService.initChecklist(auditId,
                 Arrays.asList(referentials.split(",")));
         return new ResponseEntity<>(new ResponseDTO(created + " questions ajoutées à la checklist"),
@@ -72,7 +76,11 @@ public class AuditChecklistAPI {
 
     @PutMapping("/item/{itemId}")
     public ResponseEntity<ResponseDTO> updateItem(@PathVariable Long itemId,
-            @RequestBody AuditChecklistItemDTO itemDTO) throws HSException {
+            @RequestBody AuditChecklistItemDTO itemDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse la mutation d'une question de checklist
+        // rattachée à un audit d'une autre mine.
+        auditOwnershipGuard.assertChecklistItemCompany(itemId, companyId);
         auditChecklistService.updateItem(itemId, itemDTO);
         return new ResponseEntity<>(new ResponseDTO("Question de checklist mise à jour"), HttpStatus.OK);
     }

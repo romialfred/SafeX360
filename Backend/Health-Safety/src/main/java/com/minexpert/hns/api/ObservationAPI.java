@@ -36,7 +36,9 @@ public class ObservationAPI {
     @PostMapping("/create")
     public ResponseEntity<Long> createObservation(@RequestParam(required = false) Long companyId,
             @RequestBody ObservationDTO request) throws HSException {
-        // Cloisonnement par mine : le constat hérite du companyId de la mine active.
+        // Cloisonnement par mine : refuse de rattacher un constat à un audit d'une
+        // autre mine, puis le constat hérite du companyId de la mine active.
+        auditOwnershipGuard.assertAuditCompany(request.getAuditId(), companyId);
         if (companyId != null) {
             request.setCompanyId(companyId);
         }

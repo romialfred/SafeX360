@@ -85,6 +85,10 @@ public class AuditAPI {
     @PostMapping("/execute")
     public ResponseEntity<ResponseDTO> executeAudit(@RequestParam(required = false) Long companyId,
             @Valid @RequestBody ExecuteRequest request) throws HSException {
+        // Cloisonnement par mine : refuse d'exécuter/rapporter un audit d'une autre mine.
+        if (request.getReport() != null) {
+            auditOwnershipGuard.assertAuditCompany(request.getReport().getAuditId(), companyId);
+        }
         // Cloisonnement par mine : les contributeurs héritent du companyId de la mine active.
         if (companyId != null && request.getContributors() != null) {
             request.getContributors().forEach(c -> c.setCompanyId(companyId));
@@ -126,7 +130,9 @@ public class AuditAPI {
     public ResponseEntity<Long> createRecommendation(@RequestParam(required = false) Long companyId,
             @Valid @RequestBody RecommendationDTO recommendationDTO)
             throws HSException {
-        // Cloisonnement par mine : la recommandation hérite du companyId de la mine active.
+        // Cloisonnement par mine : refuse de rattacher une recommandation à un audit
+        // d'une autre mine, puis hérite du companyId de la mine active.
+        auditOwnershipGuard.assertAuditCompany(recommendationDTO.getAuditId(), companyId);
         if (companyId != null) {
             recommendationDTO.setCompanyId(companyId);
         }
@@ -143,8 +149,10 @@ public class AuditAPI {
     }
 
     @PostMapping("/createFollowup")
-    public ResponseEntity<ResponseDTO> createFollowup(@Valid @RequestBody FollowupDTO followupDTO) throws HSException {
-        System.out.println("FollowupDTO: " + followupDTO);
+    public ResponseEntity<ResponseDTO> createFollowup(@Valid @RequestBody FollowupDTO followupDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse un suivi sur une recommandation d'une autre mine.
+        auditOwnershipGuard.assertRecommendationCompany(followupDTO.getRecommendationId(), companyId);
         recommendationFollowupService.addRecommendationFollowup(followupDTO);
         return new ResponseEntity<>(new ResponseDTO("Followup created successfully"), HttpStatus.CREATED);
     }
@@ -193,19 +201,28 @@ public class AuditAPI {
     }
 
     @PutMapping("/approvePlanning/{id}")
-    public ResponseEntity<ResponseDTO> approvePlanning(@PathVariable Long id) throws HSException {
+    public ResponseEntity<ResponseDTO> approvePlanning(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse d'approuver le planning d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(id, companyId);
         auditService.approvePlanning(id);
         return new ResponseEntity<>(new ResponseDTO("Planning Approved"), HttpStatus.OK);
     }
 
     @PutMapping("/rejectPlanning/{id}")
-    public ResponseEntity<ResponseDTO> rejectPlanning(@PathVariable Long id) throws HSException {
+    public ResponseEntity<ResponseDTO> rejectPlanning(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de rejeter le planning d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(id, companyId);
         auditService.rejectPlanning(id);
         return new ResponseEntity<>(new ResponseDTO("Planning Rejected"), HttpStatus.OK);
     }
 
     @DeleteMapping("/deleteAuditor/{id}")
-    public ResponseEntity<ResponseDTO> deleteAuditor(@PathVariable Long id) throws HSException {
+    public ResponseEntity<ResponseDTO> deleteAuditor(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de supprimer un auditeur d'une autre mine.
+        auditOwnershipGuard.assertAuditorCompany(id, companyId);
         auditorService.deleteAuditor(id);
         return new ResponseEntity<>(new ResponseDTO("Auditor deleted successfully"), HttpStatus.OK);
     }
@@ -223,7 +240,12 @@ public class AuditAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateAudit(@Valid @RequestBody AuditRequest request) throws HSException {
+    public ResponseEntity<ResponseDTO> updateAudit(@Valid @RequestBody AuditRequest request,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de modifier un audit d'une autre mine.
+        if (request.getAudit() != null) {
+            auditOwnershipGuard.assertAuditCompany(request.getAudit().getId(), companyId);
+        }
         auditService.updateAudit(request);
         return new ResponseEntity<>(new ResponseDTO("Audit updated successfully"), HttpStatus.OK);
     }

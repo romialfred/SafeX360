@@ -12,7 +12,7 @@ public interface InspectionChecklistService {
 
     void updateChecklist(InspectionChecklistDTO checklistDTO) throws HSException;
 
-    void deleteChecklist(Long id) throws HSException;
+    void deleteChecklist(Long id, Long companyId) throws HSException;
 
     List<InspectionChecklistDTO> getAllChecklists() throws HSException;
 

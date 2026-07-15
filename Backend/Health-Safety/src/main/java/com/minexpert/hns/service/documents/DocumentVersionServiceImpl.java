@@ -38,8 +38,10 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
             @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null"),
             @CacheEvict(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null")
     })
-    public DocumentVersionDTO create(DocumentVersionDTO dto) throws HSException {
-
+    public DocumentVersionDTO create(DocumentVersionDTO dto, Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de créer une version sur un document
+        // (id du body, spoofable) appartenant à une autre mine.
+        verifyParentDocument(dto.getDocumentId(), companyId);
         DocumentVersion version = dto.toEntity();
         DocumentVersion saved = versionRepository.save(version);
         return saved.toDTO();
@@ -70,9 +72,14 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
             @CacheEvict(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null"),
             @CacheEvict(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#result.documentId", condition = "#result != null && #result.documentId != null")
     })
-    public DocumentVersionDTO update(DocumentVersionDTO dto) throws HSException {
+    public DocumentVersionDTO update(DocumentVersionDTO dto, Long companyId) throws HSException {
         DocumentVersion existing = versionRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));
+        // Cloisonnement par mine : la version existante doit relever d'un document
+        // de la mine appelante ; et la cible de reparentage (dto) également.
+        Long existingDocId = existing.getDocument() != null ? existing.getDocument().getId() : null;
+        verifyParentDocument(existingDocId, companyId);
+        verifyParentDocument(dto.getDocumentId(), companyId);
 
         DocumentVersion updated = dto.toEntity();
         updated.setId(existing.getId());

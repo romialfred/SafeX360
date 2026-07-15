@@ -54,6 +54,10 @@ public class AuditReportAPI {
     @PostMapping("/create")
     public ResponseEntity<Long> createReport(@RequestParam(required = false) Long companyId,
             @RequestBody ExecuteRequest request) throws HSException {
+        // Cloisonnement par mine : refuse de créer un rapport sur un audit d'une autre mine.
+        if (request != null && request.getReport() != null) {
+            auditOwnershipGuard.assertAuditCompany(request.getReport().getAuditId(), companyId);
+        }
         applyCompanyId(companyId, request);
         return new ResponseEntity<>(reportService.createReport(request), HttpStatus.CREATED);
     }
@@ -61,6 +65,10 @@ public class AuditReportAPI {
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateReport(@RequestParam(required = false) Long companyId,
             @RequestBody ExecuteRequest request) throws HSException {
+        // Cloisonnement par mine : refuse de modifier un rapport d'un audit d'une autre mine.
+        if (request != null && request.getReport() != null) {
+            auditOwnershipGuard.assertAuditCompany(request.getReport().getAuditId(), companyId);
+        }
         applyCompanyId(companyId, request);
         reportService.updateReport(request);
         return new ResponseEntity<>(new ResponseDTO("Report updated successfully."), HttpStatus.OK);

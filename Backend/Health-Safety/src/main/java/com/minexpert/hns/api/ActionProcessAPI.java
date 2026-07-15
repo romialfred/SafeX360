@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ActionProcessDTO;
@@ -28,8 +29,11 @@ public class ActionProcessAPI {
     private ActionProcessService actionProcessService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> addActionProcess(@RequestBody ActionProcessDTO actionProcessDTO) throws HSException {
-        return new ResponseEntity<>(actionProcessService.addActionProcess(actionProcessDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> addActionProcess(@RequestBody ActionProcessDTO actionProcessDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : l'action corrective ciblée doit appartenir à la mine.
+        return new ResponseEntity<>(actionProcessService.addActionProcess(actionProcessDTO, companyId),
+                HttpStatus.CREATED);
     }
 
     @GetMapping("/getByActionId/{actionId}")

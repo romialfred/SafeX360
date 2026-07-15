@@ -18,13 +18,17 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @PostMapping("/create")
-    public ResponseEntity<NotificationDTO> create(@RequestBody NotificationDTO dto) throws HSException {
-        return ResponseEntity.ok(notificationService.create(dto));
+    public ResponseEntity<NotificationDTO> create(@RequestBody NotificationDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : la communication parente doit relever de la mine appelante.
+        return ResponseEntity.ok(notificationService.create(dto, companyId));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<NotificationDTO> update(@RequestBody NotificationDTO dto) throws HSException {
-        return ResponseEntity.ok(notificationService.update(dto));
+    public ResponseEntity<NotificationDTO> update(@RequestBody NotificationDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : la notification ciblée doit relever de la mine appelante.
+        return ResponseEntity.ok(notificationService.update(dto, companyId));
     }
 
     @GetMapping("/get/{id}")

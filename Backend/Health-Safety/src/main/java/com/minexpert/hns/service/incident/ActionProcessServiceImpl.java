@@ -53,10 +53,15 @@ public class ActionProcessServiceImpl implements ActionProcessService {
                                         CorrectiveActionServiceImpl.CACHE_CORRECTIVE_ACTIONS_PENDING
                         }, allEntries = true)
         })
-        public Long addActionProcess(ActionProcessDTO actionProcessDTO) throws HSException {
+        public Long addActionProcess(ActionProcessDTO actionProcessDTO, Long companyId) throws HSException {
                 CorrectiveAction correctiveAction = correctiveActionRepository
                                 .findById(actionProcessDTO.getCorrectiveActionId())
                                 .orElseThrow(() -> new HSException("CORRECTIVE_ACTION_NOT_FOUND"));
+                // Cloisonnement par mine : refuse de faire avancer/muter une action
+                // corrective (progression, statut) appartenant à une autre mine.
+                if (companyId != null && !companyId.equals(correctiveAction.getCompanyId())) {
+                        throw new HSException("CORRECTIVE_ACTION_NOT_FOUND");
+                }
                 if (correctiveAction.getStatus() == ActionStatus.COMPLETED
                                 || correctiveAction.getStatus() == ActionStatus.CANCELLED) {
                         throw new HSException("ACTION_ALREADY_CLOSED");

@@ -67,7 +67,8 @@ public class AuditIsoAPI {
             @RequestParam(required = false) Long companyId,
             @RequestBody MeetingDTO meetingDTO) throws HSException {
         meetingDTO.setAuditId(auditId);
-        // Cloisonnement par mine : la réunion hérite du companyId de la mine active.
+        // Cloisonnement par mine : refuse une réunion sur un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         if (companyId != null) {
             meetingDTO.setCompanyId(companyId);
         }
@@ -85,7 +86,10 @@ public class AuditIsoAPI {
     // ─── Escalade d'un constat NC vers les Constats centraux ───
 
     @PostMapping("/observations/{id}/escalate")
-    public ResponseEntity<Map<String, Object>> escalateObservation(@PathVariable Long id) throws HSException {
+    public ResponseEntity<Map<String, Object>> escalateObservation(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse d'escalader un constat d'une autre mine.
+        auditOwnershipGuard.assertObservationCompany(id, companyId);
         Long ncId = observationService.escalateToNonConformity(id);
         return new ResponseEntity<>(Map.of(
                 "nonConformityId", ncId,
@@ -114,7 +118,11 @@ public class AuditIsoAPI {
 
     @PostMapping("/recommendations/{id}/effectiveness")
     public ResponseEntity<Long> planEffectivenessCheck(@PathVariable Long id,
-            @RequestBody PlanCheckRequest request) throws HSException {
+            @RequestBody PlanCheckRequest request,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de planifier un contrôle sur une
+        // recommandation d'une autre mine.
+        auditOwnershipGuard.assertRecommendationCompany(id, companyId);
         return new ResponseEntity<>(
                 effectivenessService.planCheck(id, request.getDueDate(), request.getEvaluatorEmployeeId()),
                 HttpStatus.CREATED);
@@ -122,7 +130,10 @@ public class AuditIsoAPI {
 
     @PutMapping("/effectiveness/{id}")
     public ResponseEntity<ResponseDTO> concludeEffectivenessCheck(@PathVariable Long id,
-            @RequestBody VerdictRequest request) throws HSException {
+            @RequestBody VerdictRequest request,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de conclure un contrôle d'une autre mine.
+        auditOwnershipGuard.assertEffectivenessCheckCompany(id, companyId);
         effectivenessService.concludeCheck(id, request.getVerdict(), request.getComment());
         return new ResponseEntity<>(new ResponseDTO("Verdict d'efficacité enregistré"), HttpStatus.OK);
     }

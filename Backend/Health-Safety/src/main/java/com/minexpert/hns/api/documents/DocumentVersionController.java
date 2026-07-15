@@ -19,13 +19,17 @@ public class DocumentVersionController {
     private final DocumentVersionService versionService;
 
     @PostMapping("/create")
-    public ResponseEntity<DocumentVersionDTO> create(@RequestBody DocumentVersionDTO dto) throws HSException {
-        return ResponseEntity.ok(versionService.create(dto));
+    public ResponseEntity<DocumentVersionDTO> create(@RequestBody DocumentVersionDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : le document parent doit relever de la mine appelante.
+        return ResponseEntity.ok(versionService.create(dto, companyId));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<DocumentVersionDTO> update(@RequestBody DocumentVersionDTO dto) throws HSException {
-        return ResponseEntity.ok(versionService.update(dto));
+    public ResponseEntity<DocumentVersionDTO> update(@RequestBody DocumentVersionDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : la version ciblée doit relever de la mine appelante.
+        return ResponseEntity.ok(versionService.update(dto, companyId));
     }
 
     @GetMapping("/get/{id}")

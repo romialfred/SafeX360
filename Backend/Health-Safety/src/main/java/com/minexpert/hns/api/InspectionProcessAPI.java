@@ -19,7 +19,9 @@ import com.minexpert.hns.dto.inspections.InspectionChecklistDTO;
 import com.minexpert.hns.dto.inspections.InspectionMeasurementDTO;
 import com.minexpert.hns.dto.inspections.ProcessDTO;
 import com.minexpert.hns.dto.parameters.CheckListDTO;
+import com.minexpert.hns.entity.GeneralInspection;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.repository.inspections.GeneralInspectionRepository;
 import com.minexpert.hns.service.inspections.InspectionChecklistService;
 import com.minexpert.hns.service.inspections.InspectionMeasurementService;
 import com.minexpert.hns.service.inspections.ProcessService;
@@ -39,11 +41,31 @@ public class InspectionProcessAPI {
     @Autowired
     private InspectionMeasurementService inspectionMeasurementService;
 
+    @Autowired
+    private GeneralInspectionRepository generalInspectionRepository;
+
+    /**
+     * Cloisonnement par mine : refuse toute écriture rattachée à une inspection
+     * appartenant à une autre mine. companyId null = appel système / toutes mines.
+     */
+    private void assertInspectionCompany(Long inspectionId, Long companyId) throws HSException {
+        if (companyId == null || inspectionId == null) {
+            return;
+        }
+        Long owner = generalInspectionRepository.findById(inspectionId)
+                .map(GeneralInspection::getCompanyId).orElse(null);
+        if (owner == null || !companyId.equals(owner)) {
+            throw new HSException("GENERAL_INSPECTION_NOT_FOUND");
+        }
+    }
+
     @PostMapping("/addChecklist")
     public ResponseEntity<Long> addChecklist(
             @RequestParam(required = false) Long companyId,
             @RequestBody InspectionChecklistDTO inspectionChecklistDTO)
             throws HSException {
+        // Cloisonnement par mine : l'inspection parente (id du body) doit appartenir à la mine.
+        assertInspectionCompany(inspectionChecklistDTO.getGeneralInspectionId(), companyId);
         if (companyId != null) {
             inspectionChecklistDTO.setCompanyId(companyId);
         }
@@ -56,6 +78,8 @@ public class InspectionProcessAPI {
             @RequestParam(required = false) Long companyId,
             @RequestBody InspectionMeasurementDTO inspectionMeasurementDTO)
             throws HSException {
+        // Cloisonnement par mine : l'inspection parente (id du body) doit appartenir à la mine.
+        assertInspectionCompany(inspectionMeasurementDTO.getGeneralInspectionId(), companyId);
         if (companyId != null) {
             inspectionMeasurementDTO.setCompanyId(companyId);
         }
@@ -67,6 +91,9 @@ public class InspectionProcessAPI {
     public ResponseEntity<ProcessDTO> saveDraft(
             @RequestParam(required = false) Long companyId,
             @RequestBody ProcessDTO processDTO) throws HSException {
+        // Cloisonnement par mine : refuse d'écrire un brouillon (statut + sous-enregistrements)
+        // sur une inspection appartenant à une autre mine.
+        assertInspectionCompany(processDTO.getInspectionId(), companyId);
         if (companyId != null) {
             processDTO.setCompanyId(companyId);
         }
@@ -80,14 +107,16 @@ public class InspectionProcessAPI {
     }
 
     @DeleteMapping("/remove-checklist/{id}")
-    public ResponseEntity<ResponseDTO> removeChecklist(@PathVariable Long id) throws HSException {
-        inspectionChecklistService.deleteChecklist(id);
+    public ResponseEntity<ResponseDTO> removeChecklist(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        inspectionChecklistService.deleteChecklist(id, companyId);
         return new ResponseEntity<>(new ResponseDTO("Checklist removed successfully"), HttpStatus.OK);
     }
 
     @DeleteMapping("/remove-measurement/{id}")
-    public ResponseEntity<ResponseDTO> removeMeasurement(@PathVariable Long id) throws HSException {
-        inspectionMeasurementService.deleteMeasurement(id);
+    public ResponseEntity<ResponseDTO> removeMeasurement(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        inspectionMeasurementService.deleteMeasurement(id, companyId);
         return new ResponseEntity<>(new ResponseDTO("Measurement removed successfully"), HttpStatus.OK);
     }
 

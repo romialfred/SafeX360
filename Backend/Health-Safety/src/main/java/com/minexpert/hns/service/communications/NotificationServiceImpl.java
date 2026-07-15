@@ -39,9 +39,12 @@ public class NotificationServiceImpl implements NotificationService {
                         CommunicationCacheNames.NOTIFICATION_EXPIRED,
                         CommunicationCacheNames.NOTIFICATION_BY_COMMUNICATION
         }, allEntries = true)
-        public NotificationDTO create(NotificationDTO dto) throws HSException {
+        public NotificationDTO create(NotificationDTO dto, Long companyId) throws HSException {
                 Communication communication = communicationRepository.findById(dto.getCommunicationId())
                                 .orElseThrow(() -> new HSException("COMMUNICATION_NOT_FOUND"));
+                // Cloisonnement par mine : la communication parente (id du body) doit
+                // relever de la mine appelante.
+                assertCommunicationCompany(communication, companyId);
                 CommTime commTime = commTimeRepository.findById(dto.getCommTimeId())
                                 .orElseThrow(() -> new HSException("COMM_TIME_NOT_FOUND"));
                 Notification notification = dto.toEntity(communication, commTime);
@@ -59,13 +62,18 @@ public class NotificationServiceImpl implements NotificationService {
                                         CommunicationCacheNames.NOTIFICATION_BY_COMMUNICATION
                         }, allEntries = true)
         })
-        public NotificationDTO update(NotificationDTO dto) throws HSException {
+        public NotificationDTO update(NotificationDTO dto, Long companyId) throws HSException {
                 Notification existing = notificationRepository.findById(dto.getId())
                                 .orElseThrow(() -> new HSException("NOTIFICATION_NOT_FOUND"));
+                // Cloisonnement par mine : la notification ciblée doit relever de la mine
+                // appelante (via sa Communication parente).
+                verifyCompany(dto.getId(), companyId);
                 Communication communication = dto.getCommunicationId() != null
                                 ? communicationRepository.findById(dto.getCommunicationId())
                                                 .orElseThrow(() -> new HSException("COMMUNICATION_NOT_FOUND"))
                                 : existing.getCommunication();
+                // Et la Communication cible (reparentage éventuel) également.
+                assertCommunicationCompany(communication, companyId);
                 CommTime commTime = dto.getCommTimeId() != null
                                 ? commTimeRepository.findById(dto.getCommTimeId())
                                                 .orElseThrow(() -> new HSException("COMM_TIME_NOT_FOUND"))
@@ -135,6 +143,20 @@ public class NotificationServiceImpl implements NotificationService {
                 Long parent = notificationRepository.findParentCompanyId(notificationId).orElse(null);
                 if (parent != null && !companyId.equals(parent)) {
                         throw new HSException("NOTIFICATION_NOT_FOUND");
+                }
+        }
+
+        /**
+         * Verifie qu'une Communication parente releve de la mine appelante (creation
+         * / reparentage d'une notification). companyId null = pas de controle.
+         */
+        private void assertCommunicationCompany(Communication communication, Long companyId)
+                        throws HSException {
+                if (companyId == null || communication == null) {
+                        return;
+                }
+                if (!companyId.equals(communication.getCompanyId())) {
+                        throw new HSException("COMMUNICATION_NOT_FOUND");
                 }
         }
 }
