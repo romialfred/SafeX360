@@ -98,6 +98,14 @@ export interface ScheduleInspectionDTO {
     primaryInspectorId?: number | null;
 }
 
+export interface LastInspectionDTO {
+    id: number;
+    plannedDate: string;
+    status: InspectionStatus;
+    primaryInspectorName?: string;
+    templateName?: string;
+}
+
 export interface FindingDTO {
     id?: number;
     checkpointId?: number;
@@ -248,6 +256,23 @@ export const getInspection = (id: number) =>
     axiosInstance
         .get<InspectionDetailDTO>(`/hns/inspection/${id}`)
         .then((r) => r.data);
+
+/**
+ * Dernière inspection pour une cible donnée (type + targetRefId), scopée mine
+ * (companyId injecté par l'intercepteur). Renvoie `null` si aucune inspection
+ * précédente (backend 204/null) ou en cas d'erreur — le panneau d'info du
+ * formulaire de planification dégrade alors gracieusement.
+ */
+export const getLastInspection = (
+    targetType: InspectionTemplateType,
+    targetRefId: number,
+): Promise<LastInspectionDTO | null> =>
+    axiosInstance
+        .get<LastInspectionDTO>('/hns/inspections/last', {
+            params: { targetType, targetRefId },
+        })
+        .then((r) => (r.data && (r.data as any).id ? r.data : null))
+        .catch(() => null);
 
 export const scheduleInspection = (dto: ScheduleInspectionDTO) =>
     axiosInstance

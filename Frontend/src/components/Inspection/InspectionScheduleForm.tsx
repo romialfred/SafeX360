@@ -1,15 +1,24 @@
 /**
- * InspectionScheduleForm — Formulaire de planification en 4 etapes (responsive
- * web + mobile). Choix tactile par tuiles pour le type d'objet, suggestion
- * automatique des templates correspondants, saisie de la cible et de la date.
+ * InspectionScheduleForm — Formulaire de planification en 3 étapes (responsive
+ * web + mobile).
  *
- * Aucune section EPI (suppression demandee). Pas de checklist ni de mesure ici
- * (saisie deportee a la page d'execution mobile en Phase 4).
+ *   1. Cible    — type d'objet (tuiles) + cible (liste déroulante) + panneau
+ *                 d'info raffiné (détails de la cible + dernière inspection).
+ *   2. Modèle   — sélection du template correspondant au type.
+ *   3. Détails  — date, horaires, inspecteur, objectifs, description.
+ *
+ * La mine (site) n'est JAMAIS demandée : résolue automatiquement via
+ * `activeMineId ?? primaryMineId` → `resolvedMineId` → `siteId`. NE PAS
+ * réintroduire de sélecteur/erreur de mine.
+ *
+ * Aucune section EPI. Pas de checklist ni de mesure ici (saisie déportée à la
+ * page d'exécution mobile en Phase 4).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Select } from '@mantine/core';
 import {
     IconChevronRight,
     IconChevronLeft,
@@ -21,19 +30,28 @@ import {
     IconCheck,
     IconAlertOctagon,
     IconCalendarStats,
+    IconHistory,
+    IconInfoCircle,
 } from '@tabler/icons-react';
 
 import {
     listTemplates,
     scheduleInspection,
+    getLastInspection,
     type InspectionTemplateType,
     type InspectionTemplateSummaryDTO,
     type ScheduleInspectionDTO,
+    type LastInspectionDTO,
 } from '../../services/InspectionService';
+import { getAllEquipment } from '../../services/EquipmentService';
+import { getAllActiveLocations } from '../../services/LocationService';
+import { getAllActiveWorkProcess } from '../../services/WorkProcessService';
+import InspectionStatusBadge from './InspectionStatusBadge';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import { useAppSelector } from '../../slices/hooks';
 
-type Step = 1 | 2 | 3 | 4;
+// Wizard à 3 étapes : Cible → Modèle → Détails.
+type Step = 1 | 2 | 3;
 
 interface FormState {
     type: InspectionTemplateType | null;
@@ -76,7 +94,7 @@ const TYPE_ACCENT: Record<InspectionTemplateType, string> = {
 };
 
 export default function InspectionScheduleForm() {
-    const { t } = useTranslation(['inspection', 'common']);
+    const { t, i18n } = useTranslation(['inspection', 'common']);
     const navigate = useNavigate();
 
     const [step, setStep] = useState<Step>(1);
@@ -86,19 +104,76 @@ export default function InspectionScheduleForm() {
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
 
+    // Cibles : options de la liste déroulante + enregistrements bruts (panneau info)
+    const [targetOptions, setTargetOptions] = useState<{ value: string; label: string }[]>([]);
+    const [targetRecords, setTargetRecords] = useState<any[]>([]);
+    const [loadingTargets, setLoadingTargets] = useState(false);
+    // Dernière inspection de la cible sélectionnée
+    const [lastInspection, setLastInspection] = useState<LastInspectionDTO | null>(null);
+    const [loadingLast, setLoadingLast] = useState(false);
+
     // Principe plateforme : AUCUN formulaire ne demande la mine. La mine active
     // vient du header (sélecteur global) ; toute création y est rattachée. Le
     // « site » de l'inspection = la mine active, résolue automatiquement ici.
     const activeMineId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId ?? null);
+    // Mine principale de l'utilisateur (repli quand le header est en « Toutes les
+    // Mines » / vue consolidée) : on ne demande JAMAIS la mine dans le formulaire.
+    const primaryMineId = useAppSelector((state: any) => {
+        const c = state.user?.company;
+        const n = c === null || c === undefined ? null : Number(c);
+        return Number.isNaN(n as any) ? null : n;
+    });
+    const resolvedMineId = activeMineId ?? primaryMineId;
 
-    // Aligne en continu le site de l'inspection sur la mine active du header.
+    // Aligne en continu le site de l'inspection sur la mine résolue (header, sinon
+    // mine principale). Jamais de saisie manuelle de la mine.
     useEffect(() => {
-        setForm((f) => (f.siteId === activeMineId ? f : { ...f, siteId: activeMineId }));
-    }, [activeMineId]);
+        setForm((f) => (f.siteId === resolvedMineId ? f : { ...f, siteId: resolvedMineId }));
+    }, [resolvedMineId]);
 
-    // Charge la liste des templates filtres par type quand l'utilisateur arrive a l'etape 3
+    // Charge la liste des cibles selon le type d'objet choisi (étape 1 fusionnée).
+    // Dégradation gracieuse : toute erreur → liste vide, pas de crash.
     useEffect(() => {
-        if (step !== 3 || !form.type) return;
+        if (!form.type) {
+            setTargetOptions([]);
+            setTargetRecords([]);
+            return;
+        }
+        const currentType = form.type;
+        setLoadingTargets(true);
+        const loader =
+            currentType === 'EQUIPMENT'
+                ? getAllEquipment()
+                : currentType === 'LOCATION'
+                ? getAllActiveLocations()
+                : getAllActiveWorkProcess();
+        Promise.resolve(loader)
+            .then((list: any[]) => {
+                const arr = Array.isArray(list) ? list : [];
+                setTargetRecords(arr);
+                setTargetOptions(
+                    arr
+                        .filter((r) => r && r.id !== undefined && r.id !== null)
+                        .map((r) => ({
+                            value: String(r.id),
+                            label:
+                                currentType === 'EQUIPMENT'
+                                    ? [r.code, r.name].filter(Boolean).join(' — ') || `#${r.id}`
+                                    : r.name ?? `#${r.id}`,
+                        })),
+                );
+            })
+            .catch(() => {
+                setTargetRecords([]);
+                setTargetOptions([]);
+            })
+            .finally(() => setLoadingTargets(false));
+    }, [form.type]);
+
+    // Charge la liste des templates filtrés par type quand l'utilisateur arrive à
+    // l'étape Modèle (étape 2 dans le wizard à 3 étapes).
+    useEffect(() => {
+        if (step !== 2 || !form.type) return;
         setLoadingTemplates(true);
         listTemplates(form.type)
             .then((list) => setTemplates(list.filter((t) => t.active !== false)))
@@ -110,19 +185,47 @@ export default function InspectionScheduleForm() {
         setForm((f) => ({ ...f, [key]: value }));
     };
 
+    // Sélection du type d'objet : réinitialise la cible, le template et l'info.
+    const handleSelectType = (tt: InspectionTemplateType) => {
+        setForm((f) => ({ ...f, type: tt, templateId: null, targetRefId: '', targetLabel: '' }));
+        setLastInspection(null);
+    };
+
+    // Sélection d'une cible dans la liste déroulante : fixe targetRefId, pré-remplit
+    // la désignation (targetLabel, éditable) et va chercher la dernière inspection.
+    const handleSelectTarget = (value: string | null) => {
+        if (!value) {
+            set('targetRefId', '');
+            set('targetLabel', '');
+            setLastInspection(null);
+            return;
+        }
+        set('targetRefId', value);
+        const rec = targetRecords.find((r) => String(r.id) === value);
+        set('targetLabel', rec?.name ?? '');
+        if (form.type) {
+            setLoadingLast(true);
+            getLastInspection(form.type, Number(value))
+                .then((res) => setLastInspection(res))
+                .catch(() => setLastInspection(null))
+                .finally(() => setLoadingLast(false));
+        }
+    };
+
     const validateStep = (s: Step): string[] => {
         const errs: string[] = [];
-        if (s >= 1 && !form.type) errs.push(t('schedule.errors.typeRequired'));
-        if (s >= 2) {
-            // La mine (site) n'est PLUS saisie dans le formulaire : elle vient du
-            // header. On vérifie seulement qu'une mine active est bien sélectionnée
-            // (sinon, l'admin en « Toutes les mines » doit en choisir une en haut).
-            if (!form.siteId) errs.push(t('schedule.errors.mineNotActive', { defaultValue: 'Sélectionnez une mine active dans l\'en-tête avant de planifier.' }));
-            if (!form.targetRefId) errs.push(t('schedule.errors.targetIdRequired'));
+        // Étape 1 fusionnée : type d'objet + cible (dropdown) + désignation.
+        if (s >= 1) {
+            if (!form.type) errs.push(t('schedule.errors.typeRequired'));
+            if (!form.targetRefId) {
+                errs.push(t('schedule.errors.targetIdRequired', { defaultValue: 'Sélectionnez une cible.' }));
+            }
             if (!form.targetLabel.trim()) errs.push(t('schedule.errors.targetLabelRequired'));
         }
-        if (s >= 3 && !form.templateId) errs.push(t('schedule.errors.templateRequired'));
-        if (s >= 4 && !form.plannedDate) errs.push(t('schedule.errors.dateRequired'));
+        // La mine (site) n'est JAMAIS saisie : résolue depuis le header, sinon la
+        // mine principale de l'utilisateur. Aucun blocage ici.
+        if (s >= 2 && !form.templateId) errs.push(t('schedule.errors.templateRequired'));
+        if (s >= 3 && !form.plannedDate) errs.push(t('schedule.errors.dateRequired'));
         return errs;
     };
 
@@ -133,7 +236,7 @@ export default function InspectionScheduleForm() {
             return;
         }
         setErrors([]);
-        setStep((s) => (s < 4 ? ((s + 1) as Step) : s));
+        setStep((s) => (s < 3 ? ((s + 1) as Step) : s));
     };
 
     const goPrev = () => {
@@ -142,7 +245,7 @@ export default function InspectionScheduleForm() {
     };
 
     const handleSubmit = async () => {
-        const errs = validateStep(4);
+        const errs = validateStep(3);
         if (errs.length > 0) {
             setErrors(errs);
             return;
@@ -178,7 +281,7 @@ export default function InspectionScheduleForm() {
         }
     };
 
-    const stepHeader = (n: Step, labelKey: string) => {
+    const stepHeader = (n: Step, labelKey: string, fallback: string) => {
         const isActive = step === n;
         const isDone = step > n;
         return (
@@ -199,7 +302,7 @@ export default function InspectionScheduleForm() {
                         isActive ? 'text-slate-900 font-medium' : 'text-slate-500'
                     }`}
                 >
-                    {t(`schedule.steps.${labelKey}`)}
+                    {t(`schedule.steps.${labelKey}`, { defaultValue: fallback })}
                 </span>
             </div>
         );
@@ -240,13 +343,12 @@ export default function InspectionScheduleForm() {
                     </div>
                 </div>
 
-                {/* Stepper */}
+                {/* Stepper — 3 étapes : Cible → Modèle → Détails */}
                 <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm p-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {stepHeader(1, 'type')}
-                        {stepHeader(2, 'target')}
-                        {stepHeader(3, 'template')}
-                        {stepHeader(4, 'details')}
+                    <div className="grid grid-cols-3 gap-2">
+                        {stepHeader(1, 'target', 'Cible')}
+                        {stepHeader(2, 'template', 'Modèle')}
+                        {stepHeader(3, 'details', 'Détails')}
                     </div>
                 </div>
 
@@ -265,21 +367,20 @@ export default function InspectionScheduleForm() {
                 {/* Etape courante */}
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 mb-4">
                     {step === 1 && (
-                        <StepType
-                            selected={form.type}
-                            onSelect={(t) => {
-                                set('type', t);
-                                set('templateId', null);
-                            }}
-                        />
-                    )}
-                    {step === 2 && (
                         <StepTarget
                             form={form}
                             setField={set}
+                            onSelectType={handleSelectType}
+                            targetOptions={targetOptions}
+                            targetRecords={targetRecords}
+                            loadingTargets={loadingTargets}
+                            onSelectTarget={handleSelectTarget}
+                            lastInspection={lastInspection}
+                            loadingLast={loadingLast}
+                            locale={i18n.language}
                         />
                     )}
-                    {step === 3 && (
+                    {step === 2 && (
                         <StepTemplate
                             templates={templates}
                             loading={loadingTemplates}
@@ -287,7 +388,7 @@ export default function InspectionScheduleForm() {
                             onSelect={(id) => set('templateId', id)}
                         />
                     )}
-                    {step === 4 && (
+                    {step === 3 && (
                         <StepDetails form={form} setField={set} />
                     )}
                 </div>
@@ -312,7 +413,7 @@ export default function InspectionScheduleForm() {
                                 {t('schedule.buttons.previous')}
                             </button>
                         )}
-                        {step < 4 ? (
+                        {step < 3 ? (
                             <button
                                 type="button"
                                 onClick={goNext}
@@ -340,31 +441,66 @@ export default function InspectionScheduleForm() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- *  Sous-composants — un par etape
+ *  Sous-composants — un par étape
  * ────────────────────────────────────────────────────────────────────────*/
 
-function StepType({
-    selected,
-    onSelect,
+function formatDate(iso: string | undefined, locale: string): string {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB');
+    } catch (_e) {
+        return iso;
+    }
+}
+
+/**
+ * StepTarget — Étape 1 fusionnée : type d'objet (tuiles) + cible (liste
+ * déroulante dépendante du type) + panneau d'info raffiné (détails + dernière
+ * inspection). La désignation (targetLabel) reste éditable, pré-remplie.
+ */
+function StepTarget({
+    form,
+    setField,
+    onSelectType,
+    targetOptions,
+    targetRecords,
+    loadingTargets,
+    onSelectTarget,
+    lastInspection,
+    loadingLast,
+    locale,
 }: {
-    selected: InspectionTemplateType | null;
-    onSelect: (t: InspectionTemplateType) => void;
+    form: FormState;
+    setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+    onSelectType: (t: InspectionTemplateType) => void;
+    targetOptions: { value: string; label: string }[];
+    targetRecords: any[];
+    loadingTargets: boolean;
+    onSelectTarget: (value: string | null) => void;
+    lastInspection: LastInspectionDTO | null;
+    loadingLast: boolean;
+    locale: string;
 }) {
     const { t } = useTranslation('inspection');
     const types: InspectionTemplateType[] = ['EQUIPMENT', 'LOCATION', 'PROCEDURE'];
+    const selectedRecord = form.targetRefId
+        ? targetRecords.find((r) => String(r.id) === form.targetRefId)
+        : null;
+
     return (
         <div>
+            {/* Type d'objet — tuiles */}
             <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
                 {t('schedule.typeStep.heading')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {types.map((tt) => {
-                    const active = selected === tt;
+                    const active = form.type === tt;
                     return (
                         <button
                             key={tt}
                             type="button"
-                            onClick={() => onSelect(tt)}
+                            onClick={() => onSelectType(tt)}
                             className={`text-left p-4 rounded-xl border-2 transition min-h-[120px] ${
                                 active
                                     ? 'border-cyan-600 bg-cyan-50/60 shadow-md'
@@ -386,57 +522,122 @@ function StepType({
                     );
                 })}
             </div>
+
+            {/* Cible — liste déroulante (source dépend du type) */}
+            {form.type && (
+                <div className="mt-5 space-y-3">
+                    <div>
+                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
+                            {t('schedule.targetStep.targetSelectLabel', { defaultValue: 'Cible' })}
+                        </label>
+                        <Select
+                            searchable
+                            clearable
+                            data={targetOptions}
+                            value={form.targetRefId || null}
+                            onChange={onSelectTarget}
+                            disabled={loadingTargets}
+                            nothingFoundMessage={
+                                loadingTargets
+                                    ? t('common:loading', { defaultValue: 'Chargement…' })
+                                    : t('schedule.targetStep.noTarget', { defaultValue: 'Aucune cible disponible' })
+                            }
+                            placeholder={
+                                loadingTargets
+                                    ? t('common:loading', { defaultValue: 'Chargement…' })
+                                    : t('schedule.targetStep.targetSelectPlaceholder', { defaultValue: 'Sélectionner une cible…' })
+                            }
+                            comboboxProps={{ withinPortal: true }}
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                            {t('schedule.targetStep.targetSelectHelp', {
+                                defaultValue: "La liste est limitée à la mine active.",
+                            })}
+                        </p>
+                    </div>
+
+                    {/* Panneau d'info raffiné — détails de la cible + dernière inspection */}
+                    {selectedRecord && (
+                        <div className="rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-50/70 to-white p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                                <IconInfoCircle size={15} stroke={1.8} className="text-cyan-700" />
+                                <span className="text-[12.5px] font-semibold text-slate-800">
+                                    {t('schedule.targetStep.infoHeading', { defaultValue: 'Détails de la cible' })}
+                                </span>
+                            </div>
+
+                            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                                {form.type === 'EQUIPMENT' ? (
+                                    <>
+                                        <InfoField label={t('schedule.targetStep.fieldCode', { defaultValue: 'Code' })} value={selectedRecord.code} />
+                                        <InfoField label={t('schedule.targetStep.fieldName', { defaultValue: 'Nom' })} value={selectedRecord.name} />
+                                        <InfoField label={t('schedule.targetStep.fieldType', { defaultValue: 'Type' })} value={selectedRecord.type} />
+                                        <InfoField
+                                            label={t('schedule.targetStep.fieldBrandModel', { defaultValue: 'Marque / Modèle' })}
+                                            value={[selectedRecord.brand, selectedRecord.model].filter(Boolean).join(' ')}
+                                        />
+                                        <InfoField label={t('schedule.targetStep.fieldSerial', { defaultValue: 'N° de série' })} value={selectedRecord.serialNumber} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <InfoField label={t('schedule.targetStep.fieldName', { defaultValue: 'Nom' })} value={selectedRecord.name} />
+                                        {selectedRecord.zone && (
+                                            <InfoField label={t('schedule.targetStep.fieldZone', { defaultValue: 'Zone' })} value={selectedRecord.zone} />
+                                        )}
+                                    </>
+                                )}
+                            </dl>
+
+                            {/* Dernière inspection */}
+                            <div className="mt-3 pt-3 border-t border-cyan-100 flex items-center gap-2 flex-wrap">
+                                <IconHistory size={14} stroke={1.8} className="text-slate-500" />
+                                <span className="text-[11.5px] uppercase tracking-[0.08em] text-slate-500 font-medium">
+                                    {t('schedule.targetStep.lastInspection', { defaultValue: 'Dernière inspection' })}
+                                </span>
+                                {loadingLast ? (
+                                    <span className="text-[12px] text-slate-400">…</span>
+                                ) : lastInspection ? (
+                                    <span className="inline-flex items-center gap-2">
+                                        <span className="text-[12.5px] text-slate-800 tabular-nums font-medium">
+                                            {formatDate(lastInspection.plannedDate, locale)}
+                                        </span>
+                                        <InspectionStatusBadge status={lastInspection.status} />
+                                    </span>
+                                ) : (
+                                    <span className="text-[12px] text-slate-500 italic">
+                                        {t('schedule.targetStep.noPreviousInspection', {
+                                            defaultValue: 'Aucune inspection précédente',
+                                        })}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Désignation — pré-remplie, éditable */}
+                    <div>
+                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
+                            {t('schedule.targetStep.targetLabelLabel')}
+                        </label>
+                        <input
+                            type="text"
+                            value={form.targetLabel}
+                            onChange={(e) => setField('targetLabel', e.target.value)}
+                            placeholder={t('schedule.targetStep.targetLabelPlaceholder')}
+                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-function StepTarget({
-    form,
-    setField,
-}: {
-    form: FormState;
-    setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
-}) {
-    const { t } = useTranslation('inspection');
+function InfoField({ label, value }: { label: string; value?: string | null }) {
     return (
-        <div>
-            <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
-                {t('schedule.targetStep.heading')}
-            </h2>
-            <div className="space-y-3">
-                {/* Principe plateforme : la mine (site) N'est PAS demandée ici — elle
-                    est celle active dans l'en-tête. On rappelle juste où sera rattachée
-                    l'inspection ; aucune sélection de site dans le formulaire. */}
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                        {t('schedule.targetStep.targetIdLabel')}
-                    </label>
-                    {/* Saisie numérique en input texte (inputMode numeric) : un
-                        <input type=number> bloquait la frappe de façon déroutante.
-                        La valeur reste numérique (targetRefId = Long côté backend). */}
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={form.targetRefId}
-                        onChange={(e) => setField('targetRefId', e.target.value.replace(/[^0-9]/g, ''))}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                    />
-                    <p className="text-[11px] text-slate-500 mt-1">{t('schedule.targetStep.targetIdHelp')}</p>
-                </div>
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                        {t('schedule.targetStep.targetLabelLabel')}
-                    </label>
-                    <input
-                        type="text"
-                        value={form.targetLabel}
-                        onChange={(e) => setField('targetLabel', e.target.value)}
-                        placeholder={t('schedule.targetStep.targetLabelPlaceholder')}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                    />
-                </div>
-            </div>
+        <div className="min-w-0">
+            <dt className="text-[10.5px] uppercase tracking-[0.08em] text-slate-400 font-medium">{label}</dt>
+            <dd className="text-[12.5px] text-slate-800 truncate">{value || '—'}</dd>
         </div>
     );
 }

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import com.minexpert.hns.dto.response.GeneralInspectionResponse;
 import com.minexpert.hns.dto.response.InspectionInfo;
 import com.minexpert.hns.entity.GeneralInspection;
+import com.minexpert.hns.enums.InspectionTemplateType;
 
 public interface GeneralInspectionRepository extends CrudRepository<GeneralInspection, Long> {
 
@@ -30,4 +32,17 @@ public interface GeneralInspectionRepository extends CrudRepository<GeneralInspe
         List<GeneralInspection> findAllByCompany(@Param("companyId") Long companyId);
 
         Optional<GeneralInspection> findFirstByPlannedDateGreaterThanEqualOrderByPlannedDateAsc(LocalDate date);
+
+        /**
+         * Dernière inspection pour une cible donnée (type du template +
+         * targetRefId), scopée mine. Renvoyée la plus récente en tête
+         * (plannedDate puis id décroissants) ; le service prend le premier
+         * élément via Pageable(0,1). companyId null ne filtre pas (allMines).
+         */
+        @Query("SELECT gi FROM GeneralInspection gi "
+                        + "WHERE gi.template.type = :type AND gi.targetRefId = :refId "
+                        + "AND (:companyId IS NULL OR gi.companyId = :companyId) "
+                        + "ORDER BY gi.plannedDate DESC, gi.id DESC")
+        List<GeneralInspection> findLastInspection(@Param("type") InspectionTemplateType type,
+                        @Param("refId") Long refId, @Param("companyId") Long companyId, Pageable pageable);
 }

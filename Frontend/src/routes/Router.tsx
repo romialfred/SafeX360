@@ -217,6 +217,7 @@ const BlastDashboardPage = lazy(() => import('../components/Blast/BlastDashboard
 
 // LOT — Inspections HSE (refonte 2026-06, Phase 3 Frontend).
 const InspectionRegistryPage = lazy(() => import('../components/Inspection/InspectionRegistryPage'));
+const EquipmentRegistryPage = lazy(() => import('../components/Inspection/EquipmentRegistryPage'));
 const InspectionScheduleForm = lazy(() => import('../components/Inspection/InspectionScheduleForm'));
 const InspectionExecutePage = lazy(() => import('../components/Inspection/InspectionExecutePage'));
 const InspectionDetailPage = lazy(() => import('../components/Inspection/InspectionDetailPage'));
@@ -696,6 +697,8 @@ const router = createBrowserRouter([
             // LOT — Module Inspections HSE (refonte 2026-06, Phase 3 Frontend)
             // Reuse BlastSuspense (meme look & feel cream + Loader Mantine).
             { path: 'inspections', element: <BlastSuspense><InspectionRegistryPage /></BlastSuspense> },
+            // Registre des équipements (données de référence du module Inspections)
+            { path: 'inspections/equipment', element: <BlastSuspense><EquipmentRegistryPage /></BlastSuspense> },
             { path: 'inspections/schedule', element: <BlastSuspense><InspectionScheduleForm /></BlastSuspense> },
             { path: 'inspections/execute/:id', element: <BlastSuspense><InspectionExecutePage /></BlastSuspense> },
             { path: 'inspections/detail/:id', element: <BlastSuspense><InspectionDetailPage /></BlastSuspense> },

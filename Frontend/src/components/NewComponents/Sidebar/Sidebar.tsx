@@ -21,6 +21,7 @@ import {
     IconPlus, // Minus
     IconMinus, // Search
     IconSearch, // Users
+    IconTruck, // Équipements
     IconUsers, // Eye
     IconEye, // FileText
     IconFileText, // Clock
@@ -221,6 +222,7 @@ const menuItems: MenuItem[] = [
         subItems: [
             { id: 'non-conformity', label: 'Non-conformités', icon: IconAlertTriangle },
             { id: 'inspections', label: 'Inspections HSE', icon: IconSearch },
+            { id: 'equipment-registry', label: 'Registre des équipements', icon: IconTruck },
             { id: 'meetings', label: 'Réunions Sécurité', icon: IconUsers },
             { id: 'management-tour', label: 'Tournées Leadership', icon: IconEye }
         ]
@@ -458,6 +460,7 @@ export const menuIdToUrl: Record<string, string> = {
     // Prevention Activities
     "non-conformity": "/non-conformity",
     inspections: "/inspections",
+    "equipment-registry": "/inspections/equipment",
     meetings: "/hs-Meetings",
     "management-tour": "/steering-tours",
 

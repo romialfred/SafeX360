@@ -161,12 +161,19 @@ const DosimetryThresholdsPage = () => {
     const { t } = useTranslation('dosimetry');
     const navigate = useNavigate();
     const user = useAppSelector((state: any) => state.user);
+    // Principe plateforme : aucune sélection ARBITRAIRE de mine. La mine vient du
+    // header (sélecteur global) ; un seuil est soit « global » (toutes les mines)
+    // soit rattaché à la MINE ACTIVE. Jamais de champ mine requis.
+    const activeMineId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId ?? null);
     const canAdmin = hasDosimetryPermission(user, 'DOSIMETRY_ADMIN');
 
     const [thresholds, setThresholds] = useState<ThresholdDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [mines, setMines] = useState<MineOption[]>([]);
+    // Option unique = la mine active du header (résolue depuis la liste des mines).
+    const activeMine = mines.find((m) => String(m.id) === String(activeMineId)) || null;
+    const activeMineOptions = activeMine ? [{ value: String(activeMine.id), label: activeMine.name }] : [];
 
     // Filtres
     const [filterMine, setFilterMine] = useState<string>('all'); // 'all' | 'global' | mineId-string
@@ -520,7 +527,7 @@ const DosimetryThresholdsPage = () => {
                                 data={[
                                     { value: 'all', label: t('thresholdsPage.filters.mineAll') },
                                     { value: 'global', label: t('thresholdsPage.filters.mineGlobal') },
-                                    ...mines.map((m) => ({ value: String(m.id), label: m.name })),
+                                    ...activeMineOptions,
                                 ]}
                                 value={filterMine}
                                 onChange={(v) => setFilterMine(v ?? 'all')}
@@ -848,7 +855,7 @@ const DosimetryThresholdsPage = () => {
                 <AddThresholdModal
                     opened={addModalOpened}
                     onClose={() => setAddModalOpened(false)}
-                    mines={mines}
+                    activeMineOptions={activeMineOptions}
                     onSubmit={handleCreateThreshold}
                 />
             )}
@@ -1072,11 +1079,12 @@ function EditableCell({
 interface AddThresholdModalProps {
     opened: boolean;
     onClose: () => void;
-    mines: MineOption[];
+    /** Option unique de mine = la mine active du header (vide si vue consolidée). */
+    activeMineOptions: { value: string; label: string }[];
     onSubmit: (payload: ThresholdDTO) => Promise<void>;
 }
 
-function AddThresholdModal({ opened, onClose, mines, onSubmit }: AddThresholdModalProps) {
+function AddThresholdModal({ opened, onClose, activeMineOptions, onSubmit }: AddThresholdModalProps) {
     const { t } = useTranslation('dosimetry');
 
     const [mineValue, setMineValue] = useState<string>('global');
@@ -1164,7 +1172,7 @@ function AddThresholdModal({ opened, onClose, mines, onSubmit }: AddThresholdMod
                     placeholder={t('thresholdsPage.modal.minePlaceholder')}
                     data={[
                         { value: 'global', label: t('thresholdsPage.modal.mineGlobalOption') },
-                        ...mines.map((m) => ({ value: String(m.id), label: m.name })),
+                        ...activeMineOptions,
                     ]}
                     value={mineValue}
                     onChange={(v) => setMineValue(v ?? 'global')}
