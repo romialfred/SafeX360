@@ -27,4 +27,8 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             + "ORDER BY d.createdAt DESC")
     List<Document> findLatestByCompany(@Param("companyId") Long companyId,
             org.springframework.data.domain.Pageable pageable);
+
+    /** company_id d'un document (garde d'appartenance pour les entites filles). */
+    @Query("SELECT d.companyId FROM Document d WHERE d.id = :id")
+    java.util.Optional<Long> findCompanyIdById(@Param("id") Long id);
 }

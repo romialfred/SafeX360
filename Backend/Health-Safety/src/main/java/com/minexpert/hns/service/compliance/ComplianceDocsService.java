@@ -12,9 +12,9 @@ public interface ComplianceDocsService {
 
     public Long saveComplianceDoc(ComplianceDocsDTO complianceDocsDTO) throws HSException;
 
-    public DocResponse getDocDetails(Long id) throws HSException;
+    public DocResponse getDocDetails(Long id, Long companyId) throws HSException;
 
-    public List<DocResponse> getAllComplianceDocs() throws HSException;
+    public List<DocResponse> getAllComplianceDocs(Long companyId) throws HSException;
 
     public List<EmpEmailPosResponse> getAllEmpEmailPos() throws HSException;
 

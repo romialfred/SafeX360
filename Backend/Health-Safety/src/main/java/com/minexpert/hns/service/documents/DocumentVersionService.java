@@ -16,9 +16,9 @@ public interface DocumentVersionService {
 
     DocumentVersionDTO getById(Long id) throws HSException;
 
-    List<DocumentVersionDetails> getByDocumentId(Long documentId) throws HSException;
+    List<DocumentVersionDetails> getByDocumentId(Long documentId, Long companyId) throws HSException;
 
     MediaDTO getMediaByVersionId(Long id) throws HSException;
 
-    MediaDTO getLatestMediaByDocumentId(Long documentId) throws HSException;
+    MediaDTO getLatestMediaByDocumentId(Long documentId, Long companyId) throws HSException;
 }

@@ -47,7 +47,14 @@ public class HsActivityServiceImpl implements HsActivityService {
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
     })
-    public void createActivity(HsActivityDTO hsActivityDTO) throws HSException {
+    public void createActivity(HsActivityDTO hsActivityDTO, Long companyId) throws HSException {
+        // Anti-spoof en ECRITURE : l'activite planning parente (activityId) doit
+        // relever de la mine appelante. getActivityById applique la garde
+        // d'appartenance (repli "null = global"). Empeche un client d'attacher
+        // une HsActivity a l'activite d'une autre mine.
+        if (companyId != null) {
+            activityService.getActivityById(hsActivityDTO.getActivityId(), companyId);
+        }
         hsActivityDTO.setCreatedAt(LocalDateTime.now());
         hsActivityDTO.setUpdatedAt(LocalDateTime.now());
         hsActivityDTO.setStatus(ActivityStatus.PENDING);

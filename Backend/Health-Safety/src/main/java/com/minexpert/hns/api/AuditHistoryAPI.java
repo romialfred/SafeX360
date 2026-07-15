@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.minexpert.hns.dto.audit.AuditHistoryDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.audit.AuditHistoryService;
+import com.minexpert.hns.service.audit.AuditOwnershipGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuditHistoryAPI {
     private final AuditHistoryService auditHistoryService;
+    private final AuditOwnershipGuard auditOwnershipGuard;
 
     @PostMapping("/create")
     public ResponseEntity<Long> saveAuditHistory(@RequestParam(required = false) Long companyId,
@@ -37,7 +39,10 @@ public class AuditHistoryAPI {
     }
 
     @GetMapping("/getByAuditId/{auditId}")
-    public ResponseEntity<?> getAuditHistoryByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<?> getAuditHistoryByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse l'historique d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(auditHistoryService.getAuditHistoryByAuditId(auditId), HttpStatus.OK);
 
     }

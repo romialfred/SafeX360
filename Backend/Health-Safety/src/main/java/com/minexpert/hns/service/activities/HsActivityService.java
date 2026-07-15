@@ -18,7 +18,7 @@ import com.minexpert.hns.exception.HSException;
  */
 public interface HsActivityService {
 
-    public void createActivity(HsActivityDTO hsActivityDTO) throws HSException;
+    public void createActivity(HsActivityDTO hsActivityDTO, Long companyId) throws HSException;
 
     public void updateActivity(HsActivityDTO hsActivityDTO, Long companyId) throws HSException;
 

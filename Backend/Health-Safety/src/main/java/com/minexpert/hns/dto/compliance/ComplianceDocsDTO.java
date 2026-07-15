@@ -25,10 +25,11 @@ public class ComplianceDocsDTO {
     private DocStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public ComplianceDocs toEntity() {
         return new ComplianceDocs(id, media != null ? media.toEntity() : null,
                 requirementId != null ? new Requirement(requirementId) : null,
-                employeeId, expiryDate, comment, status, createdAt, updatedAt);
+                employeeId, expiryDate, comment, status, createdAt, updatedAt, companyId);
     }
 }

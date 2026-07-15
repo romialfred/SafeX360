@@ -96,6 +96,10 @@ public class ObservationServiceImpl implements ObservationService {
         }
 
         NonConformityDTO nc = new NonConformityDTO();
+        // Cloisonnement par mine : la NC créée par escalade hérite du companyId
+        // du constat d'origine, sinon elle devient orpheline (company_id NULL)
+        // et invisible dans le registre filtré par mine.
+        nc.setCompanyId(observation.getCompanyId());
         nc.setType(EventType.NON_CONFORMITY);
         nc.setTitle(observation.getTitle());
         nc.setDescription(observation.getObservedFact());

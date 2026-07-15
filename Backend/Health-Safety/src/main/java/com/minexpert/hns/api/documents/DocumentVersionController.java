@@ -34,8 +34,9 @@ public class DocumentVersionController {
     }
 
     @GetMapping("/by-document/{docId}")
-    public ResponseEntity<List<DocumentVersionDetails>> getByDocumentId(@PathVariable Long docId) throws HSException {
-        return ResponseEntity.ok(versionService.getByDocumentId(docId));
+    public ResponseEntity<List<DocumentVersionDetails>> getByDocumentId(@PathVariable Long docId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(versionService.getByDocumentId(docId, companyId));
     }
 
     @GetMapping("/media/{id}")
@@ -44,7 +45,8 @@ public class DocumentVersionController {
     }
 
     @GetMapping("/latest-media/{docId}")
-    public ResponseEntity<MediaDTO> getLatestMediaByDocument(@PathVariable Long docId) throws HSException {
-        return ResponseEntity.ok(versionService.getLatestMediaByDocumentId(docId));
+    public ResponseEntity<MediaDTO> getLatestMediaByDocument(@PathVariable Long docId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(versionService.getLatestMediaByDocumentId(docId, companyId));
     }
 }

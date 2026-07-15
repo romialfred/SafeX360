@@ -64,4 +64,8 @@ UPDATE communications SET company_id = 1 WHERE company_id IS NULL;
 -- les mines) — rétrocompat des activités seedées globalement (ex. TDM). Les
 -- nouvelles activités porteront la mine active.
 
+
+-- ---------- CONFORMITÉ (ComplianceDocs) ----------
+UPDATE compliance_docs SET company_id = 1 WHERE company_id IS NULL;
+
 -- Vérification (manuel) : compter les lignes encore NULL par table.

@@ -28,33 +28,39 @@ public class NotificationController {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<NotificationDTO> getById(@PathVariable Long id) throws HSException {
-        return ResponseEntity.ok(notificationService.getById(id));
+    public ResponseEntity<NotificationDTO> getById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(notificationService.getById(id, companyId));
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<NotificationSummaryView>> getAll() throws HSException {
-        return ResponseEntity.ok(notificationService.getAll());
+    public ResponseEntity<List<NotificationSummaryView>> getAll(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(notificationService.getAll(companyId));
     }
 
     @GetMapping
-    public ResponseEntity<List<NotificationSummaryView>> list() throws HSException {
-        return ResponseEntity.ok(notificationService.getAll());
+    public ResponseEntity<List<NotificationSummaryView>> list(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(notificationService.getAll(companyId));
     }
 
     @GetMapping("/getActive")
-    public ResponseEntity<List<NotificationDTO>> getActive() throws HSException {
-        return ResponseEntity.ok(notificationService.getActive());
+    public ResponseEntity<List<NotificationDTO>> getActive(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(notificationService.getActive(companyId));
     }
 
     @GetMapping("/getExpired")
-    public ResponseEntity<List<NotificationDTO>> getExpired() throws HSException {
-        return ResponseEntity.ok(notificationService.getExpired());
+    public ResponseEntity<List<NotificationDTO>> getExpired(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(notificationService.getExpired(companyId));
     }
 
     @GetMapping("/communication/{communicationId}")
-    public ResponseEntity<List<NotificationDTO>> getByCommunication(@PathVariable Long communicationId)
+    public ResponseEntity<List<NotificationDTO>> getByCommunication(@PathVariable Long communicationId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return ResponseEntity.ok(notificationService.getByCommunicationId(communicationId));
+        return ResponseEntity.ok(notificationService.getByCommunicationId(communicationId, companyId));
     }
 }

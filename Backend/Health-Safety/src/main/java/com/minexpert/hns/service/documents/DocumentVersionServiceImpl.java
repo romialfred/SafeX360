@@ -15,6 +15,7 @@ import com.minexpert.hns.entity.Media;
 import com.minexpert.hns.entity.documents.Document;
 import com.minexpert.hns.entity.documents.DocumentVersion;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.repository.documents.DocumentRepository;
 import com.minexpert.hns.repository.documents.DocumentVersionRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     public static final String CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT = "documentLatestMediaByDocument";
 
     private final DocumentVersionRepository versionRepository;
+    private final DocumentRepository documentRepository;
 
     @Override
     @Transactional
@@ -87,8 +89,10 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
-    @Cacheable(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#documentId")
-    public List<DocumentVersionDetails> getByDocumentId(Long documentId) throws HSException {
+    @Cacheable(cacheNames = CACHE_DOCUMENT_VERSIONS_BY_DOCUMENT, key = "#documentId + '-' + #companyId")
+    public List<DocumentVersionDetails> getByDocumentId(Long documentId, Long companyId)
+            throws HSException {
+        verifyParentDocument(documentId, companyId);
         return versionRepository.findByDocumentId(documentId);
     }
 
@@ -102,11 +106,27 @@ public class DocumentVersionServiceImpl implements DocumentVersionService {
     }
 
     @Override
-    @Cacheable(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#documentId")
-    public MediaDTO getLatestMediaByDocumentId(Long documentId) throws HSException {
+    @Cacheable(cacheNames = CACHE_DOCUMENT_LATEST_MEDIA_BY_DOCUMENT, key = "#documentId + '-' + #companyId")
+    public MediaDTO getLatestMediaByDocumentId(Long documentId, Long companyId) throws HSException {
+        verifyParentDocument(documentId, companyId);
         DocumentVersion version = versionRepository.findFirstByDocumentIdOrderByCreatedAtDesc(documentId)
                 .orElseThrow(() -> new HSException("VERSION_NOT_FOUND"));
         Media media = version.getMedia();
         return media != null ? media.toDTO() : null;
+    }
+
+    /**
+     * Garde d'appartenance : le document parent (docId) doit relever de la mine
+     * appelante. companyId null = pas de controle. Empeche la lecture des
+     * versions d'un document d'une autre mine via un docId enumere.
+     */
+    private void verifyParentDocument(Long documentId, Long companyId) throws HSException {
+        if (companyId == null) {
+            return;
+        }
+        Long docCompanyId = documentRepository.findCompanyIdById(documentId).orElse(null);
+        if (docCompanyId != null && !companyId.equals(docCompanyId)) {
+            throw new HSException("DOCUMENT_NOT_FOUND");
+        }
     }
 }

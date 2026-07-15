@@ -35,19 +35,26 @@ public class ComplianceDocsAPI {
     private final ComplianceDocsService complianceDocsService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> addComplianceDoc(@RequestBody ComplianceDocsDTO complianceDocRequest)
+    public ResponseEntity<Long> addComplianceDoc(@RequestBody ComplianceDocsDTO complianceDocRequest,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
+        // Cloisonnement : la mine appelante validee prime sur le payload.
+        if (companyId != null) {
+            complianceDocRequest.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(complianceDocsService.saveComplianceDoc(complianceDocRequest), HttpStatus.CREATED);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<DocResponse>> getAllComplianceDocs() throws HSException {
-        return new ResponseEntity<>(complianceDocsService.getAllComplianceDocs(), HttpStatus.OK);
+    public ResponseEntity<List<DocResponse>> getAllComplianceDocs(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(complianceDocsService.getAllComplianceDocs(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getDocDetails/{id}")
-    public ResponseEntity<DocResponse> getDocDetails(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(complianceDocsService.getDocDetails(id), HttpStatus.OK);
+    public ResponseEntity<DocResponse> getDocDetails(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(complianceDocsService.getDocDetails(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllEmpStatus")

@@ -23,6 +23,7 @@ import com.minexpert.hns.dto.audit.MeetingDTO;
 import com.minexpert.hns.dto.audit.ValidateTeamRequest;
 import com.minexpert.hns.dto.audit.ValidateTeamResponse;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.service.audit.AuditOwnershipGuard;
 import com.minexpert.hns.service.audit.EffectivenessService;
 import com.minexpert.hns.service.audit.MeetingService;
 import com.minexpert.hns.service.audit.ObservationService;
@@ -49,6 +50,7 @@ public class AuditIsoAPI {
     private final MeetingService meetingService;
     private final ObservationService observationService;
     private final EffectivenessService effectivenessService;
+    private final AuditOwnershipGuard auditOwnershipGuard;
 
     // ─── Équipe d'audit : lead qualifié + indépendance + certifications ───
 
@@ -73,7 +75,10 @@ public class AuditIsoAPI {
     }
 
     @GetMapping("/{auditId}/meetings")
-    public ResponseEntity<List<MeetingDTO>> getMeetings(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<MeetingDTO>> getMeetings(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse les réunions d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(meetingService.getMeetingsByAuditId(auditId), HttpStatus.OK);
     }
 

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.minexpert.hns.dto.audit.ObservationDTO;
 import com.minexpert.hns.dto.response.ObsTitle;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.service.audit.AuditOwnershipGuard;
 import com.minexpert.hns.service.audit.AuditService;
 import com.minexpert.hns.service.audit.ObservationService;
 
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 
 public class ObservationAPI {
     private final ObservationService observationService;
+    private final AuditOwnershipGuard auditOwnershipGuard;
 
     @PostMapping("/create")
     public ResponseEntity<Long> createObservation(@RequestParam(required = false) Long companyId,
@@ -42,13 +44,18 @@ public class ObservationAPI {
     }
 
     @GetMapping("/getAllByAuditId/{auditId}")
-    public ResponseEntity<List<ObservationDTO>> getAllObservationsByAuditId(@PathVariable Long auditId)
+    public ResponseEntity<List<ObservationDTO>> getAllObservationsByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
+        // Cloisonnement par mine : refuse les constats d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(observationService.getAllObservationsByAuditId(auditId), HttpStatus.OK);
     }
 
     @GetMapping("/getObservationTitlesByAuditId/{auditId}")
-    public ResponseEntity<List<ObsTitle>> getObservationTitlesByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<ObsTitle>> getObservationTitlesByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(observationService.getObservationTitlesByAuditId(auditId), HttpStatus.OK);
     }
 

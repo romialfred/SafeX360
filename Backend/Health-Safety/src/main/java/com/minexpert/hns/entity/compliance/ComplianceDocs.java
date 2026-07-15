@@ -40,4 +40,7 @@ public class ComplianceDocs {
     private DocStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /** Cloisonnement multi-tenant par mine (convention plateforme SafeX). */
+    private Long companyId;
 }

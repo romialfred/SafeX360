@@ -33,8 +33,9 @@ public class HsActivityAPI {
     private HsActivityService hsActivityService;
 
     @PostMapping("/create")
-    public ResponseEntity<ResponseDTO> createActivity(@RequestBody HsActivityDTO hsActivityDTO) throws HSException {
-        hsActivityService.createActivity(hsActivityDTO);
+    public ResponseEntity<ResponseDTO> createActivity(@RequestBody HsActivityDTO hsActivityDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        hsActivityService.createActivity(hsActivityDTO, companyId);
         return new ResponseEntity<>(new ResponseDTO("Activity created successfully."), HttpStatus.CREATED);
     }
 

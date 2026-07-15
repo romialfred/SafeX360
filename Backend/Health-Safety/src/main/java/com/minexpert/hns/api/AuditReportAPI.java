@@ -17,6 +17,7 @@ import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.audit.ExecuteRequest;
 import com.minexpert.hns.dto.audit.ReportDTO;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.service.audit.AuditOwnershipGuard;
 import com.minexpert.hns.service.audit.AuditReportPdfService;
 import com.minexpert.hns.service.audit.ReportService;
 
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class AuditReportAPI {
     private final ReportService reportService;
     private final AuditReportPdfService auditReportPdfService;
+    private final AuditOwnershipGuard auditOwnershipGuard;
 
     /**
      * LOT 52 — rapport d'audit PDF structuré ISO 19011 §6.5 (identification,
@@ -37,7 +39,10 @@ public class AuditReportAPI {
      * conclusions et approbation).
      */
     @GetMapping("/pdf/{auditId}")
-    public ResponseEntity<byte[]> getReportPdf(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<byte[]> getReportPdf(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse le PDF d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         byte[] pdf = auditReportPdfService.generatePdf(auditId);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
@@ -75,17 +80,24 @@ public class AuditReportAPI {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<ReportDTO> getReport(@PathVariable Long id) throws HSException {
+    public ResponseEntity<ReportDTO> getReport(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : le rapport (id) doit appartenir à la mine active.
+        auditOwnershipGuard.assertReportCompany(id, companyId);
         return new ResponseEntity<>(reportService.getReport(id), HttpStatus.OK);
     }
 
     @GetMapping("/getByAuditId/{auditId}")
-    public ResponseEntity<ExecuteRequest> getReportByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<ExecuteRequest> getReportByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(reportService.getReportByAuditId(auditId), HttpStatus.OK);
     }
 
     @GetMapping("/exists/{auditId}")
-    public ResponseEntity<Boolean> reportExists(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<Boolean> reportExists(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(reportService.reportExists(auditId), HttpStatus.OK);
     }
 

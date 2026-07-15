@@ -54,6 +54,7 @@ public class AuditAPI {
     private final RecommendationService recommendationService;
     private final RecommendationFollowupService recommendationFollowupService;
     private final AuditorService auditorService;
+    private final com.minexpert.hns.service.audit.AuditOwnershipGuard auditOwnershipGuard;
 
     @PostMapping("/create")
     public ResponseEntity<Long> createAudit(@RequestParam(required = false) Long companyId,
@@ -74,7 +75,10 @@ public class AuditAPI {
     }
 
     @GetMapping("/getAreas/{auditId}")
-    public ResponseEntity<List<AreaDTO>> getAreasByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<AreaDTO>> getAreasByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse les données d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(areaService.getAreasByAuditId(auditId), HttpStatus.OK);
     }
 
@@ -90,7 +94,9 @@ public class AuditAPI {
     }
 
     @GetMapping("/reportExists/{auditId}")
-    public ResponseEntity<Boolean> reportExists(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<Boolean> reportExists(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(reportService.reportExists(auditId), HttpStatus.OK);
     }
 
@@ -129,8 +135,10 @@ public class AuditAPI {
     }
 
     @GetMapping("/getRecommendationsByAuditId/{auditId}")
-    public ResponseEntity<List<RecommendationDTO>> getRecommendationsByAuditId(@PathVariable Long auditId)
+    public ResponseEntity<List<RecommendationDTO>> getRecommendationsByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(recommendationService.getRecommendationsByAuditId(auditId), HttpStatus.OK);
     }
 
@@ -149,22 +157,32 @@ public class AuditAPI {
     }
 
     @GetMapping("/getRecommendation/{id}")
-    public ResponseEntity<RecommendationDTO> getRecommendation(@PathVariable Long id) throws HSException {
+    public ResponseEntity<RecommendationDTO> getRecommendation(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : la recommandation doit appartenir à la mine active.
+        auditOwnershipGuard.assertRecommendationCompany(id, companyId);
         return new ResponseEntity<>(recommendationService.getRecommendation(id), HttpStatus.OK);
     }
 
     @GetMapping("/getDetails/{id}")
-    public ResponseEntity<AuditDetails> getAuditDetails(@PathVariable Long id) throws HSException {
+    public ResponseEntity<AuditDetails> getAuditDetails(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : l'audit (id) doit appartenir à la mine active.
+        auditOwnershipGuard.assertAuditCompany(id, companyId);
         return new ResponseEntity<>(auditService.getAuditDetails(id), HttpStatus.OK);
     }
 
     @GetMapping("/getAuditors/{auditId}")
-    public ResponseEntity<List<AuditorDTO>> getAuditorsByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<AuditorDTO>> getAuditorsByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(auditorService.getAuditorsByAuditId(auditId), HttpStatus.OK);
     }
 
     @GetMapping("/getAreasDetails/{auditId}")
-    public ResponseEntity<List<AreaDetails>> getAreaDetailsByAuditId(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<AreaDetails>> getAreaDetailsByAuditId(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(areaService.getAreaDetailsByAuditId(auditId), HttpStatus.OK);
     }
 

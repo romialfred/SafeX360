@@ -21,6 +21,7 @@ import com.minexpert.hns.dto.audit.AuditChecklistItemDTO;
 import com.minexpert.hns.dto.audit.AuditChecklistTemplateDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.audit.AuditChecklistService;
+import com.minexpert.hns.service.audit.AuditOwnershipGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class AuditChecklistAPI {
 
     private final AuditChecklistService auditChecklistService;
+    private final AuditOwnershipGuard auditOwnershipGuard;
 
     /** Questions types actives, filtrées par référentiel si fourni. */
     @GetMapping("/templates")
@@ -61,7 +63,10 @@ public class AuditChecklistAPI {
     }
 
     @GetMapping("/{auditId}")
-    public ResponseEntity<List<AuditChecklistItemDTO>> getChecklist(@PathVariable Long auditId) throws HSException {
+    public ResponseEntity<List<AuditChecklistItemDTO>> getChecklist(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse la checklist d'un audit d'une autre mine.
+        auditOwnershipGuard.assertAuditCompany(auditId, companyId);
         return new ResponseEntity<>(auditChecklistService.getChecklist(auditId), HttpStatus.OK);
     }
 

@@ -69,9 +69,9 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_ALL)
-    public List<DocResponse> getAllComplianceDocs() throws HSException {
-        List<DocResponse> docs = complianceDocsRepository.findAllDocs();
+    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_ALL, key = "#companyId")
+    public List<DocResponse> getAllComplianceDocs(Long companyId) throws HSException {
+        List<DocResponse> docs = complianceDocsRepository.findAllDocsByCompany(companyId);
         List<Long> employeeIds = docs.stream().map(DocResponse::getEmployeeId).filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -205,10 +205,17 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DOC_DETAILS, key = "#id")
-    public DocResponse getDocDetails(Long id) throws HSException {
+    @Cacheable(cacheNames = ComplianceCacheNames.DOC_DETAILS, key = "#id + '-' + #companyId")
+    public DocResponse getDocDetails(Long id, Long companyId) throws HSException {
         DocResponse doc = complianceDocsRepository.findDocById(id)
                 .orElseThrow(() -> new HSException("DOCUMENT_NOT_FOUND"));
+        // Garde d'appartenance : le doc doit relever de la mine appelante.
+        if (companyId != null) {
+            Long docCompanyId = complianceDocsRepository.findCompanyIdById(id).orElse(null);
+            if (docCompanyId != null && !companyId.equals(docCompanyId)) {
+                throw new HSException("DOCUMENT_NOT_FOUND");
+            }
+        }
         EmpEmailPosResponse emp = hrmsClient.getEmployeeWithEmailAndPositionById(doc.getEmployeeId());
         doc.setUploadedBy(emp.getName());
         return doc;
