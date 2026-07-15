@@ -1,6 +1,9 @@
 import axiosInstance from "../interceptors/AxiosInterceptor";
 
-const url = "hns/chemical-risks";
+// Slash de tête obligatoire : en build web same-origin (baseURL vide), un chemin
+// relatif « hns/... » se résout contre la route SPA courante et rate le rewrite
+// Vercel /hns/* sur les routes imbriquées. Aligné sur les autres services.
+const url = "/hns/chemical-risks";
 
 const createChemicalRisk = async (chemicalRiskData: any) => {
     return axiosInstance.post(`${url}/create`, chemicalRiskData)

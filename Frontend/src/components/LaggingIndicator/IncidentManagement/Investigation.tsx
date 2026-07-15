@@ -137,23 +137,29 @@ const Investigation = () => {
             method: (value) => (value ? null : t('investigation.validation.methodRequired')),
             startDate: (value) => (value ? null : t('investigation.validation.startDateRequired')),
 
-            // Chaque catégorie ICAM est satisfaite par une cause cochée OU une analyse rédigée
-            // (les outils guidés — 5 Pourquoi, Ishikawa, Arbre — alimentent l'analyse).
-            humanCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.humanAnalysis) || active < 1 ? null : t('investigation.validation.humanCauseRequired')),
-            taskCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.taskAnalysis) || active < 1 ? null : t('investigation.validation.taskCauseRequired')),
-            workingCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.workingAnalysis) || active < 1 ? null : t('investigation.validation.workingCauseRequired')),
-            organizationCauses: (value, values: any) => (value.length > 0 || isValidRichText(values.organizationAnalysis) || active < 1 ? null : t('investigation.validation.organizationCauseRequired')),
-            taskAnalysis: (value, values: any) => (isValidRichText(value) || values.taskCauses.length > 0 || active < 1 ? null : t('investigation.validation.taskAnalysisRequired')),
-            workingAnalysis: (value, values: any) => (isValidRichText(value) || values.workingCauses.length > 0 || active < 1 ? null : t('investigation.validation.workingAnalysisRequired')),
-            humanAnalysis: (value, values: any) => (isValidRichText(value) || values.humanCauses.length > 0 || active < 1 ? null : t('investigation.validation.humanAnalysisRequired')),
-            organizationAnalysis: (value, values: any) => (isValidRichText(value) || values.organizationCauses.length > 0 || active < 1 ? null : t('investigation.validation.organizationAnalysisRequired')),
-            report: (value) => (isValidRichText(value) || active < 3 ? null : t('investigation.validation.reportRequired')),
+            // Étapes 2 (Analyse causale), 3 (Plan d'actions), 4 (Rapport) :
+            // OPTIONNELLES. Règle métier : seules les informations essentielles de
+            // l'étape 1 (méthode, date de début, équipe) sont obligatoires ;
+            // l'analyse, les actions correctives et le rapport se complètent plus
+            // tard. (Avant : verrous `active < N` qui rendaient les 4 catégories
+            // ICAM obligatoires à l'étape finale, quelle que soit la méthode
+            // d'investigation choisie — 5 Pourquoi, Ishikawa, Arbre des
+            // défaillances — dont la sortie n'alimente qu'UNE catégorie ICAM après
+            // « Synthétiser », d'où un blocage systématique à la soumission.)
+            humanCauses: () => null,
+            taskCauses: () => null,
+            workingCauses: () => null,
+            organizationCauses: () => null,
+            taskAnalysis: () => null,
+            workingAnalysis: () => null,
+            humanAnalysis: () => null,
+            organizationAnalysis: () => null,
+            report: () => null,
             correctiveActions: {
-                actionName: (value) => value.trim()?.length > 0 || active < 2 ? null : t('investigation.validation.actionNameRequired'),
-                deadline: (value) => value || active < 2 ? null : t('investigation.validation.deadlineRequired'),
-
-                status: (value) => value || active < 2 ? null : t('investigation.validation.statusRequired'),
-                description: (value) => isValidRichText(value) || active < 2 ? null : t('investigation.validation.descriptionRequired')
+                actionName: () => null,
+                deadline: () => null,
+                status: () => null,
+                description: () => null
             },
             team: (value: TeamMember[]) => {
                 if (!value || value.length === 0) {
@@ -208,6 +214,10 @@ const Investigation = () => {
 
             }
         } else {
+            // Les champs obligatoires restants sont tous à l'étape 1 : on y ramène
+            // l'utilisateur pour qu'il voie les erreurs inline (sinon, depuis
+            // l'étape 4, seul le message générique s'affichait).
+            setActive(0);
             setErrorMessage(t('investigation.fillRequired'));
         }
 

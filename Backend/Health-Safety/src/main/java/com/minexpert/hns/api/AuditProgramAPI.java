@@ -42,7 +42,15 @@ public class AuditProgramAPI {
     private final AuditProgramService auditProgramService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createProgram(@RequestBody AuditProgramDTO programDTO) throws HSException {
+    public ResponseEntity<Long> createProgram(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody AuditProgramDTO programDTO) throws HSException {
+        // Le companyId de la mine active est injecté en query par l'intercepteur
+        // Axios ; on le persiste ici, sinon le programme est créé avec
+        // companyId=null et devient INVISIBLE dans la liste (filtrée par mine).
+        if (companyId != null) {
+            programDTO.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(auditProgramService.createProgram(programDTO), HttpStatus.CREATED);
     }
 

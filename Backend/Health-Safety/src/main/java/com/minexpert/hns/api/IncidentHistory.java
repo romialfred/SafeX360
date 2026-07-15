@@ -27,7 +27,8 @@ public class IncidentHistory {
     private final IncidentHistoryService incidentHistoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> saveIncidentHistory(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<Long> saveIncidentHistory(
+            @RequestParam(name = "companyId", required = false) Long companyId,
             @RequestBody IncidentHistoryDTO incidentHistoryDTO)
             throws HSException {
         return new ResponseEntity<>(incidentHistoryService.saveIncidentHistory(companyId, incidentHistoryDTO),
