@@ -21,8 +21,22 @@ Usage :
 Auth : compte admin (login/mdp surchargeables via --login / --password).
 """
 import sys
+import time
 import argparse
 import requests
+
+
+def req_retry(fn, *, tries=5, delay=6):
+    """Rejoue une requete jusqu'a `tries` fois tant qu'elle renvoie un 5xx
+    (cold-start Render : le 1er hit d'un endpoint peut echouer en 500 puis
+    repasser une fois le service/la requete rechauffes)."""
+    last = None
+    for _ in range(tries):
+        last = fn()
+        if last.status_code < 500:
+            return last
+        time.sleep(delay)
+    return last
 
 YEAR = 2026
 CATEGORY = "TDM"
@@ -59,8 +73,8 @@ def main():
 
     s = requests.Session()
     # 1) Login -> cookie jwt
-    r = s.post(f"{base}/hrms/auth/login",
-               json={"login": args.login, "password": args.password}, timeout=60)
+    r = req_retry(lambda: s.post(f"{base}/hrms/auth/login",
+                  json={"login": args.login, "password": args.password}, timeout=60))
     if r.status_code != 200:
         print(f"[ERREUR] login {args.login} -> HTTP {r.status_code} : {r.text[:200]}")
         sys.exit(1)
@@ -68,7 +82,7 @@ def main():
 
     # 2) Etat existant (idempotence) : activites TDM/PENDING de l'annee
     url_list = f"{base}/hns/activity/get/year/{YEAR}/status/PENDING/category/{CATEGORY}"
-    r = s.get(url_list, timeout=60)
+    r = req_retry(lambda: s.get(url_list, timeout=60))
     if r.status_code != 200:
         print(f"[ERREUR] lecture activites -> HTTP {r.status_code} : {r.text[:200]}")
         sys.exit(1)
