@@ -82,8 +82,12 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         return companies; // compte non migré → comportement historique (rôle)
     }, [companies, allMines, authorizedIds]);
 
+    // « Toutes les mines (consolidé) » : autorisé pour les comptes allMines migrés,
+    // et — rétrocompat — pour les admins non encore migrés (comportement historique).
+    const consolidatedAllowed = allMines || (!isMigrated && isAdmin);
+
     const isCompanyVisible = (id: number | null): boolean => {
-        if (id === null) return allMines; // « consolidé » réservé aux comptes allMines
+        if (id === null) return consolidatedAllowed; // « consolidé » réservé aux ayants droit
         if (!isMigrated) return true;
         if (allMines) return true;
         return authorizedIds ? authorizedIds.has(id) : true;
@@ -95,8 +99,10 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
     const selectedStatusColor = selectedCompany ? resolveStatusColor(selectedCompany.status) : "bg-blue-500";
     // Fix Phase 2 — ne pas se fier au seul rôle : un utilisateur multi-mines
     // (≥2 mines autorisées) ou « toutes les mines » peut basculer entre SES mines,
-    // même sans rôle admin. Les admins conservent l'accès (rétrocompat).
-    const canSelect = isEnabled && (allMines || visibleCompanies.length > 1 || isAdmin);
+    // même sans rôle admin. Comptes non migrés : comportement historique (rôle admin).
+    const canSelect = isEnabled && (
+        allMines || visibleCompanies.length > 1 || (!isMigrated && isAdmin)
+    );
     const accessibleCountLabel = loading
         ? "Chargement..."
         : canSelect
@@ -172,7 +178,7 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
             if (storedValue !== null) {
                 // « Consolidé » (null) : uniquement pour les comptes « toutes les mines ».
                 if (storedValue === "null") {
-                    if (allMines) {
+                    if (consolidatedAllowed) {
                         dispatch(setCompanySelection(null));
                         setSelectedLabel(UNKNOWN_COMPANY_NAME);
                         if (canSelect) {
@@ -254,7 +260,7 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         }
         // Pas de mine principale exploitable : « consolidé » seulement si autorisé,
         // sinon on retombe sur la 1re mine visible (jamais le consolidé cloisonné).
-        if (allMines) {
+        if (consolidatedAllowed) {
             if (selectedCompanyId !== null) {
                 dispatch(setCompanySelection(null));
             }
@@ -335,12 +341,12 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
                     dispatch(setCompanySelection(fallback.id));
                 }
                 setSelectedLabel(resolveCompanyName(fallback));
-            } else if (allMines) {
+            } else if (consolidatedAllowed) {
                 dispatch(setCompanySelection(null));
                 setSelectedLabel(UNKNOWN_COMPANY_NAME);
             }
         }
-    }, [canSelect, isMigrated, allMines, companies, visibleCompanies, userCompanyId, dispatch, initialSelectionLoaded, selectedCompanyId, selectedLabel]);
+    }, [canSelect, isMigrated, consolidatedAllowed, companies, visibleCompanies, userCompanyId, dispatch, initialSelectionLoaded, selectedCompanyId, selectedLabel]);
 
     if (!isEnabled) {
         return (
@@ -432,8 +438,8 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
 
                 <ScrollArea h={420}>
                     <div className="p-2">
-                        {/* « Toutes les mines (consolidé) » : réservé aux comptes allMines. */}
-                        {allMines && (
+                        {/* « Toutes les mines (consolidé) » : réservé aux ayants droit. */}
+                        {consolidatedAllowed && (
                             <div
                                 className={combineClassNames(
                                     "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
