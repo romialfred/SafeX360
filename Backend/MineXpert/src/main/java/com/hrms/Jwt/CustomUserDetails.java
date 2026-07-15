@@ -27,5 +27,9 @@ public class CustomUserDetails implements UserDetails {
     private String role;
     private Long teamId;
     private Collection<? extends GrantedAuthority> authorities;
+    /** Accès à toutes les mines (vue consolidée) — cloisonnement strict. */
+    private Boolean allMinesAccess;
+    /** CSV des ids de mines assignées (périmètre autorisé ; vide si allMinesAccess). */
+    private String assignedCompaniesCsv;
 
 }

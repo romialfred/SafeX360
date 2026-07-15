@@ -151,8 +151,15 @@ public class AdminUserController {
         private String role;
         /** Liste des moduleIds autorises (CSV, voir ModuleConfig.tsx). OBLIGATOIRE (LOT 52). */
         private String allowedModules;
-        /** Mine de rattachement. OBLIGATOIRE (LOT 52) : aucun utilisateur orphelin. */
+        /** Mine principale/par defaut. OBLIGATOIRE : aucun utilisateur orphelin. */
         private Long companyId;
+        /**
+         * Perimetre multi-mines : ids des mines auxquelles le compte est assigne.
+         * Si vide, on retombe sur [companyId]. Ignore si allMinesAccess=true.
+         */
+        private java.util.List<Long> assignedCompanyIds;
+        /** Acces a TOUTES les mines (vue consolidee). Si vrai, ignore assignedCompanyIds. */
+        private Boolean allMinesAccess;
         /** Optionnel : departmentId. */
         private Long departmentId;
         /** LOT 52 : LOCAL (defaut) ou ACTIVE_DIRECTORY (import annuaire, auth deleguee). */
@@ -240,6 +247,22 @@ public class AdminUserController {
         account.setPhoneNumber(req.getPhoneNumber());
         account.setRole(req.getRole());
         account.setCompany(company);
+        // ─── Périmètre multi-mines (cloisonnement strict) ───
+        boolean allMines = Boolean.TRUE.equals(req.getAllMinesAccess());
+        account.setAllMinesAccess(allMines);
+        java.util.Set<com.hrms.entity.Company> assigned = new java.util.HashSet<>();
+        if (!allMines) {
+            java.util.List<Long> ids = (req.getAssignedCompanyIds() == null || req.getAssignedCompanyIds().isEmpty())
+                    ? java.util.List.of(req.getCompanyId())
+                    : req.getAssignedCompanyIds();
+            for (Long cid : ids) {
+                if (cid == null) continue;
+                companyRepository.findById(cid).ifPresent(assigned::add);
+            }
+            // La mine principale fait toujours partie du périmètre.
+            assigned.add(company);
+        }
+        account.setAssignedCompanies(assigned);
         if (req.getDepartmentId() != null) {
             departmentRepository.findById(req.getDepartmentId()).ifPresent(account::setDepartment);
         }

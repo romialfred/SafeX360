@@ -29,7 +29,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-    TextInput, Select, Button, Group, Stack, Checkbox, Paper, Text, Badge,
+    TextInput, Select, MultiSelect, Button, Group, Stack, Checkbox, Paper, Text, Badge,
     Alert, Code, CopyButton, Modal, Loader, Switch,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -38,6 +38,7 @@ import {
     IconUser, IconMail, IconPhone, IconShieldCheck, IconChevronRight, IconChevronLeft,
     IconCheck, IconCopy, IconAlertCircle, IconCircleCheck, IconArrowLeft, IconSearch,
     IconBuildingFactory2, IconAddressBook, IconKey, IconClock, IconUserPlus, IconLock,
+    IconWorld, IconStar,
 } from '@tabler/icons-react';
 import {
     createUser, validateLogin, validateEmail,
@@ -235,6 +236,9 @@ export default function CreateUserPage() {
             role: 'EMPLOYEE',
             companyId: null as string | null,
             departmentId: null as string | null,
+            // Multi-mines : périmètre autorisé + accès consolidé
+            assignedCompanyIds: [] as string[],
+            allMinesAccess: false,
         },
         validate: {
             login: (v) => validateLogin(v),
@@ -242,6 +246,10 @@ export default function CreateUserPage() {
             name: (v) => (v.trim().length === 0 ? t('userMgmt.create.apiErrors.NAME_REQUIRED') : null),
             role: (v) => (v.trim().length === 0 ? t('userMgmt.create.apiErrors.ROLE_REQUIRED') : null),
             companyId: (v) => (!v ? t('userMgmt.create.apiErrors.COMPANY_REQUIRED') : null),
+            assignedCompanyIds: (v, values) =>
+                (!values.allMinesAccess && (!v || v.length === 0))
+                    ? t('userMgmt.create.errorAssignedRequired')
+                    : null,
         },
         validateInputOnBlur: true,
     });
@@ -316,6 +324,7 @@ export default function CreateUserPage() {
         const v = form.values;
         return Boolean(
             v.login || v.email || v.name || v.phoneNumber || v.companyId
+            || v.assignedCompanyIds.length > 0 || v.allMinesAccess
             || adUser || identitySource !== 'LOCAL' || step > 0
         );
     }, [form.values, adUser, identitySource, step]);
@@ -330,6 +339,60 @@ export default function CreateUserPage() {
         if (!id) return '—';
         const d = departments.find((x) => String(x.id) === id);
         return d?.name || `#${id}`;
+    };
+
+    // ── Options mines (Select / MultiSelect) ──
+    const companyOptions = useMemo(
+        () => companies.map((c) => ({
+            value: String(c.id),
+            label: c.name || c.shortName || `#${c.id}`,
+        })),
+        [companies]
+    );
+
+    /**
+     * Choix de design « mine principale » :
+     * la mine principale (companyId) est TOUJOURS explicite et obligatoire.
+     * - Accès restreint : elle est contrainte aux mines assignées ; par défaut la
+     *   1re mine sélectionnée, mais l'admin peut en choisir une autre parmi elles.
+     * - Accès à toutes les mines : elle est choisie librement dans la liste complète
+     *   (mine active par défaut à l'ouverture de session).
+     */
+    const mainMineOptions = useMemo(() => {
+        if (form.values.allMinesAccess) return companyOptions;
+        const allowed = new Set(form.values.assignedCompanyIds);
+        return companyOptions.filter((o) => allowed.has(o.value));
+    }, [companyOptions, form.values.allMinesAccess, form.values.assignedCompanyIds]);
+
+    /** Sélection des mines assignées — garde la mine principale cohérente. */
+    const handleAssignedChange = (vals: string[]) => {
+        form.setFieldValue('assignedCompanyIds', vals);
+        if (vals.length > 0) form.clearFieldError('assignedCompanyIds');
+        // La mine principale doit rester dans le périmètre : sinon on reprend la 1re.
+        if (!form.values.companyId || !vals.includes(form.values.companyId)) {
+            const next = vals[0] ?? null;
+            form.setFieldValue('companyId', next);
+            form.setFieldValue('departmentId', null);
+            if (next) form.clearFieldError('companyId');
+        }
+    };
+
+    /** Bascule « accès à toutes les mines ». */
+    const handleAllMinesToggle = (checked: boolean) => {
+        form.setFieldValue('allMinesAccess', checked);
+        if (checked) {
+            form.clearFieldError('assignedCompanyIds');
+        } else if (form.values.companyId && form.values.assignedCompanyIds.length === 0) {
+            // Repli : amorcer le périmètre avec la mine principale déjà choisie.
+            form.setFieldValue('assignedCompanyIds', [form.values.companyId]);
+        }
+    };
+
+    /** Mise à jour de la mine principale (réinitialise le département filtré). */
+    const handleMainMineChange = (v: string | null) => {
+        form.setFieldValue('companyId', v);
+        form.setFieldValue('departmentId', null);
+        if (v) form.clearFieldError('companyId');
     };
 
     const toggleModule = (moduleId: string) => {
@@ -439,6 +502,10 @@ export default function CreateUserPage() {
                 role: form.values.role,
                 allowedModules: Array.from(selectedModules).join(','),
                 companyId: Number(form.values.companyId),
+                assignedCompanyIds: form.values.allMinesAccess
+                    ? []
+                    : form.values.assignedCompanyIds.map((id) => Number(id)),
+                allMinesAccess: form.values.allMinesAccess,
                 departmentId: form.values.departmentId ? Number(form.values.departmentId) : undefined,
                 identitySource,
             });
@@ -758,42 +825,124 @@ export default function CreateUserPage() {
                 <p className="text-[12px] text-slate-500 mb-4 leading-relaxed">
                     {t('userMgmt.create.orgIntro')}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                        label={t('userMgmt.create.fieldMine')}
-                        placeholder={t('userMgmt.create.fieldMinePlaceholder')}
-                        leftSection={<IconBuildingFactory2 size={14} />}
-                        data={companies.map((c) => ({
-                            value: String(c.id),
-                            label: c.name || c.shortName || `#${c.id}`,
-                        }))}
-                        searchable
-                        value={form.values.companyId}
-                        onChange={(v) => {
-                            form.setFieldValue('companyId', v);
-                            form.setFieldValue('departmentId', null);
-                            if (v) form.clearFieldError('companyId');
-                        }}
-                        error={form.errors.companyId}
-                        required
-                    />
-                    <Select
-                        label={t('userMgmt.create.fieldDepartment')}
-                        placeholder={form.values.companyId ? t('userMgmt.create.fieldDepartmentOptional') : t('userMgmt.create.fieldDepartmentNeedMine')}
-                        data={departments.map((d) => ({
-                            value: String(d.id),
-                            label: d.name || `#${d.id}`,
-                        }))}
-                        searchable
-                        clearable
-                        disabled={!form.values.companyId || departments.length === 0}
-                        value={form.values.departmentId}
-                        onChange={(v) => form.setFieldValue('departmentId', v)}
-                        description={form.values.companyId && departments.length === 0
-                            ? t('userMgmt.create.fieldDepartmentNone')
-                            : undefined}
-                    />
+
+                {/* ── Switch : accès à toutes les mines (vue consolidée) ── */}
+                <div className={`flex items-start gap-3 rounded-xl border p-3.5 mb-4 transition ${
+                    form.values.allMinesAccess ? 'bg-teal-50/60 border-teal-300' : 'bg-slate-50/60 border-slate-200'
+                }`}>
+                    <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 ${
+                        form.values.allMinesAccess ? 'bg-teal-700 text-white' : 'bg-white text-slate-400 border border-slate-200'
+                    }`}>
+                        <IconWorld size={18} stroke={1.8} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <Switch
+                            color="teal"
+                            checked={form.values.allMinesAccess}
+                            onChange={(e) => handleAllMinesToggle(e.currentTarget.checked)}
+                            label={
+                                <span className="text-[13.5px] font-medium text-slate-800">
+                                    {t('userMgmt.create.allMinesLabel')}
+                                </span>
+                            }
+                        />
+                        <p className="text-[12px] text-slate-500 leading-snug mt-1">
+                            {t('userMgmt.create.allMinesDesc')}
+                        </p>
+                    </div>
                 </div>
+
+                {form.values.allMinesAccess ? (
+                    /* ── Accès consolidé : encart explicatif + mine principale ── */
+                    <div className="space-y-4">
+                        <Alert color="teal" variant="light" icon={<IconWorld size={16} />}>
+                            <Text size="xs">{t('userMgmt.create.allMinesNotice')}</Text>
+                        </Alert>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label={t('userMgmt.create.fieldMainMine')}
+                                placeholder={t('userMgmt.create.fieldMainMinePlaceholder')}
+                                leftSection={<IconStar size={14} />}
+                                data={mainMineOptions}
+                                searchable
+                                value={form.values.companyId}
+                                onChange={handleMainMineChange}
+                                error={form.errors.companyId}
+                                description={t('userMgmt.create.fieldMainMineDescAll')}
+                                required
+                            />
+                            <Select
+                                label={t('userMgmt.create.fieldDepartment')}
+                                placeholder={form.values.companyId ? t('userMgmt.create.fieldDepartmentOptional') : t('userMgmt.create.fieldDepartmentNeedMine')}
+                                data={departments.map((d) => ({
+                                    value: String(d.id),
+                                    label: d.name || `#${d.id}`,
+                                }))}
+                                searchable
+                                clearable
+                                disabled={!form.values.companyId || departments.length === 0}
+                                value={form.values.departmentId}
+                                onChange={(v) => form.setFieldValue('departmentId', v)}
+                                description={form.values.companyId && departments.length === 0
+                                    ? t('userMgmt.create.fieldDepartmentNone')
+                                    : undefined}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    /* ── Accès restreint : mines assignées (chips) + mine principale ── */
+                    <div className="space-y-4">
+                        <MultiSelect
+                            label={t('userMgmt.create.fieldAssignedMines')}
+                            placeholder={form.values.assignedCompanyIds.length === 0
+                                ? t('userMgmt.create.fieldAssignedMinesPlaceholder')
+                                : undefined}
+                            leftSection={<IconBuildingFactory2 size={14} />}
+                            data={companyOptions}
+                            searchable
+                            clearable
+                            hidePickedOptions
+                            value={form.values.assignedCompanyIds}
+                            onChange={handleAssignedChange}
+                            error={form.errors.assignedCompanyIds}
+                            description={t('userMgmt.create.fieldAssignedMinesDesc')}
+                            required
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label={t('userMgmt.create.fieldMainMine')}
+                                placeholder={t('userMgmt.create.fieldMainMinePlaceholder')}
+                                leftSection={<IconStar size={14} />}
+                                data={mainMineOptions}
+                                searchable
+                                disabled={form.values.assignedCompanyIds.length === 0}
+                                value={form.values.companyId}
+                                onChange={handleMainMineChange}
+                                error={form.errors.companyId}
+                                description={form.values.assignedCompanyIds.length === 0
+                                    ? t('userMgmt.create.fieldMainMineNeedAssigned')
+                                    : t('userMgmt.create.fieldMainMineDescRestricted')}
+                                required
+                            />
+                            <Select
+                                label={t('userMgmt.create.fieldDepartment')}
+                                placeholder={form.values.companyId ? t('userMgmt.create.fieldDepartmentOptional') : t('userMgmt.create.fieldDepartmentNeedMine')}
+                                data={departments.map((d) => ({
+                                    value: String(d.id),
+                                    label: d.name || `#${d.id}`,
+                                }))}
+                                searchable
+                                clearable
+                                disabled={!form.values.companyId || departments.length === 0}
+                                value={form.values.departmentId}
+                                onChange={(v) => form.setFieldValue('departmentId', v)}
+                                description={form.values.companyId && departments.length === 0
+                                    ? t('userMgmt.create.fieldDepartmentNone')
+                                    : undefined}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -981,7 +1130,24 @@ export default function CreateUserPage() {
                 {summaryRow(t('userMgmt.create.summaryLogin'), <Code>{form.values.login}</Code>)}
                 {summaryRow(t('userMgmt.create.summaryEmail'), form.values.email || '—')}
                 {summaryRow(t('userMgmt.create.summaryPhone'), form.values.phoneNumber || '—')}
-                {summaryRow(t('userMgmt.create.summaryMine'), companyLabel(form.values.companyId))}
+                {summaryRow(t('userMgmt.create.summaryAssignedMines'), form.values.allMinesAccess ? (
+                    <Badge color="teal" variant="light" leftSection={<IconWorld size={10} />}>
+                        {t('userMgmt.create.summaryAllMines')}
+                    </Badge>
+                ) : form.values.assignedCompanyIds.length > 0 ? (
+                    <Group gap={6}>
+                        {form.values.assignedCompanyIds.map((id) => (
+                            <Badge key={id} color="gray" variant="light" leftSection={<IconBuildingFactory2 size={10} />}>
+                                {companyLabel(id)}
+                            </Badge>
+                        ))}
+                    </Group>
+                ) : '—')}
+                {summaryRow(t('userMgmt.create.summaryMainMine'), (
+                    <Badge color="teal" variant="light" leftSection={<IconStar size={10} />}>
+                        {companyLabel(form.values.companyId)}
+                    </Badge>
+                ))}
                 {summaryRow(t('userMgmt.create.summaryDepartment'), departmentLabel(form.values.departmentId))}
                 {summaryRow(t('userMgmt.create.summaryRole'), (
                     <Badge color={selectedRoleInfo?.color} variant="light">{selectedRoleInfo ? roleLabel(selectedRoleInfo.value) : '—'}</Badge>

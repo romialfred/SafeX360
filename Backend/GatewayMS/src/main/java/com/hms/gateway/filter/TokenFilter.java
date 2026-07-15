@@ -42,6 +42,11 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         h.remove("X-Secret-Key");
                         h.remove("X-Permissions");
                         h.remove("X-User-Id");
+                        // Cloisonnement mines : ces en-têtes sont AUTORITAIRES (réinjectés
+                        // depuis le JWT ci-dessous). On strip toute version cliente pour
+                        // empêcher l'usurpation de périmètre de mines.
+                        h.remove("X-User-Companies");
+                        h.remove("X-All-Mines");
                     }))
                     .build();
 
@@ -87,6 +92,12 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 // Identité autoritaire depuis le JWT (claim `id`) pour les gardes SELF.
                 final Object idClaim = claims.get("id");
                 final String userId = idClaim != null ? String.valueOf(idClaim) : "";
+                // Cloisonnement mines (autoritaire) : périmètre depuis le JWT.
+                final Object allMinesClaim = claims.get("allMines");
+                final boolean allMines = Boolean.TRUE.equals(allMinesClaim)
+                        || "true".equalsIgnoreCase(String.valueOf(allMinesClaim));
+                final Object companiesClaim = claims.get("companies");
+                final String companies = companiesClaim != null ? String.valueOf(companiesClaim) : "";
                 exchange = exchange.mutate()
                         .request(r -> {
                             r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET);
@@ -94,6 +105,11 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                             if (!userId.isBlank()) {
                                 r.header("X-User-Id", userId);
                             }
+                            // TOUJOURS présents pour une requête utilisateur authentifiée
+                            // (même vide), pour que HNS distingue requête utilisateur
+                            // (cloisonnement strict) d'appel système (fail-open).
+                            r.header("X-All-Mines", String.valueOf(allMines));
+                            r.header("X-User-Companies", companies);
                         })
                         .build();
 

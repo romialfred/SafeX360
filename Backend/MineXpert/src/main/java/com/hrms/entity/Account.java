@@ -99,6 +99,26 @@ public class Account {
      */
     private LocalDateTime invitationExpiresAt;
 
+    /**
+     * Périmètre multi-mines : mines auxquelles le compte est explicitement assigné.
+     * Détermine STRICTEMENT les données visibles (cf. CompanyScopeFilter HNS).
+     * `company` reste la mine principale/par défaut ; ce set est le périmètre autorisé.
+     * Fetch EAGER (Set, pas de bag) pour porter le périmètre dans le JWT au login.
+     * Placé en fin d'entité pour ne pas décaler le constructeur @AllArgsConstructor.
+     */
+    @jakarta.persistence.ManyToMany(fetch = FetchType.EAGER)
+    @jakarta.persistence.JoinTable(
+            name = "account_company",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "company_id"))
+    private java.util.Set<Company> assignedCompanies = new java.util.HashSet<>();
+
+    /**
+     * Accès à TOUTES les mines (vue consolidée « Toutes les Mines »). Quand vrai,
+     * prime sur assignedCompanies (l'utilisateur voit tout). Typiquement les admins.
+     */
+    private Boolean allMinesAccess;
+
     public AccountDTO toDTO() {
         return new AccountDTO(
                 this.id,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify-icon/react";
 import { Divider, Popover, ScrollArea } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
@@ -46,17 +46,65 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         : Number.isNaN(Number(rawCompanyId))
             ? null
             : Number(rawCompanyId);
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Cloisonnement UI (défense en profondeur ; le backend impose déjà le
+    // périmètre strict). Claims JWT exposés via /hrms/auth/me :
+    //   user.allMines  : boolean  → accès à toutes les mines (vue consolidée)
+    //   user.companies : string   → CSV des ids de mines autorisées (ex. "1,3")
+    // Rétrocompat : si ces claims sont absents (comptes non migrés), on retombe
+    // sur le comportement historique piloté par le rôle + user.company.
+    // ─────────────────────────────────────────────────────────────────────
+    const rawAllMines = user?.allMines;
+    const allMines = rawAllMines === true || String(rawAllMines).toLowerCase() === "true";
+
+    const authorizedIds = useMemo<Set<number> | null>(() => {
+        const raw = user?.companies;
+        if (raw === null || raw === undefined || String(raw).trim() === "") {
+            return null; // pas de claim exploitable → repli historique
+        }
+        const ids = String(raw)
+            .split(",")
+            .map((s) => Number(s.trim()))
+            .filter((n) => !Number.isNaN(n));
+        return ids.length ? new Set(ids) : null;
+    }, [user?.companies]);
+
+    // Compte migré multi-mines ? (au moins un claim de périmètre exploitable)
+    const isMigrated = allMines || authorizedIds !== null;
+
+    // Liste des mines réellement proposables à l'utilisateur.
+    const visibleCompanies = useMemo<Company[]>(() => {
+        if (allMines) return companies;
+        if (authorizedIds && authorizedIds.size > 0) {
+            return companies.filter((c) => authorizedIds.has(c.id));
+        }
+        return companies; // compte non migré → comportement historique (rôle)
+    }, [companies, allMines, authorizedIds]);
+
+    const isCompanyVisible = (id: number | null): boolean => {
+        if (id === null) return allMines; // « consolidé » réservé aux comptes allMines
+        if (!isMigrated) return true;
+        if (allMines) return true;
+        return authorizedIds ? authorizedIds.has(id) : true;
+    };
+
     const selectedCompany = selectedCompanyId !== null
         ? companies.find((company) => company.id === selectedCompanyId)
         : undefined;
     const selectedStatusColor = selectedCompany ? resolveStatusColor(selectedCompany.status) : "bg-blue-500";
-    const canSelect = isEnabled && isAdmin;
+    // Fix Phase 2 — ne pas se fier au seul rôle : un utilisateur multi-mines
+    // (≥2 mines autorisées) ou « toutes les mines » peut basculer entre SES mines,
+    // même sans rôle admin. Les admins conservent l'accès (rétrocompat).
+    const canSelect = isEnabled && (allMines || visibleCompanies.length > 1 || isAdmin);
     const accessibleCountLabel = loading
         ? "Chargement..."
         : canSelect
-            ? companies.length
-                ? `${companies.length} mines`
-                : "Aucune mine"
+            ? allMines
+                ? "Toutes les mines"
+                : visibleCompanies.length
+                    ? `${visibleCompanies.length} mines`
+                    : "Aucune mine"
             : null;
     const displayLabel = loading && companies.length === 0 ? "Chargement..." : selectedLabel;
 
@@ -122,26 +170,32 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         try {
             const storedValue = localStorage.getItem(COMPANY_SELECTION_STORAGE_KEY);
             if (storedValue !== null) {
+                // « Consolidé » (null) : uniquement pour les comptes « toutes les mines ».
                 if (storedValue === "null") {
-                    dispatch(setCompanySelection(null));
-                    setSelectedLabel(UNKNOWN_COMPANY_NAME);
-                    if (canSelect) {
-                        setHasUserInteracted(true);
-                    }
-                    setInitialSelectionLoaded(true);
-                    return;
-                }
-                const parsedId = Number(storedValue);
-                if (!Number.isNaN(parsedId)) {
-                    const matchedCompany = companies.find((company) => company.id === parsedId);
-                    if (matchedCompany) {
-                        dispatch(setCompanySelection(matchedCompany.id));
-                        setSelectedLabel(resolveCompanyName(matchedCompany));
+                    if (allMines) {
+                        dispatch(setCompanySelection(null));
+                        setSelectedLabel(UNKNOWN_COMPANY_NAME);
                         if (canSelect) {
                             setHasUserInteracted(true);
                         }
                         setInitialSelectionLoaded(true);
                         return;
+                    }
+                    // Sélection consolidée périmée pour un compte cloisonné → ignorée.
+                } else {
+                    const parsedId = Number(storedValue);
+                    // La mine restaurée doit rester dans le périmètre autorisé.
+                    if (!Number.isNaN(parsedId) && isCompanyVisible(parsedId)) {
+                        const matchedCompany = companies.find((company) => company.id === parsedId);
+                        if (matchedCompany) {
+                            dispatch(setCompanySelection(matchedCompany.id));
+                            setSelectedLabel(resolveCompanyName(matchedCompany));
+                            if (canSelect) {
+                                setHasUserInteracted(true);
+                            }
+                            setInitialSelectionLoaded(true);
+                            return;
+                        }
                     }
                 }
             }
@@ -173,7 +227,9 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         if (!initialSelectionLoaded) {
             return;
         }
-        if (!canSelect || !isAdmin) {
+        // S'applique à tout utilisateur pouvant sélectionner (admin OU multi-mines),
+        // plus uniquement au rôle admin.
+        if (!canSelect) {
             return;
         }
         if (!companies.length) {
@@ -182,7 +238,8 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         if (hasUserInteracted) {
             return;
         }
-        const matchedCompany = userCompanyId !== null
+        // Défaut = mine principale de l'utilisateur (si elle est dans le périmètre).
+        const matchedCompany = userCompanyId !== null && isCompanyVisible(userCompanyId)
             ? companies.find((company) => company.id === userCompanyId)
             : undefined;
         if (matchedCompany) {
@@ -195,13 +252,28 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
             }
             return;
         }
-        if (selectedCompanyId !== null) {
-            dispatch(setCompanySelection(null));
+        // Pas de mine principale exploitable : « consolidé » seulement si autorisé,
+        // sinon on retombe sur la 1re mine visible (jamais le consolidé cloisonné).
+        if (allMines) {
+            if (selectedCompanyId !== null) {
+                dispatch(setCompanySelection(null));
+            }
+            if (selectedLabel !== UNKNOWN_COMPANY_NAME) {
+                setSelectedLabel(UNKNOWN_COMPANY_NAME);
+            }
+            return;
         }
-        if (selectedLabel !== UNKNOWN_COMPANY_NAME) {
-            setSelectedLabel(UNKNOWN_COMPANY_NAME);
+        const fallback = visibleCompanies[0];
+        if (fallback) {
+            const name = resolveCompanyName(fallback);
+            if (selectedCompanyId !== fallback.id) {
+                dispatch(setCompanySelection(fallback.id));
+            }
+            if (selectedLabel !== name) {
+                setSelectedLabel(name);
+            }
         }
-    }, [canSelect, dispatch, hasUserInteracted, initialSelectionLoaded, isAdmin, companies, userCompanyId, selectedCompanyId, selectedLabel]);
+    }, [canSelect, dispatch, hasUserInteracted, initialSelectionLoaded, isAdmin, allMines, companies, visibleCompanies, userCompanyId, selectedCompanyId, selectedLabel]);
 
     useEffect(() => {
         if (!initialSelectionLoaded) {
@@ -213,10 +285,10 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         if (!companies.length) {
             return;
         }
-        const matchedCompany = userCompanyId !== null
+        const matchedCompany = userCompanyId !== null && isCompanyVisible(userCompanyId)
             ? companies.find((company) => company.id === userCompanyId)
             : undefined;
-        const fallbackCompany = matchedCompany ?? companies[0];
+        const fallbackCompany = matchedCompany ?? visibleCompanies[0];
         const targetId = fallbackCompany ? fallbackCompany.id : null;
         const targetLabel = fallbackCompany ? resolveCompanyName(fallbackCompany) : UNKNOWN_COMPANY_NAME;
         if (selectedCompanyId !== targetId) {
@@ -225,7 +297,7 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         if (selectedLabel !== targetLabel) {
             setSelectedLabel(targetLabel);
         }
-    }, [companies, canSelect, dispatch, initialSelectionLoaded, isEnabled, selectedCompanyId, selectedLabel, userCompanyId]);
+    }, [companies, visibleCompanies, canSelect, dispatch, initialSelectionLoaded, isEnabled, selectedCompanyId, selectedLabel, userCompanyId]);
 
     useEffect(() => {
         if (!initialSelectionLoaded) {
@@ -244,18 +316,31 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
             return;
         }
         const matchedCompany = companies.find((company) => company.id === selectedCompanyId);
-        if (matchedCompany) {
+        if (matchedCompany && isCompanyVisible(matchedCompany.id)) {
             const name = resolveCompanyName(matchedCompany);
             if (selectedLabel !== name) {
                 setSelectedLabel(name);
             }
             return;
         }
-        if (canSelect) {
-            dispatch(setCompanySelection(null));
-            setSelectedLabel(UNKNOWN_COMPANY_NAME);
+        // Sélection hors périmètre (localStorage périmé, bascule de compte…) :
+        // on la corrige vers la mine principale / 1re mine visible, ou le consolidé
+        // uniquement si le compte y a droit.
+        if (canSelect || isMigrated) {
+            const fallback = (userCompanyId !== null && isCompanyVisible(userCompanyId)
+                ? companies.find((c) => c.id === userCompanyId)
+                : undefined) ?? visibleCompanies[0];
+            if (fallback) {
+                if (selectedCompanyId !== fallback.id) {
+                    dispatch(setCompanySelection(fallback.id));
+                }
+                setSelectedLabel(resolveCompanyName(fallback));
+            } else if (allMines) {
+                dispatch(setCompanySelection(null));
+                setSelectedLabel(UNKNOWN_COMPANY_NAME);
+            }
         }
-    }, [canSelect, companies, dispatch, initialSelectionLoaded, selectedCompanyId, selectedLabel]);
+    }, [canSelect, isMigrated, allMines, companies, visibleCompanies, userCompanyId, dispatch, initialSelectionLoaded, selectedCompanyId, selectedLabel]);
 
     if (!isEnabled) {
         return (
@@ -347,24 +432,27 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
 
                 <ScrollArea h={420}>
                     <div className="p-2">
-                        <div
-                            className={combineClassNames(
-                                "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
-                                isAllSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
-                            )}
-                            onClick={handleSelectAll}
-                        >
-                            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-teal-600 to-emerald-700 text-white rounded-lg shadow">
-                                <Icon icon="mdi:earth" width={22} />
-                            </div>
+                        {/* « Toutes les mines (consolidé) » : réservé aux comptes allMines. */}
+                        {allMines && (
+                            <div
+                                className={combineClassNames(
+                                    "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
+                                    isAllSelected ? "bg-teal-50 border-2 border-teal-300" : "border-2 border-transparent hover:bg-slate-50"
+                                )}
+                                onClick={handleSelectAll}
+                            >
+                                <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-teal-600 to-emerald-700 text-white rounded-lg shadow">
+                                    <Icon icon="mdi:earth" width={22} />
+                                </div>
 
-                            <div className="flex-1">
-                                <p className="text-sm text-slate-900">Toutes les mines (consolidé)</p>
-                                <p className="text-xs text-slate-500">Vue agrégée multi-sites</p>
-                            </div>
+                                <div className="flex-1">
+                                    <p className="text-sm text-slate-900">Toutes les mines (consolidé)</p>
+                                    <p className="text-xs text-slate-500">Vue agrégée multi-sites</p>
+                                </div>
 
-                            {isAllSelected && <span className="text-teal-600 text-sm">✓</span>}
-                        </div>
+                                {isAllSelected && <span className="text-teal-600 text-sm">✓</span>}
+                            </div>
+                        )}
 
                         <p className="px-2 pt-4 pb-2 text-[10px] uppercase tracking-widest text-slate-400">
                             Mines individuelles
@@ -378,13 +466,13 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
                             <div className="px-2 py-4 text-sm text-red-500">{error}</div>
                         )}
 
-                        {!loading && !error && companies.length === 0 && (
+                        {!loading && !error && visibleCompanies.length === 0 && (
                             <div className="px-2 py-4 text-sm text-slate-500">Aucune mine trouvée.</div>
                         )}
 
-                        {!loading && !error && companies.length > 0 && (
+                        {!loading && !error && visibleCompanies.length > 0 && (
                             <div className="flex flex-col gap-1.5">
-                                {companies.map((company, index) => {
+                                {visibleCompanies.map((company, index) => {
                                     const name = resolveCompanyName(company);
                                     const description = resolveCompanyDescription(company);
                                     const code = resolveCompanyCode(name);

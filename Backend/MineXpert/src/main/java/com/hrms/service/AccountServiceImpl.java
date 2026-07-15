@@ -132,6 +132,10 @@ public class AccountServiceImpl implements AccountService {
         // valeurs existantes (un compte AD doit rester AD, invitation intacte).
         entity.setIdentitySource(existing.getIdentitySource());
         entity.setInvitationExpiresAt(existing.getInvitationExpiresAt());
+        // Périmètre multi-mines non porté par le DTO générique : préserver l'existant
+        // (sinon un update via ce chemin viderait la table account_company).
+        entity.setAssignedCompanies(existing.getAssignedCompanies());
+        entity.setAllMinesAccess(existing.getAllMinesAccess());
         accountRepository.save(entity);
     }
 

@@ -24,8 +24,13 @@ export interface CreateUserRequest {
     phoneNumber?: string;
     role: string;
     allowedModules?: string; // CSV moduleIds
+    /** Mine principale / par défaut (mine active par défaut). OBLIGATOIRE côté backend. */
     companyId?: number;
     departmentId?: number;
+    /** Multi-mines — ids des mines assignées (périmètre autorisé). Ignoré si allMinesAccess=true. */
+    assignedCompanyIds?: number[];
+    /** Multi-mines — true = accès à TOUTES les mines (vue consolidée). */
+    allMinesAccess?: boolean;
     /** LOT 52 — LOCAL (MDP temporaire SafeX) ou ACTIVE_DIRECTORY (identifiants AD). */
     identitySource?: 'LOCAL' | 'ACTIVE_DIRECTORY';
 }

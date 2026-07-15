@@ -131,6 +131,12 @@ public class AccountDTO {
                 // LOT 52 — champs identité non exposés par le DTO : valeurs par
                 // défaut sûres (source locale, pas d'invitation en cours).
                 "LOCAL",
+                null,
+                // Périmètre multi-mines non porté par ce DTO générique : null =
+                // « ne pas définir ici » (géré par AdminUserController via setters).
+                // ⚠ Ne PAS persister le résultat de ce toEntity() en écrasant un
+                // compte existant sans recharger assignedCompanies (cf. update).
+                null,
                 null);
     }
 }

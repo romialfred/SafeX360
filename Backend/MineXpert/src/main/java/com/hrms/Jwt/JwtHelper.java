@@ -73,6 +73,11 @@ public class JwtHelper {
         claims.put("departmentId", user.getDepartmentId());
         claims.put("role", user.getRole());
         claims.put("teamId", user.getTeamId());
+        // Périmètre multi-mines (cloisonnement strict) : injecté dans le JWT pour
+        // que le gateway le propage (X-User-Companies / X-All-Mines) et que HNS
+        // valide chaque companyId demandé. `companies` = CSV des ids autorisés.
+        claims.put("allMines", Boolean.TRUE.equals(user.getAllMinesAccess()));
+        claims.put("companies", user.getAssignedCompaniesCsv() != null ? user.getAssignedCompaniesCsv() : "");
         return doGenerateToken(claims, userDetails.getUsername());
     }
 
