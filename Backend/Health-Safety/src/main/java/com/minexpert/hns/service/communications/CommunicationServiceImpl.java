@@ -118,7 +118,7 @@ public class CommunicationServiceImpl implements CommunicationService {
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_SUMMARIES, key = "#companyId")
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_SUMMARIES, key = "#companyId != null ? #companyId : 'ALL'")
     public List<CommunicationSummaryView> getAll(Long companyId) throws HSException {
         return communicationRepository.findAllSummaries(companyId);
     }
@@ -143,7 +143,7 @@ public class CommunicationServiceImpl implements CommunicationService {
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_STATS, key = "#companyId")
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_STATS, key = "#companyId != null ? #companyId : 'ALL'")
     public CommunicationStatsDTO getCounts(Long companyId) throws HSException {
         List<CommunicationStatsDTO.TypeCount> byType = communicationRepository.countByType(companyId)
                 .stream()

@@ -69,7 +69,7 @@ public class ComplianceDocsServiceImpl implements ComplianceDocsService {
     }
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_ALL, key = "#companyId")
+    @Cacheable(cacheNames = ComplianceCacheNames.DOCS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
     public List<DocResponse> getAllComplianceDocs(Long companyId) throws HSException {
         List<DocResponse> docs = complianceDocsRepository.findAllDocsByCompany(companyId);
         List<Long> employeeIds = docs.stream().map(DocResponse::getEmployeeId).filter(Objects::nonNull)

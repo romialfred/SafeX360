@@ -184,7 +184,7 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
-    @Cacheable(cacheNames = "nonConformityInfoAll", key = "#companyId")
+    @Cacheable(cacheNames = "nonConformityInfoAll", key = "#companyId != null ? #companyId : 'ALL'")
     public List<NcInfo> getAllNcInfo(Long companyId) throws HSException {
         List<NcInfo> infos = nonConformityRepository.findAllNcInfo(companyId);
         List<Long> empIds = infos.stream()

@@ -95,13 +95,13 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         @Override
-        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_SUMMARIES, key = "#companyId")
+        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_SUMMARIES, key = "#companyId != null ? #companyId : 'ALL'")
         public List<NotificationSummaryView> getAll(Long companyId) throws HSException {
                 return notificationRepository.findAllProjectedByCompany(companyId);
         }
 
         @Override
-        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_ACTIVE, key = "#companyId")
+        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_ACTIVE, key = "#companyId != null ? #companyId : 'ALL'")
         public List<NotificationDTO> getActive(Long companyId) throws HSException {
                 return notificationRepository.findByStatusAndCompany(NotiRunStatus.SUCCESS, companyId)
                                 .stream().map(Notification::toDTO)
@@ -109,7 +109,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         @Override
-        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_EXPIRED, key = "#companyId")
+        @Cacheable(cacheNames = CommunicationCacheNames.NOTIFICATION_EXPIRED, key = "#companyId != null ? #companyId : 'ALL'")
         public List<NotificationDTO> getExpired(Long companyId) throws HSException {
                 return notificationRepository.findByStatusAndCompany(NotiRunStatus.FAILURE, companyId)
                                 .stream().map(Notification::toDTO)

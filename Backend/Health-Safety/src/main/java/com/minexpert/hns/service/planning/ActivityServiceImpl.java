@@ -88,7 +88,7 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES, key = "#companyId")
+    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES, key = "#companyId != null ? #companyId : 'ALL'")
     public List<ActivityDTO> getAllActivities(Long companyId) throws HSException {
         return activityRepository.findAllByCompany(companyId)
                 .stream()

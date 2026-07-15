@@ -97,7 +97,7 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_ALL, key = "#companyId")
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_ALL, key = "#companyId != null ? #companyId : 'ALL'")
         public List<LessonLearnedDetails> getAllLessonLearnedDetails(Long companyId) throws HSException {
                 List<LessonLearnedDetails> detailsList = lessonLearnedRepository.findAllLessonLearnedDetails(companyId);
                 List<Long> employeeIds = detailsList.stream()

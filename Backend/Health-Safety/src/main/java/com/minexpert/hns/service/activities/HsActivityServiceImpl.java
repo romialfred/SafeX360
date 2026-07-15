@@ -93,7 +93,7 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, key = "#companyId")
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, key = "#companyId != null ? #companyId : 'ALL'")
     public List<HsActivityResponse> getAllActivities(Long companyId) throws HSException {
         return hsActivityRepository.findAllActivities(companyId);
     }
@@ -133,13 +133,13 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, key = "#companyId")
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, key = "#companyId != null ? #companyId : 'ALL'")
     public List<HsActivityResponse> getAllMeetings(Long companyId) throws HSException {
         return hsActivityRepository.findAllMeetings(ActivityType.HSM, companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, key = "#companyId")
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, key = "#companyId != null ? #companyId : 'ALL'")
     public List<HsActivityResponse> getAllTours(Long companyId) throws HSException {
         return hsActivityRepository.findAllTours(ActivityType.ST, companyId);
     }

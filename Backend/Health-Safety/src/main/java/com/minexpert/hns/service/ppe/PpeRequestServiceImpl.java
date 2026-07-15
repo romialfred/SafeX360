@@ -155,7 +155,7 @@ public class PpeRequestServiceImpl implements PpeRequestService {
         }
 
         @Override
-        @Cacheable(cacheNames = "ppeRequestsAll", key = "#companyId")
+        @Cacheable(cacheNames = "ppeRequestsAll", key = "#companyId != null ? #companyId : 'ALL'")
         public List<PpeRequestDTO> getAllRequests(Long companyId) throws HSException {
                 return requestRepository.findAllByCompany(companyId)
                                 .stream()

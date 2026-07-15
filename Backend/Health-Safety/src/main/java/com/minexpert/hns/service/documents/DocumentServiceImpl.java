@@ -80,7 +80,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_DOCUMENTS_ALL, key = "#companyId")
+        @Cacheable(cacheNames = CACHE_DOCUMENTS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
         public List<DocumentDTO> getAll(Long companyId) throws HSException {
                 return documentRepository.findAllByCompany(companyId)
                                 .stream().map(Document::toDTO)
@@ -88,7 +88,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_DOCUMENTS_ACTIVE, key = "#companyId")
+        @Cacheable(cacheNames = CACHE_DOCUMENTS_ACTIVE, key = "#companyId != null ? #companyId : 'ALL'")
         public List<DocumentDTO> getActive(Long companyId) throws HSException {
                 return documentRepository.findByStatusAndCompany(DocumentStatus.APPROVED, companyId)
                                 .stream()
@@ -119,7 +119,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_DOCUMENTS_LATEST, key = "#companyId")
+        @Cacheable(cacheNames = CACHE_DOCUMENTS_LATEST, key = "#companyId != null ? #companyId : 'ALL'")
         public List<DocumentDTO> getLatest(Long companyId) throws HSException {
                 return documentRepository.findLatestByCompany(companyId, PageRequest.of(0, 5))
                                 .stream().map(Document::toDTO)
@@ -127,7 +127,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_DOCUMENTS_APPROVED, key = "#companyId")
+        @Cacheable(cacheNames = CACHE_DOCUMENTS_APPROVED, key = "#companyId != null ? #companyId : 'ALL'")
         public List<DocumentDTO> getApproved(Long companyId) throws HSException {
                 return documentRepository.findByStatusAndCompany(DocumentStatus.APPROVED, companyId)
                                 .stream()

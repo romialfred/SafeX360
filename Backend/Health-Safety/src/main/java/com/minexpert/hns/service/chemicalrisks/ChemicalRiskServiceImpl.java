@@ -127,7 +127,7 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
-    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, key = "#companyId")
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, key = "#companyId != null ? #companyId : 'ALL'")
     public List<ChemicalRiskDTO> getAll(Long companyId) throws HSException {
         return chemicalRiskRepository.findAllByCompany(companyId)
                 .stream()

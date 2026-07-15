@@ -78,7 +78,7 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
         }
 
         @Override
-        @Cacheable(cacheNames = "generalInspectionsAll", key = "#companyId")
+        @Cacheable(cacheNames = "generalInspectionsAll", key = "#companyId != null ? #companyId : 'ALL'")
         public List<GeneralInspectionResponse> getAllInspections(Long companyId) throws HSException {
                 return generalInspectionRepository.findAllInspections(companyId);
         }

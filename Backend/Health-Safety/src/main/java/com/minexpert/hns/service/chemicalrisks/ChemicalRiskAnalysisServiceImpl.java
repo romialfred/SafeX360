@@ -87,7 +87,7 @@ public class ChemicalRiskAnalysisServiceImpl implements ChemicalRiskAnalysisServ
     }
 
     @Override
-    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ANALYSIS_ALL, key = "#companyId")
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ANALYSIS_ALL, key = "#companyId != null ? #companyId : 'ALL'")
     public List<ChemicalRiskAnalysisDTO> getAll(Long companyId) throws HSException {
         return analysisRepository.findAllByCompany(companyId)
                 .stream()

@@ -89,7 +89,7 @@ public class RiskAnalysisServiceImpl implements RiskAnalysisService {
         }
 
         @Override
-        @Cacheable(cacheNames = "riskAnalysisAll", key = "#companyId")
+        @Cacheable(cacheNames = "riskAnalysisAll", key = "#companyId != null ? #companyId : 'ALL'")
         public List<RiskAnalysisDTO> getAll(Long companyId) throws HSException {
                 return analysisRepository.findAllByCompany(companyId)
                                 .stream()

@@ -157,7 +157,7 @@ public class PpeEmpServiceImpl implements PpeEmpService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpAssignmentCounts", key = "#companyId")
+    @Cacheable(cacheNames = "ppeEmpAssignmentCounts", key = "#companyId != null ? #companyId : 'ALL'")
     public java.util.List<com.minexpert.hns.dto.ppe.EmpPpeCountDTO> getAllEmployeeAssignmentCounts(Long companyId)
             throws HSException {
         return empRepository.countActiveAssignmentsByEmpAndCompany(PpeEmpStatus.ACTIVE, companyId);

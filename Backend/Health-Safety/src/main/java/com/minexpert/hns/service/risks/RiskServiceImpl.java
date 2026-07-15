@@ -119,7 +119,7 @@ public class RiskServiceImpl implements RiskService {
         }
 
         @Override
-        @Cacheable(cacheNames = "risksAll", key = "#companyId")
+        @Cacheable(cacheNames = "risksAll", key = "#companyId != null ? #companyId : 'ALL'")
         public List<RiskDTO> getAll(Long companyId) throws HSException {
                 return riskRepository.findAllByCompany(companyId)
                                 .stream()
@@ -128,7 +128,7 @@ public class RiskServiceImpl implements RiskService {
         }
 
         @Override
-        @Cacheable(cacheNames = "risksWithLevel", key = "#companyId")
+        @Cacheable(cacheNames = "risksWithLevel", key = "#companyId != null ? #companyId : 'ALL'")
         public List<RiskDTO> getAllWithRiskLevel(Long companyId) throws HSException {
                 return riskRepository.findByRiskLevelIsNotNullAndCompany(companyId)
                                 .stream()

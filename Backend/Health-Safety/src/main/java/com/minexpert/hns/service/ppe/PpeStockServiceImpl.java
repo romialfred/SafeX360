@@ -75,7 +75,7 @@ public class PpeStockServiceImpl implements PpeStockService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeStocksAll", key = "#companyId")
+    @Cacheable(cacheNames = "ppeStocksAll", key = "#companyId != null ? #companyId : 'ALL'")
     public List<PpeStockDTO> getAllStocks(Long companyId) throws HSException {
         return stockRepository.findAllByCompany(companyId)
                 .stream()

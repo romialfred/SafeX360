@@ -79,7 +79,7 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppesAll", key = "#companyId")
+    @Cacheable(cacheNames = "ppesAll", key = "#companyId != null ? #companyId : 'ALL'")
     public List<PpeDTO> getAllStocks(Long companyId) throws HSException {
         return ppeRepository.findAllByCompany(companyId)
                 .stream()
@@ -88,7 +88,7 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeActive", key = "#companyId")
+    @Cacheable(cacheNames = "ppeActive", key = "#companyId != null ? #companyId : 'ALL'")
     public List<PpeDTO> getActiveStocks(Long companyId) throws HSException {
         return ppeRepository.findByStatusAndCompany(PpeStatus.ACTIVE, companyId)
                 .stream()
