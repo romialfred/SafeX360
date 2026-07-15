@@ -24,6 +24,16 @@ public interface AuditRepository extends CrudRepository<Audit, Long> {
     @Query("SELECT a FROM Audit a WHERE a.planningStatus IS NOT NULL")
     List<Audit> findAllWithNonNullPlanningStatus();
 
+    // ─── Cloisonnement par mine (companyId) ────────────────────────────────
+    // companyId null (appel système / allMines) => aucun filtre.
+
+    @Query("SELECT a FROM Audit a WHERE (:companyId IS NULL OR a.companyId = :companyId)")
+    List<Audit> findAllByCompany(@Param("companyId") Long companyId);
+
+    @Query("SELECT a FROM Audit a WHERE a.planningStatus IS NOT NULL "
+            + "AND (:companyId IS NULL OR a.companyId = :companyId)")
+    List<Audit> findAllWithNonNullPlanningStatusByCompany(@Param("companyId") Long companyId);
+
     Optional<Audit> findFirstByStartDateGreaterThanEqualOrderByStartDateAsc(LocalDate date);
 
     Optional<Audit> findFirstByEndDateGreaterThanEqualOrderByEndDateAsc(LocalDate date);

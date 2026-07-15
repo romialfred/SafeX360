@@ -34,9 +34,12 @@ public class ReportDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Report toEntity() {
         return new Report(this.id, this.preparerName, this.preparerRole, this.preDate, this.validatorName,
                 this.validatorRole, this.validatorStatus, new Audit(this.auditId), null, this.rejectionComment,
-                this.description, this.status, this.createdAt, this.updatedAt);
+                this.description, this.status, this.createdAt, this.updatedAt, this.companyId);
     }
 }

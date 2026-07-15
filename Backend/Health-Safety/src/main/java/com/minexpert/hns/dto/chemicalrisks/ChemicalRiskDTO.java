@@ -44,6 +44,9 @@ public class ChemicalRiskDTO {
     private String legalRequirements;
     private LocalDate nextReviewDate;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    private Long companyId;
+
     public ChemicalRisk toEntity() {
         return new ChemicalRisk(
                 this.id,
@@ -72,7 +75,8 @@ public class ChemicalRiskDTO {
                 this.personsExposed,
                 this.exposureCount,
                 this.legalRequirements,
-                this.nextReviewDate);
+                this.nextReviewDate,
+                this.companyId);
     }
 }
 

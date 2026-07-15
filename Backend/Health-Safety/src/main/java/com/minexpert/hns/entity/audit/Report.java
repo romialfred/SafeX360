@@ -47,6 +47,9 @@ public class Report {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Report(Long id) {
         this.id = id;
     }
@@ -54,6 +57,7 @@ public class Report {
     public ReportDTO toDTO() {
         return new ReportDTO(this.id, this.preparerName, this.preparerRole, this.preDate, this.validatorName,
                 this.validatorRole, this.validatorStatus, this.audit != null ? this.audit.getId() : null,
-                null, this.rejectionComment, this.description, this.status, this.createdAt, this.updatedAt);
+                null, this.rejectionComment, this.description, this.status, this.createdAt, this.updatedAt,
+                this.companyId);
     }
 }

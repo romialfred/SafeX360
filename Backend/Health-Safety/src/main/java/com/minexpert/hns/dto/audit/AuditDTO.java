@@ -49,6 +49,9 @@ public class AuditDTO {
     /** LOT 52 — score de priorité basé risques. */
     private Integer riskScore;
 
+    /** Cloisonnement par mine : identifiant de la société/mine propriétaire. */
+    private Long companyId;
+
     public Audit toEntity() {
         return new Audit(this.id, this.title, this.refNumber,
                 com.minexpert.hns.utility.StringListConverter.listToString(objectives),
@@ -58,7 +61,7 @@ public class AuditDTO {
                 com.minexpert.hns.utility.StringListConverter.listToString(this.references),
                 this.startDate,
                 this.endDate, this.status, this.planningStatus, this.createdAt, this.updatedAt,
-                this.programId, this.riskScore);
+                this.programId, this.riskScore, this.companyId);
     }
 
     public AuditDetails toDetails() {

@@ -94,12 +94,14 @@ public class ActivityReportServiceImpl implements ActivityReportService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, key = "#activityReportDTO.id"),
-            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ACTIVITY, key = "#activityReportDTO.activityId", condition = "#activityReportDTO.activityId != null")
+            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ACTIVITY, allEntries = true)
     })
-    public void updateActivityReport(ActivityReportDTO activityReportDTO) throws HSException {
+    public void updateActivityReport(ActivityReportDTO activityReportDTO, Long companyId)
+            throws HSException {
         ActivityReport activityReport = activityReportRepository.findById(activityReportDTO.getId())
                 .orElseThrow(() -> new HSException("ACTIVITY_REPORT_NOT_FOUND"));
+        verifyCompanyById(activityReportDTO.getId(), companyId);
         activityReport.setSummary(activityReportDTO.getSummary());
         activityReport.setFindings(activityReportDTO.getFindings());
         activityReport.setDocs(mediaService.saveAllMedia(activityReportDTO.getDocs()));
@@ -112,34 +114,66 @@ public class ActivityReportServiceImpl implements ActivityReportService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ACTIVITY, allEntries = true)
     })
-    public void deleteActivityReport(Long id) throws HSException {
+    public void deleteActivityReport(Long id, Long companyId) throws HSException {
         if (!activityReportRepository.existsById(id)) {
             throw new HSException("ACTIVITY_REPORT_NOT_FOUND");
         }
+        verifyCompanyById(id, companyId);
         activityReportRepository.deleteById(id);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, key = "#id")
-    public ActivityReportDTO getActivityReportById(Long id) throws HSException {
+    @Cacheable(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ID, key = "#id + '-' + #companyId")
+    public ActivityReportDTO getActivityReportById(Long id, Long companyId) throws HSException {
         ActivityReport activityReport = activityReportRepository.findById(id)
                 .orElseThrow(() -> new HSException("ACTIVITY_REPORT_NOT_FOUND"));
+        verifyCompanyById(id, companyId);
         ActivityReportDTO activityReportDTO = activityReport.toDTO();
         activityReportDTO.setDocs(mediaService.getAllMediaByArray(activityReport.getDocs()));
         return activityReportDTO;
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ACTIVITY, key = "#activityId")
-    public ActivityReportDTO getActivityReportByActivityId(Long activityId) throws HSException {
+    @Cacheable(cacheNames = ActivityCacheNames.ACTIVITY_REPORT_BY_ACTIVITY,
+            key = "#activityId + '-' + #companyId")
+    public ActivityReportDTO getActivityReportByActivityId(Long activityId, Long companyId)
+            throws HSException {
         ActivityReport activityReport = activityReportRepository.findByActivity_Id(activityId)
                 .orElseThrow(() -> new HSException("ACTIVITY_REPORT_NOT_FOUND"));
+        verifyCompanyByActivityId(activityId, companyId);
         ActivityReportDTO activityReportDTO = activityReport.toDTO();
         activityReportDTO.setDocs(mediaService.getAllMediaByArray(activityReport.getDocs()));
         return activityReportDTO;
+    }
+
+    /**
+     * Verifie l'appartenance via l'activite planning grand-parente. companyId
+     * null = pas de controle. Activite globale (companyId parent null) =
+     * accessible a toutes les mines (repli). Non-appartenance :
+     * ACTIVITY_REPORT_NOT_FOUND.
+     */
+    private void verifyCompanyById(Long reportId, Long companyId) throws HSException {
+        if (companyId == null) {
+            return;
+        }
+        Long parent = activityReportRepository.findParentCompanyIdById(reportId).orElse(null);
+        if (parent != null && !companyId.equals(parent)) {
+            throw new HSException("ACTIVITY_REPORT_NOT_FOUND");
+        }
+    }
+
+    private void verifyCompanyByActivityId(Long activityId, Long companyId) throws HSException {
+        if (companyId == null) {
+            return;
+        }
+        Long parent = activityReportRepository.findParentCompanyIdByActivityId(activityId)
+                .orElse(null);
+        if (parent != null && !companyId.equals(parent)) {
+            throw new HSException("ACTIVITY_REPORT_NOT_FOUND");
+        }
     }
 
 }

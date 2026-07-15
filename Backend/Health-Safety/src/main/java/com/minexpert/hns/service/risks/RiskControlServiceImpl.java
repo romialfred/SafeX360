@@ -25,17 +25,18 @@ public class RiskControlServiceImpl implements RiskControlService {
     }
 
     @Override
-    public List<RiskControlDTO> listByRisk(String sourceType, Long riskId) throws HSException {
-        return riskControlRepository.findBySourceTypeAndRiskId(sourceType, riskId)
+    public List<RiskControlDTO> listByRisk(String sourceType, Long riskId, Long companyId) throws HSException {
+        return riskControlRepository.findBySourceTypeAndRiskIdAndCompany(sourceType, riskId, companyId)
                 .stream()
                 .map(RiskControl::toDTO)
                 .toList();
     }
 
     @Override
-    public RiskControlDTO update(RiskControlDTO dto) throws HSException {
+    public RiskControlDTO update(RiskControlDTO dto, Long companyId) throws HSException {
         RiskControl existing = riskControlRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("RISK_CONTROL_NOT_FOUND"));
+        assertSameCompany(companyId, existing.getCompanyId());
         existing.setSourceType(dto.getSourceType());
         existing.setRiskId(dto.getRiskId());
         existing.setControlType(dto.getControlType());
@@ -48,9 +49,20 @@ public class RiskControlServiceImpl implements RiskControlService {
     }
 
     @Override
-    public void delete(Long id) throws HSException {
+    public void delete(Long id, Long companyId) throws HSException {
         RiskControl existing = riskControlRepository.findById(id)
                 .orElseThrow(() -> new HSException("RISK_CONTROL_NOT_FOUND"));
+        assertSameCompany(companyId, existing.getCompanyId());
         riskControlRepository.delete(existing);
+    }
+
+    /**
+     * Cloisonnement par mine : companyId fourni => l'entité doit lui appartenir.
+     * companyId null = appel système / toutes mines.
+     */
+    private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+        if (companyId != null && !companyId.equals(entityCompanyId)) {
+            throw new HSException("RISK_CONTROL_NOT_FOUND");
+        }
     }
 }

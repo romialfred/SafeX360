@@ -31,8 +31,9 @@ public class RiskOverviewController {
             @RequestParam(required = false) Long ownerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false, name = "q") String q) throws HSException {
-        return ResponseEntity.ok(riskService.search(status, departmentId, ownerId, from, to, q));
+            @RequestParam(required = false, name = "q") String q,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.search(status, departmentId, ownerId, from, to, q, companyId));
     }
 
     @GetMapping("/overview")
@@ -42,7 +43,8 @@ public class RiskOverviewController {
             @RequestParam(required = false) Long ownerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false, name = "q") String q) throws HSException {
-        return ResponseEntity.ok(riskService.getOverview(status, departmentId, ownerId, from, to, q));
+            @RequestParam(required = false, name = "q") String q,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.getOverview(status, departmentId, ownerId, from, to, q, companyId));
     }
 }

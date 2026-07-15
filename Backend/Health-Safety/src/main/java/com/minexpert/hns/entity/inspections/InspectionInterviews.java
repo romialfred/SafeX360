@@ -34,10 +34,13 @@ public class InspectionInterviews {
     private GeneralInspection generalInspection;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Mine propriétaire (cloisonnement). Renseigné à la création depuis la requête. */
+    private Long companyId;
 
     public InspectionInterviewsDTO toDTO() {
         return new InspectionInterviewsDTO(this.id, StringListConverter.convertToLongList(employees),
                 this.interviewDate, this.description,
-                generalInspection != null ? this.generalInspection.getId() : null, this.createdAt, this.updatedAt);
+                generalInspection != null ? this.generalInspection.getId() : null, this.createdAt, this.updatedAt,
+                this.companyId);
     }
 }

@@ -216,6 +216,68 @@ public class BlastEvacuationReportServiceImpl implements BlastEvacuationReportSe
                 .toList();
     }
 
+    // ── Surcharges cloisonnees par mine (companyId) ───────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BlastEvacuationReportDTO> search(Long mineId, Long companyId) {
+        // Le companyId valide prime sur le mineId (non valide par le filtre).
+        return search(companyId != null ? companyId : mineId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<BlastEvacuationReportDTO> getByBlastId(Long blastId, Long companyId) {
+        verifyBlastMine(blastId, companyId);
+        return getByBlastId(blastId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<BlastEvacuationReportDTO> getById(Long reportId, Long companyId) {
+        if (companyId != null) {
+            reportRepository.findById(reportId)
+                    .ifPresent(r -> verifyBlastMine(r.getBlastId(), companyId));
+        }
+        return getById(reportId);
+    }
+
+    @Override
+    public BlastEvacuationReportDTO sign(Long reportId, Long signedByUserId,
+            String signatureDataBase64, Long companyId) {
+        verifyBlastMine(loadOrThrow(reportId).getBlastId(), companyId);
+        return sign(reportId, signedByUserId, signatureDataBase64);
+    }
+
+    @Override
+    public BlastEvacuationReportDTO addIncident(Long reportId, String incidentDescription,
+            Long actorId, Long companyId) {
+        verifyBlastMine(loadOrThrow(reportId).getBlastId(), companyId);
+        return addIncident(reportId, incidentDescription, actorId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] renderPdf(Long reportId, String lang, Long companyId) {
+        verifyBlastMine(loadOrThrow(reportId).getBlastId(), companyId);
+        return renderPdf(reportId, lang);
+    }
+
+    /**
+     * Verifie qu'un tir (donc son rapport) releve de la mine appelante.
+     * companyId null = pas de controle (appel systeme / allMines).
+     */
+    private void verifyBlastMine(Long blastId, Long companyId) {
+        if (companyId == null) {
+            return;
+        }
+        Blast b = blastRepository.findById(blastId).orElse(null);
+        if (b == null
+                || (!companyId.equals(b.getMineId()) && !companyId.equals(b.getCompanyId()))) {
+            throw new EntityNotFoundException("BlastEvacuationReport not found for blast: " + blastId);
+        }
+    }
+
     // ── PDF render ───────────────────────────────────────────────────────
 
     @Override

@@ -65,6 +65,10 @@ public class Risk {
     @Column(name = "next_review_date")
     private LocalDate nextReviewDate;
 
+    // Cloisonnement par mine (companyId) — ajouté en DERNIER pour @AllArgsConstructor
+    @Column(name = "company_id")
+    private Long companyId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -98,7 +102,8 @@ public class Risk {
                 this.personsExposed,
                 this.exposureCount,
                 this.legalRequirements,
-                this.nextReviewDate);
+                this.nextReviewDate,
+                this.companyId);
 
         if (this.riskLevel != null && this.riskLevel.matches("^[1-5][1-5]$")) {
             dto.setProbability(Character.getNumericValue(this.riskLevel.charAt(0)));

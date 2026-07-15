@@ -20,6 +20,8 @@ import lombok.NoArgsConstructor;
 public class BlastSearchFiltersDTO {
 
     private Long mineId;
+    /** Cloisonnement par mine (injecte/valide par le CompanyScopeFilter ; prime sur mineId). */
+    private Long companyId;
     private List<BlastStatus> statuses;
     private LocalDateTime from;
     private LocalDateTime to;

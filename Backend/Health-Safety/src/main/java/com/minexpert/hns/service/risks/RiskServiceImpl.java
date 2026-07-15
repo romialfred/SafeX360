@@ -43,15 +43,16 @@ public class RiskServiceImpl implements RiskService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "riskById", key = "#dto.id", condition = "#dto.id !=null"),
+                        @CacheEvict(cacheNames = "riskById", allEntries = true),
                         @CacheEvict(cacheNames = "risksAll", allEntries = true),
                         @CacheEvict(cacheNames = "risksWithLevel", allEntries = true),
                         @CacheEvict(cacheNames = "riskSearch", allEntries = true),
                         @CacheEvict(cacheNames = "riskOverview", allEntries = true)
         })
-        public RiskDTO update(RiskDTO dto) throws HSException {
+        public RiskDTO update(RiskDTO dto, Long companyId) throws HSException {
                 Risk existing = riskRepository.findById(dto.getId())
                                 .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+                assertSameCompany(companyId, existing.getCompanyId());
                 existing.setTitle(dto.getTitle());
                 existing.setDescription(dto.getDescription());
                 existing.setDepartmentId(dto.getDepartmentId());
@@ -73,19 +74,30 @@ public class RiskServiceImpl implements RiskService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "riskById", key = "#id"),
+                        @CacheEvict(cacheNames = "riskById", allEntries = true),
                         @CacheEvict(cacheNames = "risksAll", allEntries = true),
                         @CacheEvict(cacheNames = "risksWithLevel", allEntries = true),
                         @CacheEvict(cacheNames = "riskSearch", allEntries = true),
                         @CacheEvict(cacheNames = "riskOverview", allEntries = true)
         })
-        public RiskDTO updateStatus(Long id, String status) throws HSException {
+        public RiskDTO updateStatus(Long id, String status, Long companyId) throws HSException {
                 Risk risk = riskRepository.findById(id)
                                 .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+                assertSameCompany(companyId, risk.getCompanyId());
                 assertRiskStatus(status);
                 risk.setStatus(status);
                 riskRepository.save(risk);
                 return risk.toDTO();
+        }
+
+        /**
+         * Cloisonnement par mine : si un companyId est fourni (appel utilisateur),
+         * l'entité doit lui appartenir. companyId null = appel système / toutes mines.
+         */
+        private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+                if (companyId != null && !companyId.equals(entityCompanyId)) {
+                        throw new HSException("RISK_NOT_FOUND");
+                }
         }
 
         private static final Set<String> VALID_RISK_STATUSES = Set.of(
@@ -98,48 +110,49 @@ public class RiskServiceImpl implements RiskService {
         }
 
         @Override
-        @Cacheable(cacheNames = "riskById", key = "#id")
-        public RiskDTO getById(Long id) throws HSException {
+        @Cacheable(cacheNames = "riskById", key = "{#id, #companyId}")
+        public RiskDTO getById(Long id, Long companyId) throws HSException {
                 Risk risk = riskRepository.findById(id)
                                 .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+                assertSameCompany(companyId, risk.getCompanyId());
                 return risk.toDTO();
         }
 
         @Override
-        @Cacheable(cacheNames = "risksAll")
-        public List<RiskDTO> getAll() throws HSException {
-                return riskRepository.findAll()
+        @Cacheable(cacheNames = "risksAll", key = "#companyId")
+        public List<RiskDTO> getAll(Long companyId) throws HSException {
+                return riskRepository.findAllByCompany(companyId)
                                 .stream()
                                 .map(Risk::toDTO)
                                 .toList();
         }
 
         @Override
-        @Cacheable(cacheNames = "risksWithLevel")
-        public List<RiskDTO> getAllWithRiskLevel() throws HSException {
-                return riskRepository.findByRiskLevelIsNotNull()
+        @Cacheable(cacheNames = "risksWithLevel", key = "#companyId")
+        public List<RiskDTO> getAllWithRiskLevel(Long companyId) throws HSException {
+                return riskRepository.findByRiskLevelIsNotNullAndCompany(companyId)
                                 .stream()
                                 .map(Risk::toDTO)
                                 .toList();
         }
 
         @Override
-        @Cacheable(cacheNames = "riskSearch", key = "{#status, #departmentId, #ownerId, #from, #to, #q}")
+        @Cacheable(cacheNames = "riskSearch", key = "{#status, #departmentId, #ownerId, #from, #to, #q, #companyId}")
         public List<RiskDTO> search(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to,
-                        String q)
+                        String q, Long companyId)
                         throws HSException {
                 LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
                 LocalDateTime toDt = to != null ? to.plusDays(1).atStartOfDay() : null; // exclusive upper bound
                 List<Risk> risks = riskRepository.findByFilters(
-                                normalize(status), departmentId, ownerId, fromDt, toDt, normalize(q));
+                                normalize(status), departmentId, ownerId, fromDt, toDt, normalize(q), companyId);
                 return risks.stream().map(Risk::toDTO).toList();
         }
 
         @Override
-        @Cacheable(cacheNames = "riskOverview", key = "{#status, #departmentId, #ownerId, #from, #to, #q}")
+        @Cacheable(cacheNames = "riskOverview", key = "{#status, #departmentId, #ownerId, #from, #to, #q, #companyId}")
         public RiskOverviewResponse getOverview(String status, Long departmentId, Long ownerId, LocalDate from,
-                        LocalDate to, String q) throws HSException {
-                List<RiskDTO> items = search(status, departmentId, ownerId, from, to, q);
+                        LocalDate to, String q, Long companyId) throws HSException {
+                List<RiskDTO> items = search(status, departmentId, ownerId, from, to, q, companyId);
 
                 OverviewMetrics metrics = buildMetrics(items);
                 RiskMatrixResponse matrix = buildMatrix(items);

@@ -30,12 +30,13 @@ public class PpeRequestDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deliveredAt;
+    private Long companyId;
 
     public PpeRequest toEntity() {
         return new PpeRequest(id, StringListConverter.listToString(empIds), StringListConverter.listToString(ppeIds),
                 desiredDate, priority, reason, comment, status,
                 createdAt,
-                updatedAt, deliveredAt);
+                updatedAt, deliveredAt, companyId);
     }
 
 }

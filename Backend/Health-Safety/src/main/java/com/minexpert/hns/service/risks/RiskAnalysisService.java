@@ -6,16 +6,16 @@ import com.minexpert.hns.exception.HSException;
 import java.util.List;
 
 public interface RiskAnalysisService {
-    RiskAnalysisDTO create(RiskAnalysisDTO dto) throws HSException;
+    RiskAnalysisDTO create(RiskAnalysisDTO dto, Long companyId) throws HSException;
 
-    RiskAnalysisDTO update(RiskAnalysisDTO dto) throws HSException;
+    RiskAnalysisDTO update(RiskAnalysisDTO dto, Long companyId) throws HSException;
 
-    List<RiskAnalysisDTO> getByRiskId(Long riskId) throws HSException;
+    List<RiskAnalysisDTO> getByRiskId(Long riskId, Long companyId) throws HSException;
 
-    List<RiskAnalysisDTO> getAll() throws HSException;
+    List<RiskAnalysisDTO> getAll(Long companyId) throws HSException;
 
     /**
      * Get a specific risk analysis by its ID
      */
-    RiskAnalysisDTO getById(Long id) throws HSException;
+    RiskAnalysisDTO getById(Long id, Long companyId) throws HSException;
 }

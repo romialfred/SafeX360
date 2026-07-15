@@ -26,7 +26,7 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     @Caching(evict = {
             // @CacheEvict(cacheNames = "inspectionInterviewById", allEntries = true),
             @CacheEvict(cacheNames = "inspectionInterviewsAll", allEntries = true),
-            @CacheEvict(cacheNames = "inspectionInterviewByInspection", key = "#interviewDTO.inspectionId", condition = "#interviewDTO.inspectionId != null")
+            @CacheEvict(cacheNames = "inspectionInterviewByInspection", allEntries = true)
     })
     public Long createInterview(InspectionInterviewsDTO interviewDTO) throws HSException {
         interviewDTO.setCreatedAt(LocalDateTime.now());
@@ -76,9 +76,10 @@ public class InspectionInterviewServiceImpl implements InspectionInterviewServic
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionInterviewByInspection", key = "#inspectionId")
-    public InspectionInterviewsDTO getInterviewsByInspectionId(Long inspectionId) throws HSException {
-        InspectionInterviews interviews = inspectionInterviewsRepository.findByGeneralInspection_Id(inspectionId)
+    @Cacheable(cacheNames = "inspectionInterviewByInspection", key = "#inspectionId + '-' + #companyId")
+    public InspectionInterviewsDTO getInterviewsByInspectionId(Long inspectionId, Long companyId) throws HSException {
+        InspectionInterviews interviews = inspectionInterviewsRepository
+                .findByInspectionAndCompany(inspectionId, companyId)
                 .orElse(null);
         return interviews != null ? interviews.toDTO() : null;
 

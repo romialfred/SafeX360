@@ -27,8 +27,8 @@ public class InspectionReportServiceImpl implements InspectionReportService {
 
     @Override
     @Caching(evict = {
-            // @CacheEvict(cacheNames = "inspectionReportById", allEntries = true),
-            @CacheEvict(cacheNames = "inspectionReportByInspection", key = "#report.generalInspectionId", condition = "#report.generalInspectionId != null")
+            // Clés de cache suffixées par companyId : purge globale sur mutation.
+            @CacheEvict(cacheNames = "inspectionReportByInspection", allEntries = true)
     })
     public Long createReport(InspectionReportDTO report) throws HSException {
 
@@ -48,10 +48,14 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionReportById", key = "#id")
-    public InspectionReportDTO findById(Long id) throws HSException {
+    @Cacheable(cacheNames = "inspectionReportById", key = "#id + '-' + #companyId")
+    public InspectionReportDTO findById(Long id, Long companyId) throws HSException {
         InspectionReport inspectionReport = inspectionReportRepository.findById(id)
                 .orElseThrow(() -> new HSException("INSPECTION_REPORT_NOT_FOUND"));
+        // Cloisonnement : ne pas divulguer un rapport d'une autre mine.
+        if (companyId != null && !companyId.equals(inspectionReport.getCompanyId())) {
+            throw new HSException("INSPECTION_REPORT_NOT_FOUND");
+        }
         InspectionReportDTO reportDTO = inspectionReport.toDTO();
         if (inspectionReport.getDocs() != null) {
             reportDTO.setDocs(mediaService.getAllMediaByArray(inspectionReport.getDocs()));
@@ -61,12 +65,16 @@ public class InspectionReportServiceImpl implements InspectionReportService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "inspectionReportById", key = "#report.id"),
+            @CacheEvict(cacheNames = "inspectionReportById", allEntries = true),
             @CacheEvict(cacheNames = "inspectionReportByInspection", allEntries = true)
     })
-    public void updateReport(InspectionReportDTO report) throws HSException {
+    public void updateReport(InspectionReportDTO report, Long companyId) throws HSException {
         InspectionReport existingReport = inspectionReportRepository.findById(report.getId())
                 .orElseThrow(() -> new HSException("INSPECTION_REPORT_NOT_FOUND"));
+        // Cloisonnement : ne pas modifier un rapport d'une autre mine.
+        if (companyId != null && !companyId.equals(existingReport.getCompanyId())) {
+            throw new HSException("INSPECTION_REPORT_NOT_FOUND");
+        }
 
         existingReport.setUpdatedAt(LocalDateTime.now());
 
@@ -78,9 +86,10 @@ public class InspectionReportServiceImpl implements InspectionReportService {
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionReportByInspection", key = "#id")
-    public InspectionReportDTO findByGeneralInspectionId(Long id) throws HSException {
-        Optional<InspectionReport> inspectionReportOpt = inspectionReportRepository.findByGeneralInspectionId(id);
+    @Cacheable(cacheNames = "inspectionReportByInspection", key = "#id + '-' + #companyId")
+    public InspectionReportDTO findByGeneralInspectionId(Long id, Long companyId) throws HSException {
+        Optional<InspectionReport> inspectionReportOpt = inspectionReportRepository
+                .findByInspectionAndCompany(id, companyId);
         if (inspectionReportOpt.isEmpty()) {
             throw new HSException("INSPECTION_REPORT_NOT_FOUND");
         }

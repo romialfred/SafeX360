@@ -17,27 +17,35 @@ public class ChemicalRiskAnalysisController {
     private final ChemicalRiskAnalysisService analysisService;
 
     @PostMapping("/create")
-    public ResponseEntity<ChemicalRiskAnalysisDTO> create(@RequestBody ChemicalRiskAnalysisDTO dto) throws HSException {
-        return ResponseEntity.ok(analysisService.create(dto));
+    public ResponseEntity<ChemicalRiskAnalysisDTO> create(@RequestBody ChemicalRiskAnalysisDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
+        return ResponseEntity.ok(analysisService.create(dto, companyId));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ChemicalRiskAnalysisDTO> update(@RequestBody ChemicalRiskAnalysisDTO dto) throws HSException {
-        return ResponseEntity.ok(analysisService.update(dto));
+    public ResponseEntity<ChemicalRiskAnalysisDTO> update(@RequestBody ChemicalRiskAnalysisDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(analysisService.update(dto, companyId));
     }
 
     @GetMapping("/risk/{riskId}")
-    public ResponseEntity<List<ChemicalRiskAnalysisDTO>> getByRisk(@PathVariable Long riskId) throws HSException {
-        return ResponseEntity.ok(analysisService.getByRiskId(riskId));
+    public ResponseEntity<List<ChemicalRiskAnalysisDTO>> getByRisk(@PathVariable Long riskId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(analysisService.getByRiskId(riskId, companyId));
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<ChemicalRiskAnalysisDTO>> getAll() throws HSException {
-        return ResponseEntity.ok(analysisService.getAll());
+    public ResponseEntity<List<ChemicalRiskAnalysisDTO>> getAll(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return ResponseEntity.ok(analysisService.getAll(companyId));
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<ChemicalRiskAnalysisDTO> getById(@PathVariable Long id) throws HSException {
-        return ResponseEntity.ok(analysisService.getById(id));
+    public ResponseEntity<ChemicalRiskAnalysisDTO> getById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(analysisService.getById(id, companyId));
     }
 }

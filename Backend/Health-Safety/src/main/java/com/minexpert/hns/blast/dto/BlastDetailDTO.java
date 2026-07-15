@@ -61,6 +61,7 @@ public class BlastDetailDTO {
     private String notes;
 
     private Long mineId;
+    private Long companyId;
     private LocalDateTime misfireResolvedAt;
 
     /**

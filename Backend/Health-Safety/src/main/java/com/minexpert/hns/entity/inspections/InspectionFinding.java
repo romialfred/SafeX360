@@ -114,4 +114,10 @@ public class InspectionFinding {
      */
     @Column(length = 500)
     private String overrideReason;
+
+    /**
+     * Mine propriétaire (cloisonnement). Recopié depuis l'inspection parente à
+     * la création. Nullable pour les données legacy (backfill=1).
+     */
+    private Long companyId;
 }

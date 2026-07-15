@@ -20,9 +20,11 @@ public class InspectionMeasurementDTO {
     private Long generalInspectionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public InspectionMeasurement toEntity() {
         return new InspectionMeasurement(this.id, new Measurement(measurementId), this.value,
-                new GeneralInspection(this.generalInspectionId), this.createdAt, this.updatedAt);
+                new GeneralInspection(this.generalInspectionId), this.createdAt, this.updatedAt,
+                this.companyId);
     }
 }

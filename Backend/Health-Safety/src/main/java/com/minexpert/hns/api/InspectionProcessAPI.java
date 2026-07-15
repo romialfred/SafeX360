@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -39,27 +40,43 @@ public class InspectionProcessAPI {
     private InspectionMeasurementService inspectionMeasurementService;
 
     @PostMapping("/addChecklist")
-    public ResponseEntity<Long> addChecklist(@RequestBody InspectionChecklistDTO inspectionChecklistDTO)
+    public ResponseEntity<Long> addChecklist(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody InspectionChecklistDTO inspectionChecklistDTO)
             throws HSException {
+        if (companyId != null) {
+            inspectionChecklistDTO.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(inspectionChecklistService.createChecklist(inspectionChecklistDTO),
                 HttpStatus.CREATED);
     }
 
     @PostMapping("/addMeasurement")
-    public ResponseEntity<Long> addMeasurements(@RequestBody InspectionMeasurementDTO inspectionMeasurementDTO)
+    public ResponseEntity<Long> addMeasurements(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody InspectionMeasurementDTO inspectionMeasurementDTO)
             throws HSException {
+        if (companyId != null) {
+            inspectionMeasurementDTO.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(inspectionMeasurementService.createMeasurement(inspectionMeasurementDTO),
                 HttpStatus.OK);
     }
 
     @PostMapping("/save-draft")
-    public ResponseEntity<ProcessDTO> saveDraft(@RequestBody ProcessDTO processDTO) throws HSException {
+    public ResponseEntity<ProcessDTO> saveDraft(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody ProcessDTO processDTO) throws HSException {
+        if (companyId != null) {
+            processDTO.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(processService.saveDraftProcess(processDTO), HttpStatus.CREATED);
     }
 
     @GetMapping("/get-draft/{id}")
-    public ResponseEntity<ProcessDTO> getDraft(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(processService.getDraftProcess(id), HttpStatus.OK);
+    public ResponseEntity<ProcessDTO> getDraft(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(processService.getDraftProcess(id, companyId), HttpStatus.OK);
     }
 
     @DeleteMapping("/remove-checklist/{id}")
@@ -75,13 +92,17 @@ public class InspectionProcessAPI {
     }
 
     @GetMapping("/getChecklists/{id}")
-    public ResponseEntity<List<InspectionChecklistDTO>> getChecklists(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(inspectionChecklistService.getChecklistsByInspectionId(id), HttpStatus.OK);
+    public ResponseEntity<List<InspectionChecklistDTO>> getChecklists(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(inspectionChecklistService.getChecklistsByInspectionId(id, companyId),
+                HttpStatus.OK);
     }
 
     @GetMapping("/getMeasurements/{id}")
-    public ResponseEntity<List<InspectionMeasurementDTO>> getMeasurements(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(inspectionMeasurementService.getMeasurementByInspectionId(id), HttpStatus.OK);
+    public ResponseEntity<List<InspectionMeasurementDTO>> getMeasurements(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(inspectionMeasurementService.getMeasurementByInspectionId(id, companyId),
+                HttpStatus.OK);
     }
 
 }

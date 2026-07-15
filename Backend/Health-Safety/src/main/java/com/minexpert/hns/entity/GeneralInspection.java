@@ -143,6 +143,13 @@ public class GeneralInspection {
     /** ID de l'inspecteur principal qui a saisi la majorite des findings. */
     private Long primaryInspectorId;
 
+    /**
+     * Mine propriétaire (cloisonnement multi-site). Renseigné à la création
+     * depuis le companyId de la requête (CompanyScopeFilter). Nullable pour
+     * les données legacy (backfill=1). Filtré en lecture par le service.
+     */
+    private Long companyId;
+
     public GeneralInspectionDetails toDetails() {
         return new GeneralInspectionDetails(id, activity != null ? activity.getTitle() : null,
                 activity != null ? activity.getId() : null,

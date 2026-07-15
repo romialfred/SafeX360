@@ -8,26 +8,32 @@ import com.minexpert.hns.repository.communications.projection.CommunicationSumma
 
 import java.util.List;
 
+/**
+ * Service Communications cloisonne par mine (companyId). Le param companyId
+ * (valide par le CompanyScopeFilter) filtre les lectures et verifie
+ * l'appartenance avant mutation. companyId null = pas de cloisonnement
+ * (appel systeme / allMines).
+ */
 public interface CommunicationService {
     CommunicationDTO create(CommunicationDTO dto) throws HSException;
 
-    CommunicationDTO update(CommunicationDTO dto) throws HSException;
+    CommunicationDTO update(CommunicationDTO dto, Long companyId) throws HSException;
 
-    CommunicationDTO getById(Long id) throws HSException;
+    CommunicationDTO getById(Long id, Long companyId) throws HSException;
 
-    List<CommunicationSummaryView> getAll() throws HSException;
+    List<CommunicationSummaryView> getAll(Long companyId) throws HSException;
 
-    List<CommunicationSummaryView> getRecentSummaries(int limit) throws HSException;
+    List<CommunicationSummaryView> getRecentSummaries(int limit, Long companyId) throws HSException;
 
-    List<CommunicationDTO> getByDepartmentId(Long departmentId) throws HSException;
+    List<CommunicationDTO> getByDepartmentId(Long departmentId, Long companyId) throws HSException;
 
-    CommunicationStatsDTO getCounts() throws HSException;
+    CommunicationStatsDTO getCounts(Long companyId) throws HSException;
 
-    CommunicationDTO resumeSchedule(Long communicationId) throws HSException;
+    CommunicationDTO resumeSchedule(Long communicationId, Long companyId) throws HSException;
 
-    CommunicationDTO pauseSchedule(Long communicationId) throws HSException;
+    CommunicationDTO pauseSchedule(Long communicationId, Long companyId) throws HSException;
 
-    CommunicationDTO cancelSchedule(Long communicationId) throws HSException;
+    CommunicationDTO cancelSchedule(Long communicationId, Long companyId) throws HSException;
 
-    CommTimeDTO sendNow(Long communicationId) throws HSException;
+    CommTimeDTO sendNow(Long communicationId, Long companyId) throws HSException;
 }

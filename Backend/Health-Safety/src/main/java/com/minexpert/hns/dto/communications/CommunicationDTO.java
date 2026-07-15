@@ -31,6 +31,7 @@ public class CommunicationDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private CommTimeDTO schedule;
+    private Long companyId;
 
     public Communication toEntity() {
         String recipientsString = recipients != null ? recipients.toString() : null;
@@ -52,7 +53,8 @@ public class CommunicationDTO {
                 urgency,
                 null,
                 createdAt,
-                updatedAt);
+                updatedAt,
+                companyId);
         return comm;
     }
 

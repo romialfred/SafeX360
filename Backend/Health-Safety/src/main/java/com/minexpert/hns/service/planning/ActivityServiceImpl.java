@@ -55,14 +55,15 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, key = "#dto.id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_BY_YEAR, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_FILTERED, allEntries = true)
     })
-    public ActivityDTO updateActivity(ActivityDTO dto) throws HSException {
+    public ActivityDTO updateActivity(ActivityDTO dto, Long companyId) throws HSException {
         Activity activity = activityRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
+        verifyCompany(activity, companyId);
         activity.setTitle(dto.getTitle());
         activity.setMonth(dto.getMonth());
         activity.setDateTime(dto.getDateTime());
@@ -74,49 +75,54 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_BY_YEAR, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_FILTERED, allEntries = true)
     })
-    public void deleteActivity(Long id) throws HSException {
-        if (!activityRepository.existsById(id)) {
-            throw new HSException("ACTIVITY_NOT_FOUND");
-        }
+    public void deleteActivity(Long id, Long companyId) throws HSException {
+        Activity activity = activityRepository.findById(id)
+                .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
+        verifyCompany(activity, companyId);
         activityRepository.deleteById(id);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES)
-    public List<ActivityDTO> getAllActivities() throws HSException {
-        return StreamSupport.stream(activityRepository.findAll().spliterator(), false)
+    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES, key = "#companyId")
+    public List<ActivityDTO> getAllActivities(Long companyId) throws HSException {
+        return activityRepository.findAllByCompany(companyId)
+                .stream()
                 .map(Activity::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_BY_YEAR, key = "#year")
-    public List<ActivityDTO> getAllActivitiesByYear(int year) throws HSException {
-        return StreamSupport.stream(activityRepository.findAll().spliterator(), false)
+    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_BY_YEAR,
+            key = "#year + '-' + #companyId")
+    public List<ActivityDTO> getAllActivitiesByYear(int year, Long companyId) throws HSException {
+        return activityRepository.findAllByCompany(companyId).stream()
                 .filter(a -> a.getMonth() != null && a.getMonth().getYear() == year)
                 .map(Activity::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, key = "#id")
-    public ActivityDTO getActivityById(Long id) throws HSException {
-        return activityRepository.findById(id)
-                .map(Activity::toDTO)
+    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITY_BY_ID, key = "#id + '-' + #companyId")
+    public ActivityDTO getActivityById(Long id, Long companyId) throws HSException {
+        Activity activity = activityRepository.findById(id)
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
+        verifyCompany(activity, companyId);
+        return activity.toDTO();
     }
 
     // Conversion methods moved to entity and DTO classes
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_FILTERED, key = "#year + ':' + #status + ':' + #category")
+    @Cacheable(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_FILTERED,
+            key = "#year + ':' + #status + ':' + #category + ':' + #companyId")
     public List<ActivityDTO> getActivitiesByYearStatusCategory(int year, ActivityStatus status,
-            ActivityCategory category) throws HSException {
-        return activityRepository.findByYearAndStatusAndCategory(year, status, category)
+            ActivityCategory category, Long companyId) throws HSException {
+        return activityRepository
+                .findByYearAndStatusAndCategoryAndCompany(year, status, category, companyId)
                 .stream()
                 .map(Activity::toDTO)
                 .collect(Collectors.toList());
@@ -162,5 +168,20 @@ public class ActivityServiceImpl implements ActivityService {
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
         activity.setStatus(ActivityStatus.CANCELLED);
         activityRepository.save(activity);
+    }
+
+    /**
+     * Verifie l'appartenance d'une activite a la mine appelante. companyId null
+     * (systeme/allMines) = pas de controle. Les activites GLOBALES (companyId
+     * null) restent editables/consultables par toutes les mines (repli
+     * retrocompat). Non-appartenance : ACTIVITY_NOT_FOUND.
+     */
+    private void verifyCompany(Activity activity, Long companyId) throws HSException {
+        if (companyId == null || activity == null || activity.getCompanyId() == null) {
+            return;
+        }
+        if (!companyId.equals(activity.getCompanyId())) {
+            throw new HSException("ACTIVITY_NOT_FOUND");
+        }
     }
 }

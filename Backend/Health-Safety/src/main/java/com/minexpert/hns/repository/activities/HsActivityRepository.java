@@ -15,17 +15,31 @@ import com.minexpert.hns.enums.ActivityType;
 
 public interface HsActivityRepository extends CrudRepository<HsActivity, Long> {
 
+        // Cloisonnement par mine via l'activite parente (a.activity.companyId),
+        // avec repli "null = global" : les activites globales restent visibles.
+        // companyId null (systeme/allMines) = tout voir.
         @Query("Select a.id as id, a.activity.title AS title, a.activity.id as activityId, a.type AS type,  a.location.name AS location, "
-                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a")
-        List<HsActivityResponse> findAllActivities();
+                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a "
+                        + "WHERE (:companyId IS NULL OR a.activity.companyId = :companyId OR a.activity.companyId IS NULL)")
+        List<HsActivityResponse> findAllActivities(@Param("companyId") Long companyId);
 
         @Query("Select a.id as id, a.activity.title AS title, a.activity.id as activityId, a.type AS type,  a.location.name AS location, "
-                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a where a.type = ?1")
-        List<HsActivityResponse> findAllMeetings(@Param("type") ActivityType type);
+                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a "
+                        + "WHERE a.type = :type "
+                        + "AND (:companyId IS NULL OR a.activity.companyId = :companyId OR a.activity.companyId IS NULL)")
+        List<HsActivityResponse> findAllMeetings(@Param("type") ActivityType type,
+                        @Param("companyId") Long companyId);
 
         @Query("Select a.id as id, a.activity.title AS title, a.activity.id as activityId, a.type AS type,  a.location.name AS location, "
-                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a where a.type = ?1")
-        List<HsActivityResponse> findAllTours(@Param("type") ActivityType type);
+                        + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a "
+                        + "WHERE a.type = :type "
+                        + "AND (:companyId IS NULL OR a.activity.companyId = :companyId OR a.activity.companyId IS NULL)")
+        List<HsActivityResponse> findAllTours(@Param("type") ActivityType type,
+                        @Param("companyId") Long companyId);
+
+        /** companyId de l'activite parente (null = activite globale). */
+        @Query("SELECT a.activity.companyId FROM HsActivity a WHERE a.id = :id")
+        Optional<Long> findParentCompanyId(@Param("id") Long id);
 
         @Query("Select a.id as id, a.activity.title AS title, a.activity.id as activityId, a.type AS type,  a.location.name AS location, "
                         + "a.plannedDate AS plannedDate, a.startTime AS startTime, a.endTime AS endTime, a.status AS status FROM HsActivity a where a.id=:id")

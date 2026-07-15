@@ -9,11 +9,19 @@ import com.minexpert.hns.repository.communications.projection.CommunicationTypeC
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface CommunicationRepository extends JpaRepository<Communication, Long> {
     List<Communication> findByDepartmentId(Long departmentId);
+
+    // ── Cloisonnement par mine (companyId). null = pas de filtre. ───────────
+
+    @Query("SELECT c FROM Communication c WHERE c.departmentId = :departmentId "
+            + "AND (:companyId IS NULL OR c.companyId = :companyId)")
+    List<Communication> findByDepartmentIdAndCompany(@Param("departmentId") Long departmentId,
+            @Param("companyId") Long companyId);
 
     @Query("""
             SELECT c.id AS id,
@@ -31,38 +39,43 @@ public interface CommunicationRepository extends JpaRepository<Communication, Lo
             FROM Communication c
             LEFT JOIN c.zone z
             LEFT JOIN CommTime ct ON ct.communication = c
+            WHERE (:companyId IS NULL OR c.companyId = :companyId)
             ORDER BY c.createdAt DESC
             """)
-    List<CommunicationSummaryView> findSummaries(Pageable pageable);
+    List<CommunicationSummaryView> findSummaries(@Param("companyId") Long companyId,
+            Pageable pageable);
 
-    default List<CommunicationSummaryView> findAllSummaries() {
-        return findSummaries(Pageable.unpaged());
+    default List<CommunicationSummaryView> findAllSummaries(Long companyId) {
+        return findSummaries(companyId, Pageable.unpaged());
     }
 
     @Query("""
             SELECT c.type AS type,
                    COUNT(c) AS total
             FROM Communication c
+            WHERE (:companyId IS NULL OR c.companyId = :companyId)
             GROUP BY c.type
             ORDER BY COUNT(c) DESC
             """)
-    List<CommunicationTypeCountView> countByType();
+    List<CommunicationTypeCountView> countByType(@Param("companyId") Long companyId);
 
     @Query("""
             SELECT c.category AS category,
                    COUNT(c) AS total
             FROM Communication c
+            WHERE (:companyId IS NULL OR c.companyId = :companyId)
             GROUP BY c.category
             ORDER BY COUNT(c) DESC
             """)
-    List<CommunicationCategoryCountView> countByCategory();
+    List<CommunicationCategoryCountView> countByCategory(@Param("companyId") Long companyId);
 
     @Query("""
             SELECT c.departmentId AS departmentId,
                    COUNT(c) AS total
             FROM Communication c
+            WHERE (:companyId IS NULL OR c.companyId = :companyId)
             GROUP BY c.departmentId
             ORDER BY COUNT(c) DESC
             """)
-    List<CommunicationDepartmentCountView> countByDepartment();
+    List<CommunicationDepartmentCountView> countByDepartment(@Param("companyId") Long companyId);
 }

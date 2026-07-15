@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import com.minexpert.hns.dto.audit.RecommendationDetails;
 import com.minexpert.hns.entity.audit.Recommendation;
@@ -28,8 +29,9 @@ public interface RecommendationRepository extends CrudRepository<Recommendation,
                     r.status AS status
                 FROM Recommendation r
                 LEFT JOIN r.audit a
+                WHERE (:companyId IS NULL OR r.companyId = :companyId)
             """)
-    List<RecommendationDetails> findAllRecommendationDetails();
+    List<RecommendationDetails> findAllRecommendationDetails(@Param("companyId") Long companyId);
 
     @Query("""
                 SELECT
@@ -45,6 +47,8 @@ public interface RecommendationRepository extends CrudRepository<Recommendation,
                 FROM Recommendation r
                 LEFT JOIN r.audit a
                 WHERE r.status = :status
+                AND (:companyId IS NULL OR r.companyId = :companyId)
             """)
-    List<RecommendationDetails> findRecommendationDetailsByStatus(RecommendationStatus status);
+    List<RecommendationDetails> findRecommendationDetailsByStatus(@Param("status") RecommendationStatus status,
+            @Param("companyId") Long companyId);
 }

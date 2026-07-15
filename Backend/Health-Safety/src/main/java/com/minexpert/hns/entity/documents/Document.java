@@ -54,6 +54,9 @@ public class Document {
     @Column(length = 1000)
     private String statusReason;
 
+    /** Cloisonnement multi-tenant par mine (convention plateforme SafeX). */
+    private Long companyId;
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
@@ -96,7 +99,8 @@ public class Document {
                 null,
                 createdAt,
                 updatedAt,
-                statusReason);
+                statusReason,
+                companyId);
     }
 
     public Document(Long id) {

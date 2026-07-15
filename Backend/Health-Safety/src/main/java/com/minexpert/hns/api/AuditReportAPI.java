@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -46,14 +47,31 @@ public class AuditReportAPI {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createReport(@RequestBody ExecuteRequest request) throws HSException {
+    public ResponseEntity<Long> createReport(@RequestParam(required = false) Long companyId,
+            @RequestBody ExecuteRequest request) throws HSException {
+        applyCompanyId(companyId, request);
         return new ResponseEntity<>(reportService.createReport(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateReport(@RequestBody ExecuteRequest request) throws HSException {
+    public ResponseEntity<ResponseDTO> updateReport(@RequestParam(required = false) Long companyId,
+            @RequestBody ExecuteRequest request) throws HSException {
+        applyCompanyId(companyId, request);
         reportService.updateReport(request);
         return new ResponseEntity<>(new ResponseDTO("Report updated successfully."), HttpStatus.OK);
+    }
+
+    /** Cloisonnement par mine : rapport et contributeurs héritent du companyId de la mine active. */
+    private void applyCompanyId(Long companyId, ExecuteRequest request) {
+        if (companyId == null || request == null) {
+            return;
+        }
+        if (request.getReport() != null) {
+            request.getReport().setCompanyId(companyId);
+        }
+        if (request.getContributors() != null) {
+            request.getContributors().forEach(c -> c.setCompanyId(companyId));
+        }
     }
 
     @GetMapping("/get/{id}")

@@ -40,6 +40,8 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 dto.setStatus(PpeRequestStatus.PENDING);
                 PpeRequest req = dto.toEntity();
                 PpeRequest saved = requestRepository.save(req);
+                // Propager le companyId de la demande vers les attributions EPI filles.
+                final Long companyId = dto.getCompanyId();
                 List<PpeEmpDTO> ppeEmpDTOs = dto.getEmpIds().stream().flatMap(empId -> {
                         return dto.getPpeIds().stream().map(ppeId -> {
                                 PpeEmpDTO ppeEmpDTO = new PpeEmpDTO();
@@ -48,6 +50,7 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                                 ppeEmpDTO.setPpeRequestId(saved.getId());
                                 ppeEmpDTO.setDate(dto.getDesiredDate());
                                 ppeEmpDTO.setStatus(PpeEmpStatus.PENDING);
+                                ppeEmpDTO.setCompanyId(companyId);
                                 return ppeEmpDTO;
                         });
                 }).toList();
@@ -57,12 +60,16 @@ public class PpeRequestServiceImpl implements PpeRequestService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "ppeRequestById", key = "#dto.id", condition = "#dto.id != null"),
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
-        public PpeRequestDTO update(PpeRequestDTO dto) throws HSException {
+        public PpeRequestDTO update(PpeRequestDTO dto, Long companyId) throws HSException {
                 PpeRequest existing = requestRepository.findById(dto.getId())
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                // Vérification d'appartenance à la mine (companyId null = appel système).
+                if (companyId != null && !companyId.equals(existing.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
                 existing.setDesiredDate(dto.getDesiredDate());
                 existing.setPriority(dto.getPriority());
                 existing.setReason(dto.getReason());
@@ -75,12 +82,15 @@ public class PpeRequestServiceImpl implements PpeRequestService {
 
         @Transactional
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "ppeRequestById", key = "#id"),
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
-        public PpeRequestDTO approveRequest(Long id, String comment) throws HSException {
+        public PpeRequestDTO approveRequest(Long id, String comment, Long companyId) throws HSException {
                 PpeRequest req = requestRepository.findById(id)
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
                 req.setStatus(PpeRequestStatus.APPROVED);
                 req.setComment(comment);
                 ppeService.updateStockQuantities(StringListConverter.convertToLongList(req.getPpeIds()),
@@ -93,12 +103,15 @@ public class PpeRequestServiceImpl implements PpeRequestService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "ppeRequestById", key = "#id"),
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
-        public PpeRequestDTO rejectRequest(Long id, String comment) throws HSException {
+        public PpeRequestDTO rejectRequest(Long id, String comment, Long companyId) throws HSException {
                 PpeRequest req = requestRepository.findById(id)
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
                 req.setStatus(PpeRequestStatus.REJECTED);
                 req.setComment(comment);
                 PpeRequest rejected = requestRepository.save(req);
@@ -108,12 +121,15 @@ public class PpeRequestServiceImpl implements PpeRequestService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = "ppeRequestById", key = "#id"),
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
-        public PpeRequestDTO deliverRequest(Long id, String comment) throws HSException {
+        public PpeRequestDTO deliverRequest(Long id, String comment, Long companyId) throws HSException {
                 PpeRequest req = requestRepository.findById(id)
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
                 // Garde de machine à états : seule une demande APPROVED peut être livrée.
                 if (req.getStatus() != PpeRequestStatus.APPROVED) {
                         throw new HSException("REQUEST_NOT_APPROVED");
@@ -128,17 +144,20 @@ public class PpeRequestServiceImpl implements PpeRequestService {
         }
 
         @Override
-        @Cacheable(cacheNames = "ppeRequestById", key = "#id")
-        public PpeRequestDTO getById(Long id) throws HSException {
+        @Cacheable(cacheNames = "ppeRequestById", key = "#id + '-' + #companyId")
+        public PpeRequestDTO getById(Long id, Long companyId) throws HSException {
                 PpeRequest req = requestRepository.findById(id)
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
                 return req.toDTO();
         }
 
         @Override
-        @Cacheable(cacheNames = "ppeRequestsAll")
-        public List<PpeRequestDTO> getAllRequests() throws HSException {
-                return requestRepository.findAll()
+        @Cacheable(cacheNames = "ppeRequestsAll", key = "#companyId")
+        public List<PpeRequestDTO> getAllRequests(Long companyId) throws HSException {
+                return requestRepository.findAllByCompany(companyId)
                                 .stream()
                                 .map(PpeRequest::toDTO)
                                 .toList();

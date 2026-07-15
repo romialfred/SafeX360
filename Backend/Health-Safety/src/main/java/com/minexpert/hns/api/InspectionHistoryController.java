@@ -18,13 +18,20 @@ public class InspectionHistoryController {
     private final InspectionHistoryService inspectionHistoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> create(@RequestBody InspectionHistoryDTO dto) throws HSException {
+    public ResponseEntity<Long> create(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody InspectionHistoryDTO dto) throws HSException {
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
         return ResponseEntity.ok(inspectionHistoryService.saveInspectionHistory(dto));
     }
 
     @GetMapping("/get/{inspectionId}")
-    public ResponseEntity<List<InspectionHistoryDTO>> getByInspectionId(@PathVariable Long inspectionId)
+    public ResponseEntity<List<InspectionHistoryDTO>> getByInspectionId(@PathVariable Long inspectionId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return ResponseEntity.ok(inspectionHistoryService.getInspectionHistoryByInspectionId(inspectionId));
+        return ResponseEntity.ok(
+                inspectionHistoryService.getInspectionHistoryByInspectionId(inspectionId, companyId));
     }
 }

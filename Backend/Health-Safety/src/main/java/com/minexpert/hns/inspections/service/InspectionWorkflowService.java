@@ -81,12 +81,17 @@ public class InspectionWorkflowService {
      * terrain.
      */
     @Transactional
-    public Long schedule(ScheduleInspectionDTO dto, Long userId) {
+    public Long schedule(ScheduleInspectionDTO dto, Long userId, Long companyId) {
         InspectionTemplate tpl = templateRepository.findById(dto.getTemplateId())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Template introuvable : " + dto.getTemplateId()));
         if (!Boolean.TRUE.equals(tpl.getActive())) {
             throw new IllegalStateException("Le template '" + tpl.getCode() + "' est inactif.");
+        }
+        // Cloisonnement : interdire de planifier avec un template d'une autre mine.
+        if (companyId != null && tpl.getCompanyId() != null
+                && !companyId.equals(tpl.getCompanyId())) {
+            throw new IllegalArgumentException("Template introuvable : " + dto.getTemplateId());
         }
 
         GeneralInspection inspection = new GeneralInspection();
@@ -103,6 +108,7 @@ public class InspectionWorkflowService {
         inspection.setTargetRefId(dto.getTargetRefId());
         inspection.setTargetLabel(dto.getTargetLabel());
         inspection.setPrimaryInspectorId(dto.getPrimaryInspectorId());
+        inspection.setCompanyId(companyId);
         inspection.setCreatedAt(LocalDateTime.now());
         inspection.setUpdatedAt(LocalDateTime.now());
         // Note : la colonne activity_id est NOT NULL en BDD pour rétro-compat.
@@ -121,6 +127,7 @@ public class InspectionWorkflowService {
             f.setCheckpoint(cp);
             f.setConformity(FindingConformity.NOT_APPLICABLE);
             f.setRecordedAt(LocalDateTime.now());
+            f.setCompanyId(saved.getCompanyId());
             findingRepository.save(f);
         }
 
@@ -135,8 +142,9 @@ public class InspectionWorkflowService {
 
     /** Marque l'inspection comme demarree (passage IN_PROGRESS). */
     @Transactional
-    public void start(Long inspectionId, Long userId) {
+    public void start(Long inspectionId, Long userId, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         assertStatusIn(insp, "demarrer", InspectionStatus.SCHEDULED);
         InspectionStatus from = insp.getStatus();
         insp.setStatus(InspectionStatus.IN_PROGRESS);
@@ -155,8 +163,9 @@ public class InspectionWorkflowService {
      * La conformite est recalculee automatiquement si non surchargee.
      */
     @Transactional
-    public void saveFindings(Long inspectionId, List<FindingDTO> dtos, Long userId) {
+    public void saveFindings(Long inspectionId, List<FindingDTO> dtos, Long userId, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         assertStatusIn(insp, "saisir des findings",
                 InspectionStatus.SCHEDULED, InspectionStatus.IN_PROGRESS);
         // Passe en IN_PROGRESS si c'etait SCHEDULED
@@ -179,6 +188,7 @@ public class InspectionWorkflowService {
                 f = new InspectionFinding();
                 f.setInspection(insp);
                 f.setCheckpoint(cp);
+                f.setCompanyId(insp.getCompanyId());
             }
             f.setRawValue(dto.getRawValue());
             f.setNote(dto.getNote());
@@ -201,8 +211,9 @@ public class InspectionWorkflowService {
 
     /** Met a jour la synthese texte du rapport. Possible jusqu'a APPROVED. */
     @Transactional
-    public void updateSummary(Long inspectionId, String summary, Long userId) {
+    public void updateSummary(Long inspectionId, String summary, Long userId, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         if (insp.getStatus() == InspectionStatus.APPROVED
                 || insp.getStatus() == InspectionStatus.ARCHIVED) {
             throw new IllegalStateException(
@@ -222,8 +233,9 @@ public class InspectionWorkflowService {
      * tous les findings requis ont une reponse.
      */
     @Transactional
-    public void submit(Long inspectionId, Long userId) {
+    public void submit(Long inspectionId, Long userId, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         assertStatusIn(insp, "soumettre",
                 InspectionStatus.IN_PROGRESS, InspectionStatus.REJECTED);
         // Verification : tous les checkpoints required doivent avoir un finding rempli
@@ -260,8 +272,9 @@ public class InspectionWorkflowService {
      * effacees pour repartir sur un nouveau cycle.
      */
     @Transactional
-    public void decide(Long inspectionId, ApprovalDTO dto, Long userId, int expectedApproverCount) {
+    public void decide(Long inspectionId, ApprovalDTO dto, Long userId, int expectedApproverCount, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         assertStatusIn(insp, "valider", InspectionStatus.SUBMITTED);
 
         String decision = dto.getDecision() != null ? dto.getDecision().toUpperCase() : null;
@@ -296,6 +309,7 @@ public class InspectionWorkflowService {
         approval.setDecision("APPROVE");
         approval.setComment(dto.getComment());
         approval.setDecidedAt(LocalDateTime.now());
+        approval.setCompanyId(insp.getCompanyId());
         approvalRepository.save(approval);
 
         long approveCount = approvalRepository.countByInspectionIdAndDecision(inspectionId, "APPROVE");
@@ -326,16 +340,36 @@ public class InspectionWorkflowService {
 
     /** Detail complet d'une inspection (template + findings + approvals + KPI). */
     @Transactional(readOnly = true)
-    public InspectionDetailDTO getDetail(Long inspectionId) {
+    public InspectionDetailDTO getDetail(Long inspectionId, Long companyId) {
         GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
         return toDetailDTO(insp);
     }
 
-    /** Registre des inspections (toutes mines, tous statuts). */
+    /**
+     * Surcharge « appel système » (companyId=null → pas de filtre par mine).
+     * Utilisée par les services internes (analyse IA, génération PDF) où
+     * l'appartenance a déjà été vérifiée en amont par le controller.
+     */
     @Transactional(readOnly = true)
-    public List<InspectionSummaryDTO> listAll() {
-        List<GeneralInspection> all = new ArrayList<>();
-        inspectionRepository.findAll().forEach(all::add);
+    public InspectionDetailDTO getDetail(Long inspectionId) {
+        return getDetail(inspectionId, null);
+    }
+
+    /**
+     * Vérifie qu'une inspection est accessible pour la mine (téléchargement PDF).
+     * Lève une exception si elle appartient à une autre mine.
+     */
+    @Transactional(readOnly = true)
+    public void assertAccessible(Long inspectionId, Long companyId) {
+        assertCompany(loadOrThrow(inspectionId), companyId);
+    }
+
+    /** Registre des inspections de la mine (companyId null = toutes mines). */
+    @Transactional(readOnly = true)
+    public List<InspectionSummaryDTO> listAll(Long companyId) {
+        List<GeneralInspection> all = new ArrayList<>(
+                inspectionRepository.findAllByCompany(companyId));
         all.sort(Comparator.comparing(GeneralInspection::getPlannedDate,
                 Comparator.nullsLast(Comparator.reverseOrder())));
         return all.stream().map(this::toSummaryDTO).toList();
@@ -348,6 +382,17 @@ public class InspectionWorkflowService {
     private GeneralInspection loadOrThrow(Long id) {
         return inspectionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Inspection introuvable : " + id));
+    }
+
+    /**
+     * Cloisonnement : refuse l'accès à une inspection d'une autre mine.
+     * companyId null (appel système / allMines) ne contrôle pas. Message
+     * volontairement identique à "introuvable" pour ne pas divulguer.
+     */
+    private void assertCompany(GeneralInspection insp, Long companyId) {
+        if (companyId != null && !companyId.equals(insp.getCompanyId())) {
+            throw new IllegalArgumentException("Inspection introuvable : " + insp.getId());
+        }
     }
 
     private void assertStatusIn(GeneralInspection insp, String action, InspectionStatus... allowed) {
@@ -432,6 +477,7 @@ public class InspectionWorkflowService {
         h.setComment(comment);
         h.setInspection(insp);
         h.setCreatedAt(LocalDateTime.now());
+        h.setCompanyId(insp.getCompanyId());
         historyRepository.save(h);
     }
 

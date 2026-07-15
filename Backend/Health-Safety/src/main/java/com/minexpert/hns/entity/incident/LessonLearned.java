@@ -43,4 +43,7 @@ public class LessonLearned {
     // Erreurs). Reference Long nullable, volontairement non mappee en ManyToOne.
     @Column(name = "error_event_id")
     private Long errorEventId;
+
+    /** Cloisonnement par mine (companyId). Alimenté à la création, filtré en lecture. */
+    private Long companyId;
 }

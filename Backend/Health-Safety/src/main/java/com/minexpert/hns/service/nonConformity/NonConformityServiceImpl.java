@@ -57,6 +57,10 @@ public class NonConformityServiceImpl implements NonConformityService {
         if (companyId == null) {
             throw new HSException("COMPANY_ID_REQUIRED");
         }
+        // Cloisonnement par mine : la NC porte le companyId de la requête.
+        if (request.getNonConformity() != null) {
+            request.getNonConformity().setCompanyId(companyId);
+        }
         Long id = this.createNonConformity(request.getNonConformity());
         if (request.getCorrectiveActions() != null) {
             request.getCorrectiveActions().forEach(action -> {
@@ -134,10 +138,14 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
-    @Cacheable(cacheNames = "nonConformityById", key = "#id")
-    public NonConformityDTO getNonConformityById(Long id) throws HSException {
+    @Cacheable(cacheNames = "nonConformityById", key = "#id + '_' + #companyId")
+    public NonConformityDTO getNonConformityById(Long id, Long companyId) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(id)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
+        // Vérification d'appartenance à la mine (ne pas divulguer une NC d'une autre mine).
+        if (companyId != null && !companyId.equals(nonConformity.getCompanyId())) {
+            throw new HSException("NON_CONFORMITY_NOT_FOUND");
+        }
         NonConformityDTO dto = nonConformity.toDTO();
         dto.setEvidence(mediaService.getAllMediaByArray(nonConformity.getEvidence()));
         dto.setDocs(mediaService.getAllMediaByArray(nonConformity.getDocs()));
@@ -146,10 +154,11 @@ public class NonConformityServiceImpl implements NonConformityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "nonConformityById", key = "#nonConformityId"),
+            // Clés de cache désormais composites (id_companyId) -> éviction globale de ces caches.
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
             @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
-            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#nonConformityId")
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
     public void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityId)
@@ -175,9 +184,9 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
-    @Cacheable(cacheNames = "nonConformityInfoAll")
-    public List<NcInfo> getAllNcInfo() throws HSException {
-        List<NcInfo> infos = nonConformityRepository.findAllNcInfo();
+    @Cacheable(cacheNames = "nonConformityInfoAll", key = "#companyId")
+    public List<NcInfo> getAllNcInfo(Long companyId) throws HSException {
+        List<NcInfo> infos = nonConformityRepository.findAllNcInfo(companyId);
         List<Long> empIds = infos.stream()
                 .map(NcInfo::getReporterId)
                 .distinct()
@@ -193,23 +202,30 @@ public class NonConformityServiceImpl implements NonConformityService {
     }
 
     @Override
-    @Cacheable(cacheNames = "nonConformityInfoById", key = "#id")
-    public NcInfo getNcInfoById(Long id) throws HSException {
-        return nonConformityRepository.findNcInfoById(id)
+    @Cacheable(cacheNames = "nonConformityInfoById", key = "#id + '_' + #companyId")
+    public NcInfo getNcInfoById(Long id, Long companyId) throws HSException {
+        return nonConformityRepository.findNcInfoById(id, companyId)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "nonConformityById", key = "#nonConformityDTO.id", condition = "#nonConformityDTO.id != null"),
+            // Clés de cache désormais composites (id_companyId) -> éviction globale de ces caches.
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
             @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
-            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#nonConformityDTO.id")
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
     public void updateNonConformity(NonConformityDTO nonConformityDTO) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityDTO.getId())
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
+        // Vérification d'appartenance : companyId de la requête (alimenté par le controller) vs entité.
+        if (nonConformityDTO.getCompanyId() != null
+                && !nonConformityDTO.getCompanyId().equals(nonConformity.getCompanyId())) {
+            throw new HSException("NON_CONFORMITY_NOT_FOUND");
+        }
         nonConformity.updateFromDTO(nonConformityDTO);
+        // Le companyId ne doit jamais changer après création (updateFromDTO ne le touche pas).
         nonConformity.setEvidence(mediaService.saveAllMedia(nonConformityDTO.getEvidence()));
         nonConformity.setDocs(mediaService.saveAllMedia(nonConformityDTO.getDocs()));
         nonConformity.setUpdatedAt(LocalDateTime.now());
@@ -226,6 +242,10 @@ public class NonConformityServiceImpl implements NonConformityService {
     public void updateEvent(Long companyId, EventRequestDTO request) throws HSException {
         if (companyId == null) {
             throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        // Propage le companyId de la requête pour la vérif d'appartenance dans updateNonConformity.
+        if (request.getNonConformity() != null) {
+            request.getNonConformity().setCompanyId(companyId);
         }
         this.updateNonConformity(request.getNonConformity());
         if (request.getCorrectiveActions() != null && !request.getCorrectiveActions().isEmpty()) {

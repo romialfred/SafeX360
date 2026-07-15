@@ -8,11 +8,11 @@ import java.util.List;
 public interface ChemicalRiskService {
     ChemicalRiskDTO create(ChemicalRiskDTO dto) throws HSException;
 
-    ChemicalRiskDTO update(ChemicalRiskDTO dto) throws HSException;
+    ChemicalRiskDTO update(ChemicalRiskDTO dto, Long companyId) throws HSException;
 
-    ChemicalRiskDTO updateStatus(Long id, String status) throws HSException;
+    ChemicalRiskDTO updateStatus(Long id, String status, Long companyId) throws HSException;
 
-    ChemicalRiskDTO getById(Long id) throws HSException;
+    ChemicalRiskDTO getById(Long id, Long companyId) throws HSException;
 
-    List<ChemicalRiskDTO> getAll() throws HSException;
+    List<ChemicalRiskDTO> getAll(Long companyId) throws HSException;
 }

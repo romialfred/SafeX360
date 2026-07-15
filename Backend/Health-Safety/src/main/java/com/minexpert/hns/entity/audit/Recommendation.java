@@ -48,6 +48,9 @@ public class Recommendation {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Recommendation(Long id) {
         this.id = id;
     }
@@ -56,7 +59,7 @@ public class Recommendation {
         return new RecommendationDTO(this.id, this.title, this.audit != null ? this.audit.getId() : null,
                 this.observation != null ? this.observation.getId() : null, this.description, this.priority,
                 this.actionManagerId, this.correctiveAction, this.deadline,
-                this.progress, this.status, this.createdAt, this.updatedAt);
+                this.progress, this.status, this.createdAt, this.updatedAt, this.companyId);
     }
 
 }

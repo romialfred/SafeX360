@@ -35,6 +35,9 @@ public class RiskAnalysisDTO {
     private Short residualSeverity;
     private String residualRiskLevel;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    private Long companyId;
+
     public RiskAnalysis toEntity(Risk risk) {
         return new RiskAnalysis(
                 this.id,
@@ -54,7 +57,8 @@ public class RiskAnalysisDTO {
                 this.residualProbability,
                 this.residualGravity,
                 this.residualSeverity,
-                this.residualRiskLevel);
+                this.residualRiskLevel,
+                this.companyId);
     }
 
     public static RiskAnalysisDTO fromEntity(RiskAnalysis analysis) {
@@ -76,6 +80,7 @@ public class RiskAnalysisDTO {
                 analysis.getResidualProbability(),
                 analysis.getResidualGravity(),
                 analysis.getResidualSeverity(),
-                analysis.getResidualRiskLevel());
+                analysis.getResidualRiskLevel(),
+                analysis.getCompanyId());
     }
 }

@@ -86,8 +86,22 @@ public class AuditServiceImpl implements AuditService {
     })
     public Long createAudit(AuditRequest request) throws HSException {
         Long auditId = this.createAudit(request.getAudit());
+        // Cloisonnement par mine : les auditeurs héritent du companyId de l'audit.
+        propagateCompanyId(request);
         auditorService.addAuditors(request.getAuditors(), auditId);
         return auditId;
+    }
+
+    /** Propage le companyId de l'audit vers ses auditeurs (cloisonnement par mine). */
+    private void propagateCompanyId(AuditRequest request) {
+        if (request.getAudit() == null || request.getAuditors() == null) {
+            return;
+        }
+        Long companyId = request.getAudit().getCompanyId();
+        if (companyId == null) {
+            return;
+        }
+        request.getAuditors().forEach(auditor -> auditor.setCompanyId(companyId));
     }
 
     @Override
@@ -99,14 +113,23 @@ public class AuditServiceImpl implements AuditService {
     })
     public void updateAudit(AuditRequest request) throws HSException {
         this.updateAudit(request.getAudit());
+        // Cloisonnement par mine : les auditeurs héritent du companyId de l'audit persisté
+        // (évite d'écraser le companyId existant si le payload de mise à jour ne le porte pas).
+        if (request.getAudit() != null && request.getAudit().getCompanyId() == null
+                && request.getAudit().getId() != null) {
+            auditRepository.findById(request.getAudit().getId())
+                    .ifPresent(a -> request.getAudit().setCompanyId(a.getCompanyId()));
+        }
+        propagateCompanyId(request);
         auditorService.addOrUpdateAuditors(request.getAuditors(), request.getAudit().getId());
 
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.AUDIT_LIST)
-    public List<AuditDTO> getAllAudits() throws HSException {
-        return ((List<Audit>) auditRepository.findAll()).stream()
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_LIST, key = "#companyId != null ? #companyId : -1")
+    public List<AuditDTO> getAllAudits(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return auditRepository.findAllByCompany(companyId).stream()
                 .filter((x) -> x.getPlanningStatus() == null || x.getPlanningStatus() == PlanningStatus.APPROVED)
                 .map(Audit::toDTO)
                 .toList();
@@ -226,9 +249,11 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST)
-    public List<AuditDTO> getAllPlanningAudits() throws HSException {
-        return auditRepository.findAllWithNonNullPlanningStatus().stream().map(Audit::toDTO).toList();
+    @Cacheable(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, key = "#companyId != null ? #companyId : -1")
+    public List<AuditDTO> getAllPlanningAudits(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return auditRepository.findAllWithNonNullPlanningStatusByCompany(companyId).stream()
+                .map(Audit::toDTO).toList();
     }
 
     @Override

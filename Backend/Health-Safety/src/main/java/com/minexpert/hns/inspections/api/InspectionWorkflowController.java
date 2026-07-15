@@ -52,29 +52,33 @@ public class InspectionWorkflowController {
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/list")
-    public ResponseEntity<List<InspectionSummaryDTO>> list() {
-        return ResponseEntity.ok(workflowService.listAll());
+    public ResponseEntity<List<InspectionSummaryDTO>> list(
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return ResponseEntity.ok(workflowService.listAll(companyId));
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/{id}")
-    public ResponseEntity<InspectionDetailDTO> getDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(workflowService.getDetail(id));
+    public ResponseEntity<InspectionDetailDTO> getDetail(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return ResponseEntity.ok(workflowService.getDetail(id, companyId));
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_PLAN + "')")
     @PostMapping("/schedule")
     public ResponseEntity<Long> schedule(@Valid @RequestBody ScheduleInspectionDTO dto,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        Long id = workflowService.schedule(dto, userId);
+        Long id = workflowService.schedule(dto, userId, companyId);
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_EXECUTE + "')")
     @PostMapping("/{id}/start")
     public ResponseEntity<ResponseDTO> start(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        workflowService.start(id, userId);
+        workflowService.start(id, userId, companyId);
         return ResponseEntity.ok(new ResponseDTO("Inspection demarree"));
     }
 
@@ -86,8 +90,9 @@ public class InspectionWorkflowController {
     @PostMapping("/{id}/findings/batch")
     public ResponseEntity<ResponseDTO> saveFindings(@PathVariable Long id,
             @RequestBody List<FindingDTO> findings,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        workflowService.saveFindings(id, findings, userId);
+        workflowService.saveFindings(id, findings, userId, companyId);
         return ResponseEntity.ok(new ResponseDTO(findings.size() + " constat(s) enregistre(s)"));
     }
 
@@ -96,8 +101,9 @@ public class InspectionWorkflowController {
     @PutMapping("/{id}/summary")
     public ResponseEntity<ResponseDTO> updateSummary(@PathVariable Long id,
             @RequestBody Map<String, String> body,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        workflowService.updateSummary(id, body.getOrDefault("summary", ""), userId);
+        workflowService.updateSummary(id, body.getOrDefault("summary", ""), userId, companyId);
         return ResponseEntity.ok(new ResponseDTO("Synthese mise a jour"));
     }
 
@@ -105,8 +111,9 @@ public class InspectionWorkflowController {
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_EXECUTE + "')")
     @PostMapping("/{id}/submit")
     public ResponseEntity<ResponseDTO> submit(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        workflowService.submit(id, userId);
+        workflowService.submit(id, userId, companyId);
         return ResponseEntity.ok(new ResponseDTO("Inspection soumise pour validation"));
     }
 
@@ -126,8 +133,11 @@ public class InspectionWorkflowController {
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/{id}/report/pdf")
     public ResponseEntity<byte[]> downloadReport(@PathVariable Long id,
-            @RequestParam(value = "lang", required = false, defaultValue = "fr") String lang) {
+            @RequestParam(value = "lang", required = false, defaultValue = "fr") String lang,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
         boolean english = "en".equalsIgnoreCase(lang);
+        // Cloisonnement : refuser le PDF d'une inspection d'une autre mine.
+        workflowService.assertAccessible(id, companyId);
         byte[] pdf = pdfService.generate(id, english);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
@@ -142,8 +152,9 @@ public class InspectionWorkflowController {
             @Valid @RequestBody ApprovalDTO dto,
             @RequestParam(value = "expectedApprovers", required = false, defaultValue = "1")
             int expectedApprovers,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        workflowService.decide(id, dto, userId, expectedApprovers);
+        workflowService.decide(id, dto, userId, expectedApprovers, companyId);
         return ResponseEntity.ok(new ResponseDTO("Decision enregistree"));
     }
 }

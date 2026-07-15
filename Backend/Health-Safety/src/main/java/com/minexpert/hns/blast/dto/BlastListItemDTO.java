@@ -30,4 +30,5 @@ public class BlastListItemDTO {
     private Long blasterId;
     private Long hseLeadId;
     private Long mineId;
+    private Long companyId;
 }

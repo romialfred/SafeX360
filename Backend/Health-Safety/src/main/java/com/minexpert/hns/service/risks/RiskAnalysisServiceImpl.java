@@ -26,27 +26,6 @@ public class RiskAnalysisServiceImpl implements RiskAnalysisService {
         @Override
         @Caching(evict = {
                         // @CacheEvict(cacheNames = "riskAnalysisById", allEntries = true),
-                        @CacheEvict(cacheNames = "riskAnalysisByRisk", key = "#dto.riskId"),
-                        @CacheEvict(cacheNames = "riskAnalysisAll", allEntries = true),
-                        @CacheEvict(cacheNames = "riskById", key = "#dto.riskId"),
-                        @CacheEvict(cacheNames = "risksAll", allEntries = true),
-                        @CacheEvict(cacheNames = "risksWithLevel", allEntries = true),
-                        @CacheEvict(cacheNames = "riskSearch", allEntries = true),
-                        @CacheEvict(cacheNames = "riskOverview", allEntries = true)
-        })
-        public RiskAnalysisDTO create(RiskAnalysisDTO dto) throws HSException {
-                Risk risk = riskRepository.findById(dto.getRiskId())
-                                .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
-                risk.setRiskLevel(dto.getRiskLevel());
-                riskRepository.save(risk);
-                RiskAnalysis analysis = dto.toEntity(risk);
-                RiskAnalysis saved = analysisRepository.save(analysis);
-                return saved.toDTO();
-        }
-
-        @Override
-        @Caching(evict = {
-                        @CacheEvict(cacheNames = "riskAnalysisById", key = "#dto.id"),
                         @CacheEvict(cacheNames = "riskAnalysisByRisk", allEntries = true),
                         @CacheEvict(cacheNames = "riskAnalysisAll", allEntries = true),
                         @CacheEvict(cacheNames = "riskById", allEntries = true),
@@ -55,9 +34,34 @@ public class RiskAnalysisServiceImpl implements RiskAnalysisService {
                         @CacheEvict(cacheNames = "riskSearch", allEntries = true),
                         @CacheEvict(cacheNames = "riskOverview", allEntries = true)
         })
-        public RiskAnalysisDTO update(RiskAnalysisDTO dto) throws HSException {
+        public RiskAnalysisDTO create(RiskAnalysisDTO dto, Long companyId) throws HSException {
+                Risk risk = riskRepository.findById(dto.getRiskId())
+                                .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+                assertSameCompany(companyId, risk.getCompanyId());
+                risk.setRiskLevel(dto.getRiskLevel());
+                riskRepository.save(risk);
+                // L'analyse hérite TOUJOURS de la mine de son risque parent.
+                dto.setCompanyId(risk.getCompanyId());
+                RiskAnalysis analysis = dto.toEntity(risk);
+                RiskAnalysis saved = analysisRepository.save(analysis);
+                return saved.toDTO();
+        }
+
+        @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "riskAnalysisById", allEntries = true),
+                        @CacheEvict(cacheNames = "riskAnalysisByRisk", allEntries = true),
+                        @CacheEvict(cacheNames = "riskAnalysisAll", allEntries = true),
+                        @CacheEvict(cacheNames = "riskById", allEntries = true),
+                        @CacheEvict(cacheNames = "risksAll", allEntries = true),
+                        @CacheEvict(cacheNames = "risksWithLevel", allEntries = true),
+                        @CacheEvict(cacheNames = "riskSearch", allEntries = true),
+                        @CacheEvict(cacheNames = "riskOverview", allEntries = true)
+        })
+        public RiskAnalysisDTO update(RiskAnalysisDTO dto, Long companyId) throws HSException {
                 RiskAnalysis existing = analysisRepository.findById(dto.getId())
                                 .orElseThrow(() -> new HSException("ANALYSIS_NOT_FOUND"));
+                assertSameCompany(companyId, existing.getCompanyId());
                 existing.setGravity(dto.getGravity());
                 existing.setProbability(dto.getProbability());
                 existing.setSeverity(dto.getSeverity());
@@ -76,28 +80,39 @@ public class RiskAnalysisServiceImpl implements RiskAnalysisService {
         }
 
         @Override
-        @Cacheable(cacheNames = "riskAnalysisByRisk", key = "#riskId")
-        public List<RiskAnalysisDTO> getByRiskId(Long riskId) throws HSException {
-                return analysisRepository.findByRiskId(riskId)
+        @Cacheable(cacheNames = "riskAnalysisByRisk", key = "{#riskId, #companyId}")
+        public List<RiskAnalysisDTO> getByRiskId(Long riskId, Long companyId) throws HSException {
+                return analysisRepository.findByRiskIdAndCompany(riskId, companyId)
                                 .stream()
                                 .map(RiskAnalysis::toDTO)
                                 .toList();
         }
 
         @Override
-        @Cacheable(cacheNames = "riskAnalysisAll")
-        public List<RiskAnalysisDTO> getAll() throws HSException {
-                return analysisRepository.findAll()
+        @Cacheable(cacheNames = "riskAnalysisAll", key = "#companyId")
+        public List<RiskAnalysisDTO> getAll(Long companyId) throws HSException {
+                return analysisRepository.findAllByCompany(companyId)
                                 .stream()
                                 .map(RiskAnalysis::toDTO)
                                 .toList();
         }
 
         @Override
-        @Cacheable(cacheNames = "riskAnalysisById", key = "#id")
-        public RiskAnalysisDTO getById(Long id) throws HSException {
+        @Cacheable(cacheNames = "riskAnalysisById", key = "{#id, #companyId}")
+        public RiskAnalysisDTO getById(Long id, Long companyId) throws HSException {
                 RiskAnalysis analysis = analysisRepository.findById(id)
                                 .orElseThrow(() -> new HSException("ANALYSIS_NOT_FOUND"));
+                assertSameCompany(companyId, analysis.getCompanyId());
                 return analysis.toDTO();
+        }
+
+        /**
+         * Cloisonnement par mine : companyId fourni => l'entité doit lui appartenir.
+         * companyId null = appel système / toutes mines.
+         */
+        private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+                if (companyId != null && !companyId.equals(entityCompanyId)) {
+                        throw new HSException("ANALYSIS_NOT_FOUND");
+                }
         }
 }

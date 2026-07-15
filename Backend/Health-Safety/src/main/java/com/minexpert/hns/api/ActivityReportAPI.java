@@ -47,27 +47,32 @@ public class ActivityReportAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateActivityReport(@RequestBody ActivityReportDTO activityReportDTO)
+    public ResponseEntity<ResponseDTO> updateActivityReport(@RequestBody ActivityReportDTO activityReportDTO,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        activityReportService.updateActivityReport(activityReportDTO);
+        activityReportService.updateActivityReport(activityReportDTO, companyId);
         return new ResponseEntity<>(new ResponseDTO("Activity Report updated successfully."), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteActivityReport(@PathVariable Long id) throws HSException {
-        activityReportService.deleteActivityReport(id);
+    public ResponseEntity<ResponseDTO> deleteActivityReport(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        activityReportService.deleteActivityReport(id, companyId);
         return new ResponseEntity<>(new ResponseDTO("Activity Report deleted successfully."), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<ActivityReportDTO> getActivityReportById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(activityReportService.getActivityReportById(id), HttpStatus.OK);
+    public ResponseEntity<ActivityReportDTO> getActivityReportById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(activityReportService.getActivityReportById(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getByActivityId/{activityId}")
-    public ResponseEntity<ActivityReportDTO> getActivityReportByActivityId(@PathVariable Long activityId)
+    public ResponseEntity<ActivityReportDTO> getActivityReportByActivityId(@PathVariable Long activityId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return new ResponseEntity<>(activityReportService.getActivityReportByActivityId(activityId), HttpStatus.OK);
+        return new ResponseEntity<>(
+                activityReportService.getActivityReportByActivityId(activityId, companyId), HttpStatus.OK);
     }
 
 }

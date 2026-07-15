@@ -37,4 +37,6 @@ public class InspectionHistory {
     @JoinColumn(name = "inspection_id", nullable = false)
     private GeneralInspection inspection;
     private LocalDateTime createdAt;
+    /** Mine propriétaire (cloisonnement). Renseigné à la création depuis la requête / l'inspection parente. */
+    private Long companyId;
 }

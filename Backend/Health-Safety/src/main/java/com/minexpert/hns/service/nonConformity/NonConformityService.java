@@ -14,13 +14,13 @@ public interface NonConformityService {
 
     public Long createNonConformity(NonConformityDTO nonConformityDTO) throws HSException;
 
-    public NonConformityDTO getNonConformityById(Long id) throws HSException;
+    public NonConformityDTO getNonConformityById(Long id, Long companyId) throws HSException;
 
     void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException;
 
-    public List<NcInfo> getAllNcInfo() throws HSException;
+    public List<NcInfo> getAllNcInfo(Long companyId) throws HSException;
 
-    public NcInfo getNcInfoById(Long id) throws HSException;
+    public NcInfo getNcInfoById(Long id, Long companyId) throws HSException;
 
     public void updateNonConformity(NonConformityDTO nonConformityDTO) throws HSException;
 

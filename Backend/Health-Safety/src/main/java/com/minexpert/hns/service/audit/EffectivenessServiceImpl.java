@@ -55,6 +55,8 @@ public class EffectivenessServiceImpl implements EffectivenessService {
         check.setDueDate(dueDate);
         check.setEvaluatorEmployeeId(evaluatorEmployeeId);
         check.setCreatedAt(LocalDateTime.now());
+        // Cloisonnement par mine : hérité de la recommandation (elle-même héritée de l'audit).
+        check.setCompanyId(recommendation.getCompanyId());
         return effectivenessCheckRepository.save(check).getId();
     }
 
@@ -95,8 +97,9 @@ public class EffectivenessServiceImpl implements EffectivenessService {
     }
 
     @Override
-    public List<EffectivenessCheckDTO> getPendingChecks() throws HSException {
-        return effectivenessCheckRepository.findByVerdictIsNullOrderByDueDateAsc()
+    public List<EffectivenessCheckDTO> getPendingChecks(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return effectivenessCheckRepository.findPendingByCompany(companyId)
                 .stream().map(this::toDtoWithTitle).collect(Collectors.toList());
     }
 

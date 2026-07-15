@@ -42,23 +42,24 @@ public class InspectionTemplateService {
      * de planification : afficher uniquement les templates du type choisi).
      */
     @Transactional(readOnly = true)
-    public List<InspectionTemplateSummaryDTO> listByType(InspectionTemplateType type) {
-        List<InspectionTemplate> list = templateRepository.findByTypeAndActiveTrueOrderByNameAsc(type);
+    public List<InspectionTemplateSummaryDTO> listByType(InspectionTemplateType type, Long companyId) {
+        List<InspectionTemplate> list = templateRepository.findActiveByTypeAndCompany(type, companyId);
         return list.stream().map(this::toSummary).toList();
     }
 
-    /** Liste tous les templates actifs (toutes types confondus). */
+    /** Liste tous les templates actifs (toutes types confondus) pour la mine. */
     @Transactional(readOnly = true)
-    public List<InspectionTemplateSummaryDTO> listAll() {
-        return templateRepository.findByActiveTrueOrderByTypeAscNameAsc().stream()
+    public List<InspectionTemplateSummaryDTO> listAll(Long companyId) {
+        return templateRepository.findActiveByCompany(companyId).stream()
                 .map(this::toSummary).toList();
     }
 
     /** Detail d'un template avec ses checkpoints ordonnes. */
     @Transactional(readOnly = true)
-    public InspectionTemplateDTO getById(Long id) {
+    public InspectionTemplateDTO getById(Long id, Long companyId) {
         InspectionTemplate t = templateRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Template introuvable : " + id));
+        assertSameCompany(t, companyId);
         return toDTO(t);
     }
 
@@ -91,10 +92,11 @@ public class InspectionTemplateService {
      * doit envoyer la liste complete des checkpoints souhaites.
      */
     @Transactional
-    public void update(Long id, InspectionTemplateDTO dto) {
+    public void update(Long id, InspectionTemplateDTO dto, Long companyId) {
         validateBusinessRules(dto);
         InspectionTemplate t = templateRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Template introuvable : " + id));
+        assertSameCompany(t, companyId);
         applyDTO(t, dto);
         t.setUpdatedAt(LocalDateTime.now());
         // Reset checkpoints : orphanRemoval supprime les retires
@@ -105,9 +107,10 @@ public class InspectionTemplateService {
 
     /** Soft-delete : marque inactif (les inspections passees gardent l'access). */
     @Transactional
-    public void deactivate(Long id) {
+    public void deactivate(Long id, Long companyId) {
         InspectionTemplate t = templateRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Template introuvable : " + id));
+        assertSameCompany(t, companyId);
         t.setActive(Boolean.FALSE);
         t.setUpdatedAt(LocalDateTime.now());
         templateRepository.save(t);
@@ -115,12 +118,23 @@ public class InspectionTemplateService {
 
     /** Reactivation d'un template precedemment desactive. */
     @Transactional
-    public void activate(Long id) {
+    public void activate(Long id, Long companyId) {
         InspectionTemplate t = templateRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Template introuvable : " + id));
+        assertSameCompany(t, companyId);
         t.setActive(Boolean.TRUE);
         t.setUpdatedAt(LocalDateTime.now());
         templateRepository.save(t);
+    }
+
+    /**
+     * Cloisonnement : refuse l'accès à un template d'une autre mine.
+     * companyId null (appel système / allMines) ne contrôle pas.
+     */
+    private void assertSameCompany(InspectionTemplate t, Long companyId) {
+        if (companyId != null && !companyId.equals(t.getCompanyId())) {
+            throw new IllegalArgumentException("Template introuvable : " + t.getId());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -136,6 +150,11 @@ public class InspectionTemplateService {
         t.setEstimatedDurationMin(dto.getEstimatedDurationMin());
         if (dto.getActive() != null) {
             t.setActive(dto.getActive());
+        }
+        // Renseigné à la création ; en édition, ne pas écraser la mine d'origine
+        // si la requête n'en fournit pas (companyId null).
+        if (dto.getCompanyId() != null) {
+            t.setCompanyId(dto.getCompanyId());
         }
     }
 
@@ -210,6 +229,7 @@ public class InspectionTemplateService {
         d.setCreatedAt(t.getCreatedAt());
         d.setUpdatedAt(t.getUpdatedAt());
         d.setActive(t.getActive());
+        d.setCompanyId(t.getCompanyId());
         d.setCheckpoints(t.getCheckpoints().stream().map(this::toCheckpointDTO).toList());
         return d;
     }

@@ -35,12 +35,15 @@ public class Ppe {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId). Alimenté par le CompanyScopeFilter via le controller.
+    private Long companyId;
+
     public Ppe(Long id) {
         this.id = id;
     }
 
     public PpeDTO toDTO() {
         return new PpeDTO(id, name, category, description, minStock, stock, certificationStandard, status, createdAt,
-                updatedAt);
+                updatedAt, companyId);
     }
 }

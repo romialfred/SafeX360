@@ -21,11 +21,13 @@ public class InspectionInterviewsDTO {
     private Long generalInspectionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public InspectionInterviews toEntity() {
         return new InspectionInterviews(this.id, this.employees != null ? this.employees.toString() : null,
                 this.interviewDate, this.description,
-                new GeneralInspection(this.generalInspectionId), createdAt, updatedAt);
+                new GeneralInspection(this.generalInspectionId), createdAt, updatedAt,
+                this.companyId);
     }
 
 }

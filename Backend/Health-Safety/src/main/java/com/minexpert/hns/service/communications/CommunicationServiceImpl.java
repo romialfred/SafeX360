@@ -62,7 +62,9 @@ public class CommunicationServiceImpl implements CommunicationService {
         CommTime schedule = hasSchedule ? persistSchedule(scheduleRequest, saved) : null;
         CommTimeDTO immediateSchedule = null;
         if (!hasSchedule) {
-            immediateSchedule = sendNow(saved.getId());
+            // Self-invocation : la communication vient d'etre creee et est deja
+            // cloisonnee ; pas de re-verification companyId necessaire.
+            immediateSchedule = sendNow(saved.getId(), null);
         }
 
         CommunicationDTO response = mapToDto(saved, schedule);
@@ -75,7 +77,7 @@ public class CommunicationServiceImpl implements CommunicationService {
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, key = "#dto.id"),
+            @CacheEvict(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = {
                     CommunicationCacheNames.COMMUNICATION_SUMMARIES,
                     CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
@@ -83,15 +85,18 @@ public class CommunicationServiceImpl implements CommunicationService {
                     CommunicationCacheNames.COMMUNICATION_STATS
             }, allEntries = true)
     })
-    public CommunicationDTO update(CommunicationDTO dto) throws HSException {
+    public CommunicationDTO update(CommunicationDTO dto, Long companyId) throws HSException {
         Communication existing = communicationRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
+        verifyCompany(existing, companyId);
 
         Communication updated = dto.toEntity();
 
         updated.setId(existing.getId());
         updated.setCreatedAt(existing.getCreatedAt());
         updated.setExpiresAt(existing.getExpiresAt());
+        // Conserve la mine d'origine : companyId non modifiable via update.
+        updated.setCompanyId(existing.getCompanyId());
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
             updated.setAttachments(mediaService.saveAllMedia(dto.getAttachments()));
         }
@@ -103,48 +108,56 @@ public class CommunicationServiceImpl implements CommunicationService {
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, key = "#id")
-    public CommunicationDTO getById(Long id) throws HSException {
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_ID, key = "#id + '-' + #companyId")
+    public CommunicationDTO getById(Long id, Long companyId) throws HSException {
         Communication comm = communicationRepository.findById(id)
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
+        verifyCompany(comm, companyId);
         CommTime schedule = commTimeRepository.findByCommunicationId(comm.getId()).orElse(null);
         return mapToDto(comm, schedule);
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_SUMMARIES)
-    public List<CommunicationSummaryView> getAll() throws HSException {
-        return communicationRepository.findAllSummaries();
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_SUMMARIES, key = "#companyId")
+    public List<CommunicationSummaryView> getAll(Long companyId) throws HSException {
+        return communicationRepository.findAllSummaries(companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES, key = "#limit")
-    public List<CommunicationSummaryView> getRecentSummaries(int limit) throws HSException {
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_RECENT_SUMMARIES,
+            key = "#limit + '-' + #companyId")
+    public List<CommunicationSummaryView> getRecentSummaries(int limit, Long companyId)
+            throws HSException {
         int size = limit > 0 ? limit : 5;
-        return communicationRepository.findSummaries(PageRequest.of(0, size));
+        return communicationRepository.findSummaries(companyId, PageRequest.of(0, size));
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT, key = "#departmentId")
-    public List<CommunicationDTO> getByDepartmentId(Long departmentId) throws HSException {
-        List<Communication> communications = communicationRepository.findByDepartmentId(departmentId);
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
+            key = "#departmentId + '-' + #companyId")
+    public List<CommunicationDTO> getByDepartmentId(Long departmentId, Long companyId)
+            throws HSException {
+        List<Communication> communications =
+                communicationRepository.findByDepartmentIdAndCompany(departmentId, companyId);
         return mapToDtos(communications);
     }
 
     @Override
-    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_STATS)
-    public CommunicationStatsDTO getCounts() throws HSException {
-        List<CommunicationStatsDTO.TypeCount> byType = communicationRepository.countByType()
+    @Cacheable(cacheNames = CommunicationCacheNames.COMMUNICATION_STATS, key = "#companyId")
+    public CommunicationStatsDTO getCounts(Long companyId) throws HSException {
+        List<CommunicationStatsDTO.TypeCount> byType = communicationRepository.countByType(companyId)
                 .stream()
                 .map(view -> new CommunicationStatsDTO.TypeCount(view.getType(), view.getTotal()))
                 .toList();
 
-        List<CommunicationStatsDTO.CategoryCount> byCategory = communicationRepository.countByCategory()
+        List<CommunicationStatsDTO.CategoryCount> byCategory =
+                communicationRepository.countByCategory(companyId)
                 .stream()
                 .map(view -> new CommunicationStatsDTO.CategoryCount(view.getCategory(), view.getTotal()))
                 .toList();
 
-        List<CommunicationStatsDTO.DepartmentCount> byDepartment = communicationRepository.countByDepartment()
+        List<CommunicationStatsDTO.DepartmentCount> byDepartment =
+                communicationRepository.countByDepartment(companyId)
                 .stream()
                 .map(view -> new CommunicationStatsDTO.DepartmentCount(view.getDepartmentId(), view.getTotal()))
                 .toList();
@@ -160,7 +173,8 @@ public class CommunicationServiceImpl implements CommunicationService {
             CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
             CommunicationCacheNames.COMMUNICATION_STATS
     }, allEntries = true)
-    public CommunicationDTO resumeSchedule(Long communicationId) throws HSException {
+    public CommunicationDTO resumeSchedule(Long communicationId, Long companyId) throws HSException {
+        verifyCommunicationCompany(communicationId, companyId);
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
 
@@ -177,7 +191,8 @@ public class CommunicationServiceImpl implements CommunicationService {
             CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
             CommunicationCacheNames.COMMUNICATION_STATS
     }, allEntries = true)
-    public CommunicationDTO pauseSchedule(Long communicationId) throws HSException {
+    public CommunicationDTO pauseSchedule(Long communicationId, Long companyId) throws HSException {
+        verifyCommunicationCompany(communicationId, companyId);
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
 
@@ -196,7 +211,8 @@ public class CommunicationServiceImpl implements CommunicationService {
             CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
             CommunicationCacheNames.COMMUNICATION_STATS
     }, allEntries = true)
-    public CommunicationDTO cancelSchedule(Long communicationId) throws HSException {
+    public CommunicationDTO cancelSchedule(Long communicationId, Long companyId) throws HSException {
+        verifyCommunicationCompany(communicationId, companyId);
         CommTime commTime = commTimeRepository.findByCommunicationId(communicationId)
                 .orElseThrow(() -> new HSException("COMM_SCHEDULE_NOT_FOUND"));
 
@@ -215,9 +231,10 @@ public class CommunicationServiceImpl implements CommunicationService {
             CommunicationCacheNames.COMMUNICATION_BY_DEPARTMENT,
             CommunicationCacheNames.COMMUNICATION_STATS
     }, allEntries = true)
-    public CommTimeDTO sendNow(Long communicationId) throws HSException {
+    public CommTimeDTO sendNow(Long communicationId, Long companyId) throws HSException {
         Communication communication = communicationRepository.findById(communicationId)
                 .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
+        verifyCompany(communication, companyId);
 
         Optional<CommTime> existing = commTimeRepository.findByCommunicationId(communicationId);
 
@@ -236,6 +253,30 @@ public class CommunicationServiceImpl implements CommunicationService {
         }
 
         return CommTimeDTO.fromEntity(saved);
+    }
+
+    /**
+     * Verifie l'appartenance d'une communication a la mine appelante. companyId
+     * null = pas de controle. Non-appartenance : COMM_NOT_FOUND (on ne divulgue
+     * pas l'existence d'une communication d'une autre mine).
+     */
+    private void verifyCompany(Communication comm, Long companyId) throws HSException {
+        if (companyId == null || comm == null) {
+            return;
+        }
+        if (!companyId.equals(comm.getCompanyId())) {
+            throw new HSException("COMM_NOT_FOUND");
+        }
+    }
+
+    private void verifyCommunicationCompany(Long communicationId, Long companyId)
+            throws HSException {
+        if (companyId == null) {
+            return;
+        }
+        Communication comm = communicationRepository.findById(communicationId)
+                .orElseThrow(() -> new HSException("COMM_NOT_FOUND"));
+        verifyCompany(comm, companyId);
     }
 
     private CommTime persistSchedule(CommTimeDTO scheduleDto, Communication communication) {

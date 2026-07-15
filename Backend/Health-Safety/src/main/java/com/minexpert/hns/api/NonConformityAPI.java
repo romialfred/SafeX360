@@ -50,22 +50,26 @@ public class NonConformityAPI {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<NonConformityDTO> getNonConformity(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(nonConformityService.getNonConformityById(id), HttpStatus.OK);
+    public ResponseEntity<NonConformityDTO> getNonConformity(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(nonConformityService.getNonConformityById(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAnalysis/{id}")
-    public ResponseEntity<?> getEventAnalysis(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(eventAnalysisService.getEventAnalysisByNonConformityId(id), HttpStatus.OK);
+    public ResponseEntity<?> getEventAnalysis(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(eventAnalysisService.getEventAnalysisByNonConformityId(id, companyId),
+                HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<?> getAllNonConformities() throws HSException {
-        return new ResponseEntity<>(nonConformityService.getAllNcInfo(), HttpStatus.OK);
+    public ResponseEntity<?> getAllNonConformities(@RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(nonConformityService.getAllNcInfo(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getInfo/{id}")
-    public ResponseEntity<NcInfo> getNcInfo(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(nonConformityService.getNcInfoById(id), HttpStatus.OK);
+    public ResponseEntity<NcInfo> getNcInfo(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(nonConformityService.getNcInfoById(id, companyId), HttpStatus.OK);
     }
 }

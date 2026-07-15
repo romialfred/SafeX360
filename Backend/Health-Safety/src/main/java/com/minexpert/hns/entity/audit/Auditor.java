@@ -34,6 +34,9 @@ public class Auditor {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Auditor(Long id) {
         this.id = id;
     }
@@ -41,6 +44,6 @@ public class Auditor {
     public AuditorDTO toDTO() {
         return new AuditorDTO(id, name, role, email, company, companyEmail, audit != null ? audit.getId() : null,
                 createdAt,
-                updatedAt);
+                updatedAt, companyId);
     }
 }

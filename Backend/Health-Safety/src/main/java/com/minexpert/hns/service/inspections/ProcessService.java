@@ -6,5 +6,5 @@ import com.minexpert.hns.exception.HSException;
 public interface ProcessService {
     ProcessDTO saveDraftProcess(ProcessDTO processDTO) throws HSException;
 
-    ProcessDTO getDraftProcess(Long id) throws HSException;
+    ProcessDTO getDraftProcess(Long id, Long companyId) throws HSException;
 }

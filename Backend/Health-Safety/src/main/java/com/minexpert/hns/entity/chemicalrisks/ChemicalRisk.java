@@ -70,6 +70,10 @@ public class ChemicalRisk {
     @Column(name = "next_review_date")
     private LocalDate nextReviewDate;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    @Column(name = "company_id")
+    private Long companyId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -105,7 +109,8 @@ public class ChemicalRisk {
                 this.personsExposed,
                 this.exposureCount,
                 this.legalRequirements,
-                this.nextReviewDate);
+                this.nextReviewDate,
+                this.companyId);
     }
 }
 

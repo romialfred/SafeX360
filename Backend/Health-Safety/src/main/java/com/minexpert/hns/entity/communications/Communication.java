@@ -54,6 +54,9 @@ public class Communication {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement multi-tenant par mine (convention plateforme SafeX). */
+    private Long companyId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -84,7 +87,8 @@ public class Communication {
                 null,
                 createdAt,
                 updatedAt,
-                null);
+                null,
+                companyId);
     }
 
     public enum Urgency {

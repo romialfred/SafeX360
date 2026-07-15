@@ -24,8 +24,10 @@ public class ActivityDTO {
     private ActivityStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public Activity toEntity() {
-        return new Activity(id, title, month, dateTime, responsibleId, category, status, createdAt, updatedAt);
+        return new Activity(id, title, month, dateTime, responsibleId, category, status,
+                createdAt, updatedAt, companyId);
     }
 }

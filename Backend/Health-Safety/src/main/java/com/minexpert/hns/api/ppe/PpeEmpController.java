@@ -19,40 +19,51 @@ public class PpeEmpController {
     private final PpeEmpService empService;
 
     @PostMapping("/create")
-    public ResponseEntity<PpeEmpDTO> create(@Valid @RequestBody PpeEmpDTO dto) throws HSException {
+    public ResponseEntity<PpeEmpDTO> create(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody PpeEmpDTO dto) throws HSException {
+        if (companyId != null)
+            dto.setCompanyId(companyId);
         return ResponseEntity.ok(empService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<PpeEmpDTO> update(@Valid @RequestBody PpeEmpDTO dto) throws HSException {
-        return ResponseEntity.ok(empService.update(dto));
+    public ResponseEntity<PpeEmpDTO> update(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody PpeEmpDTO dto) throws HSException {
+        if (companyId != null)
+            dto.setCompanyId(companyId);
+        return ResponseEntity.ok(empService.update(dto, companyId));
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<PpeEmpDTO> getById(@PathVariable Long id) throws HSException {
-        return ResponseEntity.ok(empService.getById(id));
+    public ResponseEntity<PpeEmpDTO> getById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(empService.getById(id, companyId));
     }
 
     @GetMapping("/by-emp/{empId}")
-    public ResponseEntity<List<PpeEmpDTO>> getByEmp(@PathVariable Long empId) throws HSException {
-        return ResponseEntity.ok(empService.getByEmpId(empId));
+    public ResponseEntity<List<PpeEmpDTO>> getByEmp(@PathVariable Long empId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(empService.getByEmpId(empId, companyId));
     }
 
     @GetMapping("/by-ppe/{ppeId}")
-    public ResponseEntity<List<PpeEmpDTO>> getByPpe(@PathVariable Long ppeId) throws HSException {
-        return ResponseEntity.ok(empService.getByPpeId(ppeId));
+    public ResponseEntity<List<PpeEmpDTO>> getByPpe(@PathVariable Long ppeId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(empService.getByPpeId(ppeId, companyId));
     }
 
     @GetMapping("/by-status")
-    public ResponseEntity<List<PpeEmpDTO>> getByStatus(@RequestParam String status) throws HSException {
-        return ResponseEntity.ok(empService.getByStatus(status));
+    public ResponseEntity<List<PpeEmpDTO>> getByStatus(@RequestParam String status,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(empService.getByStatus(status, companyId));
     }
 
     /**
      * Return all employees with their active PPE assignment counts
      */
     @GetMapping("/counts")
-    public ResponseEntity<List<EmpPpeCountDTO>> getAllAssignmentCounts() throws HSException {
-        return ResponseEntity.ok(empService.getAllEmployeeAssignmentCounts());
+    public ResponseEntity<List<EmpPpeCountDTO>> getAllAssignmentCounts(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(empService.getAllEmployeeAssignmentCounts(companyId));
     }
 }

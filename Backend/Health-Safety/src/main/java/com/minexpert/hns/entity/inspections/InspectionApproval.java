@@ -82,4 +82,10 @@ public class InspectionApproval {
     /** Horodatage de la decision. */
     @Column(name = "decided_at", nullable = false)
     private LocalDateTime decidedAt;
+
+    /**
+     * Mine propriétaire (cloisonnement). Recopié depuis l'inspection parente à
+     * la création. Nullable pour les données legacy (backfill=1).
+     */
+    private Long companyId;
 }

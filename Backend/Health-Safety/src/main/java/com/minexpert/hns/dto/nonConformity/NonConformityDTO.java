@@ -90,6 +90,9 @@ public class NonConformityDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine (companyId). */
+    private Long companyId;
+
     public NonConformity toEntity() {
         return new NonConformity(id, type, number, title, date, detectionDate, reportedBy,
                 new WorkProcess(workProcessId), new Location(locationId), new IncidentCategory(categoryId), description,
@@ -106,6 +109,6 @@ public class NonConformityDTO {
                 effectiveness, rating, risk, nextCheck,
                 feedback, archiveNumber, retentionPeriod,
                 null, archiveManagerId,
-                status, createdAt, updatedAt);
+                status, createdAt, updatedAt, companyId);
     }
 }

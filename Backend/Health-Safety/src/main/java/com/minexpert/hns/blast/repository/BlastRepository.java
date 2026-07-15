@@ -60,4 +60,14 @@ public interface BlastRepository extends JpaRepository<Blast, Long> {
             @Param("endOfDay") LocalDateTime endOfDay);
 
     List<Blast> findByMineIdOrderByScheduledAtDesc(Long mineId);
+
+    /**
+     * Cloisonnement par mine (convention plateforme). {@code companyId} null =
+     * aucun filtre (appel systeme / allMines). Applique sur {@code companyId}
+     * avec repli sur {@code mineId} pour les lignes anterieures au backfill.
+     */
+    @Query("SELECT b FROM Blast b WHERE (:companyId IS NULL "
+            + "OR b.companyId = :companyId OR b.mineId = :companyId) "
+            + "ORDER BY b.scheduledAt DESC")
+    List<Blast> findAllByCompany(@Param("companyId") Long companyId);
 }

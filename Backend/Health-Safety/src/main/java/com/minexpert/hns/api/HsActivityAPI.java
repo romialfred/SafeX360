@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -38,33 +39,39 @@ public class HsActivityAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateActivity(@RequestBody HsActivityDTO hsActivityDTO) throws HSException {
-        hsActivityService.updateActivity(hsActivityDTO);
+    public ResponseEntity<ResponseDTO> updateActivity(@RequestBody HsActivityDTO hsActivityDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        hsActivityService.updateActivity(hsActivityDTO, companyId);
         return new ResponseEntity<>(new ResponseDTO("Activity updated successfully."), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<HsActivityResponse>> getAllActivities() throws HSException {
-        return new ResponseEntity<>(hsActivityService.getAllActivities(), HttpStatus.OK);
+    public ResponseEntity<List<HsActivityResponse>> getAllActivities(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(hsActivityService.getAllActivities(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<HsActivityDetails> getActivityById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(hsActivityService.getActivityDetails(id), HttpStatus.OK);
+    public ResponseEntity<HsActivityDetails> getActivityById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(hsActivityService.getActivityDetails(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getInfo/{id}")
-    public ResponseEntity<HsActivityResponse> getActivityInfoById(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(hsActivityService.getActivityInfo(id), HttpStatus.OK);
+    public ResponseEntity<HsActivityResponse> getActivityInfoById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(hsActivityService.getActivityInfo(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllMeetings")
-    public ResponseEntity<List<HsActivityResponse>> getAllMeetings() throws HSException {
-        return new ResponseEntity<>(hsActivityService.getAllMeetings(), HttpStatus.OK);
+    public ResponseEntity<List<HsActivityResponse>> getAllMeetings(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(hsActivityService.getAllMeetings(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllTours")
-    public ResponseEntity<List<HsActivityResponse>> getAllTours() throws HSException {
-        return new ResponseEntity<>(hsActivityService.getAllTours(), HttpStatus.OK);
+    public ResponseEntity<List<HsActivityResponse>> getAllTours(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(hsActivityService.getAllTours(companyId), HttpStatus.OK);
     }
 }

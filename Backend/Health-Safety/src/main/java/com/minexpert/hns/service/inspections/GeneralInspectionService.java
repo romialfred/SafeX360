@@ -13,13 +13,13 @@ public interface GeneralInspectionService {
 
     public void createGeneralInspection(GeneralInspectionDTO generalInspectionDTO) throws HSException;
 
-    public void updateGeneralInspection(GeneralInspectionDTO generalInspectionDTO) throws HSException;
+    public void updateGeneralInspection(GeneralInspectionDTO generalInspectionDTO, Long companyId) throws HSException;
 
-    public List<GeneralInspectionResponse> getAllInspections() throws HSException;
+    public List<GeneralInspectionResponse> getAllInspections(Long companyId) throws HSException;
 
-    public GeneralInspectionDetails getInspectionDetailsById(Long id) throws HSException;
+    public GeneralInspectionDetails getInspectionDetailsById(Long id, Long companyId) throws HSException;
 
-    public InspectionInfo getInspectionInfoById(Long id) throws HSException;
+    public InspectionInfo getInspectionInfoById(Long id, Long companyId) throws HSException;
 
     public void updateInspectionStatus(Long id, InspectionStatus status) throws HSException;
 }

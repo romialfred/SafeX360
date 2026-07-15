@@ -120,6 +120,9 @@ public class NonConformity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine (companyId). Alimenté à la création, filtré en lecture. */
+    private Long companyId;
+
     public NonConformity(Long id) {
         this.id = id;
     }
@@ -175,7 +178,8 @@ public class NonConformity {
                 archiveManagerId,
                 status,
                 createdAt,
-                updatedAt);
+                updatedAt,
+                companyId);
     }
 
     public void updateFromDTO(NonConformityDTO dto) {

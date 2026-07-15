@@ -22,33 +22,41 @@ public class RiskController {
     private final RiskService riskService;
 
     @PostMapping("/create")
-    public ResponseEntity<RiskDTO> create(@Valid @RequestBody RiskDTO dto) throws HSException {
+    public ResponseEntity<RiskDTO> create(@Valid @RequestBody RiskDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
         return ResponseEntity.ok(riskService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<RiskDTO> update(@Valid @RequestBody RiskDTO dto) throws HSException {
-        return ResponseEntity.ok(riskService.update(dto));
+    public ResponseEntity<RiskDTO> update(@Valid @RequestBody RiskDTO dto,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.update(dto, companyId));
     }
 
     @PutMapping("/status/{id}")
-    public ResponseEntity<RiskDTO> updateStatus(@PathVariable Long id, @RequestParam String status) throws HSException {
-        return ResponseEntity.ok(riskService.updateStatus(id, status));
+    public ResponseEntity<RiskDTO> updateStatus(@PathVariable Long id, @RequestParam String status,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.updateStatus(id, status, companyId));
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<RiskDTO> getById(@PathVariable Long id) throws HSException {
-        return ResponseEntity.ok(riskService.getById(id));
+    public ResponseEntity<RiskDTO> getById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.getById(id, companyId));
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<RiskDTO>> getAll() throws HSException {
-        return ResponseEntity.ok(riskService.getAll());
+    public ResponseEntity<List<RiskDTO>> getAll(@RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.getAll(companyId));
     }
 
     @GetMapping("/withRiskLevel")
-    public ResponseEntity<List<RiskDTO>> getAllWithRiskLevel() throws HSException {
-        return ResponseEntity.ok(riskService.getAllWithRiskLevel());
+    public ResponseEntity<List<RiskDTO>> getAllWithRiskLevel(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return ResponseEntity.ok(riskService.getAllWithRiskLevel(companyId));
     }
 
     @GetMapping("/search")
@@ -58,8 +66,9 @@ public class RiskController {
             @RequestParam(required = false) Long ownerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false, name = "q") String q) throws HSException {
-        return ResponseEntity.ok(riskService.search(status, departmentId, ownerId, from, to, q));
+            @RequestParam(required = false, name = "q") String q,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.search(status, departmentId, ownerId, from, to, q, companyId));
     }
 
     @GetMapping("/overview")
@@ -69,7 +78,8 @@ public class RiskController {
             @RequestParam(required = false) Long ownerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false, name = "q") String q) throws HSException {
-        return ResponseEntity.ok(riskService.getOverview(status, departmentId, ownerId, from, to, q));
+            @RequestParam(required = false, name = "q") String q,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(riskService.getOverview(status, departmentId, ownerId, from, to, q, companyId));
     }
 }

@@ -18,28 +18,37 @@ public class PpeStockController {
     private final PpeStockService stockService;
 
     @PostMapping("/create")
-    public ResponseEntity<PpeStockDTO> create(@Valid @RequestBody PpeStockDTO dto)
+    public ResponseEntity<PpeStockDTO> create(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody PpeStockDTO dto)
             throws HSException {
+        if (companyId != null)
+            dto.setCompanyId(companyId);
         return ResponseEntity.ok(stockService.create(dto));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<PpeStockDTO> update(@Valid @RequestBody PpeStockDTO dto) throws HSException {
-        return ResponseEntity.ok(stockService.update(dto));
+    public ResponseEntity<PpeStockDTO> update(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody PpeStockDTO dto) throws HSException {
+        if (companyId != null)
+            dto.setCompanyId(companyId);
+        return ResponseEntity.ok(stockService.update(dto, companyId));
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<PpeStockDTO> getById(@PathVariable Long id) throws HSException {
-        return ResponseEntity.ok(stockService.getById(id));
+    public ResponseEntity<PpeStockDTO> getById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(stockService.getById(id, companyId));
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<PpeStockDTO>> getAll() throws HSException {
-        return ResponseEntity.ok(stockService.getAllStocks());
+    public ResponseEntity<List<PpeStockDTO>> getAll(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return ResponseEntity.ok(stockService.getAllStocks(companyId));
     }
 
     @GetMapping("/ppe/{ppeId}")
-    public ResponseEntity<List<PpeStockDTO>> getByPpe(@PathVariable Long ppeId) throws HSException {
-        return ResponseEntity.ok(stockService.getByPpeId(ppeId));
+    public ResponseEntity<List<PpeStockDTO>> getByPpe(@PathVariable Long ppeId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(stockService.getByPpeId(ppeId, companyId));
     }
 }

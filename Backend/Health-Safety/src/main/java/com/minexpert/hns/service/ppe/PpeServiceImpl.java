@@ -44,13 +44,17 @@ public class PpeServiceImpl implements PpeService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeById", key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = "ppeById", allEntries = true),
             @CacheEvict(cacheNames = "ppesAll", allEntries = true),
             @CacheEvict(cacheNames = "ppeActive", allEntries = true)
     })
-    public PpeDTO update(PpeDTO dto) throws HSException {
+    public PpeDTO update(PpeDTO dto, Long companyId) throws HSException {
         Ppe existing = ppeRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
+        // Vérification d'appartenance à la mine (companyId null = appel système, pas de contrôle).
+        if (companyId != null && !companyId.equals(existing.getCompanyId())) {
+            throw new HSException("PPE_NOT_FOUND");
+        }
         existing.setName(dto.getName());
         existing.setCategory(dto.getCategory());
         existing.setDescription(dto.getDescription());
@@ -63,26 +67,30 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeById", key = "#id")
-    public PpeDTO getById(Long id) throws HSException {
+    @Cacheable(cacheNames = "ppeById", key = "#id + '-' + #companyId")
+    public PpeDTO getById(Long id, Long companyId) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
+        // Ne pas divulguer un EPI d'une autre mine (companyId null = appel système).
+        if (companyId != null && !companyId.equals(ppe.getCompanyId())) {
+            throw new HSException("PPE_NOT_FOUND");
+        }
         return ppe.toDTO();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppesAll")
-    public List<PpeDTO> getAllStocks() throws HSException {
-        return ppeRepository.findAll()
+    @Cacheable(cacheNames = "ppesAll", key = "#companyId")
+    public List<PpeDTO> getAllStocks(Long companyId) throws HSException {
+        return ppeRepository.findAllByCompany(companyId)
                 .stream()
                 .map(Ppe::toDTO)
                 .toList();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeActive")
-    public List<PpeDTO> getActiveStocks() throws HSException {
-        return ppeRepository.findByStatus(PpeStatus.ACTIVE)
+    @Cacheable(cacheNames = "ppeActive", key = "#companyId")
+    public List<PpeDTO> getActiveStocks(Long companyId) throws HSException {
+        return ppeRepository.findByStatusAndCompany(PpeStatus.ACTIVE, companyId)
                 .stream()
                 .map(Ppe::toDTO)
                 .toList();
@@ -90,33 +98,39 @@ public class PpeServiceImpl implements PpeService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeById", allEntries = true),
             @CacheEvict(cacheNames = "ppeActive", allEntries = true),
             @CacheEvict(cacheNames = "ppesAll", allEntries = true)
     })
-    public void activateStock(Long id) throws HSException {
+    public void activateStock(Long id, Long companyId) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(ppe.getCompanyId())) {
+            throw new HSException("PPE_NOT_FOUND");
+        }
         ppe.setStatus(PpeStatus.ACTIVE);
         ppeRepository.save(ppe);
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeById", allEntries = true),
             @CacheEvict(cacheNames = "ppeActive", allEntries = true),
             @CacheEvict(cacheNames = "ppesAll", allEntries = true)
     })
-    public void deactivateStock(Long id) throws HSException {
+    public void deactivateStock(Long id, Long companyId) throws HSException {
         Ppe ppe = ppeRepository.findById(id)
                 .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(ppe.getCompanyId())) {
+            throw new HSException("PPE_NOT_FOUND");
+        }
         ppe.setStatus(PpeStatus.INACTIVE);
         ppeRepository.save(ppe);
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeById", key = "#id"),
+            @CacheEvict(cacheNames = "ppeById", allEntries = true),
             @CacheEvict(cacheNames = "ppeActive", allEntries = true),
             @CacheEvict(cacheNames = "ppesAll", allEntries = true)
     })
@@ -142,12 +156,13 @@ public class PpeServiceImpl implements PpeService {
     }
 
     @Override
-    public List<PpeDTO> getLowStock() throws HSException {
+    public List<PpeDTO> getLowStock(Long companyId) throws HSException {
         // EPI actifs dont le stock est passé sous le seuil minimal — les EPI
         // sans seuil défini sont exclus (pas d'alerte pertinente possible).
         // (Remplace l'ancien stub UnsupportedOperationException : l'endpoint
         // GET /ppe/getLowStock est exposé et renvoyait systématiquement 500.)
-        return ppeRepository.findByStatus(PpeStatus.ACTIVE)
+        // Filtré par mine (companyId null = toutes mines).
+        return ppeRepository.findByStatusAndCompany(PpeStatus.ACTIVE, companyId)
                 .stream()
                 .filter(ppe -> ppe.getMinStock() != null
                         && ppe.getStock() != null

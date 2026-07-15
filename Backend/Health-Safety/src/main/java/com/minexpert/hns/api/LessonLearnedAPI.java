@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.LessonLearnedDTO;
@@ -31,31 +32,42 @@ public class LessonLearnedAPI {
     private final LessonLearnedService lessonLearnedService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createLessonLearned(@RequestBody LessonLearnedDTO request) throws HSException {
+    public ResponseEntity<Long> createLessonLearned(@RequestParam(required = false) Long companyId,
+            @RequestBody LessonLearnedDTO request) throws HSException {
+        if (companyId != null) {
+            request.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(lessonLearnedService.createLessonLearned(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateLessonLearned(@RequestBody LessonLearnedDTO request) throws HSException {
+    public ResponseEntity<ResponseDTO> updateLessonLearned(@RequestParam(required = false) Long companyId,
+            @RequestBody LessonLearnedDTO request) throws HSException {
+        if (companyId != null) {
+            request.setCompanyId(companyId);
+        }
         lessonLearnedService.updateLessonLearned(request);
         return new ResponseEntity<>(new ResponseDTO("Lesson Learned updated."), HttpStatus.OK);
     }
 
     @GetMapping("/details/{id}")
-    public ResponseEntity<LessonLearnedDetails> getLessonLearnedDetails(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(lessonLearnedService.getLessonLearnedDetails(id), HttpStatus.OK);
+    public ResponseEntity<LessonLearnedDetails> getLessonLearnedDetails(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(lessonLearnedService.getLessonLearnedDetails(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/detailsByIncidentId/{incidentId}")
-    public ResponseEntity<LessonLearnedDetails> getLessonLearnedDetailsByIncidentId(@PathVariable Long incidentId)
+    public ResponseEntity<LessonLearnedDetails> getLessonLearnedDetailsByIncidentId(@PathVariable Long incidentId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return new ResponseEntity<>(lessonLearnedService.getLessonLearnedDetailsByIncidentId(incidentId),
+        return new ResponseEntity<>(lessonLearnedService.getLessonLearnedDetailsByIncidentId(incidentId, companyId),
                 HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<LessonLearnedDetails>> getAllLessonLearnedDetails() throws HSException {
-        return new ResponseEntity<>(lessonLearnedService.getAllLessonLearnedDetails(), HttpStatus.OK);
+    public ResponseEntity<List<LessonLearnedDetails>> getAllLessonLearnedDetails(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(lessonLearnedService.getAllLessonLearnedDetails(companyId), HttpStatus.OK);
     }
 
 }

@@ -23,10 +23,11 @@ public class InspectionHistoryDTO {
     private String comment;
     private Long inspectionId;
     private LocalDateTime createdAt;
+    private Long companyId;
 
     public InspectionHistory toEntity() {
         return new InspectionHistory(id, ownerId, date, status, comment,
                 inspectionId != null ? new GeneralInspection(inspectionId) : null,
-                createdAt);
+                createdAt, companyId);
     }
 }

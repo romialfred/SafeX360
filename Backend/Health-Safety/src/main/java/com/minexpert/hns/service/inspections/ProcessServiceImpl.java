@@ -30,10 +30,15 @@ public class ProcessServiceImpl implements ProcessService {
     private GeneralInspectionService generalInspectionService;
 
     @Override
-    @CacheEvict(cacheNames = "inspectionProcessDraft", key = "#processDTO.inspectionId", condition = "#processDTO.inspectionId != null")
+    @CacheEvict(cacheNames = "inspectionProcessDraft", allEntries = true)
     public ProcessDTO saveDraftProcess(ProcessDTO processDTO) throws HSException {
+        // Cloisonnement : propager la mine active à chaque sous-enregistrement.
+        final Long companyId = processDTO.getCompanyId();
         processDTO.getChecklists().parallelStream().forEach(checklist -> {
             try {
+                if (companyId != null) {
+                    checklist.setCompanyId(companyId);
+                }
                 checklist.setId(inspectionChecklistService.createChecklist(checklist));
             } catch (HSException e) {
                 log.error("Error creating checklist: {}", e.getMessage());
@@ -41,26 +46,35 @@ public class ProcessServiceImpl implements ProcessService {
         });
         processDTO.getMeasurements().parallelStream().forEach(measurement -> {
             try {
+                if (companyId != null) {
+                    measurement.setCompanyId(companyId);
+                }
                 measurement.setId(inspectionMeasurementService.createMeasurement(measurement));
             } catch (HSException e) {
                 log.error("Error creating measurement: {}", e.getMessage());
             }
         });
 
-        Long id = inspectionInterviewService.createInterview(processDTO.getInterviews());
         InspectionInterviewsDTO interview = processDTO.getInterviews();
-        interview.setId(id);
+        if (interview != null && companyId != null) {
+            interview.setCompanyId(companyId);
+        }
+        Long id = inspectionInterviewService.createInterview(interview);
+        if (interview != null) {
+            interview.setId(id);
+        }
         generalInspectionService.updateInspectionStatus(processDTO.getInspectionId(), processDTO.getStatus());
         return processDTO;
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionProcessDraft", key = "#id")
-    public ProcessDTO getDraftProcess(Long id) throws HSException {
+    @Cacheable(cacheNames = "inspectionProcessDraft", key = "#id + '-' + #companyId")
+    public ProcessDTO getDraftProcess(Long id, Long companyId) throws HSException {
         ProcessDTO processDTO = new ProcessDTO();
-        processDTO.setInterviews(inspectionInterviewService.getInterviewsByInspectionId(id));
-        processDTO.setChecklists(inspectionChecklistService.getChecklistsByInspectionId(id));
-        processDTO.setMeasurements(inspectionMeasurementService.getMeasurementByInspectionId(id));
+        processDTO.setCompanyId(companyId);
+        processDTO.setInterviews(inspectionInterviewService.getInterviewsByInspectionId(id, companyId));
+        processDTO.setChecklists(inspectionChecklistService.getChecklistsByInspectionId(id, companyId));
+        processDTO.setMeasurements(inspectionMeasurementService.getMeasurementByInspectionId(id, companyId));
         return processDTO;
     }
 

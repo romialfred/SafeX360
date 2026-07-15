@@ -23,10 +23,13 @@ public class AuditorDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Auditor toEntity() {
         return new Auditor(this.id, this.name, this.role, this.email, this.company, this.companyEmail,
                 new Audit(this.auditId),
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt, this.companyId);
     }
 }

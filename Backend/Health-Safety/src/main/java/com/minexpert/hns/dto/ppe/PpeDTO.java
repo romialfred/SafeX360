@@ -29,10 +29,11 @@ public class PpeDTO {
     private PpeStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public Ppe toEntity() {
         return new Ppe(id, name, category, description, minStock, stock, certificationStandard, status, createdAt,
-                updatedAt);
+                updatedAt, companyId);
     }
 
 }

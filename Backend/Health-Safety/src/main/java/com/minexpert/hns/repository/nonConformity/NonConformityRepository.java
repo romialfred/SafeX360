@@ -36,15 +36,16 @@ public interface NonConformityRepository extends CrudRepository<NonConformity, L
                 )
                 FROM NonConformity nc
                 LEFT JOIN EventAnalysis ea ON ea.nonConformity.id = nc.id
+                WHERE (:companyId IS NULL OR nc.companyId = :companyId)
             """)
-    List<NcInfo> findAllNcInfo();
+    List<NcInfo> findAllNcInfo(@Param("companyId") Long companyId);
 
     @Query("SELECT new com.minexpert.hns.dto.nonConformity.NcInfo(" +
             "nc.id, nc.type, nc.number, nc.title, nc.date, nc.reportedBy, " +
             "null, ea.severityLevel, ea.priority,  null,  nc.status) " +
             "FROM NonConformity nc LEFT JOIN EventAnalysis ea ON ea.nonConformity.id = nc.id " +
-            "WHERE nc.id = ?1")
-    Optional<NcInfo> findNcInfoById(Long id);
+            "WHERE nc.id = :id AND (:companyId IS NULL OR nc.companyId = :companyId)")
+    Optional<NcInfo> findNcInfoById(@Param("id") Long id, @Param("companyId") Long companyId);
 
     Optional<NonConformity> findFirstByTypeAndDateGreaterThanEqualAndStatusNotInOrderByDateAsc(EventType type,
             LocalDate date, List<EventStatus> excludedStatuses);

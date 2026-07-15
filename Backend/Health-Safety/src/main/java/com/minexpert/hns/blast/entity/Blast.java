@@ -149,6 +149,15 @@ public class Blast {
     private Long mineId;
 
     /**
+     * Cloisonnement multi-tenant par mine (convention plateforme SafeX). Aligne
+     * sur {@link #mineId} : renseigne = {@code mineId} a la creation. Valide par
+     * le {@code CompanyScopeFilter} (param {@code companyId}). Nullable pour
+     * retrocompat (lignes anterieures backfillees = mine_id).
+     */
+    @Column(name = "company_id")
+    private Long companyId;
+
+    /**
      * Horodatage de resolution d'un MISFIRE (null tant qu'un rate n'a pas ete leve).
      * Tant que ce champ est null sur un tir en statut MISFIRE, la transition vers
      * ALL_CLEAR est interdite.

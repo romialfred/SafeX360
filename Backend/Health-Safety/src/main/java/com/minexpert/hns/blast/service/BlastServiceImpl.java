@@ -146,6 +146,9 @@ public class BlastServiceImpl implements BlastService {
                 .hseLeadId(dto.getHseLeadId())
                 .alarmZoneScope(dto.getAlarmZoneScope())
                 .mineId(dto.getMineId())
+                // Cloisonnement multi-tenant : companyId aligne sur mineId si le
+                // controller ne l'a pas explicitement fourni (retrocompat).
+                .companyId(dto.getCompanyId() != null ? dto.getCompanyId() : dto.getMineId())
                 .createdAt(now)
                 .createdBy(userId)
                 .updatedAt(now)
@@ -475,7 +478,20 @@ public class BlastServiceImpl implements BlastService {
     @Override
     @Transactional(readOnly = true)
     public List<BlastListItemDTO> search(BlastSearchFiltersDTO filters) {
-        if (filters == null || filters.getMineId() == null) {
+        if (filters == null) {
+            throw new IllegalArgumentException("mineId is required");
+        }
+        // Cloisonnement STRICT : le companyId valide par le CompanyScopeFilter
+        // prime sur le mineId du corps (qui n'est PAS valide par le filtre).
+        // Un utilisateur scope a une mine ne peut donc jamais interroger une
+        // autre mine en falsifiant mineId dans le body. companyId null (appel
+        // systeme / allMines) laisse le mineId demande faire foi.
+        Long effectiveMine = filters.getCompanyId() != null
+                ? filters.getCompanyId() : filters.getMineId();
+        if (effectiveMine != null) {
+            filters.setMineId(effectiveMine);
+        }
+        if (filters.getMineId() == null) {
             throw new IllegalArgumentException("mineId is required");
         }
         List<Blast> blasts;
@@ -505,11 +521,90 @@ public class BlastServiceImpl implements BlastService {
         return toDetailDTO(b);
     }
 
+    // ── Surcharges cloisonnees par mine (companyId) ─────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public BlastDetailDTO getDetail(Long id, Long companyId) {
+        Blast b = loadOrThrow(id);
+        verifyCompany(b, companyId);
+        return toDetailDTO(b);
+    }
+
+    @Override
+    public void update(BlastUpdateDTO dto, Long userId, boolean adminOverride, Long companyId) {
+        if (dto != null && dto.getId() != null) {
+            verifyCompany(loadOrThrow(dto.getId()), companyId);
+        }
+        update(dto, userId, adminOverride);
+    }
+
+    @Override
+    public void confirm(Long id, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        confirm(id, userId);
+    }
+
+    @Override
+    public void cancel(Long id, String reason, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        cancel(id, reason, userId);
+    }
+
+    @Override
+    public void reschedule(Long id, LocalDateTime newScheduledAt, String reason,
+            Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        reschedule(id, newScheduledAt, reason, userId);
+    }
+
+    @Override
+    public void declareFired(Long id, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        declareFired(id, userId);
+    }
+
+    @Override
+    public void declareMisfire(Long id, String reason, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        declareMisfire(id, reason, userId);
+    }
+
+    @Override
+    public void resolveMisfire(Long id, String resolutionNotes, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        resolveMisfire(id, resolutionNotes, userId);
+    }
+
+    @Override
+    public void allClear(Long id, Long userId, Long companyId) {
+        verifyCompany(loadOrThrow(id), companyId);
+        allClear(id, userId);
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private Blast loadOrThrow(Long id) {
         return blastRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Blast not found: " + id));
+    }
+
+    /**
+     * Verifie l'appartenance d'un tir a la mine appelante. {@code companyId}
+     * null (appel systeme / allMines) = pas de controle. Le controle porte sur
+     * {@code mineId} (toujours renseigne, = tenant) avec repli sur
+     * {@code companyId}. En cas de non-appartenance : EntityNotFoundException
+     * (on ne divulgue pas l'existence d'un tir d'une autre mine).
+     */
+    private void verifyCompany(Blast blast, Long companyId) {
+        if (companyId == null || blast == null) {
+            return;
+        }
+        boolean matches = companyId.equals(blast.getMineId())
+                || companyId.equals(blast.getCompanyId());
+        if (!matches) {
+            throw new EntityNotFoundException("Blast not found: " + blast.getId());
+        }
     }
 
     /**
@@ -736,6 +831,7 @@ public class BlastServiceImpl implements BlastService {
                 .blasterId(b.getBlasterId())
                 .hseLeadId(b.getHseLeadId())
                 .mineId(b.getMineId())
+                .companyId(b.getCompanyId())
                 .build();
     }
 
@@ -765,6 +861,7 @@ public class BlastServiceImpl implements BlastService {
                 .hseLeadId(b.getHseLeadId())
                 .alarmZoneScope(b.getAlarmZoneScope())
                 .mineId(b.getMineId())
+                .companyId(b.getCompanyId())
                 .misfireResolvedAt(b.getMisfireResolvedAt())
                 .misfireResolutionNotes(b.getMisfireResolutionNotes())
                 .version(b.getVersion())

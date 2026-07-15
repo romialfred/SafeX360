@@ -57,47 +57,51 @@ public class HsActivityServiceImpl implements HsActivityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#hsActivityDTO.id"),
-            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#hsActivityDTO.id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
     })
-    public void updateActivity(HsActivityDTO hsActivityDTO) throws HSException {
+    public void updateActivity(HsActivityDTO hsActivityDTO, Long companyId) throws HSException {
         hsActivityRepository.findById(hsActivityDTO.getId())
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
+        verifyCompany(hsActivityDTO.getId(), companyId);
         hsActivityDTO.setUpdatedAt(LocalDateTime.now());
         hsActivityRepository.save(hsActivityDTO.toEntity());
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#id"),
-            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#id"),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, allEntries = true),
+            @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true),
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_HISTORY_BY_ACTIVITY, key = "#id")
     })
-    public void deleteActivity(Long id) throws HSException {
+    public void deleteActivity(Long id, Long companyId) throws HSException {
+        verifyCompany(id, companyId);
         hsActivityRepository.deleteById(id);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL)
-    public List<HsActivityResponse> getAllActivities() throws HSException {
-        return hsActivityRepository.findAllActivities();
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITIES_ALL, key = "#companyId")
+    public List<HsActivityResponse> getAllActivities(Long companyId) throws HSException {
+        return hsActivityRepository.findAllActivities(companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#id")
-    public HsActivityResponse getActivityInfo(Long id) throws HSException {
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_INFO, key = "#id + '-' + #companyId")
+    public HsActivityResponse getActivityInfo(Long id, Long companyId) throws HSException {
+        verifyCompany(id, companyId);
         return hsActivityRepository.findActivityInfo(id).orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#id")
-    public HsActivityDetails getActivityDetails(Long id) throws HSException {
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_DETAILS, key = "#id + '-' + #companyId")
+    public HsActivityDetails getActivityDetails(Long id, Long companyId) throws HSException {
+        verifyCompany(id, companyId);
         ActivityDetails activity = hsActivityRepository.findActivityDetailsById(id)
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
         HsActivityDetails activityDetails = activity.toDetails();
@@ -122,15 +126,15 @@ public class HsActivityServiceImpl implements HsActivityService {
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS)
-    public List<HsActivityResponse> getAllMeetings() throws HSException {
-        return hsActivityRepository.findAllMeetings(ActivityType.HSM);
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_MEETINGS, key = "#companyId")
+    public List<HsActivityResponse> getAllMeetings(Long companyId) throws HSException {
+        return hsActivityRepository.findAllMeetings(ActivityType.HSM, companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS)
-    public List<HsActivityResponse> getAllTours() throws HSException {
-        return hsActivityRepository.findAllTours(ActivityType.ST);
+    @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, key = "#companyId")
+    public List<HsActivityResponse> getAllTours(Long companyId) throws HSException {
+        return hsActivityRepository.findAllTours(ActivityType.ST, companyId);
     }
 
     @Override
@@ -146,6 +150,23 @@ public class HsActivityServiceImpl implements HsActivityService {
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
         activity.setStatus(status);
         hsActivityRepository.save(activity);
+    }
+
+    /**
+     * Verifie l'appartenance d'une HsActivity a la mine appelante, via l'activite
+     * parente. companyId null = pas de controle. Activite globale (companyId
+     * parent null) = accessible a toutes les mines (repli). Non-appartenance :
+     * ACTIVITY_NOT_FOUND.
+     */
+    private void verifyCompany(Long hsActivityId, Long companyId) throws HSException {
+        if (companyId == null || hsActivityId == null) {
+            return;
+        }
+        Long parentCompanyId = hsActivityRepository.findParentCompanyId(hsActivityId)
+                .orElse(null);
+        if (parentCompanyId != null && !companyId.equals(parentCompanyId)) {
+            throw new HSException("ACTIVITY_NOT_FOUND");
+        }
     }
 
 }

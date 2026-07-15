@@ -24,11 +24,12 @@ public class PpeStockDTO {
     private LocalDate expiryDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public PpeStock toEntity() {
         return new PpeStock(id, new Ppe(ppeId), quantity, unitPrice, supplier, brand, model, size, expiryDate,
                 createdAt,
-                updatedAt);
+                updatedAt, companyId);
     }
 
 }

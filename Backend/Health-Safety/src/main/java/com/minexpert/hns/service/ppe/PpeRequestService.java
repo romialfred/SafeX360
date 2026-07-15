@@ -8,15 +8,15 @@ import java.util.List;
 public interface PpeRequestService {
     PpeRequestDTO create(PpeRequestDTO dto) throws HSException;
 
-    PpeRequestDTO update(PpeRequestDTO dto) throws HSException;
+    PpeRequestDTO update(PpeRequestDTO dto, Long companyId) throws HSException;
 
-    PpeRequestDTO approveRequest(Long id, String comment) throws HSException;
+    PpeRequestDTO approveRequest(Long id, String comment, Long companyId) throws HSException;
 
-    PpeRequestDTO rejectRequest(Long id, String comment) throws HSException;
+    PpeRequestDTO rejectRequest(Long id, String comment, Long companyId) throws HSException;
 
-    PpeRequestDTO deliverRequest(Long id, String comment) throws HSException;
+    PpeRequestDTO deliverRequest(Long id, String comment, Long companyId) throws HSException;
 
-    PpeRequestDTO getById(Long id) throws HSException;
+    PpeRequestDTO getById(Long id, Long companyId) throws HSException;
 
-    List<PpeRequestDTO> getAllRequests() throws HSException;
+    List<PpeRequestDTO> getAllRequests(Long companyId) throws HSException;
 }

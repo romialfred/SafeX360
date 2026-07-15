@@ -38,9 +38,12 @@ public class InspectionReport {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Mine propriétaire (cloisonnement). Renseigné à la création depuis la requête. */
+    private Long companyId;
 
     public InspectionReportDTO toDTO() {
         return new InspectionReportDTO(id, reportedId, reportDate, description, null,
-                generalInspection != null ? generalInspection.getId() : null, createdAt, updatedAt);
+                generalInspection != null ? generalInspection.getId() : null, createdAt, updatedAt,
+                companyId);
     }
 }

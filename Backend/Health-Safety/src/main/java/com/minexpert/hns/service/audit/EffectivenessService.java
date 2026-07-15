@@ -22,8 +22,8 @@ public interface EffectivenessService {
      */
     void concludeCheck(Long checkId, String verdict, String comment) throws HSException;
 
-    /** Vérifications planifiées sans verdict, triées par échéance. */
-    List<EffectivenessCheckDTO> getPendingChecks() throws HSException;
+    /** Vérifications planifiées sans verdict, triées par échéance (cloisonné par mine). */
+    List<EffectivenessCheckDTO> getPendingChecks(Long companyId) throws HSException;
 
     /** Vérifications liées à une recommandation. */
     List<EffectivenessCheckDTO> getChecksByRecommendation(Long recommendationId) throws HSException;

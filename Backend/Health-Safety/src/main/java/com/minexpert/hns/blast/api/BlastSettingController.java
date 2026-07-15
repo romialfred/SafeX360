@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.blast.config.BlastRBACConfig;
@@ -33,14 +34,24 @@ public class BlastSettingController {
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/by-mine/{mineId}")
-    public ResponseEntity<BlastSettingDTO> getByMine(@PathVariable Long mineId) {
-        return new ResponseEntity<>(service.getByMineId(mineId), HttpStatus.OK);
+    public ResponseEntity<BlastSettingDTO> getByMine(@PathVariable Long mineId,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        // Le companyId valide prime sur le mineId du path (non valide par le
+        // filtre) : empeche la lecture des parametres d'une autre mine.
+        Long effectiveMine = companyId != null ? companyId : mineId;
+        return new ResponseEntity<>(service.getByMineId(effectiveMine), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_ADMIN + "')")
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> update(@Valid @RequestBody BlastSettingDTO dto,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        // Force le mineId cible sur la mine appelante validee : empeche la
+        // modification des parametres d'une autre mine via un mineId falsifie.
+        if (companyId != null) {
+            dto.setMineId(companyId);
+        }
         service.update(dto, userId);
         return new ResponseEntity<>(new ResponseDTO("Blast setting updated"), HttpStatus.OK);
     }

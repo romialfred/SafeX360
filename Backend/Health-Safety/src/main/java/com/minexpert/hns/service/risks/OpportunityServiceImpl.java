@@ -26,24 +26,26 @@ public class OpportunityServiceImpl implements OpportunityService {
     }
 
     @Override
-    public List<OpportunityDTO> list() throws HSException {
-        return opportunityRepository.findAllByOrderByCreatedAtDesc()
+    public List<OpportunityDTO> list(Long companyId) throws HSException {
+        return opportunityRepository.findAllByCompanyOrderByCreatedAtDesc(companyId)
                 .stream()
                 .map(Opportunity::toDTO)
                 .toList();
     }
 
     @Override
-    public OpportunityDTO getById(Long id) throws HSException {
+    public OpportunityDTO getById(Long id, Long companyId) throws HSException {
         Opportunity opportunity = opportunityRepository.findById(id)
                 .orElseThrow(() -> new HSException("OPPORTUNITY_NOT_FOUND"));
+        assertSameCompany(companyId, opportunity.getCompanyId());
         return opportunity.toDTO();
     }
 
     @Override
-    public OpportunityDTO update(OpportunityDTO dto) throws HSException {
+    public OpportunityDTO update(OpportunityDTO dto, Long companyId) throws HSException {
         Opportunity existing = opportunityRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("OPPORTUNITY_NOT_FOUND"));
+        assertSameCompany(companyId, existing.getCompanyId());
         existing.setTitle(dto.getTitle());
         existing.setDescription(dto.getDescription());
         existing.setCategory(dto.getCategory());
@@ -57,13 +59,24 @@ public class OpportunityServiceImpl implements OpportunityService {
     }
 
     @Override
-    public OpportunityDTO updateStatus(Long id, String status) throws HSException {
+    public OpportunityDTO updateStatus(Long id, String status, Long companyId) throws HSException {
         Opportunity opportunity = opportunityRepository.findById(id)
                 .orElseThrow(() -> new HSException("OPPORTUNITY_NOT_FOUND"));
+        assertSameCompany(companyId, opportunity.getCompanyId());
         assertOpportunityStatus(status);
         opportunity.setStatus(status);
         Opportunity updated = opportunityRepository.save(opportunity);
         return updated.toDTO();
+    }
+
+    /**
+     * Cloisonnement par mine : companyId fourni => l'entité doit lui appartenir.
+     * companyId null = appel système / toutes mines.
+     */
+    private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+        if (companyId != null && !companyId.equals(entityCompanyId)) {
+            throw new HSException("OPPORTUNITY_NOT_FOUND");
+        }
     }
 
     private static final Set<String> VALID_OPPORTUNITY_STATUSES = Set.of(
@@ -76,9 +89,10 @@ public class OpportunityServiceImpl implements OpportunityService {
     }
 
     @Override
-    public void delete(Long id) throws HSException {
+    public void delete(Long id, Long companyId) throws HSException {
         Opportunity existing = opportunityRepository.findById(id)
                 .orElseThrow(() -> new HSException("OPPORTUNITY_NOT_FOUND"));
+        assertSameCompany(companyId, existing.getCompanyId());
         opportunityRepository.delete(existing);
     }
 }

@@ -37,6 +37,7 @@ public class GeneralInspectionDTO {
     private InspectionStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public GeneralInspection toEntity() {
         // Refonte 2026-06 : la nouvelle entite GeneralInspection a plus de
@@ -58,6 +59,7 @@ public class GeneralInspectionDTO {
         entity.setStatus(this.status);
         entity.setCreatedAt(this.createdAt);
         entity.setUpdatedAt(this.updatedAt);
+        entity.setCompanyId(this.companyId);
         return entity;
     }
 

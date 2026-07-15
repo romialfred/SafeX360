@@ -50,6 +50,9 @@ public class EffectivenessCheck {
     private LocalDateTime checkedAt;
     private LocalDateTime createdAt;
 
+    /** Cloisonnement par mine : hérité de la recommandation / de l'audit de rattachement. */
+    private Long companyId;
+
     public EffectivenessCheck(Long id) {
         this.id = id;
     }
@@ -57,6 +60,6 @@ public class EffectivenessCheck {
     public EffectivenessCheckDTO toDTO() {
         return new EffectivenessCheckDTO(id,
                 recommendation != null ? recommendation.getId() : null,
-                null, dueDate, evaluatorEmployeeId, verdict, comment, checkedAt, createdAt);
+                null, dueDate, evaluatorEmployeeId, verdict, comment, checkedAt, createdAt, companyId);
     }
 }

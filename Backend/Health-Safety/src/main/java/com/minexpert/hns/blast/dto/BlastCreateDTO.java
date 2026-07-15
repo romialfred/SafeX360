@@ -71,6 +71,9 @@ public class BlastCreateDTO {
     @NotNull
     private Long mineId;
 
+    /** Cloisonnement par mine (injecte par le controller depuis le param valide). */
+    private Long companyId;
+
     private BlastPlanDTO plan;
     private List<BlastGuardDTO> guards;
     private List<BlastRecipientDTO> recipients;

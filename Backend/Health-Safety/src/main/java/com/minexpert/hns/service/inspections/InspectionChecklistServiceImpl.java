@@ -94,10 +94,10 @@ public class InspectionChecklistServiceImpl implements InspectionChecklistServic
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionChecklistsByInspection", key = "#inspectionId")
-    public List<InspectionChecklistDTO> getChecklistsByInspectionId(Long inspectionId) {
+    @Cacheable(cacheNames = "inspectionChecklistsByInspection", key = "#inspectionId + '-' + #companyId")
+    public List<InspectionChecklistDTO> getChecklistsByInspectionId(Long inspectionId, Long companyId) {
         List<InspectionChecklistDTO> checklists = ((List<InspectionChecklist>) inspectionChecklistRepository
-                .findByGeneralInspection_Id(inspectionId)).stream().map(x -> {
+                .findByInspectionAndCompany(inspectionId, companyId)).stream().map(x -> {
                     InspectionChecklistDTO checklistDTO = x.toDTO();
                     checklistDTO.setDocs(mediaService.getAllMediaByArray(x.getDocs()));
                     return checklistDTO;

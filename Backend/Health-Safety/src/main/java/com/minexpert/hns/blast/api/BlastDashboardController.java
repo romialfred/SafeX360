@@ -41,7 +41,12 @@ public class BlastDashboardController {
      */
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/summary")
-    public ResponseEntity<BlastDashboardDTO> summary(@RequestParam("mineId") Long mineId) {
-        return new ResponseEntity<>(service.getSummary(mineId), HttpStatus.OK);
+    public ResponseEntity<BlastDashboardDTO> summary(@RequestParam("mineId") Long mineId,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        // Cloisonnement : le companyId valide par le CompanyScopeFilter prime sur
+        // le mineId (non valide par le filtre). Un utilisateur scope ne peut pas
+        // consulter le tableau de bord d'une autre mine.
+        Long effectiveMine = companyId != null ? companyId : mineId;
+        return new ResponseEntity<>(service.getSummary(effectiveMine), HttpStatus.OK);
     }
 }

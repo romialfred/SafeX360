@@ -25,10 +25,12 @@ public class InspectionChecklistDTO {
     private Long generalInspectionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public InspectionChecklist toEntity() {
         return new InspectionChecklist(this.id, new CheckList(this.checkListId), this.nonConformityLevel,
                 this.observation, null, this.status,
-                new GeneralInspection(this.generalInspectionId), this.createdAt, this.updatedAt);
+                new GeneralInspection(this.generalInspectionId), this.createdAt, this.updatedAt,
+                this.companyId);
     }
 }

@@ -34,12 +34,15 @@ public class Area {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Area(Long id) {
         this.id = id;
     }
 
     public AreaDTO toDTO() {
         return new AreaDTO(id, audit != null ? audit.getId() : null, auditArea != null ? auditArea.getId() : null,
-                purpose, createdAt, updatedAt);
+                purpose, createdAt, updatedAt, companyId);
     }
 }

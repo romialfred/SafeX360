@@ -25,4 +25,7 @@ public class EffectivenessCheckDTO {
     private String comment;
     private LocalDateTime checkedAt;
     private LocalDateTime createdAt;
+
+    /** Cloisonnement par mine : hérité de la recommandation / de l'audit de rattachement. */
+    private Long companyId;
 }

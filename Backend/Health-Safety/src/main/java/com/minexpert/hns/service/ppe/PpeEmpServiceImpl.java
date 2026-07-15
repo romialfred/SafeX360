@@ -56,51 +56,62 @@ public class PpeEmpServiceImpl implements PpeEmpService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeEmpById", key = "#dto.id", condition = "#dto.id != null"),
+            @CacheEvict(cacheNames = "ppeEmpById", allEntries = true),
             @CacheEvict(cacheNames = "ppeEmpByEmp", allEntries = true),
             @CacheEvict(cacheNames = "ppeEmpByPpe", allEntries = true),
             @CacheEvict(cacheNames = "ppeEmpByStatus", allEntries = true),
             @CacheEvict(cacheNames = "ppeEmpAssignedCount", allEntries = true),
             @CacheEvict(cacheNames = "ppeEmpAssignmentCounts", allEntries = true)
     })
-    public PpeEmpDTO update(PpeEmpDTO dto) throws HSException {
+    public PpeEmpDTO update(PpeEmpDTO dto, Long companyId) throws HSException {
         PpeEmp existing = empRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("EMPLOYEE_PPE_NOT_FOUND"));
+        // Vérification d'appartenance à la mine (companyId null = appel système).
+        if (companyId != null && !companyId.equals(existing.getCompanyId())) {
+            throw new HSException("EMPLOYEE_PPE_NOT_FOUND");
+        }
         PpeEmp updated = dto.toEntity();
         updated.setId(existing.getId());
+        // Conserver le companyId d'origine si non fourni dans le DTO.
+        if (updated.getCompanyId() == null) {
+            updated.setCompanyId(existing.getCompanyId());
+        }
         PpeEmp saved = empRepository.save(updated);
         return saved.toDTO();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpById", key = "#id")
-    public PpeEmpDTO getById(Long id) throws HSException {
+    @Cacheable(cacheNames = "ppeEmpById", key = "#id + '-' + #companyId")
+    public PpeEmpDTO getById(Long id, Long companyId) throws HSException {
         PpeEmp e = empRepository.findById(id)
                 .orElseThrow(() -> new HSException("EMPLOYEE_PPE_NOT_FOUND"));
+        if (companyId != null && !companyId.equals(e.getCompanyId())) {
+            throw new HSException("EMPLOYEE_PPE_NOT_FOUND");
+        }
         return e.toDTO();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpByEmp", key = "#empId")
-    public List<PpeEmpDTO> getByEmpId(Long empId) throws HSException {
-        return empRepository.findByEmpId(empId)
+    @Cacheable(cacheNames = "ppeEmpByEmp", key = "#empId + '-' + #companyId")
+    public List<PpeEmpDTO> getByEmpId(Long empId, Long companyId) throws HSException {
+        return empRepository.findByEmpIdAndCompany(empId, companyId)
                 .stream().map(PpeEmp::toDTO)
                 .toList();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpByPpe", key = "#ppeId")
-    public List<PpeEmpDTO> getByPpeId(Long ppeId) throws HSException {
-        return empRepository.findByPpeId(ppeId)
+    @Cacheable(cacheNames = "ppeEmpByPpe", key = "#ppeId + '-' + #companyId")
+    public List<PpeEmpDTO> getByPpeId(Long ppeId, Long companyId) throws HSException {
+        return empRepository.findByPpeIdAndCompany(ppeId, companyId)
                 .stream().map(PpeEmp::toDTO)
                 .toList();
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpByStatus", key = "#status")
-    public List<PpeEmpDTO> getByStatus(String status) throws HSException {
+    @Cacheable(cacheNames = "ppeEmpByStatus", key = "#status + '-' + #companyId")
+    public List<PpeEmpDTO> getByStatus(String status, Long companyId) throws HSException {
         PpeEmpStatus st = PpeEmpStatus.valueOf(status);
-        return empRepository.findByStatus(st)
+        return empRepository.findByStatusAndCompany(st, companyId)
                 .stream().map(PpeEmp::toDTO)
                 .toList();
     }
@@ -140,15 +151,15 @@ public class PpeEmpServiceImpl implements PpeEmpService {
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpAssignedCount", key = "#empId")
-    public long getAssignedCount(Long empId) throws HSException {
-        return empRepository.countByEmpIdAndStatus(empId, PpeEmpStatus.ACTIVE);
+    @Cacheable(cacheNames = "ppeEmpAssignedCount", key = "#empId + '-' + #companyId")
+    public long getAssignedCount(Long empId, Long companyId) throws HSException {
+        return empRepository.countByEmpIdAndStatusAndCompany(empId, PpeEmpStatus.ACTIVE, companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = "ppeEmpAssignmentCounts")
-    public java.util.List<com.minexpert.hns.dto.ppe.EmpPpeCountDTO> getAllEmployeeAssignmentCounts()
+    @Cacheable(cacheNames = "ppeEmpAssignmentCounts", key = "#companyId")
+    public java.util.List<com.minexpert.hns.dto.ppe.EmpPpeCountDTO> getAllEmployeeAssignmentCounts(Long companyId)
             throws HSException {
-        return empRepository.countActiveAssignmentsByEmp(PpeEmpStatus.ACTIVE);
+        return empRepository.countActiveAssignmentsByEmpAndCompany(PpeEmpStatus.ACTIVE, companyId);
     }
 }

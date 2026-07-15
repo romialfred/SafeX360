@@ -36,6 +36,9 @@ public class PpeRequest {
     // Traçabilité de la livraison EPI : horodatage du passage APPROVED -> DELIVERED.
     private LocalDateTime deliveredAt;
 
+    // Cloisonnement par mine (companyId). Alimenté par le CompanyScopeFilter via le controller.
+    private Long companyId;
+
     public PpeRequest(Long id) {
         this.id = id;
     }
@@ -54,6 +57,6 @@ public class PpeRequest {
     public PpeRequestDTO toDTO() {
         return new PpeRequestDTO(id, StringListConverter.convertToLongList(empIds),
                 StringListConverter.convertToLongList(ppeIds), desiredDate, priority, reason, comment,
-                status, createdAt, updatedAt, deliveredAt);
+                status, createdAt, updatedAt, deliveredAt, companyId);
     }
 }

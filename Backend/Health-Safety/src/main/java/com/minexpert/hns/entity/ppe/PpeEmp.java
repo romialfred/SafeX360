@@ -45,6 +45,9 @@ public class PpeEmp {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId). Alimenté par le CompanyScopeFilter via le controller.
+    private Long companyId;
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
@@ -59,6 +62,6 @@ public class PpeEmp {
     /** Convert entity to DTO */
     public PpeEmpDTO toDTO() {
         return new PpeEmpDTO(id, empId, ppe != null ? ppe.getId() : null,
-                ppeRequest != null ? ppeRequest.getId() : null, status, date, createdAt, updatedAt);
+                ppeRequest != null ? ppeRequest.getId() : null, status, date, createdAt, updatedAt, companyId);
     }
 }

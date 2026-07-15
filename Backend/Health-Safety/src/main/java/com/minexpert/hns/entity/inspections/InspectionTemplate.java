@@ -105,6 +105,13 @@ public class InspectionTemplate {
     private Boolean active = Boolean.TRUE;
 
     /**
+     * Mine propriétaire (cloisonnement). Un template est un référentiel propre
+     * à une mine. Renseigné à la création depuis le companyId de la requête.
+     * Nullable pour les données legacy (backfill=1) et les templates partagés.
+     */
+    private Long companyId;
+
+    /**
      * Points de controle ordonnes du template. La cascade ALL permet de
      * persister et supprimer les checkpoints avec le template parent.
      * Le orphanRemoval garantit qu'un checkpoint retire de la liste est

@@ -17,6 +17,7 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
           AND (:ownerId IS NULL OR r.ownerId = :ownerId)
           AND (:fromDt IS NULL OR r.createdAt >= :fromDt)
           AND (:toDt IS NULL OR r.createdAt < :toDt)
+          AND (:companyId IS NULL OR r.companyId = :companyId)
           AND (
                 :q IS NULL OR
                 LOWER(COALESCE(r.title, '')) LIKE CONCAT('%', LOWER(:q), '%') OR
@@ -30,8 +31,14 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
             @Param("ownerId") Long ownerId,
             @Param("fromDt") LocalDateTime fromDt,
             @Param("toDt") LocalDateTime toDt,
-            @Param("q") String q
+            @Param("q") String q,
+            @Param("companyId") Long companyId
     );
 
-    List<Risk> findByRiskLevelIsNotNull();
+    @Query("SELECT r FROM Risk r WHERE (:companyId IS NULL OR r.companyId = :companyId)")
+    List<Risk> findAllByCompany(@Param("companyId") Long companyId);
+
+    @Query("SELECT r FROM Risk r WHERE r.riskLevel IS NOT NULL "
+            + "AND (:companyId IS NULL OR r.companyId = :companyId)")
+    List<Risk> findByRiskLevelIsNotNullAndCompany(@Param("companyId") Long companyId);
 }

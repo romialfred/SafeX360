@@ -8,9 +8,9 @@ import java.util.List;
 public interface RiskControlService {
     RiskControlDTO create(RiskControlDTO dto) throws HSException;
 
-    List<RiskControlDTO> listByRisk(String sourceType, Long riskId) throws HSException;
+    List<RiskControlDTO> listByRisk(String sourceType, Long riskId, Long companyId) throws HSException;
 
-    RiskControlDTO update(RiskControlDTO dto) throws HSException;
+    RiskControlDTO update(RiskControlDTO dto, Long companyId) throws HSException;
 
-    void delete(Long id) throws HSException;
+    void delete(Long id, Long companyId) throws HSException;
 }

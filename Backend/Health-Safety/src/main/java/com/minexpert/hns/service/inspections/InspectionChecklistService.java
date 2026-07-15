@@ -16,5 +16,5 @@ public interface InspectionChecklistService {
 
     List<InspectionChecklistDTO> getAllChecklists() throws HSException;
 
-    List<InspectionChecklistDTO> getChecklistsByInspectionId(Long inspectionId) throws HSException;
+    List<InspectionChecklistDTO> getChecklistsByInspectionId(Long inspectionId, Long companyId) throws HSException;
 }

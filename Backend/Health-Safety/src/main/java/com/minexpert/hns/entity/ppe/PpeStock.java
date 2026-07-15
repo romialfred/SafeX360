@@ -37,9 +37,12 @@ public class PpeStock {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId). Alimenté par le CompanyScopeFilter via le controller.
+    private Long companyId;
+
     public PpeStockDTO toDTO() {
         return new PpeStockDTO(id, ppe != null ? ppe.getId() : null, quantity, unitPrice, supplier, brand, model, size,
                 expiryDate,
-                createdAt, updatedAt);
+                createdAt, updatedAt, companyId);
     }
 }

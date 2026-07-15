@@ -44,10 +44,13 @@ public class ObservationDTO {
     /** LOT 52 — id de la NonConformity centrale créée par escalade (lecture seule). */
     private Long nonConformityId;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Observation toEntity() {
         return new Observation(id, title, date, observedFact, reference, type, severity, new AuditAreas(zoneId),
                 description,
                 null, interviews, new Audit(auditId), createdAt, updatedAt,
-                classification, clause, nonConformityId);
+                classification, clause, nonConformityId, companyId);
     }
 }

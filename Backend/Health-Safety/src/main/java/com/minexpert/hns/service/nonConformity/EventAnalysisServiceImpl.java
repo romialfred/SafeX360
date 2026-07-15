@@ -24,11 +24,12 @@ public class EventAnalysisServiceImpl implements EventAnalysisService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", key = "#eventAnalysisDTO.nonConformityId"),
-            @CacheEvict(cacheNames = "nonConformityById", key = "#eventAnalysisDTO.nonConformityId"),
+            // Clés composites (id_companyId) côté NC -> éviction globale de ces caches.
+            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
             @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
-            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#eventAnalysisDTO.nonConformityId")
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
     public Long createEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException {
 
@@ -41,19 +42,20 @@ public class EventAnalysisServiceImpl implements EventAnalysisService {
     }
 
     @Override
-    @Cacheable(cacheNames = "eventAnalysisByNonConformity", key = "#nonConformityId")
-    public EventAnalysisDTO getEventAnalysisByNonConformityId(Long nonConformityId) throws HSException {
-        return eventAnalysisRepository.findByNonConformityId(nonConformityId)
+    @Cacheable(cacheNames = "eventAnalysisByNonConformity", key = "#nonConformityId + '_' + #companyId")
+    public EventAnalysisDTO getEventAnalysisByNonConformityId(Long nonConformityId, Long companyId) throws HSException {
+        return eventAnalysisRepository.findByNonConformityIdAndCompany(nonConformityId, companyId)
                 .orElseThrow(() -> new HSException("EVENT_ANALYSIS_NOT_FOUND_FOR_NON_CONFORMITY")).toDTO();
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", key = "#eventAnalysisDTO.nonConformityId"),
-            @CacheEvict(cacheNames = "nonConformityById", key = "#eventAnalysisDTO.nonConformityId"),
+            // Clés composites (id_companyId) côté NC -> éviction globale de ces caches.
+            @CacheEvict(cacheNames = "eventAnalysisByNonConformity", allEntries = true),
+            @CacheEvict(cacheNames = "nonConformityById", allEntries = true),
             @CacheEvict(cacheNames = "nonConformitiesAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
-            @CacheEvict(cacheNames = "nonConformityInfoById", key = "#eventAnalysisDTO.nonConformityId")
+            @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
     public void updateEventAnalysis(EventAnalysisDTO eventAnalysisDTO) throws HSException {
         EventAnalysis eventAnalysis = eventAnalysisRepository.findById(eventAnalysisDTO.getId())

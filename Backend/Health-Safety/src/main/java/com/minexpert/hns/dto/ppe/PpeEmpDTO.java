@@ -25,6 +25,7 @@ public class PpeEmpDTO {
     private LocalDate date;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public PpeEmp toEntity() {
         PpeEmp e = new PpeEmp(
@@ -35,7 +36,8 @@ public class PpeEmpDTO {
                 status,
                 date,
                 createdAt,
-                updatedAt);
+                updatedAt,
+                companyId);
         return e;
     }
 

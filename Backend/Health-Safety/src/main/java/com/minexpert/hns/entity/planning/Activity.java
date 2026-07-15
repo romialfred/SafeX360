@@ -30,6 +30,13 @@ public class Activity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /**
+     * Cloisonnement par mine (convention plateforme SafeX). NULLABLE et repli
+     * "null = global" : les activites seedees globalement (companyId null)
+     * restent visibles de toutes les mines (retrocompat dropdown TDM global).
+     */
+    private Long companyId;
+
     public Activity(Long id) {
         this.id = id;
     }
@@ -44,6 +51,7 @@ public class Activity {
                 this.category,
                 this.status,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.companyId);
     }
 }

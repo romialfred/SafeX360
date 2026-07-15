@@ -51,6 +51,10 @@ public class ChemicalRiskAnalysis {
     @Column(name = "residual_risk_level")
     private String residualRiskLevel;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    @Column(name = "company_id")
+    private Long companyId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -81,7 +85,8 @@ public class ChemicalRiskAnalysis {
                 this.residualProbability,
                 this.residualGravity,
                 this.residualSeverity,
-                this.residualRiskLevel);
+                this.residualRiskLevel,
+                this.companyId);
     }
 }
 

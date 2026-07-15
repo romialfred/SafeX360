@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -55,13 +56,21 @@ public class AuditAPI {
     private final AuditorService auditorService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createAudit(@Valid @RequestBody AuditRequest request) throws HSException {
+    public ResponseEntity<Long> createAudit(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody AuditRequest request) throws HSException {
+        // Cloisonnement par mine : le companyId de la mine active (injecté en query par
+        // l'intercepteur Axios) est persisté sur l'audit, sinon l'audit devient INVISIBLE
+        // dans les listes filtrées par mine. Les auditeurs en héritent (voir service).
+        if (companyId != null && request.getAudit() != null) {
+            request.getAudit().setCompanyId(companyId);
+        }
         return new ResponseEntity<>(auditService.createAudit(request), HttpStatus.CREATED);
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<AuditDTO>> getAllAudits() throws HSException {
-        return new ResponseEntity<>(auditService.getAllAudits(), HttpStatus.OK);
+    public ResponseEntity<List<AuditDTO>> getAllAudits(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(auditService.getAllAudits(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAreas/{auditId}")
@@ -70,7 +79,12 @@ public class AuditAPI {
     }
 
     @PostMapping("/execute")
-    public ResponseEntity<ResponseDTO> executeAudit(@Valid @RequestBody ExecuteRequest request) throws HSException {
+    public ResponseEntity<ResponseDTO> executeAudit(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody ExecuteRequest request) throws HSException {
+        // Cloisonnement par mine : les contributeurs héritent du companyId de la mine active.
+        if (companyId != null && request.getContributors() != null) {
+            request.getContributors().forEach(c -> c.setCompanyId(companyId));
+        }
         auditService.executeAudit(request);
         return new ResponseEntity<>(new ResponseDTO("Audit executed successfully"), HttpStatus.OK);
     }
@@ -81,26 +95,35 @@ public class AuditAPI {
     }
 
     @GetMapping("/getAllRecommendations")
-    public ResponseEntity<List<RecommendationDetails>> getRecommendation() throws HSException {
-        return new ResponseEntity<>(recommendationService.getAllRecommendationDetails(), HttpStatus.OK);
+    public ResponseEntity<List<RecommendationDetails>> getAllRecommendations(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(recommendationService.getAllRecommendationDetails(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getPendingRecommendations")
-    public ResponseEntity<List<RecommendationDetails>> getPendingRecommendations() throws HSException {
+    public ResponseEntity<List<RecommendationDetails>> getPendingRecommendations(
+            @RequestParam(required = false) Long companyId) throws HSException {
         return new ResponseEntity<>(
-                recommendationService.getRecommendationDetailsByStatus(RecommendationStatus.PENDING), HttpStatus.OK);
+                recommendationService.getRecommendationDetailsByStatus(RecommendationStatus.PENDING, companyId),
+                HttpStatus.OK);
     }
 
     @GetMapping("/getInProgressRecommendations")
-    public ResponseEntity<List<RecommendationDetails>> getInProgressRecommendations() throws HSException {
+    public ResponseEntity<List<RecommendationDetails>> getInProgressRecommendations(
+            @RequestParam(required = false) Long companyId) throws HSException {
         return new ResponseEntity<>(
-                recommendationService.getRecommendationDetailsByStatus(RecommendationStatus.IN_PROGRESS),
+                recommendationService.getRecommendationDetailsByStatus(RecommendationStatus.IN_PROGRESS, companyId),
                 HttpStatus.OK);
     }
 
     @PostMapping("/createRecommendation")
-    public ResponseEntity<Long> createRecommendation(@Valid @RequestBody RecommendationDTO recommendationDTO)
+    public ResponseEntity<Long> createRecommendation(@RequestParam(required = false) Long companyId,
+            @Valid @RequestBody RecommendationDTO recommendationDTO)
             throws HSException {
+        // Cloisonnement par mine : la recommandation hérite du companyId de la mine active.
+        if (companyId != null) {
+            recommendationDTO.setCompanyId(companyId);
+        }
         Long recommendationId = recommendationService.createRecommendation(recommendationDTO);
         return new ResponseEntity<>(recommendationId, HttpStatus.CREATED);
     }
@@ -146,8 +169,9 @@ public class AuditAPI {
     }
 
     @GetMapping("/getPlanningAudits")
-    public ResponseEntity<List<AuditDTO>> getAllPlanningAudits() throws HSException {
-        return new ResponseEntity<>(auditService.getAllPlanningAudits(), HttpStatus.OK);
+    public ResponseEntity<List<AuditDTO>> getAllPlanningAudits(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(auditService.getAllPlanningAudits(companyId), HttpStatus.OK);
     }
 
     @PutMapping("/approvePlanning/{id}")
@@ -169,14 +193,15 @@ public class AuditAPI {
     }
 
     @GetMapping("/getLeadAuditorsForPlanning")
-    public ResponseEntity<List<AuditorDTO>> getLeadAuditorsForPlanning()
-            throws HSException {
-        return new ResponseEntity<>(auditorService.getLeadAuditorsForPlanning(), HttpStatus.OK);
+    public ResponseEntity<List<AuditorDTO>> getLeadAuditorsForPlanning(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(auditorService.getLeadAuditorsForPlanning(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getLeadAuditors")
-    public ResponseEntity<List<AuditorDTO>> getLeadAuditors() throws HSException {
-        return new ResponseEntity<>(auditorService.getLeadAuditors(), HttpStatus.OK);
+    public ResponseEntity<List<AuditorDTO>> getLeadAuditors(@RequestParam(required = false) Long companyId)
+            throws HSException {
+        return new ResponseEntity<>(auditorService.getLeadAuditors(companyId), HttpStatus.OK);
     }
 
     @PutMapping("/update")

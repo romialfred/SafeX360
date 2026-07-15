@@ -108,17 +108,19 @@ public class AuditorServiceImpl implements AuditorService {
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.LEAD_AUDITORS_PLANNING)
-    public List<AuditorDTO> getLeadAuditorsForPlanning() throws HSException {
-        return ((List<Auditor>) auditorRepository.findLeadAuditorsForPlanning()).stream()
+    @Cacheable(cacheNames = AuditCacheNames.LEAD_AUDITORS_PLANNING, key = "#companyId != null ? #companyId : -1")
+    public List<AuditorDTO> getLeadAuditorsForPlanning(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return ((List<Auditor>) auditorRepository.findLeadAuditorsForPlanning(companyId)).stream()
                 .map(Auditor::toDTO)
                 .toList();
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.LEAD_AUDITORS)
-    public List<AuditorDTO> getLeadAuditors() throws HSException {
-        return ((List<Auditor>) auditorRepository.findLeadAuditors()).stream()
+    @Cacheable(cacheNames = AuditCacheNames.LEAD_AUDITORS, key = "#companyId != null ? #companyId : -1")
+    public List<AuditorDTO> getLeadAuditors(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return ((List<Auditor>) auditorRepository.findLeadAuditors(companyId)).stream()
                 .map(Auditor::toDTO)
                 .toList();
     }

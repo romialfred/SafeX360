@@ -84,16 +84,19 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.RECOMMENDATION_DETAILS_ALL)
-    public List<RecommendationDetails> getAllRecommendationDetails() throws HSException {
-        return recommendationRepository.findAllRecommendationDetails();
+    @Cacheable(cacheNames = AuditCacheNames.RECOMMENDATION_DETAILS_ALL,
+            key = "#companyId != null ? #companyId : -1")
+    public List<RecommendationDetails> getAllRecommendationDetails(Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        return recommendationRepository.findAllRecommendationDetails(companyId);
     }
 
     @Override
-    @Cacheable(cacheNames = AuditCacheNames.RECOMMENDATION_DETAILS_BY_STATUS, key = "#status")
-    public List<RecommendationDetails> getRecommendationDetailsByStatus(RecommendationStatus status)
+    @Cacheable(cacheNames = AuditCacheNames.RECOMMENDATION_DETAILS_BY_STATUS,
+            key = "#status + '_' + (#companyId != null ? #companyId : -1)")
+    public List<RecommendationDetails> getRecommendationDetailsByStatus(RecommendationStatus status, Long companyId)
             throws HSException {
-        return recommendationRepository.findRecommendationDetailsByStatus(status);
+        return recommendationRepository.findRecommendationDetailsByStatus(status, companyId);
     }
 
 }

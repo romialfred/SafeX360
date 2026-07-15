@@ -17,4 +17,6 @@ public class ProcessDTO {
     private InspectionInterviewsDTO interviews;
     private InspectionStatus status;
     private Long inspectionId;
+    /** Mine active (cloisonnement). Propagée aux sous-DTO (checklists/mesures/interview). */
+    private Long companyId;
 }

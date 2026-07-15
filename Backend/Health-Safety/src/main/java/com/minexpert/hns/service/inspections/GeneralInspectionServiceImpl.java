@@ -58,27 +58,40 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
         @Caching(evict = {
                         @CacheEvict(cacheNames = "generalInspectionById", key = "#generalInspectionDTO.id", condition = "#generalInspectionDTO.id != null"),
                         @CacheEvict(cacheNames = "generalInspectionsAll", allEntries = true),
-                        @CacheEvict(cacheNames = "generalInspectionDetails", key = "#generalInspectionDTO.id", condition = "#generalInspectionDTO.id != null"),
-                        @CacheEvict(cacheNames = "inspectionInfoById", key = "#generalInspectionDTO.id", condition = "#generalInspectionDTO.id != null")
+                        // Clés de cache désormais suffixées par companyId : purge globale sur mutation.
+                        @CacheEvict(cacheNames = "generalInspectionDetails", allEntries = true),
+                        @CacheEvict(cacheNames = "inspectionInfoById", allEntries = true)
         })
-        public void updateGeneralInspection(GeneralInspectionDTO generalInspectionDTO) throws HSException {
-                generalInspectionRepository.findById(generalInspectionDTO.getId())
+        public void updateGeneralInspection(GeneralInspectionDTO generalInspectionDTO, Long companyId) throws HSException {
+                GeneralInspection existing = generalInspectionRepository.findById(generalInspectionDTO.getId())
                                 .orElseThrow(() -> new HSException("GENERAL_INSPECTION_NOT_FOUND"));
+                // Cloisonnement : ne pas modifier une inspection d'une autre mine.
+                if (companyId != null && !companyId.equals(existing.getCompanyId())) {
+                        throw new HSException("GENERAL_INSPECTION_NOT_FOUND");
+                }
+                // Conserver la mine d'origine si la requête n'en fournit pas une.
+                if (generalInspectionDTO.getCompanyId() == null) {
+                        generalInspectionDTO.setCompanyId(existing.getCompanyId());
+                }
                 generalInspectionDTO.setUpdatedAt(LocalDateTime.now());
                 generalInspectionRepository.save(generalInspectionDTO.toEntity());
         }
 
         @Override
-        @Cacheable(cacheNames = "generalInspectionsAll")
-        public List<GeneralInspectionResponse> getAllInspections() throws HSException {
-                return generalInspectionRepository.findAllInspections();
+        @Cacheable(cacheNames = "generalInspectionsAll", key = "#companyId")
+        public List<GeneralInspectionResponse> getAllInspections(Long companyId) throws HSException {
+                return generalInspectionRepository.findAllInspections(companyId);
         }
 
         @Override
-        @Cacheable(cacheNames = "generalInspectionDetails", key = "#id")
-        public GeneralInspectionDetails getInspectionDetailsById(Long id) throws HSException {
+        @Cacheable(cacheNames = "generalInspectionDetails", key = "#id + '-' + #companyId")
+        public GeneralInspectionDetails getInspectionDetailsById(Long id, Long companyId) throws HSException {
                 GeneralInspection inspection = generalInspectionRepository.findById(id)
                                 .orElseThrow(() -> new HSException("GENERAL_INSPECTION_NOT_FOUND"));
+                // Cloisonnement : ne pas divulguer une inspection d'une autre mine.
+                if (companyId != null && !companyId.equals(inspection.getCompanyId())) {
+                        throw new HSException("GENERAL_INSPECTION_NOT_FOUND");
+                }
                 GeneralInspectionDetails details = inspection.toDetails();
                 List<ParticipantResponse> participants = inspection.getParticipants() != null
                                 ? StringListConverter.convertStringToParticipants(inspection.getParticipants())
@@ -104,8 +117,8 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
         @Caching(evict = {
                         @CacheEvict(cacheNames = "generalInspectionById", key = "#id"),
                         @CacheEvict(cacheNames = "generalInspectionsAll", allEntries = true),
-                        @CacheEvict(cacheNames = "generalInspectionDetails", key = "#id"),
-                        @CacheEvict(cacheNames = "inspectionInfoById", key = "#id")
+                        @CacheEvict(cacheNames = "generalInspectionDetails", allEntries = true),
+                        @CacheEvict(cacheNames = "inspectionInfoById", allEntries = true)
         })
         public void updateInspectionStatus(Long id, InspectionStatus status) throws HSException {
                 GeneralInspection inspection = generalInspectionRepository.findById(id)
@@ -117,9 +130,11 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
         }
 
         @Override
-        @Cacheable(cacheNames = "inspectionInfoById", key = "#id")
-        public InspectionInfo getInspectionInfoById(Long id) throws HSException {
-                return generalInspectionRepository.findInspectionInfo(id)
+        @Cacheable(cacheNames = "inspectionInfoById", key = "#id + '-' + #companyId")
+        public InspectionInfo getInspectionInfoById(Long id, Long companyId) throws HSException {
+                // Le filtre companyId dans la requête renvoie vide si l'inspection
+                // appartient à une autre mine → NOT_FOUND (pas de divulgation).
+                return generalInspectionRepository.findInspectionInfo(id, companyId)
                                 .orElseThrow(() -> new HSException("GENERAL_INSPECTION_NOT_FOUND"));
         }
 

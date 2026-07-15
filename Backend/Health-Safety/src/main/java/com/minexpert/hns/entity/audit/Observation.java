@@ -65,6 +65,9 @@ public class Observation {
     @Column(name = "non_conformity_id")
     private Long nonConformityId;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Observation(Long id) {
         this.id = id;
     }
@@ -73,7 +76,7 @@ public class Observation {
         return new ObservationDTO(id, title, date, observedFact, reference, type, severity,
                 zone != null ? zone.getId() : null,
                 description, null, interviews, audit != null ? audit.getId() : null, createdAt, updatedAt,
-                classification, clause, nonConformityId);
+                classification, clause, nonConformityId, companyId);
     }
 
 }

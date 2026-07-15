@@ -25,9 +25,12 @@ public class LessonLearnedDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine (companyId). */
+    private Long companyId;
+
     public LessonLearned toEntity() {
         return new LessonLearned(id, date, employeeId, category, status, description,
                 incidentId != null ? new Incident(incidentId) : null,
-                createdAt, updatedAt, null);
+                createdAt, updatedAt, null, companyId);
     }
 }

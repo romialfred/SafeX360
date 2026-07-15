@@ -44,12 +44,15 @@ public class Meeting {
     @Lob
     private String attendees;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Meeting(Long id) {
         this.id = id;
     }
 
     public MeetingDTO toDTO() {
         return new MeetingDTO(id, date, startTime, endTime, agenda, minutes,
-                audit != null ? audit.getId() : null, createdAt, updatedAt, type, attendees);
+                audit != null ? audit.getId() : null, createdAt, updatedAt, type, attendees, companyId);
     }
 }

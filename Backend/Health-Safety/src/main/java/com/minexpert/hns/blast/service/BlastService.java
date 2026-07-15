@@ -94,4 +94,48 @@ public interface BlastService {
 
     /** Vue detaillee d'un tir. */
     BlastDetailDTO getDetail(Long id);
+
+    // ── Surcharges cloisonnees par mine (companyId) ─────────────────────────
+    // Le param companyId (valide par CompanyScopeFilter) verifie l'appartenance
+    // du tir a la mine appelante avant toute mutation. companyId null = pas de
+    // controle (appel systeme / allMines). Les surcharges historiques (sans
+    // companyId) restent en place pour la retrocompat (schedulers, tests).
+
+    /** Vue detaillee avec verification d'appartenance a la mine. */
+    default BlastDetailDTO getDetail(Long id, Long companyId) {
+        return getDetail(id);
+    }
+
+    default void update(BlastUpdateDTO dto, Long userId, boolean adminOverride, Long companyId) {
+        update(dto, userId, adminOverride);
+    }
+
+    default void confirm(Long id, Long userId, Long companyId) {
+        confirm(id, userId);
+    }
+
+    default void cancel(Long id, String reason, Long userId, Long companyId) {
+        cancel(id, reason, userId);
+    }
+
+    default void reschedule(Long id, LocalDateTime newScheduledAt, String reason,
+            Long userId, Long companyId) {
+        reschedule(id, newScheduledAt, reason, userId);
+    }
+
+    default void declareFired(Long id, Long userId, Long companyId) {
+        declareFired(id, userId);
+    }
+
+    default void declareMisfire(Long id, String reason, Long userId, Long companyId) {
+        declareMisfire(id, reason, userId);
+    }
+
+    default void resolveMisfire(Long id, String resolutionNotes, Long userId, Long companyId) {
+        resolveMisfire(id, resolutionNotes, userId);
+    }
+
+    default void allClear(Long id, Long userId, Long companyId) {
+        allClear(id, userId);
+    }
 }

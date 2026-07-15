@@ -47,6 +47,9 @@ public class RiskDTO {
     private String legalRequirements;
     private LocalDate nextReviewDate;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    private Long companyId;
+
     public Risk toEntity() {
         return new Risk(
                 this.id,
@@ -67,7 +70,8 @@ public class RiskDTO {
                 this.personsExposed,
                 this.exposureCount,
                 this.legalRequirements,
-                this.nextReviewDate);
+                this.nextReviewDate,
+                this.companyId);
     }
 
 }

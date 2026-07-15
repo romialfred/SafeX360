@@ -55,6 +55,9 @@ public class InspectionTemplateDTO {
 
     private Boolean active = Boolean.TRUE;
 
+    /** Mine propriétaire (cloisonnement). Injecté en query par l'intercepteur Axios. */
+    private Long companyId;
+
     /**
      * Points de controle du template. La liste peut etre vide a la creation
      * et completee par la suite.

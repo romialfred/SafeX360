@@ -37,12 +37,15 @@ public class InspectionChecklist {
     private GeneralInspection generalInspection;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Mine propriétaire (cloisonnement). Renseigné à la création depuis la requête. */
+    private Long companyId;
 
     public InspectionChecklistDTO toDTO() {
         return new InspectionChecklistDTO(this.id, checkList != null ? this.checkList.getId() : null,
                 this.nonConformityLevel,
                 this.observation, null, this.status,
-                generalInspection != null ? this.generalInspection.getId() : null, this.createdAt, this.updatedAt);
+                generalInspection != null ? this.generalInspection.getId() : null, this.createdAt, this.updatedAt,
+                this.companyId);
     }
 
 }

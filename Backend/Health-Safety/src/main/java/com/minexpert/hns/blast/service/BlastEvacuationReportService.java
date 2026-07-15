@@ -89,4 +89,34 @@ public interface BlastEvacuationReportService {
      * @return bytes du PDF (commence par les octets magiques {@code %PDF-})
      */
     byte[] renderPdf(Long reportId, String lang);
+
+    // ── Surcharges cloisonnees par mine (companyId) ─────────────────────────
+    // companyId (valide par CompanyScopeFilter) verifie que le rapport releve
+    // bien de la mine appelante (via blast.mineId). null = pas de controle.
+
+    default List<BlastEvacuationReportDTO> search(Long mineId, Long companyId) {
+        return search(companyId != null ? companyId : mineId);
+    }
+
+    default Optional<BlastEvacuationReportDTO> getByBlastId(Long blastId, Long companyId) {
+        return getByBlastId(blastId);
+    }
+
+    default Optional<BlastEvacuationReportDTO> getById(Long reportId, Long companyId) {
+        return getById(reportId);
+    }
+
+    default BlastEvacuationReportDTO sign(Long reportId, Long signedByUserId,
+            String signatureDataBase64, Long companyId) {
+        return sign(reportId, signedByUserId, signatureDataBase64);
+    }
+
+    default BlastEvacuationReportDTO addIncident(Long reportId, String incidentDescription,
+            Long actorId, Long companyId) {
+        return addIncident(reportId, incidentDescription, actorId);
+    }
+
+    default byte[] renderPdf(Long reportId, String lang, Long companyId) {
+        return renderPdf(reportId, lang);
+    }
 }

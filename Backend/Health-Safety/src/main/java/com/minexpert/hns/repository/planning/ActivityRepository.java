@@ -20,4 +20,20 @@ public interface ActivityRepository extends CrudRepository<Activity, Long> {
     List<Activity> findByYearAndStatusAndCategory(@Param("year") int year, @Param("status") ActivityStatus status,
             @Param("category") ActivityCategory category);
 
+    // ── Cloisonnement par mine (companyId) avec repli "null = global" ───────
+    // Une mine voit ses propres activites ET les activites globales (companyId
+    // null, seedees pour toutes les mines). companyId null (systeme/allMines)
+    // = tout voir.
+
+    @Query("SELECT a FROM Activity a WHERE (:companyId IS NULL "
+            + "OR a.companyId = :companyId OR a.companyId IS NULL)")
+    List<Activity> findAllByCompany(@Param("companyId") Long companyId);
+
+    @Query("SELECT a FROM Activity a WHERE FUNCTION('YEAR', a.month) = :year "
+            + "AND (:status IS NULL OR a.status = :status) "
+            + "AND (:category IS NULL OR a.category = :category) "
+            + "AND (:companyId IS NULL OR a.companyId = :companyId OR a.companyId IS NULL)")
+    List<Activity> findByYearAndStatusAndCategoryAndCompany(@Param("year") int year,
+            @Param("status") ActivityStatus status, @Param("category") ActivityCategory category,
+            @Param("companyId") Long companyId);
 }

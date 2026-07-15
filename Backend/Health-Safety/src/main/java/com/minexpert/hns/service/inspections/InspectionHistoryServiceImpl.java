@@ -28,12 +28,11 @@ public class InspectionHistoryServiceImpl implements InspectionHistoryService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = "inspectionHistoryByInspection", key = "#inspectionHistoryDTO.inspectionId"),
-            // @CacheEvict(cacheNames = "generalInspectionById", key =
-            // "#inspectionHistoryDTO.inspectionId"),
+            // Clés de cache suffixées par companyId : purge globale sur mutation.
+            @CacheEvict(cacheNames = "inspectionHistoryByInspection", allEntries = true),
             @CacheEvict(cacheNames = "generalInspectionsAll", allEntries = true),
-            @CacheEvict(cacheNames = "generalInspectionDetails", key = "#inspectionHistoryDTO.inspectionId"),
-            @CacheEvict(cacheNames = "inspectionInfoById", key = "#inspectionHistoryDTO.inspectionId")
+            @CacheEvict(cacheNames = "generalInspectionDetails", allEntries = true),
+            @CacheEvict(cacheNames = "inspectionInfoById", allEntries = true)
     })
     public Long saveInspectionHistory(InspectionHistoryDTO inspectionHistoryDTO) throws HSException {
         inspectionHistoryDTO.setCreatedAt(LocalDateTime.now());
@@ -43,9 +42,11 @@ public class InspectionHistoryServiceImpl implements InspectionHistoryService {
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionHistoryByInspection", key = "#inspectionId")
-    public List<InspectionHistoryDTO> getInspectionHistoryByInspectionId(Long inspectionId) throws HSException {
-        List<InspectionHistory> histories = inspectionHistoryRepository.findByInspectionId(inspectionId);
+    @Cacheable(cacheNames = "inspectionHistoryByInspection", key = "#inspectionId + '-' + #companyId")
+    public List<InspectionHistoryDTO> getInspectionHistoryByInspectionId(Long inspectionId, Long companyId)
+            throws HSException {
+        List<InspectionHistory> histories = inspectionHistoryRepository
+                .findByInspectionAndCompany(inspectionId, companyId);
         return histories.stream().map(h -> new InspectionHistoryDTO(
                 h.getId(),
                 h.getOwnerId(),
@@ -53,6 +54,7 @@ public class InspectionHistoryServiceImpl implements InspectionHistoryService {
                 h.getStatus(),
                 h.getComment(),
                 h.getInspection() != null ? h.getInspection().getId() : null,
-                h.getCreatedAt())).collect(Collectors.toList());
+                h.getCreatedAt(),
+                h.getCompanyId())).collect(Collectors.toList());
     }
 }

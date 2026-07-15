@@ -26,7 +26,7 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     @Caching(evict = {
             // @CacheEvict(cacheNames = "inspectionMeasurementById", allEntries = true),
             @CacheEvict(cacheNames = "inspectionMeasurementsAll", allEntries = true),
-            @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", key = "#measurementDTO.inspectionId", condition = "#measurementDTO.inspectionId != null")
+            @CacheEvict(cacheNames = "inspectionMeasurementsByInspection", allEntries = true)
     })
     public Long createMeasurement(InspectionMeasurementDTO measurementDTO) throws HSException {
         measurementDTO.setCreatedAt(LocalDateTime.now());
@@ -74,9 +74,11 @@ public class InspectionMeasurementServiceImpl implements InspectionMeasurementSe
     }
 
     @Override
-    @Cacheable(cacheNames = "inspectionMeasurementsByInspection", key = "#inspectionId")
-    public List<InspectionMeasurementDTO> getMeasurementByInspectionId(Long inspectionId) throws HSException {
-        return ((List<InspectionMeasurement>) inspectionMeasurementRepository.findByGeneralInspection_Id(inspectionId))
+    @Cacheable(cacheNames = "inspectionMeasurementsByInspection", key = "#inspectionId + '-' + #companyId")
+    public List<InspectionMeasurementDTO> getMeasurementByInspectionId(Long inspectionId, Long companyId)
+            throws HSException {
+        return ((List<InspectionMeasurement>) inspectionMeasurementRepository
+                .findByInspectionAndCompany(inspectionId, companyId))
                 .stream()
                 .map(InspectionMeasurement::toDTO)
                 .toList();

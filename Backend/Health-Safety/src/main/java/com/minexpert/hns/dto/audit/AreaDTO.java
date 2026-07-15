@@ -21,8 +21,11 @@ public class AreaDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Area toEntity() {
         return new Area(this.id, new Audit(auditId), new AuditAreas(auditAreaId), this.purpose, this.createdAt,
-                this.updatedAt);
+                this.updatedAt, this.companyId);
     }
 }

@@ -16,5 +16,5 @@ public interface InspectionMeasurementService {
 
     List<InspectionMeasurementDTO> getAllMeasurement() throws HSException;
 
-    List<InspectionMeasurementDTO> getMeasurementByInspectionId(Long inspectionId) throws HSException;
+    List<InspectionMeasurementDTO> getMeasurementByInspectionId(Long inspectionId, Long companyId) throws HSException;
 }

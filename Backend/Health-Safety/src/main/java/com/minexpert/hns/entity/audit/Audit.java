@@ -70,6 +70,9 @@ public class Audit {
     /** LOT 52 — score de priorité basé risques calculé lors de la planification. */
     private Integer riskScore;
 
+    /** Cloisonnement par mine : identifiant de la société/mine propriétaire. */
+    private Long companyId;
+
     public Audit(Long id) {
         this.id = id;
     }
@@ -80,7 +83,7 @@ public class Audit {
                 StringListConverter.convertToLongList(processes), scope != null ? scope.getId() : null,
                 StringListConverter.convertToStringList(methods), description, category, auditTypes,
                 StringListConverter.convertToStringList(references),
-                startDate, endDate, status, planningStatus, createdAt, updatedAt, programId, riskScore);
+                startDate, endDate, status, planningStatus, createdAt, updatedAt, programId, riskScore, companyId);
     }
 
     public Audit update(AuditDTO auditDTO) {
@@ -102,6 +105,10 @@ public class Audit {
         }
         if (auditDTO.getRiskScore() != null) {
             this.riskScore = auditDTO.getRiskScore();
+        }
+        // Cloisonnement : ne réécrit le companyId que s'il est fourni (payload legacy préservé).
+        if (auditDTO.getCompanyId() != null) {
+            this.companyId = auditDTO.getCompanyId();
         }
         this.setUpdatedAt(LocalDateTime.now());
         return this;

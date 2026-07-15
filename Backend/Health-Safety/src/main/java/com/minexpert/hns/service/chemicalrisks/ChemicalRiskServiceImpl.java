@@ -29,7 +29,7 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true),
-            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#result.id")
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, allEntries = true)
     })
     public ChemicalRiskDTO create(ChemicalRiskDTO dto) throws HSException {
         requireWorkProcess(dto.getWorkProcessId());
@@ -52,13 +52,14 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#dto.id"),
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true)
     })
-    public ChemicalRiskDTO update(ChemicalRiskDTO dto) throws HSException {
+    public ChemicalRiskDTO update(ChemicalRiskDTO dto, Long companyId) throws HSException {
         requireWorkProcess(dto.getWorkProcessId());
         ChemicalRisk existing = chemicalRiskRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
+        assertSameCompany(companyId, existing.getCompanyId());
         existing.setTitle(dto.getTitle());
         existing.setDescription(dto.getDescription());
         existing.setDepartmentId(dto.getDepartmentId());
@@ -84,16 +85,27 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#id"),
+            @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, allEntries = true)
     })
-    public ChemicalRiskDTO updateStatus(Long id, String status) throws HSException {
+    public ChemicalRiskDTO updateStatus(Long id, String status, Long companyId) throws HSException {
         ChemicalRisk risk = chemicalRiskRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
+        assertSameCompany(companyId, risk.getCompanyId());
         assertChemicalRiskStatus(status);
         risk.setStatus(status);
         chemicalRiskRepository.save(risk);
         return risk.toDTO();
+    }
+
+    /**
+     * Cloisonnement par mine : companyId fourni => l'entité doit lui appartenir.
+     * companyId null = appel système / toutes mines.
+     */
+    private void assertSameCompany(Long companyId, Long entityCompanyId) throws HSException {
+        if (companyId != null && !companyId.equals(entityCompanyId)) {
+            throw new HSException("CHEMICAL_RISK_NOT_FOUND");
+        }
     }
 
     private static final Set<String> VALID_CHEMICAL_RISK_STATUSES = Set.of(
@@ -106,17 +118,18 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
     }
 
     @Override
-    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "#id")
-    public ChemicalRiskDTO getById(Long id) throws HSException {
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, key = "{#id, #companyId}")
+    public ChemicalRiskDTO getById(Long id, Long companyId) throws HSException {
         ChemicalRisk risk = chemicalRiskRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
+        assertSameCompany(companyId, risk.getCompanyId());
         return risk.toDTO();
     }
 
     @Override
-    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL)
-    public List<ChemicalRiskDTO> getAll() throws HSException {
-        return chemicalRiskRepository.findAll()
+    @Cacheable(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_ALL, key = "#companyId")
+    public List<ChemicalRiskDTO> getAll(Long companyId) throws HSException {
+        return chemicalRiskRepository.findAllByCompany(companyId)
                 .stream()
                 .map(ChemicalRisk::toDTO)
                 .toList();

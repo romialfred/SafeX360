@@ -17,5 +17,5 @@ public interface InspectionInterviewService {
 
     List<InspectionInterviewsDTO> getAllInterviews() throws HSException;
 
-    InspectionInterviewsDTO getInterviewsByInspectionId(Long inspectionId) throws HSException;
+    InspectionInterviewsDTO getInterviewsByInspectionId(Long inspectionId, Long companyId) throws HSException;
 }

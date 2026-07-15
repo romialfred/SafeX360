@@ -24,9 +24,11 @@ public class InspectionReportDTO {
     private Long generalInspectionId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long companyId;
 
     public InspectionReport toEntity() {
         return new InspectionReport(id, reportedId, reportDate, description, null,
-                generalInspectionId != null ? new GeneralInspection(generalInspectionId) : null, createdAt, updatedAt);
+                generalInspectionId != null ? new GeneralInspection(generalInspectionId) : null, createdAt, updatedAt,
+                companyId);
     }
 }

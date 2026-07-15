@@ -50,7 +50,11 @@ public class BlastController {
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_PLAN + "')")
     @PostMapping("/create")
     public ResponseEntity<Long> create(@Valid @RequestBody BlastCreateDTO dto,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(service.create(dto, userId), HttpStatus.CREATED);
     }
 
@@ -61,18 +65,20 @@ public class BlastController {
             @Valid @RequestBody BlastUpdateDTO dto,
             @RequestParam(value = "adminOverride", required = false, defaultValue = "false")
             boolean adminOverride,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         // Securise le contrat : l'id du path fait foi.
         dto.setId(id);
-        service.update(dto, userId, adminOverride);
+        service.update(dto, userId, adminOverride, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast updated"), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_CONFIRM + "')")
     @PostMapping("/confirm/{id}")
     public ResponseEntity<ResponseDTO> confirm(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        service.confirm(id, userId);
+        service.confirm(id, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast confirmed"), HttpStatus.OK);
     }
 
@@ -88,9 +94,10 @@ public class BlastController {
     public ResponseEntity<ResponseDTO> cancel(@PathVariable Long id,
             @RequestBody(required = false) BlastCancelRequestDTO body,
             @RequestParam(value = "reason", required = false) String reasonParam,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         String reason = (body != null && body.getReason() != null) ? body.getReason() : reasonParam;
-        service.cancel(id, reason, userId);
+        service.cancel(id, reason, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast cancelled"), HttpStatus.OK);
     }
 
@@ -108,6 +115,7 @@ public class BlastController {
             @RequestBody(required = false) BlastRescheduleRequestDTO body,
             @RequestParam(value = "newScheduledAt", required = false) String newScheduledAtParam,
             @RequestParam(value = "reason", required = false) String reasonParam,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         String newScheduledAt = (body != null && body.getNewScheduledAt() != null)
                 ? body.getNewScheduledAt() : newScheduledAtParam;
@@ -117,15 +125,16 @@ public class BlastController {
             throw new IllegalArgumentException("newScheduledAt is required");
         }
         LocalDateTime parsed = LocalDateTime.parse(newScheduledAt);
-        service.reschedule(id, parsed, reason, userId);
+        service.reschedule(id, parsed, reason, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast rescheduled"), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_CONFIRM + "')")
     @PostMapping("/declare-fired/{id}")
     public ResponseEntity<ResponseDTO> declareFired(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        service.declareFired(id, userId);
+        service.declareFired(id, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast declared fired"), HttpStatus.OK);
     }
 
@@ -138,9 +147,10 @@ public class BlastController {
     public ResponseEntity<ResponseDTO> declareMisfire(@PathVariable Long id,
             @RequestBody(required = false) BlastMisfireRequestDTO body,
             @RequestParam(value = "reason", required = false) String reasonParam,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         String reason = (body != null && body.getReason() != null) ? body.getReason() : reasonParam;
-        service.declareMisfire(id, reason, userId);
+        service.declareMisfire(id, reason, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Misfire declared"), HttpStatus.OK);
     }
 
@@ -156,6 +166,7 @@ public class BlastController {
     public ResponseEntity<ResponseDTO> resolveMisfire(@PathVariable Long id,
             @RequestBody(required = false) BlastResolveMisfireRequestDTO body,
             @RequestParam(value = "reason", required = false) String reasonParam,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         String notes = null;
         if (body != null) {
@@ -168,28 +179,39 @@ public class BlastController {
         if (notes == null) {
             notes = reasonParam;
         }
-        service.resolveMisfire(id, notes, userId);
+        service.resolveMisfire(id, notes, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("Misfire resolved"), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_CONFIRM + "')")
     @PostMapping("/all-clear/{id}")
     public ResponseEntity<ResponseDTO> allClear(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
-        service.allClear(id, userId);
+        service.allClear(id, userId, companyId);
         return new ResponseEntity<>(new ResponseDTO("All clear pronounced"), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @PostMapping("/search")
     public ResponseEntity<List<BlastListItemDTO>> search(
-            @RequestBody BlastSearchFiltersDTO filters) {
+            @RequestBody BlastSearchFiltersDTO filters,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        // Le companyId valide par le CompanyScopeFilter (query param) prime sur
+        // le mineId du corps : empeche l'interrogation d'une autre mine.
+        if (companyId != null) {
+            if (filters == null) {
+                filters = new BlastSearchFiltersDTO();
+            }
+            filters.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(service.search(filters), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/detail/{id}")
-    public ResponseEntity<BlastDetailDTO> detail(@PathVariable Long id) {
-        return new ResponseEntity<>(service.getDetail(id), HttpStatus.OK);
+    public ResponseEntity<BlastDetailDTO> detail(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return new ResponseEntity<>(service.getDetail(id, companyId), HttpStatus.OK);
     }
 }

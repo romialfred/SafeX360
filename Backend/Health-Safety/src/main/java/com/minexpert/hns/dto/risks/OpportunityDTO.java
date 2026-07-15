@@ -24,6 +24,9 @@ public class OpportunityDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    private Long companyId;
+
     public Opportunity toEntity() {
         return new Opportunity(
                 this.id,
@@ -36,6 +39,7 @@ public class OpportunityDTO {
                 this.status,
                 this.targetDate,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.companyId);
     }
 }

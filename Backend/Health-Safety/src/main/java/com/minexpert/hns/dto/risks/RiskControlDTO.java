@@ -23,6 +23,9 @@ public class RiskControlDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    private Long companyId;
+
     public RiskControl toEntity() {
         return new RiskControl(
                 this.id,
@@ -34,6 +37,7 @@ public class RiskControlDTO {
                 this.dueDate,
                 this.status,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.companyId);
     }
 }

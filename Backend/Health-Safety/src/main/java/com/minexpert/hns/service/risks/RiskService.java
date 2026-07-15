@@ -10,19 +10,19 @@ import java.util.List;
 public interface RiskService {
     RiskDTO create(RiskDTO dto) throws HSException;
 
-    public RiskDTO update(RiskDTO dto) throws HSException;
+    public RiskDTO update(RiskDTO dto, Long companyId) throws HSException;
 
-    RiskDTO updateStatus(Long id, String status) throws HSException;
+    RiskDTO updateStatus(Long id, String status, Long companyId) throws HSException;
 
-    RiskDTO getById(Long id) throws HSException;
+    RiskDTO getById(Long id, Long companyId) throws HSException;
 
-    List<RiskDTO> getAll() throws HSException;
+    List<RiskDTO> getAll(Long companyId) throws HSException;
 
-    List<RiskDTO> getAllWithRiskLevel() throws HSException;
+    List<RiskDTO> getAllWithRiskLevel(Long companyId) throws HSException;
 
-    List<RiskDTO> search(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to, String q)
-            throws HSException;
+    List<RiskDTO> search(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to, String q,
+            Long companyId) throws HSException;
 
     RiskOverviewResponse getOverview(String status, Long departmentId, Long ownerId, LocalDate from, LocalDate to,
-            String q) throws HSException;
+            String q, Long companyId) throws HSException;
 }

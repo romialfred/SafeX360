@@ -55,8 +55,9 @@ public class BlastEvacuationReportController {
      */
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/by-blast/{blastId}")
-    public ResponseEntity<BlastEvacuationReportDTO> getByBlast(@PathVariable Long blastId) {
-        return service.getByBlastId(blastId)
+    public ResponseEntity<BlastEvacuationReportDTO> getByBlast(@PathVariable Long blastId,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return service.getByBlastId(blastId, companyId)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -66,8 +67,9 @@ public class BlastEvacuationReportController {
      */
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/{reportId}")
-    public ResponseEntity<BlastEvacuationReportDTO> getById(@PathVariable Long reportId) {
-        return service.getById(reportId)
+    public ResponseEntity<BlastEvacuationReportDTO> getById(@PathVariable Long reportId,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return service.getById(reportId, companyId)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -79,8 +81,9 @@ public class BlastEvacuationReportController {
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/search")
     public ResponseEntity<List<BlastEvacuationReportDTO>> search(
-            @RequestParam Long mineId) {
-        return new ResponseEntity<>(service.search(mineId), HttpStatus.OK);
+            @RequestParam Long mineId,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return new ResponseEntity<>(service.search(mineId, companyId), HttpStatus.OK);
     }
 
     /**
@@ -92,9 +95,10 @@ public class BlastEvacuationReportController {
     @PostMapping("/sign/{reportId}")
     public ResponseEntity<BlastEvacuationReportDTO> sign(@PathVariable Long reportId,
             @RequestBody(required = false) BlastEvacuationReportSignDTO body,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         String signature = body != null ? body.getSignatureDataBase64() : null;
-        BlastEvacuationReportDTO dto = service.sign(reportId, userId, signature);
+        BlastEvacuationReportDTO dto = service.sign(reportId, userId, signature, companyId);
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
@@ -106,11 +110,13 @@ public class BlastEvacuationReportController {
     @PostMapping("/add-incident/{reportId}")
     public ResponseEntity<BlastEvacuationReportDTO> addIncident(@PathVariable Long reportId,
             @RequestBody BlastEvacuationReportIncidentDTO body,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         if (body == null || body.getDescription() == null || body.getDescription().isBlank()) {
             throw new IllegalArgumentException("description is required");
         }
-        BlastEvacuationReportDTO dto = service.addIncident(reportId, body.getDescription(), userId);
+        BlastEvacuationReportDTO dto =
+                service.addIncident(reportId, body.getDescription(), userId, companyId);
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
@@ -121,8 +127,9 @@ public class BlastEvacuationReportController {
     @PreAuthorize("hasAuthority('" + BlastRBACConfig.BLAST_VIEW + "')")
     @GetMapping("/pdf/{reportId}")
     public ResponseEntity<byte[]> pdf(@PathVariable Long reportId,
-            @RequestParam(value = "lang", required = false, defaultValue = "fr") String lang) {
-        byte[] bytes = service.renderPdf(reportId, lang);
+            @RequestParam(value = "lang", required = false, defaultValue = "fr") String lang,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        byte[] bytes = service.renderPdf(reportId, lang, companyId);
         String filename = String.format("evacuation-report-%d.pdf", reportId);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);

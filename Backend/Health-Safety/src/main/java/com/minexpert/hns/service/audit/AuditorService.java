@@ -20,8 +20,8 @@ public interface AuditorService {
 
     public List<AuditorDTO> getAuditorsByAuditId(Long auditId) throws HSException;
 
-    public List<AuditorDTO> getLeadAuditorsForPlanning() throws HSException;
+    public List<AuditorDTO> getLeadAuditorsForPlanning(Long companyId) throws HSException;
 
-    public List<AuditorDTO> getLeadAuditors() throws HSException;
+    public List<AuditorDTO> getLeadAuditors(Long companyId) throws HSException;
 
 }

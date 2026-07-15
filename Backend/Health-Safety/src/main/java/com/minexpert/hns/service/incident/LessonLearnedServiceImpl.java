@@ -38,8 +38,8 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
 
         @Override
         @Caching(evict = {
-                        // @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_ID, allEntries = true),
-                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#request.incidentId"),
+                        // Clés de cache désormais composites (id_companyId) -> éviction globale.
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, allEntries = true),
                         @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_ALL, allEntries = true)
         })
         public Long createLessonLearned(LessonLearnedDTO request) throws HSException {
@@ -55,13 +55,18 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
 
         @Override
         @Caching(evict = {
-                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_ID, key = "#request.id"),
-                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#request.incidentId"),
+                        // Clés de cache désormais composites (id_companyId) -> éviction globale.
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_ID, allEntries = true),
+                        @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, allEntries = true),
                         @CacheEvict(cacheNames = CACHE_LESSON_LEARNED_ALL, allEntries = true)
         })
         public void updateLessonLearned(LessonLearnedDTO request) throws HSException {
                 LessonLearned lesson = lessonLearnedRepository.findById(request.getId())
                                 .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
+                // Vérification d'appartenance à la mine (companyId de la requête vs entité).
+                if (request.getCompanyId() != null && !request.getCompanyId().equals(lesson.getCompanyId())) {
+                        throw new HSException("LESSON_LEARNED_NOT_FOUND");
+                }
                 lesson.setDate(request.getDate());
                 lesson.setEmployeeId(request.getEmployeeId());
                 lesson.setCategory(request.getCategory());
@@ -72,9 +77,9 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_ID, key = "#id")
-        public LessonLearnedDetails getLessonLearnedDetails(Long id) throws HSException {
-                LessonLearnedDetails details = lessonLearnedRepository.findDetailsById(id)
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_ID, key = "#id + '_' + #companyId")
+        public LessonLearnedDetails getLessonLearnedDetails(Long id, Long companyId) throws HSException {
+                LessonLearnedDetails details = lessonLearnedRepository.findDetailsById(id, companyId)
                                 .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND"));
                 EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
                 details.setEmployeeName(res.getName());
@@ -82,9 +87,9 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#incidentId")
-        public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId) throws HSException {
-                LessonLearnedDetails details = lessonLearnedRepository.findByIncidentId(incidentId)
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_BY_INCIDENT, key = "#incidentId + '_' + #companyId")
+        public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId, Long companyId) throws HSException {
+                LessonLearnedDetails details = lessonLearnedRepository.findByIncidentId(incidentId, companyId)
                                 .orElseThrow(() -> new HSException("LESSON_LEARNED_NOT_FOUND_FOR_INCIDENT"));
                 EmpEmailPosResponse res = hrmsClient.getEmployeeWithEmailAndPositionById(details.getEmployeeId());
                 details.setEmployeeName(res.getName());
@@ -92,9 +97,9 @@ public class LessonLearnedServiceImpl implements LessonLearnedService {
         }
 
         @Override
-        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_ALL)
-        public List<LessonLearnedDetails> getAllLessonLearnedDetails() throws HSException {
-                List<LessonLearnedDetails> detailsList = lessonLearnedRepository.findAllLessonLearnedDetails();
+        @Cacheable(cacheNames = CACHE_LESSON_LEARNED_ALL, key = "#companyId")
+        public List<LessonLearnedDetails> getAllLessonLearnedDetails(Long companyId) throws HSException {
+                List<LessonLearnedDetails> detailsList = lessonLearnedRepository.findAllLessonLearnedDetails(companyId);
                 List<Long> employeeIds = detailsList.stream()
                                 .map(LessonLearnedDetails::getEmployeeId)
                                 .distinct()

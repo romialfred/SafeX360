@@ -31,8 +31,11 @@ public class MeetingDTO {
     /** LOT 52 — participants JSON [{employeeId,name,present}]. */
     private String attendees;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Meeting toEntity() {
         return new Meeting(this.id, this.date, this.startTime, this.endTime, this.agenda, this.minutes,
-                new Audit(this.auditId), this.createdAt, this.updatedAt, this.type, this.attendees);
+                new Audit(this.auditId), this.createdAt, this.updatedAt, this.type, this.attendees, this.companyId);
     }
 }

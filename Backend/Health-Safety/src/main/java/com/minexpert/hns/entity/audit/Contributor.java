@@ -32,12 +32,15 @@ public class Contributor {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public Contributor(Long id) {
         this.id = id;
     }
 
     public ContributorDTO toDTO() {
         return new ContributorDTO(this.id, this.name, this.role, this.section,
-                this.audit != null ? this.audit.getId() : null, this.createdAt, this.updatedAt);
+                this.audit != null ? this.audit.getId() : null, this.createdAt, this.updatedAt, this.companyId);
     }
 }

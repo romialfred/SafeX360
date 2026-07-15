@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -61,8 +62,13 @@ public class AuditIsoAPI {
 
     @PostMapping("/{auditId}/meetings")
     public ResponseEntity<Long> createMeeting(@PathVariable Long auditId,
+            @RequestParam(required = false) Long companyId,
             @RequestBody MeetingDTO meetingDTO) throws HSException {
         meetingDTO.setAuditId(auditId);
+        // Cloisonnement par mine : la réunion hérite du companyId de la mine active.
+        if (companyId != null) {
+            meetingDTO.setCompanyId(companyId);
+        }
         return new ResponseEntity<>(meetingService.createMeeting(meetingDTO), HttpStatus.CREATED);
     }
 
@@ -117,8 +123,9 @@ public class AuditIsoAPI {
     }
 
     @GetMapping("/effectiveness/pending")
-    public ResponseEntity<List<EffectivenessCheckDTO>> getPendingChecks() throws HSException {
-        return new ResponseEntity<>(effectivenessService.getPendingChecks(), HttpStatus.OK);
+    public ResponseEntity<List<EffectivenessCheckDTO>> getPendingChecks(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(effectivenessService.getPendingChecks(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/recommendations/{id}/effectiveness")

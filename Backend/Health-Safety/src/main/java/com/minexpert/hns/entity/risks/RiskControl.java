@@ -53,6 +53,10 @@ public class RiskControl {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Cloisonnement par mine (companyId) — en DERNIER pour @AllArgsConstructor
+    @Column(name = "company_id")
+    private Long companyId;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -78,6 +82,7 @@ public class RiskControl {
                 this.dueDate,
                 this.status,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.companyId);
     }
 }

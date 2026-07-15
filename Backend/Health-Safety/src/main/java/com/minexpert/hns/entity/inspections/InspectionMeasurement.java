@@ -35,10 +35,12 @@ public class InspectionMeasurement {
     private GeneralInspection generalInspection;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Mine propriétaire (cloisonnement). Renseigné à la création depuis la requête. */
+    private Long companyId;
 
     public InspectionMeasurementDTO toDTO() {
         return new InspectionMeasurementDTO(this.id, measurement != null ? this.measurement.getId() : null,
                 this.value, generalInspection != null ? this.generalInspection.getId() : null,
-                this.createdAt, this.updatedAt);
+                this.createdAt, this.updatedAt, this.companyId);
     }
 }

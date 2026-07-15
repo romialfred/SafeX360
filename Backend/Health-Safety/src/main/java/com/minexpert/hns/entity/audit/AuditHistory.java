@@ -45,8 +45,11 @@ public class AuditHistory {
     private Audit audit;
     private LocalDateTime createdAt;
 
+    /** Cloisonnement par mine : hérité de l'audit de rattachement. */
+    private Long companyId;
+
     public AuditHistoryDTO toDTO() {
         return new AuditHistoryDTO(id, ownerId, date, status, comment, closingReport, lessonLearned, rating,
-                audit != null ? audit.getId() : null, createdAt);
+                audit != null ? audit.getId() : null, createdAt, companyId);
     }
 }

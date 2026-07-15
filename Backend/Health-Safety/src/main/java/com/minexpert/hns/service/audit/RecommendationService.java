@@ -18,7 +18,8 @@ public interface RecommendationService {
 
     public List<RecommendationDTO> getRecommendationsByAuditId(Long auditId) throws HSException;
 
-    public List<RecommendationDetails> getAllRecommendationDetails() throws HSException;
+    public List<RecommendationDetails> getAllRecommendationDetails(Long companyId) throws HSException;
 
-    public List<RecommendationDetails> getRecommendationDetailsByStatus(RecommendationStatus status) throws HSException;
+    public List<RecommendationDetails> getRecommendationDetailsByStatus(RecommendationStatus status, Long companyId)
+            throws HSException;
 }

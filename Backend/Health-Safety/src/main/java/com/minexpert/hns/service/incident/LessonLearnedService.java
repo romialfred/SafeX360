@@ -12,10 +12,10 @@ public interface LessonLearnedService {
 
     public void updateLessonLearned(LessonLearnedDTO request) throws HSException;
 
-    public LessonLearnedDetails getLessonLearnedDetails(Long id) throws HSException;
+    public LessonLearnedDetails getLessonLearnedDetails(Long id, Long companyId) throws HSException;
 
-    public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId) throws HSException;
+    public LessonLearnedDetails getLessonLearnedDetailsByIncidentId(Long incidentId, Long companyId) throws HSException;
 
-    public List<LessonLearnedDetails> getAllLessonLearnedDetails() throws HSException;
+    public List<LessonLearnedDetails> getAllLessonLearnedDetails(Long companyId) throws HSException;
 
 }

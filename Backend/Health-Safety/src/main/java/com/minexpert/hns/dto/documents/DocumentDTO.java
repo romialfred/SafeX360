@@ -32,6 +32,7 @@ public class DocumentDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String statusReason;
+    private Long companyId;
 
     public Document toEntity() {
         return new Document(
@@ -50,7 +51,8 @@ public class DocumentDTO {
 
                 createdAt,
                 updatedAt,
-                statusReason);
+                statusReason,
+                companyId);
     }
 
 }

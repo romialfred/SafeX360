@@ -44,23 +44,30 @@ public class InspectionTemplateController {
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/list")
     public ResponseEntity<List<InspectionTemplateSummaryDTO>> list(
-            @RequestParam(value = "type", required = false) InspectionTemplateType type) {
+            @RequestParam(value = "type", required = false) InspectionTemplateType type,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
         List<InspectionTemplateSummaryDTO> result = (type != null)
-                ? templateService.listByType(type)
-                : templateService.listAll();
+                ? templateService.listByType(type, companyId)
+                : templateService.listAll(companyId);
         return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/{id}")
-    public ResponseEntity<InspectionTemplateDTO> get(@PathVariable Long id) {
-        return ResponseEntity.ok(templateService.getById(id));
+    public ResponseEntity<InspectionTemplateDTO> get(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        return ResponseEntity.ok(templateService.getById(id, companyId));
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @PostMapping("/create")
     public ResponseEntity<Long> create(@Valid @RequestBody InspectionTemplateDTO dto,
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        // Mine active injectée en query : le template devient propre à la mine.
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
         Long id = templateService.create(dto, userId);
         return new ResponseEntity<>(id, HttpStatus.CREATED);
     }
@@ -68,8 +75,12 @@ public class InspectionTemplateController {
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> update(@PathVariable Long id,
-            @Valid @RequestBody InspectionTemplateDTO dto) {
-        templateService.update(id, dto);
+            @Valid @RequestBody InspectionTemplateDTO dto,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        if (companyId != null) {
+            dto.setCompanyId(companyId);
+        }
+        templateService.update(id, dto, companyId);
         return ResponseEntity.ok(new ResponseDTO("Template mis a jour"));
     }
 
@@ -79,15 +90,17 @@ public class InspectionTemplateController {
      */
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseDTO> deactivate(@PathVariable Long id) {
-        templateService.deactivate(id);
+    public ResponseEntity<ResponseDTO> deactivate(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        templateService.deactivate(id, companyId);
         return ResponseEntity.ok(new ResponseDTO("Template desactive"));
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @PostMapping("/{id}/activate")
-    public ResponseEntity<ResponseDTO> activate(@PathVariable Long id) {
-        templateService.activate(id);
+    public ResponseEntity<ResponseDTO> activate(@PathVariable Long id,
+            @RequestParam(value = "companyId", required = false) Long companyId) {
+        templateService.activate(id, companyId);
         return ResponseEntity.ok(new ResponseDTO("Template reactive"));
     }
 }

@@ -25,11 +25,11 @@ public interface AuditService {
 
     public AuditDetails getAuditDetails(Long id) throws HSException;
 
-    public List<AuditDTO> getAllAudits() throws HSException;
+    public List<AuditDTO> getAllAudits(Long companyId) throws HSException;
 
     public void updateAuditStatus(Long id, AuditStatus status) throws HSException;
 
-    public List<AuditDTO> getAllPlanningAudits() throws HSException;
+    public List<AuditDTO> getAllPlanningAudits(Long companyId) throws HSException;
 
     public void approvePlanning(Long id) throws HSException;
 

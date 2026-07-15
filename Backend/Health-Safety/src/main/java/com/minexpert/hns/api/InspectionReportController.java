@@ -25,27 +25,39 @@ public class InspectionReportController {
     private final InspectionReportService inspectionReportService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createReport(@RequestBody InspectionReportDTO report) throws HSException {
+    public ResponseEntity<Long> createReport(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody InspectionReportDTO report) throws HSException {
+        if (companyId != null) {
+            report.setCompanyId(companyId);
+        }
         Long reportId = inspectionReportService.createReport(report);
         return ResponseEntity.status(201).body(reportId);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<InspectionReportDTO> getReportById(@PathVariable Long id) throws HSException {
-        InspectionReportDTO report = inspectionReportService.findById(id);
+    public ResponseEntity<InspectionReportDTO> getReportById(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        InspectionReportDTO report = inspectionReportService.findById(id, companyId);
         return ResponseEntity.ok(report);
     }
 
     @GetMapping("/getByInspection/{inspectionId}")
-    public ResponseEntity<InspectionReportDTO> getReportByGeneralInspectionId(@PathVariable Long inspectionId)
+    public ResponseEntity<InspectionReportDTO> getReportByGeneralInspectionId(@PathVariable Long inspectionId,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        InspectionReportDTO report = inspectionReportService.findByGeneralInspectionId(inspectionId);
+        InspectionReportDTO report = inspectionReportService.findByGeneralInspectionId(inspectionId, companyId);
         return ResponseEntity.ok(report);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateReport(@RequestBody InspectionReportDTO report) throws HSException {
-        inspectionReportService.updateReport(report);
+    public ResponseEntity<ResponseDTO> updateReport(
+            @RequestParam(required = false) Long companyId,
+            @RequestBody InspectionReportDTO report) throws HSException {
+        if (companyId != null) {
+            report.setCompanyId(companyId);
+        }
+        inspectionReportService.updateReport(report, companyId);
         return new ResponseEntity<>(new ResponseDTO("Report updated successfully."), HttpStatus.OK);
     }
 
