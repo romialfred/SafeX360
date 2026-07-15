@@ -56,6 +56,8 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
     private static final String H_COMPANIES = "X-User-Companies";
     private static final String H_ALL_MINES = "X-All-Mines";
     private static final String P_COMPANY_ID = "companyId";
+    /** Sentinelle : id de mine qui n'existe jamais → fail-closed (résultats vides). */
+    private static final String SENTINEL_NO_MINE = "-1";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -82,14 +84,10 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        // Aucune mine assignée : rien à cloisonner (l'utilisateur ne verra rien de scopé).
-        if (allowed.isEmpty()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         final String requested = request.getParameter(P_COMPANY_ID);
         if (requested != null && !requested.trim().isEmpty()) {
+            // FAIL-CLOSED : un companyId hors du périmètre (y compris si le périmètre
+            // est VIDE — token périmé sans claims, ou compte orphelin sans mine) → 403.
             if (!allowed.contains(requested.trim())) {
                 LOG.warn("Cloisonnement mines : companyId={} hors périmètre {} sur {} {} → 403",
                         requested, allowed, request.getMethod(), request.getRequestURI());
@@ -100,9 +98,12 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
             return;
         }
 
-        // companyId absent → clamp sur la 1re mine autorisée pour interdire toute
-        // vue consolidée à un utilisateur non « toutes mines ».
-        final String clamp = allowed.iterator().next();
+        // companyId absent → clamp. Périmètre vide (utilisateur authentifié SANS mine
+        // assignée : token périmé ou compte orphelin) → clamp sur une sentinelle
+        // impossible (aucune mine ne porte cet id) : les endpoints scopés renvoient
+        // VIDE (fail-closed), les endpoints non scopés (référentiels) ignorent le param.
+        // Ainsi un tel utilisateur ne voit JAMAIS de données multi-mines.
+        final String clamp = allowed.isEmpty() ? SENTINEL_NO_MINE : allowed.iterator().next();
         filterChain.doFilter(new CompanyIdInjectingRequest(request, clamp), response);
     }
 
