@@ -91,8 +91,29 @@ function StatusBadge({ status }: { status?: string }) {
     );
 }
 
-/* Familles d'équipement proposées (type = String libre côté backend) */
-const BASE_TYPES = ['ENGIN', 'VEHICULE', 'MACHINE', 'INSTALLATION', 'OUTILLAGE', 'AUTRE'];
+/* Familles d'équipement proposées (type = String libre côté backend).
+   Granularité MÉTIER (« Camions », « Pelles »…) et non technique (« ENGIN ») :
+   c'est cette famille qui sert de CATÉGORIE de regroupement dans la liste
+   déroulante des cibles d'inspection. Une famille trop large rendrait le
+   regroupement inutile. La saisie reste libre pour les cas non prévus. */
+const BASE_TYPES = [
+    'Camions',
+    'Pelles',
+    'Chargeuses',
+    'Foreuses',
+    'Bulldozers',
+    'Niveleuses',
+    'Pickups',
+    'Véhicules légers',
+    'Concasseurs',
+    'Convoyeurs',
+    'Groupes électrogènes',
+    'Compresseurs',
+    'Grues',
+    'Pompes',
+    'Outillage',
+    'Autre',
+];
 
 const isActive = (s?: string) => (s ?? 'ACTIVE').toUpperCase() === 'ACTIVE';
 

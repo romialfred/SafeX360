@@ -33,17 +33,17 @@ public class EquipmentSeeder implements CommandLineRunner {
         int inserted = 0;
 
         // ── Mine 1 — Burkina GOLD SA ────────────────────────────────────────
-        inserted += seed(1L, "CAM-A40G-18", "Camion benne Volvo A40G #18", "ENGIN", "Volvo", "A40G", "VCE-A40G-000018");
-        inserted += seed(1L, "EXC-336", "Pelle hydraulique Cat 336", "ENGIN", "Caterpillar", "336", "CAT0336-0004521");
-        inserted += seed(1L, "FOR-DML", "Foreuse de production Epiroc DML", "ENGIN", "Epiroc", "DML-1200", "EPI-DML-000712");
-        inserted += seed(1L, "CHA-966H", "Chargeuse sur pneus Cat 966H", "ENGIN", "Caterpillar", "966H", "CAT966H-0001188");
-        inserted += seed(1L, "CONC-C160", "Concasseur à mâchoires Metso C160", "INSTALLATION", "Metso", "Nordberg C160", "MET-C160-0033");
-        inserted += seed(1L, "GEN-500", "Groupe électrogène 500 kVA", "INSTALLATION", "Cummins", "C500 D5", "CUM-C500-0091");
+        inserted += seed(1L, "CAM-A40G-18", "Camion benne Volvo A40G #18", "Camions", "Volvo", "A40G", "VCE-A40G-000018");
+        inserted += seed(1L, "EXC-336", "Pelle hydraulique Cat 336", "Pelles", "Caterpillar", "336", "CAT0336-0004521");
+        inserted += seed(1L, "FOR-DML", "Foreuse de production Epiroc DML", "Foreuses", "Epiroc", "DML-1200", "EPI-DML-000712");
+        inserted += seed(1L, "CHA-966H", "Chargeuse sur pneus Cat 966H", "Chargeuses", "Caterpillar", "966H", "CAT966H-0001188");
+        inserted += seed(1L, "CONC-C160", "Concasseur à mâchoires Metso C160", "Concasseurs", "Metso", "Nordberg C160", "MET-C160-0033");
+        inserted += seed(1L, "GEN-500", "Groupe électrogène 500 kVA", "Groupes électrogènes", "Cummins", "C500 D5", "CUM-C500-0091");
 
         // ── Mine 6 ──────────────────────────────────────────────────────────
-        inserted += seed(6L, "CAM-777F", "Camion benne Cat 777F", "ENGIN", "Caterpillar", "777F", "CAT777F-0002054");
-        inserted += seed(6L, "EXC-6015B", "Pelle minière Cat 6015B", "ENGIN", "Caterpillar", "6015B", "CAT6015-0000317");
-        inserted += seed(6L, "GEN-250", "Groupe électrogène 250 kVA", "INSTALLATION", "Cummins", "C250 D5", "CUM-C250-0044");
+        inserted += seed(6L, "CAM-777F", "Camion benne Cat 777F", "Camions", "Caterpillar", "777F", "CAT777F-0002054");
+        inserted += seed(6L, "EXC-6015B", "Pelle minière Cat 6015B", "Pelles", "Caterpillar", "6015B", "CAT6015-0000317");
+        inserted += seed(6L, "GEN-250", "Groupe électrogène 250 kVA", "Groupes électrogènes", "Cummins", "C250 D5", "CUM-C250-0044");
 
         if (inserted > 0) {
             LOG.info("[EquipmentSeeder] {} équipement(s) de démo inséré(s).", inserted);

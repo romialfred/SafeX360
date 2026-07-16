@@ -15,7 +15,7 @@
  * page d'exécution mobile en Phase 4).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Select } from '@mantine/core';
@@ -55,6 +55,13 @@ import { useAppSelector } from '../../slices/hooks';
 
 // Wizard à 3 étapes : Cible → Modèle → Détails.
 type Step = 1 | 2 | 3;
+
+/** Option simple ou groupe de famille (liste des cibles). */
+type TargetItem = { value: string; label: string };
+type TargetOption = TargetItem | { group: string; items: TargetItem[] };
+
+/** Famille d'un équipement, repli explicite pour ne perdre aucune cible. */
+const UNCLASSIFIED = 'Non classé';
 
 interface FormState {
     type: InspectionTemplateType | null;
@@ -107,8 +114,10 @@ export default function InspectionScheduleForm() {
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
 
-    // Cibles : options de la liste déroulante + enregistrements bruts (panneau info)
-    const [targetOptions, setTargetOptions] = useState<{ value: string; label: string }[]>([]);
+    // Cibles : options de la liste déroulante + enregistrements bruts (panneau info).
+    // Pour les ÉQUIPEMENTS la liste est GROUPÉE par famille (Camions, Pelles…) :
+    // Mantine accepte un mélange d'items plats et de groupes { group, items }.
+    const [targetOptions, setTargetOptions] = useState<TargetOption[]>([]);
     const [targetRecords, setTargetRecords] = useState<any[]>([]);
     const [loadingTargets, setLoadingTargets] = useState(false);
     // Dernière inspection de la cible sélectionnée
@@ -180,17 +189,34 @@ export default function InspectionScheduleForm() {
             .then((list: any[]) => {
                 const arr = Array.isArray(list) ? list : [];
                 setTargetRecords(arr);
-                setTargetOptions(
-                    arr
-                        .filter((r) => r && r.id !== undefined && r.id !== null)
-                        .map((r) => ({
-                            value: String(r.id),
-                            label:
-                                currentType === 'EQUIPMENT'
-                                    ? [r.code, r.name].filter(Boolean).join(' — ') || `#${r.id}`
-                                    : r.name ?? `#${r.id}`,
-                        })),
-                );
+                const valid = arr.filter((r) => r && r.id !== undefined && r.id !== null);
+                const byLabel = (a: TargetItem, b: TargetItem) =>
+                    a.label.localeCompare(b.label, 'fr');
+                // Le libellé ne porte QUE le nom : le code est affiché en puce
+                // discrète (renderOption) et reste cherchable (filtre custom).
+                const toItem = (r: any): TargetItem => ({
+                    value: String(r.id),
+                    label: r.name ?? r.code ?? `#${r.id}`,
+                });
+
+                if (currentType === 'EQUIPMENT') {
+                    // Regroupement par famille (champ `type` du registre).
+                    const families = new Map<string, TargetItem[]>();
+                    for (const r of valid) {
+                        const fam = String(r.type ?? '').trim() || UNCLASSIFIED;
+                        if (!families.has(fam)) families.set(fam, []);
+                        families.get(fam)!.push(toItem(r));
+                    }
+                    const groups = [...families.entries()]
+                        .sort(([a], [b]) =>
+                            // « Non classé » toujours en dernier.
+                            a === UNCLASSIFIED ? 1 : b === UNCLASSIFIED ? -1 : a.localeCompare(b, 'fr'),
+                        )
+                        .map(([group, items]) => ({ group, items: items.sort(byLabel) }));
+                    setTargetOptions(groups);
+                } else {
+                    setTargetOptions(valid.map(toItem).sort(byLabel));
+                }
             })
             .catch(() => {
                 setTargetRecords([]);
@@ -519,7 +545,7 @@ function StepTarget({
     form: FormState;
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
     onSelectType: (t: InspectionTemplateType) => void;
-    targetOptions: { value: string; label: string }[];
+    targetOptions: TargetOption[];
     targetRecords: any[];
     loadingTargets: boolean;
     onSelectTarget: (value: string | null) => void;
@@ -532,6 +558,35 @@ function StepTarget({
     const selectedRecord = form.targetRefId
         ? targetRecords.find((r) => String(r.id) === form.targetRefId)
         : null;
+
+    // Code de chaque cible (équipements) : sorti du libellé pour alléger la
+    // liste, il reste affiché en puce et surtout CHERCHABLE via le filtre.
+    const codeById = useMemo(() => {
+        const m = new Map<string, string>();
+        for (const r of targetRecords) {
+            if (r?.id != null && r.code) m.set(String(r.id), String(r.code));
+        }
+        return m;
+    }, [targetRecords]);
+
+    // Filtre : recherche sur le nom ET le code, en préservant les groupes.
+    const filterTargets = ({ options, search }: { options: any[]; search: string }) => {
+        const q = search.trim().toLowerCase();
+        if (!q) return options;
+        const matches = (o: any) =>
+            String(o.label ?? '').toLowerCase().includes(q) ||
+            (codeById.get(o.value) ?? '').toLowerCase().includes(q);
+        const out: any[] = [];
+        for (const o of options) {
+            if (o && Array.isArray(o.items)) {
+                const items = o.items.filter(matches);
+                if (items.length) out.push({ ...o, items });
+            } else if (matches(o)) {
+                out.push(o);
+            }
+        }
+        return out;
+    };
 
     return (
         <div>
@@ -579,10 +634,27 @@ function StepTarget({
                         <Select
                             searchable
                             clearable
-                            data={targetOptions}
+                            data={targetOptions as any}
                             value={form.targetRefId || null}
                             onChange={onSelectTarget}
                             disabled={loadingTargets}
+                            filter={filterTargets as any}
+                            maxDropdownHeight={280}
+                            renderOption={({ option }: any) => {
+                                const code = codeById.get(option.value);
+                                return (
+                                    <div className="flex items-center justify-between gap-3 w-full min-w-0">
+                                        <span className="truncate text-[13px] text-slate-800">
+                                            {option.label}
+                                        </span>
+                                        {code && (
+                                            <span className="flex-shrink-0 text-[10px] font-medium tracking-[0.04em] text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
+                                                {code}
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            }}
                             nothingFoundMessage={
                                 loadingTargets
                                     ? t('common:loading', { defaultValue: 'Chargement…' })
