@@ -13,6 +13,14 @@
 -- script pour l'existant.
 --
 -- À exécuter sur les DEUX bases : Docker local `safex-mysql` ET Aiven prod.
+--
+-- ⚠ OBLIGATOIRE : passer `--default-character-set=utf8mb4` au client mysql.
+-- Ce fichier contient des accents (« Groupes électrogènes »). Sans cette
+-- option, le client lit les octets UTF-8 comme du latin1 et les ré-encode :
+-- on obtient un DOUBLE ENCODAGE en base (« Groupes Ã©lectrogÃ¨nes »), visible
+-- tel quel dans l'IHM. Contrôle : `SELECT HEX(type) ...` doit donner C3A9 pour
+-- « é » (et non C383C2A9).
+--   docker exec -i safex-mysql mysql -uroot -p<pwd> --default-character-set=utf8mb4 healthsafety < migrate_equipment_families.sql
 -- =====================================================================
 
 UPDATE equipment SET type = 'Camions'              WHERE code IN ('CAM-A40G-18', 'CAM-777F');
