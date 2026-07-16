@@ -17,21 +17,25 @@ import com.minexpert.hns.entity.inspections.InspectionApproval;
 import com.minexpert.hns.entity.inspections.InspectionCheckpoint;
 import com.minexpert.hns.entity.inspections.InspectionFinding;
 import com.minexpert.hns.entity.inspections.InspectionHistory;
+import com.minexpert.hns.entity.inspections.InspectionTeamMember;
 import com.minexpert.hns.entity.inspections.InspectionTemplate;
 import com.minexpert.hns.entity.parameters.Location;
 import com.minexpert.hns.enums.CheckpointResponseType;
 import com.minexpert.hns.enums.FindingConformity;
 import com.minexpert.hns.enums.InspectionStatus;
+import com.minexpert.hns.enums.InspectionTeamRole;
 import com.minexpert.hns.inspections.dto.ApprovalDTO;
 import com.minexpert.hns.inspections.dto.FindingDTO;
 import com.minexpert.hns.inspections.dto.InspectionDetailDTO;
 import com.minexpert.hns.inspections.dto.InspectionSummaryDTO;
+import com.minexpert.hns.inspections.dto.InspectionTeamMemberDTO;
 import com.minexpert.hns.inspections.dto.ScheduleInspectionDTO;
 import com.minexpert.hns.repository.inspections.GeneralInspectionRepository;
 import com.minexpert.hns.repository.inspections.InspectionApprovalRepository;
 import com.minexpert.hns.repository.inspections.InspectionCheckpointRepository;
 import com.minexpert.hns.repository.inspections.InspectionFindingRepository;
 import com.minexpert.hns.repository.inspections.InspectionHistoryRepository;
+import com.minexpert.hns.repository.inspections.InspectionTeamMemberRepository;
 import com.minexpert.hns.repository.inspections.InspectionTemplateRepository;
 
 /**
@@ -67,6 +71,8 @@ public class InspectionWorkflowService {
     private InspectionApprovalRepository approvalRepository;
     @Autowired
     private InspectionCheckpointRepository checkpointRepository;
+    @Autowired
+    private InspectionTeamMemberRepository teamMemberRepository;
     @Autowired(required = false)
     private InspectionHistoryRepository historyRepository;
 
@@ -123,7 +129,28 @@ public class InspectionWorkflowService {
         // responsable de pré-creer un Activity ou on assouplira plus tard.
         // [TODO Phase 2.b : assouplir le NOT NULL ou créer auto une activité]
 
+        // L'equipe est normalisee AVANT la sauvegarde : la resolution du LEAD
+        // alimente primaryInspectorId, qui doit etre persiste avec l'inspection.
+        List<InspectionTeamMemberDTO> team = normalizeTeam(
+                dto.getTeamMembers(), dto.getPrimaryInspectorId());
+        if (!team.isEmpty()) {
+            // Par construction, team.get(0) est le LEAD (cf. normalizeTeam).
+            inspection.setPrimaryInspectorId(team.get(0).getEmployeeId());
+        }
+
         GeneralInspection saved = inspectionRepository.save(inspection);
+
+        // Les membres sont persistes APRES la sauvegarde : la FK inspection_id
+        // est NOT NULL, il faut donc l'id genere.
+        for (InspectionTeamMemberDTO m : team) {
+            InspectionTeamMember member = new InspectionTeamMember();
+            member.setInspection(saved);
+            member.setEmployeeId(m.getEmployeeId());
+            member.setRole(m.getRole());
+            // Cloisonnement : le membre herite de la mine de l'inspection.
+            member.setCompanyId(saved.getCompanyId());
+            teamMemberRepository.save(member);
+        }
 
         // Cree un finding vide pour chaque checkpoint
         for (InspectionCheckpoint cp : tpl.getCheckpoints()) {
@@ -384,6 +411,91 @@ public class InspectionWorkflowService {
     //  Helpers internes
     // ─────────────────────────────────────────────────────────────
 
+    /**
+     * Normalise l'equipe fournie a la planification et applique les invariants
+     * metier. Le resultat est pret a persister : roles canoniques (String), le
+     * LEAD en premiere position, aucun doublon.
+     *
+     * <p>Regles :</p>
+     * <ol>
+     *   <li>Membres sans {@code employeeId} ignores (lignes vides de l'IHM).</li>
+     *   <li>Role absent → {@code INSPECTOR} par defaut ; role inconnu → erreur.</li>
+     *   <li>Doublon d'{@code employeeId} → erreur (un seul role par personne).</li>
+     *   <li><b>Exactement un LEAD</b> : plusieurs → erreur ; aucun mais
+     *       {@code primaryInspectorId} fourni → LEAD cree depuis lui (s'il est
+     *       deja dans l'equipe avec un autre role, ce role est promu en LEAD
+     *       plutot que de creer un doublon).</li>
+     *   <li>Liste vide/null sans {@code primaryInspectorId} → liste vide :
+     *       le comportement historique (aucune equipe) reste valide.</li>
+     * </ol>
+     *
+     * @return liste normalisee, LEAD en tete ; vide si aucune equipe exploitable
+     */
+    private List<InspectionTeamMemberDTO> normalizeTeam(List<InspectionTeamMemberDTO> raw,
+                                                        Long primaryInspectorId) {
+        List<InspectionTeamMemberDTO> out = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        InspectionTeamMemberDTO lead = null;
+
+        if (raw != null) {
+            for (InspectionTeamMemberDTO in : raw) {
+                if (in == null || in.getEmployeeId() == null) {
+                    continue; // ligne vide laissee par l'IHM : on ignore
+                }
+                if (!seen.add(in.getEmployeeId())) {
+                    throw new IllegalArgumentException(
+                            "Equipe d'inspection invalide : l'employe " + in.getEmployeeId()
+                                    + " est present deux fois. Un membre ne peut tenir qu'un seul role.");
+                }
+                InspectionTeamRole role = InspectionTeamRole.parse(in.getRole());
+                if (role == null) {
+                    role = InspectionTeamRole.INSPECTOR; // defaut raisonnable
+                }
+                InspectionTeamMemberDTO m = new InspectionTeamMemberDTO();
+                m.setEmployeeId(in.getEmployeeId());
+                m.setRole(role.name());
+                if (role == InspectionTeamRole.LEAD) {
+                    if (lead != null) {
+                        throw new IllegalArgumentException(
+                                "Equipe d'inspection invalide : plusieurs inspecteurs principaux (LEAD)."
+                                        + " Exactement un membre doit porter le role LEAD.");
+                    }
+                    lead = m;
+                } else {
+                    out.add(m);
+                }
+            }
+        }
+
+        if (lead == null) {
+            if (primaryInspectorId == null) {
+                if (!out.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Equipe d'inspection invalide : aucun inspecteur principal (LEAD)."
+                                    + " Designez un membre LEAD ou renseignez l'inspecteur principal.");
+                }
+                return out; // ni equipe ni inspecteur : rien a persister
+            }
+            // Un LEAD est deduit de primaryInspectorId. S'il figure deja dans
+            // l'equipe avec un autre role, on le promeut au lieu de le doublonner.
+            InspectionTeamMemberDTO already = out.stream()
+                    .filter(m -> primaryInspectorId.equals(m.getEmployeeId()))
+                    .findFirst().orElse(null);
+            if (already != null) {
+                out.remove(already);
+                already.setRole(InspectionTeamRole.LEAD.name());
+                lead = already;
+            } else {
+                lead = new InspectionTeamMemberDTO();
+                lead.setEmployeeId(primaryInspectorId);
+                lead.setRole(InspectionTeamRole.LEAD.name());
+            }
+        }
+
+        out.add(0, lead); // LEAD en tete : schedule() y lit primaryInspectorId
+        return out;
+    }
+
     private GeneralInspection loadOrThrow(Long id) {
         return inspectionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Inspection introuvable : " + id));
@@ -551,6 +663,17 @@ public class InspectionWorkflowService {
             ad.setComment(a.getComment());
             ad.setDecidedAt(a.getDecidedAt());
             d.getApprovals().add(ad);
+        }
+
+        // Equipe (employe + role). Vide pour les inspections d'avant la refonte.
+        List<InspectionTeamMember> team = teamMemberRepository
+                .findByInspection_IdOrderByIdAsc(insp.getId());
+        for (InspectionTeamMember m : team) {
+            InspectionTeamMemberDTO md = new InspectionTeamMemberDTO();
+            md.setId(m.getId());
+            md.setEmployeeId(m.getEmployeeId());
+            md.setRole(m.getRole());
+            d.getTeamMembers().add(md);
         }
         return d;
     }

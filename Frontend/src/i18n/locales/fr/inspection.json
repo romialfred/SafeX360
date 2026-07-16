@@ -70,6 +70,30 @@
         },
         "loadError": "Le registre n'a pas pu etre charge. Verifiez vos droits ou ressayez."
     },
+    "equipment": {
+        "familyLabel": "Famille",
+        "familyPlaceholder": "Sélectionner une famille",
+        "familyHelp": "La famille détermine les modèles d'inspection applicables à cet équipement.",
+        "familyUnclassified": "Non classée",
+        "family": {
+            "HEAVY_TRUCK": "Camions",
+            "EXCAVATOR": "Pelles",
+            "WHEEL_LOADER": "Chargeuses",
+            "DRILL_RIG": "Foreuses",
+            "DOZER": "Bulldozers",
+            "GRADER": "Niveleuses",
+            "PICKUP": "Pickups",
+            "LIGHT_VEHICLE": "Véhicules légers",
+            "CRUSHER": "Concasseurs",
+            "CONVEYOR": "Convoyeurs",
+            "GENSET": "Groupes électrogènes",
+            "COMPRESSOR": "Compresseurs",
+            "CRANE": "Grues",
+            "PUMP": "Pompes",
+            "TOOLING": "Outillage",
+            "OTHER": "Autre"
+        }
+    },
     "conformity": {
         "CONFORM": "Conforme",
         "WATCH": "A surveiller",
@@ -200,14 +224,25 @@
             "sitePlaceholder": "Selectionnez le site",
             "targetIdLabel": "Identifiant de la cible",
             "targetIdHelp": "Numero d'engin / id du lieu / id procedure",
-            "targetLabelLabel": "Designation",
-            "targetLabelPlaceholder": "Camion benne Volvo A40G #18, Atelier maintenance Nord..."
+            "fieldFamily": "Famille"
         },
         "templateStep": {
             "heading": "Quel modele appliquer ?",
             "noTemplate": "Aucun modele disponible pour ce type. Demandez a un administrateur de creer le modele correspondant.",
             "checkpoints": "{{count}} points de controle",
-            "estimated": "Estimation : {{min}} min"
+            "estimated": "Estimation : {{min}} min",
+            "applicableHeading": "Modèle applicable",
+            "applicableHint": "Les modèles proposés sont ceux définis pour la famille « {{family}} ».",
+            "autoSelected": "Modèle appliqué automatiquement : c'est le seul défini pour la famille « {{family}} ».",
+            "noTemplateForFamily": "Aucun modèle d'inspection n'existe pour la famille « {{family}} ». Créez-en un depuis le registre des modèles avant de planifier.",
+            "familyMissing": "Cet équipement n'a pas de famille renseignée : impossible de déterminer le modèle applicable. Renseignez sa famille dans le registre des équipements."
+        },
+        "roles": {
+            "LEAD": "Inspecteur principal",
+            "INSPECTOR": "Inspecteur",
+            "SPECIALIST": "Expert métier",
+            "EQUIPMENT_OWNER": "Responsable de l'équipement",
+            "OBSERVER": "Observateur"
         },
         "detailsStep": {
             "heading": "Date et inspecteur",
@@ -216,10 +251,25 @@
             "endTimeLabel": "Heure fin (optionnel)",
             "primaryInspectorLabel": "Inspecteur principal",
             "primaryInspectorPlaceholder": "Selectionnez l'inspecteur",
+            "teamMemberEmployeeLabel": "Employé",
+            "teamMemberEmployeePlaceholder": "Sélectionner un employé",
+            "teamMemberRoleLabel": "Rôle",
+            "teamAddMember": "Ajouter un membre",
+            "teamRemoveMember": "Retirer ce membre",
+            "teamEmpty": "Aucun membre pour l'instant. Ajoutez au moins l'inspecteur principal.",
+            "teamNoLead": "Désignez un inspecteur principal : l'équipe doit avoir un responsable.",
+            "teamLeadHint": "Un seul inspecteur principal : en désigner un autre rétrograde le précédent en inspecteur.",
+            "teamMemberCount_one": "{{count}} membre",
+            "teamMemberCount_other": "{{count}} membres",
             "objectivesLabel": "Objectif de l'inspection",
             "objectivesPlaceholder": "Verifier l'etat de fonctionnement et les organes de securite avant remise en service.",
             "descriptionLabel": "Contexte ou conditions particulieres",
-            "descriptionPlaceholder": "Apres incident du 04/06, redemarrage progressif..."
+            "descriptionPlaceholder": "Apres incident du 04/06, redemarrage progressif...",
+            "teamHeading": "Équipe d'inspection",
+            "teamSubtitle": "Composez l'équipe : un inspecteur principal et, si besoin, des équipiers.",
+            "teamHelp": "Optionnel à la planification : à défaut d'équipe, l'inspecteur qui démarrera l'exécution sera enregistré comme responsable.",
+            "noInspector": "Aucun employé disponible",
+            "leadBadge": "Inspecteur principal"
         },
         "buttons": {
             "previous": "Precedent",
@@ -231,9 +281,13 @@
             "typeRequired": "Choisissez un type d'objet.",
             "siteRequired": "Le site est obligatoire.",
             "targetIdRequired": "L'identifiant de la cible est obligatoire.",
-            "targetLabelRequired": "La designation de la cible est obligatoire.",
             "templateRequired": "Choisissez un modele d'inspection.",
             "dateRequired": "La date prevue est obligatoire.",
+            "noTemplateForFamily": "Aucun modèle d'inspection n'existe pour la famille « {{family}} ». Créez-en un depuis le registre des modèles avant de planifier.",
+            "familyMissing": "La famille de cet équipement n'est pas renseignée : renseignez-la dans le registre des équipements pour déterminer le modèle applicable.",
+            "teamMemberIncomplete": "Chaque membre de l'équipe doit correspondre à un employé.",
+            "teamLeadRequired": "L'équipe doit comporter un inspecteur principal.",
+            "teamLeadDuplicate": "L'équipe ne peut comporter qu'un seul inspecteur principal.",
             "submitFailed": "Echec de la planification. Verifiez vos droits ou ressayez."
         },
         "success": {

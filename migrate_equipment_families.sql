@@ -1,6 +1,13 @@
 -- =====================================================================
 -- migrate_equipment_families.sql  (schéma : healthsafety / HNS)
 -- =====================================================================
+-- ⛔ OBSOLÈTE — NE PLUS EXÉCUTER. Remplacé par migrate_equipment_family_keys.sql.
+-- Ce script écrit des LIBELLÉS FR dans `equipment.type` ; depuis la décision D1
+-- (réforme Inspections), ce champ porte une CLÉ canonique (HEAVY_TRUCK,
+-- WHEEL_LOADER…) appariée à `inspection_template.scope_ref`. Le rejouer
+-- ANNULERAIT la migration vers les clés et re-casserait le filtrage des
+-- modèles d'inspection. Conservé uniquement pour l'historique.
+-- =====================================================================
 -- Reclasse le champ `type` des équipements depuis une granularité TECHNIQUE
 -- trop large (ENGIN / INSTALLATION) vers la FAMILLE MÉTIER (Camions, Pelles,
 -- Foreuses…). C'est ce champ qui sert désormais de CATÉGORIE de regroupement

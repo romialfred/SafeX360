@@ -19,6 +19,19 @@ import lombok.RequiredArgsConstructor;
  * Idempotent au grain du couple (companyId, code) : un équipement déjà présent
  * n'est jamais dupliqué ni écrasé — un code manquant est (ré)inséré au prochain
  * démarrage.</p>
+ *
+ * <p><b>D1 — famille canonique :</b> {@code equipment.type} porte une CLÉ stable
+ * ({@code HEAVY_TRUCK}, {@code EXCAVATOR}, {@code WHEEL_LOADER}, {@code DRILL_RIG},
+ * {@code DOZER}, {@code GRADER}, {@code PICKUP}, {@code LIGHT_VEHICLE},
+ * {@code CRUSHER}, {@code CONVEYOR}, {@code GENSET}, {@code COMPRESSOR},
+ * {@code CRANE}, {@code PUMP}, {@code TOOLING}, {@code OTHER}), jamais un libellé
+ * FR. C'est cette clé qui est appariée à {@code InspectionTemplate.scopeRef} pour
+ * ne proposer que les modèles d'inspection APPLICABLES à la famille de la cible.
+ * Le libellé FR/EN est porté par l'i18n (<code>equipment.family.&lt;KEY&gt;</code>).</p>
+ *
+ * <p>L'existant déjà en base (libellés FR « Camions », « Chargeuses »…) est
+ * converti par <code>migrate_equipment_family_keys.sql</code> : ce seeder étant
+ * idempotent, il ne met PAS à jour les lignes déjà présentes.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -33,17 +46,17 @@ public class EquipmentSeeder implements CommandLineRunner {
         int inserted = 0;
 
         // ── Mine 1 — Burkina GOLD SA ────────────────────────────────────────
-        inserted += seed(1L, "CAM-A40G-18", "Camion benne Volvo A40G #18", "Camions", "Volvo", "A40G", "VCE-A40G-000018");
-        inserted += seed(1L, "EXC-336", "Pelle hydraulique Cat 336", "Pelles", "Caterpillar", "336", "CAT0336-0004521");
-        inserted += seed(1L, "FOR-DML", "Foreuse de production Epiroc DML", "Foreuses", "Epiroc", "DML-1200", "EPI-DML-000712");
-        inserted += seed(1L, "CHA-966H", "Chargeuse sur pneus Cat 966H", "Chargeuses", "Caterpillar", "966H", "CAT966H-0001188");
-        inserted += seed(1L, "CONC-C160", "Concasseur à mâchoires Metso C160", "Concasseurs", "Metso", "Nordberg C160", "MET-C160-0033");
-        inserted += seed(1L, "GEN-500", "Groupe électrogène 500 kVA", "Groupes électrogènes", "Cummins", "C500 D5", "CUM-C500-0091");
+        inserted += seed(1L, "CAM-A40G-18", "Camion benne Volvo A40G #18", "HEAVY_TRUCK", "Volvo", "A40G", "VCE-A40G-000018");
+        inserted += seed(1L, "EXC-336", "Pelle hydraulique Cat 336", "EXCAVATOR", "Caterpillar", "336", "CAT0336-0004521");
+        inserted += seed(1L, "FOR-DML", "Foreuse de production Epiroc DML", "DRILL_RIG", "Epiroc", "DML-1200", "EPI-DML-000712");
+        inserted += seed(1L, "CHA-966H", "Chargeuse sur pneus Cat 966H", "WHEEL_LOADER", "Caterpillar", "966H", "CAT966H-0001188");
+        inserted += seed(1L, "CONC-C160", "Concasseur à mâchoires Metso C160", "CRUSHER", "Metso", "Nordberg C160", "MET-C160-0033");
+        inserted += seed(1L, "GEN-500", "Groupe électrogène 500 kVA", "GENSET", "Cummins", "C500 D5", "CUM-C500-0091");
 
         // ── Mine 6 ──────────────────────────────────────────────────────────
-        inserted += seed(6L, "CAM-777F", "Camion benne Cat 777F", "Camions", "Caterpillar", "777F", "CAT777F-0002054");
-        inserted += seed(6L, "EXC-6015B", "Pelle minière Cat 6015B", "Pelles", "Caterpillar", "6015B", "CAT6015-0000317");
-        inserted += seed(6L, "GEN-250", "Groupe électrogène 250 kVA", "Groupes électrogènes", "Cummins", "C250 D5", "CUM-C250-0044");
+        inserted += seed(6L, "CAM-777F", "Camion benne Cat 777F", "HEAVY_TRUCK", "Caterpillar", "777F", "CAT777F-0002054");
+        inserted += seed(6L, "EXC-6015B", "Pelle minière Cat 6015B", "EXCAVATOR", "Caterpillar", "6015B", "CAT6015-0000317");
+        inserted += seed(6L, "GEN-250", "Groupe électrogène 250 kVA", "GENSET", "Cummins", "C250 D5", "CUM-C250-0044");
 
         if (inserted > 0) {
             LOG.info("[EquipmentSeeder] {} équipement(s) de démo inséré(s).", inserted);
@@ -53,6 +66,7 @@ public class EquipmentSeeder implements CommandLineRunner {
     /**
      * Insère l'équipement s'il n'existe pas déjà pour cette mine (par code).
      *
+     * @param type clé canonique de famille (D1), jamais un libellé FR.
      * @return 1 si inséré, 0 si déjà présent.
      */
     private int seed(Long companyId, String code, String name, String type,

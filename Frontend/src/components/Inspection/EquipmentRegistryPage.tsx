@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button, LoadingOverlay, Modal, Select, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -42,6 +43,11 @@ import {
     type EquipmentDTO,
 } from '../../services/EquipmentService';
 import { getAllActiveLocations } from '../../services/LocationService';
+import {
+    equipmentFamilyLabel,
+    equipmentFamilyOptions,
+    normalizeFamilyKey,
+} from './inspectionLabels';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import { Z } from '../../constants/zIndex';
 
@@ -91,29 +97,13 @@ function StatusBadge({ status }: { status?: string }) {
     );
 }
 
-/* Familles d'équipement proposées (type = String libre côté backend).
-   Granularité MÉTIER (« Camions », « Pelles »…) et non technique (« ENGIN ») :
-   c'est cette famille qui sert de CATÉGORIE de regroupement dans la liste
-   déroulante des cibles d'inspection. Une famille trop large rendrait le
-   regroupement inutile. La saisie reste libre pour les cas non prévus. */
-const BASE_TYPES = [
-    'Camions',
-    'Pelles',
-    'Chargeuses',
-    'Foreuses',
-    'Bulldozers',
-    'Niveleuses',
-    'Pickups',
-    'Véhicules légers',
-    'Concasseurs',
-    'Convoyeurs',
-    'Groupes électrogènes',
-    'Compresseurs',
-    'Grues',
-    'Pompes',
-    'Outillage',
-    'Autre',
-];
+/* FAMILLE D'ÉQUIPEMENT (D1) — `type` stocke une CLÉ canonique (HEAVY_TRUCK,
+   WHEEL_LOADER…), jamais un libellé. C'est cette clé qui s'apparie avec
+   `InspectionTemplate.scopeRef` pour dériver le modèle d'inspection applicable
+   à l'équipement (cf. InspectionScheduleForm). La SAISIE LIBRE est SUPPRIMÉE :
+   c'est elle qui rendait l'appariement impossible (« Chargeuses » vs
+   `WHEEL_LOADER`) et laissait des équipements sans modèle applicable.
+   Les libellés viennent de l'i18n (`inspection:equipment.family.<KEY>`). */
 
 const isActive = (s?: string) => (s ?? 'ACTIVE').toUpperCase() === 'ACTIVE';
 
@@ -124,6 +114,7 @@ interface FiltersState {
 
 export default function EquipmentRegistryPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation('inspection');
 
     const [items, setItems] = useState<EquipmentDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -180,16 +171,35 @@ export default function EquipmentRegistryPage() {
             .catch(() => setLocations([]));
     }, []);
 
-    // Options « type » : base + valeurs distinctes déjà présentes (gère le libre).
+    /**
+     * Options « famille » : les CLÉS canoniques uniquement. Une valeur héritée
+     * non reconnue (donnée pas encore migrée) est ajoutée telle quelle pour ne
+     * pas la faire disparaître silencieusement à l'édition — l'utilisateur la
+     * remplace alors par une vraie clé.
+     */
     const typeOptions = useMemo(() => {
-        const set = new Set<string>(BASE_TYPES);
-        for (const it of items) if (it.type) set.add(it.type);
-        return Array.from(set).map((t) => ({ value: t, label: t }));
-    }, [items]);
+        const canonical = equipmentFamilyOptions(t);
+        const known = new Set(canonical.map((o) => o.value));
+        const legacy: { value: string; label: string }[] = [];
+        for (const it of items) {
+            const raw = (it.type ?? '').trim();
+            if (!raw) continue;
+            const key = normalizeFamilyKey(raw);
+            if (key && known.has(key)) continue;
+            if (!legacy.some((o) => o.value === raw)) legacy.push({ value: raw, label: raw });
+        }
+        return [...canonical, ...legacy];
+    }, [items, t]);
 
     const kpi = useMemo(() => {
         const active = items.filter((i) => isActive(i.status)).length;
-        const types = new Set(items.map((i) => (i.type || '').trim()).filter(Boolean));
+        // Familles distinctes : comptées sur la CLÉ normalisée, sinon
+        // « Camions » et HEAVY_TRUCK compteraient double.
+        const types = new Set(
+            items
+                .map((i) => normalizeFamilyKey(i.type) ?? (i.type || '').trim())
+                .filter(Boolean),
+        );
         return { total: items.length, active, inactive: items.length - active, types: types.size };
     }, [items]);
 
@@ -202,7 +212,17 @@ export default function EquipmentRegistryPage() {
             }
             if (filters.query.trim()) {
                 const q = filters.query.trim().toLowerCase();
-                const hay = [it.code, it.name, it.type, it.brand, it.model, it.serialNumber]
+                // On cherche AUSSI sur le libellé traduit de la famille : la clé
+                // (HEAVY_TRUCK) n'est jamais ce que l'utilisateur tape.
+                const hay = [
+                    it.code,
+                    it.name,
+                    it.type,
+                    equipmentFamilyLabel(t, it.type),
+                    it.brand,
+                    it.model,
+                    it.serialNumber,
+                ]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase();
@@ -210,7 +230,7 @@ export default function EquipmentRegistryPage() {
             }
             return true;
         });
-    }, [items, filters]);
+    }, [items, filters, t]);
 
     const locationLabel = (id?: number | null) => {
         if (id === null || id === undefined) return '—';
@@ -238,7 +258,9 @@ export default function EquipmentRegistryPage() {
         form.setValues({
             code: row.code ?? '',
             name: row.name ?? '',
-            type: row.type ?? '',
+            // Donnée héritée (« Chargeuses ») → on présélectionne sa CLÉ, pour
+            // que ré-enregistrer la ligne la migre au passage.
+            type: normalizeFamilyKey(row.type) ?? row.type ?? '',
             brand: row.brand ?? '',
             model: row.model ?? '',
             serialNumber: row.serialNumber ?? '',
@@ -454,7 +476,7 @@ export default function EquipmentRegistryPage() {
                                     <tr className="text-slate-600">
                                         <th className="text-left px-3 py-2 font-medium">Code</th>
                                         <th className="text-left px-3 py-2 font-medium">Nom</th>
-                                        <th className="text-left px-3 py-2 font-medium">Type</th>
+                                        <th className="text-left px-3 py-2 font-medium">Famille</th>
                                         <th className="text-left px-3 py-2 font-medium">Marque / Modèle</th>
                                         <th className="text-left px-3 py-2 font-medium">N° série</th>
                                         <th className="text-left px-3 py-2 font-medium">Lieu</th>
@@ -467,7 +489,8 @@ export default function EquipmentRegistryPage() {
                                         <tr key={it.id ?? it.code} className="border-b border-slate-100 hover:bg-slate-50 transition">
                                             <td className="px-3 py-2 text-slate-800 font-medium whitespace-nowrap">{it.code}</td>
                                             <td className="px-3 py-2 text-slate-700 truncate max-w-[220px]">{it.name}</td>
-                                            <td className="px-3 py-2 text-slate-700">{it.type || '—'}</td>
+                                            {/* Libellé traduit, jamais la clé brute stockée (D1). */}
+                                            <td className="px-3 py-2 text-slate-700">{equipmentFamilyLabel(t, it.type) || '—'}</td>
                                             <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">
                                                 {[it.brand, it.model].filter(Boolean).join(' ') || '—'}
                                             </td>
@@ -531,9 +554,16 @@ export default function EquipmentRegistryPage() {
                             placeholder="ex. CAM-A40G-18"
                             {...form.getInputProps('code')}
                         />
+                        {/* Famille = CLÉ canonique, choisie dans une liste fermée.
+                            AUCUNE saisie libre (D1) : c'est elle qui détermine
+                            les modèles d'inspection applicables. */}
                         <Select
-                            label="Type / Famille"
-                            placeholder="Sélectionner"
+                            label={t('equipment.familyLabel', { defaultValue: 'Famille' })}
+                            placeholder={t('equipment.familyPlaceholder', { defaultValue: 'Sélectionner une famille' })}
+                            description={t('equipment.familyHelp', {
+                                defaultValue:
+                                    "La famille détermine les modèles d'inspection applicables à cet équipement.",
+                            })}
                             searchable
                             clearable
                             data={typeOptions}

@@ -1,0 +1,45 @@
+-- =====================================================================
+-- migrate_inspection_templates_global.sql  (schéma : healthsafety / HNS)
+-- =====================================================================
+-- Rend le CATALOGUE de modèles d'inspection GLOBAL (company_id = NULL),
+-- donc visible de TOUTES les mines.
+--
+-- POURQUOI (régression évitée) :
+--   `migrate_company_scoping.sql` avait rattaché tous les modèles à la mine 1
+--   (backfill company_id=1 sur ~40 tables). Or le `code` d'un modèle est UNIQUE
+--   GLOBALEMENT : impossible de dupliquer « Camion benne » par mine. Résultat,
+--   les mines autres que la 1 n'avaient AUCUN modèle applicable.
+--   Tant que le formulaire listait TOUS les modèles sans filtre, le défaut
+--   restait invisible. Avec le filtrage par `scope_ref` (réforme Inspections),
+--   il devenait bloquant : la mine 6 (CAM-777F, EXC-6015B, GEN-250) n'aurait
+--   plus rien pu planifier du tout.
+--
+-- CONVENTION appliquée (déjà en vigueur sur le projet — cf. HsActivityRepository,
+-- EmergencyUserPermissionRepository) :
+--   company_id IS NULL  => référentiel GLOBAL, visible de toutes les mines
+--   company_id = X      => personnalisation propre à la mine X
+-- La requête `findActiveByTypeAndCompany` a été corrigée en conséquence :
+--   AND (:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId)
+--
+-- Pas d'accent dans ce fichier : `--default-character-set` indifférent ici.
+-- Idempotent : rejouable sans effet une fois les modèles passés à NULL.
+-- À exécuter sur les DEUX bases : Docker local `safex-mysql` ET Aiven prod.
+-- =====================================================================
+
+-- Tous les modèles actuels sont des seeds génériques (EQ-CAMION-BENNE,
+-- EQ-EXCAVATEUR, EQ-FOREUSE, EQ-CHARGEUSE, EQ-CONCASSEUR,
+-- EQ-GROUPE-ELECTROGENE, EQ-COMPRESSEUR, EQ-CONVOYEUR, LOC-*, PROC-*) :
+-- aucun n'est une personnalisation métier d'une mine donnée.
+UPDATE `inspection_template` SET `company_id` = NULL WHERE `company_id` = 1;
+
+-- Vérifications :
+--   SELECT IFNULL(company_id, 'GLOBAL') AS scope, COUNT(*)
+--     FROM inspection_template GROUP BY company_id;
+--   -- attendu : GLOBAL = tous les modèles, aucune ligne à 1.
+--
+--   -- Familles d'équipement SANS modèle applicable (attendu : aucune ligne) :
+--   SELECT DISTINCT e.type AS famille_sans_modele
+--     FROM equipment e
+--    WHERE NOT EXISTS (SELECT 1 FROM inspection_template t
+--                       WHERE t.type = 'EQUIPMENT' AND t.active = 1
+--                         AND t.scope_ref = e.type);

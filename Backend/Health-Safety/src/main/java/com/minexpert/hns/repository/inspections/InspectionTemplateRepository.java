@@ -27,14 +27,27 @@ public interface InspectionTemplateRepository extends JpaRepository<InspectionTe
     /** Recherche par code unique (utilise par le seed pour upsert idempotent). */
     Optional<InspectionTemplate> findByCode(String code);
 
-    // ── Variantes cloisonnées par mine (companyId null ne filtre pas) ──
+    // ── Variantes cloisonnées par mine ──
+    //
+    // Un template est un RÉFÉRENTIEL, pas une donnée de mine : une checklist
+    // « Camion benne » est générique. On applique donc la convention déjà en
+    // vigueur sur le projet (cf. HsActivityRepository, EmergencyUserPermission-
+    // Repository) : `companyId IS NULL` = CATALOGUE GLOBAL, visible de TOUTES
+    // les mines ; `companyId = X` = personnalisation propre à la mine X.
+    //
+    // Sans la clause `t.companyId IS NULL`, un catalogue global était invisible
+    // dès qu'une mine active était sélectionnée : les mines autres que la 1
+    // n'avaient AUCUN modèle applicable et ne pouvaient plus rien planifier une
+    // fois le filtrage par scopeRef en place.
 
     @Query("SELECT t FROM InspectionTemplate t WHERE t.type = :type AND t.active = true "
-            + "AND (:companyId IS NULL OR t.companyId = :companyId) ORDER BY t.name ASC")
+            + "AND (:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId) "
+            + "ORDER BY t.name ASC")
     List<InspectionTemplate> findActiveByTypeAndCompany(@Param("type") InspectionTemplateType type,
             @Param("companyId") Long companyId);
 
     @Query("SELECT t FROM InspectionTemplate t WHERE t.active = true "
-            + "AND (:companyId IS NULL OR t.companyId = :companyId) ORDER BY t.type ASC, t.name ASC")
+            + "AND (:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId) "
+            + "ORDER BY t.type ASC, t.name ASC")
     List<InspectionTemplate> findActiveByCompany(@Param("companyId") Long companyId);
 }

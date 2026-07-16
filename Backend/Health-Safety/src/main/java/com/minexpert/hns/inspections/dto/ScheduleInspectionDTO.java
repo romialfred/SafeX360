@@ -2,6 +2,7 @@ package com.minexpert.hns.inspections.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -61,4 +62,14 @@ public class ScheduleInspectionDTO {
 
     /** Inspecteur principal en charge de l'execution. */
     private Long primaryInspectorId;
+
+    /**
+     * Equipe d'inspection (employe + role). Nullable/vide tolere : dans ce cas
+     * le comportement historique s'applique et le seul
+     * {@code primaryInspectorId} fait foi (un LEAD est alors cree depuis lui).
+     *
+     * <p>Invariant applique par le service : exactement UN membre {@code LEAD},
+     * dont l'{@code employeeId} alimente {@code primaryInspectorId}.</p>
+     */
+    private List<InspectionTeamMemberDTO> teamMembers;
 }

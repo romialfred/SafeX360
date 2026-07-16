@@ -1,18 +1,32 @@
 /**
- * InspectionScheduleForm — Formulaire de planification en 3 étapes (responsive
- * web + mobile).
+ * InspectionScheduleForm — Formulaire de planification (responsive web + mobile).
  *
- *   1. Cible    — type d'objet (tuiles) + cible (liste déroulante) + panneau
- *                 d'info raffiné (détails de la cible + dernière inspection).
- *   2. Modèle   — sélection du template correspondant au type.
- *   3. Détails  — date, horaires, inspecteur, objectifs, description.
+ *   1. Cible    — type d'objet (tuiles) + cible (liste déroulante groupée par
+ *                 famille) + panneau d'info (détails, famille, modèle applicable,
+ *                 dernière inspection).
+ *   2. Modèle   — SAUTÉE quand un seul modèle est applicable (cf. D2) ; sinon
+ *                 n'affiche QUE les modèles applicables à la famille de la cible.
+ *   3. Détails  — date, horaires, ÉQUIPE d'inspection (employés + rôles),
+ *                 objectifs, description.
  *
- * La mine (site) n'est JAMAIS demandée : résolue automatiquement via
- * `activeMineId ?? primaryMineId` → `resolvedMineId` → `siteId`. NE PAS
- * réintroduire de sélecteur/erreur de mine.
+ * INVARIANTS À NE PAS CASSER
+ *
+ *  - D2 : le modèle est DÉRIVÉ de la cible, jamais choisi à l'aveugle. On
+ *    apparie `template.scopeRef` avec la FAMILLE de la cible (`equipment.type`,
+ *    une clé canonique depuis D1). Zéro modèle applicable ⇒ message métier
+ *    actionnable + soumission bloquée. Ne JAMAIS retomber sur « tous les
+ *    modèles du type » : c'est ce repli qui permettait d'inspecter une
+ *    chargeuse avec la checklist d'un camion benne (défaut de SÉCURITÉ).
+ *  - D3 : la « Designation » n'existe plus dans l'IHM. `targetLabel` est
+ *    toujours envoyé au backend mais DÉRIVÉ du nom de la cible. Ne pas
+ *    réintroduire de champ de saisie.
+ *  - D4 : l'équipe comporte EXACTEMENT un LEAD ; `primaryInspectorId` en est
+ *    dérivé (rétro-compat `start()` + PDF).
+ *  - Mine : JAMAIS demandée. Dérivée de la cible (`companyId`) et passée en
+ *    param explicite à `scheduleInspection`. Ne pas réintroduire de sélecteur.
  *
  * Aucune section EPI. Pas de checklist ni de mesure ici (saisie déportée à la
- * page d'exécution mobile en Phase 4).
+ * page d'exécution).
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -32,8 +46,10 @@ import {
     IconCalendarStats,
     IconHistory,
     IconInfoCircle,
-    IconUserCheck,
     IconUsers,
+    IconUserPlus,
+    IconTrash,
+    IconFileCheck,
 } from '@tabler/icons-react';
 
 import {
@@ -50,29 +66,53 @@ import { getAllActiveLocations } from '../../services/LocationService';
 import { getAllActiveWorkProcess } from '../../services/WorkProcessService';
 import { getEmployeeDropdown } from '../../services/EmployeeService';
 import InspectionStatusBadge from './InspectionStatusBadge';
+import {
+    equipmentFamilyLabel,
+    normalizeFamilyKey,
+    inspectionRoleOptions,
+    inspectionRoleLabel,
+    INSPECTION_ROLE_CONFIG,
+    initialsOf,
+    type InspectionRoleKey,
+} from './inspectionLabels';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import { useAppSelector } from '../../slices/hooks';
 
-// Wizard à 3 étapes : Cible → Modèle → Détails.
+// Wizard : Cible → [Modèle] → Détails. L'étape 2 est conditionnelle (D2).
 type Step = 1 | 2 | 3;
 
 /** Option simple ou groupe de famille (liste des cibles). */
 type TargetItem = { value: string; label: string };
 type TargetOption = TargetItem | { group: string; items: TargetItem[] };
 
-/** Famille d'un équipement, repli explicite pour ne perdre aucune cible. */
-const UNCLASSIFIED = 'Non classé';
+/** Clé sentinelle du groupe « sans famille » — distincte des clés métier. */
+const UNCLASSIFIED = '__UNCLASSIFIED__';
+
+/** Membre d'équipe côté IHM (`uid` = clé de rendu, jamais envoyée). */
+interface TeamMemberState {
+    uid: string;
+    employeeId: string;
+    role: InspectionRoleKey;
+}
+
+let memberSeq = 0;
+const newMember = (role: InspectionRoleKey): TeamMemberState => ({
+    uid: `m${++memberSeq}`,
+    employeeId: '',
+    role,
+});
 
 interface FormState {
     type: InspectionTemplateType | null;
     siteId: number | null;
     targetRefId: string;
+    /** Dérivé du nom de la cible (D3) — jamais saisi, jamais affiché en champ. */
     targetLabel: string;
     templateId: number | null;
     plannedDate: string;
     startTime: string;
     endTime: string;
-    primaryInspectorId: string;
+    team: TeamMemberState[];
     objectives: string;
     description: string;
 }
@@ -86,7 +126,7 @@ const INITIAL: FormState = {
     plannedDate: '',
     startTime: '',
     endTime: '',
-    primaryInspectorId: '',
+    team: [],
     objectives: '',
     description: '',
 };
@@ -115,8 +155,8 @@ export default function InspectionScheduleForm() {
     const [errors, setErrors] = useState<string[]>([]);
 
     // Cibles : options de la liste déroulante + enregistrements bruts (panneau info).
-    // Pour les ÉQUIPEMENTS la liste est GROUPÉE par famille (Camions, Pelles…) :
-    // Mantine accepte un mélange d'items plats et de groupes { group, items }.
+    // Pour les ÉQUIPEMENTS la liste est GROUPÉE par famille : le groupe porte le
+    // LIBELLÉ traduit, jamais la clé brute (HEAVY_TRUCK) stockée en base.
     const [targetOptions, setTargetOptions] = useState<TargetOption[]>([]);
     const [targetRecords, setTargetRecords] = useState<any[]>([]);
     const [loadingTargets, setLoadingTargets] = useState(false);
@@ -125,8 +165,7 @@ export default function InspectionScheduleForm() {
     const [loadingLast, setLoadingLast] = useState(false);
 
     // Principe plateforme : AUCUN formulaire ne demande la mine. La mine active
-    // vient du header (sélecteur global) ; toute création y est rattachée. Le
-    // « site » de l'inspection = la mine active, résolue automatiquement ici.
+    // vient du header (sélecteur global) ; toute création y est rattachée.
     const activeMineId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId ?? null);
     // Mine principale de l'utilisateur (repli quand le header est en « Toutes les
     // Mines » / vue consolidée) : on ne demande JAMAIS la mine dans le formulaire.
@@ -137,19 +176,19 @@ export default function InspectionScheduleForm() {
     });
     const resolvedMineId = activeMineId ?? primaryMineId;
 
-    // Équipe d'inspection : liste des employés pour le sélecteur d'inspecteur
-    // principal. Alimentée par le dropdown HRMS (scopé mine par l'intercepteur).
-    const [inspectors, setInspectors] = useState<{ value: string; label: string }[]>([]);
-    const [loadingInspectors, setLoadingInspectors] = useState(false);
+    // Employés (dropdown HRMS, scopé mine par l'intercepteur) : alimente les
+    // sélecteurs de membres de l'équipe d'inspection.
+    const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
 
     useEffect(() => {
         let alive = true;
-        setLoadingInspectors(true);
+        setLoadingEmployees(true);
         Promise.resolve(getEmployeeDropdown())
             .then((list: any[]) => {
                 if (!alive) return;
                 const arr = Array.isArray(list) ? list : [];
-                setInspectors(
+                setEmployees(
                     arr
                         .filter((e) => e && e.id !== undefined && e.id !== null)
                         .map((e) => ({
@@ -159,17 +198,17 @@ export default function InspectionScheduleForm() {
                 );
             })
             .catch(() => {
-                if (alive) setInspectors([]);
+                if (alive) setEmployees([]);
             })
             .finally(() => {
-                if (alive) setLoadingInspectors(false);
+                if (alive) setLoadingEmployees(false);
             });
         return () => {
             alive = false;
         };
     }, []);
 
-    // Charge la liste des cibles selon le type d'objet choisi (étape 1 fusionnée).
+    // Charge la liste des cibles selon le type d'objet choisi.
     // Dégradation gracieuse : toute erreur → liste vide, pas de crash.
     useEffect(() => {
         if (!form.type) {
@@ -200,19 +239,33 @@ export default function InspectionScheduleForm() {
                 });
 
                 if (currentType === 'EQUIPMENT') {
-                    // Regroupement par famille (champ `type` du registre).
+                    // Regroupement par famille : on groupe sur la CLÉ puis on
+                    // affiche son LIBELLÉ traduit (D1).
                     const families = new Map<string, TargetItem[]>();
                     for (const r of valid) {
-                        const fam = String(r.type ?? '').trim() || UNCLASSIFIED;
+                        const fam = normalizeFamilyKey(r.type) ?? UNCLASSIFIED;
                         if (!families.has(fam)) families.set(fam, []);
                         families.get(fam)!.push(toItem(r));
                     }
+                    const groupLabel = (key: string) =>
+                        key === UNCLASSIFIED
+                            ? t('equipment.familyUnclassified', { defaultValue: 'Non classée' })
+                            : equipmentFamilyLabel(t, key);
                     const groups = [...families.entries()]
-                        .sort(([a], [b]) =>
-                            // « Non classé » toujours en dernier.
-                            a === UNCLASSIFIED ? 1 : b === UNCLASSIFIED ? -1 : a.localeCompare(b, 'fr'),
+                        .map(([key, items]) => ({
+                            group: groupLabel(key),
+                            items: items.sort(byLabel),
+                            __key: key,
+                        }))
+                        .sort((a, b) =>
+                            // « Non classée » toujours en dernier.
+                            a.__key === UNCLASSIFIED
+                                ? 1
+                                : b.__key === UNCLASSIFIED
+                                ? -1
+                                : a.group.localeCompare(b.group, 'fr'),
                         )
-                        .map(([group, items]) => ({ group, items: items.sort(byLabel) }));
+                        .map(({ group, items }) => ({ group, items }));
                     setTargetOptions(groups);
                 } else {
                     setTargetOptions(valid.map(toItem).sort(byLabel));
@@ -223,41 +276,139 @@ export default function InspectionScheduleForm() {
                 setTargetOptions([]);
             })
             .finally(() => setLoadingTargets(false));
-    }, [form.type]);
+        // `t` : les libellés de groupe doivent suivre la langue courante.
+    }, [form.type, t, i18n.language]);
 
-    // Charge la liste des templates filtrés par type quand l'utilisateur arrive à
-    // l'étape Modèle (étape 2 dans le wizard à 3 étapes).
+    // Modèles du type sélectionné. Chargés dès le choix du TYPE (et non à
+    // l'étape 2) : il faut connaître les modèles applicables AVANT de savoir si
+    // l'étape « Modèle » doit exister (D2 — auto-sélection / saut d'étape).
     useEffect(() => {
-        if (step !== 2 || !form.type) return;
+        if (!form.type) {
+            setTemplates([]);
+            return;
+        }
+        let alive = true;
         setLoadingTemplates(true);
         listTemplates(form.type)
-            .then((list) => setTemplates(list.filter((t) => t.active !== false)))
-            .catch(() => setTemplates([]))
-            .finally(() => setLoadingTemplates(false));
-    }, [step, form.type]);
+            .then((list) => {
+                if (alive) setTemplates(list.filter((tpl) => tpl.active !== false));
+            })
+            .catch(() => {
+                if (alive) setTemplates([]);
+            })
+            .finally(() => {
+                if (alive) setLoadingTemplates(false);
+            });
+        return () => {
+            alive = false;
+        };
+    }, [form.type]);
 
     const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
         setForm((f) => ({ ...f, [key]: value }));
     };
 
+    const selectedRecord = useMemo(
+        () => (form.targetRefId ? targetRecords.find((r) => String(r.id) === form.targetRefId) ?? null : null),
+        [targetRecords, form.targetRefId],
+    );
+
+    // Famille de la cible = clé d'appariement avec `template.scopeRef`.
+    //  - EQUIPMENT : la famille EST `record.type` (clé canonique depuis D1).
+    //  - LOCATION / PROCEDURE : `scopeRef` de la cible s'il est renseigné,
+    //    sinon pas de sous-filtre (le filtre par `type` suffit).
+    const targetFamily = useMemo<string | null>(() => {
+        if (!selectedRecord || !form.type) return null;
+        const raw =
+            form.type === 'EQUIPMENT'
+                ? selectedRecord.type
+                : selectedRecord.scopeRef ?? null;
+        return String(raw ?? '').trim() || null;
+    }, [selectedRecord, form.type]);
+
+    /**
+     * Équipement dont la famille est absente/inconnue : on ne peut PAS dériver
+     * le modèle. On bloque avec un message actionnable plutôt que de retomber
+     * sur la liste complète (ce repli est précisément le défaut de sécurité).
+     */
+    const familyMissing = useMemo(
+        () => form.type === 'EQUIPMENT' && !!selectedRecord && !normalizeFamilyKey(targetFamily),
+        [form.type, selectedRecord, targetFamily],
+    );
+
+    const familyLabel = useMemo(
+        () =>
+            normalizeFamilyKey(targetFamily)
+                ? equipmentFamilyLabel(t, targetFamily)
+                : t('equipment.familyUnclassified', { defaultValue: 'Non classée' }),
+        [targetFamily, t],
+    );
+
+    /** Modèles applicables à la cible sélectionnée (D2). */
+    const applicableTemplates = useMemo<InspectionTemplateSummaryDTO[]>(() => {
+        if (!form.type || !selectedRecord) return [];
+        const byType = templates.filter((tpl) => tpl.type === form.type);
+        if (form.type === 'EQUIPMENT') {
+            const key = normalizeFamilyKey(targetFamily);
+            if (!key) return []; // famille inconnue → aucun appariement possible
+            return byType.filter((tpl) => normalizeFamilyKey(tpl.scopeRef) === key);
+        }
+        // LOCATION / PROCEDURE : sous-filtre scopeRef seulement s'il est porté
+        // par la cible ; sinon tous les modèles du type sont pertinents.
+        if (!targetFamily) return byType;
+        const wanted = targetFamily.trim().toUpperCase();
+        return byType.filter((tpl) => String(tpl.scopeRef ?? '').trim().toUpperCase() === wanted);
+    }, [templates, form.type, selectedRecord, targetFamily]);
+
+    const autoTemplate =
+        selectedRecord && applicableTemplates.length === 1 ? applicableTemplates[0] : null;
+    /** Un seul modèle applicable → l'étape « Modèle » n'a plus rien à demander. */
+    const skipTemplateStep = !!autoTemplate;
+    /** Le stepper ne doit pas mentir : il n'affiche que les étapes atteignables. */
+    const visibleSteps: Step[] = skipTemplateStep ? [1, 3] : [1, 2, 3];
+
+    // Recalcul du modèle à chaque changement de cible : auto-sélection quand il
+    // n'y a qu'un applicable, purge quand la sélection courante ne l'est plus.
+    useEffect(() => {
+        setForm((f) => {
+            if (autoTemplate) {
+                return f.templateId === autoTemplate.id ? f : { ...f, templateId: autoTemplate.id };
+            }
+            if (f.templateId && !applicableTemplates.some((tpl) => tpl.id === f.templateId)) {
+                return { ...f, templateId: null };
+            }
+            return f;
+        });
+    }, [autoTemplate, applicableTemplates]);
+
+    // Si l'utilisateur est sur l'étape « Modèle » et qu'elle devient inutile
+    // (changement de cible → un seul applicable), on ne l'y laisse pas coincé.
+    useEffect(() => {
+        if (skipTemplateStep && step === 2) setStep(3);
+    }, [skipTemplateStep, step]);
+
     // Sélection du type d'objet : réinitialise la cible, le template et l'info.
     const handleSelectType = (tt: InspectionTemplateType) => {
         setForm((f) => ({ ...f, type: tt, templateId: null, targetRefId: '', targetLabel: '' }));
         setLastInspection(null);
+        setErrors([]);
     };
 
-    // Sélection d'une cible dans la liste déroulante : fixe targetRefId, pré-remplit
-    // la désignation (targetLabel, éditable) et va chercher la dernière inspection.
+    // Sélection d'une cible : fixe targetRefId, DÉRIVE la désignation (D3 — non
+    // affichée, non modifiable) et va chercher la dernière inspection.
     const handleSelectTarget = (value: string | null) => {
         if (!value) {
-            set('targetRefId', '');
-            set('targetLabel', '');
+            setForm((f) => ({ ...f, targetRefId: '', targetLabel: '', templateId: null }));
             setLastInspection(null);
             return;
         }
-        set('targetRefId', value);
         const rec = targetRecords.find((r) => String(r.id) === value);
-        set('targetLabel', rec?.name ?? '');
+        setForm((f) => ({
+            ...f,
+            targetRefId: value,
+            targetLabel: rec?.name ?? rec?.code ?? `#${value}`,
+        }));
+        setErrors([]);
         if (form.type) {
             setLoadingLast(true);
             getLastInspection(form.type, Number(value))
@@ -267,20 +418,76 @@ export default function InspectionScheduleForm() {
         }
     };
 
+    // ─── Équipe d'inspection (D4) ──────────────────────────────────────────
+    // Invariant : exactement UN LEAD. Il est tenu côté IHM — désigner un
+    // nouveau principal rétrograde le précédent — et re-vérifié à la validation
+    // (cas « on retire le LEAD »). On ne se repose pas sur le serveur seul.
+
+    const addMember = () =>
+        setForm((f) => ({
+            ...f,
+            team: [...f.team, newMember(f.team.some((m) => m.role === 'LEAD') ? 'INSPECTOR' : 'LEAD')],
+        }));
+
+    const removeMember = (uid: string) =>
+        setForm((f) => ({ ...f, team: f.team.filter((m) => m.uid !== uid) }));
+
+    const setMemberEmployee = (uid: string, employeeId: string) =>
+        setForm((f) => ({
+            ...f,
+            team: f.team.map((m) => (m.uid === uid ? { ...m, employeeId } : m)),
+        }));
+
+    const setMemberRole = (uid: string, role: InspectionRoleKey) =>
+        setForm((f) => ({
+            ...f,
+            team: f.team.map((m) =>
+                m.uid === uid
+                    ? { ...m, role }
+                    : // Un seul LEAD : le précédent redevient inspecteur.
+                    role === 'LEAD' && m.role === 'LEAD'
+                    ? { ...m, role: 'INSPECTOR' as InspectionRoleKey }
+                    : m,
+            ),
+        }));
+
+    const leadCount = form.team.filter((m) => m.role === 'LEAD').length;
+
     const validateStep = (s: Step): string[] => {
         const errs: string[] = [];
-        // Étape 1 fusionnée : type d'objet + cible (dropdown) + désignation.
+        // Étape 1 : type d'objet + cible. Plus de « Designation » (D3).
         if (s >= 1) {
             if (!form.type) errs.push(t('schedule.errors.typeRequired'));
             if (!form.targetRefId) {
                 errs.push(t('schedule.errors.targetIdRequired', { defaultValue: 'Sélectionnez une cible.' }));
             }
-            if (!form.targetLabel.trim()) errs.push(t('schedule.errors.targetLabelRequired'));
+            // D2 : sans modèle applicable, la planification n'a pas de sens.
+            if (selectedRecord && !loadingTemplates) {
+                if (familyMissing) {
+                    errs.push(t('schedule.errors.familyMissing'));
+                } else if (applicableTemplates.length === 0) {
+                    errs.push(t('schedule.errors.noTemplateForFamily', { family: familyLabel }));
+                }
+            }
         }
         // La mine (site) n'est JAMAIS saisie : résolue depuis le header, sinon la
         // mine principale de l'utilisateur. Aucun blocage ici.
-        if (s >= 2 && !form.templateId) errs.push(t('schedule.errors.templateRequired'));
-        if (s >= 3 && !form.plannedDate) errs.push(t('schedule.errors.dateRequired'));
+        // Le modèle n'est exigé que si l'utilisateur avait un choix à faire :
+        // à 1 applicable il est auto-sélectionné, à 0 l'erreur est déjà remontée.
+        if (s >= 2 && !form.templateId && applicableTemplates.length > 1) {
+            errs.push(t('schedule.errors.templateRequired'));
+        }
+        if (s >= 3) {
+            if (!form.plannedDate) errs.push(t('schedule.errors.dateRequired'));
+            // Équipe optionnelle ; mais dès qu'elle existe elle doit être valide.
+            if (form.team.length > 0) {
+                if (form.team.some((m) => !m.employeeId)) {
+                    errs.push(t('schedule.errors.teamMemberIncomplete'));
+                }
+                if (leadCount === 0) errs.push(t('schedule.errors.teamLeadRequired'));
+                else if (leadCount > 1) errs.push(t('schedule.errors.teamLeadDuplicate'));
+            }
+        }
         return errs;
     };
 
@@ -291,12 +498,19 @@ export default function InspectionScheduleForm() {
             return;
         }
         setErrors([]);
-        setStep((s) => (s < 3 ? ((s + 1) as Step) : s));
+        // Saut de l'étape « Modèle » quand elle n'a rien à demander (D2).
+        setStep((s) => {
+            const idx = visibleSteps.indexOf(s);
+            return idx >= 0 && idx < visibleSteps.length - 1 ? visibleSteps[idx + 1] : s;
+        });
     };
 
     const goPrev = () => {
         setErrors([]);
-        setStep((s) => (s > 1 ? ((s - 1) as Step) : s));
+        setStep((s) => {
+            const idx = visibleSteps.indexOf(s);
+            return idx > 0 ? visibleSteps[idx - 1] : s;
+        });
     };
 
     const handleSubmit = async () => {
@@ -312,26 +526,35 @@ export default function InspectionScheduleForm() {
             // le lieu de rattachement de l'équipement/procédure (peut être null).
             // Mine = company_id de la cible → l'inspection est filée sous la bonne
             // mine même en vue consolidée (« Toutes les Mines »).
-            const rec = targetRecords.find((r) => String(r.id) === form.targetRefId);
+            const rec = selectedRecord;
             const derivedSiteId =
                 form.type === 'LOCATION'
                     ? Number(form.targetRefId)
                     : rec?.locationId ?? null;
             const targetCompanyId = rec?.companyId ?? resolvedMineId ?? null;
 
+            // D3 : targetLabel dérivé du nom de la cible, jamais saisi.
+            const derivedLabel =
+                String(rec?.name ?? form.targetLabel ?? '').trim() || `#${form.targetRefId}`;
+
+            // D4 : l'équipe part telle quelle ; primaryInspectorId = LEAD.
+            const members = form.team.filter((m) => m.employeeId);
+            const lead = members.find((m) => m.role === 'LEAD');
+
             const payload: ScheduleInspectionDTO = {
                 templateId: form.templateId as number,
                 siteId: derivedSiteId,
                 targetRefId: Number(form.targetRefId),
-                targetLabel: form.targetLabel.trim(),
+                targetLabel: derivedLabel,
                 plannedDate: form.plannedDate,
                 startTime: form.startTime ? `${form.startTime}:00` : null,
                 endTime: form.endTime ? `${form.endTime}:00` : null,
                 description: form.description || undefined,
                 objectives: form.objectives || undefined,
-                primaryInspectorId: form.primaryInspectorId
-                    ? Number(form.primaryInspectorId)
-                    : null,
+                primaryInspectorId: lead ? Number(lead.employeeId) : null,
+                teamMembers: members.length
+                    ? members.map((m) => ({ employeeId: Number(m.employeeId), role: m.role }))
+                    : undefined,
             };
             const id = await scheduleInspection(payload, targetCompanyId);
             successNotification(t('schedule.success.submitted', { id }));
@@ -348,11 +571,19 @@ export default function InspectionScheduleForm() {
         }
     };
 
-    const stepHeader = (n: Step, labelKey: string, fallback: string) => {
+    const STEP_META: Record<Step, { key: string; fallback: string }> = {
+        1: { key: 'target', fallback: 'Cible' },
+        2: { key: 'template', fallback: 'Modèle' },
+        3: { key: 'details', fallback: 'Détails' },
+    };
+
+    /** `position` = rang AFFICHÉ (1..n) : il suit les étapes réellement visibles. */
+    const stepHeader = (n: Step, position: number) => {
         const isActive = step === n;
-        const isDone = step > n;
+        const isDone = visibleSteps.indexOf(step) > visibleSteps.indexOf(n);
+        const meta = STEP_META[n];
         return (
-            <div className="flex items-center gap-2 min-w-0">
+            <div key={n} className="flex items-center gap-2 min-w-0">
                 <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 ${
                         isDone
@@ -362,18 +593,20 @@ export default function InspectionScheduleForm() {
                             : 'bg-slate-200 text-slate-500'
                     }`}
                 >
-                    {isDone ? <IconCheck size={14} stroke={2.4} /> : n}
+                    {isDone ? <IconCheck size={14} stroke={2.4} /> : position}
                 </div>
                 <span
                     className={`text-[12px] truncate ${
                         isActive ? 'text-slate-900 font-medium' : 'text-slate-500'
                     }`}
                 >
-                    {t(`schedule.steps.${labelKey}`, { defaultValue: fallback })}
+                    {t(`schedule.steps.${meta.key}`, { defaultValue: meta.fallback })}
                 </span>
             </div>
         );
     };
+
+    const isLastStep = step === visibleSteps[visibleSteps.length - 1];
 
     return (
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
@@ -410,12 +643,13 @@ export default function InspectionScheduleForm() {
                     </div>
                 </div>
 
-                {/* Stepper — 3 étapes : Cible → Modèle → Détails */}
+                {/* Stepper — n'affiche que les étapes réellement atteignables (D2) */}
                 <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm p-3">
-                    <div className="grid grid-cols-3 gap-2">
-                        {stepHeader(1, 'target', 'Cible')}
-                        {stepHeader(2, 'template', 'Modèle')}
-                        {stepHeader(3, 'details', 'Détails')}
+                    <div
+                        className="grid gap-2"
+                        style={{ gridTemplateColumns: `repeat(${visibleSteps.length}, minmax(0, 1fr))` }}
+                    >
+                        {visibleSteps.map((n, i) => stepHeader(n, i + 1))}
                     </div>
                 </div>
 
@@ -436,7 +670,6 @@ export default function InspectionScheduleForm() {
                     {step === 1 && (
                         <StepTarget
                             form={form}
-                            setField={set}
                             onSelectType={handleSelectType}
                             targetOptions={targetOptions}
                             targetRecords={targetRecords}
@@ -445,22 +678,39 @@ export default function InspectionScheduleForm() {
                             lastInspection={lastInspection}
                             loadingLast={loadingLast}
                             locale={i18n.language}
+                            selectedRecord={selectedRecord}
+                            familyLabel={familyLabel}
+                            familyMissing={familyMissing}
+                            applicableTemplates={applicableTemplates}
+                            loadingTemplates={loadingTemplates}
                         />
                     )}
                     {step === 2 && (
                         <StepTemplate
-                            templates={templates}
+                            templates={applicableTemplates}
                             loading={loadingTemplates}
                             selectedTemplateId={form.templateId}
                             onSelect={(id) => set('templateId', id)}
+                            familyLabel={familyLabel}
+                            familyMissing={familyMissing}
                         />
                     )}
                     {step === 3 && (
                         <StepDetails
                             form={form}
                             setField={set}
-                            inspectors={inspectors}
-                            loadingInspectors={loadingInspectors}
+                            employees={employees}
+                            loadingEmployees={loadingEmployees}
+                            leadCount={leadCount}
+                            onAddMember={addMember}
+                            onRemoveMember={removeMember}
+                            onSetMemberEmployee={setMemberEmployee}
+                            onSetMemberRole={setMemberRole}
+                            appliedTemplate={
+                                templates.find((tpl) => tpl.id === form.templateId) ?? null
+                            }
+                            templateAutoApplied={skipTemplateStep}
+                            familyLabel={familyLabel}
                         />
                     )}
                 </div>
@@ -475,7 +725,7 @@ export default function InspectionScheduleForm() {
                         {t('schedule.buttons.cancel')}
                     </button>
                     <div className="flex items-center gap-2">
-                        {step > 1 && (
+                        {step !== visibleSteps[0] && (
                             <button
                                 type="button"
                                 onClick={goPrev}
@@ -485,7 +735,7 @@ export default function InspectionScheduleForm() {
                                 {t('schedule.buttons.previous')}
                             </button>
                         )}
-                        {step < 3 ? (
+                        {!isLastStep ? (
                             <button
                                 type="button"
                                 onClick={goNext}
@@ -526,13 +776,17 @@ function formatDate(iso: string | undefined, locale: string): string {
 }
 
 /**
- * StepTarget — Étape 1 fusionnée : type d'objet (tuiles) + cible (liste
- * déroulante dépendante du type) + panneau d'info raffiné (détails + dernière
- * inspection). La désignation (targetLabel) reste éditable, pré-remplie.
+ * StepTarget — Étape 1 : type d'objet (tuiles) + cible (liste déroulante
+ * groupée par famille) + panneau d'info (détails, famille, MODÈLE APPLICABLE,
+ * dernière inspection).
+ *
+ * Le modèle applicable est annoncé DÈS ICI : c'est la famille de la cible qui
+ * le détermine (D2), donc l'utilisateur voit immédiatement si la planification
+ * est possible — et pourquoi elle ne l'est pas, le cas échéant.
+ * Pas de champ « Designation » (D3).
  */
 function StepTarget({
     form,
-    setField,
     onSelectType,
     targetOptions,
     targetRecords,
@@ -541,9 +795,13 @@ function StepTarget({
     lastInspection,
     loadingLast,
     locale,
+    selectedRecord,
+    familyLabel,
+    familyMissing,
+    applicableTemplates,
+    loadingTemplates,
 }: {
     form: FormState;
-    setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
     onSelectType: (t: InspectionTemplateType) => void;
     targetOptions: TargetOption[];
     targetRecords: any[];
@@ -552,12 +810,14 @@ function StepTarget({
     lastInspection: LastInspectionDTO | null;
     loadingLast: boolean;
     locale: string;
+    selectedRecord: any | null;
+    familyLabel: string;
+    familyMissing: boolean;
+    applicableTemplates: InspectionTemplateSummaryDTO[];
+    loadingTemplates: boolean;
 }) {
     const { t } = useTranslation('inspection');
     const types: InspectionTemplateType[] = ['EQUIPMENT', 'LOCATION', 'PROCEDURE'];
-    const selectedRecord = form.targetRefId
-        ? targetRecords.find((r) => String(r.id) === form.targetRefId)
-        : null;
 
     // Code de chaque cible (équipements) : sorti du libellé pour alléger la
     // liste, il reste affiché en puce et surtout CHERCHABLE via le filtre.
@@ -689,7 +949,8 @@ function StepTarget({
                                     <>
                                         <InfoField label={t('schedule.targetStep.fieldCode', { defaultValue: 'Code' })} value={selectedRecord.code} />
                                         <InfoField label={t('schedule.targetStep.fieldName', { defaultValue: 'Nom' })} value={selectedRecord.name} />
-                                        <InfoField label={t('schedule.targetStep.fieldType', { defaultValue: 'Type' })} value={selectedRecord.type} />
+                                        {/* La famille est affichée TRADUITE, jamais la clé brute (D1). */}
+                                        <InfoField label={t('schedule.targetStep.fieldFamily', { defaultValue: 'Famille' })} value={familyMissing ? null : familyLabel} />
                                         <InfoField
                                             label={t('schedule.targetStep.fieldBrandModel', { defaultValue: 'Marque / Modèle' })}
                                             value={[selectedRecord.brand, selectedRecord.model].filter(Boolean).join(' ')}
@@ -732,19 +993,34 @@ function StepTarget({
                         </div>
                     )}
 
-                    {/* Désignation — pré-remplie, éditable */}
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                            {t('schedule.targetStep.targetLabelLabel')}
-                        </label>
-                        <input
-                            type="text"
-                            value={form.targetLabel}
-                            onChange={(e) => setField('targetLabel', e.target.value)}
-                            placeholder={t('schedule.targetStep.targetLabelPlaceholder')}
-                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                        />
-                    </div>
+                    {/* Modèle applicable — verdict immédiat de l'appariement famille↔scopeRef (D2) */}
+                    {selectedRecord && !loadingTemplates && (
+                        <>
+                            {familyMissing ? (
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px]">
+                                    <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                                    <span>{t('schedule.templateStep.familyMissing')}</span>
+                                </div>
+                            ) : applicableTemplates.length === 0 ? (
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px]">
+                                    <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                                    <span>
+                                        {t('schedule.templateStep.noTemplateForFamily', { family: familyLabel })}
+                                    </span>
+                                </div>
+                            ) : applicableTemplates.length === 1 ? (
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[12.5px]">
+                                    <IconFileCheck size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <div className="font-medium">{applicableTemplates[0].name}</div>
+                                        <div className="text-[11.5px] text-emerald-700/90">
+                                            {t('schedule.templateStep.autoSelected', { family: familyLabel })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </>
+                    )}
                 </div>
             )}
         </div>
@@ -760,29 +1036,48 @@ function InfoField({ label, value }: { label: string; value?: string | null }) {
     );
 }
 
+/**
+ * StepTemplate — Étape 2, affichée UNIQUEMENT quand plusieurs modèles sont
+ * applicables. `templates` ne contient QUE les applicables : ne jamais lui
+ * repasser la liste complète du type (cf. D2, défaut de sécurité).
+ */
 function StepTemplate({
     templates,
     loading,
     selectedTemplateId,
     onSelect,
+    familyLabel,
+    familyMissing,
 }: {
     templates: InspectionTemplateSummaryDTO[];
     loading: boolean;
     selectedTemplateId: number | null;
     onSelect: (id: number) => void;
+    familyLabel: string;
+    familyMissing: boolean;
 }) {
     const { t } = useTranslation('inspection');
     return (
         <div>
-            <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
+            <h2 className="text-[14px] font-semibold text-slate-800 mb-1">
                 {t('schedule.templateStep.heading')}
             </h2>
+            {!loading && !familyMissing && templates.length > 0 && (
+                <p className="text-[11.5px] text-slate-500 mb-3">
+                    {t('schedule.templateStep.applicableHint', { family: familyLabel })}
+                </p>
+            )}
             {loading ? (
                 <div className="text-[12.5px] text-slate-500 py-6 text-center">…</div>
+            ) : familyMissing ? (
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px]">
+                    <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                    <span>{t('schedule.templateStep.familyMissing')}</span>
+                </div>
             ) : templates.length === 0 ? (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[12.5px]">
                     <IconAlertOctagon size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                    <span>{t('schedule.templateStep.noTemplate')}</span>
+                    <span>{t('schedule.templateStep.noTemplateForFamily', { family: familyLabel })}</span>
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -803,10 +1098,7 @@ function StepTemplate({
                                     <div className="text-[13.5px] font-medium text-slate-900 truncate">
                                         {tpl.name}
                                     </div>
-                                    <div className="text-[11px] text-slate-500 mt-0.5">
-                                        {tpl.code}
-                                        {tpl.scopeRef && <> · {tpl.scopeRef}</>}
-                                    </div>
+                                    <div className="text-[11px] text-slate-500 mt-0.5">{tpl.code}</div>
                                     <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-x-3">
                                         <span>
                                             {t('schedule.templateStep.checkpoints', { count: tpl.checkpointCount })}
@@ -832,34 +1124,78 @@ function StepTemplate({
     );
 }
 
+/** Badge de rôle coloré (chip borde — jamais la couleur seule). */
+function RoleBadge({ role }: { role: InspectionRoleKey }) {
+    const { t } = useTranslation('inspection');
+    const cfg = INSPECTION_ROLE_CONFIG[role];
+    return (
+        <span
+            className={`inline-flex items-center px-1.5 py-0.5 text-[10.5px] rounded font-medium border whitespace-nowrap ${cfg.chip}`}
+        >
+            {inspectionRoleLabel(t, role)}
+        </span>
+    );
+}
+
 function StepDetails({
     form,
     setField,
-    inspectors,
-    loadingInspectors,
+    employees,
+    loadingEmployees,
+    leadCount,
+    onAddMember,
+    onRemoveMember,
+    onSetMemberEmployee,
+    onSetMemberRole,
+    appliedTemplate,
+    templateAutoApplied,
+    familyLabel,
 }: {
     form: FormState;
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
-    inspectors: { value: string; label: string }[];
-    loadingInspectors: boolean;
+    employees: { value: string; label: string }[];
+    loadingEmployees: boolean;
+    leadCount: number;
+    onAddMember: () => void;
+    onRemoveMember: (uid: string) => void;
+    onSetMemberEmployee: (uid: string, employeeId: string) => void;
+    onSetMemberRole: (uid: string, role: InspectionRoleKey) => void;
+    appliedTemplate: InspectionTemplateSummaryDTO | null;
+    templateAutoApplied: boolean;
+    familyLabel: string;
 }) {
     const { t } = useTranslation('inspection');
-    const selectedInspector = form.primaryInspectorId
-        ? inspectors.find((i) => i.value === form.primaryInspectorId) ?? null
-        : null;
-    const initials = (name: string) =>
-        name
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((p) => p[0]?.toUpperCase() ?? '')
-            .join('');
+    const roleOptions = useMemo(() => inspectionRoleOptions(t), [t]);
+    const employeeLabel = (id: string) => employees.find((e) => e.value === id)?.label ?? '';
+
+    /** Un employé ne peut pas tenir deux rôles : on l'exclut des autres lignes. */
+    const optionsFor = (uid: string) => {
+        const taken = new Set(
+            form.team.filter((m) => m.uid !== uid && m.employeeId).map((m) => m.employeeId),
+        );
+        return employees.filter((e) => !taken.has(e.value));
+    };
+
     return (
         <div>
             <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
                 {t('schedule.detailsStep.heading')}
             </h2>
             <div className="space-y-3">
+                {/* Rappel du modèle auto-appliqué : l'étape « Modèle » ayant été
+                    sautée, l'utilisateur doit voir quelle checklist s'applique. */}
+                {templateAutoApplied && appliedTemplate && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[12.5px]">
+                        <IconFileCheck size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <div className="font-medium">{appliedTemplate.name}</div>
+                            <div className="text-[11.5px] text-emerald-700/90">
+                                {t('schedule.templateStep.autoSelected', { family: familyLabel })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                         <label className="block text-[12px] font-medium text-slate-700 mb-1">
@@ -896,68 +1232,138 @@ function StepDetails({
                     </div>
                 </div>
 
-                {/* Équipe d'inspection — carte dédiée, sélecteur d'inspecteur
-                    principal (liste déroulante d'employés) + confirmation visuelle. */}
+                {/* Équipe d'inspection (D4) — membres = employés + rôles.
+                    Invariant tenu côté IHM : exactement un LEAD. */}
                 <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                            <IconUsers size={15} stroke={1.8} className="text-white" />
-                        </div>
-                        <div>
-                            <div className="text-[13px] font-semibold text-slate-800">
-                                {t('schedule.detailsStep.teamHeading', { defaultValue: "Équipe d'inspection" })}
+                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                                <IconUsers size={15} stroke={1.8} className="text-white" />
                             </div>
-                            <div className="text-[11px] text-slate-500">
-                                {t('schedule.detailsStep.teamSubtitle', {
-                                    defaultValue: "Désignez l'inspecteur responsable de l'exécution.",
-                                })}
+                            <div className="min-w-0">
+                                <div className="text-[13px] font-semibold text-slate-800">
+                                    {t('schedule.detailsStep.teamHeading')}
+                                </div>
+                                <div className="text-[11px] text-slate-500">
+                                    {t('schedule.detailsStep.teamSubtitle')}
+                                </div>
                             </div>
                         </div>
+                        {form.team.length > 0 && (
+                            <span className="text-[11px] text-slate-500 tabular-nums flex-shrink-0">
+                                {t('schedule.detailsStep.teamMemberCount', { count: form.team.length })}
+                            </span>
+                        )}
                     </div>
 
-                    <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 mb-1">
-                        <IconUserCheck size={13} stroke={1.8} className="text-cyan-700" />
-                        {t('schedule.detailsStep.primaryInspectorLabel')}
-                    </label>
-                    <Select
-                        searchable
-                        clearable
-                        data={inspectors}
-                        value={form.primaryInspectorId || null}
-                        onChange={(v) => setField('primaryInspectorId', v ?? '')}
-                        disabled={loadingInspectors}
-                        nothingFoundMessage={
-                            loadingInspectors
-                                ? t('common:loading', { defaultValue: 'Chargement…' })
-                                : t('schedule.detailsStep.noInspector', { defaultValue: 'Aucun employé disponible' })
-                        }
-                        placeholder={
-                            loadingInspectors
-                                ? t('common:loading', { defaultValue: 'Chargement…' })
-                                : t('schedule.detailsStep.primaryInspectorPlaceholder')
-                        }
-                        comboboxProps={{ withinPortal: true }}
-                    />
-
-                    {/* Confirmation de l'inspecteur sélectionné */}
-                    {selectedInspector && (
-                        <div className="mt-2.5 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white pl-1 pr-3 py-1">
-                            <span className="w-6 h-6 rounded-full bg-cyan-600 text-white text-[10px] font-semibold flex items-center justify-center">
-                                {initials(selectedInspector.label)}
-                            </span>
-                            <span className="text-[12px] text-slate-800 font-medium">
-                                {selectedInspector.label}
-                            </span>
-                            <span className="text-[10.5px] uppercase tracking-[0.08em] text-cyan-700 font-medium">
-                                {t('schedule.detailsStep.leadBadge', { defaultValue: 'Inspecteur principal' })}
-                            </span>
+                    {form.team.length === 0 ? (
+                        <p className="text-[12px] text-slate-500 italic py-2">
+                            {t('schedule.detailsStep.teamEmpty')}
+                        </p>
+                    ) : (
+                        <div className="space-y-2">
+                            {form.team.map((m) => {
+                                const cfg = INSPECTION_ROLE_CONFIG[m.role];
+                                const name = employeeLabel(m.employeeId);
+                                return (
+                                    <div
+                                        key={m.uid}
+                                        className="rounded-lg border border-slate-200 bg-white p-2.5 flex items-start gap-2.5"
+                                    >
+                                        {/* Puce d'avatar à initiales, teintée par le rôle */}
+                                        <span
+                                            className={`w-8 h-8 rounded-full text-white text-[10.5px] font-semibold flex items-center justify-center flex-shrink-0 mt-1 ${
+                                                name ? cfg.avatar : 'bg-slate-300'
+                                            }`}
+                                            aria-hidden="true"
+                                        >
+                                            {name ? initialsOf(name) : '—'}
+                                        </span>
+                                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div className="min-w-0">
+                                                <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                                    {t('schedule.detailsStep.teamMemberEmployeeLabel')}
+                                                </label>
+                                                <Select
+                                                    searchable
+                                                    data={optionsFor(m.uid)}
+                                                    value={m.employeeId || null}
+                                                    onChange={(v) => onSetMemberEmployee(m.uid, v ?? '')}
+                                                    disabled={loadingEmployees}
+                                                    nothingFoundMessage={
+                                                        loadingEmployees
+                                                            ? t('common:loading', { defaultValue: 'Chargement…' })
+                                                            : t('schedule.detailsStep.noInspector')
+                                                    }
+                                                    placeholder={
+                                                        loadingEmployees
+                                                            ? t('common:loading', { defaultValue: 'Chargement…' })
+                                                            : t('schedule.detailsStep.teamMemberEmployeePlaceholder')
+                                                    }
+                                                    comboboxProps={{ withinPortal: true }}
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                                                    {t('schedule.detailsStep.teamMemberRoleLabel')}
+                                                </label>
+                                                <Select
+                                                    data={roleOptions}
+                                                    value={m.role}
+                                                    onChange={(v) =>
+                                                        onSetMemberRole(m.uid, (v ?? 'INSPECTOR') as InspectionRoleKey)
+                                                    }
+                                                    allowDeselect={false}
+                                                    comboboxProps={{ withinPortal: true }}
+                                                />
+                                            </div>
+                                            <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
+                                                <RoleBadge role={m.role} />
+                                                {name && (
+                                                    <span className="text-[12px] text-slate-700 font-medium truncate">
+                                                        {name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => onRemoveMember(m.uid)}
+                                            title={t('schedule.detailsStep.teamRemoveMember')}
+                                            aria-label={t('schedule.detailsStep.teamRemoveMember')}
+                                            className="p-1.5 rounded text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition flex-shrink-0 mt-1"
+                                        >
+                                            <IconTrash size={14} stroke={1.8} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
+
+                    {/* Invariant « exactement un LEAD » : signalé AVANT la soumission. */}
+                    {form.team.length > 0 && leadCount === 0 && (
+                        <div className="mt-2 flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11.5px]">
+                            <IconAlertOctagon size={13} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                            <span>{t('schedule.detailsStep.teamNoLead')}</span>
+                        </div>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <button
+                            type="button"
+                            onClick={onAddMember}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-[12.5px] rounded-md border border-cyan-300 text-cyan-800 bg-white hover:bg-cyan-50 transition font-medium min-h-[40px]"
+                        >
+                            <IconUserPlus size={14} stroke={1.8} />
+                            {t('schedule.detailsStep.teamAddMember')}
+                        </button>
+                    </div>
+
                     <p className="text-[11px] text-slate-500 mt-2">
-                        {t('schedule.detailsStep.teamHelp', {
-                            defaultValue:
-                                "Optionnel à la planification : à défaut, l'inspecteur qui démarrera l'exécution sera enregistré comme responsable.",
-                        })}
+                        {form.team.length > 0
+                            ? t('schedule.detailsStep.teamLeadHint')
+                            : t('schedule.detailsStep.teamHelp')}
                     </p>
                 </div>
 

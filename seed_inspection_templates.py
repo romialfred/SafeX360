@@ -1,14 +1,26 @@
 """
 SEED Inspections HSE — Phase 6.
 
-Insere 8 modeles d'inspection conformes ISO 45001 (referentiels metier mine) :
+Insere 11 modeles d'inspection conformes ISO 45001 (referentiels metier mine) :
 
-  EQUIPEMENT (5)
+  EQUIPEMENT (8)
     EQ-CAMION-BENNE     Camion benne (HD truck) — verification journaliere
     EQ-EXCAVATEUR       Excavateur / pelle mecanique — controle pre-quart
     EQ-FOREUSE          Foreuse rotative — visite securite tour de forage
     EQ-CONVOYEUR        Convoyeur a bande — inspection hebdomadaire
     EQ-COMPRESSEUR      Compresseur haute pression — controle technique
+    EQ-CHARGEUSE        Chargeuse sur pneus — verification journaliere
+    EQ-CONCASSEUR       Concasseur — inspection hebdomadaire
+    EQ-GROUPE-ELECTROGENE  Groupe electrogene — controle mensuel
+
+  Le champ `scope` (= inspection_template.scope_ref) porte la CLE CANONIQUE de
+  famille d'equipement (decision D1) : c'est elle qui est appariee a
+  equipment.type pour ne proposer que les modeles APPLICABLES a la cible.
+  Les 3 derniers modeles comblent les familles WHEEL_LOADER / CRUSHER / GENSET
+  qui n'avaient AUCUN modele — c'est ce qui obligeait le formulaire a proposer
+  n'importe quel modele (chargeuse inspectee avec la checklist d'un camion).
+  Ils sont aussi seedes au boot par InspectionTemplateSeeder.java (idempotent
+  par code) : ce script reste la reference du referentiel complet.
 
   LIEU (2)
     LOC-ATELIER-MAINT   Atelier de maintenance — inspection 5S + securite
@@ -130,6 +142,68 @@ TEMPLATES = [
              dict(label='Photo de la cuve', type='PHOTO_REQUIRED'),
              dict(label='Constat technicien', type='FREE_TEXT'),
          ]),
+    # ── EQUIPEMENT 6 : Chargeuse sur pneus ─────────────────────────────────
+    dict(code='EQ-CHARGEUSE', name='Chargeuse sur pneus', type='EQUIPMENT',
+         scope='WHEEL_LOADER', est_min=20,
+         desc='Verification journaliere avant prise de poste. Risques dominants : renversement, ecrasement lors de l articulation, chute de blocs. ISO 45001 §8.1.4.',
+         checkpoints=[
+             dict(label='Etat des pneus (usure, hernies, ecrous de roue)', help='Faire le tour de la machine : entailles profondes, jantes fissurees, ecrous manquants', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Godet : dents, tranchant, axes et bagues', help='Dents manquantes ou fissurees, jeu anormal aux axes', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Articulation centrale : jeu et barre de bridage', help='La barre de bridage doit etre rangee en position service', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Essai de freinage de service', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Frein de parc operationnel', help='Essai machine a l arret, moteur tournant', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Direction (reponse et absence de point dur)', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Klaxon de recul (avertisseur sonore de marche arriere)', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Avertisseur sonore avant (klaxon)', type='BOOLEAN', expected='true'),
+             dict(label='Structure ROPS / FOPS integre', help='Aucune fissure, aucune soudure ou percage non homologue', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Fuites hydrauliques (verins levage/cavage, flexibles)', help='Toute fuite = arret machine', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Niveau hydraulique reservoir', type='NUMERIC_RANGE', minv=70.0, maxv=100.0, unit='%'),
+             dict(label='Eclairage (feux avant/arriere, gyrophare)', type='BOOLEAN', expected='true'),
+             dict(label='Ceinture de securite (etat et verrouillage)', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Extincteur present et controle', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Photo du godet et du train de roulement', type='PHOTO_REQUIRED'),
+             dict(label='Observation generale conducteur', type='FREE_TEXT'),
+         ]),
+    # ── EQUIPEMENT 7 : Concasseur ──────────────────────────────────────────
+    dict(code='EQ-CONCASSEUR', name='Concasseur', type='EQUIPMENT',
+         scope='CRUSHER', est_min=30,
+         desc='Inspection hebdomadaire de l installation de concassage. Risques dominants : entrainement aux organes en mouvement, projection lors du debourrage, empoussierage siliceux, bruit. ISO 45001 §8.1.2.',
+         checkpoints=[
+             dict(label='Protections et carters des organes en mouvement en place', help='Poulies, courroies, accouplements : aucun carter depose ou incomplet', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Arrets d urgence accessibles et testes', help='Tester au moins un arret d urgence par troncon, verifier l absence de redemarrage automatique', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Consignation LOTO disponible et appliquee', help='Points de consignation identifies, cadenas personnels et etiquettes au poste', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Procedure de debourrage / deblocage des machoires respectee', help='Aucune intervention dans la chambre sans consignation ni dispositif anti-chute de blocs', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Plaques de machoires / blindages : usure et fixation', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Bandes transporteuses d alimentation et de sortie', help='Etat de la bande, alignement, cable d arret d urgence (tirette)', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Carters de protection des rouleaux et tambours d entrainement', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Garde-corps, plateformes et echelles d acces', help='Lisses, sous-lisses et plinthes en place ; caillebotis fixes', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Empoussierage en zone (poussieres alveolaires)', help='Mesure au poste operateur. Abattage par voie humide / captage en service', type='NUMERIC_RANGE', minv=0.0, maxv=5.0, unit='mg/m3', critical=True),
+             dict(label='Systeme d abattage des poussieres en fonctionnement', help='Rampes d aspersion ou captage : debit et buses non obstruees', type='BOOLEAN', expected='true'),
+             dict(label='Bruit ambiant au poste de conduite', type='NUMERIC_RANGE', minv=0.0, maxv=85.0, unit='dB(A)'),
+             dict(label='Vibrations anormales du chassis / des paliers', type='VISUAL_GRADE', expected='GOOD'),
+             dict(label='Photo de la zone d alimentation et des protections', type='PHOTO_REQUIRED'),
+             dict(label='Mesures correctives proposees', type='FREE_TEXT'),
+         ]),
+    # ── EQUIPEMENT 8 : Groupe electrogene ──────────────────────────────────
+    dict(code='EQ-GROUPE-ELECTROGENE', name='Groupe electrogene', type='EQUIPMENT',
+         scope='GENSET', est_min=20,
+         desc='Controle mensuel. Risques dominants : electrisation, incendie, pollution des sols par les hydrocarbures, intoxication aux gaz d echappement, bruit. ISO 45001 §8.1.2 et §8.2.',
+         checkpoints=[
+             dict(label='Mise a la terre raccordee (resistance de prise de terre)', help='Mesure au piquet de terre, conforme a la note de calcul du site', type='NUMERIC_RANGE', minv=0.0, maxv=10.0, unit='ohm', critical=True),
+             dict(label='Coupure d urgence accessible, signalee et testee', help='Arret d urgence du groupe et organe de coupure generale du tableau', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Protection differentielle / disjoncteur general controle', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Retention hydrocarbures etanche et non saturee', help='Volume conforme, absence de fissure, purge des eaux pluviales', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Kit anti-pollution (absorbants) disponible a proximite', type='BOOLEAN', expected='true'),
+             dict(label='Extincteur adapte (CO2 / poudre) present et controle', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Ventilation du local et echappement hors zone occupee', help='Aucun recyclage des gaz vers les prises d air ou les postes de travail', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Ligne d echappement : etancheite et calorifugeage', help='Fuites de gaz, parties chaudes accessibles non protegees', type='VISUAL_GRADE', expected='GOOD'),
+             dict(label='Cablage et armoire electrique (isolation, presse-etoupes, IP)', help='Aucun conducteur nu, aucune porte d armoire ouverte', type='VISUAL_GRADE', expected='GOOD', critical=True),
+             dict(label='Protections des organes tournants (ventilateur, courroies)', type='BOOLEAN', expected='true', critical=True),
+             dict(label='Niveau sonore a 1 m du capot', type='NUMERIC_RANGE', minv=0.0, maxv=95.0, unit='dB(A)'),
+             dict(label='Signalisation (danger electrique, port des EPI auditifs)', type='BOOLEAN', expected='true'),
+             dict(label='Photo de la retention et de l armoire electrique', type='PHOTO_REQUIRED'),
+             dict(label='Constat technicien', type='FREE_TEXT'),
+         ]),
     # ── LIEU 1 : Atelier maintenance ───────────────────────────────────────
     dict(code='LOC-ATELIER-MAINT', name='Atelier de maintenance', type='LOCATION',
          scope='WORKSHOP', est_min=25,
@@ -207,13 +281,17 @@ else:
     print('  Aucun template existant a purger')
 
 print(f'[2] Insertion de {len(TEMPLATES)} templates...')
+# company_id = 1 : referentiel rattache a la mine 1, comme l'existant
+# (cf. migrate_company_scoping.sql : UPDATE inspection_template SET company_id = 1
+#  WHERE company_id IS NULL). Un template laisse a NULL serait invisible des
+# requetes cloisonnees (findActiveByTypeAndCompany).
 for tpl in TEMPLATES:
     cur.execute(
         '''
         INSERT INTO inspection_template
             (code, name, description, type, scope_ref, estimated_duration_min,
-             created_by, created_at, updated_at, active)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+             created_by, created_at, updated_at, active, company_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 1, 1)
         ''',
         (tpl['code'], tpl['name'], tpl['desc'], tpl['type'], tpl['scope'],
          tpl['est_min'], USER_ID, NOW, NOW),
@@ -255,4 +333,4 @@ for row in cur.fetchall():
 cur.close()
 conn.close()
 print()
-print('Seed termine. 8 templates inseres conformes ISO 45001.')
+print(f'Seed termine. {len(TEMPLATES)} templates inseres conformes ISO 45001.')

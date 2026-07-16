@@ -85,6 +85,19 @@ export interface InspectionTemplateSummaryDTO {
     active: boolean;
 }
 
+/**
+ * Rôles au sein d'une équipe d'inspection (D4). Invariant métier : une équipe
+ * comporte EXACTEMENT un membre `LEAD` — c'est lui qui alimente
+ * `primaryInspectorId` (rétro-compat : `start()` et le PDF s'en servent).
+ */
+export type InspectionRole = 'LEAD' | 'INSPECTOR' | 'SPECIALIST' | 'EQUIPMENT_OWNER' | 'OBSERVER';
+
+export interface InspectionTeamMemberDTO {
+    id?: number;
+    employeeId: number;
+    role: InspectionRole;
+}
+
 export interface ScheduleInspectionDTO {
     templateId: number;
     siteId?: number | null;
@@ -96,6 +109,8 @@ export interface ScheduleInspectionDTO {
     description?: string;
     objectives?: string;
     primaryInspectorId?: number | null;
+    /** Équipe d'inspection (D4). Null/vide toléré par le backend. */
+    teamMembers?: InspectionTeamMemberDTO[];
 }
 
 export interface LastInspectionDTO {

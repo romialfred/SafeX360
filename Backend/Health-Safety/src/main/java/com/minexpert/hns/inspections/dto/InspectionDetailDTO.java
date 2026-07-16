@@ -65,4 +65,12 @@ public class InspectionDetailDTO {
     // ── Listes imbriquees ──
     private List<FindingDTO> findings = new ArrayList<>();
     private List<ApprovalDTO> approvals = new ArrayList<>();
+
+    /**
+     * Equipe d'inspection (employe + role), pour que l'IHM puisse la
+     * reafficher. Le membre {@code LEAD} correspond a
+     * {@code primaryInspectorId}. Liste vide pour les inspections planifiees
+     * avant la refonte (aucun backfill).
+     */
+    private List<InspectionTeamMemberDTO> teamMembers = new ArrayList<>();
 }
