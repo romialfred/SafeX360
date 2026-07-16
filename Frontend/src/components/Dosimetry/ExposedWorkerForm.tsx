@@ -257,26 +257,11 @@ const ExposedWorkerForm = () => {
                             ? null
                             : t('workerForm.validation.classificationDateRequired'),
             },
-            exposure: {
-                exposureTypes: (v) =>
-                    activeStep < 2
-                        ? null
-                        : v && v.length > 0
-                            ? null
-                            : t('workerForm.validation.exposureTypesRequired'),
-                workAreaIds: (v) =>
-                    activeStep < 2
-                        ? null
-                        : v && v.length > 0
-                            ? null
-                            : t('workerForm.validation.workAreasRequired'),
-                frequencyConditions: (v) =>
-                    activeStep < 2
-                        ? null
-                        : v && v.trim().length > 0
-                            ? null
-                            : t('workerForm.validation.frequencyRequired'),
-            },
+            // NOTE (bug perte de donnees) : les champs de l'etape 3 (types d'exposition,
+            // zones, postes, frequence/conditions) ne sont PAS persistes par
+            // ExposedWorkerService — le DTO ExposedWorkerDTO ne les porte pas. Tant que la
+            // persistance du profil d'exposition n'est pas cablee, ils restent facultatifs :
+            // rendre obligatoire une saisie jetee au submit trompe l'utilisateur.
             special: {
                 startDate: (v, values) =>
                     activeStep < 3
@@ -284,12 +269,8 @@ const ExposedWorkerForm = () => {
                         : values.special.status === 'PREGNANCY' && !v
                             ? t('workerForm.validation.pregnancyStartRequired')
                             : null,
-                birthDate: (v, values) =>
-                    activeStep < 3
-                        ? null
-                        : values.special.status === 'APPRENTICE' && !v
-                            ? t('workerForm.validation.apprenticeBirthRequired')
-                            : null,
+                // birthDate : non persiste (aucun champ correspondant sur ExposedWorkerDTO)
+                // -> facultatif, cf. note ci-dessus.
             },
             qualifications: {
                 certified: (v) =>
@@ -352,6 +333,12 @@ const ExposedWorkerForm = () => {
                 form.setFieldValue(
                     'identity.employeeId',
                     dto.employeeId != null ? String(dto.employeeId) : '',
+                );
+                // Re-hydrate la date d'affectation : sans ca, ouvrir puis
+                // re-enregistrer une fiche ecraserait la valeur persistee.
+                form.setFieldValue(
+                    'identity.assignmentDate',
+                    parseDate(dto.assignmentDate) ?? new Date(),
                 );
                 form.setFieldValue(
                     'classification.category',
@@ -458,6 +445,9 @@ const ExposedWorkerForm = () => {
             active: true,
             // mineId est injecte par le backend si possible — sinon on prend le user.mineId
             mineId: user?.mineId ?? user?.companyId ?? 1,
+            // Date d'affectation : champ obligatoire de l'etape 1, jete jusqu'ici
+            // faute d'exister cote DTO/entite. Desormais persiste.
+            assignmentDate: toLocalDate(values.identity.assignmentDate),
         };
 
         dispatch(showOverlay());
@@ -707,7 +697,6 @@ const ExposedWorkerForm = () => {
                 }
                 placeholder={t('workerForm.exposure.typesPlaceholder')}
                 data={EXPOSURE_TYPES.map((v) => ({ value: v, label: t(`workerForm.exposure.types.${v}`) }))}
-                withAsterisk
                 size="sm"
                 {...form.getInputProps('exposure.exposureTypes')}
             />
@@ -724,7 +713,6 @@ const ExposedWorkerForm = () => {
                 placeholder={t('workerForm.exposure.workAreasPlaceholder')}
                 data={workAreas}
                 searchable
-                withAsterisk
                 size="sm"
                 nothingFoundMessage={t('workerForm.exposure.workAreasEmpty')}
                 {...form.getInputProps('exposure.workAreaIds')}
@@ -747,10 +735,18 @@ const ExposedWorkerForm = () => {
                 placeholder={t('workerForm.exposure.frequencyPlaceholder')}
                 autosize
                 minRows={3}
-                withAsterisk
                 size="sm"
                 {...form.getInputProps('exposure.frequencyConditions')}
             />
+
+            <Alert
+                icon={<IconInfoCircle size={15} stroke={1.8} />}
+                color="gray"
+                variant="light"
+                title={t('workerForm.exposure.notPersistedTitle')}
+            >
+                {t('workerForm.exposure.notPersistedText')}
+            </Alert>
         </Paper>
     );
 
@@ -837,7 +833,6 @@ const ExposedWorkerForm = () => {
                                 label={t('workerForm.special.apprenticeBirthDate')}
                                 placeholder={t('workerForm.identity.assignmentDatePlaceholder')}
                                 valueFormat="DD/MM/YYYY"
-                                withAsterisk
                                 size="sm"
                                 leftSection={<IconCalendarTime size={14} stroke={1.8} />}
                                 {...form.getInputProps('special.birthDate')}
@@ -898,6 +893,15 @@ const ExposedWorkerForm = () => {
                         leftSection={<IconCalendarTime size={14} stroke={1.8} />}
                         {...form.getInputProps('qualifications.nextExpiry')}
                     />
+
+                    <Alert
+                        icon={<IconInfoCircle size={15} stroke={1.8} />}
+                        color="gray"
+                        variant="light"
+                        title={t('workerForm.qualifications.notPersistedTitle')}
+                    >
+                        {t('workerForm.qualifications.notPersistedText')}
+                    </Alert>
                 </Paper>
 
                 {/* Recapitulatif */}

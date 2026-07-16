@@ -27,6 +27,14 @@ public class Theme {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /**
+     * Cloisonnement par mine (convention plateforme SafeX). NULLABLE et repli
+     * "null = global" : les themes seedes globalement (companyId null) restent
+     * visibles de toutes les mines. Place en DERNIER : l'ordre des champs pilote
+     * @AllArgsConstructor.
+     */
+    private Long companyId;
+
     public ThemeDTO toDTO() {
         return new ThemeDTO(
                 this.id,
@@ -36,6 +44,7 @@ public class Theme {
                 this.title,
                 this.description,
                 this.createdAt,
-                this.updatedAt);
+                this.updatedAt,
+                this.companyId);
     }
 }

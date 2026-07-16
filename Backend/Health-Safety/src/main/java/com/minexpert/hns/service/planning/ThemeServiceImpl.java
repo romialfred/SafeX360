@@ -8,7 +8,6 @@ import com.minexpert.hns.repository.planning.ThemeRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -31,9 +30,10 @@ public class ThemeServiceImpl implements ThemeService {
     }
 
     @Override
-    public ThemeDTO updateTheme(ThemeDTO dto) throws HSException {
+    public ThemeDTO updateTheme(ThemeDTO dto, Long companyId) throws HSException {
         Theme theme = themeRepository.findById(dto.getId())
                 .orElseThrow(() -> new HSException("THEME_NOT_FOUND"));
+        verifyCompany(theme, companyId);
         theme.setMonth(dto.getMonth());
         theme.setCategory(dto.getCategory());
         theme.setType(dto.getType());
@@ -44,33 +44,50 @@ public class ThemeServiceImpl implements ThemeService {
     }
 
     @Override
-    public void deleteTheme(Long id) throws HSException {
-        if (!themeRepository.existsById(id)) {
-            throw new HSException("THEME_NOT_FOUND");
-        }
+    public void deleteTheme(Long id, Long companyId) throws HSException {
+        Theme theme = themeRepository.findById(id)
+                .orElseThrow(() -> new HSException("THEME_NOT_FOUND"));
+        verifyCompany(theme, companyId);
         themeRepository.deleteById(id);
     }
 
     @Override
-    public List<ThemeDTO> getAllThemes() throws HSException {
-        return StreamSupport.stream(themeRepository.findAll().spliterator(), false)
+    public List<ThemeDTO> getAllThemes(Long companyId) throws HSException {
+        return themeRepository.findAllByCompany(companyId)
+                .stream()
                 .map(Theme::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ThemeDTO> getAllThemesByYear(int year) throws HSException {
-        return StreamSupport.stream(themeRepository.findAll().spliterator(), false)
-                .filter(t -> t.getMonth() != null && t.getMonth().getYear() == year)
+    public List<ThemeDTO> getAllThemesByYear(int year, Long companyId) throws HSException {
+        return themeRepository.findAllByMonthYearAndCompany(year, companyId)
+                .stream()
                 .map(Theme::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ThemeDTO getThemeById(Long id) throws HSException {
-        return themeRepository.findById(id)
-                .map(Theme::toDTO)
+    public ThemeDTO getThemeById(Long id, Long companyId) throws HSException {
+        Theme theme = themeRepository.findById(id)
                 .orElseThrow(() -> new HSException("THEME_NOT_FOUND"));
+        verifyCompany(theme, companyId);
+        return theme.toDTO();
+    }
+
+    /**
+     * Verifie l'appartenance d'un theme a la mine appelante. companyId null
+     * (systeme/allMines) = pas de controle. Les themes GLOBAUX (companyId null)
+     * restent editables/consultables par toutes les mines (repli retrocompat).
+     * Non-appartenance : THEME_NOT_FOUND.
+     */
+    private void verifyCompany(Theme theme, Long companyId) throws HSException {
+        if (companyId == null || theme == null || theme.getCompanyId() == null) {
+            return;
+        }
+        if (!companyId.equals(theme.getCompanyId())) {
+            throw new HSException("THEME_NOT_FOUND");
+        }
     }
 
     // Conversion methods moved to entity and DTO classes

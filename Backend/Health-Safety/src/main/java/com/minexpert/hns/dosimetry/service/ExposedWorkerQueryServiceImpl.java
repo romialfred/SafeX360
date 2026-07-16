@@ -140,8 +140,10 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
             Double limit = threshold != null ? threshold.getRegulatoryLimit() : null;
             String exposureLevel = calculateExposureLevel(annualHp10, limit);
 
-            // 3. Derniere dose Hp(10) connue (record actif le plus recent)
-            Double lastDose = resolveLastActiveHp10(id);
+            // 3. Dernier enregistrement actif connu (dose Hp(10) + periode)
+            DoseRecord lastRecord = resolveLastActiveRecord(id);
+            Double lastDose = lastRecord != null ? lastRecord.getHp10() : null;
+            String lastPeriod = lastRecord != null ? lastRecord.getPeriod() : null;
 
             ExposedWorkerListItemDTO dto = ExposedWorkerListItemDTO.builder()
                     .id(id)
@@ -149,6 +151,7 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
                     .category(category)
                     .specialStatus(specialStatus)
                     .lastDoseHp10(lastDose)
+                    .lastPeriod(lastPeriod)
                     .annualHp10(annualHp10)
                     .rolling5yHp10(rolling5y)
                     .lifetimeHp10(lifetime)
@@ -385,13 +388,16 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
         return PERSON_CATEGORY_PUBLIC;
     }
 
-    /** Derniere dose Hp(10) connue (record actif a la period la plus recente). */
-    private Double resolveLastActiveHp10(Long workerId) {
+    /**
+     * Dernier enregistrement actif connu (record actif a la period la plus recente), ou null si
+     * le worker n'en a aucun. Resolu une seule fois par worker : le DTO expose a la fois la dose
+     * ({@code lastDoseHp10}) et la periode correspondante ({@code lastPeriod}).
+     */
+    private DoseRecord resolveLastActiveRecord(Long workerId) {
         return doseRecordRepository.findActiveByWorkerId(workerId).stream()
                 .sorted(Comparator.comparing(DoseRecord::getPeriod,
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .findFirst()
-                .map(DoseRecord::getHp10)
                 .orElse(null);
     }
 

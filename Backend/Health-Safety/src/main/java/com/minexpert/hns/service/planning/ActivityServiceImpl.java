@@ -69,6 +69,7 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setDateTime(dto.getDateTime());
         activity.setResponsibleId(dto.getResponsibleId());
         activity.setCategory(dto.getCategory());
+        activity.setTheme(dto.getTheme());
         activity.setUpdatedAt(java.time.LocalDateTime.now());
         return activityRepository.save(activity).toDTO();
     }

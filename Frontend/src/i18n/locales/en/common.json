@@ -125,6 +125,9 @@
     },
     "ai": {
         "trainingTitle": "Artificial intelligence currently in training",
-        "trainingMessage": "The AI module is in its learning phase on your HSE data. During this period, the analyses provided are simulated and allow you to test the full declaration workflow."
+        "trainingMessage": "The AI module is in its learning phase on your HSE data. During this period, the analyses provided are simulated and allow you to test the full declaration workflow.",
+        "refsLoading": "Loading configuration…",
+        "setupIncompleteTitle": "Incomplete configuration for this mine",
+        "setupIncompleteMessage": "At least one active location, work area and work process are required to report an incident. Ask an administrator to create them in Settings, then reload the page."
     }
 }

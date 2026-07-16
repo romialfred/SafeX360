@@ -36,9 +36,22 @@ public class RiskServiceImpl implements RiskService {
                         @CacheEvict(cacheNames = "riskOverview", allEntries = true)
         })
         public RiskDTO create(RiskDTO dto) throws HSException {
+                requireWorkProcess(dto.getWorkProcessId());
                 Risk risk = dto.toEntity();
                 Risk saved = riskRepository.save(risk);
                 return saved.toDTO();
+        }
+
+        /**
+         * work_process_id est NOT NULL en base : un risque sans processus de
+         * travail declenchait un 500 brut (« unsaved transient instance » /
+         * violation de contrainte) a l'enregistrement. On leve ici une erreur
+         * metier explicite, transformee en message clair cote UI.
+         */
+        private void requireWorkProcess(Long workProcessId) throws HSException {
+                if (workProcessId == null) {
+                        throw new HSException("WORK_PROCESS_REQUIRED");
+                }
         }
 
         @Override

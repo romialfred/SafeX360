@@ -125,6 +125,9 @@
     },
     "ai": {
         "trainingTitle": "Intelligence artificielle en cours d'entraînement",
-        "trainingMessage": "Le module IA est en phase d'apprentissage sur vos données HSE. Pendant cette période, les analyses fournies sont simulées et vous permettent de tester l'ensemble du workflow de déclaration."
+        "trainingMessage": "Le module IA est en phase d'apprentissage sur vos données HSE. Pendant cette période, les analyses fournies sont simulées et vous permettent de tester l'ensemble du workflow de déclaration.",
+        "refsLoading": "Chargement du paramétrage…",
+        "setupIncompleteTitle": "Paramétrage incomplet pour cette mine",
+        "setupIncompleteMessage": "Au moins un lieu, une zone de travail et un processus de travail actifs sont requis pour déclarer un incident. Demandez à un administrateur de les créer dans Paramètres, puis rechargez la page."
     }
 }

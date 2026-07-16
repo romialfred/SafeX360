@@ -98,6 +98,9 @@ export default function AIIncidentDeclaration() {
     const [defaultLocationId, setDefaultLocationId] = useState<number | null>(null);
     const [defaultWorkAreaId, setDefaultWorkAreaId] = useState<number | null>(null);
     const [defaultWorkProcessId, setDefaultWorkProcessId] = useState<number | null>(null);
+    // Tant que les 3 referentiels ne sont pas resolus, la soumission est bloquee :
+    // un default null => violation FK nullable=false => 500 generique cote backend.
+    const [refsLoading, setRefsLoading] = useState(true);
 
     // Champs editables sur la step REVIEW
     const [editedTitle, setEditedTitle] = useState('');
@@ -123,22 +126,28 @@ export default function AIIncidentDeclaration() {
 
         // Pre-charge le premier element Location/WorkArea/WorkProcess pour valider
         // les contraintes FK non-null cote backend lors de la soumission IA.
-        getAllActiveLocations()
-            .then((res: any[]) => {
-                if (Array.isArray(res) && res.length > 0) setDefaultLocationId(res[0].id);
+        // On attend les 3 avant de lever refsLoading : un seul manquant suffit a
+        // faire echouer la soumission, on prefere donc un etat resolu global.
+        setRefsLoading(true);
+        const first = (res: any) =>
+            Array.isArray(res) && res.length > 0 ? (res[0].id as number) : null;
+        Promise.allSettled([
+            getAllActiveLocations(),
+            getAllActiveWorkArea(),
+            getAllActiveWorkProcess(),
+        ])
+            .then(([loc, area, proc]) => {
+                setDefaultLocationId(loc.status === 'fulfilled' ? first(loc.value) : null);
+                setDefaultWorkAreaId(area.status === 'fulfilled' ? first(area.value) : null);
+                setDefaultWorkProcessId(proc.status === 'fulfilled' ? first(proc.value) : null);
             })
-            .catch((err) => console.error(err));
-        getAllActiveWorkArea()
-            .then((res: any[]) => {
-                if (Array.isArray(res) && res.length > 0) setDefaultWorkAreaId(res[0].id);
-            })
-            .catch((err) => console.error(err));
-        getAllActiveWorkProcess()
-            .then((res: any[]) => {
-                if (Array.isArray(res) && res.length > 0) setDefaultWorkProcessId(res[0].id);
-            })
-            .catch((err) => console.error(err));
+            .finally(() => setRefsLoading(false));
     }, []);
+
+    // Paramétrage minimal de la mine : au moins un lieu, une zone et un processus actifs.
+    const refsReady =
+        defaultLocationId !== null && defaultWorkAreaId !== null && defaultWorkProcessId !== null;
+    const refsIncomplete = !refsLoading && !refsReady;
 
     // ─── Gestion fichier ───
     const handleFile = (file: File) => {
@@ -221,6 +230,12 @@ export default function AIIncidentDeclaration() {
      */
     const submitIncident = async () => {
         if (!analysis) return;
+        // Garde : sans les 3 FK obligatoires, le backend renvoie un 500 generique.
+        // On bloque en amont avec un message actionnable (le bouton est deja desactive).
+        if (!refsReady) {
+            errorNotification(t('ai.setupIncompleteMessage'));
+            return;
+        }
         setSubmitting(true);
         try {
             const now = new Date().toISOString();
@@ -323,6 +338,21 @@ export default function AIIncidentDeclaration() {
                 </div>
             )}
 
+            {/* Paramétrage mine incomplet : la soumission sera impossible */}
+            {refsIncomplete && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                    <IconAlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <div className="text-[13.5px] font-semibold text-amber-900 mb-0.5">
+                            {t('ai.setupIncompleteTitle')}
+                        </div>
+                        <p className="text-[12.5px] text-amber-800 leading-relaxed">
+                            {t('ai.setupIncompleteMessage')}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Stepper visuel */}
             <StepperHeader currentStep={step} />
 
@@ -364,6 +394,8 @@ export default function AIIncidentDeclaration() {
                     onBack={reset}
                     onSubmit={submitIncident}
                     submitting={submitting}
+                    refsLoading={refsLoading}
+                    refsIncomplete={refsIncomplete}
                 />
             )}
 
@@ -758,12 +790,15 @@ interface ReviewStepProps {
     onBack: () => void;
     onSubmit: () => void;
     submitting: boolean;
+    refsLoading: boolean;
+    refsIncomplete: boolean;
 }
 
 function ReviewStep(props: ReviewStepProps) {
+    const { t } = useTranslation('common');
     const { analysis, imagePreview, editedTitle, onEditedTitleChange,
         editedDescription, onEditedDescriptionChange, editedSeverity, onEditedSeverityChange,
-        onBack, onSubmit, submitting } = props;
+        onBack, onSubmit, submitting, refsLoading, refsIncomplete } = props;
 
     const sev = SEVERITY_COLORS[editedSeverity] || SEVERITY_COLORS.MEDIUM;
     const confidencePct = Math.round(analysis.confidence * 100);
@@ -917,6 +952,16 @@ function ReviewStep(props: ReviewStepProps) {
                         </div>
                     )}
 
+                    {/* Paramétrage mine incomplet : soumission impossible */}
+                    {refsIncomplete && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                            <IconAlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-[12.5px] text-amber-800 leading-relaxed">
+                                {t('ai.setupIncompleteMessage')}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Actions globales */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
                         <Button
@@ -930,16 +975,30 @@ function ReviewStep(props: ReviewStepProps) {
                             size="md"
                             color="teal"
                             leftSection={<IconCheck size={16} />}
-                            loading={submitting}
+                            loading={submitting || refsLoading}
+                            disabled={refsLoading || refsIncomplete}
                             onClick={onSubmit}
+                            title={
+                                refsIncomplete
+                                    ? t('ai.setupIncompleteMessage')
+                                    : refsLoading
+                                        ? t('ai.refsLoading')
+                                        : undefined
+                            }
                             styles={{
                                 root: {
-                                    background: 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',
-                                    boxShadow: '0 8px 20px -5px rgba(15,118,110,0.4)',
+                                    background:
+                                        refsLoading || refsIncomplete
+                                            ? undefined
+                                            : 'linear-gradient(135deg, #0F766E 0%, #047857 100%)',
+                                    boxShadow:
+                                        refsLoading || refsIncomplete
+                                            ? undefined
+                                            : '0 8px 20px -5px rgba(15,118,110,0.4)',
                                 },
                             }}
                         >
-                            Soumettre la déclaration
+                            {refsLoading ? t('ai.refsLoading') : 'Soumettre la déclaration'}
                         </Button>
                     </div>
                 </div>

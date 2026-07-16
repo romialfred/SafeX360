@@ -127,6 +127,28 @@ export const REC_PRIORITY_COLORS: Record<string, string> = {
     Weak: 'yellow',
 };
 
+// ─── Dates ─────────────────────────────────────────────────────────────────
+
+/**
+ * `Date` -> 'YYYY-MM-DD' dans le fuseau LOCAL (convention plateforme).
+ * `toISOString()` convertit en UTC et décale la date d'un jour pour les
+ * saisies faites en soirée / à l'ouest de Greenwich : le backend attend un
+ * LocalDate, jamais un instant.
+ */
+export const toIsoDateLocal = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+/** Repli null-safe pour les champs de date optionnels d'un formulaire. */
+export const toIsoDateLocalOrNull = (value: unknown): string | null => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : toIsoDateLocal(date);
+};
+
 // ─── Rôles d'auditeur (valeurs backend conservées : Lead Auditor...) ───────
 
 export const AUDITOR_ROLE_OPTIONS = [

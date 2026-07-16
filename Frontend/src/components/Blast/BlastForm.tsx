@@ -78,6 +78,7 @@ import {
     IconArrowRight,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
+import { getEmployeeDropdown } from '../../services/EmployeeService';
 import {
     createBlast,
     updateBlast,
@@ -299,6 +300,43 @@ const BlastForm = () => {
         Array<{ name: string; size: number }>
     >([]);
 
+    /**
+     * Liste d'employes pour les selecteurs de personnes (boutefeu, responsable
+     * HSE, vigies). Chargee une seule fois ; l'intercepteur Axios injecte deja
+     * `?companyId=` (mine active) — AUCUN selecteur de mine ici (principe
+     * plateforme : un formulaire ne demande jamais la mine).
+     * Degradation gracieuse : toute erreur → liste vide, pas de crash.
+     */
+    const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
+
+    useEffect(() => {
+        let alive = true;
+        setLoadingEmployees(true);
+        Promise.resolve(getEmployeeDropdown())
+            .then((list: any[]) => {
+                if (!alive) return;
+                const arr = Array.isArray(list) ? list : [];
+                setEmployees(
+                    arr
+                        .filter((e) => e && e.id !== undefined && e.id !== null)
+                        .map((e) => ({
+                            value: String(e.id),
+                            label: e.name ?? e.fullName ?? `#${e.id}`,
+                        })),
+                );
+            })
+            .catch(() => {
+                if (alive) setEmployees([]);
+            })
+            .finally(() => {
+                if (alive) setLoadingEmployees(false);
+            });
+        return () => {
+            alive = false;
+        };
+    }, []);
+
     /** Formattage humain d'une taille en octets. */
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} o`;
@@ -462,6 +500,14 @@ const BlastForm = () => {
         return Object.keys(e).length === 0;
     };
 
+    /**
+     * Vigies retenues a la soumission. `BlastGuard.employeeId` est `nullable=false`
+     * cote entite : on NE DOIT PAS envoyer `employeeId: 0` (reference fantome).
+     * Les lignes sans employe selectionne sont donc simplement ignorees.
+     */
+    const cleanGuards = (): BlastGuardDTO[] =>
+        state.guards.filter((g) => Number(g.employeeId) > 0);
+
     // ───── Construction du payload (create ou update) ─────
     // P2.1 : on envoie desormais les 7 champs flag par l'audit
     // (accessConcerned, assemblyPoints, team, ppvLimit, sensitiveReceivers,
@@ -504,7 +550,7 @@ const BlastForm = () => {
             initiationSystem: state.initiationSystem || null,
             delaySequence: state.delaySequence || null,
         },
-        guards: state.guards,
+        guards: cleanGuards(),
         recipients: state.recipients,
     });
 
@@ -545,7 +591,7 @@ const BlastForm = () => {
             initiationSystem: state.initiationSystem || null,
             delaySequence: state.delaySequence || null,
         },
-        guards: state.guards,
+        guards: cleanGuards(),
         recipients: state.recipients,
         reason: reason ?? null,
     });
@@ -1273,24 +1319,39 @@ const BlastForm = () => {
                                         key={idx}
                                         className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-end"
                                     >
-                                        <NumberInput
+                                        <Select
                                             label={
                                                 idx === 0
                                                     ? t('form.fields.guardName')
                                                     : undefined
                                             }
-                                            value={g.employeeId || ''}
+                                            searchable
+                                            clearable
+                                            data={employees}
+                                            value={
+                                                g.employeeId
+                                                    ? String(g.employeeId)
+                                                    : null
+                                            }
                                             onChange={(v) =>
                                                 updateGuard(idx, {
-                                                    employeeId:
-                                                        typeof v === 'number'
-                                                            ? v
-                                                            : v === ''
-                                                              ? 0
-                                                              : Number(v),
+                                                    // 0 = ligne non renseignee : filtree a la
+                                                    // soumission (cf. cleanGuards).
+                                                    employeeId: v ? Number(v) : 0,
                                                 })
                                             }
-                                            min={0}
+                                            disabled={loadingEmployees}
+                                            nothingFoundMessage={
+                                                loadingEmployees
+                                                    ? t('form.fields.employeeLoading')
+                                                    : t('form.fields.noEmployee')
+                                            }
+                                            placeholder={
+                                                loadingEmployees
+                                                    ? t('form.fields.employeeLoading')
+                                                    : t('form.fields.guardNamePlaceholder')
+                                            }
+                                            comboboxProps={{ withinPortal: true }}
                                             classNames={{ input: 'min-h-[44px]' }}
                                         />
                                         <TextInput
@@ -1335,22 +1396,30 @@ const BlastForm = () => {
                         title={t('form.section6')}
                     />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <NumberInput
+                        <Select
                             label={t('form.fields.blaster')}
-                            placeholder={t('form.fields.blasterPlaceholder')}
-                            value={state.blasterId}
+                            searchable
+                            clearable
+                            data={employees}
+                            value={state.blasterId === '' ? null : String(state.blasterId)}
                             onChange={(v) =>
                                 setState((s) => ({
                                     ...s,
-                                    blasterId:
-                                        typeof v === 'number'
-                                            ? v
-                                            : v === ''
-                                              ? ''
-                                              : Number(v),
+                                    blasterId: v ? Number(v) : '',
                                 }))
                             }
-                            min={0}
+                            disabled={loadingEmployees}
+                            nothingFoundMessage={
+                                loadingEmployees
+                                    ? t('form.fields.employeeLoading')
+                                    : t('form.fields.noEmployee')
+                            }
+                            placeholder={
+                                loadingEmployees
+                                    ? t('form.fields.employeeLoading')
+                                    : t('form.fields.blasterPlaceholder')
+                            }
+                            comboboxProps={{ withinPortal: true }}
                             classNames={{ input: 'min-h-[44px]' }}
                         />
                         <TextInput
@@ -1365,22 +1434,30 @@ const BlastForm = () => {
                             }
                             classNames={{ input: 'min-h-[44px]' }}
                         />
-                        <NumberInput
+                        <Select
                             label={t('form.fields.hseLead')}
-                            placeholder={t('form.fields.hseLeadPlaceholder')}
-                            value={state.hseLeadId}
+                            searchable
+                            clearable
+                            data={employees}
+                            value={state.hseLeadId === '' ? null : String(state.hseLeadId)}
                             onChange={(v) =>
                                 setState((s) => ({
                                     ...s,
-                                    hseLeadId:
-                                        typeof v === 'number'
-                                            ? v
-                                            : v === ''
-                                              ? ''
-                                              : Number(v),
+                                    hseLeadId: v ? Number(v) : '',
                                 }))
                             }
-                            min={0}
+                            disabled={loadingEmployees}
+                            nothingFoundMessage={
+                                loadingEmployees
+                                    ? t('form.fields.employeeLoading')
+                                    : t('form.fields.noEmployee')
+                            }
+                            placeholder={
+                                loadingEmployees
+                                    ? t('form.fields.employeeLoading')
+                                    : t('form.fields.hseLeadPlaceholder')
+                            }
+                            comboboxProps={{ withinPortal: true }}
                             classNames={{ input: 'min-h-[44px]' }}
                         />
                     </div>

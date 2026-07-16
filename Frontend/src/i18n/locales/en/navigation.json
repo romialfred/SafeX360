@@ -222,11 +222,13 @@
                 "EMAIL_INVALID": "Invalid email format",
                 "NAME_REQUIRED": "The name is required",
                 "ROLE_REQUIRED": "The role is required",
+                "ROLE_INVALID": "The selected role is not allowed at creation. Choose a role offered in the list.",
                 "COMPANY_REQUIRED": "The mine of assignment is mandatory",
                 "COMPANY_NOT_FOUND": "The selected mine could not be found",
                 "MODULES_REQUIRED": "Select at least one module",
                 "LOGIN_ALREADY_EXISTS": "This login is already in use",
                 "DIRECTORY_DISABLED": "The Active Directory connector is disabled — import not possible",
+                "AD_ACCOUNT_NO_LOCAL_PASSWORD": "This account comes from Active Directory: it has no local password. Reset it in the AD directory instead.",
                 "PERMISSIONS_INIT_FAILED": "The account was created but permission initialization failed. Please contact support."
             },
             "roles": {

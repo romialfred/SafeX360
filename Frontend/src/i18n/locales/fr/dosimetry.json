@@ -990,7 +990,9 @@
             "positionsPlaceholder": "Tapez pour ajouter un poste…",
             "positionsHint": "Saisir librement les postes occupés. Pressez Entrée pour valider.",
             "frequencyLabel": "Fréquence et conditions d'exposition",
-            "frequencyPlaceholder": "Décrire la fréquence (quotidien, hebdomadaire…), durée moyenne, équipements de protection portés…"
+            "frequencyPlaceholder": "Décrire la fréquence (quotidien, hebdomadaire…), durée moyenne, équipements de protection portés…",
+            "notPersistedTitle": "Informations non enregistrées pour l'instant",
+            "notPersistedText": "Le profil d'exposition (types, zones, postes, fréquence) est renseigné à titre indicatif : il n'est pas encore enregistré avec la fiche du travailleur. Ces champs sont donc facultatifs."
         },
         "special": {
             "sectionTitle": "Statut spécial du travailleur",
@@ -1026,6 +1028,8 @@
                 "RADIATION_AWARENESS": "Sensibilisation aux rayonnements ionisants"
             },
             "nextExpiry": "Date de prochaine échéance de validité",
+            "notPersistedTitle": "Informations non enregistrées pour l'instant",
+            "notPersistedText": "Les habilitations et leur échéance sont renseignées à titre indicatif : elles ne sont pas encore enregistrées avec la fiche du travailleur. Utilisez le registre des habilitations pour les tracer.",
             "summaryTitle": "Récapitulatif du dossier",
             "certifyLabel": "Je certifie que les données saisies sont exactes et conformes au règlement interne ainsi qu'aux exigences CIPR 103 / AIEA GSR Part 3."
         },

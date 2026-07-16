@@ -37,6 +37,15 @@ public class Activity {
      */
     private Long companyId;
 
+    /**
+     * Theme mensuel retenu pour l'activite (causerie RSS / tournee TDM). Libelle
+     * libre : on stocke l'intitule du theme choisi dans ThemeManagement plutot
+     * qu'une FK, pour que l'activite reste lisible si le theme est renomme ou
+     * supprime du calendrier. Nullable (les IGP n'ont pas de theme).
+     * Place en DERNIER : l'ordre des champs pilote @AllArgsConstructor.
+     */
+    private String theme;
+
     public Activity(Long id) {
         this.id = id;
     }
@@ -52,6 +61,7 @@ public class Activity {
                 this.status,
                 this.createdAt,
                 this.updatedAt,
-                this.companyId);
+                this.companyId,
+                this.theme);
     }
 }

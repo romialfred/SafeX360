@@ -20,6 +20,8 @@ public class ThemeDTO {
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Cloisonnement par mine. Doit rester en DERNIER, comme dans Theme. */
+    private Long companyId;
 
     public Theme toEntity() {
         Theme theme = new Theme();
@@ -31,6 +33,7 @@ public class ThemeDTO {
         theme.setDescription(this.description);
         theme.setCreatedAt(this.createdAt);
         theme.setUpdatedAt(this.updatedAt);
+        theme.setCompanyId(this.companyId);
         return theme;
     }
 }

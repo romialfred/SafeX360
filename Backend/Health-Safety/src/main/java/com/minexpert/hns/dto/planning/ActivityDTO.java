@@ -25,9 +25,11 @@ public class ActivityDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long companyId;
+    /** Theme mensuel (intitule libre). Doit rester en DERNIER, comme dans Activity. */
+    private String theme;
 
     public Activity toEntity() {
         return new Activity(id, title, month, dateTime, responsibleId, category, status,
-                createdAt, updatedAt, companyId);
+                createdAt, updatedAt, companyId, theme);
     }
 }

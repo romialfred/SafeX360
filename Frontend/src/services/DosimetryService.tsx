@@ -161,6 +161,8 @@ export interface ExposedWorkerDTO {
     updatedAt?: string;
     createdBy?: number | null;
     updatedBy?: number | null;
+    /** Date d'affectation au poste expose (reglementaire). */
+    assignmentDate?: string | null;
 }
 
 /** DosimeterDTO — dosimetre / instrument de mesure. */

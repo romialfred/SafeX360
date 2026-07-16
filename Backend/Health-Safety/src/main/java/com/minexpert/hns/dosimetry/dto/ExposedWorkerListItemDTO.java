@@ -41,6 +41,14 @@ public class ExposedWorkerListItemDTO {
     /** Dose Hp(10) du dernier enregistrement actif (mSv). */
     private Double lastDoseHp10;
 
+    /**
+     * Periode du dernier enregistrement actif ("YYYY-MM" mensuel ou "YYYY-Qx" trimestriel),
+     * telle que stockee sur {@code DoseRecord#period}. Reste null si le worker n'a aucun
+     * enregistrement actif. Utilisee par le front (carte 360-mini du travailleur) pour
+     * qualifier la valeur de {@link #lastDoseHp10}.
+     */
+    private String lastPeriod;
+
     /** Cumul annuel Hp(10) (mSv). */
     private Double annualHp10;
 

@@ -990,7 +990,9 @@
             "positionsPlaceholder": "Type to add a position…",
             "positionsHint": "Enter positions freely. Press Enter to confirm.",
             "frequencyLabel": "Exposure frequency and conditions",
-            "frequencyPlaceholder": "Describe the frequency (daily, weekly…), average duration, protective equipment worn…"
+            "frequencyPlaceholder": "Describe the frequency (daily, weekly…), average duration, protective equipment worn…",
+            "notPersistedTitle": "Not saved for now",
+            "notPersistedText": "The exposure profile (types, areas, positions, frequency) is captured for reference only: it is not yet saved with the worker record. These fields are therefore optional."
         },
         "special": {
             "sectionTitle": "Worker special status",
@@ -1026,6 +1028,8 @@
                 "RADIATION_AWARENESS": "Ionizing radiation awareness"
             },
             "nextExpiry": "Next validity expiry date",
+            "notPersistedTitle": "Not saved for now",
+            "notPersistedText": "Qualifications and their expiry date are captured for reference only: they are not yet saved with the worker record. Use the qualifications registry to track them.",
             "summaryTitle": "Record summary",
             "certifyLabel": "I certify that the data entered is accurate and compliant with the internal regulations and ICRP 103 / IAEA GSR Part 3 requirements."
         },

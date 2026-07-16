@@ -181,11 +181,13 @@ const API_ERROR_TARGETS: Record<string, { step?: number; field?: string }> = {
     EMAIL_INVALID: { step: 1, field: 'email' },
     NAME_REQUIRED: { step: 1, field: 'name' },
     ROLE_REQUIRED: { step: 2 },
+    ROLE_INVALID: { step: 2 },
     COMPANY_REQUIRED: { step: 1, field: 'companyId' },
     COMPANY_NOT_FOUND: { step: 1, field: 'companyId' },
     MODULES_REQUIRED: { step: 2 },
     LOGIN_ALREADY_EXISTS: { step: 1, field: 'login' },
     DIRECTORY_DISABLED: { step: 0 },
+    AD_ACCOUNT_NO_LOCAL_PASSWORD: { step: 0 },
     PERMISSIONS_INIT_FAILED: {},
 };
 

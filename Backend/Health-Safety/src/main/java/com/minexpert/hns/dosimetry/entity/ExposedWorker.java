@@ -80,4 +80,10 @@ public class ExposedWorker {
 
     @Column(name = "updated_by")
     private Long updatedBy;
+
+    /** Date d'affectation au poste exposé (réglementaire). Champ ajouté en
+     *  dernier (@AllArgsConstructor positionnel). Colonne créée par Hibernate
+     *  ddl-auto=update au boot. */
+    @Column(name = "assignment_date")
+    private LocalDate assignmentDate;
 }

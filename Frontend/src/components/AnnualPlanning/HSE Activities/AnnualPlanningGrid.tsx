@@ -12,6 +12,7 @@ import { Button, Group, Modal, Select, SelectProps, Text, TextInput } from '@man
 import { DateTimePicker, MonthPickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { createActivity, deleteActivity, updateActivity } from '../../../services/HSEActivityService';
+import { getThemesByYear } from '../../../services/HSEThemeService';
 import { modals } from '@mantine/modals';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
@@ -43,6 +44,25 @@ export default function AnnualPlanningGrid({
     const dispatch = useDispatch();
     const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
 
+    // Thèmes réels du calendrier (module Thèmes mensuels), cloisonnés par mine
+    // côté serveur : plus de liste FR codée en dur, la saisie reste alignée sur
+    // ce que le HSE a réellement planifié pour l'année.
+    const [themes, setThemes] = useState<any[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        getThemesByYear(year)
+            .then((data) => {
+                if (!cancelled) setThemes(Array.isArray(data) ? data : []);
+            })
+            .catch(() => {
+                // Repli silencieux : l'absence de thèmes ne doit pas bloquer la
+                // saisie d'une activité (le Select passera en mode "non configuré").
+                if (!cancelled) setThemes([]);
+            });
+        return () => { cancelled = true; };
+    }, [year]);
+
     const filteredActivities = allActivities.filter(activity => {
         const matchesMonth = selectedMonth === 'all' || (activity.month && (activity.month.endsWith(`-${String(selectedMonth).padStart(2, '0')}-01`) || activity.month === selectedMonth));
         const matchesDepartment = selectedDepartment === 'all' || activity.department === selectedDepartment;
@@ -50,30 +70,6 @@ export default function AnnualPlanningGrid({
         const matchesCategory = selectedCategory === 'all' || (activity.category && activity.category.toString() === selectedCategory);
         return matchesMonth && matchesDepartment && matchesEmployee && matchesCategory;
     });
-
-    // Thèmes en français — réunions sécurité (RSS)
-    const themesReunions = [
-        'Formation sécurité',
-        'Analyse d\'incident',
-        'Sensibilisation sécurité',
-        'Prévention des risques',
-        'Équipements de protection',
-        'Procédures d\'urgence',
-        'Amélioration continue',
-        'Retour d\'expérience',
-    ];
-
-    // Thèmes en français — tournées Leadership (TDM)
-    const themesTournees = [
-        'Visite terrain',
-        'Audit sécurité',
-        'Contrôle de procédé',
-        'Inspection générale',
-        'Évaluation des risques',
-        'Suivi des actions',
-        'Observation comportementale',
-        'Dialogue sécurité',
-    ];
 
     // Mois en français
     const months = [
@@ -177,6 +173,29 @@ export default function AnnualPlanningGrid({
             form.reset();
         }
     }, [selectedActivity]);
+
+    // Catégorie d'activité (codes backend) → catégorie de thème (ThemeCategory).
+    const THEME_CATEGORY_OF_ACTIVITY: Record<string, string> = { HSE: 'RSS', TDM: 'TDM' };
+
+    /**
+     * Thèmes proposés pour la catégorie en cours. Un thème sans catégorie est
+     * considéré transverse (proposé pour RSS comme pour TDM). Le thème déjà
+     * enregistré sur l'activité est réinjecté même s'il n'est plus au calendrier,
+     * pour qu'une modification ne l'efface pas silencieusement.
+     */
+    const themeOptions = React.useMemo(() => {
+        const wanted = THEME_CATEGORY_OF_ACTIVITY[form.values.category];
+        const titles = themes
+            .filter((t) => !t.category || t.category === wanted)
+            .map((t) => t.title)
+            .filter((title: string) => !!title);
+        const current = form.values.theme;
+        if (current && !titles.includes(current)) {
+            titles.push(current);
+        }
+        return Array.from(new Set(titles)).map((title: string) => ({ label: title, value: title }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [themes, form.values.category, form.values.theme]);
 
     const handleSaveActivity = async (values: any) => {
         dispatch(showOverlay());
@@ -483,8 +502,20 @@ export default function AnnualPlanningGrid({
                             <Select
                                 size="sm"
                                 label="Thème"
-                                placeholder="Sélectionner un thème"
-                                data={(form.values.category === 'HSE' ? themesReunions : themesTournees).map(t => ({ label: t, value: t }))}
+                                placeholder={
+                                    themeOptions.length
+                                        ? 'Sélectionner un thème'
+                                        : `Aucun thème défini pour ${year}`
+                                }
+                                data={themeOptions}
+                                disabled={!themeOptions.length}
+                                searchable
+                                clearable
+                                description={
+                                    themeOptions.length
+                                        ? undefined
+                                        : 'Définissez les sujets de l’année dans « Thèmes mensuels » pour pouvoir en associer un.'
+                                }
                                 {...form.getInputProps('theme')}
                             />
                         </div>

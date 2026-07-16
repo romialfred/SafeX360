@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { notifyError } from '../../../utility/notifyError';
 import { toLocalDate } from '../../../utility/dateConversion';
 import { createRisk } from '../../../services/RiskRegisterService';
 import { getAllDepartments } from '../../../services/HrmsService';
@@ -163,7 +164,9 @@ const RegisterForm = () => {
                 navigate('/risks-register');
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || t('errors.saveFailed'));
+                // notifyError traduit les codes metier (ex. WORK_PROCESS_REQUIRED) en
+                // message lisible ; sans lui le code brut s'affichait tel quel.
+                notifyError(err, t('errors.saveFailed'));
             })
             .finally(() => {
                 setSubmitting(false);

@@ -269,6 +269,11 @@ EFFECTIVENESS_REQUIRES_COMPLETED_RECOMMENDATION: La verification d efficacite ne
 EFFECTIVENESS_CHECK_NOT_FOUND: La verification d efficacite n existe pas.
 EFFECTIVENESS_ALREADY_CONCLUDED: Cette verification a deja recu un verdict.
 VERDICT_INVALID: Verdict invalide (EFFICACE, PARTIELLEMENT_EFFICACE, INEFFICACE).
+
+# Execution d audit (POST /audit/execute) — entretiens et recommandations
+AREA_REQUIRED_FOR_EXECUTION: Chaque entretien doit etre rattache a un domaine d audit.
+AREA_NOT_IN_AUDIT: Le domaine indique n appartient pas a cet audit.
+AUDIT_REQUIRED_FOR_RECOMMENDATION: Chaque recommandation doit etre rattachee a un audit.
 DUE_DATE_REQUIRED: L echeance de verification est obligatoire.
 
 # LOT 53 — verrouillage de cloture ISO 19011 (6.6) : conditions de fin d audit

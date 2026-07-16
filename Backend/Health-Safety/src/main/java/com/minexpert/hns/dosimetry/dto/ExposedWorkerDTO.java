@@ -41,4 +41,13 @@ public class ExposedWorkerDTO {
     private LocalDateTime updatedAt;
     private Long createdBy;
     private Long updatedBy;
+
+    /**
+     * Date d'affectation au poste exposé (donnée réglementaire). Ajoutée EN
+     * DERNIER : le DTO est construit positionnellement (@AllArgsConstructor)
+     * dans ExposedWorkerServiceImpl.toDTO — tout ajout ailleurs décalerait les
+     * arguments. Le formulaire l'exigeait déjà mais elle était jetée faute de
+     * champ ici.
+     */
+    private LocalDate assignmentDate;
 }

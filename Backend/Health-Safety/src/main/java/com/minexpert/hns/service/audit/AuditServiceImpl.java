@@ -39,6 +39,9 @@ public class AuditServiceImpl implements AuditService {
 
     private final ContributorService contributorService;
     private final ReportService reportService;
+    private final AreaExecutionService areaExecutionService;
+    private final RecommendationService recommendationService;
+    private final com.minexpert.hns.repository.audit.AreaRepository areaRepository;
 
     // LOT 53 — dépendances du verrouillage de clôture ISO 19011 §6.6
     private final com.minexpert.hns.repository.audit.ReportRepository reportRepository;
@@ -137,6 +140,11 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
+    // HSException est une exception CONTRÔLÉE : sans rollbackFor, Spring committe
+    // la transaction. Un refus sur les entretiens / recommandations laisserait le
+    // rapport enregistré (donc l'écran d'exécution définitivement verrouillé par
+    // reportExists) avec la saisie perdue. La soumission doit être atomique.
+    @Transactional(rollbackFor = HSException.class)
     public void executeAudit(ExecuteRequest request) throws HSException {
         // Persiste RÉELLEMENT le rapport d'audit (rédacteur, validateur, statut,
         // description, pièces jointes) + les contributeurs. Auparavant seul
@@ -150,6 +158,63 @@ public class AuditServiceImpl implements AuditService {
         } else if (request.getContributors() != null) {
             contributorService.createContributors(request.getContributors());
         }
+        // Puis les entretiens par domaine et les recommandations : jusqu'ici absents
+        // d'ExecuteRequest, ils étaient écartés par Jackson et donc perdus.
+        Long auditId = request.getReport() != null ? request.getReport().getAuditId() : null;
+        persistExecutions(request.getExecutions(), auditId);
+        persistRecommendations(request.getRecommendations(), auditId);
+    }
+
+    /**
+     * Entretiens d'exécution : FK {@code area_id} NOT NULL, et le domaine doit
+     * appartenir à l'audit rapporté (intégrité + cloisonnement par mine, le
+     * companyId de l'audit ayant déjà été vérifié par la garde du controller).
+     * AreaExecution ne porte pas de companyId : il est hérité via area -> audit.
+     */
+    private void persistExecutions(List<com.minexpert.hns.dto.audit.AreaExecutionDTO> executions, Long auditId)
+            throws HSException {
+        if (executions == null || executions.isEmpty()) {
+            return;
+        }
+        Set<Long> auditAreaIds = auditId == null ? Set.of()
+                : areaRepository.findByAudit_Id(auditId).stream()
+                        .map(com.minexpert.hns.entity.audit.Area::getId)
+                        .collect(java.util.stream.Collectors.toSet());
+        for (var execution : executions) {
+            if (execution.getAreaId() == null) {
+                throw new HSException("AREA_REQUIRED_FOR_EXECUTION");
+            }
+            if (auditId != null && !auditAreaIds.contains(execution.getAreaId())) {
+                throw new HSException("AREA_NOT_IN_AUDIT");
+            }
+        }
+        areaExecutionService.createAreaExecutionList(executions);
+    }
+
+    /**
+     * Recommandations : FK {@code audit_id} NOT NULL — l'auditId est résolu depuis
+     * le rapport quand le payload ne le porte pas. Le companyId a déjà été posé
+     * par le controller (mine active) ; à défaut on le fait hériter de l'audit.
+     */
+    private void persistRecommendations(List<com.minexpert.hns.dto.audit.RecommendationDTO> recommendations,
+            Long auditId) throws HSException {
+        if (recommendations == null || recommendations.isEmpty()) {
+            return;
+        }
+        Long ownerCompanyId = auditId == null ? null
+                : auditRepository.findById(auditId).map(Audit::getCompanyId).orElse(null);
+        for (var recommendation : recommendations) {
+            if (recommendation.getAuditId() == null) {
+                recommendation.setAuditId(auditId);
+            }
+            if (recommendation.getAuditId() == null) {
+                throw new HSException("AUDIT_REQUIRED_FOR_RECOMMENDATION");
+            }
+            if (recommendation.getCompanyId() == null) {
+                recommendation.setCompanyId(ownerCompanyId);
+            }
+        }
+        recommendationService.createRecommendations(recommendations);
     }
 
     @Override

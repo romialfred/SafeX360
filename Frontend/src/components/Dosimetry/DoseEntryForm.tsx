@@ -125,9 +125,9 @@ interface WorkerListItem {
     annualHp10?: number | null;
     /** Cumul glissant 5 ans Hp10 (mSv). */
     rolling5yHp10?: number | null;
-    /** Derniere periode declaree (YYYY-MM). */
+    /** Derniere periode declaree (YYYY-MM) — DTO backend : `lastPeriod`. */
     lastPeriod?: string | null;
-    /** Derniere dose Hp10 (mSv). */
+    /** Derniere dose Hp10 (mSv) — DTO backend : `lastDoseHp10`. */
     lastHp10?: number | null;
 }
 
@@ -306,8 +306,10 @@ const DoseEntryForm = () => {
                         active: w.active !== false,
                         annualHp10: typeof w.annualHp10 === 'number' ? w.annualHp10 : null,
                         rolling5yHp10: typeof w.rolling5yHp10 === 'number' ? w.rolling5yHp10 : null,
+                        // Le DTO backend (ExposedWorkerListItemDTO) expose `lastDoseHp10`
+                        // et `lastPeriod` — cf. searchWorkers / ExposedWorkerQueryServiceImpl.
                         lastPeriod: w.lastPeriod ?? null,
-                        lastHp10: typeof w.lastHp10 === 'number' ? w.lastHp10 : null,
+                        lastHp10: typeof w.lastDoseHp10 === 'number' ? w.lastDoseHp10 : null,
                     }))
                     .filter((w) => w.id > 0);
                 const map: Record<string, WorkerListItem> = {};

@@ -109,6 +109,7 @@ public class ExposedWorkerServiceImpl implements ExposedWorkerService {
         e.setMineId(dto.getMineId());
         e.setCreatedBy(dto.getCreatedBy());
         e.setUpdatedBy(dto.getUpdatedBy());
+        e.setAssignmentDate(dto.getAssignmentDate());
         return e;
     }
 
@@ -123,6 +124,7 @@ public class ExposedWorkerServiceImpl implements ExposedWorkerService {
         e.setSpecialStatusEndDate(dto.getSpecialStatusEndDate());
         e.setActive(dto.isActive());
         e.setUpdatedBy(dto.getUpdatedBy());
+        e.setAssignmentDate(dto.getAssignmentDate());
     }
 
     private ExposedWorkerDTO toDTO(ExposedWorker e) {
@@ -130,6 +132,6 @@ public class ExposedWorkerServiceImpl implements ExposedWorkerService {
                 e.getClassificationReason(), e.getClassificationDate(), e.getRpoId(),
                 e.getSpecialStatus(), e.getSpecialStatusStartDate(), e.getSpecialStatusEndDate(),
                 e.isActive(), e.getMineId(), e.getCreatedAt(), e.getUpdatedAt(),
-                e.getCreatedBy(), e.getUpdatedBy());
+                e.getCreatedBy(), e.getUpdatedBy(), e.getAssignmentDate());
     }
 }

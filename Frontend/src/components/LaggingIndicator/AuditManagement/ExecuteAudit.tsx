@@ -39,7 +39,8 @@ import { PickList } from "primereact/picklist";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { getBase64 } from "../../../utility/DocumentUtility";
-import { REC_STATUS_OPTIONS, REC_TYPE_OPTIONS, VALIDATOR_STATUS_OPTIONS } from "./auditLabels";
+import { REC_PRIORITY_OPTIONS, REC_STATUS_OPTIONS, VALIDATOR_STATUS_OPTIONS, toIsoDateLocalOrNull } from "./auditLabels";
+import { getObservationDropdown } from "../../../services/ObservationService";
 import AuditChecklistPanel from "./AuditChecklistPanel";
 
 
@@ -54,9 +55,10 @@ const ExecuteAudit = () => {
         value: o.value,
         label: t(`validatorStatus.${o.value}`, { defaultValue: o.label }),
     }));
-    const recTypeOptions = REC_TYPE_OPTIONS.map((o) => ({
+    // Priorité de la recommandation : valeurs backend (High/Average/Weak) conservées.
+    const recPriorityOptions = REC_PRIORITY_OPTIONS.map((o) => ({
         value: o.value,
-        label: t(`recType.${o.value}`, { defaultValue: o.label }),
+        label: t(`recPriority.${o.value}`, { defaultValue: o.label }),
     }));
     const recStatusOptions = REC_STATUS_OPTIONS.map((o) => ({
         value: o.value,
@@ -70,6 +72,7 @@ const ExecuteAudit = () => {
     const [areas, setAreas] = useState<any[]>([]);
     const [areaMap, setAreaMap] = useState<Record<string, any>>({});
     const [employees, setEmployees] = useState<any[]>([]);
+    const [observations, setObservations] = useState<any[]>([]);
     const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
     const ref = useRef<HTMLInputElement>(null);
     const ref1 = useRef<HTMLInputElement>(null);
@@ -122,21 +125,30 @@ const ExecuteAudit = () => {
             setEmployees(res);
         }).catch((_err) => {
         })
+        // Constats de l'audit : alimentent le rattachement (facultatif) d'une
+        // recommandation à un constat, comme l'onglet Recommandations du dossier.
+        getObservationDropdown(id).then((res) => {
+            setObservations((res ?? []).map((x: any) => ({ value: "" + x.id, label: x.title })));
+        }).catch((_err) => {
+            setObservations([]);
+        })
     }, []);
 
+    // Le formulaire suit désormais EXACTEMENT le modèle backend RecommendationDTO
+    // (cf. onglet « Recommandations » du dossier d'audit). Les champs historiques
+    // type/department/goal/startDate/assessment/areaId n'avaient aucune colonne en
+    // base et étaient écartés par Jackson.
     const addRecommendation = () => {
         form.insertListItem("recommendations", {
             title: "",
-            description: "",
-            type: "",
-            department: "",
-            goal: "",
-            startDate: null,
-            endDate: null,
-            assessment: "",
-            areaId: "",
             auditId: id,
-            status: undefined,
+            observationId: "",
+            description: "",
+            priority: "",
+            actionManagerId: "",
+            correctiveAction: "",
+            deadline: null,
+            status: "",
         })
     };
 
@@ -155,8 +167,8 @@ const ExecuteAudit = () => {
                 docs: [],
                 description: "",
             },
-            recommendations: [],
-            contributors: [],
+            recommendations: [] as any[],
+            contributors: [] as any[],
         },
         validate: {
             // LOT audit P2 : validation des champs marqués withAsterisk côté UI
@@ -259,20 +271,34 @@ const ExecuteAudit = () => {
             onConfirm: async () => {
                 const values = form.values;
                 const docs = await convertFilesToBase64(values.report.docs);
+                // `emps` (annuaire complet) et `index` (clé de rendu) sont des
+                // artefacts d'UI : hors contrat AreaExecutionDTO, on ne les poste pas.
                 const executions = await Promise.all(
-                    values.executions.map(async (item: any) => {
+                    values.executions.map(async ({ emps: _emps, index: _index, ...item }: any) => {
                         const evidence = await convertFilesToBase64(item.evidence);
                         return {
                             ...item,
+                            interviewDate: toIsoDateLocalOrNull(item.interviewDate),
+                            attendees: (item.attendees ?? []).map((a: any) => ({ id: a.id, role: a.role ?? null })),
                             evidence: evidence,
                         };
                     }
                     )
                 );
+                // Contrat RecommendationDTO : ids Long (chaîne vide -> null) et
+                // échéance en date locale (LocalDate côté backend).
+                const recommendations = values.recommendations.map((rec: any) => ({
+                    ...rec,
+                    auditId: id,
+                    observationId: rec.observationId || null,
+                    actionManagerId: rec.actionManagerId || null,
+                    priority: rec.priority || null,
+                    deadline: toIsoDateLocalOrNull(rec.deadline),
+                }));
 
 
                 dispatch(showOverlay());
-                executeAudit({ ...values, report: { ...values.report, docs }, executions })
+                executeAudit({ ...values, report: { ...values.report, docs }, executions, recommendations })
                     .then(() => {
                         successNotification(t('execute.savedToast'));
                         navigate("/audit-management");
@@ -288,8 +314,9 @@ const ExecuteAudit = () => {
         });
     }
     const convertFilesToBase64 = async (files: any[]) => {
+        // Null-safe : une zone de dépôt jamais ouverte laisse le champ à undefined.
         const fileObjects = await Promise.all(
-            files.map(async (image) => {
+            (files ?? []).map(async (image) => {
                 const base64: any = await getBase64(image.file);
                 return {
                     id: image.id ?? null,
@@ -569,10 +596,13 @@ const ExecuteAudit = () => {
                                         <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
                                     </ActionIcon>
                                 </div>}>
-                                    <Select {...form.getInputProps(`recommendations.${index}.areaId`)}
-                                        label={t('execute.recArea')}
-                                        placeholder={t('execute.selectArea')}
-                                        data={areas.map((a) => ({ value: "" + a.id, label: areaMap[a.auditAreaId]?.name }))}
+                                    <Select {...form.getInputProps(`recommendations.${index}.observationId`)}
+                                        label={t('execute.recObservation')}
+                                        placeholder={observations.length ? t('execute.selectObservation') : t('execute.noObservation')}
+                                        disabled={!observations.length}
+                                        clearable
+                                        searchable
+                                        data={observations}
                                     />
                                     <TextInput {...form.getInputProps(`recommendations.${index}.title`)}
                                         label={t('execute.recTitle')}
@@ -582,34 +612,33 @@ const ExecuteAudit = () => {
                                         <TextEditor form={form} id={`recommendations.${index}.description`} title={t('execute.recDescription')} />
                                     </div>
 
-                                    <Select {...form.getInputProps(`recommendations.${index}.type`)} label={t('execute.recTypeLabel')} placeholder={t('execute.selectType')} data={recTypeOptions} />
+                                    <Select {...form.getInputProps(`recommendations.${index}.priority`)}
+                                        label={t('execute.recPriority')}
+                                        placeholder={t('execute.selectPriority')}
+                                        data={recPriorityOptions} />
 
-
-                                    <TextInput
-                                        {...form.getInputProps(`recommendations.${index}.department`)}
-                                        label={t('execute.recDepartment')}
-                                        placeholder={t('execute.recDepartmentPlaceholder')}
-
+                                    {/* Le responsable d'action est un identifiant employé (actionManagerId) :
+                                        Select alimenté par l'annuaire, plus de saisie libre « Département ». */}
+                                    <Select
+                                        {...form.getInputProps(`recommendations.${index}.actionManagerId`)}
+                                        label={t('execute.recActionManager')}
+                                        placeholder={t('execute.selectActionManager')}
+                                        searchable
+                                        clearable
+                                        data={employees.map((e: any) => ({ value: "" + e.id, label: e.name }))}
                                     />
                                     <div className="col-span-2">
-                                        <TextEditor form={form} id={`recommendations.${index}.goal`} title={t('execute.recGoal')} />
+                                        <TextEditor form={form} id={`recommendations.${index}.correctiveAction`} title={t('execute.recCorrectiveAction')} />
                                     </div>
 
                                     {/* LOT 40 P1: responsive grid breakpoints */}
-                                    <div className="grid col-span-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
-                                        <DateInput label={t('execute.recStartDate')} placeholder={t('execute.datePlaceholder')} leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.startDate`)} />
-
-                                        <DateInput label={t('execute.recEndDate')} placeholder={t('execute.datePlaceholder')} leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.endDate`)} />
+                                    <div className="grid col-span-2 grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                        <DateInput label={t('execute.recDeadline')} placeholder={t('execute.datePlaceholder')} leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.deadline`)} />
                                         <Select {...form.getInputProps(`recommendations.${index}.status`)}
                                             label={t('execute.status')}
                                             placeholder={t('execute.selectStatus')}
                                             data={recStatusOptions}
                                         />
-                                    </div>
-
-                                    <div className="col-span-2">
-
-                                        <TextEditor form={form} id={`recommendations.${index}.assessment`} title={t('execute.recAssessment')} />
                                     </div>
                                 </Fieldset>
                             ))}

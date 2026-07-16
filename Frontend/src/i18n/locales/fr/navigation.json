@@ -222,11 +222,13 @@
                 "EMAIL_INVALID": "Format email invalide",
                 "NAME_REQUIRED": "Le nom est requis",
                 "ROLE_REQUIRED": "Le rôle est requis",
+                "ROLE_INVALID": "Le rôle sélectionné n'est pas autorisé à la création. Choisissez un rôle proposé dans la liste.",
                 "COMPANY_REQUIRED": "La mine de rattachement est obligatoire",
                 "COMPANY_NOT_FOUND": "La mine sélectionnée est introuvable",
                 "MODULES_REQUIRED": "Sélectionnez au moins un module",
                 "LOGIN_ALREADY_EXISTS": "Ce login est déjà utilisé",
                 "DIRECTORY_DISABLED": "Le connecteur Active Directory est désactivé — import impossible",
+                "AD_ACCOUNT_NO_LOCAL_PASSWORD": "Ce compte provient d'Active Directory : il n'a pas de mot de passe local. La réinitialisation se fait dans l'annuaire AD.",
                 "PERMISSIONS_INIT_FAILED": "Le compte a été créé mais l'initialisation des permissions a échoué. Contactez le support."
             },
             "roles": {

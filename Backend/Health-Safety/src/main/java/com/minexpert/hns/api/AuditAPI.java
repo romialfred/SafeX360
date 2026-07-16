@@ -93,6 +93,22 @@ public class AuditAPI {
         if (companyId != null && request.getContributors() != null) {
             request.getContributors().forEach(c -> c.setCompanyId(companyId));
         }
+        // Cloisonnement par mine : même traitement que POST /createRecommendation —
+        // refus de rattacher une recommandation à un audit d'une autre mine, puis
+        // héritage du companyId de la mine active. L'auditId manquant est résolu
+        // depuis le rapport (le formulaire ne demande jamais la mine).
+        if (request.getRecommendations() != null) {
+            Long reportAuditId = request.getReport() != null ? request.getReport().getAuditId() : null;
+            for (RecommendationDTO recommendation : request.getRecommendations()) {
+                if (recommendation.getAuditId() == null) {
+                    recommendation.setAuditId(reportAuditId);
+                }
+                auditOwnershipGuard.assertAuditCompany(recommendation.getAuditId(), companyId);
+                if (companyId != null) {
+                    recommendation.setCompanyId(companyId);
+                }
+            }
+        }
         auditService.executeAudit(request);
         return new ResponseEntity<>(new ResponseDTO("Audit executed successfully"), HttpStatus.OK);
     }

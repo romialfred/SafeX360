@@ -34,7 +34,12 @@ public class RecommendationDTO {
     private Long companyId;
 
     public Recommendation toEntity() {
-        return new Recommendation(this.id, this.title, new Audit(this.auditId), new Observation(this.observationId),
+        // observation_id est nullable en base : une recommandation peut être créée
+        // depuis l'écran d'exécution avant tout constat formalisé. Sans ce garde,
+        // `new Observation(null)` produisait une association vers une entité
+        // transiente (échec de flush Hibernate).
+        return new Recommendation(this.id, this.title, new Audit(this.auditId),
+                this.observationId != null ? new Observation(this.observationId) : null,
                 this.description, this.priority, this.actionManagerId, this.correctiveAction, this.deadline,
                 this.progress, this.status, this.createdAt, this.updatedAt, this.companyId);
     }
