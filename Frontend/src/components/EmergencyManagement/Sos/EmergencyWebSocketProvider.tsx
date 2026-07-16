@@ -131,7 +131,15 @@ const resolveWsBaseUrl = (): string => {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         return 'http://localhost:8081/hns';
     }
-    // Prod web : passer par gateway (le sock-js sera proxifié si tout va bien)
+    // Prod web : passer par le MÊME ORIGINE (proxy Vercel `/hns/*` → gateway),
+    // comme l'intercepteur Axios. Sinon le handshake SockJS (`/ws/emergency/info`)
+    // partait en CROSS-ORIGIN vers onrender.com : le cookie `jwt` (first-party
+    // data-univers.com, SameSite) n'était PAS envoyé → TokenFilter renvoyait 401
+    // en boucle (toutes les 5 s) et AUCUN SOS/alerte n'arrivait. En same-origin,
+    // le cookie accompagne les transports XHR de SockJS et le WS s'authentifie.
+    if (typeof window !== 'undefined' && window.location?.origin) {
+        return `${window.location.origin}/hns`;
+    }
     return 'https://safex360-gateway.onrender.com/hns';
 };
 

@@ -67,11 +67,23 @@ public class GeneralInspection {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    /**
+     * Activité legacy (workflow simple, avant la refonte template). Désormais
+     * OPTIONNELLE : les inspections planifiées via le nouveau workflow
+     * (template + cible) n'en créent pas. Colonne relâchée en NULL (migration
+     * relax_inspection_notnull.sql) — sinon toute planification violait la
+     * contrainte NOT NULL puisque schedule() ne fournit pas d'activité.
+     */
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activity_id", nullable = false, unique = true)
+    @JoinColumn(name = "activity_id", nullable = true, unique = true)
     private Activity activity;
+    /**
+     * Lieu physique de l'inspection. OPTIONNEL : dérivé de la cible (lieu de
+     * rattachement de l'équipement, ou la localisation elle-même). La mine
+     * (cloisonnement) est portée par {@link #companyId}, PAS par ce champ.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "site_id", nullable = false)
+    @JoinColumn(name = "site_id", nullable = true)
     private Location site;
     private LocalDate plannedDate;
     private LocalTime startTime;

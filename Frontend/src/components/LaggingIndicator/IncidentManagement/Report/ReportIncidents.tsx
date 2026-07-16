@@ -224,7 +224,11 @@ const ReportIncidents = () => {
         }
         const values = form.values;
         const evidence = await Promise.all(values.evidence?.map(convertFileToBase64DTO));
-        const deptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
+        // Département = celui SÉLECTIONNÉ (champ obligatoire) en priorité ; repli
+        // sur le département du déclarant. Auparavant seul le déclarant comptait →
+        // en déclaration rapide (sans déclarant) departmentId partait null.
+        const reporterDeptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
+        const deptId = values.department ? Number(values.department) : reporterDeptId;
         dispatch(showOverlay());
         reportIncident({ ...values, evidence: evidence, departmentId: deptId, involvedPersons: values.involvedPersons?.map((x: any) => x.id), witnesses: values.witnesses?.map((x: any) => x.id) }).then((_res: any) => {
             successNotification("Incident déclaré avec succès");

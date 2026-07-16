@@ -404,9 +404,10 @@ How can I assist more precisely?`,
     // Floating Button
     if (!isOpen) {
         return (
-            <div className="fixed bottom-6 right-6 z-50">
+            <div className="fixed right-3 top-1/2 -translate-y-1/2 z-50">
                 <button
                     onClick={handleToggleOpen}
+                    aria-label="Ouvrir l'assistant SafeX"
                     className="group relative w-16 h-16 bg-gradient-to-r from-teal-500 to-sky-500 rounded-full shadow-2xl hover:shadow-teal-500/30 transition-all duration-300 hover:scale-110 animate-pulse"
                 >
                     {/* Ripple Effect */}
@@ -423,10 +424,11 @@ How can I assist more precisely?`,
                         <span className="text-xs text-white">AI</span>
                     </div>
 
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                        SafeX Assist - Health & Safety Assistant
-                        <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    {/* Tooltip — à GAUCHE de la bulle (elle est collée au bord droit),
+                        non-cliquable pour ne jamais intercepter un clic sur le contenu. */}
+                    <div className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        SafeX Assist — Assistant Santé &amp; Sécurité
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-4 border-transparent border-l-gray-900"></div>
                     </div>
                 </button>
             </div>

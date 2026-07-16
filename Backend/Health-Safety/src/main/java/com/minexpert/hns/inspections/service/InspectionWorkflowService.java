@@ -95,9 +95,14 @@ public class InspectionWorkflowService {
         }
 
         GeneralInspection inspection = new GeneralInspection();
-        Location site = new Location();
-        site.setId(dto.getSiteId());
-        inspection.setSite(site);
+        // Site (lieu) OPTIONNEL : dérivé de la cible côté client. On ne rattache
+        // une Location que si un id valide est fourni — sinon on laisse null
+        // (colonne relâchée). L'activité legacy reste null (workflow template).
+        if (dto.getSiteId() != null) {
+            Location site = new Location();
+            site.setId(dto.getSiteId());
+            inspection.setSite(site);
+        }
         inspection.setPlannedDate(dto.getPlannedDate());
         inspection.setStartTime(dto.getStartTime());
         inspection.setEndTime(dto.getEndTime());

@@ -87,7 +87,7 @@ export interface InspectionTemplateSummaryDTO {
 
 export interface ScheduleInspectionDTO {
     templateId: number;
-    siteId: number;
+    siteId?: number | null;
     targetRefId: number;
     targetLabel: string;
     plannedDate: string;        // ISO YYYY-MM-DD
@@ -274,9 +274,18 @@ export const getLastInspection = (
         .then((r) => (r.data && (r.data as any).id ? r.data : null))
         .catch(() => null);
 
-export const scheduleInspection = (dto: ScheduleInspectionDTO) =>
+/**
+ * Planifie une inspection. `companyId` (optionnel) force la mine propriétaire :
+ * indispensable en vue consolidée (« Toutes les Mines ») où l'intercepteur
+ * n'injecte aucun companyId — on file alors l'inspection sous la mine de la
+ * cible sélectionnée. Fourni explicitement, il court-circuite l'intercepteur.
+ */
+export const scheduleInspection = (dto: ScheduleInspectionDTO, companyId?: number | null) =>
     axiosInstance
-        .post<number>('/hns/inspection/schedule', dto, { headers: writeHeaders() })
+        .post<number>('/hns/inspection/schedule', dto, {
+            headers: writeHeaders(),
+            ...(companyId !== null && companyId !== undefined ? { params: { companyId } } : {}),
+        })
         .then((r) => r.data);
 
 export const startInspection = (id: number) =>

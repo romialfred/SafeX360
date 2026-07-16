@@ -87,7 +87,7 @@ export default function ThemeManagement() {
         const payload = {
             title: values.title.trim(),
             description: values.description.trim(),
-            category: values.category,
+            category: values.category || null,
             type: values.type,
             month: `${currentYear}-${String(MONTHS_FR.indexOf(values.month) + 1).padStart(2, '0')}-01`,
         };

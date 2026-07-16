@@ -257,10 +257,17 @@ const AmbientMeasurementForm = ({
     // ─── Submit ───
     const buildPayload = (): AmbientMeasurementDTO => {
         const n = Number(value);
+        const dt = measuredAt ?? new Date();
+        const pad = (x: number) => String(x).padStart(2, '0');
+        // Backend = LocalDateTime : on envoie l'heure murale locale au format
+        // ISO_LOCAL_DATE_TIME (sans suffixe « Z »/offset). toISOString() produit
+        // un « …Z » que le désérialiseur strict de Jackson refuse → 400 à chaque
+        // enregistrement de mesure d'ambiance.
+        const measuredAtLocal = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
         return {
             mineId,
             measurementPointId: Number(measurementPointId),
-            measuredAt: (measuredAt ?? new Date()).toISOString(),
+            measuredAt: measuredAtLocal,
             measuredBy: userId || 0,
             value: n,
             uncertainty:

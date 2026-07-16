@@ -22,7 +22,12 @@ public class ScheduleInspectionDTO {
     @NotNull(message = "Le template d'inspection est obligatoire")
     private Long templateId;
 
-    @NotNull(message = "Le site (location) est obligatoire")
+    /**
+     * Lieu physique (Location) de l'inspection. OPTIONNEL : dérivé de la cible
+     * côté client (lieu de rattachement de l'équipement, ou la localisation
+     * elle-même). La mine est portée par le paramètre {@code companyId} de la
+     * requête (cloisonnement), pas par ce champ.
+     */
     private Long siteId;
 
     /**

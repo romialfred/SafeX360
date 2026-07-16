@@ -150,7 +150,7 @@ const EditNewAuditPlans: React.FC = () => {
                 endDate: new Date(res.endDate),
                 processes: res.processes.map((item: any) => String(item)),
                 scopeId: String(res.scopeId),
-                types: Object.keys(res.auditTypes),
+                types: res.auditTypes ? Object.keys(res.auditTypes) : [],
             });
         }).catch((err) => {
             errorNotification(err.response?.data?.errorMessage || "Le plan d'audit n'a pas pu être chargé");

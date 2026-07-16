@@ -38,6 +38,7 @@ public class AuditServiceImpl implements AuditService {
     private final AuditorService auditorService;
 
     private final ContributorService contributorService;
+    private final ReportService reportService;
 
     // LOT 53 — dépendances du verrouillage de clôture ISO 19011 §6.6
     private final com.minexpert.hns.repository.audit.ReportRepository reportRepository;
@@ -137,8 +138,18 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     public void executeAudit(ExecuteRequest request) throws HSException {
-        // reportService.createReport(request.getReport());
-        contributorService.createContributors(request.getContributors());
+        // Persiste RÉELLEMENT le rapport d'audit (rédacteur, validateur, statut,
+        // description, pièces jointes) + les contributeurs. Auparavant seul
+        // createContributors était appelé (createReport était commenté, de plus
+        // avec une mauvaise signature) → le rapport d'exécution était perdu
+        // silencieusement. createReport gère médias + contributeurs et pose le
+        // statut DRAFT ; l'écran d'exécution n'est ouvert que si aucun rapport
+        // n'existe (reportExists), donc pas de doublon.
+        if (request.getReport() != null) {
+            reportService.createReport(request);
+        } else if (request.getContributors() != null) {
+            contributorService.createContributors(request.getContributors());
+        }
     }
 
     @Override

@@ -32,6 +32,8 @@ import {
     IconCalendarStats,
     IconHistory,
     IconInfoCircle,
+    IconUserCheck,
+    IconUsers,
 } from '@tabler/icons-react';
 
 import {
@@ -46,6 +48,7 @@ import {
 import { getAllEquipment } from '../../services/EquipmentService';
 import { getAllActiveLocations } from '../../services/LocationService';
 import { getAllActiveWorkProcess } from '../../services/WorkProcessService';
+import { getEmployeeDropdown } from '../../services/EmployeeService';
 import InspectionStatusBadge from './InspectionStatusBadge';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import { useAppSelector } from '../../slices/hooks';
@@ -125,11 +128,37 @@ export default function InspectionScheduleForm() {
     });
     const resolvedMineId = activeMineId ?? primaryMineId;
 
-    // Aligne en continu le site de l'inspection sur la mine résolue (header, sinon
-    // mine principale). Jamais de saisie manuelle de la mine.
+    // Équipe d'inspection : liste des employés pour le sélecteur d'inspecteur
+    // principal. Alimentée par le dropdown HRMS (scopé mine par l'intercepteur).
+    const [inspectors, setInspectors] = useState<{ value: string; label: string }[]>([]);
+    const [loadingInspectors, setLoadingInspectors] = useState(false);
+
     useEffect(() => {
-        setForm((f) => (f.siteId === resolvedMineId ? f : { ...f, siteId: resolvedMineId }));
-    }, [resolvedMineId]);
+        let alive = true;
+        setLoadingInspectors(true);
+        Promise.resolve(getEmployeeDropdown())
+            .then((list: any[]) => {
+                if (!alive) return;
+                const arr = Array.isArray(list) ? list : [];
+                setInspectors(
+                    arr
+                        .filter((e) => e && e.id !== undefined && e.id !== null)
+                        .map((e) => ({
+                            value: String(e.id),
+                            label: e.name ?? e.fullName ?? `#${e.id}`,
+                        })),
+                );
+            })
+            .catch(() => {
+                if (alive) setInspectors([]);
+            })
+            .finally(() => {
+                if (alive) setLoadingInspectors(false);
+            });
+        return () => {
+            alive = false;
+        };
+    }, []);
 
     // Charge la liste des cibles selon le type d'objet choisi (étape 1 fusionnée).
     // Dégradation gracieuse : toute erreur → liste vide, pas de crash.
@@ -252,9 +281,21 @@ export default function InspectionScheduleForm() {
         }
         setSubmitting(true);
         try {
+            // Le site (lieu) et la mine propriétaire sont DÉRIVÉS de la cible —
+            // jamais saisis. Site = la localisation elle-même (type LOCATION) ou
+            // le lieu de rattachement de l'équipement/procédure (peut être null).
+            // Mine = company_id de la cible → l'inspection est filée sous la bonne
+            // mine même en vue consolidée (« Toutes les Mines »).
+            const rec = targetRecords.find((r) => String(r.id) === form.targetRefId);
+            const derivedSiteId =
+                form.type === 'LOCATION'
+                    ? Number(form.targetRefId)
+                    : rec?.locationId ?? null;
+            const targetCompanyId = rec?.companyId ?? resolvedMineId ?? null;
+
             const payload: ScheduleInspectionDTO = {
                 templateId: form.templateId as number,
-                siteId: form.siteId as number,
+                siteId: derivedSiteId,
                 targetRefId: Number(form.targetRefId),
                 targetLabel: form.targetLabel.trim(),
                 plannedDate: form.plannedDate,
@@ -266,7 +307,7 @@ export default function InspectionScheduleForm() {
                     ? Number(form.primaryInspectorId)
                     : null,
             };
-            const id = await scheduleInspection(payload);
+            const id = await scheduleInspection(payload, targetCompanyId);
             successNotification(t('schedule.success.submitted', { id }));
             navigate('/inspections');
         } catch (e: any) {
@@ -389,7 +430,12 @@ export default function InspectionScheduleForm() {
                         />
                     )}
                     {step === 3 && (
-                        <StepDetails form={form} setField={set} />
+                        <StepDetails
+                            form={form}
+                            setField={set}
+                            inspectors={inspectors}
+                            loadingInspectors={loadingInspectors}
+                        />
                     )}
                 </div>
 
@@ -717,11 +763,25 @@ function StepTemplate({
 function StepDetails({
     form,
     setField,
+    inspectors,
+    loadingInspectors,
 }: {
     form: FormState;
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+    inspectors: { value: string; label: string }[];
+    loadingInspectors: boolean;
 }) {
     const { t } = useTranslation('inspection');
+    const selectedInspector = form.primaryInspectorId
+        ? inspectors.find((i) => i.value === form.primaryInspectorId) ?? null
+        : null;
+    const initials = (name: string) =>
+        name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((p) => p[0]?.toUpperCase() ?? '')
+            .join('');
     return (
         <div>
             <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
@@ -763,18 +823,72 @@ function StepDetails({
                         />
                     </div>
                 </div>
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
+
+                {/* Équipe d'inspection — carte dédiée, sélecteur d'inspecteur
+                    principal (liste déroulante d'employés) + confirmation visuelle. */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <IconUsers size={15} stroke={1.8} className="text-white" />
+                        </div>
+                        <div>
+                            <div className="text-[13px] font-semibold text-slate-800">
+                                {t('schedule.detailsStep.teamHeading', { defaultValue: "Équipe d'inspection" })}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                                {t('schedule.detailsStep.teamSubtitle', {
+                                    defaultValue: "Désignez l'inspecteur responsable de l'exécution.",
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 mb-1">
+                        <IconUserCheck size={13} stroke={1.8} className="text-cyan-700" />
                         {t('schedule.detailsStep.primaryInspectorLabel')}
                     </label>
-                    <input
-                        type="number"
-                        value={form.primaryInspectorId}
-                        onChange={(e) => setField('primaryInspectorId', e.target.value)}
-                        placeholder={t('schedule.detailsStep.primaryInspectorPlaceholder')}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
+                    <Select
+                        searchable
+                        clearable
+                        data={inspectors}
+                        value={form.primaryInspectorId || null}
+                        onChange={(v) => setField('primaryInspectorId', v ?? '')}
+                        disabled={loadingInspectors}
+                        nothingFoundMessage={
+                            loadingInspectors
+                                ? t('common:loading', { defaultValue: 'Chargement…' })
+                                : t('schedule.detailsStep.noInspector', { defaultValue: 'Aucun employé disponible' })
+                        }
+                        placeholder={
+                            loadingInspectors
+                                ? t('common:loading', { defaultValue: 'Chargement…' })
+                                : t('schedule.detailsStep.primaryInspectorPlaceholder')
+                        }
+                        comboboxProps={{ withinPortal: true }}
                     />
+
+                    {/* Confirmation de l'inspecteur sélectionné */}
+                    {selectedInspector && (
+                        <div className="mt-2.5 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white pl-1 pr-3 py-1">
+                            <span className="w-6 h-6 rounded-full bg-cyan-600 text-white text-[10px] font-semibold flex items-center justify-center">
+                                {initials(selectedInspector.label)}
+                            </span>
+                            <span className="text-[12px] text-slate-800 font-medium">
+                                {selectedInspector.label}
+                            </span>
+                            <span className="text-[10.5px] uppercase tracking-[0.08em] text-cyan-700 font-medium">
+                                {t('schedule.detailsStep.leadBadge', { defaultValue: 'Inspecteur principal' })}
+                            </span>
+                        </div>
+                    )}
+                    <p className="text-[11px] text-slate-500 mt-2">
+                        {t('schedule.detailsStep.teamHelp', {
+                            defaultValue:
+                                "Optionnel à la planification : à défaut, l'inspecteur qui démarrera l'exécution sera enregistré comme responsable.",
+                        })}
+                    </p>
                 </div>
+
                 <div>
                     <label className="block text-[12px] font-medium text-slate-700 mb-1">
                         {t('schedule.detailsStep.objectivesLabel')}

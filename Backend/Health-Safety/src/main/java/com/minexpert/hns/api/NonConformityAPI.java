@@ -34,7 +34,8 @@ public class NonConformityAPI {
     private final EventAnalysisService eventAnalysisService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> createNonConformity(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<Long> createNonConformity(
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @Valid @RequestBody EventRequestDTO request) throws HSException {
         request.setCompanyId(companyId);
         return new ResponseEntity<>(nonConformityService.addNonConformity(companyId, request),
@@ -42,7 +43,8 @@ public class NonConformityAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateNonConformity(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<ResponseDTO> updateNonConformity(
+            @RequestParam(value = "companyId", required = false) Long companyId,
             @Valid @RequestBody EventRequestDTO request) throws HSException {
         request.setCompanyId(companyId);
         nonConformityService.updateEvent(companyId, request);

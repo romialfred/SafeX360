@@ -20,7 +20,10 @@ const InvestigationPlan = ({ form, incident }: any) => {
             actionName: '',
             deadline: '',
             assignedEmployeeId: "",
-            status: "",
+            // Statut par défaut PENDING : une chaîne vide partait telle quelle
+            // vers l'enum ActionStatus côté backend → 400 (désérialisation) qui
+            // faisait échouer TOUTE la soumission d'investigation.
+            status: "PENDING",
             description: ""
         });
     }
