@@ -256,6 +256,69 @@ public class InspectionWorkflowService {
         inspectionRepository.save(insp);
     }
 
+    /**
+     * Remplace l'équipe d'une inspection DÉJÀ PLANIFIÉE (employés + rôles).
+     *
+     * <p>Jusqu'ici l'équipe n'était figée qu'à la planification : une erreur de
+     * composition (mauvais inspecteur, absence de dernière minute, changement de
+     * chef) imposait d'annuler et de replanifier. Cet endpoint comble ce trou.</p>
+     *
+     * <p><b>Sémantique de remplacement intégral</b> (et non de fusion) : la liste
+     * reçue devient l'équipe. C'est ce que fait l'IHM, qui envoie l'état complet
+     * du tableau ; une fusion rendrait le retrait d'un membre impossible.</p>
+     *
+     * <p>Les invariants (exactement un LEAD, pas de doublon d'employé, rôle
+     * valide) sont délégués à {@link #normalizeTeam} : ils restent portés à UN
+     * SEUL endroit, partagé avec {@code schedule()}. {@code primaryInspectorId}
+     * est re-dérivé du LEAD pour rester cohérent ({@code start()} et le PDF le
+     * lisent).</p>
+     *
+     * <p>Verrouillage : interdit après APPROVED/ARCHIVED — le rapport est figé,
+     * réécrire son équipe falsifierait une preuve d'audit (même règle que
+     * {@link #updateSummary}).</p>
+     *
+     * @param members liste complète ; vide/null vide l'équipe (et remet
+     *                {@code primaryInspectorId} à null)
+     */
+    @Transactional
+    public void updateTeam(Long inspectionId, List<InspectionTeamMemberDTO> members,
+                           Long userId, Long companyId) {
+        GeneralInspection insp = loadOrThrow(inspectionId);
+        assertCompany(insp, companyId);
+        if (insp.getStatus() == InspectionStatus.APPROVED
+                || insp.getStatus() == InspectionStatus.ARCHIVED) {
+            throw new IllegalStateException(
+                    "L'equipe n'est plus modifiable apres approbation/archivage.");
+        }
+
+        // Normalisation AVANT toute écriture : si la composition est invalide,
+        // on sort sans avoir supprimé l'équipe existante.
+        List<InspectionTeamMemberDTO> team = normalizeTeam(members, null);
+
+        teamMemberRepository.deleteByInspection_Id(inspectionId);
+        // flush : le delete doit précéder les insert, sinon l'ordre de vidage du
+        // contexte de persistance pourrait rejouer les suppressions après.
+        teamMemberRepository.flush();
+
+        for (InspectionTeamMemberDTO m : team) {
+            InspectionTeamMember member = new InspectionTeamMember();
+            member.setInspection(insp);
+            member.setEmployeeId(m.getEmployeeId());
+            member.setRole(m.getRole());
+            member.setCompanyId(insp.getCompanyId()); // cloisonnement hérité
+            teamMemberRepository.save(member);
+        }
+
+        // Le LEAD (toujours en tête après normalizeTeam) redevient l'inspecteur
+        // principal ; équipe vide => plus d'inspecteur principal.
+        insp.setPrimaryInspectorId(team.isEmpty() ? null : team.get(0).getEmployeeId());
+        insp.setUpdatedAt(LocalDateTime.now());
+        inspectionRepository.save(insp);
+
+        logHistory(insp, insp.getStatus(), insp.getStatus(), userId,
+                "Equipe d'inspection mise a jour (" + team.size() + " membre(s))");
+    }
+
     // ─────────────────────────────────────────────────────────────
     //  Soumission et validation
     // ─────────────────────────────────────────────────────────────

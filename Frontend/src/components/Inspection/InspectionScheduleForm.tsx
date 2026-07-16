@@ -46,9 +46,6 @@ import {
     IconCalendarStats,
     IconHistory,
     IconInfoCircle,
-    IconUsers,
-    IconUserPlus,
-    IconTrash,
     IconFileCheck,
 } from '@tabler/icons-react';
 
@@ -69,12 +66,14 @@ import InspectionStatusBadge from './InspectionStatusBadge';
 import {
     equipmentFamilyLabel,
     normalizeFamilyKey,
-    inspectionRoleOptions,
-    inspectionRoleLabel,
-    INSPECTION_ROLE_CONFIG,
-    initialsOf,
-    type InspectionRoleKey,
 } from './inspectionLabels';
+// Éditeur d'équipe PARTAGÉ avec InspectionDetailPage (modification post-
+// planification) : l'invariant « un seul LEAD » vit dans le composant, pas ici.
+import InspectionTeamEditor, {
+    leadCountOf,
+    teamToDTO,
+    type TeamMemberState,
+} from './InspectionTeamEditor';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import { useAppSelector } from '../../slices/hooks';
 
@@ -88,19 +87,6 @@ type TargetOption = TargetItem | { group: string; items: TargetItem[] };
 /** Clé sentinelle du groupe « sans famille » — distincte des clés métier. */
 const UNCLASSIFIED = '__UNCLASSIFIED__';
 
-/** Membre d'équipe côté IHM (`uid` = clé de rendu, jamais envoyée). */
-interface TeamMemberState {
-    uid: string;
-    employeeId: string;
-    role: InspectionRoleKey;
-}
-
-let memberSeq = 0;
-const newMember = (role: InspectionRoleKey): TeamMemberState => ({
-    uid: `m${++memberSeq}`,
-    employeeId: '',
-    role,
-});
 
 interface FormState {
     type: InspectionTemplateType | null;
@@ -419,39 +405,11 @@ export default function InspectionScheduleForm() {
     };
 
     // ─── Équipe d'inspection (D4) ──────────────────────────────────────────
-    // Invariant : exactement UN LEAD. Il est tenu côté IHM — désigner un
-    // nouveau principal rétrograde le précédent — et re-vérifié à la validation
-    // (cas « on retire le LEAD »). On ne se repose pas sur le serveur seul.
+    // La composition (ajout/retrait, invariant « un seul LEAD ») est portée par
+    // InspectionTeamEditor, partagé avec InspectionDetailPage. Ici on ne garde
+    // que la re-vérification à la validation (cas « on retire le LEAD »).
 
-    const addMember = () =>
-        setForm((f) => ({
-            ...f,
-            team: [...f.team, newMember(f.team.some((m) => m.role === 'LEAD') ? 'INSPECTOR' : 'LEAD')],
-        }));
-
-    const removeMember = (uid: string) =>
-        setForm((f) => ({ ...f, team: f.team.filter((m) => m.uid !== uid) }));
-
-    const setMemberEmployee = (uid: string, employeeId: string) =>
-        setForm((f) => ({
-            ...f,
-            team: f.team.map((m) => (m.uid === uid ? { ...m, employeeId } : m)),
-        }));
-
-    const setMemberRole = (uid: string, role: InspectionRoleKey) =>
-        setForm((f) => ({
-            ...f,
-            team: f.team.map((m) =>
-                m.uid === uid
-                    ? { ...m, role }
-                    : // Un seul LEAD : le précédent redevient inspecteur.
-                    role === 'LEAD' && m.role === 'LEAD'
-                    ? { ...m, role: 'INSPECTOR' as InspectionRoleKey }
-                    : m,
-            ),
-        }));
-
-    const leadCount = form.team.filter((m) => m.role === 'LEAD').length;
+    const leadCount = leadCountOf(form.team);
 
     const validateStep = (s: Step): string[] => {
         const errs: string[] = [];
@@ -701,11 +659,6 @@ export default function InspectionScheduleForm() {
                             setField={set}
                             employees={employees}
                             loadingEmployees={loadingEmployees}
-                            leadCount={leadCount}
-                            onAddMember={addMember}
-                            onRemoveMember={removeMember}
-                            onSetMemberEmployee={setMemberEmployee}
-                            onSetMemberRole={setMemberRole}
                             appliedTemplate={
                                 templates.find((tpl) => tpl.id === form.templateId) ?? null
                             }
@@ -1124,29 +1077,11 @@ function StepTemplate({
     );
 }
 
-/** Badge de rôle coloré (chip borde — jamais la couleur seule). */
-function RoleBadge({ role }: { role: InspectionRoleKey }) {
-    const { t } = useTranslation('inspection');
-    const cfg = INSPECTION_ROLE_CONFIG[role];
-    return (
-        <span
-            className={`inline-flex items-center px-1.5 py-0.5 text-[10.5px] rounded font-medium border whitespace-nowrap ${cfg.chip}`}
-        >
-            {inspectionRoleLabel(t, role)}
-        </span>
-    );
-}
-
 function StepDetails({
     form,
     setField,
     employees,
     loadingEmployees,
-    leadCount,
-    onAddMember,
-    onRemoveMember,
-    onSetMemberEmployee,
-    onSetMemberRole,
     appliedTemplate,
     templateAutoApplied,
     familyLabel,
@@ -1155,26 +1090,11 @@ function StepDetails({
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
     employees: { value: string; label: string }[];
     loadingEmployees: boolean;
-    leadCount: number;
-    onAddMember: () => void;
-    onRemoveMember: (uid: string) => void;
-    onSetMemberEmployee: (uid: string, employeeId: string) => void;
-    onSetMemberRole: (uid: string, role: InspectionRoleKey) => void;
     appliedTemplate: InspectionTemplateSummaryDTO | null;
     templateAutoApplied: boolean;
     familyLabel: string;
 }) {
     const { t } = useTranslation('inspection');
-    const roleOptions = useMemo(() => inspectionRoleOptions(t), [t]);
-    const employeeLabel = (id: string) => employees.find((e) => e.value === id)?.label ?? '';
-
-    /** Un employé ne peut pas tenir deux rôles : on l'exclut des autres lignes. */
-    const optionsFor = (uid: string) => {
-        const taken = new Set(
-            form.team.filter((m) => m.uid !== uid && m.employeeId).map((m) => m.employeeId),
-        );
-        return employees.filter((e) => !taken.has(e.value));
-    };
 
     return (
         <div>
@@ -1232,140 +1152,15 @@ function StepDetails({
                     </div>
                 </div>
 
-                {/* Équipe d'inspection (D4) — membres = employés + rôles.
-                    Invariant tenu côté IHM : exactement un LEAD. */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                                <IconUsers size={15} stroke={1.8} className="text-white" />
-                            </div>
-                            <div className="min-w-0">
-                                <div className="text-[13px] font-semibold text-slate-800">
-                                    {t('schedule.detailsStep.teamHeading')}
-                                </div>
-                                <div className="text-[11px] text-slate-500">
-                                    {t('schedule.detailsStep.teamSubtitle')}
-                                </div>
-                            </div>
-                        </div>
-                        {form.team.length > 0 && (
-                            <span className="text-[11px] text-slate-500 tabular-nums flex-shrink-0">
-                                {t('schedule.detailsStep.teamMemberCount', { count: form.team.length })}
-                            </span>
-                        )}
-                    </div>
-
-                    {form.team.length === 0 ? (
-                        <p className="text-[12px] text-slate-500 italic py-2">
-                            {t('schedule.detailsStep.teamEmpty')}
-                        </p>
-                    ) : (
-                        <div className="space-y-2">
-                            {form.team.map((m) => {
-                                const cfg = INSPECTION_ROLE_CONFIG[m.role];
-                                const name = employeeLabel(m.employeeId);
-                                return (
-                                    <div
-                                        key={m.uid}
-                                        className="rounded-lg border border-slate-200 bg-white p-2.5 flex items-start gap-2.5"
-                                    >
-                                        {/* Puce d'avatar à initiales, teintée par le rôle */}
-                                        <span
-                                            className={`w-8 h-8 rounded-full text-white text-[10.5px] font-semibold flex items-center justify-center flex-shrink-0 mt-1 ${
-                                                name ? cfg.avatar : 'bg-slate-300'
-                                            }`}
-                                            aria-hidden="true"
-                                        >
-                                            {name ? initialsOf(name) : '—'}
-                                        </span>
-                                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            <div className="min-w-0">
-                                                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                                                    {t('schedule.detailsStep.teamMemberEmployeeLabel')}
-                                                </label>
-                                                <Select
-                                                    searchable
-                                                    data={optionsFor(m.uid)}
-                                                    value={m.employeeId || null}
-                                                    onChange={(v) => onSetMemberEmployee(m.uid, v ?? '')}
-                                                    disabled={loadingEmployees}
-                                                    nothingFoundMessage={
-                                                        loadingEmployees
-                                                            ? t('common:loading', { defaultValue: 'Chargement…' })
-                                                            : t('schedule.detailsStep.noInspector')
-                                                    }
-                                                    placeholder={
-                                                        loadingEmployees
-                                                            ? t('common:loading', { defaultValue: 'Chargement…' })
-                                                            : t('schedule.detailsStep.teamMemberEmployeePlaceholder')
-                                                    }
-                                                    comboboxProps={{ withinPortal: true }}
-                                                />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                                                    {t('schedule.detailsStep.teamMemberRoleLabel')}
-                                                </label>
-                                                <Select
-                                                    data={roleOptions}
-                                                    value={m.role}
-                                                    onChange={(v) =>
-                                                        onSetMemberRole(m.uid, (v ?? 'INSPECTOR') as InspectionRoleKey)
-                                                    }
-                                                    allowDeselect={false}
-                                                    comboboxProps={{ withinPortal: true }}
-                                                />
-                                            </div>
-                                            <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
-                                                <RoleBadge role={m.role} />
-                                                {name && (
-                                                    <span className="text-[12px] text-slate-700 font-medium truncate">
-                                                        {name}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => onRemoveMember(m.uid)}
-                                            title={t('schedule.detailsStep.teamRemoveMember')}
-                                            aria-label={t('schedule.detailsStep.teamRemoveMember')}
-                                            className="p-1.5 rounded text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition flex-shrink-0 mt-1"
-                                        >
-                                            <IconTrash size={14} stroke={1.8} />
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* Invariant « exactement un LEAD » : signalé AVANT la soumission. */}
-                    {form.team.length > 0 && leadCount === 0 && (
-                        <div className="mt-2 flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11.5px]">
-                            <IconAlertOctagon size={13} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                            <span>{t('schedule.detailsStep.teamNoLead')}</span>
-                        </div>
-                    )}
-
-                    <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        <button
-                            type="button"
-                            onClick={onAddMember}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-[12.5px] rounded-md border border-cyan-300 text-cyan-800 bg-white hover:bg-cyan-50 transition font-medium min-h-[40px]"
-                        >
-                            <IconUserPlus size={14} stroke={1.8} />
-                            {t('schedule.detailsStep.teamAddMember')}
-                        </button>
-                    </div>
-
-                    <p className="text-[11px] text-slate-500 mt-2">
-                        {form.team.length > 0
-                            ? t('schedule.detailsStep.teamLeadHint')
-                            : t('schedule.detailsStep.teamHelp')}
-                    </p>
-                </div>
+                {/* Équipe d'inspection (D4) — composant PARTAGÉ avec
+                    InspectionDetailPage (modification post-planification).
+                    L'invariant « un seul LEAD » vit dans le composant. */}
+                <InspectionTeamEditor
+                    value={form.team}
+                    onChange={(next) => setField('team', next)}
+                    employees={employees}
+                    loadingEmployees={loadingEmployees}
+                />
 
                 <div>
                     <label className="block text-[12px] font-medium text-slate-700 mb-1">

@@ -1,4 +1,15 @@
 {
+    "detail": {
+        "teamEdit": "Modifier l'équipe",
+        "teamEditTitle": "Équipe d'inspection",
+        "teamEmpty": "Aucun membre d'équipe désigné.",
+        "teamLocked": "Figée après approbation",
+        "teamLegacyHint": "Équipe reprise de l'inspecteur principal — enregistrez pour la compléter.",
+        "teamSave": "Enregistrer",
+        "teamCancel": "Annuler",
+        "teamSaved": "Équipe d'inspection mise à jour",
+        "teamSaveFailed": "Échec de la mise à jour de l'équipe"
+    },
     "sidebar": {
         "parent": "Inspections HSE",
         "registry": "Registre des inspections",

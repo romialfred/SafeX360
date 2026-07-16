@@ -202,6 +202,12 @@ export interface InspectionDetailDTO {
     criticalNonConformCount: number;
     findings: FindingDTO[];
     approvals: ApprovalDTO[];
+    /**
+     * Équipe d'inspection (employé + rôle). Optionnel : les inspections
+     * ANTÉRIEURES à la réforme n'en ont pas — seul `primaryInspectorId` est
+     * renseigné. Les consommateurs doivent tolérer une liste vide.
+     */
+    teamMembers?: InspectionTeamMemberDTO[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -301,6 +307,19 @@ export const scheduleInspection = (dto: ScheduleInspectionDTO, companyId?: numbe
             headers: writeHeaders(),
             ...(companyId !== null && companyId !== undefined ? { params: { companyId } } : {}),
         })
+        .then((r) => r.data);
+
+/**
+ * Remplace l'équipe d'une inspection DÉJÀ PLANIFIÉE (employés + rôles).
+ *
+ * Sémantique de REMPLACEMENT intégral : envoyer l'état complet du tableau.
+ * Une liste vide vide l'équipe (et l'inspecteur principal). Le serveur applique
+ * les mêmes invariants qu'à la planification (exactement un LEAD, pas de
+ * doublon d'employé) et refuse après approbation/archivage (rapport figé).
+ */
+export const updateInspectionTeam = (id: number, members: InspectionTeamMemberDTO[]) =>
+    axiosInstance
+        .put(`/hns/inspection/${id}/team`, members, { headers: writeHeaders() })
         .then((r) => r.data);
 
 export const startInspection = (id: number) =>

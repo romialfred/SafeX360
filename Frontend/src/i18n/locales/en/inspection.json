@@ -1,4 +1,15 @@
 {
+    "detail": {
+        "teamEdit": "Edit team",
+        "teamEditTitle": "Inspection team",
+        "teamEmpty": "No team member assigned.",
+        "teamLocked": "Locked after approval",
+        "teamLegacyHint": "Team derived from the lead inspector — save to complete it.",
+        "teamSave": "Save",
+        "teamCancel": "Cancel",
+        "teamSaved": "Inspection team updated",
+        "teamSaveFailed": "Failed to update the team"
+    },
     "sidebar": {
         "parent": "HSE Inspections",
         "registry": "Inspections registry",

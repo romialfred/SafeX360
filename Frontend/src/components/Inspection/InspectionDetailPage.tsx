@@ -26,16 +26,28 @@ import {
     IconClipboardCheck,
     IconClipboardX,
     IconUsers,
+    IconUsersGroup,
+    IconPencil,
     IconClockHour4,
 } from '@tabler/icons-react';
-import { Textarea } from '@mantine/core';
+import { Button, Modal, Textarea } from '@mantine/core';
 
 import {
     getInspection,
     decideInspection,
+    updateInspectionTeam,
     type InspectionDetailDTO,
     type FindingConformity,
 } from '../../services/InspectionService';
+import { getEmployeeDropdown } from '../../services/EmployeeService';
+import InspectionTeamEditor, {
+    RoleBadge,
+    teamFromDTO,
+    teamToDTO,
+    type TeamMemberState,
+} from './InspectionTeamEditor';
+import { INSPECTION_ROLE_CONFIG, initialsOf, type InspectionRoleKey } from './inspectionLabels';
+import { Z } from '../../constants/zIndex';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
 import AIReportReviewPanel from './AIReportReviewPanel';
@@ -59,6 +71,35 @@ export default function InspectionDetailPage() {
     const [rejectComment, setRejectComment] = useState('');
     const [deciding, setDeciding] = useState(false);
 
+    // ─── Équipe d'inspection ──────────────────────────────────────────────
+    const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
+    const [teamOpen, setTeamOpen] = useState(false);
+    const [teamDraft, setTeamDraft] = useState<TeamMemberState[]>([]);
+    const [savingTeam, setSavingTeam] = useState(false);
+
+    useEffect(() => {
+        let alive = true;
+        setLoadingEmployees(true);
+        Promise.resolve(getEmployeeDropdown())
+            .then((list: any[]) => {
+                if (!alive) return;
+                setEmployees(
+                    (Array.isArray(list) ? list : [])
+                        .filter((e) => e && e.id != null)
+                        .map((e) => ({ value: String(e.id), label: e.name ?? e.fullName ?? `#${e.id}` })),
+                );
+            })
+            .catch(() => alive && setEmployees([]))
+            .finally(() => alive && setLoadingEmployees(false));
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+    const employeeLabel = (empId: string) =>
+        employees.find((e) => e.value === empId)?.label ?? '';
+
     const reload = () => {
         if (!id) return;
         getInspection(Number(id))
@@ -66,6 +107,65 @@ export default function InspectionDetailPage() {
             .catch(() => setError('Inspection introuvable'));
     };
     useEffect(reload, [id]);
+
+    /**
+     * Équipe affichée. Inspections ANTÉRIEURES à la réforme : `teamMembers` est
+     * vide alors que `primaryInspectorId` est renseigné — on le présente alors
+     * comme LEAD implicite plutôt que d'afficher « aucune équipe », ce qui
+     * serait faux. Le premier enregistrement régularise la fiche.
+     */
+    const displayTeam: { employeeId: number; role: string }[] = (() => {
+        if (!detail) return [];
+        const members = detail.teamMembers ?? [];
+        if (members.length > 0) {
+            return members
+                .filter((m) => m.employeeId != null)
+                .map((m) => ({ employeeId: m.employeeId as number, role: m.role ?? 'INSPECTOR' }))
+                .sort((a, b) => (a.role === 'LEAD' ? -1 : b.role === 'LEAD' ? 1 : 0));
+        }
+        return detail.primaryInspectorId != null
+            ? [{ employeeId: detail.primaryInspectorId, role: 'LEAD' }]
+            : [];
+    })();
+
+    // Le serveur refuse la modification une fois le rapport figé : ne proposons
+    // pas une action vouée à l'échec.
+    const teamLocked = detail?.status === 'APPROVED' || detail?.status === 'ARCHIVED';
+
+    const openTeamEditor = () => {
+        setTeamDraft(teamFromDTO(displayTeam));
+        setTeamOpen(true);
+    };
+
+    const saveTeam = async () => {
+        if (!detail) return;
+        const payload = teamToDTO(teamDraft);
+        // Invariant « exactement un LEAD » — signalé ici pour que l'utilisateur
+        // corrige, sans dépendre du seul aller-retour serveur.
+        const leads = payload.filter((m) => m.role === 'LEAD').length;
+        if (payload.length > 0 && leads !== 1) {
+            errorNotification(
+                leads === 0 ? t('schedule.errors.teamLeadRequired') : t('schedule.errors.teamLeadDuplicate'),
+            );
+            return;
+        }
+        setSavingTeam(true);
+        try {
+            await updateInspectionTeam(detail.id, payload);
+            successNotification(t('detail.teamSaved'));
+            setTeamOpen(false);
+            reload();
+        } catch (e: any) {
+            // Remonte le message métier du serveur, pas un texte générique.
+            errorNotification(
+                e?.response?.data?.errorMessage ||
+                    e?.response?.data?.message ||
+                    t('detail.teamSaveFailed'),
+            );
+        } finally {
+            setSavingTeam(false);
+        }
+    };
 
     const decide = async (decision: 'APPROVE' | 'REJECT', comment?: string) => {
         if (!detail) return;
@@ -155,6 +255,7 @@ export default function InspectionDetailPage() {
             : 0;
 
     return (
+        <>
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-5 lg:px-6 py-6">
             <div className="w-full">
                 {/* Breadcrumb */}
@@ -208,6 +309,66 @@ export default function InspectionDetailPage() {
                     <KpiCell label="Conformité" value={`${conformityRatio}%`} tone={conformityRatio >= 80 ? 'ok' : conformityRatio >= 60 ? 'warn' : 'bad'} />
                     <KpiCell label="Non conformes" value={detail.nonConformCount} tone={detail.nonConformCount > 0 ? 'bad' : 'neutral'} />
                     <KpiCell label="Critiques NC" value={detail.criticalNonConformCount} tone={detail.criticalNonConformCount > 0 ? 'bad' : 'neutral'} />
+                </div>
+
+                {/* Équipe d'inspection (employés + rôles) — modifiable tant que le
+                    rapport n'est pas figé (APPROVED/ARCHIVED). */}
+                <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <IconUsersGroup size={16} stroke={1.8} className="text-slate-600" />
+                            <h2 className="text-[13.5px] font-semibold text-slate-800">
+                                {t('schedule.detailsStep.teamHeading')}
+                            </h2>
+                        </div>
+                        {teamLocked ? (
+                            <span className="text-[11px] text-slate-400 italic">
+                                {t('detail.teamLocked')}
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={openTeamEditor}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] rounded-md border border-cyan-300 text-cyan-800 bg-white hover:bg-cyan-50 transition font-medium"
+                            >
+                                <IconPencil size={13} stroke={1.8} />
+                                {t('detail.teamEdit')}
+                            </button>
+                        )}
+                    </div>
+                    {displayTeam.length === 0 ? (
+                        <p className="text-[12.5px] text-slate-500 italic">{t('detail.teamEmpty')}</p>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {displayTeam.map((m, i) => {
+                                const name = employeeLabel(String(m.employeeId));
+                                const role = (m.role as InspectionRoleKey) || 'INSPECTOR';
+                                return (
+                                    <div
+                                        key={`${m.employeeId}-${i}`}
+                                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 pl-1 pr-3 py-1"
+                                    >
+                                        <span
+                                            className={`w-6 h-6 rounded-full text-white text-[10px] font-semibold flex items-center justify-center ${INSPECTION_ROLE_CONFIG[role].avatar}`}
+                                            aria-hidden="true"
+                                        >
+                                            {initialsOf(name || '?')}
+                                        </span>
+                                        <span className="text-[12px] text-slate-800 font-medium">
+                                            {name || `#${m.employeeId}`}
+                                        </span>
+                                        <RoleBadge role={role} />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {/* Inspections antérieures à la réforme : l'équipe n'existe pas
+                        encore mais l'inspecteur principal est renseigné. On ne le
+                        masque pas — le premier enregistrement régularisera la fiche. */}
+                    {(detail.teamMembers ?? []).length === 0 && detail.primaryInspectorId != null && (
+                        <p className="text-[11px] text-slate-500 mt-2">{t('detail.teamLegacyHint')}</p>
+                    )}
                 </div>
 
                 {/* Validation equipe */}
@@ -414,6 +575,34 @@ export default function InspectionDetailPage() {
                 </div>
             </div>
         </div>
+
+            {/* Édition de l'équipe — éditeur PARTAGÉ avec le formulaire de
+                planification (mêmes invariants, un seul code). */}
+            <Modal
+                opened={teamOpen}
+                onClose={() => setTeamOpen(false)}
+                title={t('detail.teamEditTitle')}
+                size="lg"
+                zIndex={Z.modal}
+                centered
+            >
+                <InspectionTeamEditor
+                    value={teamDraft}
+                    onChange={setTeamDraft}
+                    employees={employees}
+                    loadingEmployees={loadingEmployees}
+                    hideHeader
+                />
+                <div className="flex items-center justify-end gap-2 mt-4">
+                    <Button variant="default" size="sm" onClick={() => setTeamOpen(false)}>
+                        {t('detail.teamCancel')}
+                    </Button>
+                    <Button size="sm" color="teal" loading={savingTeam} onClick={saveTeam}>
+                        {t('detail.teamSave')}
+                    </Button>
+                </div>
+            </Modal>
+        </>
     );
 }
 

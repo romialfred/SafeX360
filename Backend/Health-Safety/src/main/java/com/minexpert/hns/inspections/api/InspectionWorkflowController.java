@@ -27,6 +27,7 @@ import com.minexpert.hns.inspections.dto.ApprovalDTO;
 import com.minexpert.hns.inspections.dto.FindingDTO;
 import com.minexpert.hns.inspections.dto.InspectionDetailDTO;
 import com.minexpert.hns.inspections.dto.InspectionSummaryDTO;
+import com.minexpert.hns.inspections.dto.InspectionTeamMemberDTO;
 import com.minexpert.hns.inspections.dto.ScheduleInspectionDTO;
 import com.minexpert.hns.inspections.service.InspectionReportPdfService;
 import com.minexpert.hns.inspections.service.InspectionWorkflowService;
@@ -71,6 +72,25 @@ public class InspectionWorkflowController {
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         Long id = workflowService.schedule(dto, userId, companyId);
         return new ResponseEntity<>(id, HttpStatus.CREATED);
+    }
+
+    /**
+     * Remplace l'equipe d'une inspection deja planifiee (employe + role).
+     *
+     * <p>Meme permission que la planification : composer l'equipe EST un acte de
+     * planification, pas d'execution. Semantique de REMPLACEMENT integral : la
+     * liste recue devient l'equipe (une fusion interdirait de retirer un
+     * membre). Liste vide => equipe videe et primaryInspectorId remis a null.
+     * Refuse apres APPROVED/ARCHIVED (rapport fige).</p>
+     */
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_PLAN + "')")
+    @PutMapping("/{id}/team")
+    public ResponseEntity<ResponseDTO> updateTeam(@PathVariable Long id,
+            @RequestBody(required = false) List<InspectionTeamMemberDTO> members,
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+        workflowService.updateTeam(id, members, userId, companyId);
+        return ResponseEntity.ok(new ResponseDTO("Equipe d'inspection mise a jour"));
     }
 
     @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_EXECUTE + "')")
