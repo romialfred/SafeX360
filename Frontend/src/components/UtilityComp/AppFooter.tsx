@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { IconSparkles } from '@tabler/icons-react';
 import SafeXLogoColor from './SafeXLogoColor';
 import IsoBadge from './IsoBadge';
+import { useAppDispatch } from '../../slices/hooks';
+import { openAiAssistant } from '../../slices/AiAssistantSlice';
 
 /**
  * AppFooter — Footer global de la plateforme SafeX 360 (LOT 45 v2 — refonte mono-ligne).
@@ -19,6 +22,7 @@ import IsoBadge from './IsoBadge';
 
 const AppFooter = () => {
     const { t } = useTranslation('navigation');
+    const dispatch = useAppDispatch();
     const year = 2026;
 
     return (
@@ -49,8 +53,20 @@ const AppFooter = () => {
                             <span style={{ marginLeft: '0.18em', color: '#EF4444' }}>360</span>
                         </span>
                         <span className="text-slate-600 text-[11px]" aria-hidden="true">·</span>
-                        <span className="text-[11.5px] text-slate-400 truncate">
-                            © {year} <span className="text-slate-300">Data Universe</span>
+                        {/* Copyright + lien du site JUSTE EN DESSOUS (le lien vivait
+                            auparavant à droite du footer, il rejoint sa marque). */}
+                        <span className="flex flex-col leading-tight min-w-0">
+                            <span className="text-[11.5px] text-slate-400 truncate">
+                                © {year} <span className="text-slate-300">Data Universe</span>
+                            </span>
+                            <a
+                                href="https://datauniverse.bf/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10.5px] text-slate-500 hover:text-slate-300 transition-colors truncate"
+                            >
+                                datauniverse.bf
+                            </a>
                         </span>
                     </div>
 
@@ -81,18 +97,22 @@ const AppFooter = () => {
                         ))}
                     </div>
 
-                    {/* LOT 45 — Statut système déplacé dans la sidebar (pied) — n'apparaît plus ici.
-                        À droite du footer : adresse maintainer pour équilibrer la ligne. */}
-                    <div className="text-[11px] text-slate-500 whitespace-nowrap">
-                        <a
-                            href="https://datauniverse.bf/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-slate-300 transition-colors"
-                        >
-                            datauniverse.bf
-                        </a>
-                    </div>
+                    {/* À droite du footer : déclencheur de l'Assistant SafeX 360.
+                        Remplace l'ancienne bulle flottante, qui recouvrait les
+                        boutons d'action des formulaires (même coin bas-droit). */}
+                    <button
+                        type="button"
+                        onClick={() => dispatch(openAiAssistant())}
+                        aria-label={t('footer.aiAssistant', { defaultValue: 'Assistant SafeX 360' })}
+                        className="group inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 bg-gradient-to-r from-teal-500/15 to-sky-500/15 border border-teal-400/30 text-teal-200 hover:text-white hover:border-teal-300/60 hover:from-teal-500/25 hover:to-sky-500/25 transition-all whitespace-nowrap"
+                    >
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-teal-500 to-sky-500 flex-shrink-0">
+                            <IconSparkles size={13} stroke={1.9} className="text-white group-hover:rotate-12 transition-transform" />
+                        </span>
+                        <span className="text-[12px] font-medium">
+                            {t('footer.aiAssistant', { defaultValue: 'Assistant SafeX 360' })}
+                        </span>
+                    </button>
                 </div>
             </div>
         </footer>

@@ -7,10 +7,12 @@ import collapseReducer from "./slices/CollapseSlice";
 import menuReducer from "./slices/MenuSlice";
 import companySelectionReducer from "./slices/CompanySelectionSlice";
 import mobileSidebarReducer from "./slices/MobileSidebarSlice";
+import aiAssistantReducer from "./slices/AiAssistantSlice";
 
 
 const store = configureStore({
     reducer: {
+        aiAssistant: aiAssistantReducer,
         jwt: jwtReducer,
         user: userReducer,
         profile: profileReducer,
