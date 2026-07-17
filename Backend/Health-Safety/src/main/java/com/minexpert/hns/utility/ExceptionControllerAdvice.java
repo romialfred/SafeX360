@@ -147,6 +147,24 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
+    /** Paramètre de type incompatible (ex. id non numérique ou hors plage Long) → 400, pas 500. */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorInfo> typeMismatchHandler(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException exception) {
+        ErrorInfo error = new ErrorInfo("Parametre invalide : " + exception.getName(),
+                HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /** Corps JSON illisible ou valeur d'enum inconnue → 400 (erreur cliente), pas 500. */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorInfo> notReadableHandler(
+            org.springframework.http.converter.HttpMessageNotReadableException exception) {
+        ErrorInfo error = new ErrorInfo("Requete mal formee ou valeur invalide.",
+                HttpStatus.BAD_REQUEST.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         log.error("Unhandled exception", exception);

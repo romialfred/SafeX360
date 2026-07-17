@@ -23,7 +23,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
 
   mail:
     # Credentials exclusivement via variables d'environnement (fichier public —
