@@ -91,6 +91,12 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 if (companyId != null && !companyId.equals(req.getCompanyId())) {
                         throw new HSException("REQUEST_NOT_FOUND");
                 }
+                // Idempotence : seule une demande PENDING peut être approuvée. Sans
+                // cette garde, un double-clic (ou un rejeu direct de l'endpoint)
+                // re-décrémentait le stock à chaque appel.
+                if (req.getStatus() != PpeRequestStatus.PENDING) {
+                        throw new HSException("REQUEST_NOT_PENDING");
+                }
                 req.setStatus(PpeRequestStatus.APPROVED);
                 req.setComment(comment);
                 ppeService.updateStockQuantities(StringListConverter.convertToLongList(req.getPpeIds()),
@@ -111,6 +117,11 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
                 if (companyId != null && !companyId.equals(req.getCompanyId())) {
                         throw new HSException("REQUEST_NOT_FOUND");
+                }
+                // Idempotence : on ne rejette qu'une demande encore PENDING (évite
+                // de rejeter une demande déjà approuvée/livrée).
+                if (req.getStatus() != PpeRequestStatus.PENDING) {
+                        throw new HSException("REQUEST_NOT_PENDING");
                 }
                 req.setStatus(PpeRequestStatus.REJECTED);
                 req.setComment(comment);

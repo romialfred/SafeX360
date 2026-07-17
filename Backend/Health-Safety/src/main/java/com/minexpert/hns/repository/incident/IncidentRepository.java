@@ -40,16 +40,7 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                 i.reporter_id AS reporterId,
                                 i.source AS source,
                                 i.ai_confidence AS aiConfidence,
-                               CASE i.status
-                WHEN 0 THEN 'PENDING'
-                WHEN 1 THEN 'REPORTED'
-                WHEN 2 THEN 'INVESTIGATION'
-                WHEN 3 THEN 'INVESTIGATION_COMPLETED'
-                WHEN 4 THEN 'CORRECTIVE_ACTIONS'
-                WHEN 5 THEN 'CLOSED'
-                WHEN 6 THEN 'REJECTED'
-                ELSE 'UNKNOWN'
-            END AS status,
+                               i.status AS status,
                                 severity_info.level AS maxSeverityLevel,
                                 severity_info.name AS severityLevelName,
                                 severity_info.incident_category_name AS incidentCategoryName
@@ -81,16 +72,7 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                 i.id AS id,
                                 i.title AS title,
                                 i.occurred_at AS incidentDate,
-                                CASE i.status
-                WHEN 0 THEN 'PENDING'
-                WHEN 1 THEN 'REPORTED'
-                WHEN 2 THEN 'INVESTIGATION'
-                WHEN 3 THEN 'INVESTIGATION_COMPLETED'
-                WHEN 4 THEN 'CORRECTIVE_ACTIONS'
-                WHEN 5 THEN 'CLOSED'
-                WHEN 6 THEN 'REJECTED'
-                ELSE 'UNKNOWN'
-            END AS status,
+                                i.status AS status,
                                 severity_info.level AS maxSeverityLevel,
                                 severity_info.name AS severityLevelName,
                                 severity_info.incident_category_name AS incidentCategoryName
@@ -132,16 +114,7 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                                 i.department_id AS departmentId,
                                 i.source AS source,
                                 i.ai_confidence AS aiConfidence,
-                               CASE i.status
-                WHEN 0 THEN 'PENDING'
-                WHEN 1 THEN 'REPORTED'
-                WHEN 2 THEN 'INVESTIGATION'
-                WHEN 3 THEN 'INVESTIGATION_COMPLETED'
-                WHEN 4 THEN 'CORRECTIVE_ACTIONS'
-                WHEN 5 THEN 'CLOSED'
-                WHEN 6 THEN 'REJECTED'
-                ELSE 'UNKNOWN'
-            END AS status,
+                               i.status AS status,
                                 severity_info.level AS maxSeverityLevel,
                                 severity_info.name AS severityLevelName,
                                 severity_info.incident_category_name AS incidentCategoryName

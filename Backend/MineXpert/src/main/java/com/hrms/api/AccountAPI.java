@@ -56,7 +56,25 @@ public class AccountAPI {
     }
 
     @PostMapping("/update-password")
-    public ResponseEntity<ResponseDTO> UpdatePassword(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
+    public ResponseEntity<ResponseDTO> UpdatePassword(@RequestBody @Valid AccountDTO accountDTO,
+            @CookieValue(name = "jwt", required = false) String token) throws Exception {
+        // Authentification obligatoire (fermait l'escalade P0 : l'endpoint etait
+        // totalement ouvert). Le parcours normal envoie login + ancien mot de
+        // passe : la possession de l'ancien mot de passe, verifiee par le service,
+        // fait foi. La branche « reset par id SANS ancien mot de passe » ne doit
+        // etre accessible qu'a un ADMIN ou au titulaire du compte lui-meme.
+        Claims claims = requireAuth(token);
+        boolean byId = (accountDTO.getLogin() == null || accountDTO.getLogin().isBlank())
+                && accountDTO.getId() != null;
+        if (byId) {
+            Long callerId = claims.get("id", Long.class);
+            String role = claims.get("role", String.class);
+            boolean admin = "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role);
+            if (!admin && !accountDTO.getId().equals(callerId)) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.FORBIDDEN, "Not allowed to reset this account's password");
+            }
+        }
         accountService.updatePassword(accountDTO);
         return new ResponseEntity<>(new ResponseDTO("Password Updated Successfully."), HttpStatus.OK);
     }
@@ -73,33 +91,49 @@ public class AccountAPI {
         return new ResponseEntity<>(new ResponseDTO("Email Sent Successfully."), HttpStatus.OK);
     }
 
+    // Lecture d'un compte : authentification requise (fermait un IDOR anonyme).
     @GetMapping("/get/{id}")
-    public ResponseEntity<AccountDTO> getAccount(@PathVariable Long id) throws HRMSException {
+    public ResponseEntity<AccountDTO> getAccount(@PathVariable Long id,
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAuth(token);
         return new ResponseEntity<>(accountService.getAccount(id), HttpStatus.OK);
     }
 
     @GetMapping("/getByEmpId/{empId}")
-    public ResponseEntity<AccountDTO> getAccountByEmpId(@PathVariable Long empId) throws HRMSException {
+    public ResponseEntity<AccountDTO> getAccountByEmpId(@PathVariable Long empId,
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAuth(token);
         return new ResponseEntity<>(accountService.getAccountByEmpId(empId), HttpStatus.OK);
     }
 
+    // Listing complet + comptages inter-mines : reserve aux administrateurs
+    // (fermait le listing de TOUS les comptes de TOUTES les mines par n'importe
+    // quel utilisateur authentifie).
     @GetMapping("/getAll")
-    public ResponseEntity<List<AccountDetailsDTO>> getAllAccounts() throws HRMSException {
+    public ResponseEntity<List<AccountDetailsDTO>> getAllAccounts(
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         return new ResponseEntity<>(accountService.getAllAccounts(), HttpStatus.OK);
     }
 
     @GetMapping("/getCounts")
-    public ResponseEntity<List<Object[]>> getCountByCompany() throws HRMSException {
+    public ResponseEntity<List<Object[]>> getCountByCompany(
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         return new ResponseEntity<>(accountService.getCountsByCompany(), HttpStatus.OK);
     }
 
     @GetMapping("/getActives")
-    public ResponseEntity<List<Object[]>> getActiveCountByCompany() throws HRMSException {
+    public ResponseEntity<List<Object[]>> getActiveCountByCompany(
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         return new ResponseEntity<>(accountService.getActiveCountsByCompany(), HttpStatus.OK);
     }
 
     @GetMapping("/getAdmins")
-    public ResponseEntity<List<Object[]>> getAdminsCountByCompany() throws HRMSException {
+    public ResponseEntity<List<Object[]>> getAdminsCountByCompany(
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         return new ResponseEntity<>(accountService.getAdminCountsByCompany(), HttpStatus.OK);
     }
 
@@ -162,15 +196,25 @@ public class AccountAPI {
     }
 
     private void requireAdmin(String token) {
-        if (token == null || token.isBlank()) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "Authentication required");
-        }
-        Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
+        Claims claims = requireAuth(token);
         String role = claims.get("role", String.class);
         if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Admin privileges required");
+        }
+    }
+
+    /** Exige un cookie jwt valide ; renvoie les claims. 401 sinon. */
+    private Claims requireAuth(String token) {
+        if (token == null || token.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+        try {
+            return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
+        } catch (Exception e) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Invalid or expired session");
         }
     }
 }

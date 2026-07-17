@@ -214,13 +214,20 @@ public class AccountServiceImpl implements AccountService {
     public void resetPassword(AccountDTO accountDTO) throws Exception {
         Account account = accountRepository.findByEmailAndLogin(accountDTO.getEmail(), accountDTO.getLogin())
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
-        account.setPassword(passwordEncoder.encode(accountDTO.getPassword()));
+        // SÉCURITÉ (prise de contrôle non authentifiée) : cet endpoint « mot de
+        // passe oublié » n'est pas authentifié. On ne doit JAMAIS appliquer le mot
+        // de passe fourni par l'appelant (il pourrait fixer un mot de passe connu
+        // de lui et prendre le compte). Le serveur génère lui-même un mot de passe
+        // temporaire fort (CSPRNG, OWASP) envoyé UNIQUEMENT au titulaire par email ;
+        // firstLogin=true force son changement à la prochaine connexion.
+        String temporaryPassword = com.hrms.utility.PasswordGenerator.generate();
+        account.setPassword(passwordEncoder.encode(temporaryPassword));
         account.setFirstLogin(true);
         MimeMessage mm = mailSender.createMimeMessage();
         MimeMessageHelper message = new MimeMessageHelper(mm, true);
-        message.setTo(accountDTO.getEmail());
+        message.setTo(account.getEmail());
         message.setSubject(" Password Reset - Access to Your Account");
-        message.setText(Data.getResetPasswordBody(accountDTO.getName(), accountDTO.getLogin(), accountDTO.getPassword(),
+        message.setText(Data.getResetPasswordBody(accountDTO.getName(), accountDTO.getLogin(), temporaryPassword,
                 loginUrl, "r.tiegnan@data-univers.com",
                 "Data Universe",
                 null,

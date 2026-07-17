@@ -64,9 +64,36 @@ public class ExceptionControllerAdvice {
 
     @ExceptionHandler(HRMSException.class)
     public ResponseEntity<ErrorInfo> HRMSExceptionHandler(HRMSException exception) {
-        String msg = environment.getProperty(exception.getMessage());
-        ErrorInfo error = new ErrorInfo(msg, HttpStatus.INTERNAL_SERVER_ERROR.value(), LocalDateTime.now());
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        // Une HRMSException porte une erreur MÉTIER (validation, ressource
+        // introuvable, doublon…) : c'est un 4xx, pas un 500. On classe par
+        // convention de nommage du code (aligné sur HNS) au lieu de forcer 500,
+        // qui masquait la vraie cause et alarmait à tort.
+        String code = exception.getMessage();
+        HttpStatus status = resolveHRMSStatus(code);
+        String resolved = code != null ? environment.getProperty(code) : null;
+        String msg = resolved != null ? resolved : (code != null ? code : "Requête invalide.");
+        ErrorInfo error = new ErrorInfo(msg, status.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, status);
+    }
+
+    private HttpStatus resolveHRMSStatus(String code) {
+        if (code == null) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        String c = code.toUpperCase();
+        if (c.endsWith("_NOT_FOUND")) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (c.contains("ALREADY") || c.endsWith("_EXISTS")) {
+            return HttpStatus.CONFLICT;
+        }
+        if (c.contains("UNAUTHORIZED") || c.contains("INVALID_CREDENTIALS")) {
+            return HttpStatus.UNAUTHORIZED;
+        }
+        if (c.contains("FORBIDDEN") || c.contains("NOT_ALLOWED")) {
+            return HttpStatus.FORBIDDEN;
+        }
+        return HttpStatus.BAD_REQUEST;
     }
 
     @ExceptionHandler({ MethodArgumentNotValidException.class, ConstraintViolationException.class })

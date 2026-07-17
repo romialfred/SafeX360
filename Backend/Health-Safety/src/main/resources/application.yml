@@ -204,6 +204,7 @@ PPE_ALREADY_EXISTS: PPE already exists
 STOCK_NOT_FOUND: Stock not found
 
 REQUEST_NOT_FOUND: Request not found
+REQUEST_NOT_PENDING: Cette demande d EPI n est plus en attente : elle a deja ete traitee.
 
 EMPLOYEE_PPE_NOT_FOUND: Employee PPE not found
 
