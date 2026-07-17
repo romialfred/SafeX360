@@ -89,13 +89,13 @@ export const REC_STATUS_OPTIONS = [
     { value: 'COMPLETED', label: 'Terminée' },
 ];
 
-/** Options FR pour le statut initial d'une action / recommandation. */
-export const ACTION_STATUS_OPTIONS = [
-    { value: 'PENDING', label: 'En attente' },
-    { value: 'IN_PROGRESS', label: 'En cours' },
-    { value: 'CANCELLED', label: 'Annulée' },
-    { value: 'COMPLETED', label: 'Terminée' },
-];
+// Supprimé : ACTION_STATUS_OPTIONS. Ces options venaient de l'enum ActionStatus
+// mais alimentaient le champ `status` d'une recommandation, typé
+// RecommendationStatus (PENDING, IN_PROGRESS, COMPLETED, DELAYED) — sans
+// CANCELLED. Le statut initial ne se choisit pas de toute façon :
+// createRecommendation impose PENDING (spec 2.3). N'en réintroduisez pas :
+// pour le SUIVI d'une recommandation, utilisez REC_STATUS_OPTIONS ci-dessus,
+// qui dérive du bon enum.
 
 // ─── Priorités de recommandation (backend : High / Average / Weak) ─────────
 

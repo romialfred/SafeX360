@@ -32,7 +32,6 @@ import { getProgressColor, isValidRichText } from "../../../../utility/OtherUtil
 import { Tag } from "primereact/tag";
 import { Z } from '../../../../constants/zIndex';
 import {
-    ACTION_STATUS_OPTIONS,
     REC_PRIORITY_COLORS,
     REC_PRIORITY_OPTIONS,
     REC_STATUS_OPTIONS,
@@ -102,7 +101,8 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             actionManagerId: "",
             correctiveAction: "",
             deadline: "",
-            status: "",
+            // Statut imposé par createRecommendation (RecommendationStatus.PENDING).
+            status: "PENDING",
 
 
 
@@ -116,7 +116,6 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
             actionManagerId: (value) => value ? null : "Le responsable d'action est requis",
             correctiveAction: (value) => value ? null : "L'action corrective est requise",
             deadline: (value) => value ? null : "L'échéance est requise",
-            status: (value) => value ? null : "Le statut est requis",
         }
     });
     const updateForm = useForm({
@@ -346,13 +345,21 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
                             </div>
 
                             <DateInput label="Échéance de réalisation" placeholder="Sélectionner la date" {...form.getInputProps('deadline')} minDate={new Date(audit.startDate)} withAsterisk />
-                            <Select
-                                placeholder="Sélectionner le statut"
-                                label="Statut"
-                                data={ACTION_STATUS_OPTIONS}
-                                withAsterisk
-                                {...form.getInputProps('status')}
-                            />
+                            {/* Statut : affiché, jamais choisi (spec 2.3). Une
+                                recommandation naît « En attente » —
+                                createRecommendation impose RecommendationStatus.PENDING
+                                — puis transite par le suivi (Followup). Le <Select>
+                                précédent proposait les options d'ActionStatus, un
+                                AUTRE enum : choisir « Annulée » envoyait CANCELLED
+                                dans un champ RecommendationStatus (PENDING,
+                                IN_PROGRESS, COMPLETED, DELAYED) → Jackson refusait
+                                → recommandation perdue. */}
+                            <div>
+                                <div className="text-sm text-slate-700 mb-1">Statut</div>
+                                <div className="flex items-center h-9">
+                                    <Badge color={recStatusColor('PENDING')} variant="light">{recStatusLabel('PENDING')}</Badge>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Action buttons */}

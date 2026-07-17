@@ -7,7 +7,7 @@ import { getEmployeeDropdown } from "../../../../services/EmployeeService";
 import { modals } from "@mantine/modals";
 import { removeCorrectiveAction } from "../../../../services/CorrectiveActionService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
-import { ACTION_STATUS_OPTIONS } from "../incidentLabels";
+import { adhocStatusConfig } from "../../../NewComponents/AdhocActions/adhocLabels";
 import { useTranslation } from "react-i18next";
 
 
@@ -99,7 +99,24 @@ const InvestigationPlan = ({ form, incident }: any) => {
                 <TextInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label={t('investigation.plan.actionNameLabel')} placeholder={t('investigation.plan.actionNamePlaceholder')} />
                 <Select {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={emps} label={t('investigation.plan.ownerLabel')} placeholder={t('investigation.plan.ownerPlaceholder')} />
                 <DateInput withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} minDate={incident?.discoveryDate ? new Date(incident.discoveryDate) : undefined} label={t('investigation.plan.deadlineLabel')} placeholder={t('investigation.plan.deadlinePlaceholder')} />
-                <Select withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={ACTION_STATUS_OPTIONS} label={t('investigation.plan.statusLabel')} placeholder={t('investigation.plan.statusPlaceholder')} />
+                {/* Statut : affiché, jamais choisi (spec 2.3). Une action naît « En
+                    attente » — addCorrectiveAction impose ActionStatus.PENDING — et
+                    son statut transite ensuite par les actions dédiées. Le <Select>
+                    précédent était donc décoratif : ce qu'il promettait, le serveur
+                    ne le tenait pas. */}
+                {(() => {
+                    const cfg = adhocStatusConfig(x.id ? x.status : 'PENDING');
+                    return (
+                        <div>
+                            <div className="text-sm text-slate-700 mb-1">{t('investigation.plan.statusLabel')}</div>
+                            <div className="flex items-center h-9">
+                                <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${cfg.chip}`}>
+                                    {cfg.label}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })()}
                 <div className='col-span-2'>
 
                     <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title={t('investigation.plan.descriptionLabel')} />

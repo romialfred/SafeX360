@@ -92,25 +92,6 @@ export const ACTION_STATUS_COLORS: Record<string, string> = {
 export const actionStatusColor = (code?: string | null): string =>
     ACTION_STATUS_COLORS[String(code ?? '').toUpperCase()] ?? 'gray';
 
-/**
- * Options FR pour les <Select> de statut d'action corrective des formulaires
- * incident.
- *
- * ⚠ Les valeurs DOIVENT correspondre exactement à l'enum backend
- * {@code ActionStatus} : PENDING, IN_PROGRESS, COMPLETED, **CANCELLED** (deux L),
- * ON_HOLD. Le commentaire précédent affirmait « valeur backend CANCELED —
- * orthographe historique conservée » : c'était FAUX. L'enum n'a jamais accepté
- * qu'un seul L, donc choisir « Annulée » envoyait une valeur inconnue, Jackson
- * levait HttpMessageNotReadableException → 500 → toute la saisie perdue.
- * Vérifier contre l'enum avant d'ajouter une valeur ici.
- */
-export const ACTION_STATUS_OPTIONS = [
-    { label: 'En attente', value: 'PENDING' },
-    { label: 'En cours', value: 'IN_PROGRESS' },
-    { label: 'Annulée', value: 'CANCELLED' },
-    { label: 'Terminée', value: 'COMPLETED' },
-];
-
 // ─── Échelles de risque (probabilité × gravité, ISO 31000) ─────────────────
 
 export const PROBABILITY_OPTIONS = [

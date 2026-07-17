@@ -13,7 +13,7 @@ import { removeInsMeasurement } from "../../../../services/InspectionProcessServ
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import TextEditor from "../../../UtilityComp/TextEditor";
 import { createCorrectiveAction } from "../../../../services/CorrectiveActionService";
-import { ACTION_STATUS_OPTIONS } from "../pgiLabels";
+import { adhocStatusConfig } from "../../../NewComponents/AdhocActions/adhocLabels";
 import { Z } from '../../../../constants/zIndex';
 import { useSelector } from "react-redux";
 import { toLocalDate } from "../../../../utility/dateConversion";
@@ -105,7 +105,7 @@ const Measurement = ({ form, employee }: any) => {
             actionName: "",
             assignedEmployeeId: "",
             deadline: "",
-            status: "",
+            status: "PENDING",
             description: "",
             generalInspectionId: id,
         },
@@ -117,7 +117,6 @@ const Measurement = ({ form, employee }: any) => {
             },
             assignedEmployeeId: (value) => (!value ? 'Sélectionnez un responsable' : null),
             deadline: (value) => (!value ? 'Sélectionnez une échéance' : null),
-            status: (value) => (!value ? 'Sélectionnez un statut' : null),
         }
     })
 
@@ -276,15 +275,17 @@ const Measurement = ({ form, employee }: any) => {
                         placeholder="JJ/MM/AAAA"
                         valueFormat="DD/MM/YYYY"
                     />
-                    <Select
-                        withAsterisk
-                        size="sm"
-                        {...actionForm.getInputProps(`status`)}
-                        data={ACTION_STATUS_OPTIONS}
-                        label="Statut"
-                        placeholder="Sélectionner le statut"
-                        className="col-span-2"
-                    />
+                    {/* Statut : affiché, jamais choisi (spec 2.3). Une action naît
+                        « En attente » — addCorrectiveAction impose ActionStatus.PENDING
+                        — et son statut transite ensuite par les actions dédiées. Le
+                        <Select> précédent était décoratif, et obligatoire par-dessus :
+                        il exigeait un choix que le serveur écrasait. */}
+                    <div className="col-span-2">
+                        <div className="text-sm text-slate-700 mb-1">Statut</div>
+                        <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${adhocStatusConfig('PENDING').chip}`}>
+                            {adhocStatusConfig('PENDING').label}
+                        </span>
+                    </div>
                     <div className="col-span-2">
                         <TextEditor withAsterisk form={actionForm} id={`description`} title="Description" />
                     </div>
