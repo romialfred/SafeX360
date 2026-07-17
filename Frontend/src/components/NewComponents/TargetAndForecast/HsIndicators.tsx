@@ -13,8 +13,8 @@
  * erreurs -> [].
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Button, LoadingOverlay, Modal, Select, Switch, TextInput, Textarea } from '@mantine/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Select, Switch, TextInput, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
@@ -30,6 +30,7 @@ import {
     IconTrash,
     IconTrendingUp,
     IconUsers,
+    IconX,
 } from '@tabler/icons-react';
 
 import {
@@ -48,6 +49,7 @@ import {
     DIRECTION_OPTIONS,
     frequencyLabel,
     FREQUENCY_OPTIONS,
+    SECTION_TITLE_STYLE,
 } from './indicatorLabels';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { Z } from '../../../constants/zIndex';
@@ -114,6 +116,7 @@ const HsIndicators = () => {
     const [categoryFilter, setCategoryFilter] = useState<'all' | IndicatorCategory>('all');
     const [opened, { open, close }] = useDisclosure(false);
     const [editing, setEditing] = useState<IndicatorDTO | null>(null);
+    const formRef = useRef<HTMLDivElement | null>(null);
 
     const form = useForm<FormValues>({
         initialValues: {
@@ -148,6 +151,14 @@ const HsIndicators = () => {
     useEffect(() => {
         void fetchList();
     }, []);
+
+    /* Le formulaire inline s'ouvre en tete de liste : on l'amene dans le champ
+       de vision (utile si l'utilisateur a scrolle vers le bas avant d'editer). */
+    useEffect(() => {
+        if (opened) {
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [opened]);
 
     const kpi = useMemo(
         () => ({
@@ -335,6 +346,86 @@ const HsIndicators = () => {
                 </div>
             </div>
 
+            {/* Formulaire inline (creation / edition) — PAS de modale : sur une
+                plateforme pro, un formulaire de plusieurs champs vit dans la page.
+                Bonus : les <Select> Mantine ne sont plus piegees sous l'overlay
+                d'une modale (le deroulant ne s'ouvrait pas). */}
+            {opened && (
+                <div
+                    ref={formRef}
+                    className="bg-white border border-violet-200 rounded-xl shadow-sm ring-1 ring-violet-100 p-4"
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-[14px] text-slate-900" style={{ ...SECTION_TITLE_STYLE, fontSize: '14px' }}>
+                            {editing ? "Modifier l'indicateur" : 'Nouvel indicateur'}
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                            aria-label="Fermer le formulaire"
+                        >
+                            <IconX size={16} stroke={1.8} />
+                        </button>
+                    </div>
+                    <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-3">
+                        <TextInput
+                            label="Nom de l'indicateur"
+                            withAsterisk
+                            placeholder="ex. Taux de frequence des accidents avec arret"
+                            {...form.getInputProps('name')}
+                        />
+                        <Textarea
+                            label="Definition"
+                            withAsterisk
+                            autosize
+                            minRows={2}
+                            placeholder="Definition complete de l'indicateur (formule, perimetre…)"
+                            {...form.getInputProps('definition')}
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Select
+                                label="Categorie"
+                                withAsterisk
+                                data={CATEGORY_OPTIONS}
+                                allowDeselect={false}
+                                {...form.getInputProps('category')}
+                            />
+                            <Select
+                                label="Frequence"
+                                withAsterisk
+                                data={FREQUENCY_OPTIONS}
+                                allowDeselect={false}
+                                {...form.getInputProps('frequency')}
+                            />
+                        </div>
+                        <Select
+                            label="Sens d'amelioration"
+                            withAsterisk
+                            data={DIRECTION_OPTIONS}
+                            allowDeselect={false}
+                            description="Determine si « atteint » veut dire au-dessus ou en-dessous de la cible"
+                            {...form.getInputProps('direction')}
+                        />
+                        <TextInput
+                            label="Unite"
+                            placeholder='ex. « pour 200 000 h », « % », « score (1-10) »'
+                            {...form.getInputProps('unit')}
+                        />
+                        <Switch
+                            label="Cet indicateur fait l'objet d'une prevision/planification"
+                            {...form.getInputProps('hasForecast', { type: 'checkbox' })}
+                        />
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 mt-1">
+                            <Button variant="default" onClick={handleClose} disabled={saving}>Annuler</Button>
+                            <Button type="submit" color="violet" loading={saving}>
+                                {editing ? 'Enregistrer' : 'Creer'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
             {/* Sections par categorie */}
             {visibleCategories.map((cat) => {
                 const cfg = CATEGORY_CONFIG[cat];
@@ -422,74 +513,6 @@ const HsIndicators = () => {
                 );
             })}
 
-            {/* Modal creation / edition */}
-            <Modal
-                opened={opened}
-                onClose={handleClose}
-                centered
-                size="lg"
-                zIndex={Z.modal}
-                title={
-                    <span className="text-[15px] font-semibold text-slate-900">
-                        {editing ? "Modifier l'indicateur" : 'Nouvel indicateur'}
-                    </span>
-                }
-            >
-                <LoadingOverlay visible={saving} zIndex={Z.overlay} overlayProps={{ radius: 'sm', blur: 2 }} />
-                <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-3">
-                    <TextInput
-                        label="Nom de l'indicateur"
-                        withAsterisk
-                        placeholder="ex. Taux de frequence des accidents avec arret"
-                        {...form.getInputProps('name')}
-                    />
-                    <Textarea
-                        label="Definition"
-                        withAsterisk
-                        autosize
-                        minRows={2}
-                        placeholder="Definition complete de l'indicateur (formule, perimetre…)"
-                        {...form.getInputProps('definition')}
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Select
-                            label="Categorie"
-                            withAsterisk
-                            data={CATEGORY_OPTIONS}
-                            allowDeselect={false}
-                            {...form.getInputProps('category')}
-                        />
-                        <Select
-                            label="Frequence"
-                            withAsterisk
-                            data={FREQUENCY_OPTIONS}
-                            allowDeselect={false}
-                            {...form.getInputProps('frequency')}
-                        />
-                    </div>
-                    <Select
-                        label="Sens d'amelioration"
-                        withAsterisk
-                        data={DIRECTION_OPTIONS}
-                        allowDeselect={false}
-                        description="Determine si « atteint » veut dire au-dessus ou en-dessous de la cible"
-                        {...form.getInputProps('direction')}
-                    />
-                    <TextInput
-                        label="Unite"
-                        placeholder='ex. « pour 200 000 h », « % », « score (1-10) »'
-                        {...form.getInputProps('unit')}
-                    />
-                    <Switch
-                        label="Cet indicateur fait l'objet d'une prevision/planification"
-                        {...form.getInputProps('hasForecast', { type: 'checkbox' })}
-                    />
-                    <div className="flex items-center justify-end gap-2 pt-2">
-                        <Button variant="default" onClick={handleClose}>Annuler</Button>
-                        <Button type="submit" color="violet">{editing ? 'Enregistrer' : 'Creer'}</Button>
-                    </div>
-                </form>
-            </Modal>
         </div>
     );
 };
