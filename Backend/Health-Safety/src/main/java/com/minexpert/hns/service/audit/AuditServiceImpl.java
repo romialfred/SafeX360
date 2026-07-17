@@ -189,8 +189,20 @@ public class AuditServiceImpl implements AuditService {
     @Cacheable(cacheNames = AuditCacheNames.AUDIT_LIST, key = "#companyId != null ? #companyId : -1")
     public List<AuditDTO> getAllAudits(Long companyId) throws HSException {
         // Cloisonnement par mine : companyId null (appel système / allMines) => aucun filtre.
+        //
+        // Les audits EN ATTENTE D'APPROBATION sont VISIBLES (avec leur badge).
+        // Auparavant ce filtre les masquait : un audit créé depuis « Gestion des
+        // audits » disparaissait de la liste de son auteur — le symptôme même du
+        // BUG-8 (« l'audit créé n'apparaît pas »). Or masquer n'a jamais été la
+        // barrière : c'est `assertProgrammeApproved` (à l'exécution) qui interdit
+        // de conduire un audit non approuvé, y compris par appel direct. La liste
+        // peut donc informer sans rien ouvrir.
+        //
+        // REJECTED reste exclu : un programme refusé se corrige et se re-soumet
+        // depuis la Planification annuelle, il n'a pas sa place dans la liste
+        // opérationnelle. null = donnée antérieure au circuit d'approbation.
         return auditRepository.findAllByCompany(companyId).stream()
-                .filter((x) -> x.getPlanningStatus() == null || x.getPlanningStatus() == PlanningStatus.APPROVED)
+                .filter((x) -> x.getPlanningStatus() != PlanningStatus.REJECTED)
                 .map(Audit::toDTO)
                 .toList();
     }

@@ -16,6 +16,13 @@ const AuditCard = ({ incidentData, auditAreaMap }: any) => {
     // d'offrir un bouton qui échouera. Jamais de bouton mort sans explication.
     const isPlanApproved = String(incidentData.planningStatus ?? '').toUpperCase() === 'APPROVED';
     const isClosed = String(incidentData.status ?? '').toUpperCase() === 'CLOSED';
+    // Un audit en attente d'approbation est désormais VISIBLE dans la liste
+    // (avant, le filtre serveur le masquait : il disparaissait de la vue de son
+    // auteur). Il doit donc s'annoncer clairement, sans quoi on croirait pouvoir
+    // le conduire : l'exécution est refusée tant que le programme n'est pas
+    // approuvé (ISO 19011 §5.4, garde serveur assertProgrammeApproved).
+    // `planningStatus` absent = donnée antérieure au circuit d'approbation.
+    const isPlanPending = String(incidentData.planningStatus ?? '').toUpperCase() === 'PENDING';
     const editLocked = isPlanApproved || isClosed;
     const lockReason = isClosed
         ? "Audit clôturé : le rapport est signé, la planification n'est plus modifiable."
@@ -31,6 +38,23 @@ const AuditCard = ({ incidentData, auditAreaMap }: any) => {
                 <span className="text-xs bg-violet-50 text-violet-800 px-2 py-1 rounded-lg">
                     {auditAreaMap[incidentData.scopeId]?.name}
                 </span>
+                {isPlanPending && (
+                    <Tooltip
+                        label="Le programme doit être approuvé depuis la Planification annuelle avant que l'audit puisse être conduit (ISO 19011 §5.4)."
+                        multiline
+                        w={280}
+                        withArrow
+                    >
+                        <Badge
+                            color="orange"
+                            size="sm"
+                            variant="light"
+                            className="rounded-full whitespace-nowrap cursor-help"
+                        >
+                            En attente d'approbation
+                        </Badge>
+                    </Tooltip>
+                )}
                 <Badge
                     color={auditStatusColor(incidentData.status)}
                     size="sm"
