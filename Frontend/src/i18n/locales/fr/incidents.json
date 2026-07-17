@@ -65,6 +65,11 @@
         "noDescription": "Aucune description fournie pour cet incident.",
         "fallbackCategory": "Incident"
     },
+    "declaration": {
+        "generalInfo": "Informations générales",
+        "initialStatusHelp": "Un incident est enregistré « En attente » de validation HSE. Le statut évolue ensuite depuis la fiche de l'incident, selon les transitions autorisées.",
+        "initialStatusAria": "Statut initial de l'incident : En attente"
+    },
     "report": {
         "title": "Report Incidents",
         "breadcrumbHome": "Home",

@@ -65,6 +65,11 @@
         "noDescription": "No description provided for this incident.",
         "fallbackCategory": "Incident"
     },
+    "declaration": {
+        "generalInfo": "General information",
+        "initialStatusHelp": "An incident is recorded as \"Pending\" HSE validation. Its status then progresses from the incident record, following the allowed transitions.",
+        "initialStatusAria": "Initial incident status: Pending"
+    },
     "report": {
         "title": "Report Incident",
         "breadcrumbHome": "Home",

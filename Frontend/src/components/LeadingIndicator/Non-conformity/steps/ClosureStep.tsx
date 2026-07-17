@@ -50,6 +50,11 @@ const ClosureStep = ({ form, employees }: any) => {
                         </Text>
                     </div>
                 </Group>
+                {/* Aucun astérisque sur cette étape : les étapes 2 à 4 sont
+                    OPTIONNELLES (cf. règles de validation de NonConformityForm —
+                    seule l'étape 1 « Déclaration » est obligatoire). Marquer ces
+                    champs comme requis était un engagement que rien ne tenait :
+                    la soumission passait sans eux. Obligatoire ⇒ réellement exigé. */}
                 <Grid>
                     <Grid.Col span={6}>
                         <DateInput
@@ -57,7 +62,6 @@ const ClosureStep = ({ form, employees }: any) => {
                             label="Date de clôture"
                             {...form.getInputProps('nonConformity.closingDate')}
                             placeholder="Sélectionner la date"
-                            withAsterisk
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
@@ -67,7 +71,6 @@ const ClosureStep = ({ form, employees }: any) => {
                             {...form.getInputProps('nonConformity.finalStatus')}
                             placeholder="Sélectionner le statut final"
                             data={[{ value: 'Clôturé', label: 'Clôturé' }, { value: 'Rejeté', label: 'Rejeté' }, { value: 'Annulé', label: 'Annulé' }, { value: 'En attente', label: 'En attente' }, { value: 'Reporté', label: 'Reporté' }]}
-                            withAsterisk
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
@@ -76,7 +79,6 @@ const ClosureStep = ({ form, employees }: any) => {
                             label="Validé par"
                             {...form.getInputProps('nonConformity.validator')}
                             placeholder="Sélectionner le validateur"
-                            withAsterisk
                             data={employees}
                             searchable
                         />
@@ -87,7 +89,6 @@ const ClosureStep = ({ form, employees }: any) => {
                             label="Date de validation"
                             {...form.getInputProps('nonConformity.validationDate')}
                             placeholder="Sélectionner la date"
-                            withAsterisk
                         />
                     </Grid.Col>
                     <Grid.Col span={12}>
@@ -111,13 +112,23 @@ const ClosureStep = ({ form, employees }: any) => {
                         />
                     </Grid.Col>
                     <Grid.Col span={6}>
+                        {/* Score ENTIER : `rating` est un Integer côté back
+                            (NonConformityDTO / NonConformity). Avec step={0.1},
+                            un 7,5 saisi était tronqué à 7 en silence
+                            (ACCEPT_FLOAT_AS_INT) : l'évaluation d'efficacité
+                            §10.2 était falsifiée à la baisse sans que
+                            l'utilisateur en soit averti. Le libellé « /10 »
+                            appelant de toute façon une note entière, on aligne
+                            l'IHM sur le contrat serveur plutôt que de migrer la
+                            colonne. */}
                         <NumberInput
                             size="sm"
                             label="Score d'efficacité (/10)"
                             placeholder="0"
                             min={0}
                             max={10}
-                            step={0.1}
+                            step={1}
+                            allowDecimal={false}
                             {...form.getInputProps('nonConformity.rating')}
                         />
                     </Grid.Col>

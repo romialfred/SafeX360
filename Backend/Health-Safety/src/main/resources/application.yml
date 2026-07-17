@@ -115,7 +115,13 @@ BODY_PART_NOT_FOUND: Body Part not found
 BODY_PART_ALREADY_EXISTS: Body Part already exists
 
 # Corrective Action
-CORRECTIVE_ACTION_NOT_FOUND: Corrective Action not found
+CORRECTIVE_ACTION_NOT_FOUND: L action corrective indiquee n existe pas (ou n appartient pas a cette mine).
+# Echeance anterieure a la date de creation : une action naitrait « en retard »,
+# ce qui fausse le pilotage des actions correctives (ISO 45001 10.2).
+ACTION_DEADLINE_BEFORE_CREATION: L echeance ne peut pas etre anterieure a la date de creation de l action.
+# Transition de statut refusee (workflow contraint : un statut transite, il ne se
+# choisit pas librement). Code partage par les workflows action / NC / incident / audit.
+INVALID_STATUS_TRANSITION: Changement de statut refuse, cette transition n est pas autorisee depuis le statut actuel.
 
 # Measurements
 MEASUREMENT_NOT_FOUND: Measurement not found
@@ -177,6 +183,11 @@ INTERNAL_AUDITOR_ALREADY_EXISTS: Auditor already exists
 EVENT_ANALYSIS_ALREADY_EXISTS_FOR_NON_CONFORMITY: Event Analysis already exists for Non-Conformity
 
 EVENT_ANALYSIS_NOT_FOUND_FOR_NON_CONFORMITY: Event Analysis not found for Non-Conformity
+
+# Constat central (non-conformite / quasi-accident) — verrouillage apres cloture.
+# Un constat CLOTURE ou ANNULE est une preuve figee (ISO 45001 7.5) : toute
+# reecriture est refusee cote SERVEUR, l IHM ne faisant qu annoncer la regle.
+NON_CONFORMITY_LOCKED: Ce constat est cloture ou annule, il ne peut plus etre modifie.
 
 # Theme
 THEME_NOT_FOUND: Theme not found
@@ -269,6 +280,12 @@ EFFECTIVENESS_REQUIRES_COMPLETED_RECOMMENDATION: La verification d efficacite ne
 EFFECTIVENESS_CHECK_NOT_FOUND: La verification d efficacite n existe pas.
 EFFECTIVENESS_ALREADY_CONCLUDED: Cette verification a deja recu un verdict.
 VERDICT_INVALID: Verdict invalide (EFFICACE, PARTIELLEMENT_EFFICACE, INEFFICACE).
+
+# Verrous de planification d audit (spec formulaires ISO 45001 2.1 / 2.2)
+AUDIT_EXECUTION_BEFORE_PLANNED_DATE: Execution impossible, la date du rapport est anterieure a la date de debut planifiee de l audit. Un constat date d un jour ou rien n a ete observe n a aucune valeur probante (ISO 19011 9.2). Pour auditer plus tot, replanifiez l audit. Le retard, lui, reste toujours possible.
+AUDIT_ALREADY_APPROVED: Modification impossible, ce plan d audit est approuve ou cloture. Une preuve approuvee ne se reecrit pas, elle se replanifie (ISO 45001 7.5).
+AUDIT_END_DATE_BEFORE_START_DATE: La date de fin de l audit ne peut pas preceder la date de debut.
+AUDIT_NOT_APPROVED: Execution impossible, le programme d audit n est pas encore approuve. Faites-le approuver depuis la Planification annuelle avant de conduire l audit (ISO 19011 5.4).
 
 # Execution d audit (POST /audit/execute) — entretiens et recommandations
 AREA_REQUIRED_FOR_EXECUTION: Chaque entretien doit etre rattache a un domaine d audit.

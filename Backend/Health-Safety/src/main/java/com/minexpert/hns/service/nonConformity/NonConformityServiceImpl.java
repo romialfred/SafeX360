@@ -224,6 +224,15 @@ public class NonConformityServiceImpl implements NonConformityService {
                 && !nonConformityDTO.getCompanyId().equals(nonConformity.getCompanyId())) {
             throw new HSException("NON_CONFORMITY_NOT_FOUND");
         }
+        // Verrouillage apres cloture/annulation (spec formulaires 2.2) : un constat
+        // clos est une preuve figee. Le disabled={isLocked} de NonConformityEdit ne
+        // protegeait que l'IHM — un PUT direct reecrivait integralement une NC CLOSED
+        // (gravite, validateur, commentaire de validation...). La regle vit desormais
+        // dans le service, l'IHM ne faisant que l'annoncer.
+        if (nonConformity.getStatus() == EventStatus.CLOSED
+                || nonConformity.getStatus() == EventStatus.CANCELLED) {
+            throw new HSException("NON_CONFORMITY_LOCKED");
+        }
         nonConformity.updateFromDTO(nonConformityDTO);
         // Le companyId ne doit jamais changer après création (updateFromDTO ne le touche pas).
         nonConformity.setEvidence(mediaService.saveAllMedia(nonConformityDTO.getEvidence()));

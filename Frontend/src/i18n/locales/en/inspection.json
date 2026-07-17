@@ -79,7 +79,10 @@
             "subtitle": "Schedule your first inspection from an existing template or create one.",
             "cta": "Schedule an inspection"
         },
-        "loadError": "Registry could not load. Check your access rights or try again."
+        "loadError": "Registry could not load. Check your access rights or try again.",
+        "executeLocked": "Can be executed from {{date}}",
+        "overdueBadge": "Overdue",
+        "overdueTitle": "Inspection planned on {{date}} and not carried out: compliance gap (ISO 45001 §9.1). Execution is still possible."
     },
     "equipment": {
         "familyLabel": "Family",
@@ -202,7 +205,8 @@
         "saveError": "Save failed. Check your connection.",
         "submitError": "Submission failed. Check required checkpoints.",
         "readonlyBanner": "This inspection is archived. Values are read-only.",
-        "rejectedBanner": "This inspection was rejected by the team. Fix the findings and resubmit."
+        "rejectedBanner": "This inspection was rejected by the team. Fix the findings and resubmit.",
+        "notBeforePlannedDate": "Inspection planned on {{date}}: it cannot start before that date. Reschedule it if execution must be brought forward."
     },
     "schedule": {
         "breadcrumbCurrent": "Schedule",

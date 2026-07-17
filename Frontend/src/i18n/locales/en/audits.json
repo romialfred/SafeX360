@@ -220,6 +220,7 @@
         "interviewTopic": "Topic",
         "interviewDate": "Interview date",
         "datePlaceholder": "dd-mm-yyyy",
+        "preDateMinHint": "Can be executed from {{date}}",
         "interviewLocation": "Location",
         "interviewLocationPlaceholder": "Interview location",
         "startTime": "Start time",

@@ -44,6 +44,7 @@ import {
 
 import {
     getInspection,
+    startInspection,
     saveFindingsBatch,
     submitInspection,
     updateSummary,
@@ -53,7 +54,12 @@ import {
     type CheckpointResponseType,
 } from '../../services/InspectionService';
 import { type AICheckpointProposal } from '../../services/AIInspectionService';
-import { successNotification, errorNotification } from '../../utility/NotificationUtility';
+import {
+    successNotification,
+    errorNotification,
+    extractErrorMessage,
+} from '../../utility/NotificationUtility';
+import { formatInspectionDate, isExecutableNow } from './inspectionLabels';
 import InspectionStatusBadge from './InspectionStatusBadge';
 import AIInspectAssistPanel from './AIInspectAssistPanel';
 import CheckpointIllustration from './CheckpointIllustration';
@@ -84,10 +90,50 @@ export default function InspectionExecutePage() {
     const [method, setMethod] = useState<ExecutionMethod>('HUMAN');
 
     // ── Chargement initial ────────────────────────────────────────────
+    //
+    // SPEC §2.1 — l'IHM verrouille déjà le bouton « Exécuter » (registre et
+    // détail), mais l'URL reste atteignable : lien partagé, favori, retour
+    // arrière. On ne réimplémente PAS la règle ici : sur une SCHEDULED datée du
+    // futur on interroge le SERVEUR (`start()`), seule autorité, et on relaie
+    // SON message métier. Si le serveur accepte (règle assouplie, date du jour
+    // franchie entre-temps), l'inspection démarre normalement : aucun faux
+    // blocage côté client.
     useEffect(() => {
         if (!id) return;
-        getInspection(Number(id))
-            .then((d) => {
+        let alive = true;
+
+        const guardThenLoad = async () => {
+            try {
+                let d = await getInspection(Number(id));
+                if (!alive) return;
+
+                if (d.status === 'SCHEDULED' && !isExecutableNow(d.plannedDate)) {
+                    let refused: unknown = null;
+                    try {
+                        await startInspection(d.id);
+                    } catch (e) {
+                        refused = e ?? new Error('start refused');
+                    }
+                    if (!alive) return;
+                    if (refused) {
+                        errorNotification(
+                            extractErrorMessage(
+                                refused,
+                                t('execute.notBeforePlannedDate', {
+                                    date: formatInspectionDate(d.plannedDate, i18n.language),
+                                }),
+                            ),
+                        );
+                        navigate(`/inspections/detail/${d.id}`, { replace: true });
+                        return;
+                    }
+                    // Le serveur a tranché « oui » : la fiche est passée
+                    // IN_PROGRESS, on repart de l'état réel.
+                    d = await getInspection(Number(id));
+                    if (!alive) return;
+                }
+
+                if (!alive) return;
                 setDetail(d);
                 setFindings(
                     [...d.findings].sort(
@@ -95,8 +141,16 @@ export default function InspectionExecutePage() {
                     ),
                 );
                 setSummary(d.summaryReport ?? '');
-            })
-            .catch(() => setError('Inspection introuvable'));
+            } catch {
+                if (alive) setError('Inspection introuvable');
+            }
+        };
+
+        void guardThenLoad();
+        return () => {
+            alive = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const isReadOnly = useMemo(() => {

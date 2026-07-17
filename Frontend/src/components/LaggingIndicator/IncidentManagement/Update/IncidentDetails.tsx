@@ -10,6 +10,7 @@ import {
     SelectProps,
     Text,
     TextInput,
+    Tooltip,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
@@ -20,7 +21,7 @@ import { modals } from "@mantine/modals";
 import { removeIncidentDetail } from "../../../../services/IncidentDetailService";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
-import { INCIDENT_STATUS_OPTIONS, PPE_LABELS } from "../incidentLabels";
+import { PPE_LABELS, incidentStatusColor, incidentStatusLabel } from "../incidentLabels";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, departments, workAreas, workProcesses }: any) => {
 
@@ -136,7 +137,16 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
             <div className="flex justify-between items-center mb-2">
 
                 <h2 className="text-lg text-gray-800 mb-4">Informations générales</h2>
-                <Select aria-label="Statut de l'incident" {...form.getInputProps("status")} data={INCIDENT_STATUS_OPTIONS} allowDeselect={false} />
+                {/* Statut en LECTURE SEULE : updateIncident (IncidentServiceImpl) réimpose
+                    systématiquement le statut existant — ce <Select> laissait donc choisir
+                    « Clôturé », affichait « mise à jour réussie », et ne changeait rien.
+                    Le changement de statut se fait depuis la fiche de l'incident, qui
+                    n'offre que les transitions autorisées par la machine à états. */}
+                <Tooltip label="Le statut se modifie depuis la fiche de l'incident, selon les transitions autorisées." multiline w={260} withArrow>
+                    <Badge color={incidentStatusColor(form.values.status)} variant="light" size="lg" aria-label="Statut actuel de l'incident">
+                        {incidentStatusLabel(form.values.status)}
+                    </Badge>
+                </Tooltip>
             </div>
             <div className="grid grid-cols-1 gap-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">

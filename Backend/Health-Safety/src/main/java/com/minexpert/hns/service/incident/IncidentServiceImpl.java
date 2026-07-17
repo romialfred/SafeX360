@@ -96,11 +96,17 @@ public class IncidentServiceImpl implements IncidentService {
         if (companyId == null) {
             throw new HSException("COMPANY_ID_REQUIRED");
         }
-        // Statut initial par défaut : un incident sans statut sort en 'UNKNOWN'
-        // dans les projections (CASE ... ELSE) et échappe à tous les filtres.
-        if (incidentDTO.getStatus() == null) {
-            incidentDTO.setStatus(IncidentStatus.PENDING);
-        }
+        // Statut initial IMPOSE (ISO 45001 §10.2 — spec formulaires §2.3) : un
+        // incident NAIT dans son etat initial, il ne se choisit pas. Auparavant le
+        // statut n'etait force que s'il etait null : le client pouvait donc faire
+        // naitre un incident directement CLOSED ou REJECTED — etats TERMINAUX dans
+        // INCIDENT_TRANSITIONS — soit une preuve definitivement figee, sans
+        // investigation ni tracabilite de la cloture. assertIncidentTransition ne
+        // protege que updateIncidentStatus : la creation la contournait.
+        // PENDING est bien l'etat initial de la machine a etats (seul etat sans
+        // transition entrante) ; c'est le HSE qui le fait ensuite transiter vers
+        // REPORTED ou REJECTED.
+        incidentDTO.setStatus(IncidentStatus.PENDING);
 
         incidentDTO.setCompanyId(companyId);
         Incident incident = incidentDTO.toIncident();

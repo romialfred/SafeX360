@@ -39,6 +39,7 @@ import {
     AUDIT_OBJECTIVE_OPTIONS,
     AUDIT_REFERENCE_OPTIONS,
     AUDITOR_ROLE_OPTIONS,
+    toIsoDateLocalOrNull,
 } from "./auditLabels";
 
 interface ListItem { id: number; name: string; }
@@ -106,7 +107,9 @@ const NewAuditPlan: React.FC = () => {
         validate: {
             audit: {
 
-                title: (value) => (value ? null : "Le titre est requis"),
+                // `.trim()` : " " est truthy — un titre d'espaces passait le front
+                // et n'était refusé qu'au serveur (@NotBlank).
+                title: (value) => (value?.trim() ? null : "Le titre est requis"),
                 objectives: (value) => (value.length > 0 ? null : "Au moins un objectif est requis"),
                 processes: (value) => (value.length > 0 ? null : "Au moins un processus est requis"),
                 scopeId: (value) => (value ? null : "Le périmètre est requis"),
@@ -203,7 +206,21 @@ const NewAuditPlan: React.FC = () => {
             }
         }
 
-        let values = form.values;
+        let values: any = form.values;
+        // `startDate`/`endDate` sont des LocalDate côté serveur : envoyées en objets
+        // `Date` bruts, Date.toJSON() les convertit en UTC et les décale d'un jour.
+        // Les deux dates glissant ENSEMBLE, la durée reste juste et l'erreur est
+        // indétectable à la relecture — d'où la normalisation en date locale.
+        // `planningStatus` n'est jamais posté : le serveur pose PENDING (ISO 19011 §5.4).
+        values = {
+            ...values,
+            audit: {
+                ...values.audit,
+                title: values.audit.title?.trim(),
+                startDate: toIsoDateLocalOrNull(values.audit.startDate),
+                endDate: toIsoDateLocalOrNull(values.audit.endDate),
+            },
+        };
         if (form.values.audit.category == "INTERNAL") {
             let auditors: any = values.auditors.map((auditor: any) => ({ ...auditor, name: auditorsMap[auditor.name]?.employeeName, company: null, companyMail: null }));;
             values = { ...values, auditors: auditors };

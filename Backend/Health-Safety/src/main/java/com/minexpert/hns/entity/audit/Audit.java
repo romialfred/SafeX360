@@ -73,6 +73,17 @@ public class Audit {
     /** Cloisonnement par mine : identifiant de la société/mine propriétaire. */
     private Long companyId;
 
+    /**
+     * Types d'audit HSE retenus, sérialisés comme {@code objectives} / {@code methods}
+     * (colonne texte + StringListConverter). Champ obligatoire du formulaire qui
+     * était jusqu'ici jeté au serveur.
+     *
+     * ⚠ Déclaré EN DERNIER : le constructeur positionnel Lombok suit l'ordre des
+     * champs — tout ajout intermédiaire casserait toEntity()/toDTO().
+     * Colonne `types` créée automatiquement (ddl-auto=update).
+     */
+    private String types;
+
     public Audit(Long id) {
         this.id = id;
     }
@@ -83,7 +94,8 @@ public class Audit {
                 StringListConverter.convertToLongList(processes), scope != null ? scope.getId() : null,
                 StringListConverter.convertToStringList(methods), description, category, auditTypes,
                 StringListConverter.convertToStringList(references),
-                startDate, endDate, status, planningStatus, createdAt, updatedAt, programId, riskScore, companyId);
+                startDate, endDate, status, planningStatus, createdAt, updatedAt, programId, riskScore, companyId,
+                StringListConverter.convertToStringList(types));
     }
 
     public Audit update(AuditDTO auditDTO) {
@@ -95,6 +107,7 @@ public class Audit {
         this.description = auditDTO.getDescription();
         this.category = auditDTO.getCategory();
         this.auditTypes = auditDTO.getAuditTypes();
+        this.types = StringListConverter.listToString(auditDTO.getTypes());
         this.references = StringListConverter.listToString(auditDTO.getReferences());
         this.startDate = auditDTO.getStartDate();
         this.endDate = auditDTO.getEndDate();

@@ -422,7 +422,10 @@ const NonConformityEdit = () => {
             nonConformity: ncPayload,
             // methodData (objet) resérialisé en JSON pour la colonne HNS.
             analysis: { ...values.analysis, methodData: typeof values.analysis.methodData === 'string' ? values.analysis.methodData : JSON.stringify(values.analysis.methodData || {}) },
-            correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id }))
+            // Idem création : `deadline` normalisée en date LOCALE (LocalDate côté
+            // back). Sans cela le spread renvoyait un objet Date sérialisé en ISO
+            // UTC -> échéance reculée d'un jour à CHAQUE enregistrement.
+            correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, deadline: toLocalDate(action.deadline), departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id }))
         }).then((_response) => {
             successNotification("Constat central mis à jour");
             navigate("/non-conformity");

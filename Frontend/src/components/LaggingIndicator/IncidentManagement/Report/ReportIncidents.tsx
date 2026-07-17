@@ -24,6 +24,8 @@ import { getAllActiveWorkArea } from "../../../../services/WorkAreaService";
 import { getAllActiveWorkProcess } from "../../../../services/WorkProcessService";
 import { getAllDepartments } from "../../../../services/HrmsService";
 import ReportHelp from "./ReportHelp";
+import { toIsoDateTimeLocal } from "../incidentLabels";
+import { notifyError } from "../../../../utility/notifyError";
 
 // type ActionPlan = {
 //     actionName: '',
@@ -32,13 +34,6 @@ import ReportHelp from "./ReportHelp";
 //     status: "",
 //     description: ""
 // }
-// Génère un numéro provisoire affiché côté UI (le backend produira le numéro définitif au submit)
-const generateProvisionalIncidentNumber = () => {
-    const year = new Date().getFullYear();
-    const stamp = String(Date.now()).slice(-6);
-    return `INC-${year}-${stamp}`;
-};
-
 // Formatte une durée en secondes au format HH:MM:SS pour le chrono
 const formatElapsed = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -65,9 +60,6 @@ const ReportIncidents = () => {
     const [workProcesses, setWorkProcesses] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
 
-    // Numéro d'incident provisoire généré au mount (le backend produira le N° définitif au submit)
-    const [provisionalNumber] = useState<string>(() => generateProvisionalIncidentNumber());
-
     // Chrono : durée passée sur le formulaire (en secondes)
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -93,9 +85,11 @@ const ReportIncidents = () => {
     const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
     const form = useForm({
         initialValues: {
-            number: provisionalNumber,
+            // `number` et `status` ne sont PAS des champs de saisie : le numéro est
+            // attribué par le serveur à l'enregistrement (generateIncidentNumber) et
+            // le statut initial est imposé (PENDING). Les porter dans le formulaire
+            // laissait croire à une saisie que le serveur écrasait.
             title: '',
-            status: "REPORTED",
             locationId: '',
             weatherConditions: [],
             occurredAt: new Date(),
@@ -230,12 +224,26 @@ const ReportIncidents = () => {
         const reporterDeptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
         const deptId = values.department ? Number(values.department) : reporterDeptId;
         dispatch(showOverlay());
-        reportIncident({ ...values, evidence: evidence, departmentId: deptId, involvedPersons: values.involvedPersons?.map((x: any) => x.id), witnesses: values.witnesses?.map((x: any) => x.id) }).then((_res: any) => {
+        reportIncident({
+            ...values,
+            evidence: evidence,
+            departmentId: deptId,
+            // Dates sérialisées en fuseau LOCAL. Auparavant l'objet Date brut partait
+            // dans le payload : axios lui applique toJSON() = toISOString() = UTC, donc
+            // « 17/07 00h30 » (UTC+1) était stocké '2026-07-16T23:30' — incident daté
+            // de la veille (ISO 45001 §9.1).
+            occurredAt: toIsoDateTimeLocal(values.occurredAt),
+            discoveryTime: toIsoDateTimeLocal(values.discoveryTime),
+            involvedPersons: values.involvedPersons?.map((x: any) => x.id),
+            witnesses: values.witnesses?.map((x: any) => x.id),
+        }).then((_res: any) => {
             successNotification("Incident déclaré avec succès");
             navigate("/incidents");
         }
         ).catch((err: any) => {
-            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
+            // notifyError traduit les codes métier (REFERENCE_DATA_MISSING…) qui
+            // étaient jusqu'ici affichés bruts à l'utilisateur.
+            notifyError(err, "Impossible d'enregistrer la déclaration");
         }
         ).finally(() => {
             dispatch(hideOverlay());
@@ -331,11 +339,17 @@ const ReportIncidents = () => {
                         <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-3">
                                 <h1 className="text-2xl text-slate-900 tracking-tight leading-tight">Déclaration d'Incident HSE</h1>
-                                {/* Numéro d'incident auto-généré, affiché en badge à droite du titre */}
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
-                                    <IconHash size={13} className="text-slate-500" />
-                                    <span className="text-xs font-mono text-slate-700">{provisionalNumber}</span>
-                                </div>
+                                {/* Le numéro est attribué par le SERVEUR à l'enregistrement.
+                                    On affichait ici un numéro fabriqué côté navigateur, présenté
+                                    comme définitif puis écrasé au submit : le déclarant notait un
+                                    numéro qui n'a jamais existé et ne retrouvait plus son dossier.
+                                    On annonce donc l'attribution, sans inventer de valeur. */}
+                                <Tooltip label="Le numéro définitif est généré par le serveur au moment de l'enregistrement, puis affiché sur la fiche de l'incident." multiline w={280} withArrow>
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
+                                        <IconHash size={13} className="text-slate-500" />
+                                        <span className="text-xs text-slate-600">N° attribué à l'enregistrement</span>
+                                    </div>
+                                </Tooltip>
                             </div>
                             <p className="text-sm text-slate-500 mt-0.5">Formulaire conforme à <span className="text-slate-700">ISO 45001:2018</span> § 10.2, Investigation des incidents</p>
                         </div>

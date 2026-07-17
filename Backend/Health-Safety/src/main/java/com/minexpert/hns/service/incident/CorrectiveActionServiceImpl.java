@@ -193,8 +193,24 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         ensureCompanyIdProvided(companyId);
         correctiveActionDTO.setCompanyId(companyId);
         CorrectiveAction correctiveAction = correctiveActionDTO.toEntity();
-        correctiveAction.setCreatedAt(LocalDateTime.now());
-        correctiveAction.setUpdatedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+
+        // Matrice des processus (spec 4) : « Echeance >= date de creation » pour une
+        // action corrective. createdAt etait pose sans jamais confronter deadline :
+        // une action pouvait naitre deja OVERDUE, ce qui vide de son sens le pilotage
+        // des actions (ISO 45001 10.2).
+        if (correctiveAction.getDeadline() != null
+                && correctiveAction.getDeadline().isBefore(now.toLocalDate())) {
+            throw new HSException("ACTION_DEADLINE_BEFORE_CREATION");
+        }
+
+        correctiveAction.setCreatedAt(now);
+        correctiveAction.setUpdatedAt(now);
+        // Statut initial IMPOSE par le serveur (spec 2.3 : un objet nait dans son etat
+        // initial, un statut transite ensuite via assertActionTransition). Le statut du
+        // DTO etait repris tel quel : un POST {"status":"COMPLETED"} creait une action
+        // nee terminee, sans aucune transition tracee, avec progress = 0.
+        correctiveAction.setStatus(ActionStatus.PENDING);
         correctiveAction.setProgress(0);
         correctiveAction.setCompanyId(companyId);
         correctiveActionRepository.save(correctiveAction);

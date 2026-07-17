@@ -55,12 +55,60 @@ public class AuditServiceImpl implements AuditService {
             @CacheEvict(cacheNames = AuditCacheNames.AUDIT_PLANNING_LIST, allEntries = true)
     })
     public Long createAudit(AuditDTO auditDTO) throws HSException {
+        assertDateOrder(auditDTO.getStartDate(), auditDTO.getEndDate());
         auditDTO.setRefNumber(generateAuditRefNumber());
         auditDTO.setStatus(AuditStatus.PLANNING);
+        // ISO 19011 §5.4 — l'approbation du programme est un ACTE TRACÉ
+        // (approvePlanning), jamais une propriété que l'appelant se décerne.
+        // Le statut posé ici est INCONDITIONNEL : le client ne dicte pas un
+        // statut d'approbation. Sans cela, un audit naissait avec
+        // planningStatus = null (formulaire silencieux) ou APPROVED (POST
+        // direct), et getAllAudits traite null|APPROVED comme approuvé : la
+        // preuve d'approbation n'était plus opposable.
+        auditDTO.setPlanningStatus(PlanningStatus.PENDING);
         auditDTO.setCreatedAt(LocalDateTime.now());
         auditDTO.setUpdatedAt(LocalDateTime.now());
         return auditRepository.save(auditDTO.toEntity()).getId();
 
+    }
+
+    /**
+     * ISO 19011 §5.4/§5.5 — un audit ne s'EXÉCUTE pas tant que le programme
+     * n'est pas approuvé.
+     *
+     * <p><b>Le défaut que ceci corrige :</b> l'approbation n'était qu'un FILTRE
+     * D'AFFICHAGE (`getAllAudits` ne montre que `null || APPROVED`). Un audit
+     * non approuvé était donc invisible… mais parfaitement exécutable par un
+     * appel direct à l'API : on avait caché la porte au lieu de la fermer.
+     * Cacher n'est pas interdire — la barrière doit vivre là où l'acte se
+     * produit, c'est-à-dire à l'exécution.</p>
+     *
+     * <p><b>Rétro-compatibilité :</b> `planningStatus == null` = donnée
+     * antérieure au circuit d'approbation ⇒ traitée comme approuvée, exactement
+     * comme le fait le filtre de `getAllAudits`. Durcir ici sans le faire là
+     * rendrait inexécutables tous les audits historiques.</p>
+     */
+    private void assertProgrammeApproved(Long auditId) throws HSException {
+        if (auditId == null) {
+            return;
+        }
+        Audit audit = auditRepository.findById(auditId)
+                .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
+        PlanningStatus ps = audit.getPlanningStatus();
+        if (ps != null && ps != PlanningStatus.APPROVED) {
+            throw new HSException("AUDIT_NOT_APPROVED");
+        }
+    }
+
+    /**
+     * Cohérence du calendrier : une fin antérieure au début n'était refusée que
+     * par les minDate/maxDate de l'IHM — donc contournable par appel direct.
+     * Règle métier ⇒ portée par le service (spec §2).
+     */
+    private void assertDateOrder(java.time.LocalDate startDate, java.time.LocalDate endDate) throws HSException {
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new HSException("AUDIT_END_DATE_BEFORE_START_DATE");
+        }
     }
 
     @Override
@@ -73,6 +121,14 @@ public class AuditServiceImpl implements AuditService {
     public void updateAudit(AuditDTO auditDTO) throws HSException {
         Audit audit = auditRepository.findById(auditDTO.getId())
                 .orElseThrow(() -> new HSException("AUDIT_NOT_FOUND"));
+        // §2.2 — un plan APPROUVÉ (et a fortiori un audit CLOS dont le rapport est
+        // signé) est une preuve figée : réécrire son périmètre, ses dates ou son
+        // équipe rétroactivement est une falsification. Avancer un plan approuvé
+        // suppose un nouvel acte d'approbation, pas une réécriture silencieuse.
+        if (audit.getPlanningStatus() == PlanningStatus.APPROVED || audit.getStatus() == AuditStatus.CLOSED) {
+            throw new HSException("AUDIT_ALREADY_APPROVED");
+        }
+        assertDateOrder(auditDTO.getStartDate(), auditDTO.getEndDate());
         auditRepository.save(audit.update(auditDTO));
     }
 
@@ -154,6 +210,8 @@ public class AuditServiceImpl implements AuditService {
         // statut DRAFT ; l'écran d'exécution n'est ouvert que si aucun rapport
         // n'existe (reportExists), donc pas de doublon.
         if (request.getReport() != null) {
+            assertProgrammeApproved(request.getReport().getAuditId());
+            assertNotExecutedBeforePlannedDate(request.getReport());
             reportService.createReport(request);
         } else if (request.getContributors() != null) {
             contributorService.createContributors(request.getContributors());
@@ -163,6 +221,29 @@ public class AuditServiceImpl implements AuditService {
         Long auditId = request.getReport() != null ? request.getReport().getAuditId() : null;
         persistExecutions(request.getExecutions(), auditId);
         persistRecommendations(request.getRecommendations(), auditId);
+    }
+
+    /**
+     * §2.1 / ISO 19011 §9.2 — un rapport daté d'un jour où l'audit n'avait pas
+     * commencé est une falsification (« pencil-whipping »), et le rapport est
+     * ensuite définitivement figé (reportExists verrouille l'écran d'exécution).
+     * La règle vit donc AU SERVEUR, l'IHM ne faisant que l'annoncer (minDate).
+     *
+     * Contrat volontaire :
+     *   • comparaison sur la DATE seule (démarrer le jour prévu est permis) ;
+     *   • le RETARD n'est JAMAIS bloqué — le bloquer pousserait à créer un faux
+     *     rapport à la bonne date, et l'écart est déjà visible comme tel ;
+     *   • date de rapport ou date planifiée absente ⇒ aucun blocage.
+     */
+    private void assertNotExecutedBeforePlannedDate(com.minexpert.hns.dto.audit.ReportDTO report) throws HSException {
+        if (report.getPreDate() == null || report.getAuditId() == null) {
+            return;
+        }
+        java.time.LocalDate plannedStart = auditRepository.findById(report.getAuditId())
+                .map(Audit::getStartDate).orElse(null);
+        if (plannedStart != null && report.getPreDate().isBefore(plannedStart)) {
+            throw new HSException("AUDIT_EXECUTION_BEFORE_PLANNED_DATE");
+        }
     }
 
     /**

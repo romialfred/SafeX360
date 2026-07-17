@@ -30,11 +30,14 @@ import {
     type AIAnalysisResponse, type IdentifiedRisk, type CorrectiveAction,
 } from '../../../../services/AIIncidentService';
 import { successNotification, errorNotification } from '../../../../utility/NotificationUtility';
+import { notifyError } from '../../../../utility/notifyError';
 import CameraCaptureModal from './CameraCaptureModal';
 import { reportIncident } from '../../../../services/IncidentService';
 import { getAllActiveLocations } from '../../../../services/LocationService';
 import { getAllActiveWorkArea } from '../../../../services/WorkAreaService';
 import { getAllActiveWorkProcess } from '../../../../services/WorkProcessService';
+import { getAllDepartments } from '../../../../services/HrmsService';
+import { toIsoDateTimeLocal } from '../incidentLabels';
 
 type Step = 'UPLOAD' | 'ANALYZING' | 'REVIEW' | 'SUBMITTED';
 
@@ -107,9 +110,11 @@ export default function AIIncidentDeclaration() {
     const [editedDescription, setEditedDescription] = useState('');
     const [editedSeverity, setEditedSeverity] = useState('');
 
-    // Contexte fourni au backend
-    const [mineContext, setMineContext] = useState('');
-    const [departmentContext, setDepartmentContext] = useState('');
+    // Contexte fourni au backend.
+    // departmentId est une VRAIE référence (persistée en departmentId), plus un
+    // champ texte libre ignoré ; userContext est le témoignage du déclarant.
+    const [departments, setDepartments] = useState<{ value: string; label: string }[]>([]);
+    const [departmentId, setDepartmentId] = useState<string | null>(null);
     const [userContext, setUserContext] = useState('');
 
     // Modal "comment ça marche"
@@ -142,6 +147,13 @@ export default function AIIncidentDeclaration() {
                 setDefaultWorkProcessId(proc.status === 'fulfilled' ? first(proc.value) : null);
             })
             .finally(() => setRefsLoading(false));
+
+        // Départements de la mine active — alimente le Select (patron ReportIncidents).
+        getAllDepartments()
+            .then((res: any) =>
+                setDepartments((res ?? []).map((item: any) => ({ label: item.name, value: String(item.id) }))),
+            )
+            .catch((err: any) => notifyError(err, t('ai.departmentsLoadError')));
     }, []);
 
     // Paramétrage minimal de la mine : au moins un lieu, une zone et un processus actifs.
@@ -187,8 +199,12 @@ export default function AIIncidentDeclaration() {
         }, 300);
 
         try {
+            // Le contexte département envoyé à l'IA est désormais le libellé RÉEL du
+            // département choisi, plus une saisie libre approximative.
             const result = await analyzeImage(image, {
-                mineContext, departmentContext, userContext, language: 'fr',
+                departmentContext: departments.find((d) => d.value === departmentId)?.label,
+                userContext,
+                language: 'fr',
             });
             clearInterval(progressTimer);
             setAnalyzeProgress(100);
@@ -236,9 +252,15 @@ export default function AIIncidentDeclaration() {
             errorNotification(t('ai.setupIncompleteMessage'));
             return;
         }
+        // NOTE : aucun blocage si departmentId est vide. Une declaration d'incident ne
+        // se freine JAMAIS (spec §4) — le departement manquant se corrige a l'edition,
+        // un incident non declare est perdu. Il est simplement persiste s'il est fourni.
         setSubmitting(true);
         try {
-            const now = new Date().toISOString();
+            // Horodatage en fuseau LOCAL (jamais toISOString/UTC) : le backend attend un
+            // LocalDateTime. À UTC+1, une déclaration faite à 00h30 était datée de la
+            // veille — l'incident changeait de jour (ISO 45001 §9.1).
+            const now = toIsoDateTimeLocal(new Date());
             const payload: any = {
                 title: editedTitle,
                 // source/aiConfidence/aiModel sont les NOUVEAUX champs persistes en BDD
@@ -248,6 +270,8 @@ export default function AIIncidentDeclaration() {
                 // Dates
                 occurredAt: now,
                 discoveryTime: now,
+                // Département RÉELLEMENT persisté (le champ libre précédent était ignoré)
+                departmentId: departmentId ? Number(departmentId) : null,
                 // FK obligatoires backend — defaults pre-charges
                 locationId: defaultLocationId,
                 workAreaId: defaultWorkAreaId,
@@ -258,8 +282,15 @@ export default function AIIncidentDeclaration() {
                 evidence: [],
                 ppe: [],
                 weatherConditions: [],
-                // Analyse incident — agrege l'analyse IA dans factualDescription pour audit
-                factualDescription: editedDescription,
+                // Analyse incident — agrege l'analyse IA dans factualDescription pour audit.
+                // Le témoignage libre du déclarant (userContext) y est APPENDU : c'est une
+                // donnée de première main (ISO 45001 §7.5) et aucun champ du DTO ne lui est
+                // dédié. Il n'était jusqu'ici transmis qu'à l'IA pour orienter l'analyse,
+                // puis jeté — la description IA qui en découlait ne le remplace pas.
+                // L'attribution explicite préserve la distinction constat IA / déclarant.
+                factualDescription: userContext.trim()
+                    ? `${editedDescription}\n\n${t('ai.testimonyPrefix')}\n${userContext.trim()}`
+                    : editedDescription,
                 immediateCauses: analysis.rootCauseHypothesis || '',
                 rootCauses: analysis.rootCauseHypothesis || '',
                 contributingFactors: (analysis.identifiedRisks || []).map((r: IdentifiedRisk) => r.risk).join(' | '),
@@ -281,9 +312,9 @@ export default function AIIncidentDeclaration() {
             successNotification('Incident IA déclaré avec succès — visible dans Gestion des incidents (filtre IA)');
             setStep('SUBMITTED');
         } catch (e: any) {
-            const msg = e?.response?.data?.errorMessage || e?.message || 'erreur inconnue';
-            console.error('[AI Incident Submit] echec', e);
-            errorNotification(`Erreur soumission : ${msg}`);
+            // notifyError traduit les codes metier (REFERENCE_DATA_MISSING…) qui etaient
+            // jusqu'ici concatenes bruts dans le message affiche a l'utilisateur.
+            notifyError(e, t('ai.submitError'));
         } finally {
             setSubmitting(false);
         }
@@ -368,10 +399,9 @@ export default function AIIncidentDeclaration() {
                     fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
                     cameraInputRef={cameraInputRef as React.RefObject<HTMLInputElement>}
                     onOpenCamera={() => setCameraOpened(true)}
-                    mineContext={mineContext}
-                    onMineContextChange={setMineContext}
-                    departmentContext={departmentContext}
-                    onDepartmentContextChange={setDepartmentContext}
+                    departments={departments}
+                    departmentId={departmentId}
+                    onDepartmentIdChange={setDepartmentId}
                     userContext={userContext}
                     onUserContextChange={setUserContext}
                 />
@@ -506,10 +536,9 @@ interface UploadStepProps {
     fileInputRef: React.RefObject<HTMLInputElement>;
     cameraInputRef: React.RefObject<HTMLInputElement>;
     onOpenCamera: () => void;
-    mineContext: string;
-    onMineContextChange: (v: string) => void;
-    departmentContext: string;
-    onDepartmentContextChange: (v: string) => void;
+    departments: { value: string; label: string }[];
+    departmentId: string | null;
+    onDepartmentIdChange: (v: string | null) => void;
     userContext: string;
     onUserContextChange: (v: string) => void;
 }
@@ -517,10 +546,10 @@ interface UploadStepProps {
 function UploadStep({
     onFile, onDrop, imagePreview, image, onReset, onStart,
     fileInputRef, cameraInputRef, onOpenCamera,
-    mineContext, onMineContextChange,
-    departmentContext, onDepartmentContextChange,
+    departments, departmentId, onDepartmentIdChange,
     userContext, onUserContextChange,
 }: UploadStepProps) {
+    const { t } = useTranslation('common');
     return (
         <div className="grid lg:grid-cols-2 gap-5">
             {/* Zone upload */}
@@ -603,53 +632,52 @@ function UploadStep({
                 )}
             </div>
 
-            {/* Contexte optionnel */}
+            {/* Contexte de la déclaration */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                     <span className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center">
                         <IconSparkles size={16} className="text-teal-700" />
                     </span>
-                    <h3 className="text-[15px] font-semibold text-slate-900">Contexte (optionnel)</h3>
+                    {/* Le titre annonçait « (optionnel) » et le texte « Tout est optionnel » :
+                        c'était vrai au sens où rien n'était obligatoire, mais trompeur — ces
+                        champs n'étaient enregistrés NULLE PART. Ils le sont désormais ; on
+                        décrit donc ce que le formulaire fait réellement de la saisie. */}
+                    <h3 className="text-[15px] font-semibold text-slate-900">{t('ai.contextTitle')}</h3>
                 </div>
                 <p className="text-[12.5px] text-slate-600 mb-5 leading-relaxed">
-                    Ces informations aident l'IA à mieux analyser la situation. Tout est optionnel.
+                    {t('ai.contextHelp')}
                 </p>
 
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1.5">
-                            Site / mine
-                        </label>
-                        <input
-                            type="text"
-                            value={mineContext}
-                            onChange={(e) => onMineContextChange(e.target.value)}
-                            placeholder="ex : Mine d'or — Galerie Nord"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-                        />
-                    </div>
+                    {/* « Site / mine » supprimé : la mine n'est JAMAIS demandée dans un
+                        formulaire de saisie (spec §3) — elle vient de la mine active du
+                        header, injectée en companyId par l'intercepteur. Le champ libre
+                        n'était de toute façon apparié à rien côté serveur. */}
+
+                    {/* Département : liste déroulante (spec §3 — toute référence d'entité
+                        est un Select, jamais du texte libre) et surtout PERSISTÉ via
+                        departmentId. L'input libre précédent n'était dans aucun payload :
+                        l'incident IA partait sans département et échappait aux filtres et
+                        aux statistiques par département. */}
+                    <Select
+                        label={t('ai.departmentLabel')}
+                        description={t('ai.departmentHelp')}
+                        placeholder={t('ai.departmentPlaceholder')}
+                        data={departments}
+                        value={departmentId}
+                        onChange={onDepartmentIdChange}
+                        searchable
+                        clearable
+                        size="sm"
+                    />
 
                     <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1.5">
-                            Département / zone
-                        </label>
-                        <input
-                            type="text"
-                            value={departmentContext}
-                            onChange={(e) => onDepartmentContextChange(e.target.value)}
-                            placeholder="ex : Extraction · Niveau −120m"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1.5">
-                            Commentaire libre
-                        </label>
                         <Textarea
+                            label={t('ai.testimonyLabel')}
+                            description={t('ai.testimonyHelp')}
                             value={userContext}
                             onChange={(e) => onUserContextChange(e.target.value)}
-                            placeholder="ex : J'ai remarqué que les harnais étaient au sol vers 10h"
+                            placeholder={t('ai.testimonyPlaceholder')}
                             minRows={3}
                             autosize
                             styles={{ input: { fontSize: 13 } }}
@@ -1163,8 +1191,8 @@ function HelpContent() {
             text: 'Photographiez la situation que vous voulez déclarer (échafaudage non sécurisé, EPI manquant, fuite, etc.). Vous pouvez utiliser la caméra de votre téléphone ou téléverser une image existante.',
         },
         {
-            title: '2. Ajoutez du contexte (optionnel)',
-            text: 'Indiquez le site, le département et un commentaire libre. Plus l\'IA a de contexte, plus son analyse sera précise.',
+            title: '2. Ajoutez du contexte',
+            text: 'Sélectionnez le département concerné et décrivez ce que vous avez constaté : ces deux informations sont enregistrées avec l\'incident. La mine n\'est pas à saisir — c\'est celle sélectionnée en haut de page. Votre témoignage est conservé dans la description de l\'incident.',
         },
         {
             title: '3. L\'IA analyse',

@@ -23,8 +23,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuditDTO {
     private Long id;
-    @NotBlank(message = "title is required")
-    @Size(max = 255, message = "title must not exceed 255 characters")
+    // Messages metier en FR : un « title is required » brut est une non-conformite
+    // documentaire (spec §5.6 — jamais de message technique anglais a l'ecran).
+    @NotBlank(message = "Le titre de l'audit est obligatoire.")
+    @Size(max = 255, message = "Le titre de l'audit ne doit pas depasser 255 caracteres.")
     private String title;
     private String refNumber;
     private List<String> objectives;
@@ -32,7 +34,7 @@ public class AuditDTO {
     private Long scopeId;
     private List<String> methods;
     private String description;
-    @NotNull(message = "category is required")
+    @NotNull(message = "La modalite d'audit (interne / externe) est obligatoire.")
     private AuditCategory category;
     private Map<String, List<String>> auditTypes;
     private List<String> references;
@@ -52,6 +54,18 @@ public class AuditDTO {
     /** Cloisonnement par mine : identifiant de la société/mine propriétaire. */
     private Long companyId;
 
+    /**
+     * Types d'audit HSE retenus (champ OBLIGATOIRE du formulaire, §7.5 : ce que
+     * le formulaire promet, le serveur le tient). Auparavant absent du DTO et de
+     * l'entité, il était silencieusement jeté : seule la map {@code auditTypes}
+     * (type -> critères) survivait, et uniquement si un critère était coché —
+     * décocher tous les critères effaçait donc le type.
+     *
+     * ⚠ Champ ajouté EN DERNIER : le constructeur positionnel Lombok
+     * (@AllArgsConstructor) suit l'ordre de déclaration.
+     */
+    private List<String> types;
+
     public Audit toEntity() {
         return new Audit(this.id, this.title, this.refNumber,
                 com.minexpert.hns.utility.StringListConverter.listToString(objectives),
@@ -61,12 +75,13 @@ public class AuditDTO {
                 com.minexpert.hns.utility.StringListConverter.listToString(this.references),
                 this.startDate,
                 this.endDate, this.status, this.planningStatus, this.createdAt, this.updatedAt,
-                this.programId, this.riskScore, this.companyId);
+                this.programId, this.riskScore, this.companyId,
+                com.minexpert.hns.utility.StringListConverter.listToString(this.types));
     }
 
     public AuditDetails toDetails() {
         return new AuditDetails(id, title, refNumber, objectives, processes, scopeId, methods, description, category,
                 auditTypes, references, startDate, endDate, status, planningStatus,
-                createdAt, updatedAt);
+                createdAt, updatedAt, types);
     }
 }

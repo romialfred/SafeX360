@@ -37,6 +37,10 @@ import { auditorRoles, auditTypesLabels, criteriaByLabel } from "../../../Data/D
 import { getAllAuditors } from "../../../services/AuditorsService";
 import { getDateDifferenceInDays } from "../../../utility/DateFormats";
 import { getAllActiveWorkProcess } from "../../../services/WorkProcessService";
+// Helper de date partagé avec le module Gestion des audits : ces deux écrans de
+// planification tapent le même POST /audit/create et doivent produire la même
+// charge utile (LocalDate en fuseau local).
+import { toIsoDateLocalOrNull } from "../../LaggingIndicator/AuditManagement/auditLabels";
 
 interface ListItem { id: number; name: string; }
 
@@ -122,7 +126,9 @@ const NewAuditPlans: React.FC = () => {
                 startDate: null,
                 endDate: null,
                 types: [] as string[],
-                planningStatus: "PENDING"
+                // `planningStatus` n'est PLUS envoyé : le statut d'approbation est
+                // posé par le serveur (toujours PENDING à la création). Un client
+                // ne se décerne pas sa propre approbation (ISO 19011 §5.4).
             },
             auditors: [
                 { name: "", role: "", email: "" }
@@ -132,7 +138,9 @@ const NewAuditPlans: React.FC = () => {
         },
         validate: {
             audit: {
-                title: (value) => (value ? null : "Le titre est requis"),
+                // `.trim()` : " " est truthy — un titre d'espaces passait le front
+                // et n'était refusé qu'au serveur (@NotBlank).
+                title: (value) => (value?.trim() ? null : "Le titre est requis"),
                 objectives: (value) => (value.length > 0 ? null : "Au moins un objectif est requis"),
                 processes: (value) => (value.length > 0 ? null : "Au moins un processus est requis"),
                 scopeId: (value) => (value ? null : "Le périmètre est requis"),
@@ -202,7 +210,20 @@ const NewAuditPlans: React.FC = () => {
             return;
         }
 
-        let values = form.values;
+        let values: any = form.values;
+        // `startDate`/`endDate` sont des LocalDate côté serveur : envoyées en objets
+        // `Date` bruts, Date.toJSON() les convertit en UTC et les décale d'un jour.
+        // Les deux dates glissant ENSEMBLE, la durée reste juste et l'erreur est
+        // indétectable à la relecture — d'où la normalisation en date locale.
+        values = {
+            ...values,
+            audit: {
+                ...values.audit,
+                title: values.audit.title?.trim(),
+                startDate: toIsoDateLocalOrNull(values.audit.startDate),
+                endDate: toIsoDateLocalOrNull(values.audit.endDate),
+            },
+        };
         if (form.values.audit.category == "INTERNAL") {
             let auditors: any = values.auditors.map((auditor: any) => ({ ...auditor, name: auditorsMap[auditor.name]?.employeeName, company: null, companyMail: null }));;
             values = { ...values, auditors: auditors };

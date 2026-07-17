@@ -34,4 +34,11 @@ public class AuditDetails {
     private PlanningStatus planningStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /**
+     * Types d'audit HSE persistés. ⚠ Champ ajouté EN DERNIER (constructeur
+     * positionnel Lombok). Null pour les audits antérieurs à la persistance du
+     * champ : le frontend replie alors sur les clés de {@code auditTypes}.
+     */
+    private List<String> types;
 }

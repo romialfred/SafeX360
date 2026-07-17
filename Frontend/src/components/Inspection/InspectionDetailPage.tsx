@@ -46,7 +46,14 @@ import InspectionTeamEditor, {
     teamToDTO,
     type TeamMemberState,
 } from './InspectionTeamEditor';
-import { INSPECTION_ROLE_CONFIG, initialsOf, type InspectionRoleKey } from './inspectionLabels';
+import {
+    INSPECTION_ROLE_CONFIG,
+    initialsOf,
+    formatInspectionDate,
+    isExecutableNow,
+    isInspectionOverdue,
+    type InspectionRoleKey,
+} from './inspectionLabels';
 import { Z } from '../../constants/zIndex';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
@@ -245,6 +252,16 @@ export default function InspectionDetailPage() {
         detail.status === 'IN_PROGRESS' ||
         detail.status === 'REJECTED';
 
+    /**
+     * SPEC §2.1 — verrou de date, ANNONCÉ ici, APPLIQUÉ par le serveur.
+     * Ne concerne que SCHEDULED : IN_PROGRESS/REJECTED ont déjà franchi start().
+     * Le retard n'est jamais bloqué — il est signalé par le badge ci-dessous.
+     */
+    const executableNow =
+        detail.status !== 'SCHEDULED' || isExecutableNow(detail.plannedDate);
+    const overdue = isInspectionOverdue(detail.plannedDate, detail.status);
+    const plannedLabel = formatInspectionDate(detail.plannedDate, i18n.language);
+
     const conformityRatio =
         detail.totalCheckpoints > 0
             ? Math.round(
@@ -286,19 +303,51 @@ export default function InspectionDetailPage() {
                         <p className="text-[12.5px] text-slate-500 mt-1">
                             {detail.targetLabel}
                             {detail.siteName && <> · {detail.siteName}</>}
-                            {detail.plannedDate && <> · {detail.plannedDate}</>}
+                            {detail.plannedDate && <> · {plannedLabel}</>}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                         <InspectionStatusBadge status={detail.status} size="md" />
-                        {canExecute && (
-                            <button
-                                type="button"
-                                onClick={() => navigate(`/inspections/execute/${detail.id}`)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-amber-700 text-white hover:bg-amber-800 transition font-medium"
+                        {/* Écart de conformité ISO 45001 §9.1 : visible, jamais bloquant. */}
+                        {overdue && (
+                            <span
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium border text-[12px] bg-rose-50 border-rose-200 text-rose-800"
+                                title={t('registry.overdueTitle', { date: plannedLabel })}
                             >
-                                Reprendre la saisie
-                            </button>
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
+                                {t('registry.overdueBadge')}
+                            </span>
+                        )}
+                        {canExecute && (
+                            <div className="flex flex-col items-end gap-1">
+                                <span
+                                    /* `title` sur le SPAN : un <button disabled> n'émet pas
+                                       d'événement de survol dans plusieurs navigateurs. */
+                                    title={
+                                        executableNow
+                                            ? undefined
+                                            : t('registry.executeLocked', { date: plannedLabel })
+                                    }
+                                    className="inline-flex"
+                                >
+                                    <button
+                                        type="button"
+                                        disabled={!executableNow}
+                                        onClick={() => navigate(`/inspections/execute/${detail.id}`)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] rounded-md bg-amber-700 text-white hover:bg-amber-800 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-700"
+                                    >
+                                        Reprendre la saisie
+                                    </button>
+                                </span>
+                                {/* Un bouton grisé n'est jamais muet : l'explication est
+                                    aussi écrite, pas seulement en infobulle (SPEC §2.1). */}
+                                {!executableNow && (
+                                    <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                        <IconClockHour4 size={12} stroke={1.8} className="text-slate-400" />
+                                        {t('registry.executeLocked', { date: plannedLabel })}
+                                    </span>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

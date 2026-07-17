@@ -12,7 +12,6 @@ import com.minexpert.hns.entity.parameters.WorkProcess;
 import com.minexpert.hns.enums.IncidentStatus;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,15 +23,37 @@ import lombok.NoArgsConstructor;
 public class IncidentDTO {
     private Long id;
     private String number;
-    @NotBlank(message = "title is required")
-    @Size(max = 255, message = "title must not exceed 255 characters")
+    @NotBlank(message = "Le titre de l'incident est obligatoire.")
+    @Size(max = 255, message = "Le titre de l'incident ne doit pas dépasser 255 caractères.")
     private String title;
     private List<String> ppe;
     private Long locationId;
     private List<Long> weatherConditions;
-    @NotNull(message = "departmentId is required")
+    /**
+     * PAS de @NotNull ICI, volontairement — et c'est une decision de conception, pas
+     * un oubli. Cette contrainte existait mais n'a JAMAIS ete evaluee (aucun @Valid
+     * sur le corps de la requete). L'activer telle quelle transformerait en 400 des
+     * declarations aujourd'hui acceptees : la colonne est nullable, et les ecrans
+     * terrain (MobileIncidentQuickDeclare / MobileAIIncidentDeclare) derivent le
+     * departement du profil utilisateur — il vaut null si l'employe n'en a pas et
+     * ces ecrans n'offrent aucun selecteur de repli.
+     *
+     * Or une declaration d'incident ne doit JAMAIS etre freinee (ISO 45001 §10.2 /
+     * spec formulaires §4) : bloquer produit de la sous-declaration, le pire echec
+     * d'un SMS. Un incident au departement manquant reste rattrapable a l'edition ;
+     * un incident jamais declare est perdu.
+     *
+     * Le departement est donc exige la ou il est REELLEMENT collectable (formulaires
+     * web de declaration : champ obligatoire cote client), et persiste dans tous les
+     * cas ou il est fourni.
+     */
     private Long departmentId;
-    @NotNull(message = "companyId is required")
+    /**
+     * Renseigne par le SERVEUR depuis le @RequestParam companyId (mine active du
+     * header) — jamais porte par le corps de la requete. Aucune contrainte @NotNull
+     * ici : elle s'evaluerait AVANT setCompanyId() et rejetterait toute declaration
+     * (l'absence de mine est deja traitee par HSException COMPANY_ID_REQUIRED).
+     */
     private Long companyId;
     private IncidentStatus status;
     private LocalDateTime occurredAt;

@@ -79,7 +79,10 @@
             "subtitle": "Planifiez votre premiere inspection a partir d'un modele existant ou creez-en un.",
             "cta": "Planifier une inspection"
         },
-        "loadError": "Le registre n'a pas pu etre charge. Verifiez vos droits ou ressayez."
+        "loadError": "Le registre n'a pas pu etre charge. Verifiez vos droits ou ressayez.",
+        "executeLocked": "Exécutable à partir du {{date}}",
+        "overdueBadge": "En retard",
+        "overdueTitle": "Inspection planifiée le {{date}} et non réalisée : écart de conformité (ISO 45001 §9.1). L'exécution reste possible."
     },
     "equipment": {
         "familyLabel": "Famille",
@@ -202,7 +205,8 @@
         "saveError": "Echec de la sauvegarde. Verifiez votre connexion.",
         "submitError": "Echec de la soumission. Verifiez les points obligatoires.",
         "readonlyBanner": "Cette inspection est archivee. Les valeurs sont en lecture seule.",
-        "rejectedBanner": "Cette inspection a ete rejetee par l'equipe. Corrigez les constats puis re-soumettez."
+        "rejectedBanner": "Cette inspection a ete rejetee par l'equipe. Corrigez les constats puis re-soumettez.",
+        "notBeforePlannedDate": "Inspection planifiée le {{date}} : elle ne peut pas démarrer avant cette date. Replanifiez-la si l'exécution doit être avancée."
     },
     "schedule": {
         "breadcrumbCurrent": "Planifier",

@@ -343,7 +343,11 @@ const NonConformityForm = () => {
             // methodData (objet libre par méthode d'analyse) sérialisé en JSON :
             // la colonne HNS methodData est un String/@Lob.
             analysis: { ...values.analysis, methodData: JSON.stringify(values.analysis.methodData || {}) },
-            correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id })),
+            // `deadline` doit être normalisée comme les dates de la NC (toLocalDate) :
+            // le spread propageait un objet Date brut, sérialisé en ISO UTC, alors que
+            // CorrectiveActionDTO.deadline est un LocalDate -> échéance reculée d'un
+            // jour et action signalée « en retard » 24 h trop tôt.
+            correctiveActions: values.correctiveActions.map((action: any) => ({ ...action, deadline: toLocalDate(action.deadline), departmentId: action.assignedEmployeeId ? empMap[action.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: action.assignedEmployeeId ?? user.id, assignedEmployeeId: action.assignedEmployeeId ?? user.id })),
         }).then((_response) => {
             successNotification("Constat central déclaré avec succès !");
             navigate("/non-conformity");

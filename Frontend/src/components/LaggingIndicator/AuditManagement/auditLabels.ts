@@ -142,6 +142,23 @@ export const toIsoDateLocal = (date: Date): string => {
     return `${y}-${m}-${d}`;
 };
 
+/**
+ * 'YYYY-MM-DD' (LocalDate backend) -> `Date` à minuit LOCAL.
+ * `new Date('2026-07-20')` est interprété en UTC par la spec ECMAScript : à
+ * l'ouest de Greenwich la date recule d'un jour, ce qui décalerait une borne
+ * `minDate`/`maxDate` — symétrique exact de toIsoDateLocal.
+ */
+export const parseIsoDateLocal = (value?: string | Date | null): Date | null => {
+    if (!value) return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+    if (match) {
+        return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    const parsed = new Date(String(value));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 /** Repli null-safe pour les champs de date optionnels d'un formulaire. */
 export const toIsoDateLocalOrNull = (value: unknown): string | null => {
     if (!value) return null;

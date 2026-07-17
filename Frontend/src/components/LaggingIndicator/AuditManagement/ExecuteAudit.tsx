@@ -28,7 +28,7 @@ import { useTranslation } from "react-i18next";
 import PageHeader from "../../UtilityComp/PageHeader";
 import TextEditor from "../../UtilityComp/TextEditor";
 import { useForm } from "@mantine/form";
-import { executeAudit, getAreasByAuditId, reportExists } from "../../../services/AuditService";
+import { executeAudit, getAreasByAuditId, getAuditDetails, reportExists } from "../../../services/AuditService";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { GetAllAuditArea } from "../../../services/AuditAreaService";
@@ -39,7 +39,7 @@ import { PickList } from "primereact/picklist";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { getBase64 } from "../../../utility/DocumentUtility";
-import { REC_PRIORITY_OPTIONS, VALIDATOR_STATUS_OPTIONS, toIsoDateLocalOrNull } from "./auditLabels";
+import { REC_PRIORITY_OPTIONS, VALIDATOR_STATUS_OPTIONS, parseIsoDateLocal, toIsoDateLocalOrNull } from "./auditLabels";
 import { getObservationDropdown } from "../../../services/ObservationService";
 import AuditChecklistPanel from "./AuditChecklistPanel";
 
@@ -73,6 +73,14 @@ const ExecuteAudit = () => {
     const ref = useRef<HTMLInputElement>(null);
     const ref1 = useRef<HTMLInputElement>(null);
     const [submitted, setSubmitted] = useState(false);
+    // §2.1 — date de début PLANIFIÉE de l'audit : borne basse de la date du
+    // rapport. Le serveur porte la règle (AUDIT_EXECUTION_BEFORE_PLANNED_DATE) ;
+    // l'IHM ne fait que l'annoncer (minDate + libellé), jamais de champ bloqué muet.
+    const [plannedStartDate, setPlannedStartDate] = useState<Date | null>(null);
+    /** Date planifiée au format JJ/MM/AAAA pour le libellé « Exécutable à partir du… ». */
+    const plannedStartLabel = plannedStartDate
+        ? plannedStartDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
 
 
     useEffect(() => {
@@ -104,6 +112,12 @@ const ExecuteAudit = () => {
             }
         }).catch((_err) => {
 
+        })
+        // Date de début planifiée : borne le DateInput de la date du rapport.
+        getAuditDetails(Number(id)).then((res) => {
+            setPlannedStartDate(parseIsoDateLocal(res?.startDate));
+        }).catch((_err) => {
+            setPlannedStartDate(null);
         })
         getAreasByAuditId(Number(id)).then((res) => {
             setAreas(res);
@@ -531,7 +545,25 @@ const ExecuteAudit = () => {
                                 <Grid>
                                     <Grid.Col span={4}><TextInput {...form.getInputProps("report.preparerName")} label={t('execute.name')} placeholder={t('execute.preparerNamePlaceholder')} /></Grid.Col>
                                     <Grid.Col span={4}><TextInput label={t('execute.role')} placeholder={t('execute.preparerRolePlaceholder')} {...form.getInputProps("report.preparerRole")} /></Grid.Col>
-                                    <Grid.Col span={4}><DateInput leftSection={<IconCalendar />} label={t('execute.date')} placeholder={t('execute.datePlaceholder')} {...form.getInputProps("report.preDate")} /></Grid.Col>
+                                    <Grid.Col span={4}>
+                                        {/* §2.1 — la date du rapport ne peut précéder la date de début
+                                            planifiée : un constat daté d'un jour où rien n'a été observé
+                                            détruit la valeur probante du rapport, et celui-ci est ensuite
+                                            figé. Le RETARD reste toujours possible (aucune borne haute). */}
+                                        <DateInput
+                                            leftSection={<IconCalendar />}
+                                            label={t('execute.date')}
+                                            placeholder={t('execute.datePlaceholder')}
+                                            minDate={plannedStartDate ?? undefined}
+                                            description={plannedStartDate
+                                                ? t('execute.preDateMinHint', {
+                                                    date: plannedStartLabel,
+                                                    defaultValue: `Exécutable à partir du ${plannedStartLabel}`,
+                                                })
+                                                : undefined}
+                                            {...form.getInputProps("report.preDate")}
+                                        />
+                                    </Grid.Col>
                                 </Grid>
                             </Card>
 

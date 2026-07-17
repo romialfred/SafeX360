@@ -30,9 +30,29 @@ export const INCIDENT_STATUS_LABELS: Record<string, string> = {
 export const incidentStatusLabel = (code?: string | null): string =>
     code ? INCIDENT_STATUS_LABELS[String(code).toUpperCase()] ?? code : '—';
 
+/** Couleurs Mantine par statut d'incident (miroir de la carte de ViewDetails). */
+export const INCIDENT_STATUS_COLORS: Record<string, string> = {
+    PENDING: 'gray',
+    REPORTED: 'blue',
+    INVESTIGATION: 'cyan',
+    INVESTIGATION_COMPLETED: 'yellow',
+    CORRECTIVE_ACTIONS: 'orange',
+    CLOSED: 'green',
+    REJECTED: 'red',
+};
+
+export const incidentStatusColor = (code?: string | null): string =>
+    INCIDENT_STATUS_COLORS[String(code ?? '').toUpperCase()] ?? 'gray';
+
 /**
  * Options FR pour les <Select> de statut d'incident.
- * Mêmes valeurs backend que Data/DropdownData (incidentStatuses).
+ *
+ * ATTENTION : cette liste est le catalogue COMPLET des statuts — elle ne doit
+ * jamais alimenter un <Select> telle quelle. Un statut ne se choisit pas, il
+ * TRANSITE (spec §2.3) : filtrez-la par les transitions autorisées depuis
+ * l'état courant, comme le fait Details/ViewDetails. Usage légitime restant :
+ * les filtres de liste (IncidentManagementData), où toutes les valeurs sont
+ * des critères de recherche et non des cibles de transition.
  */
 export const INCIDENT_STATUS_OPTIONS = [
     { label: 'En attente', value: 'PENDING' },
@@ -74,12 +94,20 @@ export const actionStatusColor = (code?: string | null): string =>
 
 /**
  * Options FR pour les <Select> de statut d'action corrective des formulaires
- * incident (valeur backend CANCELED — orthographe historique conservée).
+ * incident.
+ *
+ * ⚠ Les valeurs DOIVENT correspondre exactement à l'enum backend
+ * {@code ActionStatus} : PENDING, IN_PROGRESS, COMPLETED, **CANCELLED** (deux L),
+ * ON_HOLD. Le commentaire précédent affirmait « valeur backend CANCELED —
+ * orthographe historique conservée » : c'était FAUX. L'enum n'a jamais accepté
+ * qu'un seul L, donc choisir « Annulée » envoyait une valeur inconnue, Jackson
+ * levait HttpMessageNotReadableException → 500 → toute la saisie perdue.
+ * Vérifier contre l'enum avant d'ajouter une valeur ici.
  */
 export const ACTION_STATUS_OPTIONS = [
     { label: 'En attente', value: 'PENDING' },
     { label: 'En cours', value: 'IN_PROGRESS' },
-    { label: 'Annulée', value: 'CANCELED' },
+    { label: 'Annulée', value: 'CANCELLED' },
     { label: 'Terminée', value: 'COMPLETED' },
 ];
 
@@ -240,4 +268,33 @@ export const toIsoDateLocal = (date: Date): string => {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+};
+
+/**
+ * Sérialise une Date en 'yyyy-MM-ddTHH:mm:ss' en fuseau LOCAL, SANS suffixe 'Z'
+ * — format attendu par un LocalDateTime backend (occurredAt, discoveryTime).
+ *
+ * Pourquoi : toISOString() (et le toJSON() implicite appliqué par axios à tout
+ * objet Date) convertit l'horodatage en UTC. À UTC+1, un incident survenu le
+ * 17/07 à 00h30 est alors stocké '2026-07-16T23:30' : l'incident CHANGE DE JOUR
+ * et l'enregistrement devient une preuve fausse (ISO 45001 §9.1 — la date d'un
+ * constat doit être celle de l'observation réelle).
+ *
+ * toIsoDateLocal ne suffit pas ici : elle perd l'heure, or l'heure de survenance
+ * est une donnée d'investigation (croisement avec les rotations de poste).
+ *
+ * ATTENTION : le résultat doit être envoyé tel quel (string). Le repasser dans
+ * un `new Date()` ou laisser un objet Date dans le payload réintroduit le bug.
+ *
+ * Tolère une valeur déjà sérialisée (patron de auditLabels.toIsoDateOrNull) ;
+ * renvoie null si la valeur est absente ou invalide.
+ */
+export const toIsoDateTimeLocal = (value?: Date | string | null): string | null => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    if (Number.isNaN(date.getTime())) return null;
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${toIsoDateLocal(date)}T${hh}:${mm}:${ss}`;
 };

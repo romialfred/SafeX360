@@ -38,6 +38,9 @@ import { auditorRoles, auditTypesLabels, criteriaByLabel } from "../../../Data/D
 import { getAllAuditors } from "../../../services/AuditorsService";
 import { getDateDifferenceInDays } from "../../../utility/DateFormats";
 import { getAllActiveWorkProcess } from "../../../services/WorkProcessService";
+// Helper de date partagé avec l'écran d'édition jumeau (EditScheduleAudit) :
+// les deux tapent le même PUT /audit/update.
+import { toIsoDateLocalOrNull } from "../../LaggingIndicator/AuditManagement/auditLabels";
 
 interface ListItem { id: number; name: string; }
 
@@ -79,6 +82,10 @@ const EditNewAuditPlans: React.FC = () => {
     const [auditAreas, setAuditAreas] = useState<any[]>([]);
     const [processes, setProcesses] = useState<any[]>([]);
     const [planStatus, setPlanStatus] = useState<string>('');
+    // §2.2 — plan approuvé = preuve figée : le serveur refuse l'update
+    // (AUDIT_ALREADY_APPROVED). L'IHM l'annonce et neutralise l'enregistrement
+    // plutôt que d'offrir un bouton qui échouera.
+    const planLocked = planStatus.toUpperCase() === 'APPROVED';
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -107,7 +114,7 @@ const EditNewAuditPlans: React.FC = () => {
         },
         validate: {
             audit: {
-                title: (value) => (value ? null : "Le titre est requis"),
+                title: (value) => (value?.trim() ? null : "Le titre est requis"),
                 objectives: (value) => (value.length > 0 ? null : "Au moins un objectif est requis"),
                 processes: (value) => (value.length > 0 ? null : "Au moins un processus est requis"),
                 scopeId: (value) => (value ? null : "Le périmètre est requis"),
@@ -150,7 +157,9 @@ const EditNewAuditPlans: React.FC = () => {
                 endDate: new Date(res.endDate),
                 processes: res.processes.map((item: any) => String(item)),
                 scopeId: String(res.scopeId),
-                types: res.auditTypes ? Object.keys(res.auditTypes) : [],
+                // `types` est désormais persisté ; repli sur les clés d'auditTypes
+                // pour les audits antérieurs (où le champ était jeté au serveur).
+                types: res.types?.length ? res.types : (res.auditTypes ? Object.keys(res.auditTypes) : []),
             });
         }).catch((err) => {
             errorNotification(err.response?.data?.errorMessage || "Le plan d'audit n'a pas pu être chargé");
@@ -222,7 +231,17 @@ const EditNewAuditPlans: React.FC = () => {
             return;
         }
 
-        let values = form.values;
+        let values: any = form.values;
+        // LocalDate côté serveur : normalisation en date locale (cf. NewAuditPlans).
+        values = {
+            ...values,
+            audit: {
+                ...values.audit,
+                title: values.audit.title?.trim(),
+                startDate: toIsoDateLocalOrNull(values.audit.startDate),
+                endDate: toIsoDateLocalOrNull(values.audit.endDate),
+            },
+        };
         if (form.values.audit.category == "INTERNAL") {
             let mapped: any = values.auditors.map((auditor: any) => ({ ...auditor, name: auditorsMap[auditor.name]?.employeeName, company: null, companyMail: null }));
             values = { ...values, auditors: mapped };
@@ -581,16 +600,20 @@ const EditNewAuditPlans: React.FC = () => {
                         <Button variant="default" size="sm" leftSection={<IconX size={15} />} onClick={() => navigate('/annual-audit-plan')}>
                             Annuler
                         </Button>
-                        <Button color="indigo" size="sm" leftSection={<IconDeviceFloppy size={15} />} onClick={handleSubmit}>
+                        <Button color="indigo" size="sm" leftSection={<IconDeviceFloppy size={15} />} onClick={handleSubmit} disabled={planLocked}>
                             Enregistrer
                         </Button>
                     </>
                 }
             />
 
-            {planStatus.toUpperCase() === 'APPROVED' && (
+            {planLocked && (
                 <Alert color="teal" variant="light" icon={<IconLock size={16} />}>
-                    <Text size="sm">Ce plan d'audit est approuvé : les modifications peuvent être restreintes.</Text>
+                    <Text size="sm">
+                        Ce plan d'audit est approuvé : sa planification est verrouillée (ISO 45001 §7.5 — une
+                        preuve approuvée ne se réécrit pas). Pour changer le périmètre, les dates ou l'équipe,
+                        replanifiez l'audit ; l'enregistrement sera refusé par le serveur.
+                    </Text>
                 </Alert>
             )}
 
@@ -684,6 +707,7 @@ const EditNewAuditPlans: React.FC = () => {
                                 color="indigo"
                                 leftSection={<IconDeviceFloppy size={15} />}
                                 onClick={handleSubmit}
+                                disabled={planLocked}
                             >
                                 Enregistrer les modifications
                             </Button>

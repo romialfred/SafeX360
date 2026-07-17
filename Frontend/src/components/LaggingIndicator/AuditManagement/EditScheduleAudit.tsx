@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+    Alert,
     Text,
     Card,
     TextInput,
@@ -17,7 +18,7 @@ import {
     Radio,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { IconCalendar, IconClipboardCheck, IconFileText, IconInfoCircle, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
+import { IconCalendar, IconClipboardCheck, IconFileText, IconInfoCircle, IconLock, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
 import PageHeader from "../../UtilityComp/PageHeader";
 import TextEditor from "../../UtilityComp/TextEditor";
@@ -38,6 +39,7 @@ import {
     AUDIT_OBJECTIVE_OPTIONS,
     AUDIT_REFERENCE_OPTIONS,
     AUDITOR_ROLE_OPTIONS,
+    toIsoDateLocalOrNull,
 } from "./auditLabels";
 
 interface ListItem { id: number; name: string; }
@@ -54,6 +56,11 @@ const EditScheduleAudit: React.FC = () => {
     const navigate = useNavigate();
     const [processes, setProcesses] = useState<any[]>([]);
     const { id } = useParams();
+    // §2.2 — plan approuvé / audit clos = preuve figée : le serveur refuse l'update
+    // (AUDIT_ALREADY_APPROVED). L'écran l'annonce et neutralise l'enregistrement,
+    // y compris en accès direct par URL (le bouton « Modifier » est déjà masqué).
+    const [planLocked, setPlanLocked] = useState(false);
+    const [lockReason, setLockReason] = useState('');
 
 
     useEffect(() => {
@@ -74,12 +81,20 @@ const EditScheduleAudit: React.FC = () => {
         })
         dispatch(showOverlay());
         getAuditDetails(Number(id)).then((res) => {
+            const approved = String(res.planningStatus ?? '').toUpperCase() === 'APPROVED';
+            const closed = String(res.status ?? '').toUpperCase() === 'CLOSED';
+            setPlanLocked(approved || closed);
+            setLockReason(closed
+                ? "Cet audit est clôturé : son rapport est signé, la planification n'est plus modifiable (ISO 45001 §7.5)."
+                : "Ce plan d'audit est approuvé : sa planification est verrouillée. Pour changer le périmètre, les dates ou l'équipe, replanifiez l'audit.");
             form.setFieldValue('audit', {
                 ...res, startDate: new Date(res.startDate),
                 endDate: new Date(res.endDate),
                 processes: res.processes.map((item: any) => String(item)),
                 scopeId: String(res.scopeId),
-                types: res.auditTypes ? Object.keys(res.auditTypes) : [],
+                // `types` est désormais persisté ; repli sur les clés d'auditTypes
+                // pour les audits antérieurs (où le champ était jeté au serveur).
+                types: res.types?.length ? res.types : (res.auditTypes ? Object.keys(res.auditTypes) : []),
 
             })
         }).catch((_err) => {
@@ -145,7 +160,7 @@ const EditScheduleAudit: React.FC = () => {
         validate: {
             audit: {
 
-                title: (value) => (value ? null : "Le titre est requis"),
+                title: (value) => (value?.trim() ? null : "Le titre est requis"),
                 objectives: (value) => (value.length > 0 ? null : "Au moins un objectif est requis"),
                 processes: (value) => (value.length > 0 ? null : "Au moins un processus est requis"),
                 scopeId: (value) => (value ? null : "Le périmètre est requis"),
@@ -216,7 +231,17 @@ const EditScheduleAudit: React.FC = () => {
             return;
         }
 
-        let values = form.values;
+        let values: any = form.values;
+        // LocalDate côté serveur : normalisation en date locale (cf. NewAuditPlan).
+        values = {
+            ...values,
+            audit: {
+                ...values.audit,
+                title: values.audit.title?.trim(),
+                startDate: toIsoDateLocalOrNull(values.audit.startDate),
+                endDate: toIsoDateLocalOrNull(values.audit.endDate),
+            },
+        };
         if (form.values.audit.category == "INTERNAL") {
             let auditors: any = values.auditors.map((auditor: any) => ({ ...auditor, name: auditorsMap[auditor.name]?.employeeName, company: null, companyMail: null }));;
             values = { ...values, auditors: auditors };
@@ -548,6 +573,12 @@ const EditScheduleAudit: React.FC = () => {
                 subtitle="Mise à jour du cadrage, du périmètre et de l'équipe d'audit"
             />
 
+            {planLocked && (
+                <Alert color="teal" variant="light" icon={<IconLock size={16} />}>
+                    <Text size="sm">{lockReason}</Text>
+                </Alert>
+            )}
+
             <Card className="bg-white" shadow="sm" withBorder radius="md">
                 <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect color="indigo" size="sm">
                     <Stepper.Step icon={<IconFileText size={16} />} label={<Text size="sm">Informations</Text>} description={<Text size="xs" c="dimmed">Cadrage et planning</Text>} />
@@ -569,7 +600,7 @@ const EditScheduleAudit: React.FC = () => {
                         </Button>
                     ) : (
                         <>
-                            <Button type="button" onClick={handleSubmit} color="indigo">
+                            <Button type="button" onClick={handleSubmit} color="indigo" disabled={planLocked}>
                                 Enregistrer les modifications
                             </Button>
                         </>

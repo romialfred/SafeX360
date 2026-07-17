@@ -17,6 +17,9 @@ import FileUpdateDropzone from '../../../UtilityComp/FileUpdateDropzone';
 import { errorNotification, successNotification } from '../../../../utility/NotificationUtility';
 import { modals } from '@mantine/modals';
 import { removeCorrectiveAction } from '../../../../services/CorrectiveActionService';
+// Palette + libellés FR des statuts d'action corrective : source unique (charte R7),
+// avec l'orthographe exacte de l'enum backend ActionStatus (CANCELLED, deux L).
+import { adhocStatusConfig } from '../../../NewComponents/AdhocActions/adhocLabels';
 
 
 
@@ -33,12 +36,14 @@ const TreatmentStep = ({ form, employees }: any) => {
         'USD': '$',
         'XOF': 'CFA'
     };
+    // Le statut n'est PAS saisi : une action naît « En attente » (progression 0 %),
+    // statut imposé par le serveur (CorrectiveActionServiceImpl.addCorrectiveAction).
+    // Il transite ensuite via les actions dédiées (approuver / annuler).
     const handleAddIncident = () => {
         form.insertListItem('correctiveActions', {
             actionName: '',
             deadline: '',
             assignedEmployeeId: "",
-            status: "",
             description: ""
         });
     }
@@ -340,8 +345,31 @@ const TreatmentStep = ({ form, employees }: any) => {
                 </div>}>
                     <TextInput size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.actionName`)} label={`Nom du plan ${form.values.nonConformity.type == "NEAR_MISS" ? "préventif" : "correctif"}`} placeholder='Saisir le nom du plan' />
                     <Select size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.assignedEmployeeId`)} data={employees} searchable label="Employé assigné" placeholder="Sélectionner l'employé" />
-                    <DateInput size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.deadline`)} label="Échéance" placeholder="Sélectionner la date" />
-                    <Select size="sm" withAsterisk {...form.getInputProps(`correctiveActions.${index}.status`)} data={[{ label: "En attente", value: "PENDING" }, { label: "En cours", value: "IN_PROGRESS" }, { label: "Annulée", value: "CANCELED" }, { label: "Terminée", value: "COMPLETED" }]} label="Statut" placeholder="Sélectionner le statut" />
+                    <DateInput size="sm" withAsterisk minDate={x.id ? undefined : new Date()} {...form.getInputProps(`correctiveActions.${index}.deadline`)} label="Échéance" placeholder="Sélectionner la date" />
+                    {/* Statut : affiché, jamais choisi. Une action naît « En attente »
+                        et son statut transite ensuite par les actions dédiées
+                        (approuver / annuler), seules à respecter les transitions
+                        valides. La liste précédente proposait « CANCELED » (un L),
+                        valeur absente de l'enum ActionStatus (CANCELLED) : la
+                        soumission partait en 500 et TOUTE la saisie était perdue. */}
+                    {(() => {
+                        const cfg = adhocStatusConfig(x.id ? x.status : 'PENDING');
+                        return (
+                            <div>
+                                <div className="text-sm text-slate-700 mb-1">Statut</div>
+                                <div className="flex items-center gap-2 h-9">
+                                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${cfg.chip}`}>
+                                        {cfg.label}
+                                    </span>
+                                    <span className="text-[11.5px] text-slate-500">
+                                        {x.id
+                                            ? 'Statut actuel — modifiable depuis le suivi des actions'
+                                            : "Statut initial — l'action est créée en attente d'approbation"}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })()}
                     <div className='col-span-2'>
 
                         <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title="Description" />

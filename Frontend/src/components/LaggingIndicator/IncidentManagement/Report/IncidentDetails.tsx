@@ -10,6 +10,7 @@ import {
     SelectProps,
     Text,
     TextInput,
+    Tooltip,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { IconPlus, IconTrash, IconInfoSquareRounded, IconShield, IconCategoryPlus, IconMapPin2 } from "@tabler/icons-react";
@@ -17,10 +18,12 @@ import { useEffect, useState } from "react";
 import TextEditor from "../../../UtilityComp/TextEditor";
 import BodyPartSelect from "./BodyPartSelect";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
-import { INCIDENT_STATUS_OPTIONS } from "../incidentLabels";
+import { incidentStatusColor } from "../incidentLabels";
+import { useTranslation } from "react-i18next";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, workAreas, workProcesses, departments }: any) => {
 
+    const { t } = useTranslation('incidents');
 
     // EPI organisés en 3 catégories anatomiques pour saisie rapide terrain
     const ppeCategories = [
@@ -108,9 +111,19 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         <div className="p-1 rounded bg-teal-100/80">
                             <IconInfoSquareRounded size={14} className="text-teal-700" />
                         </div>
-                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">Informations générales</h2>
+                        <h2 className="text-xs text-slate-800 uppercase tracking-wider">{t('declaration.generalInfo')}</h2>
                     </div>
-                    <Select size="xs" aria-label="Statut de l'incident" {...form.getInputProps("status")} data={INCIDENT_STATUS_OPTIONS} allowDeselect={false} w={180} />
+                    {/* Statut NON choisi à la création (spec §2.3) : un incident naît dans
+                        son état initial et TRANSITE ensuite. L'ancien <Select> proposait
+                        toutes les options, dont « Clôturé » — état terminal : l'incident
+                        naissait alors définitivement figé, sans investigation possible.
+                        Le serveur impose désormais PENDING ; un badge lecture seule dit
+                        la vérité plutôt qu'un champ qui promet un choix inexistant. */}
+                    <Tooltip label={t('declaration.initialStatusHelp')} multiline w={260} withArrow>
+                        <Badge color={incidentStatusColor('PENDING')} variant="light" size="lg" aria-label={t('declaration.initialStatusAria')}>
+                            {t('status.PENDING')}
+                        </Badge>
+                    </Tooltip>
                 </header>
                 <div className="p-4 grid grid-cols-1 gap-3">
                     <TextInput size="sm" {...form.getInputProps("title")} label="Titre de l'incident" placeholder="Description courte et factuelle" withAsterisk />

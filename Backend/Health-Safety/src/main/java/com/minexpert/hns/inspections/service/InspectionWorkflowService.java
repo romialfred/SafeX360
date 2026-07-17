@@ -178,6 +178,7 @@ public class InspectionWorkflowService {
         GeneralInspection insp = loadOrThrow(inspectionId);
         assertCompany(insp, companyId);
         assertStatusIn(insp, "demarrer", InspectionStatus.SCHEDULED);
+        assertNotBeforePlannedDate(insp);
         InspectionStatus from = insp.getStatus();
         insp.setStatus(InspectionStatus.IN_PROGRESS);
         insp.setUpdatedAt(LocalDateTime.now());
@@ -200,6 +201,16 @@ public class InspectionWorkflowService {
         assertCompany(insp, companyId);
         assertStatusIn(insp, "saisir des findings",
                 InspectionStatus.SCHEDULED, InspectionStatus.IN_PROGRESS);
+        // Meme verrou que start() : cette methode fait sa PROPRE transition
+        // SCHEDULED -> IN_PROGRESS (voir plus bas). Sans ce controle, un POST
+        // direct sur /findings/batch demarrait une inspection future et
+        // enregistrait des constats ANTIDATES en contournant start() —
+        // exactement le trou que la regle vise a fermer. Une porte derobee
+        // annule la regle : elle doit etre gardee partout ou la transition a
+        // lieu, pas seulement sur le chemin nominal.
+        if (insp.getStatus() == InspectionStatus.SCHEDULED) {
+            assertNotBeforePlannedDate(insp);
+        }
         // Passe en IN_PROGRESS si c'etait SCHEDULED
         if (insp.getStatus() == InspectionStatus.SCHEDULED) {
             insp.setStatus(InspectionStatus.IN_PROGRESS);
@@ -572,6 +583,39 @@ public class InspectionWorkflowService {
     private void assertCompany(GeneralInspection insp, Long companyId) {
         if (companyId != null && !companyId.equals(insp.getCompanyId())) {
             throw new IllegalArgumentException("Inspection introuvable : " + insp.getId());
+        }
+    }
+
+    /**
+     * Verrou de planification (ISO 45001 §9.1 — surveillance et mesure) : une
+     * inspection ne démarre PAS avant sa date prévue.
+     *
+     * <p><b>Pourquoi c'est une règle métier et non une coquetterie d'IHM :</b>
+     * démarrer en avance produirait un constat daté d'un jour où rien n'a été
+     * observé sur le terrain. L'enregistrement perdrait sa valeur probante —
+     * exactement ce que l'auditeur cherche à détecter (« pencil-whipping »).
+     * La règle vit donc côté SERVEUR : une garde qui n'existe que dans l'IHM se
+     * contourne par un appel direct à l'API.</p>
+     *
+     * <p><b>Ce qui reste permis, volontairement :</b></p>
+     * <ul>
+     *   <li>démarrer LE JOUR prévu (comparaison sur la date, pas l'heure) ;</li>
+     *   <li>démarrer EN RETARD — jamais bloqué : un retard doit être rattrapable,
+     *       et il est déjà visible comme écart de conformité ;</li>
+     *   <li>avancer légitimement une inspection → on REPLANIFIE (acte tracé dans
+     *       l'historique) plutôt que de contourner silencieusement la date.</li>
+     * </ul>
+     *
+     * <p>Date nulle (donnée legacy) : pas de blocage.</p>
+     */
+    private void assertNotBeforePlannedDate(GeneralInspection insp) {
+        java.time.LocalDate planned = insp.getPlannedDate();
+        if (planned != null && planned.isAfter(java.time.LocalDate.now())) {
+            throw new IllegalStateException(
+                    "Inspection planifiee le "
+                            + planned.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            + " : elle ne peut pas demarrer avant cette date. "
+                            + "Replanifiez-la si l'execution doit etre avancee.");
         }
     }
 

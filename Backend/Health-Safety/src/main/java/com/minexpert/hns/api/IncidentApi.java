@@ -24,6 +24,8 @@ import com.minexpert.hns.dto.response.YearlyClosureData;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.incident.IncidentService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/incidents")
 @CrossOrigin
@@ -33,9 +35,16 @@ public class IncidentApi {
     @Autowired
     private IncidentService incidentService;
 
+    // @Valid est indispensable ICI : le @Validated de classe ne couvre que les
+    // parametres de methode (@RequestParam/@PathVariable), jamais le corps de la
+    // requete. Sans lui, les contraintes de IncidentDTO n'etaient JAMAIS evaluees —
+    // un titre vide ou de plus de 255 caracteres partait jusqu'a la base.
+    // Volontairement PAS de @Valid sur /update : ce endpoint recoit des incidents
+    // existants, et un rejet 400 y ferait perdre la saisie en cours. A traiter
+    // separement.
     @PostMapping("/report")
     public ResponseEntity<ResponseDTO> reportIncident(@RequestParam("companyId") Long companyId,
-            @RequestBody IncidentDTO incidentDTO) throws HSException {
+            @Valid @RequestBody IncidentDTO incidentDTO) throws HSException {
         incidentService.reportIncident(companyId, incidentDTO);
         return new ResponseEntity<>(new ResponseDTO("Incident reported successfully."), HttpStatus.OK);
     }

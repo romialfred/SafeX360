@@ -170,11 +170,16 @@ const AdhocActionsForm = () => {
                                     searchable
                                     {...form.getInputProps('assignedEmployeeId')}
                                 />
+                                {/* Échéance ≥ date de création (règle portée par le
+                                    serveur : ACTION_DEADLINE_BEFORE_CREATION). L'IHM
+                                    se contente de l'annoncer en interdisant la
+                                    sélection d'une date passée. */}
                                 <DateInput
                                     label={t('form.deadlineLabel')}
                                     placeholder={t('form.deadlinePlaceholder')}
                                     size="sm"
                                     withAsterisk
+                                    minDate={new Date()}
                                     leftSection={<IconCalendarDue size={14} />}
                                     {...form.getInputProps('deadline')}
                                 />

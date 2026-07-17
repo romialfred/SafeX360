@@ -110,10 +110,14 @@ export const NC_LEVEL_OPTIONS = Object.entries(NC_LEVEL_CONFIG).map(([value, cfg
 
 // ─── Statuts de plan d'action correctif ────────────────────────────────────
 
+// ⚠ Les valeurs DOIVENT correspondre exactement à l'enum backend ActionStatus :
+// PENDING, IN_PROGRESS, COMPLETED, CANCELLED (deux L), ON_HOLD. « CANCELED »
+// (un L) était envoyé tel quel : valeur inconnue de l'enum → Jackson levait
+// HttpMessageNotReadableException → 500 → saisie perdue.
 export const ACTION_STATUS_OPTIONS = [
     { value: 'PENDING', label: 'En attente' },
     { value: 'IN_PROGRESS', label: 'En cours' },
-    { value: 'CANCELED', label: 'Annulé' },
+    { value: 'CANCELLED', label: 'Annulé' },
     { value: 'COMPLETED', label: 'Terminé' },
 ];
 

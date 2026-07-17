@@ -128,6 +128,17 @@
         "trainingMessage": "Le module IA est en phase d'apprentissage sur vos données HSE. Pendant cette période, les analyses fournies sont simulées et vous permettent de tester l'ensemble du workflow de déclaration.",
         "refsLoading": "Chargement du paramétrage…",
         "setupIncompleteTitle": "Paramétrage incomplet pour cette mine",
-        "setupIncompleteMessage": "Au moins un lieu, une zone de travail et un processus de travail actifs sont requis pour déclarer un incident. Demandez à un administrateur de les créer dans Paramètres, puis rechargez la page."
+        "setupIncompleteMessage": "Au moins un lieu, une zone de travail et un processus de travail actifs sont requis pour déclarer un incident. Demandez à un administrateur de les créer dans Paramètres, puis rechargez la page.",
+        "contextTitle": "Contexte",
+        "contextHelp": "Le département est enregistré avec l'incident. Votre description aide l'IA à analyser la situation et est conservée dans la déclaration.",
+        "departmentLabel": "Département concerné",
+        "departmentHelp": "Enregistré avec l'incident — il conditionne son suivi et les statistiques par département.",
+        "departmentPlaceholder": "Sélectionner le département",
+        "departmentsLoadError": "Impossible de charger les départements",
+        "testimonyLabel": "Ce que vous avez constaté",
+        "testimonyHelp": "Conservé dans la description de l'incident, en complément de l'analyse IA.",
+        "testimonyPlaceholder": "ex : J'ai remarqué que les harnais étaient au sol vers 10h",
+        "testimonyPrefix": "— Témoignage du déclarant :",
+        "submitError": "Impossible d'enregistrer la déclaration"
     }
 }

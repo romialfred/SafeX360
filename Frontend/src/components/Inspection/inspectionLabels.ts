@@ -202,3 +202,74 @@ export const initialsOf = (name: string): string =>
         .slice(0, 2)
         .map((p) => p[0]?.toUpperCase() ?? '')
         .join('') || '?';
+
+// ─── 3. Verrou d'exécution avant la date prévue (SPEC §2.1) ──────────────────
+//
+// Règle métier portée par le SERVEUR (`InspectionWorkflowService.start()` →
+// `assertNotBeforePlannedDate`) : `plannedDate > aujourd'hui` ⇒ démarrage refusé
+// (HTTP 409). L'IHM ne fait que l'ANNONCER : bouton désactivé + explication.
+// Elle ne l'« applique » pas — une règle qui ne vit que dans l'IHM se contourne.
+//
+// Deux invariants volontaires :
+//   - démarrer LE JOUR PRÉVU est permis ⇒ comparaison sur la DATE seule ;
+//   - démarrer EN RETARD n'est JAMAIS bloqué (le retard est un écart de
+//     conformité à rendre visible — cf. `isInspectionOverdue` — pas à masquer
+//     en poussant l'utilisateur à fabriquer une inspection à la bonne date).
+//
+// ATTENTION FUSEAU : `Date#toISOString()` bascule en UTC et décale le jour dans
+// tout fuseau non-UTC (à Ouagadougou/Montréal, le 15 devient le 14 ou le 16).
+// On compare donc des dates LOCALES, jamais des instants.
+
+/** Date du jour au format ISO `YYYY-MM-DD`, en heure LOCALE (jamais UTC). */
+export const todayIsoLocal = (): string => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+};
+
+/**
+ * Réduit une `plannedDate` (`YYYY-MM-DD`, ou ISO datetime pour les données
+ * legacy) à son jour `YYYY-MM-DD`. Retourne null si absente/illisible : une
+ * date inexploitable ne doit JAMAIS bloquer — c'est le serveur qui tranche.
+ */
+export const plannedDayOf = (plannedDate?: string | null): string | null => {
+    if (!plannedDate) return null;
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(plannedDate).trim());
+    return m ? m[1] : null;
+};
+
+/**
+ * L'exécution est-elle permise aujourd'hui ?
+ * Vrai si aucune date prévue (legacy) ou si `plannedDate <= aujourd'hui`.
+ * Les chaînes `YYYY-MM-DD` sont ordonnées : la comparaison lexicographique
+ * équivaut à la comparaison chronologique, sans passer par `Date`.
+ */
+export const isExecutableNow = (plannedDate?: string | null): boolean => {
+    const day = plannedDayOf(plannedDate);
+    return day === null || day <= todayIsoLocal();
+};
+
+/**
+ * Écart de conformité (ISO 45001 §9.1) : inspection encore `SCHEDULED` alors
+ * que la date prévue est passée. À rendre visible, jamais à bloquer.
+ */
+export const isInspectionOverdue = (plannedDate?: string | null, status?: string): boolean => {
+    if (status !== 'SCHEDULED') return false;
+    const day = plannedDayOf(plannedDate);
+    return day !== null && day < todayIsoLocal();
+};
+
+/**
+ * Formate une date ISO selon la locale i18n courante, sans jamais la décaler :
+ * `YYYY-MM-DD` est construit comme une date LOCALE (`new Date('2026-07-20')`
+ * serait interprété en UTC et afficherait le 19 dans les fuseaux négatifs).
+ */
+export const formatInspectionDate = (iso: string | null | undefined, lang: string): string => {
+    const day = plannedDayOf(iso);
+    if (!day) return iso ?? '—';
+    const [y, m, d] = day.split('-').map(Number);
+    const local = new Date(y, m - 1, d);
+    if (Number.isNaN(local.getTime())) return day;
+    return local.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB');
+};

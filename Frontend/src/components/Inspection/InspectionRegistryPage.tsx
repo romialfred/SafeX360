@@ -42,6 +42,11 @@ import {
     type InspectionTemplateType,
 } from '../../services/InspectionService';
 import InspectionStatusBadge from './InspectionStatusBadge';
+import {
+    formatInspectionDate,
+    isExecutableNow,
+    isInspectionOverdue,
+} from './inspectionLabels';
 
 /* ─────────────────────────────────────────────────────────────────────────
  *  KPI tile reutilisable (memes proportions que BlastRegistryPage)
@@ -161,19 +166,27 @@ export default function InspectionRegistryPage() {
         return k;
     }, [items]);
 
-    const formatDate = (iso?: string) => {
-        if (!iso) return '—';
-        try {
-            const d = new Date(iso);
-            return d.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB');
-        } catch (_e) {
-            return iso;
-        }
-    };
+    const formatDate = (iso?: string) => (iso ? formatInspectionDate(iso, i18n.language) : '—');
+
+    /**
+     * Statut éditable ⇒ la saisie terrain est atteignable. Ne dit RIEN de la
+     * date : le verrou de date est porté séparément par `canExecuteNow`.
+     */
+    const isEditableStatus = (it: InspectionSummaryDTO) =>
+        it.status === 'SCHEDULED' || it.status === 'IN_PROGRESS' || it.status === 'REJECTED';
+
+    /**
+     * SPEC §2.1 — une inspection déjà démarrée (IN_PROGRESS) ou rejetée
+     * (REJECTED, à corriger) n'est plus concernée par le verrou de date : elle
+     * a franchi `start()`. Seule une SCHEDULED datée du futur est retenue.
+     */
+    const canExecuteNow = (it: InspectionSummaryDTO) =>
+        it.status !== 'SCHEDULED' || isExecutableNow(it.plannedDate);
 
     const handleRowClick = (it: InspectionSummaryDTO) => {
-        // Phase 4 : execution mobile-first. En attendant, on navigue vers le detail.
-        if (it.status === 'SCHEDULED' || it.status === 'IN_PROGRESS' || it.status === 'REJECTED') {
+        // Une ligne dont la date n'est pas atteinte ne doit pas lancer la saisie :
+        // on ouvre le détail, où le verrou est expliqué (SPEC §2.1).
+        if (isEditableStatus(it) && canExecuteNow(it)) {
             navigate(`/inspections/execute/${it.id}`);
         } else {
             navigate(`/inspections/detail/${it.id}`);
@@ -369,10 +382,10 @@ export default function InspectionRegistryPage() {
                                 </thead>
                                 <tbody>
                                     {filtered.map((it) => {
-                                        const isExecutable =
-                                            it.status === 'SCHEDULED' ||
-                                            it.status === 'IN_PROGRESS' ||
-                                            it.status === 'REJECTED';
+                                        const isExecutable = isEditableStatus(it);
+                                        const executable = canExecuteNow(it);
+                                        const overdue = isInspectionOverdue(it.plannedDate, it.status);
+                                        const plannedLabel = formatDate(it.plannedDate);
                                         return (
                                             <tr
                                                 key={it.id}
@@ -400,7 +413,20 @@ export default function InspectionRegistryPage() {
                                                     {it.siteName || '—'}
                                                 </td>
                                                 <td className="px-3 py-2">
-                                                    <InspectionStatusBadge status={it.status} />
+                                                    <div className="inline-flex items-center gap-1 flex-wrap">
+                                                        <InspectionStatusBadge status={it.status} />
+                                                        {/* Écart de conformité ISO 45001 §9.1 : jamais bloquant,
+                                                            mais il doit se voir. */}
+                                                        {overdue && (
+                                                            <span
+                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-medium border text-[10.5px] bg-rose-50 border-rose-200 text-rose-800"
+                                                                title={t('registry.overdueTitle', { date: plannedLabel })}
+                                                            >
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true" />
+                                                                {t('registry.overdueBadge')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-3 py-2 text-right text-slate-700 tabular-nums">
                                                     {it.findingsRecorded}/{it.totalCheckpoints}
@@ -428,15 +454,32 @@ export default function InspectionRegistryPage() {
                                                             <IconEye size={14} stroke={1.8} />
                                                         </button>
                                                         {isExecutable && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => navigate(`/inspections/execute/${it.id}`)}
-                                                                className="p-1 rounded text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition"
-                                                                title={t('registry.actions.execute')}
-                                                                aria-label={t('registry.actions.execute')}
+                                                            /* Jamais un bouton grisé muet : il dit POURQUOI et À PARTIR
+                                                               DE QUAND (SPEC §2.1). Le `title` est porté par le SPAN :
+                                                               un <button disabled> n'émet pas d'événement de survol
+                                                               dans plusieurs navigateurs, l'infobulle y serait perdue. */
+                                                            <span
+                                                                title={
+                                                                    executable
+                                                                        ? t('registry.actions.execute')
+                                                                        : t('registry.executeLocked', { date: plannedLabel })
+                                                                }
+                                                                className="inline-flex"
                                                             >
-                                                                <IconPlayerPlay size={14} stroke={1.8} />
-                                                            </button>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!executable}
+                                                                    onClick={() => navigate(`/inspections/execute/${it.id}`)}
+                                                                    className="p-1 rounded text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                                                                    aria-label={
+                                                                        executable
+                                                                            ? t('registry.actions.execute')
+                                                                            : t('registry.executeLocked', { date: plannedLabel })
+                                                                    }
+                                                                >
+                                                                    <IconPlayerPlay size={14} stroke={1.8} />
+                                                                </button>
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </td>

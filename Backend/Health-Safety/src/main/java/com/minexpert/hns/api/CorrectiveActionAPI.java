@@ -23,6 +23,8 @@ import com.minexpert.hns.dto.response.CorrectiveActionResponse;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.incident.CorrectiveActionService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/corrective-action")
 @CrossOrigin
@@ -34,7 +36,7 @@ public class CorrectiveActionAPI {
 
     @PostMapping("/create")
     public ResponseEntity<Long> createCorrectiveAction(@RequestParam("companyId") Long companyId,
-            @RequestBody CorrectiveActionDTO correctiveActionDTO)
+            @Valid @RequestBody CorrectiveActionDTO correctiveActionDTO)
             throws HSException {
         return new ResponseEntity<>(correctiveActionService.addCorrectiveAction(companyId, correctiveActionDTO),
                 HttpStatus.OK);
