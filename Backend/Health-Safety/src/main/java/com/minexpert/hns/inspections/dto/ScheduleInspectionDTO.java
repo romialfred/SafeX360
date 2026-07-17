@@ -43,7 +43,9 @@ public class ScheduleInspectionDTO {
      * Libelle affiche de la cible (denormalise, ex : "Camion Volvo A40G #18",
      * "Atelier maintenance Sud", "Procedure LOTO ligne TC-04").
      */
-    @NotNull
+    // Message explicite : sans lui, Bean Validation remonte « must not be null »
+    // brut dans la liste d'erreurs, au milieu de messages métier en français.
+    @NotNull(message = "Le libelle de la cible est obligatoire")
     @Size(max = 200)
     private String targetLabel;
 

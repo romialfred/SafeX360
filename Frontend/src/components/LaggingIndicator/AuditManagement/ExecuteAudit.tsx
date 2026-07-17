@@ -39,7 +39,7 @@ import { PickList } from "primereact/picklist";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { getBase64 } from "../../../utility/DocumentUtility";
-import { REC_PRIORITY_OPTIONS, REC_STATUS_OPTIONS, VALIDATOR_STATUS_OPTIONS, toIsoDateLocalOrNull } from "./auditLabels";
+import { REC_PRIORITY_OPTIONS, VALIDATOR_STATUS_OPTIONS, toIsoDateLocalOrNull } from "./auditLabels";
 import { getObservationDropdown } from "../../../services/ObservationService";
 import AuditChecklistPanel from "./AuditChecklistPanel";
 
@@ -59,10 +59,6 @@ const ExecuteAudit = () => {
     const recPriorityOptions = REC_PRIORITY_OPTIONS.map((o) => ({
         value: o.value,
         label: t(`recPriority.${o.value}`, { defaultValue: o.label }),
-    }));
-    const recStatusOptions = REC_STATUS_OPTIONS.map((o) => ({
-        value: o.value,
-        label: t(`recStatus.${o.value}`, { defaultValue: o.label }),
     }));
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -148,7 +144,7 @@ const ExecuteAudit = () => {
             actionManagerId: "",
             correctiveAction: "",
             deadline: null,
-            status: "",
+            // Pas de `status` : le service force PENDING/0 % à la création.
         })
     };
 
@@ -297,8 +293,18 @@ const ExecuteAudit = () => {
                 }));
 
 
+                // `preDate` est un LocalDate côté backend : elle DOIT être
+                // normalisée comme interviewDate/deadline. Envoyée brute, la Date
+                // du DateInput part en UTC (toISOString) et peut décaler d'un jour
+                // — inacceptable sur la date d'un rapport d'audit (pièce ISO 19011).
+                const report = {
+                    ...values.report,
+                    docs,
+                    preDate: toIsoDateLocalOrNull(values.report.preDate),
+                };
+
                 dispatch(showOverlay());
-                executeAudit({ ...values, report: { ...values.report, docs }, executions, recommendations })
+                executeAudit({ ...values, report, executions, recommendations })
                     .then(() => {
                         successNotification(t('execute.savedToast'));
                         navigate("/audit-management");
@@ -631,14 +637,15 @@ const ExecuteAudit = () => {
                                         <TextEditor form={form} id={`recommendations.${index}.correctiveAction`} title={t('execute.recCorrectiveAction')} />
                                     </div>
 
-                                    {/* LOT 40 P1: responsive grid breakpoints */}
+                                    {/* Pas de sélecteur de STATUT ici : une recommandation naît
+                                        « En attente » avec 0 % de progression — le service le force
+                                        (RecommendationServiceImpl). Le champ affiché était donc un
+                                        leurre : choisir « Terminée » à la création n'avait aucun
+                                        effet. Le statut évolue ensuite via le suivi
+                                        (UpdateRecommendation / RecommendationFileTab), où il est
+                                        contraint aux transitions valides. */}
                                     <div className="grid col-span-2 grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                                         <DateInput label={t('execute.recDeadline')} placeholder={t('execute.datePlaceholder')} leftSection={<IconCalendar />} withAsterisk {...form.getInputProps(`recommendations.${index}.deadline`)} />
-                                        <Select {...form.getInputProps(`recommendations.${index}.status`)}
-                                            label={t('execute.status')}
-                                            placeholder={t('execute.selectStatus')}
-                                            data={recStatusOptions}
-                                        />
                                     </div>
                                 </Fieldset>
                             ))}
