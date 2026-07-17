@@ -9,6 +9,7 @@ import {
     concludeEffectivenessCheck,
 } from '../../../services/AuditIsoService';
 import { errorNotification, successNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
+import { toLocalDate } from '../../../utility/dateConversion';
 
 /**
  * LOT 52 — Vérification d'efficacité d'une recommandation d'audit
@@ -52,7 +53,9 @@ const EffectivenessPanel = ({ recommendationId }: { recommendationId: number }) 
         setLoading(true);
         try {
             await planEffectivenessCheck(recommendationId, {
-                dueDate: dueDate.toISOString().slice(0, 10),
+                // toISOString() est banni pour une date-only : à 23h en UTC-… il
+                // renvoie le lendemain. On compose YYYY-MM-DD en heure locale.
+                dueDate: toLocalDate(dueDate)!,
                 evaluatorEmployeeId: null,
             });
             successNotification('Vérification d\'efficacité planifiée');
