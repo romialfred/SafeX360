@@ -109,6 +109,44 @@ public class ExceptionControllerAdvice {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    // ── Erreurs de ROUTAGE : erreurs CLIENT, pas des pannes serveur ──
+    //
+    // Sans ces handlers, une URL inconnue tombait dans le catch-all Exception et
+    // renvoyait « 500 An internal error occurred ». Trois conséquences :
+    //   1. mensonger — un 500 annonce un serveur en panne alors que la requête
+    //      est simplement mal formée côté appelant ;
+    //   2. la supervision se remplit de fausses alertes 500 ;
+    //   3. diagnostic impossible — « endpoint non déployé » et « endpoint qui
+    //      plante » deviennent indiscernables (vécu au déploiement de l'édition
+    //      d'équipe : plusieurs sondes de version rendues aveugles).
+    // Spring Boot 3.4 lève NoResourceFoundException pour une route inconnue ;
+    // NoHandlerFoundException reste possible selon la configuration.
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ErrorInfo> noResourceHandler(
+            org.springframework.web.servlet.resource.NoResourceFoundException exception) {
+        ErrorInfo error = new ErrorInfo("RESOURCE_NOT_FOUND",
+                HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.NoHandlerFoundException.class)
+    public ResponseEntity<ErrorInfo> noHandlerHandler(
+            org.springframework.web.servlet.NoHandlerFoundException exception) {
+        ErrorInfo error = new ErrorInfo("RESOURCE_NOT_FOUND",
+                HttpStatus.NOT_FOUND.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    /** Bonne URL, mauvaise méthode (ex. GET sur un chemin mappé en PUT) → 405. */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorInfo> methodNotSupportedHandler(
+            org.springframework.web.HttpRequestMethodNotSupportedException exception) {
+        ErrorInfo error = new ErrorInfo("METHOD_NOT_ALLOWED",
+                HttpStatus.METHOD_NOT_ALLOWED.value(), LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorInfo> generalExceptionHandler(Exception exception) {
         log.error("Unhandled exception", exception);
