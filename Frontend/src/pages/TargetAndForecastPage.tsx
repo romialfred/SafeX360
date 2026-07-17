@@ -3,7 +3,7 @@ import TargetAndForeCastTabs from "../components/NewComponents/TargetAndForecast
 const TargetAndForecastPage = () => {
 
     return (
-        <div className="p-5">  <TargetAndForeCastTabs /> </div>
+        <div className="min-h-full"><TargetAndForeCastTabs /></div>
     )
 }
 

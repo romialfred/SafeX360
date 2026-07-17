@@ -309,3 +309,9 @@ ERROR_EVENT_STATUS_UNCHANGED: Le statut cible est identique au statut actuel.
 ERROR_EVENT_STATUS_REGRESSION_FORBIDDEN: Transition interdite, le workflow ne peut pas revenir en arriere (sauf reouverture justifiee).
 CAUSAL_ANALYSIS_NOT_FOUND: L analyse causale indiquee n existe pas.
 CAUSE_NOT_FOUND: La cause indiquee n existe pas.
+
+# Module Indicateurs de performance HSE (Target and Forecast) — messages d erreur
+INDICATOR_NOT_FOUND: L indicateur indique n existe pas (ou n appartient pas a cette mine).
+INDICATOR_NAME_REQUIRED: Le nom de l indicateur est obligatoire.
+INDICATOR_ALREADY_EXISTS: Un indicateur avec ce code existe deja pour cette mine.
+INDICATOR_PLAN_YEAR_REQUIRED: L annee de planification est obligatoire.
