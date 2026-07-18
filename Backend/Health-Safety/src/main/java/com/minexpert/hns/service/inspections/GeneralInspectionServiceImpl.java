@@ -25,6 +25,7 @@ import com.minexpert.hns.dto.response.LastInspectionDTO;
 import com.minexpert.hns.dto.response.ParticipantResponse;
 import com.minexpert.hns.entity.GeneralInspection;
 import com.minexpert.hns.enums.InspectionStatus;
+import com.minexpert.hns.inspections.workflow.InspectionWorkflowRules;
 import com.minexpert.hns.enums.InspectionTemplateType;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.inspections.GeneralInspectionRepository;
@@ -127,6 +128,23 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
         public void updateInspectionStatus(Long id, InspectionStatus status) throws HSException {
                 GeneralInspection inspection = generalInspectionRepository.findById(id)
                                 .orElseThrow(() -> new HSException("GENERAL_INSPECTION_NOT_FOUND"));
+
+                // Cette methode est la VOIE BRUTE d'ecriture du statut (sauvegarde de
+                // processus, historique) : elle recevait jusqu'ici le statut tel quel
+                // depuis le client, sans machine a etats ni verrou de date — le verrou
+                // ne vivait donc que dans l'IHM, contournable par appel direct.
+                // On applique desormais EXACTEMENT les memes regles que le service
+                // metier garde (source unique : InspectionWorkflowRules).
+                //
+                // Statut absent : on ne touche pas au statut courant (sauvegarde de
+                // brouillon qui ne porte pas d'intention de transition).
+                if (status == null) {
+                        inspection.setUpdatedAt(LocalDateTime.now());
+                        generalInspectionRepository.save(inspection);
+                        return;
+                }
+                InspectionWorkflowRules.assertTransitionAllowed(inspection.getStatus(), status);
+                InspectionWorkflowRules.assertNotBeforePlannedDate(inspection.getPlannedDate(), status);
 
                 inspection.setStatus(status);
                 inspection.setUpdatedAt(LocalDateTime.now());

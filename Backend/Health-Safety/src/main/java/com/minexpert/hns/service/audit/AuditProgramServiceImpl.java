@@ -87,12 +87,16 @@ public class AuditProgramServiceImpl implements AuditProgramService {
         program.setObjectives(programDTO.getObjectives());
         program.setScope(programDTO.getScope());
         program.setResources(programDTO.getResources());
-        if (programDTO.getStatus() != null) {
-            program.setStatus(programDTO.getStatus());
-        }
-        if (programDTO.getCompanyId() != null) {
-            program.setCompanyId(programDTO.getCompanyId());
-        }
+        // ISO 19011 §5.4 — l'approbation d'un programme est un ACTE TRACÉ : elle
+        // passe exclusivement par approveProgram(), qui enregistre approvedBy et
+        // approvedAt. Accepter le statut du corps de requête permettait de poser
+        // APPROVED sans aucun approbateur ni date : le programme paraissait
+        // approuvé alors que rien ne prouvait qui l'avait approuvé.
+        // Le statut n'est donc PLUS modifiable par update (l'IHM renvoyait de
+        // toute façon la valeur d'origine, jamais un choix de l'utilisateur).
+        //
+        // De même, la mine de rattachement n'est pas réassignable par le corps :
+        // l'accepter permettait de DÉPLACER un programme vers une autre mine.
         program.setUpdatedAt(LocalDateTime.now());
         auditProgramRepository.save(program);
     }

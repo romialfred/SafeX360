@@ -207,10 +207,27 @@ public class InvestigationServiceImpl implements InvestigationService {
             });
         }
 
-        dto.setUpdatedAt(LocalDateTime.now());
+        // `toEntity()` porte les conversions de format (équipe et causes sont des
+        // listes côté DTO, sérialisées en texte côté entité) : on le réutilise
+        // pour le CONTENU éditable...
         Investigation entity = dto.toEntity();
         entity.setEvidence(mediaService.saveAllMedia(dto.getEvidence()));
-        investigationRepository.save(entity).getId();
+
+        // ...puis on RESTAURE les champs qui appartiennent au SERVEUR depuis
+        // l'entité persistée. Auparavant l'objet était intégralement reconstruit
+        // depuis la requête : le statut, la progression, la mine, l'incident de
+        // rattachement et la date de création étaient dictés par le client. Un
+        // appel direct pouvait donc déclarer une investigation terminée sans
+        // passer par le workflow, ou la rattacher à une autre mine. Ces champs
+        // transitent par les actions dédiées, jamais par une édition de contenu.
+        entity.setId(investigation.getId());
+        entity.setStatus(investigation.getStatus());
+        entity.setProgress(investigation.getProgress());
+        entity.setCompanyId(investigation.getCompanyId());
+        entity.setIncident(investigation.getIncident());
+        entity.setCreatedAt(investigation.getCreatedAt());
+        entity.setUpdatedAt(LocalDateTime.now());
+        investigationRepository.save(entity);
     }
 
     @Override

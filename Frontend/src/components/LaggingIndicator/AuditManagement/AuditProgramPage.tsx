@@ -27,6 +27,7 @@ import IsoBadge from "../../UtilityComp/IsoBadge";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { formatDateShort } from "../../../utility/DateFormats";
+import { getEmployeeDropdown } from "../../../services/EmployeeService";
 import {
     approveAuditProgram,
     createAuditProgram,
@@ -71,6 +72,10 @@ const AuditProgramPage = () => {
     const [riskSuggestions, setRiskSuggestions] = useState<RiskSuggestionDTO[]>([]);
     const [mode, setMode] = useState<PageMode>('list');
     const [statusFilter, setStatusFilter] = useState('ALL');
+    // Annuaire id → nom, pour afficher QUI a approuvé le programme.
+    // ISO 19011 §5.4 : une approbation doit être attribuable — afficher la seule
+    // date laissait la traçabilité à moitié faite.
+    const [empNames, setEmpNames] = useState<Record<number, string>>({});
 
     const selectedProgram = useMemo(
         () => programs.find((p) => p.id === selectedId) ?? null,
@@ -124,6 +129,23 @@ const AuditProgramPage = () => {
 
     useEffect(() => { fetchPrograms(); }, []);
 
+    // Annuaire employés (dégradation gracieuse : sans lui on affiche l'id).
+    useEffect(() => {
+        getEmployeeDropdown()
+            .then((list: any) => {
+                const map: Record<number, string> = {};
+                (Array.isArray(list) ? list : []).forEach((e: any) => {
+                    if (e?.id && e?.name) map[Number(e.id)] = e.name;
+                });
+                setEmpNames(map);
+            })
+            .catch(() => setEmpNames({}));
+    }, []);
+
+    /** Nom de l'approbateur, ou repli lisible si l'annuaire est indisponible. */
+    const approverName = (id?: number | null) =>
+        id == null ? null : (empNames[Number(id)] ?? `Employé #${id}`);
+
     useEffect(() => {
         if (selectedId == null) {
             setRiskSuggestions([]);
@@ -167,7 +189,6 @@ const AuditProgramPage = () => {
         if (!form.isValid()) return;
         const values = form.values;
         const isEdit = mode === 'edit' && values.id != null;
-        const original = isEdit ? programs.find((p) => p.id === values.id) : null;
         const payload: AuditProgramDTO = {
             id: values.id,
             year: values.year,
@@ -175,8 +196,11 @@ const AuditProgramPage = () => {
             objectives: values.objectives,
             scope: values.scope,
             resources: values.resources,
-            status: original?.status ?? null,
-            companyId: original?.companyId ?? null,
+            // Statut et mine ne sont PAS envoyés : le serveur les ignore
+            // désormais (le statut transite par « Approuver », qui trace
+            // l'approbateur — ISO 19011 §5.4 ; la mine n'est pas réassignable).
+            // On renvoyait la valeur d'origine, ce qui laissait croire à un
+            // champ modifiable alors qu'il ne l'était pas.
         };
 
         dispatch(showOverlay());
@@ -314,7 +338,10 @@ const AuditProgramPage = () => {
                         {kpis ? `${kpis.actionsEnRetard} action${kpis.actionsEnRetard > 1 ? 's' : ''} en retard` : '— en retard'}
                     </span>
                     {program.status === 'APPROVED' && program.approvedAt && (
-                        <span className="text-slate-400">Approuvé le {formatDateShort(program.approvedAt)}</span>
+                        <span className="text-slate-400">
+                            Approuvé le {formatDateShort(program.approvedAt)}
+                            {approverName(program.approvedBy) && <> par {approverName(program.approvedBy)}</>}
+                        </span>
                     )}
                 </div>
 
@@ -665,6 +692,22 @@ const AuditProgramPage = () => {
                                     {programStatusLabel(selectedProgram.status)}
                                 </Badge>
                             </div>
+                            {/* Traçabilité de l'approbation (ISO 19011 §5.4) : un
+                                programme approuvé doit dire QUI l'a approuvé et QUAND.
+                                Le statut n'est pas modifiable ici — il transite par
+                                l'action « Approuver », seule à horodater et signer. */}
+                            {selectedProgram.status === 'APPROVED' && selectedProgram.approvedAt && (
+                                <div className="flex items-center gap-2 -mt-3 text-[12px] text-slate-500">
+                                    <IconCircleCheck size={14} className="text-emerald-600" />
+                                    <span>
+                                        Programme approuvé le{' '}
+                                        <span className="text-slate-700">{formatDateShort(selectedProgram.approvedAt)}</span>
+                                        {approverName(selectedProgram.approvedBy) && (
+                                            <> par <span className="text-slate-700">{approverName(selectedProgram.approvedBy)}</span></>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
                             {renderKpiSection()}
                             {renderRiskSection()}
                         </div>
