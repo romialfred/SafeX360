@@ -29,7 +29,7 @@
  * page d'exécution).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Select } from '@mantine/core';
@@ -47,10 +47,14 @@ import {
     IconHistory,
     IconInfoCircle,
     IconFileCheck,
+    IconListCheck,
+    IconUsers,
+    IconClock,
 } from '@tabler/icons-react';
 
 import {
     listTemplates,
+    getTemplate,
     scheduleInspection,
     getLastInspection,
     type InspectionTemplateType,
@@ -346,6 +350,55 @@ export default function InspectionScheduleForm() {
         return byType.filter((tpl) => String(tpl.scopeRef ?? '').trim().toUpperCase() === wanted);
     }, [templates, form.type, selectedRecord, targetFamily]);
 
+    // ─── Aperçu des points de contrôle ────────────────────────────────────────
+    //
+    // POURQUOI. L'étape « grille de contrôle » n'affichait que le NOM du modèle
+    // et un décompte. Or les modèles de lieu s'appellent « Atelier de
+    // maintenance », « Magasin d'explosifs »… — c'est-à-dire exactement comme
+    // des lieux. Après avoir choisi un lieu à l'étape 1, l'utilisateur croyait
+    // donc qu'on lui redemandait le lieu. Ce qu'il cherchait — éclairage, niveau
+    // sonore, sols dégagés — existe bel et bien, mais comme POINTS DE CONTRÔLE
+    // du modèle, et n'était affiché nulle part avant l'exécution.
+    //
+    // On charge donc les points de contrôle des modèles applicables (au plus
+    // quelques-uns) pour les montrer dès la planification. Une `ref` mémorise
+    // les identifiants déjà demandés : sans elle, la dépendance sur l'état
+    // rechargerait en boucle.
+    const [checkpointPreviews, setCheckpointPreviews] = useState<Record<number, string[]>>({});
+    const requestedTemplateIds = useRef<Set<number>>(new Set());
+
+    useEffect(() => {
+        const missing = applicableTemplates.filter((tpl) => !requestedTemplateIds.current.has(tpl.id));
+        if (missing.length === 0) return;
+        missing.forEach((tpl) => requestedTemplateIds.current.add(tpl.id));
+        let alive = true;
+        Promise.all(
+            missing.map((tpl) =>
+                getTemplate(tpl.id)
+                    .then(
+                        (detail) =>
+                            [
+                                tpl.id,
+                                (detail.checkpoints ?? [])
+                                    .slice()
+                                    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+                                    .map((cp) => cp.label)
+                                    .filter(Boolean),
+                            ] as const,
+                    )
+                    // Un aperçu indisponible ne doit JAMAIS bloquer la planification :
+                    // on retombe sur la liste vide, l'écran affiche alors le seul
+                    // décompte, comme avant.
+                    .catch(() => [tpl.id, []] as const),
+            ),
+        ).then((entries) => {
+            if (alive) setCheckpointPreviews((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        });
+        return () => {
+            alive = false;
+        };
+    }, [applicableTemplates]);
+
     const autoTemplate =
         selectedRecord && applicableTemplates.length === 1 ? applicableTemplates[0] : null;
     /** Un seul modèle applicable → l'étape « Modèle » n'a plus rien à demander. */
@@ -623,8 +676,12 @@ export default function InspectionScheduleForm() {
                     </div>
                 )}
 
-                {/* Etape courante */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 mb-4">
+                {/* Corps : étape courante à gauche, récapitulatif persistant à droite.
+                    Le volet lève l'ambiguïté qui rendait ce formulaire confus — la
+                    cible retenue reste VISIBLE à chaque étape, donc on ne peut plus
+                    croire qu'une étape ultérieure la redemande. */}
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 mb-4 items-start">
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 sm:p-5 min-w-0">
                     {step === 1 && (
                         <StepTarget
                             form={form}
@@ -651,6 +708,8 @@ export default function InspectionScheduleForm() {
                             onSelect={(id) => set('templateId', id)}
                             familyLabel={familyLabel}
                             familyMissing={familyMissing}
+                            checkpointPreviews={checkpointPreviews}
+                            targetLabel={form.targetLabel}
                         />
                     )}
                     {step === 3 && (
@@ -664,8 +723,25 @@ export default function InspectionScheduleForm() {
                             }
                             templateAutoApplied={skipTemplateStep}
                             familyLabel={familyLabel}
+                            checkpointPreviews={checkpointPreviews}
                         />
                     )}
+                </div>
+
+                    {/* Volet récapitulatif — visible à TOUTES les étapes. */}
+                    <RecapPanel
+                        form={form}
+                        typeLabel={
+                            // Même clé que les cartes de l'étape 1 : le volet et
+                            // l'étape nomment le type exactement pareil.
+                            form.type ? t(`schedule.typeStep.${form.type}.title`, { defaultValue: form.type }) : null
+                        }
+                        familyLabel={familyLabel}
+                        appliedTemplate={templates.find((tpl) => tpl.id === form.templateId) ?? null}
+                        checkpointPreviews={checkpointPreviews}
+                        employees={employees}
+                        locale={i18n.language}
+                    />
                 </div>
 
                 {/* Footer actions */}
@@ -1001,6 +1077,8 @@ function StepTemplate({
     onSelect,
     familyLabel,
     familyMissing,
+    checkpointPreviews,
+    targetLabel,
 }: {
     templates: InspectionTemplateSummaryDTO[];
     loading: boolean;
@@ -1008,6 +1086,8 @@ function StepTemplate({
     onSelect: (id: number) => void;
     familyLabel: string;
     familyMissing: boolean;
+    checkpointPreviews: Record<number, string[]>;
+    targetLabel: string;
 }) {
     const { t } = useTranslation('inspection');
     return (
@@ -1015,6 +1095,21 @@ function StepTemplate({
             <h2 className="text-[14px] font-semibold text-slate-800 mb-1">
                 {t('schedule.templateStep.heading')}
             </h2>
+            {/* Rappel EXPLICITE de la cible déjà retenue. Sans lui, cette étape —
+                dont les modèles de lieu s'appellent « Atelier de maintenance »,
+                « Magasin d'explosifs »… — se lisait comme une seconde demande de
+                lieu, alors que le lieu était déjà choisi à l'étape 1. */}
+            {targetLabel && (
+                <div className="mb-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-[12px]">
+                    <IconMapPin size={14} stroke={1.8} className="mt-0.5 flex-shrink-0 text-slate-500" />
+                    <span className="text-slate-600">
+                        {t('schedule.templateStep.targetRecall', {
+                            defaultValue: 'Objet retenu : {{target}}. Choisissez maintenant la grille de points à contrôler.',
+                            target: targetLabel,
+                        })}
+                    </span>
+                </div>
+            )}
             {!loading && !familyMissing && templates.length > 0 && (
                 <p className="text-[11.5px] text-slate-500 mb-3">
                     {t('schedule.templateStep.applicableHint', { family: familyLabel })}
@@ -1048,11 +1143,14 @@ function StepTemplate({
                                 }`}
                             >
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-[13.5px] font-medium text-slate-900 truncate">
-                                        {tpl.name}
+                                    <div className="flex items-center gap-1.5">
+                                        <IconListCheck size={14} stroke={1.8} className="text-slate-400 flex-shrink-0" />
+                                        <div className="text-[13.5px] font-medium text-slate-900 truncate">
+                                            {tpl.name}
+                                        </div>
                                     </div>
-                                    <div className="text-[11px] text-slate-500 mt-0.5">{tpl.code}</div>
-                                    <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-x-3">
+                                    <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-3">
+                                        <span>{tpl.code}</span>
                                         <span>
                                             {t('schedule.templateStep.checkpoints', { count: tpl.checkpointCount })}
                                         </span>
@@ -1062,6 +1160,12 @@ function StepTemplate({
                                             </span>
                                         )}
                                     </div>
+                                    {/* Les intitulés réels lèvent toute ambiguïté : on
+                                        choisit une GRILLE, pas un lieu. */}
+                                    <CheckpointPreview
+                                        labels={checkpointPreviews[tpl.id] ?? []}
+                                        total={tpl.checkpointCount}
+                                    />
                                 </div>
                                 {active && (
                                     <div className="w-6 h-6 rounded-full bg-cyan-700 text-white flex items-center justify-center flex-shrink-0">
@@ -1077,6 +1181,179 @@ function StepTemplate({
     );
 }
 
+/**
+ * Aperçu des points de contrôle d'une grille.
+ *
+ * C'est LA réponse au reproche « on me redemande le lieu » : montrer, dès la
+ * planification, ce que l'inspection vérifiera réellement (éclairage, niveau
+ * sonore, sols dégagés…). Ces intitulés sont ceux du modèle ; ils ne sont pas
+ * saisis ici — ils seront renseignés à l'exécution, sur le terrain.
+ */
+function CheckpointPreview({ labels, total }: { labels: string[]; total: number }) {
+    const { t } = useTranslation('inspection');
+    const shown = labels.slice(0, 6);
+    const rest = Math.max(0, total - shown.length);
+    if (shown.length === 0) return null;
+    return (
+        <div className="mt-2">
+            <div className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400 mb-1.5">
+                {t('schedule.templateStep.previewHeading', { defaultValue: 'Ce qui sera vérifié' })}
+            </div>
+            <div className="flex flex-wrap gap-1">
+                {shown.map((label, i) => (
+                    <span
+                        key={`${label}-${i}`}
+                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-slate-100 text-slate-600 border border-slate-200"
+                    >
+                        {label}
+                    </span>
+                ))}
+                {rest > 0 && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] text-slate-400">
+                        {t('schedule.templateStep.previewMore', {
+                            count: rest,
+                            defaultValue: `+ ${rest} autres`,
+                        })}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/** Ligne du volet : intitulé discret à gauche, valeur affirmée à droite. */
+function RecapRow({ label, value }: { label: string; value?: string | null }) {
+    return (
+        <div className="flex items-baseline justify-between gap-3 py-1.5">
+            <span className="text-[11.5px] text-slate-500 flex-shrink-0">{label}</span>
+            <span
+                className={`text-[12.5px] text-right min-w-0 truncate ${
+                    value ? 'text-slate-900 font-medium' : 'text-slate-300'
+                }`}
+            >
+                {value || '—'}
+            </span>
+        </div>
+    );
+}
+
+/**
+ * Volet récapitulatif — persistant sur les trois étapes.
+ *
+ * Il répond au reproche central : « à l'étape 2 c'est encore la liste des lieux
+ * alors que le lieu est déjà choisi ». En gardant la cible retenue sous les
+ * yeux en permanence, l'ambiguïté disparaît — l'étape 2 ne peut plus être prise
+ * pour une nouvelle demande de lieu.
+ *
+ * Ce qui n'est pas encore décidé s'affiche « — », jamais une valeur inventée.
+ */
+function RecapPanel({
+    form,
+    typeLabel,
+    familyLabel,
+    appliedTemplate,
+    checkpointPreviews,
+    employees,
+    locale,
+}: {
+    form: FormState;
+    typeLabel: string | null;
+    familyLabel: string;
+    appliedTemplate: InspectionTemplateSummaryDTO | null;
+    checkpointPreviews: Record<number, string[]>;
+    employees: { value: string; label: string }[];
+    locale: string;
+}) {
+    const { t } = useTranslation('inspection');
+
+    const lead = form.team.find((m) => m.role === 'LEAD' && m.employeeId);
+    const leadName = lead ? employees.find((e) => e.value === lead.employeeId)?.label ?? null : null;
+    const assignedCount = form.team.filter((m) => m.employeeId).length;
+
+    const dateLabel = form.plannedDate
+        ? new Date(`${form.plannedDate}T00:00:00`).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB')
+        : null;
+    const slot = [form.startTime, form.endTime].filter(Boolean).join(' → ') || null;
+
+    const previewLabels = appliedTemplate ? checkpointPreviews[appliedTemplate.id] ?? [] : [];
+
+    return (
+        <aside className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 lg:sticky lg:top-4">
+            <h2 className="text-[11px] uppercase tracking-[0.16em] text-slate-500 mb-3">
+                {t('schedule.recap.heading', { defaultValue: 'Récapitulatif' })}
+            </h2>
+
+            <section className="pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1">
+                    <IconMapPin size={13} stroke={1.8} className="text-cyan-700" />
+                    <span className="text-[11.5px] font-medium text-slate-700">
+                        {t('schedule.recap.target', { defaultValue: 'Objet inspecté' })}
+                    </span>
+                </div>
+                <RecapRow label={t('schedule.recap.type', { defaultValue: 'Type' })} value={typeLabel} />
+                <RecapRow
+                    label={t('schedule.recap.name', { defaultValue: 'Désignation' })}
+                    value={form.targetLabel || null}
+                />
+                {form.type === 'EQUIPMENT' && (
+                    <RecapRow
+                        label={t('schedule.recap.family', { defaultValue: 'Famille' })}
+                        value={familyLabel || null}
+                    />
+                )}
+            </section>
+
+            <section className="py-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1">
+                    <IconListCheck size={13} stroke={1.8} className="text-cyan-700" />
+                    <span className="text-[11.5px] font-medium text-slate-700">
+                        {t('schedule.recap.grid', { defaultValue: 'Grille de contrôle' })}
+                    </span>
+                </div>
+                <RecapRow
+                    label={t('schedule.recap.gridName', { defaultValue: 'Modèle' })}
+                    value={appliedTemplate?.name ?? null}
+                />
+                <RecapRow
+                    label={t('schedule.recap.gridPoints', { defaultValue: 'Points' })}
+                    value={appliedTemplate ? String(appliedTemplate.checkpointCount) : null}
+                />
+                {appliedTemplate && (
+                    <CheckpointPreview labels={previewLabels} total={appliedTemplate.checkpointCount} />
+                )}
+            </section>
+
+            <section className="py-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1">
+                    <IconClock size={13} stroke={1.8} className="text-cyan-700" />
+                    <span className="text-[11.5px] font-medium text-slate-700">
+                        {t('schedule.recap.planning', { defaultValue: 'Planification' })}
+                    </span>
+                </div>
+                <RecapRow label={t('schedule.recap.date', { defaultValue: 'Date prévue' })} value={dateLabel} />
+                <RecapRow label={t('schedule.recap.slot', { defaultValue: 'Créneau' })} value={slot} />
+            </section>
+
+            <section className="pt-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                    <IconUsers size={13} stroke={1.8} className="text-cyan-700" />
+                    <span className="text-[11.5px] font-medium text-slate-700">
+                        {t('schedule.recap.team', { defaultValue: 'Équipe' })}
+                    </span>
+                </div>
+                <RecapRow
+                    label={t('schedule.recap.lead', { defaultValue: 'Responsable' })}
+                    value={leadName}
+                />
+                <RecapRow
+                    label={t('schedule.recap.members', { defaultValue: 'Membres' })}
+                    value={assignedCount > 0 ? String(assignedCount) : null}
+                />
+            </section>
+        </aside>
+    );
+}
+
 function StepDetails({
     form,
     setField,
@@ -1085,6 +1362,7 @@ function StepDetails({
     appliedTemplate,
     templateAutoApplied,
     familyLabel,
+    checkpointPreviews,
 }: {
     form: FormState;
     setField: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
@@ -1093,99 +1371,156 @@ function StepDetails({
     appliedTemplate: InspectionTemplateSummaryDTO | null;
     templateAutoApplied: boolean;
     familyLabel: string;
+    checkpointPreviews: Record<number, string[]>;
 }) {
     const { t } = useTranslation('inspection');
+
+    /**
+     * HIÉRARCHIE VISUELLE — l'ancienne version alignait libellés, valeurs et
+     * notes d'aide dans des gris et des tailles trop proches : on ne distinguait
+     * plus ce qui était une étiquette de ce qui était une saisie, ni de ce qui
+     * était un commentaire. Trois niveaux nets sont désormais tenus :
+     *   · SECTION  — capitales espacées, ardoise clair (repère de bloc) ;
+     *   · LIBELLÉ  — 12 px semi-gras ardoise foncé (nomme le champ) ;
+     *   · AIDE     — 11 px ardoise clair, précédée d'un point médian (commente).
+     * Les champs, eux, portent un fond blanc et une bordure franche.
+     */
+    const sectionTitle = 'text-[11px] uppercase tracking-[0.14em] text-slate-500';
+    const fieldLabel = 'block text-[12px] font-semibold text-slate-800 mb-1';
+    const fieldHint = 'text-[11px] text-slate-500 mt-1';
+    const inputBase =
+        'w-full px-3 py-2 text-[13px] text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 placeholder:text-slate-400';
+
+    const previewLabels = appliedTemplate ? checkpointPreviews[appliedTemplate.id] ?? [] : [];
 
     return (
         <div>
             <h2 className="text-[14px] font-semibold text-slate-800 mb-3">
                 {t('schedule.detailsStep.heading')}
             </h2>
-            <div className="space-y-3">
-                {/* Rappel du modèle auto-appliqué : l'étape « Modèle » ayant été
-                    sautée, l'utilisateur doit voir quelle checklist s'applique. */}
+            <div className="space-y-5">
+                {/* Rappel du modèle auto-appliqué : l'étape « grille » ayant été
+                    sautée, l'utilisateur doit voir quelle grille s'applique — ET
+                    ce qu'elle contient, sinon le bandeau ne dit rien d'utile. */}
                 {templateAutoApplied && appliedTemplate && (
-                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[12.5px]">
-                        <IconFileCheck size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                            <div className="font-medium">{appliedTemplate.name}</div>
-                            <div className="text-[11.5px] text-emerald-700/90">
-                                {t('schedule.templateStep.autoSelected', { family: familyLabel })}
+                    <div className="px-3 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                        <div className="flex items-start gap-2 text-emerald-800 text-[12.5px]">
+                            <IconFileCheck size={14} stroke={1.8} className="mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <div className="font-medium">{appliedTemplate.name}</div>
+                                <div className="text-[11.5px] text-emerald-700/90">
+                                    {t('schedule.templateStep.autoSelected', { family: familyLabel })}
+                                </div>
                             </div>
                         </div>
+                        <CheckpointPreview labels={previewLabels} total={appliedTemplate.checkpointCount} />
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                            {t('schedule.detailsStep.plannedDateLabel')}
-                        </label>
-                        <input
-                            type="date"
-                            value={form.plannedDate}
-                            onChange={(e) => setField('plannedDate', e.target.value)}
-                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                        />
+                {/* ─── Planification ─────────────────────────────────────── */}
+                <section>
+                    <div className="flex items-center gap-2 mb-2">
+                        <h3 className={sectionTitle}>
+                            {t('schedule.detailsStep.planningSection', { defaultValue: 'Planification' })}
+                        </h3>
+                        <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
                     </div>
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                            {t('schedule.detailsStep.startTimeLabel')}
-                        </label>
-                        <input
-                            type="time"
-                            value={form.startTime}
-                            onChange={(e) => setField('startTime', e.target.value)}
-                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className={fieldLabel}>
+                                {t('schedule.detailsStep.plannedDateLabel')}
+                                <span className="text-rose-600 ml-0.5" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={form.plannedDate}
+                                onChange={(e) => setField('plannedDate', e.target.value)}
+                                className={`${inputBase} min-h-[40px]`}
+                            />
+                        </div>
+                        <div>
+                            <label className={fieldLabel}>{t('schedule.detailsStep.startTimeLabel')}</label>
+                            <input
+                                type="time"
+                                value={form.startTime}
+                                onChange={(e) => setField('startTime', e.target.value)}
+                                className={`${inputBase} min-h-[40px]`}
+                            />
+                        </div>
+                        <div>
+                            <label className={fieldLabel}>{t('schedule.detailsStep.endTimeLabel')}</label>
+                            <input
+                                type="time"
+                                value={form.endTime}
+                                onChange={(e) => setField('endTime', e.target.value)}
+                                className={`${inputBase} min-h-[40px]`}
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                            {t('schedule.detailsStep.endTimeLabel')}
-                        </label>
-                        <input
-                            type="time"
-                            value={form.endTime}
-                            onChange={(e) => setField('endTime', e.target.value)}
-                            className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 min-h-[40px]"
-                        />
-                    </div>
-                </div>
+                </section>
 
-                {/* Équipe d'inspection (D4) — composant PARTAGÉ avec
-                    InspectionDetailPage (modification post-planification).
-                    L'invariant « un seul LEAD » vit dans le composant. */}
-                <InspectionTeamEditor
-                    value={form.team}
-                    onChange={(next) => setField('team', next)}
-                    employees={employees}
-                    loadingEmployees={loadingEmployees}
-                />
+                {/* ─── Équipe ────────────────────────────────────────────── */}
+                <section>
+                    <div className="flex items-center gap-2 mb-2">
+                        <h3 className={sectionTitle}>
+                            {t('schedule.detailsStep.teamSection', { defaultValue: 'Équipe' })}
+                        </h3>
+                        <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+                    </div>
+                    {/* Composant PARTAGÉ avec InspectionDetailPage (modification
+                        post-planification) : l'invariant « un seul LEAD » y vit. */}
+                    <InspectionTeamEditor
+                        value={form.team}
+                        onChange={(next) => setField('team', next)}
+                        employees={employees}
+                        loadingEmployees={loadingEmployees}
+                    />
+                </section>
 
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                        {t('schedule.detailsStep.objectivesLabel')}
-                    </label>
-                    <textarea
-                        value={form.objectives}
-                        onChange={(e) => setField('objectives', e.target.value)}
-                        placeholder={t('schedule.detailsStep.objectivesPlaceholder')}
-                        rows={2}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                    />
-                </div>
-                <div>
-                    <label className="block text-[12px] font-medium text-slate-700 mb-1">
-                        {t('schedule.detailsStep.descriptionLabel')}
-                    </label>
-                    <textarea
-                        value={form.description}
-                        onChange={(e) => setField('description', e.target.value)}
-                        placeholder={t('schedule.detailsStep.descriptionPlaceholder')}
-                        rows={3}
-                        className="w-full px-3 py-2 text-[13px] bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                    />
-                </div>
+                {/* ─── Cadrage ───────────────────────────────────────────── */}
+                <section>
+                    <div className="flex items-center gap-2 mb-2">
+                        <h3 className={sectionTitle}>
+                            {t('schedule.detailsStep.scopeSection', { defaultValue: 'Cadrage de la mission' })}
+                        </h3>
+                        <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-3">
+                        <div>
+                            <label className={fieldLabel}>{t('schedule.detailsStep.objectivesLabel')}</label>
+                            <textarea
+                                value={form.objectives}
+                                onChange={(e) => setField('objectives', e.target.value)}
+                                placeholder={t('schedule.detailsStep.objectivesPlaceholder')}
+                                rows={2}
+                                className={inputBase}
+                            />
+                            <p className={fieldHint}>
+                                ·{' '}
+                                {t('schedule.detailsStep.objectivesHint', {
+                                    defaultValue: 'Facultatif — précise ce que cette inspection cherche à établir.',
+                                })}
+                            </p>
+                        </div>
+                        <div>
+                            <label className={fieldLabel}>{t('schedule.detailsStep.descriptionLabel')}</label>
+                            <textarea
+                                value={form.description}
+                                onChange={(e) => setField('description', e.target.value)}
+                                placeholder={t('schedule.detailsStep.descriptionPlaceholder')}
+                                rows={3}
+                                className={inputBase}
+                            />
+                            <p className={fieldHint}>
+                                ·{' '}
+                                {t('schedule.detailsStep.descriptionHint', {
+                                    defaultValue:
+                                        'Facultatif — conditions particulières utiles à l’inspecteur sur le terrain.',
+                                })}
+                            </p>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     );
