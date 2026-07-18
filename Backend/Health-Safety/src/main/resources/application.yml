@@ -316,3 +316,7 @@ INDICATOR_NOT_FOUND: L indicateur indique n existe pas (ou n appartient pas a ce
 INDICATOR_NAME_REQUIRED: Le nom de l indicateur est obligatoire.
 INDICATOR_ALREADY_EXISTS: Un indicateur avec ce code existe deja pour cette mine.
 INDICATOR_PLAN_YEAR_REQUIRED: L annee de planification est obligatoire.
+
+# Module Preferences de notification (alertes in-app) — messages d erreur
+USER_ID_REQUIRED: L utilisateur destinataire est obligatoire.
+NOTIFICATION_EVENT_TYPE_REQUIRED: Le type d evenement est obligatoire.

@@ -325,16 +325,16 @@ const ZONES: AdminZone[] = [
             },
             {
                 id: 'advanced',
-                title: 'Configuration avancée',
-                description: 'Paramètres système, audit trail, export de données.',
+                title: 'Notifications',
+                description: 'Réception des alertes de sécurité dans l’application.',
                 icon: IconSettingsCog,
                 accentClass: 'text-slate-700',
                 bgAccentClass: 'bg-slate-50 border-slate-100',
                 items: [
                     {
                         id: 'system-params',
-                        name: 'Paramètres système',
-                        description: 'Configuration globale de la plateforme',
+                        name: 'Préférences de notification',
+                        description: 'Alertes in-app reçues, par type d’événement',
                         url: 'advanced-configuration',
                         status: 'configured',
                     },
@@ -548,7 +548,7 @@ const SettingsPage = () => {
                                 className="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-slate-50 text-[12.5px] text-slate-700 transition-colors"
                             >
                                 <IconBriefcase size={13} className="text-slate-500" />
-                                <span className="flex-1 text-left truncate">Paramètres système</span>
+                                <span className="flex-1 text-left truncate">Préférences de notification</span>
                                 <IconArrowRight size={12} className="text-slate-400" />
                             </button>
                         </div>

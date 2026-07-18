@@ -2,7 +2,8 @@ import AdvancedConfigurationTabs from "../components/NewComponents/AdvancedConfi
 
 const AdvancedConfigurationPage = () => {
     return (
-        <div className="p-5"><AdvancedConfigurationTabs /></div>
+        // Pas de padding ici : l'écran porte son propre fond crème pleine largeur.
+        <AdvancedConfigurationTabs />
     )
 }
 

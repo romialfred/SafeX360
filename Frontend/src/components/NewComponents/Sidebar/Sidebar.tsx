@@ -81,7 +81,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     'Gestion des Modules': 'sidebar.modulesManagement',
     'Cibles et prévisions': 'sidebar.targetsAndForecasts',
     'Données de Références': 'sidebar.operationalReferences',
-    'Paramètres système': 'sidebar.systemSettings',
+    'Préférences de notification': 'sidebar.systemSettings',
     'Liste des utilisateurs': 'sidebar.usersList',
     'Rôles et permissions': 'sidebar.rolesAndPermissions',
     // LOT — Dosimetrie & Expositions (ns 'dosimetry')
@@ -431,7 +431,7 @@ const menuItems: MenuItem[] = [
         color: 'text-slate-600',
         subItems: [
             { id: 'operational-references', label: 'Données de Références', icon: IconFolderOpen },
-            { id: 'system-settings', label: 'Paramètres système', icon: IconSettings },
+            { id: 'system-settings', label: 'Préférences de notification', icon: IconBell },
         ],
     },
     {

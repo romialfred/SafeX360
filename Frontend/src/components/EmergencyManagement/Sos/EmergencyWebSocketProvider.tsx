@@ -4,6 +4,10 @@ import { Client, type IMessage } from '@stomp/stompjs';
 import { useAppSelector } from '../../../slices/hooks';
 import type { SosAlertDTO } from '../../../services/SosService';
 import type { GeneralAlertDTO } from '../../../services/GeneralAlertService';
+import {
+    getMyPreferences,
+    type NotificationEventType,
+} from '../../../services/NotificationPreferenceService';
 
 /**
  * Provider WebSocket STOMP global pour la plateforme Emergency (LOT 48 Phase 3.b).
@@ -160,6 +164,65 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     const escalationListenersRef = useRef<Set<EscalationListener>>(new Set());
     const misfireListenersRef = useRef<Set<MisfireListener>>(new Set());
 
+    /* ─────────────────────────────────────────────────────────────────────
+     *  PRÉFÉRENCES DE NOTIFICATION (écran « Préférences de notification »)
+     *
+     *  L'utilisateur peut couper, par type d'événement, l'affichage des
+     *  alertes DANS L'APPLICATION. C'est ici — et seulement ici — que ce
+     *  réglage produit un effet : on filtre les messages STOMP AVANT de les
+     *  remettre aux listeners (popups, sirène, toasts). Filtrer au plus près
+     *  de la réception évite d'avoir à répéter la règle dans chaque écran.
+     *
+     *  FAIL-OPEN : `null` signifie « préférences pas encore chargées » (ou
+     *  chargement en échec — API indisponible, réseau coupé, utilisateur
+     *  inconnu). Dans ce cas on affiche TOUT. Masquer un SOS ou un raté de
+     *  tir parce qu'un appel de configuration a échoué serait un risque de
+     *  sécurité bien plus grave que d'afficher une alerte non désirée. Le
+     *  défaut serveur est d'ailleurs le même (opt-out, pas opt-in).
+     * ────────────────────────────────────────────────────────────────────*/
+    const prefsRef = useRef<Record<NotificationEventType, boolean> | null>(null);
+    const notificationUserId = Number(user?.empId ?? user?.id ?? 0) || null;
+
+    /** Faut-il remettre cet événement aux listeners ? Fail-open si non chargé. */
+    const isEventAllowed = useCallback((type: NotificationEventType): boolean => {
+        const prefs = prefsRef.current;
+        if (!prefs) return true; // fail-open : jamais de silence dû à une panne
+        return prefs[type] !== false;
+    }, []);
+
+    useEffect(() => {
+        if (!notificationUserId) {
+            prefsRef.current = null; // pas d'utilisateur identifié → tout passe
+            return;
+        }
+        let cancelled = false;
+        getMyPreferences(notificationUserId)
+            .then((rows) => {
+                if (cancelled) return;
+                const map: Record<NotificationEventType, boolean> = {
+                    SOS: true,
+                    GENERAL_ALERT: true,
+                    BLAST: true,
+                    ESCALATION: true,
+                    MISFIRE: true,
+                };
+                rows.forEach((row) => {
+                    if (row?.eventType && row.eventType in map) {
+                        map[row.eventType] = row.enabled !== false;
+                    }
+                });
+                prefsRef.current = map;
+            })
+            .catch(() => {
+                // Échec de chargement → on reste en fail-open (voir bloc ci-dessus).
+                if (!cancelled) prefsRef.current = null;
+            });
+        return () => {
+            cancelled = true;
+        };
+        // Rechargé au changement de mine : les préférences sont par mine.
+    }, [notificationUserId, effectiveCompanyId]);
+
     // Fonction subscribe stable (n'oblige pas les enfants à re-render)
     const subscribe = useCallback((listener: AlertListener) => {
         listenersRef.current.add(listener);
@@ -217,6 +280,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     `/topic/emergency/sos/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('SOS')) return; // préférence utilisateur
                             const payload: SosAlertDTO = JSON.parse(msg.body);
                             listenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -229,6 +293,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     `/topic/emergency/alert/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('GENERAL_ALERT')) return; // préférence utilisateur
                             const payload: GeneralAlertDTO = JSON.parse(msg.body);
                             generalListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -245,6 +310,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     '/topic/blast-popup',
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('BLAST')) return; // préférence utilisateur
                             const payload: BlastPopupPayload = JSON.parse(msg.body);
                             blastListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -256,6 +322,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     `/topic/blast-popup/mine/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('BLAST')) return; // préférence utilisateur
                             const payload: BlastPopupPayload = JSON.parse(msg.body);
                             blastListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -268,6 +335,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     `/topic/emergency/escalation/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('ESCALATION')) return; // préférence utilisateur
                             const payload: EscalationEvent = JSON.parse(msg.body);
                             escalationListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -281,6 +349,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     '/topic/blast-misfire',
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('MISFIRE')) return; // préférence utilisateur
                             const payload: BlastMisfirePayload = JSON.parse(msg.body);
                             misfireListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -292,6 +361,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                     `/topic/blast-misfire/mine/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
+                            if (!isEventAllowed('MISFIRE')) return; // préférence utilisateur
                             const payload: BlastMisfirePayload = JSON.parse(msg.body);
                             misfireListenersRef.current.forEach((l) => {
                                 try { l(payload); } catch { /* swallow */ }
@@ -313,7 +383,9 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
             clientRef.current = null;
             setConnected(false);
         };
-    }, [effectiveCompanyId]);
+        // `isEventAllowed` est stable (useCallback sans dépendance) : l'ajouter ici
+        // ne provoque aucune reconnexion, il lit `prefsRef` au moment du message.
+    }, [effectiveCompanyId, isEventAllowed]);
 
     const value = useMemo(
         () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup, subscribeEscalation, subscribeMisfire }),
