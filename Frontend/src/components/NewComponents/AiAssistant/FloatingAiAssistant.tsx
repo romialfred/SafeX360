@@ -24,6 +24,21 @@ import {
     IconBulb,
 } from '@tabler/icons-react';
 import { matchDemoProcedure, WorkflowDiagram, type WorkflowStep } from './demoProcedures';
+import {
+    TRANSPARENCY_NOTE,
+    WELCOME_MESSAGE,
+    classifyQuestion,
+    loadOhsSnapshot,
+    buildLoadErrorAnswer,
+    buildKpiAnswer,
+    buildIncidentsAnswer,
+    buildAlertsAnswer,
+    buildPpeAnswer,
+    buildNotTrackedAnswer,
+    buildHelpAnswer,
+    buildUnknownAnswer,
+    buildLtifrDefinitionAnswer,
+} from './assistantAnswers';
 
 interface Message {
     id: string;
@@ -62,31 +77,31 @@ const quickActions: QuickAction[] = [
         color: 'text-rose-600'
     },
     {
-        id: 'analyze-kpis',
-        label: 'Analyze KPIs',
+        id: 'situation-hse',
+        label: 'Situation HSE',
         icon: IconChartBar,
-        prompt: 'Can you analyze our current safety KPIs?',
+        prompt: 'Quelle est la situation HSE de la mine cette année ?',
         color: 'text-blue-600'
     },
     {
-        id: 'incident-report',
-        label: 'Incident Report',
+        id: 'incidents',
+        label: 'Incidents',
         icon: IconAlertTriangle,
-        prompt: "Generate a summary of this month's incidents",
+        prompt: "Combien d'incidents et de quasi-accidents cette année ?",
         color: 'text-red-600'
     },
     {
-        id: 'ppe-status',
-        label: 'PPE Status',
+        id: 'alertes',
+        label: 'Alertes en cours',
         icon: IconHelmet,
-        prompt: 'What is the status of pending PPE requests?',
+        prompt: 'Quelles sont les alertes HSE en cours ?',
         color: 'text-purple-600'
     },
     {
         id: 'help-guide',
-        label: 'Help Guide',
+        label: 'Que sais-tu faire ?',
         icon: IconBulb,
-        prompt: 'How can I use this platform effectively?',
+        prompt: 'Que peux-tu faire pour moi ?',
         color: 'text-yellow-600'
     }
 ];
@@ -137,27 +152,20 @@ const FloatingAIAssistant: React.FC = () => {
         speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = 1.1;
-        utterance.pitch = 1.8;
+        // Contenu désormais entièrement en français : la voix doit suivre.
+        utterance.lang = 'fr-FR';
+        utterance.rate = 1.05;
+        utterance.pitch = 1.4;
         utterance.volume = 0.9;
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => setIsSpeaking(false);
 
-        // Try to select a female voice if available
         const voices = speechSynthesis.getVoices();
-        const femaleVoice = voices.find(voice =>
-            voice.lang.startsWith('en') &&
-            (voice.name.toLowerCase().includes('female') ||
-                voice.name.toLowerCase().includes('samantha') ||
-                voice.name.toLowerCase().includes('victoria') ||
-                voice.name.toLowerCase().includes('google us english'))
-        );
-
-        if (femaleVoice) {
-            utterance.voice = femaleVoice;
+        const frenchVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('fr'));
+        if (frenchVoice) {
+            utterance.voice = frenchVoice;
         }
 
         speechSynthesis.speak(utterance);
@@ -169,15 +177,16 @@ const FloatingAIAssistant: React.FC = () => {
             const welcomeMessage: Message = {
                 id: '1',
                 type: 'ai',
-                content: "Hello! I'm SafeX Assist, your Health & Safety Assistant. How can I help you today?",
-                timestamp: new Date().toISOString()
+                content: WELCOME_MESSAGE,
+                timestamp: new Date().toISOString(),
+                speechSummary: "Bonjour ! Je suis l'Assistant SafeX. Je réponds à partir des données réelles de la mine active et de ma base de procédures HSE.",
             };
 
             setMessages([welcomeMessage]);
 
             // Speak welcome message after a short delay
             setTimeout(() => {
-                speak("Hello! I'm SafeX Assist, your Health and Safety Assistant. How can I help you today?");
+                speak(welcomeMessage.speechSummary!);
             }, 500);
 
             setHasSpokenWelcome(true);
@@ -219,161 +228,65 @@ const FloatingAIAssistant: React.FC = () => {
         setInputValue('');
         setIsLoading(true);
 
-        // Simulate AI response
-        setTimeout(() => {
-            const aiResponse = generateAIResponse(inputValue);
-            setMessages(prev => [...prev, aiResponse]);
-            setIsLoading(false);
+        // Le délai simulé a disparu : l'attente est désormais celle du vrai
+        // chargement des données de la mine (ou immédiate pour le savoir).
+        const aiResponse = await generateAIResponse(inputValue);
+        setMessages(prev => [...prev, aiResponse]);
+        setIsLoading(false);
 
-            // Speak the AI response (résumé court pour les procédures longues)
-            speak(aiResponse.speechSummary ?? aiResponse.content);
-        }, 1500);
+        // Speak the AI response (résumé court pour les procédures longues)
+        speak(aiResponse.speechSummary ?? aiResponse.content);
     };
 
-    const generateAIResponse = (userInput: string): Message => {
-        const input = userInput.toLowerCase();
+    /**
+     * Deux sources, jamais mélangées :
+     *  - le SAVOIR (procédures HSE, définitions) : local, vrai en toutes
+     *    circonstances ;
+     *  - les MESURES de la mine : lues sur le serveur, ou refusées.
+     */
+    const generateAIResponse = async (userInput: string): Promise<Message> => {
+        const base = { id: (Date.now() + 1).toString(), type: 'ai' as const, timestamp: new Date().toISOString() };
 
         // Procédures HSE complètes (base de connaissances) — prioritaire
         const procedure = matchDemoProcedure(userInput);
         if (procedure) {
             return {
-                id: (Date.now() + 1).toString(),
-                type: 'ai',
+                ...base,
                 content: procedure.markdown,
-                timestamp: new Date().toISOString(),
                 workflow: procedure.workflow,
                 workflowTitle: procedure.workflowTitle,
                 speechSummary: procedure.speechSummary,
             };
         }
 
-        if (input.includes('kpi') || input.includes('analyser') || input.includes('analyze') || input.includes('performance')) {
-            return {
-                id: (Date.now() + 1).toString(),
-                type: 'ai',
-                content: `📊 **Current KPI Analysis**
+        const kind = classifyQuestion(userInput);
 
-**Key Indicators:**
-• LTIFR: 1.2 (Target: 2.0) ✅ Below target
-• TRIR: 2.8 (Target: 3.5) ✅ Excellent performance
-• Training: 96% ✅ Above target
-• Days without incident: 47 days 🎯
+        // Réponses sans données de la mine (savoir / refus / aide).
+        const localAnswer =
+            kind === 'ltifr-definition' ? buildLtifrDefinitionAnswer()
+                : kind === 'not-tracked' ? buildNotTrackedAnswer()
+                    : kind === 'help' ? buildHelpAnswer()
+                        : kind === 'unknown' ? buildUnknownAnswer(userInput)
+                            : null;
 
-**Trends:**
-📈 LTIFR improving (-0.8 vs last month)
-📈 Training completion rising (+4%)
-
-**Recommendations:**
-1. Continue current initiatives
-2. Analyze the increase in near misses for insights
-3. Recognize the team for 47 incident-free days`,
-                timestamp: new Date().toISOString()
-            };
+        if (localAnswer) {
+            return { ...base, content: localAnswer.markdown, speechSummary: localAnswer.speech };
         }
 
-        if (input.includes('incident') || input.includes('rapport') || input.includes('report')) {
-            return {
-                id: (Date.now() + 1).toString(),
-                type: 'ai',
-                content: `🚨 **Incident Summary - January 2024**
-
-**Total:** 23 incidents (↓ 3 vs December)
-
-**By Category:**
-• Slips/Trips/Falls: 8 incidents (35%)
-• Chemical Exposure: 4 incidents (17%)
-• Equipment Related: 6 incidents (26%)
-• Near Misses: 5 incidents (22%)
-
-**Investigation Status:**
-• Closed: 16 (70%)
-• Ongoing: 5 (22%)
-• Pending: 2 (8%)
-
-**Priority Actions:**
-1. Improve housekeeping
-2. Additional PPE training
-3. Review equipment maintenance`,
-                timestamp: new Date().toISOString()
-            };
+        // Mesures : elles viennent du serveur, ou pas du tout.
+        const snapshot = await loadOhsSnapshot();
+        if (!snapshot.ok) {
+            const err = buildLoadErrorAnswer(snapshot.error);
+            return { ...base, content: err.markdown, speechSummary: err.speech };
         }
 
-        if (input.includes('epi') || input.includes('ppe') || input.includes('équipement') || input.includes('equipment')) {
-            return {
-                id: (Date.now() + 1).toString(),
-                type: 'ai',
-                content: `🦺 **PPE Status - Pending Requests**
+        const answer =
+            kind === 'incidents' ? buildIncidentsAnswer(snapshot.data)
+                : kind === 'alerts' ? buildAlertsAnswer(snapshot.data)
+                    : kind === 'ppe' ? buildPpeAnswer(snapshot.data)
+                        : buildKpiAnswer(snapshot.data);
 
-**Awaiting Approval:** 5 requests
-• Safety helmets (25 units) - Construction team
-• Chemical gloves (50 pairs) - Laboratory
-• Safety goggles (15 units) - Maintenance
-• Respirators (8 units) - Painting
-
-**Budget:**
-• Monthly budget: €5,000
-• Spent: €3,200 (64%)
-• Remaining: €1,800 (36%)
-
-**⚠️ Action Required:**
-2 requests are approaching the deadline (24h)`,
-                timestamp: new Date().toISOString()
-            };
-        }
-
-        if (input.includes('aide') || input.includes('help') || input.includes('utiliser') || input.includes('guide') || input.includes('use')) {
-            return {
-                id: (Date.now() + 1).toString(),
-                type: 'ai',
-                content: `💡 **Quick Start Guide**
-
-**Navigation:**
-• **Home:** Overview of modules
-• **Dashboard:** Real-time metrics
-• **Modules:** Specialized features
-
-**Core Functions:**
-🔍 **Search:** Global search across the platform
-📊 **Reports:** Detailed analytics and KPIs
-👥 **Users:** Access management
-⚙️ **Settings:** System configuration
-
-**Tips:**
-• Use filters to refine data
-• Export reports to PDF/Excel
-• Configure important notifications
-• Use inline help (question mark icon)
-
-**Common questions:**
-• "How to create an incident report?"
-• "Where to see overdue actions?"
-• "How to approve a PPE request?"`,
-                timestamp: new Date().toISOString()
-            };
-        }
-
-        // Default response
-        return {
-            id: (Date.now() + 1).toString(),
-            type: 'ai',
-            content: `I understand your question about "${userInput}".
-
-🎯 **I can help with:**
-• **KPI analyses** and safety metrics
-• **Incident reports** and investigations
-• **Action status** and PPE requests
-• **Platform navigation**
-• **Searching** for specific information
-
-💬 **Example prompts:**
-• "Analyze this month's KPIs"
-• "Status of pending PPE requests"
-• "How to create an incident report?"
-• "Show overdue actions"
-
-How can I assist more precisely?`,
-            timestamp: new Date().toISOString()
-        };
+        return { ...base, content: answer.markdown, speechSummary: answer.speech };
     };
 
     const handleQuickAction = (action: QuickAction) => {
@@ -402,7 +315,7 @@ How can I assist more precisely?`,
     };
 
     const formatTime = (timestamp: string) => {
-        return new Date(timestamp).toLocaleTimeString('en-US', {
+        return new Date(timestamp).toLocaleTimeString('fr-FR', {
             hour: '2-digit',
             minute: '2-digit'
         });
@@ -448,8 +361,8 @@ How can I assist more precisely?`,
                         </div>
                         {!isMinimized && (
                             <div>
-                                <h3 className="text-white">SafeX Assist</h3>
-                                <p className="text-purple-100 text-sm">Health & Safety Assistant</p>
+                                <h3 className="text-white">Assistant SafeX</h3>
+                                <p className="text-purple-100 text-xs leading-snug">Données réelles de la mine + procédures HSE</p>
                             </div>
                         )}
                     </div>
@@ -461,7 +374,7 @@ How can I assist more precisely?`,
                                 <button
                                     onClick={() => { setIsOpen(false); setIsMinimized(false); navigate('/ai-assistant'); }}
                                     className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                                    title="Open Assistant"
+                                    title="Ouvrir l'assistant"
                                 >
                                     <IconMaximize className="w-4 h-4 text-white" />
                                 </button>
@@ -469,7 +382,7 @@ How can I assist more precisely?`,
                                 <button
                                     onClick={toggleMute}
                                     className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                                    title={isMuted ? 'Enable sound' : 'Mute'}
+                                    title={isMuted ? 'Activer le son' : 'Couper le son'}
                                 >
                                     {isMuted ? (
                                         <IconVolumeOff className="w-4 h-4 text-white" />
@@ -481,7 +394,7 @@ How can I assist more precisely?`,
                                 <button
                                     onClick={() => setIsMinimized(true)}
                                     className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                                    title="Minimize"
+                                    title="Réduire"
                                 >
                                     <IconMinimize className="w-4 h-4 text-white" />
                                 </button>
@@ -491,7 +404,7 @@ How can I assist more precisely?`,
                             <button
                                 onClick={() => setIsMinimized(false)}
                                 className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                                title="Maximize"
+                                title="Agrandir"
                             >
                                 <IconMaximize className="w-4 h-4 text-white" />
                             </button>
@@ -500,7 +413,7 @@ How can I assist more precisely?`,
                         <button
                             onClick={() => setIsOpen(false)}
                             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                            title="Close"
+                            title="Fermer"
                         >
                             <IconX className="w-4 h-4 text-white" />
                         </button>
@@ -517,8 +430,8 @@ How can I assist more precisely?`,
                                         {/* Empty-messages icon */}
                                         <IconSparkles className="w-8 h-8 text-purple-600" />
                                     </div>
-                                    <h4 className="text-lg text-gray-900 mb-2">Hello!</h4>
-                                    <p className="text-gray-600 text-sm">I'm SafeX Assist, your AI assistant for Health & Safety.</p>
+                                    <h4 className="text-lg text-gray-900 mb-2">Bonjour !</h4>
+                                    <p className="text-gray-600 text-sm">{TRANSPARENCY_NOTE}</p>
                                 </div>
                             )}
 
@@ -603,14 +516,14 @@ How can I assist more precisely?`,
                                                             <button
                                                                 onClick={() => copyMessage(message.content)}
                                                                 className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
-                                                                title="Copy"
+                                                                title="Copier"
                                                             >
                                                                 <IconCopy className="w-3 h-3" />
                                                             </button>
                                                             <button
                                                                 onClick={() => speak(message.content)}
                                                                 className="p-1 text-gray-400 hover:text-purple-600 rounded transition-colors"
-                                                                title="Listen"
+                                                                title="Écouter"
                                                             >
                                                                 <IconVolume className="w-3 h-3" />
                                                             </button>
@@ -642,7 +555,7 @@ How can I assist more precisely?`,
                                                         <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                                         <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                                     </div>
-                                                    <span className="text-gray-500 text-sm">SafeX Assist is thinking...</span>
+                                                    <span className="text-gray-500 text-sm">L'assistant consulte les données de la mine…</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -656,7 +569,7 @@ How can I assist more precisely?`,
                         {/* Quick Actions */}
                         {messages.length <= 1 && (
                             <div className="px-4 py-1 border-t border-gray-100 bg-gray-50">
-                                <div className="text-xs text-gray-600 mb-2">Quick actions:</div>
+                                <div className="text-xs text-gray-600 mb-2">Actions rapides :</div>
                                 <div className="grid grid-cols-2 gap-2">
                                     {quickActions.map((action) => (
                                         <button
@@ -683,7 +596,7 @@ How can I assist more precisely?`,
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         onKeyPress={handleKeyPress}
-                                        placeholder="Ask SafeX Assist your question..."
+                                        placeholder="Posez votre question…"
                                         className="w-full  resize-none border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs"
                                         rows={1}
                                         style={{ minHeight: '40px', maxHeight: '100px' }}
@@ -697,7 +610,7 @@ How can I assist more precisely?`,
                                             ? 'bg-red-500 text-white'
                                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                             }`}
-                                        title={isListening ? 'Stop listening' : 'Voice input'}
+                                        title={isListening ? "Arrêter l'écoute" : 'Saisie vocale'}
                                     >
                                         {/* Voice input toggle */}
                                         {isListening ? <IconMicrophoneOff className="w-4 h-4" /> : <IconMicrophone className="w-4 h-4" />}
@@ -707,7 +620,7 @@ How can I assist more precisely?`,
                                         onClick={handleSendMessage}
                                         disabled={!inputValue.trim() || isLoading}
                                         className="p-2 bg-gradient-to-r from-teal-500 to-sky-500 text-white rounded-lg hover:from-teal-600 hover:to-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
-                                        title="Send"
+                                        title="Envoyer"
                                     >
                                         <IconSend className="w-4 h-4" />
                                     </button>
@@ -720,13 +633,13 @@ How can I assist more precisely?`,
                                     {isSpeaking && (
                                         <div className="flex items-center text-green-600">
                                             <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
-                                            SafeX Assist speaking...
+                                            Lecture en cours…
                                         </div>
                                     )}
                                     {isListening && (
                                         <div className="flex items-center text-red-600">
                                             <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
-                                            Listening...
+                                            Écoute…
                                         </div>
                                     )}
                                 </div>
