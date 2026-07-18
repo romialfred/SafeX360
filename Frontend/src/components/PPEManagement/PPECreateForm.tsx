@@ -45,7 +45,16 @@ const PPECreateForm = () => {
                 return trimmed.length > 250 ? t('create.validateDescriptionMax') : null;
             },
             category: (value) => (value?.trim().length > 0 ? null : t('create.validateCategory')),
-            minStock: (value) => (value ? null : t('create.validateMinStock')),
+            // `value ? ...` rejetait 0, qui est un seuil MINIMAL parfaitement
+            // légitime (« alerter dès qu'il n'en reste plus »). On teste donc la
+            // présence d'un nombre, pas sa véracité booléenne.
+            // `value ? ...` rejetait 0, seuil minimal parfaitement légitime
+            // (« alerter dès qu'il n'en reste plus »). On exige donc un NOMBRE,
+            // ce qui écarte aussi la chaîne vide renvoyée par un champ effacé.
+            minStock: (value) =>
+                Number.isFinite(Number(value)) && String(value ?? '').trim() !== ''
+                    ? null
+                    : t('create.validateMinStock'),
         },
     });
 

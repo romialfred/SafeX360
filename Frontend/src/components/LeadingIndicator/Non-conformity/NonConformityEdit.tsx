@@ -7,6 +7,8 @@ import TreatmentStep from './steps/TreatmentStep';
 import ClosureStep from './steps/ClosureStep';
 import { useNavigate, useParams } from 'react-router-dom';
 import DeclarationStep from './steps/DeclarationStep';
+import { declarationRules } from './nonConformityValidation';
+import { hasLessonsLearnedSection } from './nonConformityLabels';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { getAllActiveLocations } from '../../../services/LocationService';
@@ -14,6 +16,7 @@ import { getAllActiveIncidentCategories } from '../../../services/IncidentCatego
 import { getAllActiveWorkProcess } from '../../../services/WorkProcessService';
 import { isValidRichText, mapIdToName } from '../../../utility/OtherUtilities';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { missingFieldsMessage } from '../../../utility/FormErrorUtility';
 import { convertDocsToFiles, convertFilesToBase64New } from '../../../utility/DocumentUtility';
 import { getEventAnalysisByNonConformityId, getNonConformity, updateNonConformity } from '../../../services/NonConformityService';
 import { useAppDispatch } from '../../../slices/hooks';
@@ -117,25 +120,10 @@ const NonConformityEdit = () => {
         },
         validate: {
             nonConformity: {
-                //première page
-                type: (value) => value ? null : "Le type d'événement est requis",
-                title: (value) => value ? null : 'Le titre est requis',
-                date: (value) => value ? null : "La date de l'événement est requise",
-                detectionDate: (value) => value ? null : 'La date de détection est requise',
-                reportedBy: (value) => value ? null : 'Le déclarant est requis',
-                workProcessId: (value) => value ? null : 'Le processus de travail est requis',
-                locationId: (value) => value ? null : 'Le lieu est requis',
-                categoryId: (value) => value ? null : 'La catégorie est requise',
-                description: (value) => isValidRichText(value) ? null : 'La description est requise',
-                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'exigence non respectée est requise",
-                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'La source de détection est requise',
-                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'action immédiate est requise",
-                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : 'Le niveau de gravité est requis',
-                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? 'Le type de quasi-accident est requis' : null,
-                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? 'Au moins un facteur contributif est requis' : null,
-                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'action préventive est requise" : null,
-                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'opportunité d'amélioration est requise" : null,
-                events: (value) => value.length === 0 ? "Au moins une nature d'événement est requise" : null,
+                // Étape 1 (Déclaration) : règles PARTAGÉES avec l'autre écran
+                // (voir nonConformityValidation). Ne jamais les recopier ici —
+                // c'est la recopie qui avait rendu HAZARD indéclarable.
+                ...declarationRules,
 
                 //troisième page
 
@@ -143,8 +131,15 @@ const NonConformityEdit = () => {
                 comments: (value) => isValidRichText(value) || activeStep < 2 ? null : 'Les commentaires sont requis',
 
                 //quatrième page
-                lessonLearned: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Les leçons apprises sont requises',
-                sharingPlan: (value) => isValidRichText(value) || activeStep < 3 ? null : 'Le plan de diffusion est requis',
+                // Exigé UNIQUEMENT si la carte « Leçons apprises » est rendue —
+                // même prédicat que ClosureStep. Sans cette garde, clôturer une
+                // situation dangereuse était impossible : le champ était requis
+                // alors que sa carte n'est pas montée pour ce type.
+                lessonLearned: (value, values) => !hasLessonsLearnedSection(values.nonConformity.type) || isValidRichText(value) || activeStep < 3 ? null : 'Les leçons apprises sont requises',
+                // `sharingPlan` N'A PLUS DE RÈGLE : son éditeur est commenté dans
+                // ClosureStep, donc le champ n'existe sur aucun écran. L'exiger
+                // rendait le bouton « Soumettre et clôturer » définitivement
+                // inopérant, sans rien à corriger pour l'utilisateur.
                 closingDate: (value) => value || activeStep < 3 ? null : 'La date de clôture est requise',
                 finalStatus: (value) => value || activeStep < 3 ? null : 'Le statut final est requis',
                 validator: (value) => value || activeStep < 3 ? null : 'Le validateur est requis',
@@ -333,7 +328,7 @@ const NonConformityEdit = () => {
 
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de continuer.");
+            errorNotification(missingFieldsMessage(form.errors));
             return;
         }
         if (activeStep < steps.length - 1) {
@@ -354,7 +349,7 @@ const NonConformityEdit = () => {
         }
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
+            errorNotification(missingFieldsMessage(form.errors, "Enregistrement impossible"));
             return;
         }
 
@@ -387,7 +382,7 @@ const NonConformityEdit = () => {
 
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de soumettre.");
+            errorNotification(missingFieldsMessage(form.errors, "Enregistrement impossible"));
             return;
         }
         const values = form.values;

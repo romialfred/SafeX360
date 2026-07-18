@@ -32,6 +32,7 @@ import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { deleteAuditor, getAuditDetails, getAuditorsByAuditId, updateAudit } from "../../../services/AuditService";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { missingFieldsMessage } from "../../../utility/FormErrorUtility";
 import { getAllActiveAuditArea } from "../../../services/AuditAreaService";
 import { isValidRichText, mapIdToName } from "../../../utility/OtherUtilities";
 import { auditorRoles, auditTypesLabels, criteriaByLabel } from "../../../Data/DropdownData";
@@ -130,8 +131,13 @@ const EditNewAuditPlans: React.FC = () => {
                 role: (value) => (value ? null : "Le rôle est requis"),
                 email: (value) => (value ? null : "L'email est requis"),
             },
-            company: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "L'entreprise est requise"),
-            companyEmail: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "L'email de l'entreprise est requis"),
+            // Rendus à l'ÉTAPE 2 uniquement (renderSection, case 1) : la garde
+            // `activeStep == 0` — la même que `references` / `types` ci-dessus —
+            // manquait. Ouvrir un audit EXTERNE en édition rendait donc le bouton
+            // « Suivant » de l'étape 1 totalement inopérant et MUET, puisque le
+            // champ fautif n'était pas monté pour porter l'erreur.
+            company: (value): string | null => ((activeStep == 0 || form.values.audit.category === "INTERNAL" || value) ? null : "L'entreprise est requise"),
+            companyEmail: (value): string | null => ((activeStep == 0 || form.values.audit.category === "INTERNAL" || value) ? null : "L'email de l'entreprise est requis"),
         },
     });
 
@@ -172,12 +178,26 @@ const EditNewAuditPlans: React.FC = () => {
     useEffect(() => {
         if (auditorsNameMap && Object.keys(auditorsNameMap).length > 0) {
             getAuditorsByAuditId(Number(id)).then((res) => {
+                // Un auditeur EXTERNE n'est pas au registre interne : le chercher
+                // dans `auditorsNameMap` produisait la chaîne « undefined » dans
+                // le champ Nom et un rôle vide, donc une perte de donnee
+                // silencieuse à chaque édition. On ne resout l'identite interne
+                // que pour les audits internes, ou le Select attend un id.
+                const isExternal = form.values.audit.category === "EXTERNAL";
                 form.setFieldValue("auditors", res.map((item: any) => ({
                     ...item,
-                    name: "" + auditorsNameMap[item.email]?.id,
-                    role: auditorsNameMap[item.email]?.role,
+                    name: isExternal ? (item?.name || "") : "" + auditorsNameMap[item.email]?.id,
+                    role: isExternal ? (item?.role || "") : auditorsNameMap[item.email]?.role,
                     email: item?.email || ""
                 })));
+                // L'entreprise auditée est portée par les auditeurs externes :
+                // sans cette reprise, les deux champs revenaient vides et
+                // bloquaient l'enregistrement à l'étape 2.
+                const carrier = res.find((item: any) => item?.company || item?.companyEmail);
+                if (carrier) {
+                    form.setFieldValue("company", carrier.company || "");
+                    form.setFieldValue("companyEmail", carrier.companyEmail || carrier.companyMail || "");
+                }
             }).catch(() => { errorNotification("Impossible de charger les auditeurs de cet audit"); });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -203,7 +223,13 @@ const EditNewAuditPlans: React.FC = () => {
 
     const handleNext = () => {
         form.validate();
-        if (!form.isValid()) return;
+        if (!form.isValid()) {
+            // Un `return` nu laissait l'utilisateur devant un bouton sans effet
+            // ni explication — c'est ce silence qui rendait le défaut ci-dessus
+            // indiagnosticable.
+            errorNotification(missingFieldsMessage(form.errors));
+            return;
+        }
         if (activeStep < 1) {
             setActiveStep((prev) => prev + 1);
         }

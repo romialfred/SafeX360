@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react';
 import TextEditor from '../../../UtilityComp/TextEditor';
 import { eventTypes, eventTypesMap } from '../../../../Data/DropdownData';
+import { hasNonConformityFields, hasNearMissFields } from '../nonConformityLabels';
 import FileUpdateDropzone from '../../../UtilityComp/FileUpdateDropzone';
 
 
@@ -232,8 +233,10 @@ const DeclarationStep = ({ form, employees, locations, categories, workProcesses
                 </div>
             </section>
 
-            {/* Section 2 — Spécifique Non-conformité */}
-            {form.values.nonConformity.type === 'NON_CONFORMITY' && (
+            {/* Section 2 — Spécifique Non-conformité.
+                Le prédicat est PARTAGÉ avec la validation (nonConformityLabels) :
+                un champ n'est jamais exigé sans être rendu. */}
+            {hasNonConformityFields(form.values.nonConformity.type) && (
                 <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                     <header className="px-4 py-2.5 bg-red-50/60 border-b border-red-200/70 flex items-center gap-2">
                         <div className="p-1 rounded bg-red-100">
@@ -280,8 +283,8 @@ const DeclarationStep = ({ form, employees, locations, categories, workProcesses
                 </section>
             )}
 
-            {/* Section 3 — Spécifique Quasi-accident */}
-            {form.values.nonConformity.type === 'NEAR_MISS' && (
+            {/* Section 3 — Spécifique Quasi-accident (même prédicat partagé). */}
+            {hasNearMissFields(form.values.nonConformity.type) && (
                 <section className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                     <header className="px-4 py-2.5 bg-orange-50/60 border-b border-orange-200/70 flex items-center gap-2">
                         <div className="p-1 rounded bg-orange-100">

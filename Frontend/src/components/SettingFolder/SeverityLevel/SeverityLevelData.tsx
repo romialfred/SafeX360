@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { missingFieldsMessage } from "../../../utility/FormErrorUtility";
 import { modals } from "@mantine/modals";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
@@ -199,6 +200,36 @@ const SeverityLevelData = ({ opened, close }: any) => {
             })
             .finally(() => setLoading(false));
     }
+
+    /**
+
+     * Le SegmentedControl ne monte QU'UNE catégorie à la fois : les erreurs des
+
+     * autres catégories sont posées par la validation mais restent invisibles.
+
+     * Sans ce rappel, la soumission échouait sans rien afficher dès qu'une
+
+     * catégorie non sélectionnée était incomplète. On nomme donc les onglets
+
+     * fautifs, seule information qui permette d'aller les corriger.
+
+     */
+
+    const handleInvalid = (errors: Record<string, unknown>) => {
+        const faulty = Array.from(new Set(
+            Object.keys(errors)
+                .map((path) => /^catDesc\.(\d+)\./.exec(path)?.[1])
+                .filter((idx): idx is string => Boolean(idx))
+                .map((idx) => categoryMap[form.values.catDesc[Number(idx)]?.incidentCategoryId]?.name)
+                .filter(Boolean),
+        ));
+        errorNotification(
+            faulty.length
+                ? `Catégories à compléter : ${faulty.join(', ')}`
+                : missingFieldsMessage(errors),
+        );
+    };
+
 
     const handleSubmit = (values: any) => {
         setLoading(true);
@@ -510,7 +541,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                 </div>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
-                <form className='grid grid-cols-2 gap-4' onSubmit={form.onSubmit(handleSubmit)}>
+                <form className='grid grid-cols-2 gap-4' onSubmit={form.onSubmit(handleSubmit, handleInvalid)}>
                     <Select label="Level" withAsterisk placeholder='Select Level' data={severityLevels} {...form.getInputProps('level')} />
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
 

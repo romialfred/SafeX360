@@ -27,6 +27,7 @@ import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { createAudit } from "../../../services/AuditService";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { missingFieldsMessage } from "../../../utility/FormErrorUtility";
 import { getAllActiveAuditArea } from "../../../services/AuditAreaService";
 import { isValidRichText, mapIdToName } from "../../../utility/OtherUtilities";
 import { auditTypesLabels, criteriaByLabel } from "../../../Data/DropdownData";
@@ -67,7 +68,13 @@ const NewAuditPlan: React.FC = () => {
 
     const handleNext = () => {
         form.validate();
-        if (!form.isValid()) return;
+        if (!form.isValid()) {
+            // Un `return` nu laissait un bouton « Suivant » sans effet ni
+            // explication : le champ fautif est rendu à l'étape 2, il ne peut
+            // donc pas porter l'erreur en ligne à l'étape 1.
+            errorNotification(missingFieldsMessage(form.errors));
+            return;
+        }
         if (activeStep < 1) {
             setActiveStep((prev) => prev + 1);
         }
@@ -126,8 +133,8 @@ const NewAuditPlan: React.FC = () => {
                 role: (value) => (value ? null : "Le rôle est requis"),
                 email: (value) => (value ? null : "L'adresse e-mail est requise"),
             },
-            company: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "La société est requise"),
-            companyEmail: (value): string | null => ((form.values.audit.category === "INTERNAL" || value) ? null : "L'e-mail de la société est requis"),
+            company: (value): string | null => ((activeStep == 0 || form.values.audit.category === "INTERNAL" || value) ? null : "La société est requise"),
+            companyEmail: (value): string | null => ((activeStep == 0 || form.values.audit.category === "INTERNAL" || value) ? null : "L'e-mail de la société est requis"),
 
 
 

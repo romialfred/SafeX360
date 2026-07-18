@@ -11,12 +11,14 @@ import TreatmentStep from './steps/TreatmentStep';
 import ClosureStep from './steps/ClosureStep';
 import { useNavigate } from 'react-router-dom';
 import DeclarationStep from './steps/DeclarationStep';
+import { declarationRules } from './nonConformityValidation';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { getAllActiveLocations } from '../../../services/LocationService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
 import { getAllActiveWorkProcess } from '../../../services/WorkProcessService';
 import { isValidRichText, mapIdToName } from '../../../utility/OtherUtilities';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+import { missingFieldsMessage } from '../../../utility/FormErrorUtility';
 import { convertFilesToBase64New } from '../../../utility/DocumentUtility';
 import { reportNonConformity } from '../../../services/NonConformityService';
 import { useAppDispatch } from '../../../slices/hooks';
@@ -131,25 +133,10 @@ const NonConformityForm = () => {
         },
         validate: {
             nonConformity: {
-                //première page
-                type: (value) => value ? null : "Le type d'événement est requis",
-                title: (value) => value ? null : "Le titre est requis",
-                date: (value) => value ? null : "La date de l'événement est requise",
-                detectionDate: (value) => value ? null : "La date de détection est requise",
-                reportedBy: (value) => value ? null : "Le déclarant est requis",
-                workProcessId: (value) => value ? null : "Le processus de travail est requis",
-                locationId: (value) => value ? null : "Le lieu est requis",
-                categoryId: (value) => value ? null : "La catégorie est requise",
-                description: (value) => isValidRichText(value) ? null : "La description est requise",
-                requirement: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'exigence non respectée est requise",
-                detectionSource: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "La source de détection est requise",
-                actionTaken: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "L'action immédiate est requise",
-                severityLevel: (value, values) => value || values.nonConformity.type == "NEAR_MISS" ? null : "Le niveau de gravité est requis",
-                nearMissType: (value, values) => values.nonConformity.type == "NEAR_MISS" && !value ? "Le type de quasi-accident est requis" : null,
-                factors: (value, values) => values.nonConformity.type == "NEAR_MISS" && value.length === 0 ? "Au moins un facteur contributif est requis" : null,
-                preventiveAction: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'action préventive est requise" : null,
-                improvement: (value, values) => values.nonConformity.type == "NEAR_MISS" && !isValidRichText(value) ? "L'opportunité d'amélioration est requise" : null,
-                events: (value) => value.length === 0 ? "Au moins une nature d'événement est requise" : null,
+                // Étape 1 (Déclaration) : règles PARTAGÉES avec l'autre écran
+                // (voir nonConformityValidation). Ne jamais les recopier ici —
+                // c'est la recopie qui avait rendu HAZARD indéclarable.
+                ...declarationRules,
 
                 // Étapes 2 à 4 (Analyse, Traitement, Clôture & Diffusion) :
                 // OPTIONNELLES. Règle métier : seule l'étape 1 (Déclaration) est
@@ -255,7 +242,7 @@ const NonConformityForm = () => {
     const handleNext = () => {
         form.validate();
         if (!form.isValid()) {
-            errorNotification("Veuillez compléter tous les champs obligatoires avant de continuer.");
+            errorNotification(missingFieldsMessage(form.errors));
             return;
         }
         if (activeStep < steps.length - 1) {
@@ -278,7 +265,7 @@ const NonConformityForm = () => {
             // l'étape 4, seul un toast générique s'affichait).
             setActiveStep(0);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            errorNotification("Veuillez compléter les champs obligatoires de l'étape 1 (Déclaration) avant de soumettre.");
+            errorNotification(missingFieldsMessage(form.errors, "Étape 1 (Déclaration) incomplète"));
             return;
         }
 
@@ -307,7 +294,7 @@ const NonConformityForm = () => {
         if (!form.isValid()) {
             setActiveStep(0);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            errorNotification("Veuillez compléter les champs obligatoires de l'étape 1 (Déclaration) avant de soumettre.");
+            errorNotification(missingFieldsMessage(form.errors, "Étape 1 (Déclaration) incomplète"));
             return;
         }
         const values = form.values;

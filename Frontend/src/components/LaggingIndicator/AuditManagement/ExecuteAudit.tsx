@@ -38,6 +38,7 @@ import { getEmployeeDropdown } from "../../../services/EmployeeService";
 import { PickList } from "primereact/picklist";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import { missingFieldsMessage } from "../../../utility/FormErrorUtility";
 import { getBase64 } from "../../../utility/DocumentUtility";
 import { REC_PRIORITY_OPTIONS, VALIDATOR_STATUS_OPTIONS, parseIsoDateLocal, toIsoDateLocalOrNull } from "./auditLabels";
 import { getObservationDropdown } from "../../../services/ObservationService";
@@ -263,7 +264,12 @@ const ExecuteAudit = () => {
 
     const handleSubmit = () => {
         form.validate();
-        if (!form.isValid()) return;
+        if (!form.isValid()) {
+            // Le `return` nu ne disait rien : le rédacteur et le validateur du
+            // rapport sont obligatoires mais n'affichaient même pas d'astérisque.
+            errorNotification(missingFieldsMessage(form.errors));
+            return;
+        }
         modals.openConfirmModal({
             title: <span className="text-base">{t('execute.confirmTitle')}</span>,
             centered: true,
@@ -543,7 +549,7 @@ const ExecuteAudit = () => {
                             <Card shadow="md" withBorder>
                                 <p className="flex items-center text-lg mb-2 text-gray-600"> <IconFilePencil stroke={1.5} size={20} /> {t('execute.reportPreparer')}</p>
                                 <Grid>
-                                    <Grid.Col span={4}><TextInput {...form.getInputProps("report.preparerName")} label={t('execute.name')} placeholder={t('execute.preparerNamePlaceholder')} /></Grid.Col>
+                                    <Grid.Col span={4}><TextInput withAsterisk {...form.getInputProps("report.preparerName")} label={t('execute.name')} placeholder={t('execute.preparerNamePlaceholder')} /></Grid.Col>
                                     <Grid.Col span={4}><TextInput label={t('execute.role')} placeholder={t('execute.preparerRolePlaceholder')} {...form.getInputProps("report.preparerRole")} /></Grid.Col>
                                     <Grid.Col span={4}>
                                         {/* §2.1 — la date du rapport ne peut précéder la date de début
@@ -591,7 +597,7 @@ const ExecuteAudit = () => {
                             <Card shadow="md" withBorder>
                                 <p className="flex items-center mb-2 text-lg text-gray-600"><IconUserCheck stroke={1.5} size={20} /> {t('execute.reportValidator')}</p>
                                 <Grid mb={10}>
-                                    <Grid.Col span={4}><TextInput {...form.getInputProps("report.validatorName")} label={t('execute.name')} placeholder={t('execute.validatorNamePlaceholder')} /></Grid.Col>
+                                    <Grid.Col span={4}><TextInput withAsterisk {...form.getInputProps("report.validatorName")} label={t('execute.name')} placeholder={t('execute.validatorNamePlaceholder')} /></Grid.Col>
                                     <Grid.Col span={4}><TextInput label={t('execute.role')} placeholder={t('execute.validatorRolePlaceholder')} {...form.getInputProps("report.validatorRole")} /></Grid.Col>
                                     <Grid.Col span={4}><Select  {...form.getInputProps("report.validatorStatus")} placeholder={t('execute.selectStatus')} data={validatorStatusOptions} label={t('execute.status')} /></Grid.Col>
                                 </Grid>

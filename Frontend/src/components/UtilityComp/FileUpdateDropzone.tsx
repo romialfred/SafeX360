@@ -20,6 +20,9 @@ import { removeMedia } from "../../services/MediaService";
 import { errorNotification, successNotification } from "../../utility/NotificationUtility";
 
 const FileUpdateDropzone = ({ title, id, form }: any) => {
+    // `form.errors` est indexé par le CHEMIN du champ, celui-là même que reçoit
+    // `id` — on lit donc l'erreur exactement comme le ferait getInputProps.
+    const fieldError = form?.errors?.[id];
     const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
     const [previewFile, setPreviewFile] = useState<string | null>(null);
     const [previewType, setPreviewType] = useState<string | null>(null);
@@ -124,6 +127,18 @@ const FileUpdateDropzone = ({ title, id, form }: any) => {
                     </Text>
                 </div>
             </Dropzone>
+
+            {/* ERREUR DE VALIDATION — ce composant ne restituait AUCUNE erreur.
+                Un champ de pièce jointe déclaré obligatoire (ex. la preuve d'une
+                non-conformité d'audit) échouait donc en silence : le formulaire
+                refusait de se soumettre sans rien afficher, puisque le seul
+                endroit où le message aurait pu apparaître ne le lisait pas.
+                Aligné sur la restitution d'erreur des champs Mantine. */}
+            {fieldError && (
+                <Text c="red" fz="sm" mt="xs" role="alert">
+                    {fieldError}
+                </Text>
+            )}
 
             {uploadedFiles.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">

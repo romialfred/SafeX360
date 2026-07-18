@@ -3,6 +3,7 @@ import { DateInput } from '@mantine/dates';
 import { IconCheck, IconBulb } from '@tabler/icons-react';
 import TextEditor from '../../../UtilityComp/TextEditor';
 import { eventTypesMap } from '../../../../Data/DropdownData';
+import { hasLessonsLearnedSection } from '../nonConformityLabels';
 
 
 const ClosureStep = ({ form, employees }: any) => {
@@ -10,7 +11,10 @@ const ClosureStep = ({ form, employees }: any) => {
     return (
         <div className="space-y-6">
 
-            {(form.values.nonConformity.type === 'NEAR_MISS' || form.values.nonConformity.type === 'NON_CONFORMITY') && (
+            {/* Prédicat PARTAGÉ avec la validation (nonConformityLabels) :
+                le champ « Leçons apprises » n'est exigé que si cette carte est
+                rendue. Le recopier ici avait bloqué la clôture des HAZARD. */}
+            {hasLessonsLearnedSection(form.values.nonConformity.type) && (
                 <Card className="bg-orange-50 border border-orange-200 shadow-sm rounded-xl p-6">
                     <Group className="mb-6">
                         <div className="p-2 rounded-lg bg-orange-100">
@@ -29,9 +33,6 @@ const ClosureStep = ({ form, employees }: any) => {
                         <Grid.Col span={12}>
                             <TextEditor form={form} id="nonConformity.lessonLearned" title="Leçons apprises" />
                         </Grid.Col>
-                        {/* <Grid.Col span={12}>
-                            <TextEditor form={form} id="nonConformity.sharingPlan" title="Knowledge Sharing Plan" />
-                        </Grid.Col> */}
                     </Grid>
                 </Card>
             )}

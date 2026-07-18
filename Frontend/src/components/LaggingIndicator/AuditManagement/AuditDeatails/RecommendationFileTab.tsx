@@ -332,7 +332,20 @@ const RecommendationFileTab = ({ employees, empMap, audit, observationVersion }:
 
                         <div className="grid grid-cols-2 gap-5">
                             <TextInput label="Titre de la recommandation" placeholder="Saisir le titre" withAsterisk {...form.getInputProps('title')} />
-                            <Select label="Constat associé" placeholder="Sélectionner le constat" data={observations} withAsterisk  {...form.getInputProps('observationId')} />
+                            <Select
+                                label="Constat associé"
+                                placeholder={observations.length ? "Sélectionner le constat" : "Aucun constat enregistré"}
+                                data={observations}
+                                withAsterisk
+                                nothingFoundMessage="Aucun constat sur cet audit"
+                                /* Une recommandation découle TOUJOURS d'un constat
+                                   (ISO 19011) : la règle reste stricte. Mais sans
+                                   constat enregistré, l'utilisateur se heurtait à
+                                   une liste vide et à un « requis » inexplicable —
+                                   on lui dit donc quoi faire d'abord. */
+                                description={observations.length ? undefined : "Enregistrez d'abord un constat dans l'onglet Exécution : une recommandation s'y rattache obligatoirement."}
+                                {...form.getInputProps('observationId')}
+                            />
                             <div className="col-span-2">
 
                                 <TextEditor title="Description de la recommandation" withAsterisk form={form} id="description" />
