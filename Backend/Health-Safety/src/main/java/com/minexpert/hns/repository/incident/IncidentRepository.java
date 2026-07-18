@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 import com.minexpert.hns.dto.response.IncidentResponse;
 import com.minexpert.hns.entity.incident.Incident;
 import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
+import com.minexpert.hns.repository.projection.IdCount;
+import com.minexpert.hns.repository.projection.LabelCount;
 
 public interface IncidentRepository extends CrudRepository<Incident, Long> {
     Optional<Incident> findByIdAndCompanyId(Long id, Long companyId);
@@ -162,4 +164,113 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
             LocalDateTime fromDate);
 
     long countByDepartmentIdAndCreatedAtGreaterThanEqual(Long departmentId, LocalDateTime fromDate);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Tableau de bord HSE (GET /dashboard/ohs)
+    //
+    // SCOPING : toutes les requêtes ci-dessous portent le prédicat
+    // (:companyId IS NULL OR <colonne société> = :companyId). companyId est
+    // validé/clampé en amont par le CompanyScopeFilter ; null signifie « vue
+    // consolidée toutes mines » (réservée aux comptes allMinesAccess) et ne
+    // filtre alors rien. NE JAMAIS retirer ce prédicat : sans lui les compteurs
+    // fuiteraient d'une mine à l'autre.
+    //
+    // DATE DE RÉFÉRENCE : COALESCE(occurredAt, createdAt) — occurredAt est la
+    // date de survenue réelle mais reste nullable sur des déclarations partielles
+    // (et sur des lignes legacy) ; on retombe alors sur la date de création pour
+    // ne pas perdre l'incident du décompte annuel.
+    //
+    // Certaines requêtes portent sur IncidentDetail : elles sont volontairement
+    // placées ici (et non dans IncidentDetailRepository) parce qu'elles
+    // comptent des INCIDENTS et parce que les méthodes d'agrégation existantes
+    // d'IncidentDetailRepository (countIncidentDetailsByCategory,
+    // countIncidentDetailsBySeverityLevel, countByCategoryAndSeverityLevel)
+    // n'ont AUCUN filtre société ni date — les réutiliser provoquerait une fuite
+    // inter-entreprises. On repasse donc systématiquement par
+    // d.incident.companyId.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Nombre d'incidents d'une année, scopé mine. */
+    @Query("""
+            SELECT COUNT(i) FROM Incident i
+            WHERE FUNCTION('YEAR', COALESCE(i.occurredAt, i.createdAt)) = :year
+              AND (:companyId IS NULL OR i.companyId = :companyId)
+            """)
+    long countByYearAndCompany(@Param("year") int year, @Param("companyId") Long companyId);
+
+    /**
+     * Date du dernier incident GRAVE, tous exercices confondus, scopée mine.
+     * « Grave » = l'incident porte au moins un IncidentDetail dont le niveau de
+     * gravité est >= 4. Renvoie null si aucun incident grave n'est enregistré :
+     * le service traduit ce null par daysWithoutSeriousIncident = null (et non
+     * 0, qui signifierait à tort « un incident grave aujourd'hui »).
+     */
+    @Query("""
+            SELECT MAX(COALESCE(d.incident.occurredAt, d.incident.createdAt))
+            FROM IncidentDetail d
+            WHERE d.severityLevel.level >= :minLevel
+              AND (:companyId IS NULL OR d.incident.companyId = :companyId)
+            """)
+    LocalDateTime findLastSeriousIncidentDate(@Param("minLevel") int minLevel,
+            @Param("companyId") Long companyId);
+
+    /**
+     * Répartition des incidents par catégorie, via le lien DIRECT
+     * incident_detail.incident_category_id. Un incident pouvant porter
+     * plusieurs détails (donc plusieurs catégories), on compte des incidents
+     * DISTINCTS par catégorie : la somme des barres peut donc dépasser le total
+     * d'incidents, ce qui est le comportement correct pour un incident
+     * multi-catégories.
+     */
+    @Query("""
+            SELECT c.name AS label, COUNT(DISTINCT d.incident.id) AS total
+            FROM IncidentDetail d
+            JOIN d.incidentCategory c
+            WHERE FUNCTION('YEAR', COALESCE(d.incident.occurredAt, d.incident.createdAt)) = :year
+              AND (:companyId IS NULL OR d.incident.companyId = :companyId)
+            GROUP BY c.name
+            ORDER BY COUNT(DISTINCT d.incident.id) DESC
+            """)
+    List<LabelCount> findIncidentCountByCategory(@Param("year") int year, @Param("companyId") Long companyId);
+
+    /**
+     * Répartition des incidents par gravité. Incident et IncidentDetail ne
+     * portent pas de gravité « de tête » : on dérive UNE gravité par incident
+     * en retenant le MAX(sl.level) de ses détails, exactement le motif déjà
+     * éprouvé par findAllIncidentsWithMaxSeverity. Requête native car le motif
+     * IN (colonne, MAX(colonne)) n'a pas d'équivalent JPQL portable.
+     */
+    @Query(value = """
+            SELECT sl.name AS label, COUNT(DISTINCT idt.incident_id) AS total
+            FROM incident i
+            JOIN incident_detail idt ON idt.incident_id = i.id
+            JOIN severity_level sl ON idt.severity_level_id = sl.id
+            WHERE (idt.incident_id, sl.level) IN (
+                    SELECT idt2.incident_id, MAX(sl2.level)
+                    FROM incident_detail idt2
+                    JOIN severity_level sl2 ON idt2.severity_level_id = sl2.id
+                    GROUP BY idt2.incident_id
+                  )
+              AND YEAR(COALESCE(i.occurred_at, i.created_at)) = :year
+              AND (:companyId IS NULL OR i.company_id = :companyId)
+            GROUP BY sl.name
+            ORDER BY COUNT(DISTINCT idt.incident_id) DESC
+            """, nativeQuery = true)
+    List<LabelCount> findIncidentCountBySeverity(@Param("year") int year, @Param("companyId") Long companyId);
+
+    /**
+     * Répartition des incidents par mine — n'a de sens qu'en vue consolidée.
+     * Le libellé lisible n'est pas résolu ici : HNS ne connaît pas le
+     * référentiel des sociétés (porté par MineXpert/HRMS), l'IHM fait la
+     * correspondance id → nom.
+     */
+    @Query("""
+            SELECT i.companyId AS id, COUNT(i) AS total
+            FROM Incident i
+            WHERE FUNCTION('YEAR', COALESCE(i.occurredAt, i.createdAt)) = :year
+              AND i.companyId IS NOT NULL
+            GROUP BY i.companyId
+            ORDER BY COUNT(i) DESC
+            """)
+    List<IdCount> findIncidentCountByCompany(@Param("year") int year);
 }

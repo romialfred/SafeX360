@@ -310,6 +310,31 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
             @Param("today") LocalDate today,
             @Param("closedStatuses") List<ActionStatus> closedStatuses);
 
+    /**
+     * Tableau de bord HSE — nombre TOTAL d'actions correctives en retard
+     * (échéance dépassée, statut non terminal), toutes origines confondues.
+     *
+     * <p>Reprend le motif de {@link #countOverdueErrorCapa} SANS le prédicat
+     * {@code c.errorEventId IS NOT NULL} : celui-ci restreint le décompte aux
+     * seules CAPA du module Gestion des Erreurs, alors que le tableau de bord
+     * doit alerter sur toutes les actions correctives en retard (incidents,
+     * audits, risques, ad hoc…).</p>
+     *
+     * <p>SCOPING : (:companyId IS NULL OR c.companyId = :companyId) — companyId
+     * null = vue consolidée, sinon filtre strict par mine. Les actions dont
+     * l'échéance est nulle sont naturellement exclues (comparaison NULL) : on
+     * ne peut pas affirmer qu'une action sans échéance est « en retard ».</p>
+     */
+    @Query("""
+            SELECT COUNT(c) FROM CorrectiveAction c
+            WHERE c.deadline < :today
+              AND c.status NOT IN :closedStatuses
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    long countOverdueActions(@Param("companyId") Long companyId,
+            @Param("today") LocalDate today,
+            @Param("closedStatuses") List<ActionStatus> closedStatuses);
+
     // ─── Module Gestion des Risques : CAPA rattachees a un controle du Plan de maitrise ───
 
     /** CAPA liees a un controle du Plan de maitrise d'un risque (lien federateur). */
