@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Tooltip } from "@mantine/core";
 import {
     IconAlertTriangle,
@@ -15,6 +16,9 @@ import {
     IconRefresh,
     IconBuildingFactory2,
     IconMoodSmile,
+    IconChecklist,
+    IconClipboardCheck,
+    IconRoute,
 } from "@tabler/icons-react";
 
 import {
@@ -22,9 +26,15 @@ import {
     type DashboardOhsDTO,
     type LabelCountDTO,
     type MonthlyPointDTO,
+    type WorkloadSummaryDTO,
 } from "../services/DashboardService";
 import { getAllCompanies } from "../services/HrmsService";
 import { riskLevelFromKey } from "../components/RiskManagement/riskLabels";
+import {
+    incidentStatusLabel,
+    incidentStatusColor,
+} from "../components/LaggingIndicator/IncidentManagement/incidentLabels";
+import { caStatusConfig } from "../components/LaggingIndicator/CorrectiveAction/correctiveLabels";
 
 /**
  * SafeX 360 — Tableau de bord HSE exécutif.
@@ -35,12 +45,27 @@ import { riskLevelFromKey } from "../components/RiskManagement/riskLabels";
  *
  * RÈGLE CARDINALE — on n'invente aucun chiffre. Quand le backend renvoie
  * `null`, l'IHM affiche « — » assorti d'une explication courte ; jamais 0 à la
- * place d'« inconnu », jamais de valeur de repli.
+ * place d'« inconnu », jamais de valeur de repli. Aucun pourcentage n'est
+ * affiché sur un dénominateur nul.
  *
  * Filtrage : le seul filtre honoré par le serveur est l'ANNÉE. La mine provient
  * du sélecteur du header (companyId injecté par l'intercepteur Axios) — aucun
- * sélecteur de mine dans les écrans. Les filtres gravité/département de la
- * maquette ont été retirés : un filtre décoratif est un mensonge.
+ * sélecteur de mine dans les écrans.
+ *
+ * DENSITÉ (refonte 2026-07-18) — la version précédente consacrait l'essentiel
+ * de la surface à quatre tuiles surdimensionnées et à une courbe géante quadrillée,
+ * pour n'exposer au total que sept chiffres. Trois principes ont guidé la refonte :
+ *   1. les KPI forment un BANDEAU compact, pas quatre cartes ;
+ *   2. la courbe de tendance est un aplat SANS grille de fond — le quadrillage
+ *      n'apportait aucune précision utile sur des effectifs à un chiffre ;
+ *   3. la surface libérée sert à montrer les WORKFLOWS (traitement des
+ *      incidents, actions correctives, inspections), c'est-à-dire ce qu'un
+ *      responsable HSE doit piloter — pas seulement des volumes.
+ *
+ * SOURCE UNIQUE DES LIBELLÉS — les statuts ne sont PAS retraduits ici : les
+ * libellés et la sémantique de couleur viennent des modules propriétaires
+ * (`incidentLabels`, `correctiveLabels`, i18n `inspection:statuses`). Le
+ * tableau de bord et les écrans métier disent donc exactement la même chose.
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,18 +81,21 @@ const YEAR_OPTIONS = Array.from(
 );
 
 const MONTH_LABELS_FR = [
-    'Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin',
-    'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc',
+    'J', 'F', 'M', 'A', 'M', 'J',
+    'J', 'A', 'S', 'O', 'N', 'D',
 ];
 
 /** Placeholder unique pour toute valeur inconnue (jamais 0, jamais inventée). */
 const UNKNOWN = '—';
 
-const KPI_COLOR_MAP: Record<string, { border: string; iconBg: string; iconText: string; barColor: string }> = {
-    red:     { border: 'border-red-200',     iconBg: 'bg-red-100',     iconText: 'text-red-700',     barColor: 'bg-red-500' },
-    amber:   { border: 'border-amber-200',   iconBg: 'bg-amber-100',   iconText: 'text-amber-700',   barColor: 'bg-amber-500' },
-    blue:    { border: 'border-blue-200',    iconBg: 'bg-blue-100',    iconText: 'text-blue-700',    barColor: 'bg-blue-500' },
-    emerald: { border: 'border-emerald-200', iconBg: 'bg-emerald-100', iconText: 'text-emerald-700', barColor: 'bg-emerald-500' },
+const SERIF = "'Source Serif 4', Georgia, serif";
+
+/** Accent de chaque cellule du bandeau KPI (pastille + valeur). */
+const KPI_ACCENT: Record<string, { dot: string; icon: string }> = {
+    red:     { dot: 'bg-red-500',     icon: 'text-red-600'     },
+    amber:   { dot: 'bg-amber-500',   icon: 'text-amber-600'   },
+    blue:    { dot: 'bg-blue-500',    icon: 'text-blue-600'    },
+    emerald: { dot: 'bg-emerald-500', icon: 'text-emerald-600' },
 };
 
 const ALERT_TONE_MAP: Record<string, { border: string; bg: string; dot: string; text: string }> = {
@@ -111,12 +139,61 @@ const RISK_RANK_BAR: Record<number, string> = {
 /** Palette de la répartition par mine (aucune sémantique : simple distinction). */
 const MINE_PALETTE = ['#0F766E', '#0EA5E9', '#6366F1', '#F59E0B', '#94A3B8', '#EC4899'];
 
+/**
+ * Traduction des noms de couleur Mantine (rendus par `incidentStatusColor`)
+ * en hexadécimal, seul format exploitable dans un SVG.
+ *
+ * On ne redéfinit PAS ici quel statut porte quelle couleur : cette
+ * correspondance reste la propriété d'`incidentLabels`. Ce tableau ne fait que
+ * matérialiser une couleur nommée — dupliquer la sémantique aurait garanti que
+ * le tableau de bord et le registre des incidents finissent par diverger.
+ */
+const MANTINE_HEX: Record<string, string> = {
+    gray:   '#94A3B8',
+    blue:   '#3B82F6',
+    cyan:   '#06B6D4',
+    yellow: '#EAB308',
+    orange: '#F97316',
+    green:  '#10B981',
+    red:    '#EF4444',
+    teal:   '#14B8A6',
+    violet: '#8B5CF6',
+};
+
+const hexOfMantine = (name: string) => MANTINE_HEX[name] ?? MANTINE_HEX.gray;
+
+/**
+ * Couleur des statuts d'inspection — miroir de la charte d'InspectionStatusBadge.
+ * Le partage terminal/non terminal, lui, est tranché par le SERVEUR
+ * (`CLOSED_INSPECTION_STATUSES`) : l'IHM ne le recalcule pas.
+ */
+const INSPECTION_STATUS_HEX: Record<string, string> = {
+    SCHEDULED:   '#06B6D4',
+    IN_PROGRESS: '#F59E0B',
+    SUBMITTED:   '#8B5CF6',
+    APPROVED:    '#10B981',
+    ARCHIVED:    '#64748B',
+    REJECTED:    '#F43F5E',
+    PENDING:     '#94A3B8',
+    COMPLETED:   '#10B981',
+    CANCELLED:   '#CBD5E1',
+};
+
+/** Couleur des statuts d'action corrective — miroir de CA_STATUS_CONFIG. */
+const ACTION_STATUS_HEX: Record<string, string> = {
+    PENDING:     '#8B5CF6',
+    IN_PROGRESS: '#F59E0B',
+    COMPLETED:   '#10B981',
+    CANCELLED:   '#F43F5E',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //   PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 
 const OhsDashboardPage = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation('inspection');
 
     const [year, setYear] = useState<number>(CURRENT_YEAR);
     const [data, setData] = useState<DashboardOhsDTO | null>(null);
@@ -219,10 +296,30 @@ const OhsDashboardPage = () => {
         [data?.incidentsBySeverity],
     );
 
+    /**
+     * Pipeline de traitement des incidents (ISO 45001 §10.2). Série EXCLUSIVE :
+     * chaque incident porte un seul statut, la somme des segments est donc le
+     * total de l'année — une part du total y est légitime, contrairement aux
+     * catégories.
+     */
+    const incidentPipeline = useMemo(() => {
+        const raw = data?.incidentsByStatus ?? [];
+        const total = raw.reduce((s, r) => s + (r.count ?? 0), 0);
+        return {
+            total,
+            segments: raw.map((r) => ({
+                label: incidentStatusLabel(r.label),
+                count: r.count ?? 0,
+                pct: total > 0 ? ((r.count ?? 0) / total) * 100 : 0,
+                color: hexOfMantine(incidentStatusColor(r.label)),
+            })),
+        };
+    }, [data?.incidentsByStatus]);
+
     const alerts = data?.alerts ?? [];
 
     return (
-        <div className="px-6 lg:px-8 py-5 space-y-5 w-full bg-[#FAF8F3] min-h-full">
+        <div className="px-6 lg:px-8 py-5 space-y-4 w-full bg-[#FAF8F3] min-h-full">
 
             {/* ─── En-tête : titre + sélecteur d'année ─────────────────── */}
             <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
@@ -231,18 +328,18 @@ const OhsDashboardPage = () => {
                         Direction Santé · Sécurité · Environnement
                     </p>
                     <h1
-                        className="text-slate-900 mt-1.5"
+                        className="text-slate-900 mt-1"
                         style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontFamily: SERIF,
                             fontWeight: 500,
-                            fontSize: 'clamp(26px, 3vw, 32px)',
+                            fontSize: 'clamp(22px, 2.4vw, 27px)',
                             letterSpacing: '-0.014em',
                         }}
                     >
                         Tableau de bord HSE consolidé
                     </h1>
-                    <p className="text-[13.5px] text-slate-600 mt-1">
-                        Indicateurs sentinelles, distribution des risques et alertes prioritaires — mine active du bandeau.
+                    <p className="text-[12.5px] text-slate-600 mt-0.5">
+                        Indicateurs sentinelles, pilotage des workflows et alertes prioritaires — mine active du bandeau.
                     </p>
                 </div>
 
@@ -265,7 +362,7 @@ const OhsDashboardPage = () => {
                                 value={year}
                                 onChange={(e) => setYear(Number(e.target.value))}
                                 aria-label="Année de référence du tableau de bord"
-                                className="appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 py-2 text-[13px] font-medium text-slate-800 cursor-pointer hover:border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-colors tabular-nums"
+                                className="appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 py-1.5 text-[13px] font-medium text-slate-800 cursor-pointer hover:border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-colors tabular-nums"
                             >
                                 {YEAR_OPTIONS.map((y) => (
                                     <option key={y} value={y}>{y}</option>
@@ -310,13 +407,19 @@ const OhsDashboardPage = () => {
                 </div>
             ) : (
                 <>
-                    {/* ─── KPI BAR — 4 indicateurs sentinelles ─────────── */}
-                    <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {/* 1. Incidents totaux */}
-                        <KpiCard
-                            color="red"
-                            icon={<IconAlertTriangle size={18} aria-hidden="true" />}
-                            label={`Incidents totaux ${year}`}
+                    {/* ─── BANDEAU KPI — 4 cellules dans UNE carte ─────────
+                        Quatre cartes distinctes occupaient une bande de 132 px
+                        pour quatre nombres. Regroupées, elles tiennent en 90 px
+                        et se lisent d'un seul balayage. */}
+                    {/* `gap-px` sur fond ardoise : les séparateurs sont produits par
+                        la gouttière elle-même. `divide-x` aurait posé une bordure
+                        gauche au premier élément de la 2ᵉ rangée en affichage à deux
+                        colonnes — le tracé aurait été faux dès qu'une rangée se replie. */}
+                    <section className="rounded-xl border border-slate-200 bg-slate-100 grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden">
+                        <KpiCell
+                            accent="red"
+                            icon={<IconAlertTriangle size={14} aria-hidden="true" />}
+                            label={`Incidents ${year}`}
                             value={String(kpis?.totalIncidentsYtd ?? 0)}
                             badge={
                                 incidentDelta === null
@@ -333,20 +436,17 @@ const OhsDashboardPage = () => {
                             }
                         />
 
-                        {/* 2. Quasi-accidents — déclarer PLUS est positif */}
-                        <KpiCard
-                            color="blue"
-                            icon={<IconReportAnalytics size={18} aria-hidden="true" />}
-                            label="Quasi-accidents déclarés"
+                        <KpiCell
+                            accent="blue"
+                            icon={<IconReportAnalytics size={14} aria-hidden="true" />}
+                            label="Quasi-accidents"
                             value={String(kpis?.nearMissCount ?? 0)}
-                            badge={null}
-                            footer="Signalements de l'année — en déclarer davantage traduit une culture proactive"
+                            footer="En déclarer davantage traduit une culture proactive"
                         />
 
-                        {/* 3. Jours sans incident grave — « — » si aucun incident grave */}
-                        <KpiCard
-                            color="emerald"
-                            icon={<IconShieldCheck size={18} aria-hidden="true" />}
+                        <KpiCell
+                            accent="emerald"
+                            icon={<IconShieldCheck size={14} aria-hidden="true" />}
                             label="Jours sans incident grave"
                             value={
                                 kpis?.daysWithoutSeriousIncident === null || kpis?.daysWithoutSeriousIncident === undefined
@@ -356,9 +456,8 @@ const OhsDashboardPage = () => {
                             unit={
                                 kpis?.daysWithoutSeriousIncident === null || kpis?.daysWithoutSeriousIncident === undefined
                                     ? undefined
-                                    : 'jours'
+                                    : 'j'
                             }
-                            badge={null}
                             footer={
                                 kpis?.daysWithoutSeriousIncident === null || kpis?.daysWithoutSeriousIncident === undefined
                                     ? 'aucun incident grave enregistré'
@@ -366,48 +465,86 @@ const OhsDashboardPage = () => {
                             }
                         />
 
-                        {/* 4. LTIFR — valeur DÉCLARÉE, jamais calculée */}
-                        <KpiCard
-                            color="amber"
-                            icon={<IconActivity size={18} aria-hidden="true" />}
+                        {/* LTIFR — valeur DÉCLARÉE, jamais calculée. */}
+                        <KpiCell
+                            accent="amber"
+                            icon={<IconActivity size={14} aria-hidden="true" />}
                             label="Taux de fréquence LTI"
                             value={kpis?.ltifr ? formatNumberFr(kpis.ltifr.value) : UNKNOWN}
                             unit={kpis?.ltifr?.period ?? undefined}
-                            badge={null}
                             declared={Boolean(kpis?.ltifr)}
                             footer={
                                 kpis?.ltifr
                                     ? kpis.ltifr.target !== null && kpis.ltifr.target !== undefined
                                         ? `cible ${formatNumberFr(kpis.ltifr.target)}`
-                                        : 'aucune cible définie pour cette période'
-                                    : 'non défini'
-                            }
-                            help={
-                                kpis?.ltifr
-                                    ? undefined
-                                    : "Définissez un indicateur de code LTIFR dans Indicateurs & Performance pour suivre ce taux."
+                                        : 'aucune cible définie'
+                                    : 'non défini — à créer dans Indicateurs & Performance'
                             }
                         />
                     </section>
+
+                    {/* ─── PIPELINE DE TRAITEMENT DES INCIDENTS (ISO 45001 §10.2) ─── */}
+                    <StatusPipelineCard
+                        pipeline={incidentPipeline}
+                        year={year}
+                        onNavigate={() => navigate('/incidents')}
+                    />
 
                     {/* ─── BODY : graphiques + colonne d'alertes ──────── */}
                     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4">
 
                         <div className="space-y-4 min-w-0">
 
-                            {/* Row 1 : catégories + gravité */}
+                            {/* Row 1 : plans de charge — ce qu'il faut PILOTER */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <WorkloadCard
+                                    title="Actions correctives"
+                                    subtitle={`Ouvertes en ${year} · ISO 45001 §10.2`}
+                                    icon={<IconChecklist size={14} />}
+                                    summary={data.actions}
+                                    colorOf={(code) => ACTION_STATUS_HEX[code] ?? '#94A3B8'}
+                                    labelOf={(code) => caStatusConfig(code).label}
+                                    overdueLabel="en retard"
+                                    emptyText={`Aucune action corrective créée en ${year}.`}
+                                    footnote="Le décompte des retards ci-dessus porte sur le seul exercice affiché ; l'alerte de droite, elle, couvre toutes les années."
+                                    onClick={() => navigate('/corrective')}
+                                />
+
+                                <WorkloadCard
+                                    title="Inspections planifiées"
+                                    subtitle={`Programmées en ${year} · ISO 45001 §9.1`}
+                                    icon={<IconClipboardCheck size={14} />}
+                                    summary={data.inspections}
+                                    colorOf={(code) => INSPECTION_STATUS_HEX[code] ?? '#94A3B8'}
+                                    labelOf={(code) => t(`statuses.${code}`, { defaultValue: code })}
+                                    overdueLabel="date dépassée"
+                                    emptyText={`Aucune inspection planifiée en ${year}.`}
+                                    onClick={() => navigate('/inspections')}
+                                />
+                            </div>
+
+                            {/* Row 2 : tendance COMPACTE, sans grille de fond */}
+                            <ChartCard
+                                title="Tendance mensuelle"
+                                subtitle="Incidents avérés vs quasi-accidents signalés"
+                                icon={<IconRoute size={14} />}
+                            >
+                                <DualAreaChart data={data.monthlyTrend ?? []} />
+                            </ChartCard>
+
+                            {/* Row 3 : catégories + gravité */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <ChartCard
-                                    title="Répartition des incidents par catégorie"
+                                    title="Incidents par catégorie"
                                     subtitle={`${kpis?.totalIncidentsYtd ?? 0} incident(s) déclaré(s) en ${year}`}
                                     icon={<IconAlertTriangle size={14} />}
                                 >
                                     {data.incidentsByCategory?.length ? (
                                         <>
                                             <CountBars data={data.incidentsByCategory} />
-                                            <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">
+                                            <p className="text-[10.5px] text-slate-400 mt-3 leading-relaxed">
                                                 Un incident peut relever de plusieurs catégories : la somme des barres
-                                                peut dépasser le total d'incidents. Aucune part du total n'est donc affichée.
+                                                peut dépasser le total. Aucune part du total n'est donc affichée.
                                             </p>
                                         </>
                                     ) : (
@@ -428,22 +565,13 @@ const OhsDashboardPage = () => {
                                 </ChartCard>
                             </div>
 
-                            {/* Row 2 : tendance mensuelle */}
-                            <ChartCard
-                                title="Tendance mensuelle — incidents vs quasi-accidents"
-                                subtitle={`12 mois de ${year} · davantage de quasi-accidents signalés = signalement proactif`}
-                                icon={<IconActivity size={14} />}
-                            >
-                                <DualLineChart data={data.monthlyTrend ?? []} />
-                            </ChartCard>
-
-                            {/* Row 3 : niveaux de risque + répartition par mine */}
+                            {/* Row 4 : niveaux de risque + répartition par mine */}
                             {(riskByLevel.length > 0 || mineDistribution.length > 0) && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {riskByLevel.length > 0 && (
                                         <ChartCard
                                             title="Niveaux de risque (registre)"
-                                            subtitle="Paliers de la matrice probabilité × gravité du registre des risques"
+                                            subtitle="Paliers de la matrice probabilité × gravité"
                                             icon={<IconBolt size={14} />}
                                         >
                                             <RiskLevelBars data={riskByLevel} />
@@ -523,8 +651,8 @@ const OhsDashboardPage = () => {
             )}
 
             {/* ─── ACCÈS RAPIDES ─────────────────────────────────────── */}
-            <section className="mt-2">
-                <div className="flex items-center gap-2 mb-3">
+            <section className="mt-1">
+                <div className="flex items-center gap-2 mb-2.5">
                     <IconClock size={13} className="text-slate-500" />
                     <h2 className="text-[11px] uppercase tracking-[0.18em] text-slate-600">
                         Accès rapides
@@ -572,100 +700,344 @@ const formatNumberFr = (value: number): string =>
 //   SOUS-COMPOSANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Carte KPI — le style de la maquette, la donnée du backend. */
-function KpiCard({
-    color,
+/**
+ * Cellule du bandeau KPI. Compacte par construction : pas de pavé d'icône, pas
+ * de bordure propre — la séparation vient du `divide-x` de la carte parente.
+ */
+function KpiCell({
+    accent,
     icon,
     label,
     value,
     unit,
     badge,
     footer,
-    help,
     declared,
 }: {
-    color: keyof typeof KPI_COLOR_MAP | string;
+    accent: keyof typeof KPI_ACCENT | string;
     icon: React.ReactNode;
     label: string;
     value: string;
     unit?: string;
-    badge: { text: string; positive: boolean } | null;
+    badge?: { text: string; positive: boolean } | null;
     footer: string;
-    help?: string;
     declared?: boolean;
 }) {
-    const c = KPI_COLOR_MAP[color] ?? KPI_COLOR_MAP.blue;
+    const a = KPI_ACCENT[accent] ?? KPI_ACCENT.blue;
     const isUnknown = value === UNKNOWN;
     return (
-        <div className={`relative rounded-xl border ${c.border} bg-white p-4 overflow-hidden hover:shadow-md transition-shadow`}>
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${c.barColor}`} aria-hidden="true" />
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-                <div className={`p-2 rounded-lg ${c.iconBg} ${c.iconText}`}>{icon}</div>
-                <div className="flex items-center gap-1.5">
-                    {declared && (
-                        <Tooltip
-                            multiline
-                            w={250}
-                            withArrow
-                            label="Valeur saisie dans le module Indicateurs — le calcul automatique exigerait les heures travaillées, non disponibles."
-                        >
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-600 text-[10.5px] font-medium cursor-help">
-                                déclaré
-                            </span>
-                        </Tooltip>
-                    )}
-                    {badge && (
-                        <span
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                                badge.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                            }`}
-                        >
-                            {badge.text}
+        <div className="bg-white px-4 py-3 min-w-0">
+            <div className="flex items-center gap-1.5 mb-1.5">
+                <span className={a.icon} aria-hidden="true">{icon}</span>
+                <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-500 truncate">{label}</p>
+                {declared && (
+                    <Tooltip
+                        multiline
+                        w={250}
+                        withArrow
+                        label="Valeur saisie dans le module Indicateurs — le calcul automatique exigerait les heures travaillées, non disponibles."
+                    >
+                        <span className="ml-auto inline-flex items-center px-1 py-px rounded border border-slate-200 bg-slate-50 text-slate-500 text-[9.5px] font-medium cursor-help flex-shrink-0">
+                            déclaré
                         </span>
-                    )}
-                </div>
+                    </Tooltip>
+                )}
+                {badge && (
+                    <span
+                        className={`ml-auto inline-flex items-center px-1.5 py-px rounded text-[10.5px] font-medium flex-shrink-0 ${
+                            badge.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                        }`}
+                    >
+                        {badge.text}
+                    </span>
+                )}
             </div>
-            <p className="text-[11.5px] uppercase tracking-[0.1em] text-slate-500">{label}</p>
-            <p className="flex items-baseline gap-1.5 mt-1">
+            <p className="flex items-baseline gap-1.5">
                 <span
-                    className={isUnknown ? 'text-slate-400' : 'text-slate-900'}
+                    className={isUnknown ? 'text-slate-300' : 'text-slate-900'}
                     style={{
-                        fontFamily: "'Source Serif 4', Georgia, serif",
+                        fontFamily: SERIF,
                         fontWeight: 600,
-                        fontSize: '34px',
+                        fontSize: '26px',
                         letterSpacing: '-0.02em',
                         lineHeight: 1,
                     }}
                 >
                     {value}
                 </span>
-                {unit && <span className="text-[12px] text-slate-500">{unit}</span>}
+                {unit && <span className="text-[11px] text-slate-500 truncate">{unit}</span>}
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">{footer}</p>
-            {help && (
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{help}</p>
-            )}
+            <p className="text-[10.5px] text-slate-500 mt-1 leading-snug">{footer}</p>
         </div>
+    );
+}
+
+/**
+ * Pipeline de traitement des incidents — barre empilée pleine largeur.
+ *
+ * Répond à la question que ne posait aucun graphique précédent : « où en sont
+ * les incidents déclarés ? ». Un volume total sans pipeline ne dit pas si les
+ * incidents sont traités, or c'est exactement ce que la norme exige de suivre.
+ */
+function StatusPipelineCard({
+    pipeline,
+    year,
+    onNavigate,
+}: {
+    pipeline: { total: number; segments: Array<{ label: string; count: number; pct: number; color: string }> };
+    year: number;
+    onNavigate: () => void;
+}) {
+    if (pipeline.total === 0) {
+        return (
+            <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                    <IconRoute size={14} className="text-teal-700" />
+                    <h3 className="text-[13px] text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500 }}>
+                        Traitement des incidents
+                    </h3>
+                </div>
+                <p className="text-[12px] text-slate-500">Aucun incident déclaré en {year}.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <IconRoute size={14} className="text-teal-700" />
+                    <h3 className="text-[13px] text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500 }}>
+                        Traitement des incidents
+                    </h3>
+                    <span className="text-[11px] text-slate-500">
+                        · {pipeline.total} déclaré{pipeline.total > 1 ? 's' : ''} en {year} · ISO 45001 §10.2
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    onClick={onNavigate}
+                    className="text-[11.5px] text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-0.5 flex-shrink-0"
+                >
+                    Ouvrir le registre
+                    <IconChevronRight size={12} />
+                </button>
+            </div>
+
+            {/* Barre empilée — série exclusive, la somme fait 100 %. */}
+            <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">
+                {pipeline.segments.map((s) => (
+                    <Tooltip key={s.label} label={`${s.label} · ${s.count}`} withArrow>
+                        <div
+                            className="h-full transition-all hover:brightness-110"
+                            style={{ width: `${s.pct}%`, backgroundColor: s.color }}
+                            aria-label={`${s.label} : ${s.count}`}
+                        />
+                    </Tooltip>
+                ))}
+            </div>
+
+            <ul className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2.5">
+                {pipeline.segments.map((s) => (
+                    <li key={s.label} className="inline-flex items-center gap-1.5 text-[11.5px]">
+                        <span
+                            className="w-2 h-2 rounded-sm flex-shrink-0"
+                            style={{ backgroundColor: s.color }}
+                            aria-hidden="true"
+                        />
+                        <span className="text-slate-600">{s.label}</span>
+                        <span className="text-slate-900 font-medium tabular-nums">{s.count}</span>
+                        <span className="text-slate-400 tabular-nums">({s.pct.toFixed(0)} %)</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+/**
+ * Plan de charge (actions correctives / inspections) — anneau d'avancement,
+ * trois compteurs, détail par statut.
+ *
+ * Un SEUL composant pour les deux domaines : ils répondent à la même question
+ * de pilotage. Deux composants jumeaux auraient divergé au premier ajustement.
+ *
+ * HONNÊTETÉ : le taux d'avancement n'est affiché que si `total > 0` — un
+ * pourcentage sur un dénominateur nul serait une invention.
+ */
+function WorkloadCard({
+    title,
+    subtitle,
+    icon,
+    summary,
+    colorOf,
+    labelOf,
+    overdueLabel,
+    emptyText,
+    footnote,
+    onClick,
+}: {
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    summary?: WorkloadSummaryDTO | null;
+    colorOf: (statusCode: string) => string;
+    labelOf: (statusCode: string) => string;
+    overdueLabel: string;
+    emptyText: string;
+    footnote?: string;
+    onClick: () => void;
+}) {
+    const total = summary?.total ?? 0;
+    const closed = summary?.closed ?? 0;
+    const open = summary?.open ?? 0;
+    const overdue = summary?.overdue ?? 0;
+    const rate = total > 0 ? Math.round((closed / total) * 100) : null;
+
+    return (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <header className="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <h3
+                        className="flex items-center gap-1.5 text-[13.5px] text-slate-900"
+                        style={{ fontFamily: SERIF, fontWeight: 500 }}
+                    >
+                        <span className="text-teal-700">{icon}</span>
+                        {title}
+                    </h3>
+                    <p className="text-[11.5px] text-slate-500 mt-0.5">{subtitle}</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={onClick}
+                    className="text-[11.5px] text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-0.5 flex-shrink-0"
+                >
+                    Ouvrir
+                    <IconChevronRight size={12} />
+                </button>
+            </header>
+
+            <div className="p-4">
+                {total === 0 ? (
+                    <EmptyBlock text={emptyText} />
+                ) : (
+                    <>
+                        <div className="flex items-center gap-4">
+                            <ProgressRing
+                                pct={rate ?? 0}
+                                centerValue={rate === null ? UNKNOWN : `${rate}%`}
+                                color={overdue > 0 ? '#F59E0B' : '#0F766E'}
+                            />
+                            <dl className="flex-1 min-w-0 space-y-1.5">
+                                <StatRow label="Total" value={total} />
+                                <StatRow label="En cours" value={open} tone={open > 0 ? 'amber' : 'neutral'} />
+                                <StatRow label={overdueLabel} value={overdue} tone={overdue > 0 ? 'rose' : 'neutral'} />
+                            </dl>
+                        </div>
+
+                        {/* Détail par statut — série exclusive. */}
+                        <ul className="flex flex-wrap gap-x-3.5 gap-y-1.5 mt-3.5 pt-3 border-t border-slate-100">
+                            {(summary?.byStatus ?? []).map((s) => (
+                                <li key={s.label} className="inline-flex items-center gap-1.5 text-[11.5px]">
+                                    <span
+                                        className="w-2 h-2 rounded-sm flex-shrink-0"
+                                        style={{ backgroundColor: colorOf(s.label) }}
+                                        aria-hidden="true"
+                                    />
+                                    <span className="text-slate-600">{labelOf(s.label)}</span>
+                                    <span className="text-slate-900 font-medium tabular-nums">{s.count ?? 0}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        {footnote && (
+                            <p className="text-[10.5px] text-slate-400 mt-2.5 leading-relaxed">{footnote}</p>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function StatRow({
+    label,
+    value,
+    tone = 'neutral',
+}: {
+    label: string;
+    value: number;
+    tone?: 'neutral' | 'amber' | 'rose';
+}) {
+    const valueClass = {
+        neutral: 'text-slate-900',
+        amber: 'text-amber-700',
+        rose: 'text-rose-700',
+    }[tone];
+    return (
+        <div className="flex items-baseline justify-between gap-2">
+            <dt className="text-[12px] text-slate-600 truncate">{label}</dt>
+            <dd className={`text-[14px] font-semibold tabular-nums flex-shrink-0 ${valueClass}`}>{value}</dd>
+        </div>
+    );
+}
+
+/** Anneau d'avancement — SVG pur, aucune dépendance graphique. */
+function ProgressRing({
+    pct,
+    centerValue,
+    color,
+}: {
+    pct: number;
+    centerValue: string;
+    color: string;
+}) {
+    const size = 78;
+    const stroke = 8;
+    const r = (size - stroke) / 2;
+    const c = 2 * Math.PI * r;
+    const clamped = Math.max(0, Math.min(100, pct));
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="flex-shrink-0">
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke} />
+            <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={color}
+                strokeWidth={stroke}
+                strokeDasharray={`${(clamped / 100) * c} ${c}`}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
+            <text
+                x={size / 2}
+                y={size / 2 + 5}
+                textAnchor="middle"
+                className="fill-slate-900"
+                style={{ fontFamily: SERIF, fontWeight: 600, fontSize: '16px' }}
+            >
+                {centerValue}
+            </text>
+        </svg>
     );
 }
 
 function DashboardSkeleton() {
     return (
-        <div className="space-y-5 animate-pulse" aria-busy="true" aria-label="Chargement du tableau de bord">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="h-[132px] rounded-xl border border-slate-200 bg-white" />
-                ))}
-            </div>
+        <div className="space-y-4 animate-pulse" aria-busy="true" aria-label="Chargement du tableau de bord">
+            <div className="h-[90px] rounded-xl border border-slate-200 bg-white" />
+            <div className="h-[104px] rounded-xl border border-slate-200 bg-white" />
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4">
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="h-[260px] rounded-xl border border-slate-200 bg-white" />
-                        <div className="h-[260px] rounded-xl border border-slate-200 bg-white" />
+                        <div className="h-[200px] rounded-xl border border-slate-200 bg-white" />
+                        <div className="h-[200px] rounded-xl border border-slate-200 bg-white" />
                     </div>
-                    <div className="h-[280px] rounded-xl border border-slate-200 bg-white" />
+                    <div className="h-[190px] rounded-xl border border-slate-200 bg-white" />
                 </div>
-                <div className="h-[320px] rounded-xl border border-slate-200 bg-white" />
+                <div className="h-[300px] rounded-xl border border-slate-200 bg-white" />
             </div>
         </div>
     );
@@ -673,7 +1045,7 @@ function DashboardSkeleton() {
 
 function EmptyBlock({ text }: { text: string }) {
     return (
-        <div className="flex flex-col items-center justify-center text-center gap-1.5 py-8">
+        <div className="flex flex-col items-center justify-center text-center gap-1.5 py-6">
             <IconCircleCheck size={20} stroke={1.6} className="text-slate-300" aria-hidden="true" />
             <p className="text-[12.5px] text-slate-500">{text}</p>
         </div>
@@ -695,7 +1067,7 @@ function ChartCard({
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <header className="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <h3 className="flex items-center gap-1.5 text-[13.5px] text-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>
+                    <h3 className="flex items-center gap-1.5 text-[13.5px] text-slate-900" style={{ fontFamily: SERIF, fontWeight: 500 }}>
                         {icon && <span className="text-teal-700">{icon}</span>}
                         {title}
                     </h3>
@@ -723,7 +1095,7 @@ function CountBars({ data }: { data: LabelCountDTO[] }) {
                     <Tooltip label={d.label} withArrow>
                         <span className="text-[12px] text-slate-700 w-28 flex-shrink-0 truncate">{d.label}</span>
                     </Tooltip>
-                    <div className="flex-1 h-5 rounded-full bg-slate-100 overflow-hidden relative">
+                    <div className="flex-1 h-4 rounded-full bg-slate-100 overflow-hidden relative">
                         <div
                             className="h-full rounded-full transition-all"
                             style={{
@@ -744,7 +1116,7 @@ function CountBars({ data }: { data: LabelCountDTO[] }) {
 /** Barres avec part du total — valide uniquement sur une série EXCLUSIVE. */
 function ShareBars({ data, total }: { data: LabelCountDTO[]; total: number }) {
     return (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
             {data.map((d) => {
                 const pct = total > 0 ? ((d.count ?? 0) / total) * 100 : 0;
                 return (
@@ -778,16 +1150,16 @@ function DonutChart({
     centerLabel?: string;
     centerValue?: string;
 }) {
-    const r = 60;
-    const cx = 90;
-    const cy = 90;
-    const strokeWidth = 22;
+    const r = 52;
+    const cx = 78;
+    const cy = 78;
+    const strokeWidth = 20;
     const circumference = 2 * Math.PI * r;
     let offset = 0;
 
     return (
         <div className="flex items-center gap-5">
-            <svg width="180" height="180" viewBox="0 0 180 180">
+            <svg width="156" height="156" viewBox="0 0 156 156" className="flex-shrink-0">
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth={strokeWidth} />
                 {data.map((seg, i) => {
                     const len = (seg.pct / 100) * circumference;
@@ -810,12 +1182,12 @@ function DonutChart({
                     );
                 })}
                 {centerValue && (
-                    <text x={cx} y={cy - 3} textAnchor="middle" className="fill-slate-900" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: '28px' }}>
+                    <text x={cx} y={cy - 2} textAnchor="middle" className="fill-slate-900" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: '24px' }}>
                         {centerValue}
                     </text>
                 )}
                 {centerLabel && (
-                    <text x={cx} y={cy + 15} textAnchor="middle" className="fill-slate-500" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    <text x={cx} y={cy + 14} textAnchor="middle" className="fill-slate-500" style={{ fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                         {centerLabel}
                     </text>
                 )}
@@ -833,10 +1205,21 @@ function DonutChart({
     );
 }
 
-function DualLineChart({ data }: { data: MonthlyPointDTO[] }) {
+/**
+ * Tendance mensuelle — deux aplats superposés, SANS grille de fond.
+ *
+ * La version précédente dessinait cinq lignes de grille horizontales et une
+ * échelle Y sur une courbe dont les valeurs sont des effectifs à un chiffre :
+ * le quadrillage n'ajoutait aucune précision et saturait visuellement une zone
+ * de 200 px de haut. Ici la lecture fine passe par l'infobulle de chaque mois,
+ * et la hauteur descend à 130 px : la forme de la courbe suffit à la lecture
+ * d'ensemble, seul usage réel d'un tableau de bord de direction.
+ */
+function DualAreaChart({ data }: { data: MonthlyPointDTO[] }) {
     const points = useMemo(
         () =>
-            (data ?? []).map((d) => ({
+            (data ?? []).map((d, i) => ({
+                monthIndex: i,
                 month: MONTH_LABELS_FR[Math.min(11, Math.max(0, (d.month ?? 1) - 1))],
                 incidents: d.incidents ?? 0,
                 nearMiss: d.nearMiss ?? 0,
@@ -848,69 +1231,88 @@ function DualLineChart({ data }: { data: MonthlyPointDTO[] }) {
         return <EmptyBlock text="Série mensuelle indisponible." />;
     }
 
-    const w = 600, h = 200, pad = 30;
+    const w = 620, h = 130, padX = 8, padTop = 12, padBottom = 20;
     // Garde anti-division par zéro : une année sans aucun événement reste lisible.
-    const maxV = Math.max(1, ...points.map((d) => Math.max(d.incidents, d.nearMiss))) * 1.15;
-    const stepX = (w - 2 * pad) / (points.length - 1);
+    const maxV = Math.max(1, ...points.map((d) => Math.max(d.incidents, d.nearMiss))) * 1.2;
+    const stepX = (w - 2 * padX) / (points.length - 1);
+    const yOf = (v: number) => h - padBottom - (v / maxV) * (h - padTop - padBottom);
 
     const buildPath = (key: 'incidents' | 'nearMiss') =>
-        points
-            .map((d, i) => {
-                const x = pad + i * stepX;
-                const y = h - pad - (d[key] / maxV) * (h - 2 * pad);
-                return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-            })
-            .join(' ');
+        points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${padX + i * stepX} ${yOf(d[key])}`).join(' ');
 
-    const pathIncidents = buildPath('incidents');
-    const pathNearMiss = buildPath('nearMiss');
+    const buildArea = (key: 'incidents' | 'nearMiss') =>
+        `${buildPath(key)} L ${padX + (points.length - 1) * stepX} ${h - padBottom} L ${padX} ${h - padBottom} Z`;
+
+    const totalIncidents = points.reduce((s, d) => s + d.incidents, 0);
+    const totalNearMiss = points.reduce((s, d) => s + d.nearMiss, 0);
 
     return (
-        <div className="overflow-x-auto">
-            <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" style={{ minWidth: 480 }}>
-                {/* Grid Y */}
-                {[0, 0.25, 0.5, 0.75, 1].map((p) => {
-                    const y = h - pad - p * (h - 2 * pad);
-                    return (
-                        <g key={p}>
-                            <line x1={pad} x2={w - pad} y1={y} y2={y} stroke="#E2E8F0" strokeDasharray="3 3" />
-                            <text x={pad - 8} y={y + 3} textAnchor="end" fontSize="10" fill="#94A3B8">{Math.round(p * maxV)}</text>
-                        </g>
-                    );
-                })}
-                {/* X labels */}
-                {points.map((d, i) => (
-                    <text key={`${d.month}-${i}`} x={pad + i * stepX} y={h - pad + 14} textAnchor="middle" fontSize="10" fill="#64748B">
-                        {d.month}
-                    </text>
-                ))}
-                {/* Near miss area */}
-                <path d={`${pathNearMiss} L ${pad + (points.length - 1) * stepX} ${h - pad} L ${pad} ${h - pad} Z`} fill="rgba(59,130,246,0.08)" />
-                {/* Lines */}
-                <path d={pathNearMiss} fill="none" stroke="#3B82F6" strokeWidth="2" />
-                <path d={pathIncidents} fill="none" stroke="#EF4444" strokeWidth="2.5" />
-                {/* Points */}
-                {points.map((d, i) => {
-                    const x = pad + i * stepX;
-                    const yI = h - pad - (d.incidents / maxV) * (h - 2 * pad);
-                    const yN = h - pad - (d.nearMiss / maxV) * (h - 2 * pad);
-                    return (
-                        <g key={i}>
-                            <circle cx={x} cy={yN} r="3" fill="#3B82F6" />
-                            <circle cx={x} cy={yI} r="3.5" fill="#EF4444" />
-                        </g>
-                    );
-                })}
-            </svg>
-            {/* Légende */}
-            <div className="flex items-center justify-center gap-4 mt-2 text-[11.5px] text-slate-600">
+        <div>
+            <div className="overflow-x-auto">
+                <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" style={{ minWidth: 420 }}>
+                    <defs>
+                        <linearGradient id="gradNearMiss" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.20" />
+                            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+                        </linearGradient>
+                        <linearGradient id="gradIncidents" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#EF4444" stopOpacity="0.18" />
+                            <stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+
+                    {/* Ligne de base seule — aucune grille de fond. */}
+                    <line
+                        x1={padX}
+                        x2={w - padX}
+                        y1={h - padBottom}
+                        y2={h - padBottom}
+                        stroke="#E2E8F0"
+                        strokeWidth="1"
+                    />
+
+                    <path d={buildArea('nearMiss')} fill="url(#gradNearMiss)" />
+                    <path d={buildArea('incidents')} fill="url(#gradIncidents)" />
+                    <path d={buildPath('nearMiss')} fill="none" stroke="#3B82F6" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d={buildPath('incidents')} fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinejoin="round" />
+
+                    {points.map((d, i) => {
+                        const x = padX + i * stepX;
+                        return (
+                            <g key={i}>
+                                <circle cx={x} cy={yOf(d.nearMiss)} r="2.4" fill="#3B82F6" />
+                                <circle cx={x} cy={yOf(d.incidents)} r="2.8" fill="#EF4444" />
+                                <text x={x} y={h - 6} textAnchor="middle" fontSize="9.5" fill="#94A3B8">
+                                    {d.month}
+                                </text>
+                                {/* Zone de survol pleine hauteur : la lecture fine
+                                    passe par l'infobulle, non par une grille. */}
+                                <title>
+                                    {`${d.incidents} incident(s) · ${d.nearMiss} quasi-accident(s)`}
+                                </title>
+                                <rect
+                                    x={x - stepX / 2}
+                                    y={0}
+                                    width={stepX}
+                                    height={h - padBottom}
+                                    fill="transparent"
+                                />
+                            </g>
+                        );
+                    })}
+                </svg>
+            </div>
+
+            <div className="flex items-center justify-center gap-5 mt-1 text-[11.5px] text-slate-600">
                 <span className="inline-flex items-center gap-1.5">
                     <span className="w-3 h-0.5 bg-red-500" aria-hidden="true" />
                     Incidents avérés
+                    <span className="text-slate-900 font-medium tabular-nums">{totalIncidents}</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                     <span className="w-3 h-0.5 bg-blue-500" aria-hidden="true" />
-                    Quasi-accidents signalés
+                    Quasi-accidents
+                    <span className="text-slate-900 font-medium tabular-nums">{totalNearMiss}</span>
                 </span>
             </div>
         </div>
@@ -925,7 +1327,7 @@ function DualLineChart({ data }: { data: MonthlyPointDTO[] }) {
 function RiskLevelBars({ data }: { data: Array<{ label: string; count: number; pct: number; color: string }> }) {
     const totalCount = data.reduce((s, d) => s + d.count, 0);
     return (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
             {data.map((d) => (
                 <div key={d.label}>
                     <div className="flex items-center justify-between text-[12px] mb-1">

@@ -273,4 +273,28 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
             ORDER BY COUNT(i) DESC
             """)
     List<IdCount> findIncidentCountByCompany(@Param("year") int year);
+
+    /**
+     * Répartition des incidents par STATUT de traitement (ISO 45001 §10.2 :
+     * tout incident doit être investigué puis clos — le pipeline doit être
+     * visible, pas seulement le volume).
+     *
+     * <p>Contrairement à la répartition par catégorie, cette série est
+     * EXCLUSIVE : un incident porte exactement un statut. La somme des barres
+     * égale donc le total d'incidents de l'année, et une part du total y est
+     * légitime.</p>
+     *
+     * <p>Les lignes à {@code status} null (legacy) sont conservées et remontent
+     * avec un libellé null, que le service traduit en « UNKNOWN » : les
+     * masquer ferait mentir le total.</p>
+     */
+    @Query("""
+            SELECT CAST(i.status AS string) AS label, COUNT(i) AS total
+            FROM Incident i
+            WHERE FUNCTION('YEAR', COALESCE(i.occurredAt, i.createdAt)) = :year
+              AND (:companyId IS NULL OR i.companyId = :companyId)
+            GROUP BY i.status
+            ORDER BY COUNT(i) DESC
+            """)
+    List<LabelCount> findIncidentCountByStatus(@Param("year") int year, @Param("companyId") Long companyId);
 }

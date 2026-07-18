@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import com.minexpert.hns.dto.response.CorrectiveActionResponse;
 import com.minexpert.hns.entity.incident.CorrectiveAction;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.repository.projection.LabelCount;
 
 public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAction, Long> {
 
@@ -332,6 +333,46 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
               AND (:companyId IS NULL OR c.companyId = :companyId)
             """)
     long countOverdueActions(@Param("companyId") Long companyId,
+            @Param("today") LocalDate today,
+            @Param("closedStatuses") List<ActionStatus> closedStatuses);
+
+    // ─── Tableau de bord : suivi des actions correctives (ISO 45001 §10.2) ───
+    //
+    // Ces deux requêtes sont bornées à l'EXERCICE (année de création) pour
+    // rester cohérentes avec le sélecteur d'année de l'écran. Elles ne
+    // remplacent pas countOverdueActions ci-dessus, qui alimente l'ALERTE et
+    // reste volontairement au présent, toutes années confondues : une action
+    // de 2024 encore en retard aujourd'hui doit alerter même si l'utilisateur
+    // consulte l'exercice 2026.
+
+    /**
+     * Répartition des actions correctives de l'exercice par statut. Série
+     * EXCLUSIVE (une action porte un seul statut) : sa somme est le total.
+     */
+    @Query("""
+            SELECT CAST(c.status AS string) AS label, COUNT(c) AS total
+            FROM CorrectiveAction c
+            WHERE FUNCTION('YEAR', c.createdAt) = :year
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            GROUP BY c.status
+            ORDER BY COUNT(c) DESC
+            """)
+    List<LabelCount> findActionCountByStatus(@Param("year") int year, @Param("companyId") Long companyId);
+
+    /**
+     * Actions de l'exercice dont l'échéance est dépassée sans être closes.
+     * Les actions sans échéance sont naturellement exclues (comparaison NULL) :
+     * on ne peut pas affirmer qu'une action sans date est « en retard ».
+     */
+    @Query("""
+            SELECT COUNT(c) FROM CorrectiveAction c
+            WHERE FUNCTION('YEAR', c.createdAt) = :year
+              AND c.deadline < :today
+              AND c.status NOT IN :closedStatuses
+              AND (:companyId IS NULL OR c.companyId = :companyId)
+            """)
+    long countOverdueActionsByYear(@Param("year") int year,
+            @Param("companyId") Long companyId,
             @Param("today") LocalDate today,
             @Param("closedStatuses") List<ActionStatus> closedStatuses);
 

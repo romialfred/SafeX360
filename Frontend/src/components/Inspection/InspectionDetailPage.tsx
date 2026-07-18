@@ -30,7 +30,7 @@ import {
     IconPencil,
     IconClockHour4,
 } from '@tabler/icons-react';
-import { Button, Modal, Textarea } from '@mantine/core';
+import { Button, Textarea } from '@mantine/core';
 
 import {
     getInspection,
@@ -41,20 +41,18 @@ import {
 } from '../../services/InspectionService';
 import { getEmployeeDropdown } from '../../services/EmployeeService';
 import InspectionTeamEditor, {
+    MemberAvatar,
     RoleBadge,
     teamFromDTO,
     teamToDTO,
     type TeamMemberState,
 } from './InspectionTeamEditor';
 import {
-    INSPECTION_ROLE_CONFIG,
-    initialsOf,
     formatInspectionDate,
     isExecutableNow,
     isInspectionOverdue,
     type InspectionRoleKey,
 } from './inspectionLabels';
-import { Z } from '../../constants/zIndex';
 import { successNotification, errorNotification } from '../../utility/NotificationUtility';
 import InspectionStatusBadge from './InspectionStatusBadge';
 import AIReportReviewPanel from './AIReportReviewPanel';
@@ -81,7 +79,7 @@ export default function InspectionDetailPage() {
     // ─── Équipe d'inspection ──────────────────────────────────────────────
     const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
     const [loadingEmployees, setLoadingEmployees] = useState(false);
-    const [teamOpen, setTeamOpen] = useState(false);
+    const [teamEditing, setTeamEditing] = useState(false);
     const [teamDraft, setTeamDraft] = useState<TeamMemberState[]>([]);
     const [savingTeam, setSavingTeam] = useState(false);
 
@@ -141,7 +139,7 @@ export default function InspectionDetailPage() {
 
     const openTeamEditor = () => {
         setTeamDraft(teamFromDTO(displayTeam));
-        setTeamOpen(true);
+        setTeamEditing(true);
     };
 
     const saveTeam = async () => {
@@ -160,7 +158,7 @@ export default function InspectionDetailPage() {
         try {
             await updateInspectionTeam(detail.id, payload);
             successNotification(t('detail.teamSaved'));
-            setTeamOpen(false);
+            setTeamEditing(false);
             reload();
         } catch (e: any) {
             // Remonte le message métier du serveur, pas un texte générique.
@@ -361,19 +359,43 @@ export default function InspectionDetailPage() {
                 </div>
 
                 {/* Équipe d'inspection (employés + rôles) — modifiable tant que le
-                    rapport n'est pas figé (APPROVED/ARCHIVED). */}
-                <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm p-4">
-                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                        <div className="flex items-center gap-2">
+                    rapport n'est pas figé (APPROVED/ARCHIVED).
+
+                    L'édition se fait EN PLACE : le tableau de consultation cède la
+                    place au même tableau, éditable. Une fenêtre modale masquait la
+                    fiche entière pour modifier deux colonnes, et faisait rendre les
+                    listes déroulantes sous son propre voile. */}
+                <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
                             <IconUsersGroup size={16} stroke={1.8} className="text-slate-600" />
                             <h2 className="text-[13.5px] font-semibold text-slate-800">
                                 {t('schedule.detailsStep.teamHeading')}
                             </h2>
+                            {!teamEditing && displayTeam.length > 0 && (
+                                <span className="text-[11px] text-slate-500 tabular-nums">
+                                    · {t('schedule.detailsStep.teamMemberCount', { count: displayTeam.length })}
+                                </span>
+                            )}
                         </div>
                         {teamLocked ? (
                             <span className="text-[11px] text-slate-400 italic">
                                 {t('detail.teamLocked')}
                             </span>
+                        ) : teamEditing ? (
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="default"
+                                    size="xs"
+                                    disabled={savingTeam}
+                                    onClick={() => setTeamEditing(false)}
+                                >
+                                    {t('detail.teamCancel')}
+                                </Button>
+                                <Button size="xs" color="teal" loading={savingTeam} onClick={saveTeam}>
+                                    {t('detail.teamSave')}
+                                </Button>
+                            </div>
                         ) : (
                             <button
                                 type="button"
@@ -385,38 +407,73 @@ export default function InspectionDetailPage() {
                             </button>
                         )}
                     </div>
-                    {displayTeam.length === 0 ? (
-                        <p className="text-[12.5px] text-slate-500 italic">{t('detail.teamEmpty')}</p>
+
+                    {teamEditing ? (
+                        <div className="p-4">
+                            {/* Éditeur PARTAGÉ avec le formulaire de planification :
+                                mêmes invariants, un seul code. */}
+                            <InspectionTeamEditor
+                                value={teamDraft}
+                                onChange={setTeamDraft}
+                                employees={employees}
+                                loadingEmployees={loadingEmployees}
+                                hideHeader
+                            />
+                        </div>
+                    ) : displayTeam.length === 0 ? (
+                        <p className="text-[12.5px] text-slate-500 italic px-4 py-5 text-center">
+                            {t('detail.teamEmpty')}
+                        </p>
                     ) : (
-                        <div className="flex flex-wrap gap-2">
-                            {displayTeam.map((m, i) => {
-                                const name = employeeLabel(String(m.employeeId));
-                                const role = (m.role as InspectionRoleKey) || 'INSPECTOR';
-                                return (
-                                    <div
-                                        key={`${m.employeeId}-${i}`}
-                                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 pl-1 pr-3 py-1"
-                                    >
-                                        <span
-                                            className={`w-6 h-6 rounded-full text-white text-[10px] font-semibold flex items-center justify-center ${INSPECTION_ROLE_CONFIG[role].avatar}`}
-                                            aria-hidden="true"
-                                        >
-                                            {initialsOf(name || '?')}
-                                        </span>
-                                        <span className="text-[12px] text-slate-800 font-medium">
-                                            {name || `#${m.employeeId}`}
-                                        </span>
-                                        <RoleBadge role={role} />
-                                    </div>
-                                );
-                            })}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-[12.5px]">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr className="text-slate-600">
+                                        <th className="text-left px-4 py-2 font-medium">
+                                            {t('schedule.detailsStep.teamMemberEmployeeLabel')}
+                                        </th>
+                                        <th className="text-left px-4 py-2 font-medium w-[42%]">
+                                            {t('schedule.detailsStep.teamMemberRoleLabel')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayTeam.map((m, i) => {
+                                        const name = employeeLabel(String(m.employeeId));
+                                        const role = (m.role as InspectionRoleKey) || 'INSPECTOR';
+                                        return (
+                                            <tr
+                                                key={`${m.employeeId}-${i}`}
+                                                className="border-b border-slate-100 last:border-b-0"
+                                            >
+                                                <td className="px-4 py-2.5">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <MemberAvatar name={name} role={role} size={28} />
+                                                        <span className="text-slate-800 font-medium truncate">
+                                                            {/* Employé supprimé du référentiel : on montre
+                                                                l'identifiant plutôt qu'une ligne vide. */}
+                                                            {name || `#${m.employeeId}`}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2.5">
+                                                    <RoleBadge role={role} />
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     )}
+
                     {/* Inspections antérieures à la réforme : l'équipe n'existe pas
                         encore mais l'inspecteur principal est renseigné. On ne le
                         masque pas — le premier enregistrement régularisera la fiche. */}
-                    {(detail.teamMembers ?? []).length === 0 && detail.primaryInspectorId != null && (
-                        <p className="text-[11px] text-slate-500 mt-2">{t('detail.teamLegacyHint')}</p>
+                    {!teamEditing && (detail.teamMembers ?? []).length === 0 && detail.primaryInspectorId != null && (
+                        <p className="text-[11px] text-slate-500 px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
+                            {t('detail.teamLegacyHint')}
+                        </p>
                     )}
                 </div>
 
@@ -624,33 +681,6 @@ export default function InspectionDetailPage() {
                 </div>
             </div>
         </div>
-
-            {/* Édition de l'équipe — éditeur PARTAGÉ avec le formulaire de
-                planification (mêmes invariants, un seul code). */}
-            <Modal
-                opened={teamOpen}
-                onClose={() => setTeamOpen(false)}
-                title={t('detail.teamEditTitle')}
-                size="lg"
-                zIndex={Z.modal}
-                centered
-            >
-                <InspectionTeamEditor
-                    value={teamDraft}
-                    onChange={setTeamDraft}
-                    employees={employees}
-                    loadingEmployees={loadingEmployees}
-                    hideHeader
-                />
-                <div className="flex items-center justify-end gap-2 mt-4">
-                    <Button variant="default" size="sm" onClick={() => setTeamOpen(false)}>
-                        {t('detail.teamCancel')}
-                    </Button>
-                    <Button size="sm" color="teal" loading={savingTeam} onClick={saveTeam}>
-                        {t('detail.teamSave')}
-                    </Button>
-                </div>
-            </Modal>
         </>
     );
 }

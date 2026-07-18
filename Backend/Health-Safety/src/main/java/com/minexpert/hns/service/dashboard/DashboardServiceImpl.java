@@ -24,11 +24,13 @@ import com.minexpert.hns.entity.indicator.HsIndicator;
 import com.minexpert.hns.entity.indicator.IndicatorPlan;
 import com.minexpert.hns.entity.indicator.IndicatorPlanEntry;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.enums.InspectionStatus;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.incident.CorrectiveActionRepository;
 import com.minexpert.hns.repository.incident.IncidentRepository;
 import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
 import com.minexpert.hns.repository.indicator.HsIndicatorRepository;
+import com.minexpert.hns.repository.inspections.GeneralInspectionRepository;
 import com.minexpert.hns.repository.indicator.IndicatorPlanEntryRepository;
 import com.minexpert.hns.repository.indicator.IndicatorPlanRepository;
 import com.minexpert.hns.repository.nonConformity.NonConformityRepository;
@@ -71,12 +73,22 @@ public class DashboardServiceImpl implements DashboardService {
     private static final List<ActionStatus> CLOSED_ACTION_STATUSES = List.of(ActionStatus.COMPLETED,
             ActionStatus.CANCELLED);
 
+    /**
+     * Statuts terminaux d'une inspection : rapport figé ou abandon. Inclut les
+     * statuts LEGACY COMPLETED / CANCELLED (antérieurs à la refonte du
+     * workflow), sans quoi d'anciennes inspections achevées seraient comptées
+     * comme « en cours ».
+     */
+    private static final List<InspectionStatus> CLOSED_INSPECTION_STATUSES = List.of(InspectionStatus.APPROVED,
+            InspectionStatus.ARCHIVED, InspectionStatus.COMPLETED, InspectionStatus.CANCELLED);
+
     /** Code de l'indicateur portant la valeur LTIFR déclarée. */
     private static final String LTIFR_CODE = "LTIFR";
 
     private final IncidentRepository incidentRepository;
     private final NonConformityRepository nonConformityRepository;
     private final CorrectiveActionRepository correctiveActionRepository;
+    private final GeneralInspectionRepository generalInspectionRepository;
     private final HsIndicatorRepository hsIndicatorRepository;
     private final IndicatorPlanRepository indicatorPlanRepository;
     private final IndicatorPlanEntryRepository indicatorPlanEntryRepository;
@@ -97,7 +109,67 @@ public class DashboardServiceImpl implements DashboardService {
         dto.setAlerts(buildAlerts(companyId));
         dto.setIncidentsByMine(buildIncidentsByMine(companyId, refYear));
         dto.setRiskByLevel(buildRiskByLevel(companyId));
+        dto.setIncidentsByStatus(toLabelCounts(incidentRepository.findIncidentCountByStatus(refYear, companyId)));
+        dto.setActions(buildActionsSummary(companyId, refYear));
+        dto.setInspections(buildInspectionsSummary(companyId, refYear));
         return dto;
+    }
+
+    // ─────────────────── Plans de charge (actions / inspections) ───────────────────
+
+    /**
+     * Suivi des actions correctives de l'exercice (ISO 45001 §10.2).
+     *
+     * <p>Le « clos » est déterminé par {@link #CLOSED_ACTION_STATUSES}, la MÊME
+     * liste que celle qui sert à exclure les actions closes du décompte des
+     * retards. Une seule définition de « terminal » : deux listes divergentes
+     * produiraient un total incohérent avec son propre détail.</p>
+     */
+    private DashboardOhsDTO.WorkloadSummary buildActionsSummary(Long companyId, int refYear) {
+        List<LabelCountDTO> byStatus = toLabelCounts(
+                correctiveActionRepository.findActionCountByStatus(refYear, companyId));
+        long closed = sumWhereLabelIn(byStatus, CLOSED_ACTION_STATUSES.stream().map(Enum::name).toList());
+        long overdue = correctiveActionRepository.countOverdueActionsByYear(refYear, companyId, LocalDate.now(),
+                CLOSED_ACTION_STATUSES);
+        return buildWorkload(byStatus, closed, overdue);
+    }
+
+    /**
+     * Suivi de la surveillance planifiée de l'exercice (ISO 45001 §9.1).
+     *
+     * <p>« Terminal » couvre ici les inspections dont le rapport est figé ou
+     * abandonné. Les statuts LEGACY (COMPLETED / CANCELLED, antérieurs à la
+     * refonte du workflow) y sont inclus : les ignorer classerait d'anciennes
+     * inspections achevées parmi les « en cours » et gonflerait artificiellement
+     * la charge restante.</p>
+     */
+    private DashboardOhsDTO.WorkloadSummary buildInspectionsSummary(Long companyId, int refYear) {
+        List<LabelCountDTO> byStatus = toLabelCounts(
+                generalInspectionRepository.findInspectionCountByStatus(refYear, companyId));
+        long closed = sumWhereLabelIn(byStatus, CLOSED_INSPECTION_STATUSES.stream().map(Enum::name).toList());
+        long overdue = generalInspectionRepository.countOverdueInspections(refYear, companyId, LocalDate.now(),
+                InspectionStatus.SCHEDULED);
+        return buildWorkload(byStatus, closed, overdue);
+    }
+
+    /** Assemble la synthèse : total = somme du détail, ouvert = total - clos. */
+    private DashboardOhsDTO.WorkloadSummary buildWorkload(List<LabelCountDTO> byStatus, long closed, long overdue) {
+        long total = byStatus.stream().mapToLong(row -> row.getCount() != null ? row.getCount() : 0L).sum();
+        DashboardOhsDTO.WorkloadSummary summary = new DashboardOhsDTO.WorkloadSummary();
+        summary.setTotal(total);
+        summary.setClosed(closed);
+        summary.setOpen(total - closed);
+        summary.setOverdue(overdue);
+        summary.setByStatus(byStatus);
+        return summary;
+    }
+
+    /** Somme des effectifs dont le libellé figure parmi les statuts fournis. */
+    private long sumWhereLabelIn(List<LabelCountDTO> rows, List<String> labels) {
+        return rows.stream()
+                .filter(row -> labels.contains(row.getLabel()))
+                .mapToLong(row -> row.getCount() != null ? row.getCount() : 0L)
+                .sum();
     }
 
     // ─────────────────────────── KPI ────────────────────────────

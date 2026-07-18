@@ -63,6 +63,29 @@ export interface DashboardKpisDTO {
     ltifr: DeclaredMetricDTO | null;
 }
 
+/**
+ * Synthèse d'un plan de charge (actions correctives, inspections).
+ *
+ * Forme PARTAGÉE par les deux domaines : ils répondent à la même question de
+ * pilotage (« combien en cours, combien de retard ? »), donc un seul type et un
+ * seul composant d'IHM.
+ *
+ * Aucun taux n'est pré-calculé côté serveur : `total` peut valoir 0 et un
+ * pourcentage sur un dénominateur nul serait une invention. C'est l'IHM qui
+ * décide d'afficher — ou non — un avancement.
+ */
+export interface WorkloadSummaryDTO {
+    total: number;
+    /** Éléments dans un statut NON terminal. */
+    open: number;
+    /** Éléments dans un statut terminal (clos, annulé, archivé…). */
+    closed: number;
+    /** Échéance dépassée et statut non terminal. Les éléments sans échéance en sont exclus. */
+    overdue: number;
+    /** Détail par statut — série EXCLUSIVE (sa somme est `total`). */
+    byStatus: LabelCountDTO[];
+}
+
 export interface DashboardOhsDTO {
     year: number;
     /** null = vue consolidée toutes mines. */
@@ -77,6 +100,18 @@ export interface DashboardOhsDTO {
     incidentsByMine: LabelCountDTO[] | null;
     /** NULLABLE — labels = clés brutes « PS » de la matrice (ex. « 35 »). */
     riskByLevel: LabelCountDTO[] | null;
+
+    /**
+     * Répartition des incidents par STATUT de traitement (ISO 45001 §10.2).
+     * Série EXCLUSIVE : sa somme égale `kpis.totalIncidentsYtd`.
+     */
+    incidentsByStatus: LabelCountDTO[];
+
+    /** Actions correctives créées durant l'exercice (ISO 45001 §10.2). */
+    actions: WorkloadSummaryDTO;
+
+    /** Inspections dont la date PRÉVUE tombe dans l'exercice (ISO 45001 §9.1). */
+    inspections: WorkloadSummaryDTO;
 }
 
 /**

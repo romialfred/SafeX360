@@ -58,6 +58,54 @@ public class DashboardOhsDTO {
     private List<LabelCountDTO> riskByLevel;
 
     /**
+     * Répartition des incidents par STATUT de traitement (ISO 45001 §10.2).
+     * Série EXCLUSIVE : sa somme égale {@code kpis.totalIncidentsYtd}.
+     */
+    private List<LabelCountDTO> incidentsByStatus;
+
+    /** Suivi des actions correctives de l'exercice (ISO 45001 §10.2). */
+    private WorkloadSummary actions;
+
+    /** Suivi de la surveillance planifiée de l'exercice (ISO 45001 §9.1). */
+    private WorkloadSummary inspections;
+
+    /**
+     * Synthèse d'un plan de charge : volume, avancement et écarts.
+     *
+     * <p>Structure PARTAGÉE par les actions correctives et les inspections :
+     * les deux répondent à la même question de pilotage (« combien en cours,
+     * combien de retard ? »). Une seule forme, donc un seul composant d'IHM et
+     * un seul jeu d'invariants — deux structures jumelles auraient divergé.</p>
+     *
+     * <p>Aucun taux n'est pré-calculé ici : {@code total} peut valoir 0, et un
+     * pourcentage sur un dénominateur nul serait une invention. L'IHM décide de
+     * l'afficher ou non.</p>
+     */
+    @Data
+    @NoArgsConstructor
+    public static class WorkloadSummary {
+
+        /** Volume total de l'exercice. Toujours calculable (0 = aucun élément). */
+        private Long total;
+
+        /** Éléments dans un statut NON terminal. */
+        private Long open;
+
+        /** Éléments dans un statut terminal (clos, annulé, archivé…). */
+        private Long closed;
+
+        /**
+         * Éléments en retard : échéance/date prévue dépassée et statut non
+         * terminal. Les éléments sans échéance en sont exclus — on ne peut pas
+         * affirmer qu'un élément sans date est en retard.
+         */
+        private Long overdue;
+
+        /** Détail par statut, série exclusive. */
+        private List<LabelCountDTO> byStatus;
+    }
+
+    /**
      * Indicateurs de tête. Sous-objet imbriqué (et non fichier séparé) pour
      * rester aligné sur la liste de DTO livrés.
      */
