@@ -33,7 +33,12 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "hs_indicator",
         indexes = {
-                @Index(name = "idx_indicator_company", columnList = "companyId"),
+                // On écrit le nom PHYSIQUE (company_id) par cohérence avec le reste
+                // du fichier. NB : le camelCase fonctionne aussi — Hibernate applique
+                // la stratégie de nommage au columnList (vérifié : l'annotation
+                // "plannedDate" de GeneralInspection a bien produit un index sur
+                // la colonne planned_date). Les deux formes sont donc valides.
+                @Index(name = "idx_indicator_company", columnList = "company_id"),
                 @Index(name = "idx_indicator_category", columnList = "category"),
                 @Index(name = "idx_indicator_code", columnList = "code")
         }

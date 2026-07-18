@@ -11,9 +11,13 @@ import java.util.List;
 public interface PpeRepository extends JpaRepository<Ppe, Long> {
     List<Ppe> findByStatus(PpeStatus status);
 
-    // Find PPE items where current stock is below minimum stock
-    @org.springframework.data.jpa.repository.Query("SELECT p FROM Ppe p WHERE p.stock < p.minStock")
-    List<Ppe> findLowStock();
+    // SUPPRIMÉ — findLowStock() : "SELECT p FROM Ppe p WHERE p.stock < p.minStock".
+    // Deux défauts : aucun filtre de mine (elle renvoyait les EPI de TOUTES les
+    // entreprises) et un `<` strict là où la règle métier est `<=` (un stock
+    // exactement AU seuil est déjà en alerte). Elle contredisait donc
+    // PpeServiceImpl.getLowStock(companyId), qui applique `<=`, le statut ACTIVE
+    // et le cloisonnement. Aucun appelant ne l'utilisait.
+    // Pour lister les EPI sous seuil : passer par PpeService.getLowStock(companyId).
 
     List<Ppe> findByIdIn(List<Long> ids);
 

@@ -33,18 +33,17 @@ public class IncidentDetailAPI {
         return new ResponseEntity<>(new ResponseDTO("Incident Detail deleted successfully"), HttpStatus.OK);
     }
 
-    @GetMapping("/severity-level-count")
-    public ResponseEntity<List<CategorySeverityCount>> countIncidentDetailsBySeverityLevel() throws HSException {
-        return new ResponseEntity<>(incidentDetailService.countIncidentDetailsBySeverityLevel(), HttpStatus.OK);
-    }
-
-    @GetMapping("/category-count")
-    public ResponseEntity<List<CategorySeverityCount>> countIncidentDetailsByCategory() throws HSException {
-        return new ResponseEntity<>(incidentDetailService.countIncidentDetailsByCategory(), HttpStatus.OK);
-    }
-
-    @GetMapping("/category-severity-count")
-    public ResponseEntity<List<CategorySeverityCount>> countByCategoryAndSeverityLevel() throws HSException {
-        return new ResponseEntity<>(incidentDetailService.countByCategoryAndSeverityLevel(), HttpStatus.OK);
-    }
+    // SUPPRIMÉ — trois endpoints d'agrégation (/severity-level-count,
+    // /category-count, /category-severity-count) qui n'avaient AUCUN filtre de
+    // mine : IncidentDetail ne porte pas de companyId, et les requêtes ne
+    // joignaient pas incident.companyId. Tout utilisateur authentifié lisait
+    // donc des agrégats TOUTES MINES CONFONDUES (fuite inter-entreprises).
+    //
+    // Ils étaient de simples DOUBLONS : IncidentTypeAPI expose déjà les mêmes
+    // comptages CORRECTEMENT cloisonnés (/countBySeverityLevel, /countByCategory,
+    // /countByCategoryAndSeverityLevel, tous avec companyId) — et c'est cette
+    // version-là que le frontend consomme. Aucun consommateur ne pointait ici.
+    //
+    // On SUPPRIME plutôt qu'on ne cloisonne : un endpoint dupliqué est une
+    // surface d'attaque qui re-diverge tôt ou tard. Utilisez IncidentTypeAPI.
 }

@@ -5,11 +5,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.minexpert.hns.dto.IncidentDetailDTO;
-import com.minexpert.hns.dto.response.CategorySeverityCount;
 import com.minexpert.hns.entity.incident.IncidentDetail;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.incident.IncidentDetailRepository;
@@ -18,9 +16,6 @@ import com.minexpert.hns.repository.incident.IncidentDetailRepository;
 public class IncidentDetailServiceIImpl implements IncidentDetailService {
 
     public static final String CACHE_INCIDENT_DETAILS_BY_INCIDENT = "incidentDetailsByIncident";
-    public static final String CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS = "incidentDetailSeverityCounts";
-    public static final String CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS = "incidentDetailCategoryCounts";
-    public static final String CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS = "incidentDetailCategorySeverityCounts";
 
     @Autowired
     private IncidentDetailRepository incidentDetailRepository;
@@ -34,32 +29,17 @@ public class IncidentDetailServiceIImpl implements IncidentDetailService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(cacheNames = CACHE_INCIDENT_DETAILS_BY_INCIDENT, allEntries = true),
-            @CacheEvict(cacheNames = CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS, allEntries = true)
-    })
+    @CacheEvict(cacheNames = CACHE_INCIDENT_DETAILS_BY_INCIDENT, allEntries = true)
     public void deleteIncidentDetail(Long id) throws HSException {
         incidentDetailRepository.deleteById(id);
     }
 
-    @Override
-    @Cacheable(cacheNames = CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS)
-    public List<CategorySeverityCount> countIncidentDetailsBySeverityLevel() throws HSException {
-        return incidentDetailRepository.countIncidentDetailsBySeverityLevel();
-    }
-
-    @Override
-    @Cacheable(cacheNames = CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS)
-    public List<CategorySeverityCount> countIncidentDetailsByCategory() throws HSException {
-        return incidentDetailRepository.countIncidentDetailsByCategory();
-    }
-
-    @Override
-    @Cacheable(cacheNames = CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS)
-    public List<CategorySeverityCount> countByCategoryAndSeverityLevel() throws HSException {
-        return incidentDetailRepository.countByCategoryAndSeverityLevel();
-    }
-
+    // SUPPRIMÉ avec les trois agrégations non cloisonnées, ainsi que leurs caches
+    // (incidentDetailSeverityCounts / CategoryCounts / CategorySeverityCounts).
+    //
+    // Ces caches AGGRAVAIENT la fuite : déclarés sans `key`, ils ne comportaient
+    // qu'une seule entrée partagée. La première réponse calculée était donc
+    // resservie telle quelle à toutes les entreprises suivantes — même si les
+    // requêtes avaient été cloisonnées, le cache aurait continué de mélanger
+    // les mines. Les équivalents corrects sont dans IncidentTypeService.
 }

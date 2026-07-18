@@ -87,10 +87,9 @@ public class IncidentServiceImpl implements IncidentService {
             // @CacheEvict(cacheNames = CACHE_INCIDENT_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = CACHE_INCIDENT_RESPONSE_BY_ID, allEntries = true),
             @CacheEvict(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS, allEntries = true)
+            // Les caches d'agrégation incidentDetail* ont été supprimés avec les
+            // requêtes non cloisonnées qu'ils servaient (voir IncidentDetailRepository).
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, allEntries = true)
     })
     public void reportIncident(Long companyId, IncidentDTO incidentDTO) throws HSException {
         if (companyId == null) {
@@ -155,10 +154,7 @@ public class IncidentServiceImpl implements IncidentService {
             @CacheEvict(cacheNames = CACHE_INCIDENTS_ALL, allEntries = true),
             @CacheEvict(cacheNames = CACHE_INCIDENT_YEARLY_CLOSURE, allEntries = true),
             @CacheEvict(cacheNames = CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, key = "#incidentDTO.id"),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_SEVERITY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_COUNTS, allEntries = true),
-            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAIL_CATEGORY_SEVERITY_COUNTS, allEntries = true)
+            @CacheEvict(cacheNames = IncidentDetailServiceIImpl.CACHE_INCIDENT_DETAILS_BY_INCIDENT, key = "#incidentDTO.id")
     })
     public void updateIncident(Long companyId, IncidentDTO incidentDTO) throws HSException {
         if (companyId == null) {
