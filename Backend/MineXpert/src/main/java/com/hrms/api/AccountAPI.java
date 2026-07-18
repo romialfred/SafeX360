@@ -21,6 +21,7 @@ import com.hrms.DataInterface.AccountNameDTO;
 import com.hrms.dto.AccountDTO;
 import com.hrms.dto.ResponseDTO;
 import com.hrms.exception.HRMSException;
+import com.hrms.security.AdminRoles;
 import com.hrms.service.AccountService;
 
 import io.jsonwebtoken.Claims;
@@ -69,8 +70,9 @@ public class AccountAPI {
         if (byId) {
             Long callerId = claims.get("id", Long.class);
             String role = claims.get("role", String.class);
-            boolean admin = "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role);
-            if (!admin && !accountDTO.getId().equals(callerId)) {
+            // Meme source de verite que requireAdmin : le test litteral precedent
+            // (ADMIN / SUPER_ADMIN) ne correspondait a aucun role reel.
+            if (!AdminRoles.isAdmin(role) && !accountDTO.getId().equals(callerId)) {
                 throw new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.FORBIDDEN, "Not allowed to reset this account's password");
             }
@@ -181,7 +183,9 @@ public class AccountAPI {
         Claims callerClaims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
         Long callerId = callerClaims.get("id", Long.class);
         String callerRole = callerClaims.get("role", String.class);
-        if (!id.equals(callerId) && !"ADMIN".equalsIgnoreCase(callerRole) && !"SUPER_ADMIN".equalsIgnoreCase(callerRole)) {
+        // Source unique (AdminRoles) : le test litteral empechait un administrateur
+        // reel (role « Administrator ») de consulter les permissions d'un autre compte.
+        if (!id.equals(callerId) && !AdminRoles.isAdmin(callerRole)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         return new ResponseEntity<>(accountService.getAccountPermissions(id), HttpStatus.OK);
@@ -198,7 +202,11 @@ public class AccountAPI {
     private void requireAdmin(String token) {
         Claims claims = requireAuth(token);
         String role = claims.get("role", String.class);
-        if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
+        // Source de verite UNIQUE (AdminRoles) : cette garde n'acceptait que
+        // ADMIN / SUPER_ADMIN, deux roles qui N'EXISTENT PAS en base. Les roles
+        // reels sont Administrator (3 comptes) et SYSTEM_ADMINISTRATOR. Elle
+        // refusait donc tous les administrateurs legitimes.
+        if (!AdminRoles.isAdmin(role)) {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Admin privileges required");
         }

@@ -98,11 +98,11 @@ public class AdminUserController {
      * casse). Le compte admin de PROD porte le rôle BDD "Administrator" — il ne
      * doit JAMAIS être verrouillé hors de la gestion des utilisateurs.
      */
-    private static final java.util.Set<String> ADMIN_ROLE_ALIASES = java.util.Set.of(
-            "SYSTEM_ADMINISTRATOR", "ADMINISTRATOR", "ADMIN");
-
+    // Delegue a com.hrms.security.AdminRoles : meme liste, meme comparaison en
+    // majuscules. La liste etait dupliquee ici et dans AccountAPI, et les deux
+    // avaient divergé — c'est cette divergence qui a casse l'acces admin.
     private static boolean isAdminRole(String role) {
-        return role != null && ADMIN_ROLE_ALIASES.contains(role.trim().toUpperCase());
+        return com.hrms.security.AdminRoles.isAdmin(role);
     }
 
     /**

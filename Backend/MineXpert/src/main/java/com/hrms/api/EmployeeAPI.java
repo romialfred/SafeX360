@@ -63,7 +63,10 @@ public class EmployeeAPI {
         io.jsonwebtoken.Claims claims = io.jsonwebtoken.Jwts.parser()
                 .setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
         String role = claims.get("role", String.class);
-        if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
+        // Source unique (AdminRoles) : ADMIN / SUPER_ADMIN n'existent dans aucun
+        // compte ; les roles reels sont Administrator et SYSTEM_ADMINISTRATOR.
+        // Ce test refusait donc TOUS les administrateurs.
+        if (!com.hrms.security.AdminRoles.isAdmin(role)) {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Admin privileges required");
         }
