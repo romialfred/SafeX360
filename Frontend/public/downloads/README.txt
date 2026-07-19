@@ -1,16 +1,15 @@
-SafeX 360 Field — APK Android
+SafeX 360 Field - statut du miroir APK Android
 
-L'APK sera disponible ici (SafexMobile.apk) après le premier
-build CI/CD reussi (~10 min apres push).
+Le fichier SafexMobile.apk present dans ce repertoire est un miroir historique.
+Il n'est plus remplace automatiquement par GitHub Actions et ne garantit pas la
+derniere version validee de SafeX.
 
-En attendant, recuperer le dernier APK depuis :
+Canal de validation interne :
 https://github.com/BICONSULT/SafeX360/actions/workflows/android-build.yml
 
-Dans le run le plus recent, telecharger l'artefact
-"safex360-field-debug-<commit>" ou "release-<commit>".
+Selectionner un run release reussi, puis telecharger l'artefact
+"safex360-field-release-<commit SHA>". L'artefact contient le SHA-256, le SBOM
+CycloneDX et les metadonnees du commit. Verifier egalement l'attestation GitHub.
 
-Pour declencher manuellement un build :
-  Repo SafeX360 > Actions > "SafeX 360 Field — Build APK Android"
-  > Run workflow > Choisir build_type (debug/release) > Run
-
-Documentation complete : ../Mobile/README.md
+Le remplacement du lien public par un canal signe permanent reste requis avant
+de retirer ce miroir historique.

@@ -89,9 +89,8 @@ const AppFooter = () => {
                         </a>
                     </nav>
 
-                    {/* Règle plateforme : les médaillons ISO ne vivent que sur le login et ici,
-                        dans le footer — jamais dans le contenu des pages. */}
-                    <div className="flex items-center gap-2" aria-label="Normes ISO couvertes par la plateforme">
+                    {/* Repères des référentiels pris en compte, sans valeur d'attestation. */}
+                    <div className="flex items-center gap-2" aria-label="Référentiels ISO pris en compte par certains modules">
                         {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
                             <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
                         ))}

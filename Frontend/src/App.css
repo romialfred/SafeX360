@@ -428,6 +428,28 @@ a:focus-visible,
   opacity: 0.6;
 }
 
+/* Transition fonctionnelle bornée : les composants historiques utilisent ce
+   token au lieu d'une transition globale afin de ne pas animer des propriétés imprévues. */
+.transition-ui {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform, width, height;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* WCAG 2.2 — toutes les animations non essentielles deviennent statiques
+   lorsque l'utilisateur demande une réduction du mouvement. */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto !important;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ===========================================================================
    Scrollbar discrète
    =========================================================================== */

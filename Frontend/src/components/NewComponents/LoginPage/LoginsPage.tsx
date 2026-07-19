@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     IconEye,
     IconEyeOff,
@@ -11,7 +11,14 @@ import {
 import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { isNativePlatform } from '../../../m/utils/capacitorBridge';
-import { getUser, loginUser } from '../../../services/LoginService';
+import {
+    confirmMfaEnrollment,
+    getUser,
+    loginUser,
+    startMfaEnrollment,
+    verifyMfa,
+    type MfaEnrollment,
+} from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
 import { useForm } from '@mantine/form';
@@ -103,6 +110,38 @@ const LoginsPage = () => {
     type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | 'invitationExpired' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
     const [wakingStep, setWakingStep] = useState(0);
+    type MfaMode = 'verify' | 'enroll' | 'recoveryCodes' | null;
+    const [mfaMode, setMfaMode] = useState<MfaMode>(null);
+    const [mfaChallenge, setMfaChallenge] = useState('');
+    const [mfaEnrollment, setMfaEnrollment] = useState<MfaEnrollment | null>(null);
+    const [mfaCode, setMfaCode] = useState('');
+    const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+    const [mfaRecoveryCodes, setMfaRecoveryCodes] = useState<string[]>([]);
+    const [mfaError, setMfaError] = useState('');
+    // Le defi MFA expire cote serveur (expiresInSeconds, 300 s par defaut).
+    // Sans compte a rebours ni sortie, l'utilisateur decouvrait l'expiration
+    // par un echec sec et ne pouvait que recharger la page.
+    const [mfaDeadline, setMfaDeadline] = useState<number | null>(null);
+    const [mfaRemaining, setMfaRemaining] = useState<number>(0);
+
+    useEffect(() => {
+        if (mfaDeadline === null || mfaMode === null || mfaMode === 'recoveryCodes') return;
+        const tick = () => setMfaRemaining(Math.max(0, Math.ceil((mfaDeadline - Date.now()) / 1000)));
+        tick();
+        const id = window.setInterval(tick, 1000);
+        return () => window.clearInterval(id);
+    }, [mfaDeadline, mfaMode]);
+
+    /** Abandon du parcours MFA : retour a l'ecran de connexion, etat purge. */
+    const cancelMfa = () => {
+        setMfaMode(null);
+        setMfaChallenge('');
+        setMfaEnrollment(null);
+        setMfaCode('');
+        setMfaError('');
+        setUseRecoveryCode(false);
+        setMfaDeadline(null);
+    };
 
     const t = language === 'fr'
         ? {
@@ -217,6 +256,34 @@ const LoginsPage = () => {
                 const isNetwork = !err?.response;
                 const status = err?.response?.status;
                 const errMsg = err?.response?.data?.errorMessage ?? '';
+                const errCode = err?.response?.data?.errorCode ?? '';
+
+                if (status === 428 && (errCode === 'MFA_REQUIRED' || errCode === 'MFA_ENROLLMENT_REQUIRED')) {
+                    const challenge = String(err?.response?.data?.challenge ?? '');
+                    if (!challenge) {
+                        finalErrorKind = 'server';
+                        setErrorKind('server');
+                        return;
+                    }
+                    setMfaChallenge(challenge);
+                    setMfaCode('');
+                    setMfaError('');
+                    const ttl = Number(err?.response?.data?.expiresInSeconds) || 300;
+                    setMfaDeadline(Date.now() + ttl * 1000);
+                    if (errCode === 'MFA_ENROLLMENT_REQUIRED') {
+                        try {
+                            const enrollment = await startMfaEnrollment(challenge);
+                            setMfaEnrollment(enrollment);
+                            setMfaMode('enroll');
+                        } catch {
+                            finalErrorKind = 'server';
+                            setErrorKind('server');
+                        }
+                    } else {
+                        setMfaMode('verify');
+                    }
+                    return;
+                }
 
                 if (status === 429) {
                     finalErrorKind = 'rateLimit';
@@ -265,6 +332,48 @@ const LoginsPage = () => {
         } finally {
             setLoading(false);
             if (finalErrorKind !== 'waking') setWakingStep(0);
+        }
+    };
+
+    const completeAuthenticatedSession = async () => {
+        const res = await getUser();
+        dispatch(setUser(res));
+        navigate(isNativePlatform() ? '/m/home' : '/');
+    };
+
+    const handleMfaVerification = async () => {
+        if (!mfaCode.trim()) return;
+        setLoading(true);
+        setMfaError('');
+        try {
+            await verifyMfa(mfaChallenge, useRecoveryCode ? '' : mfaCode, useRecoveryCode ? mfaCode : undefined);
+            setMfaMode(null);
+            await completeAuthenticatedSession();
+        } catch (error: unknown) {
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            setMfaError(status === 429
+                ? (language === 'fr' ? 'Challenge bloqué après cinq essais. Recommencez la connexion.' : 'Challenge locked after five attempts. Start sign-in again.')
+                : (language === 'fr' ? 'Code invalide, expiré ou déjà utilisé.' : 'Invalid, expired, or previously used code.'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMfaEnrollment = async () => {
+        if (!mfaCode.trim()) return;
+        setLoading(true);
+        setMfaError('');
+        try {
+            const result = await confirmMfaEnrollment(mfaChallenge, mfaCode);
+            setMfaRecoveryCodes(result.recoveryCodes);
+            setMfaMode('recoveryCodes');
+        } catch (error: unknown) {
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            setMfaError(status === 429
+                ? (language === 'fr' ? 'Challenge bloqué. Recommencez la connexion.' : 'Challenge locked. Start sign-in again.')
+                : (language === 'fr' ? 'Code de vérification incorrect.' : 'Incorrect verification code.'));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -592,9 +701,11 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
-                {/* Badges officiels des normes ISO — même axe centré que le logo
-                    et la carte (règle plateforme : jamais de norme en texte nu) */}
-                <div className="mt-3 md:mt-4 flex items-center justify-center gap-2.5 shrink-0">
+                {/* Repères des référentiels pris en compte ; ils n'ont pas valeur d'attestation. */}
+                <div
+                    className="mt-3 md:mt-4 flex items-center justify-center gap-2.5 shrink-0"
+                    aria-label={language === 'fr' ? 'Référentiels pris en compte' : 'Referenced frameworks'}
+                >
                     {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
                         <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
                     ))}
@@ -610,6 +721,121 @@ const LoginsPage = () => {
                 )}
 
                 {/* ═══ Popup d'erreur SafeX — professionnelle avec logo officiel ═══ */}
+                <Modal
+                    opened={mfaMode !== null}
+                    /* Echappable — SAUF pendant l'affichage unique des codes de
+                       recuperation : les fermer sans les avoir enregistres les
+                       perdrait definitivement. */
+                    onClose={() => { if (mfaMode !== 'recoveryCodes') cancelMfa(); }}
+                    closeOnClickOutside={false}
+                    closeOnEscape={mfaMode !== 'recoveryCodes'}
+                    withCloseButton={mfaMode !== 'recoveryCodes'}
+                    centered
+                    title={language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
+                    radius="lg"
+                    size="md"
+                    overlayProps={{ backgroundOpacity: 0.65, blur: 6 }}
+                >
+                    {mfaMode === 'enroll' && mfaEnrollment && (
+                        <div className="space-y-4 text-sm text-slate-800">
+                            <p>{language === 'fr'
+                                ? 'Ce rôle sensible exige un second facteur. Ajoutez cette clé dans votre application TOTP, puis saisissez le code à six chiffres.'
+                                : 'This sensitive role requires a second factor. Add this key to your TOTP app, then enter the six-digit code.'}</p>
+                            <div className="rounded-md bg-slate-100 p-3 font-mono break-all" aria-label={language === 'fr' ? 'Clé MFA manuelle' : 'Manual MFA key'}>
+                                {mfaEnrollment.manualKey}
+                            </div>
+                            <a className="text-teal-700 underline" href={mfaEnrollment.otpAuthUri}>
+                                {language === 'fr' ? 'Ouvrir dans une application compatible' : 'Open in a compatible app'}
+                            </a>
+                            <TextInput
+                                label={language === 'fr' ? 'Code de vérification' : 'Verification code'}
+                                value={mfaCode}
+                                onChange={(event) => setMfaCode(event.currentTarget.value.replace(/\D/g, '').slice(0, 6))}
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                maxLength={6}
+                            />
+                            {mfaError && <p role="alert" className="text-red-700">{mfaError}</p>}
+                            <Button fullWidth loading={loading} onClick={handleMfaEnrollment} disabled={mfaCode.length !== 6}>
+                                {language === 'fr' ? 'Activer la MFA' : 'Enable MFA'}
+                            </Button>
+                        </div>
+                    )}
+
+                    {mfaMode === 'verify' && (
+                        <div className="space-y-4 text-sm text-slate-800">
+                            <p>{useRecoveryCode
+                                ? (language === 'fr' ? 'Saisissez un code de récupération non encore utilisé.' : 'Enter an unused recovery code.')
+                                : (language === 'fr' ? 'Saisissez le code à six chiffres de votre application TOTP.' : 'Enter the six-digit code from your TOTP app.')}</p>
+                            <TextInput
+                                label={useRecoveryCode
+                                    ? (language === 'fr' ? 'Code de récupération' : 'Recovery code')
+                                    : (language === 'fr' ? 'Code de vérification' : 'Verification code')}
+                                value={mfaCode}
+                                onChange={(event) => setMfaCode(useRecoveryCode
+                                    ? event.currentTarget.value.toUpperCase().slice(0, 20)
+                                    : event.currentTarget.value.replace(/\D/g, '').slice(0, 6))}
+                                inputMode={useRecoveryCode ? 'text' : 'numeric'}
+                                autoComplete="one-time-code"
+                            />
+                            <button
+                                type="button"
+                                className="text-teal-700 underline"
+                                onClick={() => { setUseRecoveryCode(!useRecoveryCode); setMfaCode(''); setMfaError(''); }}
+                            >
+                                {useRecoveryCode
+                                    ? (language === 'fr' ? 'Utiliser l’application TOTP' : 'Use the TOTP app')
+                                    : (language === 'fr' ? 'Utiliser un code de récupération' : 'Use a recovery code')}
+                            </button>
+                            {mfaError && <p role="alert" className="text-red-700">{mfaError}</p>}
+                            {/* Le defi expire cote serveur : l'utilisateur doit le VOIR
+                                venir, pas le decouvrir par un echec sec. */}
+                            {mfaDeadline !== null && mfaRemaining > 0 && (
+                                <p className={`text-xs tabular-nums ${mfaRemaining <= 60 ? 'text-amber-700' : 'text-slate-500'}`}>
+                                    {language === 'fr'
+                                        ? `Défi valable encore ${Math.floor(mfaRemaining / 60)}:${String(mfaRemaining % 60).padStart(2, '0')}`
+                                        : `Challenge valid for ${Math.floor(mfaRemaining / 60)}:${String(mfaRemaining % 60).padStart(2, '0')}`}
+                                </p>
+                            )}
+                            {mfaDeadline !== null && mfaRemaining <= 0 ? (
+                                <div className="space-y-2">
+                                    <p role="alert" className="text-amber-800">
+                                        {language === 'fr'
+                                            ? 'Défi expiré. Reconnectez-vous pour en obtenir un nouveau.'
+                                            : 'Challenge expired. Sign in again to get a new one.'}
+                                    </p>
+                                    <Button fullWidth variant="default" onClick={cancelMfa}>
+                                        {language === 'fr' ? 'Revenir à la connexion' : 'Back to sign in'}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button fullWidth loading={loading} onClick={handleMfaVerification} disabled={!mfaCode.trim()}>
+                                    {language === 'fr' ? 'Vérifier et se connecter' : 'Verify and sign in'}
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
+                    {mfaMode === 'recoveryCodes' && (
+                        <div className="space-y-4 text-sm text-slate-800">
+                            <p className="font-semibold">{language === 'fr'
+                                ? 'Conservez ces codes hors ligne. Chacun ne fonctionne qu’une fois et ne sera plus affiché.'
+                                : 'Store these codes offline. Each works once and will not be shown again.'}</p>
+                            <ul className="grid grid-cols-2 gap-2 rounded-md bg-slate-100 p-3 font-mono" aria-label={language === 'fr' ? 'Codes de récupération' : 'Recovery codes'}>
+                                {mfaRecoveryCodes.map((code) => <li key={code}>{code}</li>)}
+                            </ul>
+                            <Button fullWidth onClick={() => {
+                                setMfaMode(null);
+                                setMfaRecoveryCodes([]);
+                                setMfaCode('');
+                                form.setFieldValue('password', '');
+                            }}>
+                                {language === 'fr' ? 'J’ai conservé les codes — me reconnecter' : 'I saved the codes — sign in again'}
+                            </Button>
+                        </div>
+                    )}
+                </Modal>
+
                 <Modal
                     opened={errorKind !== null && errorKind !== 'waking'}
                     onClose={() => setErrorKind(null)}

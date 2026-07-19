@@ -10,36 +10,6 @@ spring:
         - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_UNIQUE
         - DedupeResponseHeader=Access-Control-Allow-Origin RETAIN_FIRST
         - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
-      globalcors:
-        cors-configurations:
-          "[/**]":
-            allowedOriginPatterns:
-              - http://localhost:3000
-              - http://localhost:5173
-              - http://localhost:5174
-              - http://localhost:5474
-              - http://localhost:5475
-              # APK Capacitor : le WebView Android sert l'app depuis
-              # https://localhost (sans port) et appelle le gateway en direct.
-              - https://localhost
-              - capacitor://localhost
-              - https://health-safety-eight.vercel.app
-              - http://host.docker.internal:3000
-              - https://safex360.data-univers.com
-              - http://app1.localtest.me:3000
-              - http://app2.localtest.me:5173
-              - https://mine-xpert.data-univers.com
-              - https://dev.safex360.data-univers.com
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
-            allowedHeaders:
-              - "*"
-            allowCredentials: true
       routes:
         - id: hrms
           uri: ${MINE_XPERT_URL}
@@ -60,6 +30,9 @@ spring:
         response-timeout: 60s
 server:
   port: 9000
+
+# Liste exacte, centralisée, utilisée à la fois par CORS et la protection CSRF.
+SAFEX_ALLOWED_ORIGINS: ${SAFEX_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5474,http://localhost:5475,https://localhost,capacitor://localhost,https://health-safety-eight.vercel.app,https://safex360.vercel.app,http://host.docker.internal:3000,https://safex360.data-univers.com,http://app1.localtest.me:3000,http://app2.localtest.me:5173,https://mine-xpert.data-univers.com,https://dev.safex360.data-univers.com}
 eureka:
   client:
     service-url:

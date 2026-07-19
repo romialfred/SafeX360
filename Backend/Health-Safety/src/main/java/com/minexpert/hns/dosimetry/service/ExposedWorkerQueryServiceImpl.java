@@ -83,6 +83,12 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
     private final ExposureAlertRepository exposureAlertRepository;
     private final ThresholdRepository thresholdRepository;
     private final DosimetryAuditLogRepository auditLogRepository;
+    private RegulatoryLimitResolver regulatoryLimitResolver;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setRegulatoryLimitResolver(RegulatoryLimitResolver regulatoryLimitResolver) {
+        this.regulatoryLimitResolver = regulatoryLimitResolver;
+    }
     /**
      * Lookup RH (table {@code employee} de HRMS MineXpert dans la même DB Aiven). Nullable
      * pour rester compatible avec les tests unitaires qui instancient le service sans
@@ -120,8 +126,8 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
         // 1. Projection compacte : worker + cumul de l'annee N
         List<Object[]> rows = workerRepository.findRegistryProjection(mineId, year);
 
-        // 2. Cache des seuils reglementaires Hp(10) par categorie de personne (1 lookup par cat.)
-        Map<String, Threshold> hp10Thresholds = new HashMap<>();
+        // 2. Cache des limites approuvées par catégorie (1 résolution par catégorie).
+        Map<String, Double> hp10Limits = new HashMap<>();
 
         List<ExposedWorkerListItemDTO> items = new ArrayList<>(rows.size());
         for (Object[] row : rows) {
@@ -134,10 +140,15 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
             Double lifetime = (Double) row[6];
 
             String personCategory = resolvePersonCategory(category, specialStatus);
-            Threshold threshold = hp10Thresholds.computeIfAbsent(personCategory,
-                    pc -> resolveHp10Threshold(mineId, pc));
-
-            Double limit = threshold != null ? threshold.getRegulatoryLimit() : null;
+            Double limit = hp10Limits.computeIfAbsent(personCategory, pc -> {
+                if (regulatoryLimitResolver != null) {
+                    return regulatoryLimitResolver.resolve(mineId, pc, ThresholdGrandeur.HP10,
+                            LocalDate.of(year, 12, 31)).orElse(null);
+                }
+                // Compatibilité limitée aux anciens tests unitaires sans contexte Spring.
+                Threshold threshold = resolveHp10Threshold(mineId, pc);
+                return threshold != null ? threshold.getRegulatoryLimit() : null;
+            });
             String exposureLevel = calculateExposureLevel(annualHp10, limit);
 
             // 3. Dernier enregistrement actif connu (dose Hp(10) + periode)
@@ -592,7 +603,8 @@ public class ExposedWorkerQueryServiceImpl implements ExposedWorkerQueryService 
     private ThresholdDTO toThresholdDTO(Threshold e) {
         return new ThresholdDTO(e.getId(), e.getMineId(), e.getGrandeur(),
                 e.getPersonCategory(), e.getDoseConstraint(), e.getInvestigationLevel(),
-                e.getActionLevel(), e.getRegulatoryLimit(), e.getWarnPercentages(),
+                e.getActionLevel(), e.getClassificationThreshold(), e.getRegulatoryLimit(),
+                e.getWarnPercentages(),
                 e.getUnit(), e.getReferenceFramework(), e.isActive(),
                 e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy());
     }

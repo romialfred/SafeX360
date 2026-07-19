@@ -30,7 +30,10 @@ public class JwtHelper {
     // LOT 41 P1 SECURITY: durée de vie effective du JWT en millisecondes.
     // Exposée pour que les couches API (cookie max-age) et JWT (setExpiration) restent cohérentes.
     public long getExpirationMillis() {
-        return expirationHours * 60L * 60L * 1000L;
+        if (expirationHours < 1 || expirationHours > 24) {
+            throw new IllegalStateException("JWT_EXPIRATION_HOURS doit être compris entre 1 et 24");
+        }
+        return Math.multiplyExact(expirationHours, 60L * 60L * 1000L);
     }
 
     // retrieve username from jwt token

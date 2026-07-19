@@ -18,7 +18,7 @@
  *                          tri par period DESC.
  *   4. Graphique trend   : Recharts LineChart HP10 mensuel + cumul annuel
  *                          (resets a chaque annee civile) + ReferenceLine =
- *                          limite annuelle (20 mSv pour Cat A, 6 mSv pour B).
+ *                          limite annuelle active configurée pour la mine/globale.
  *   5. Cumuls gauges     : 3 gauge cards (annuel / 5y / vie pro) avec couleurs
  *                          vert / jaune / orange / rouge selon ratio, tooltip
  *                          valeurs exactes + limite.
@@ -85,8 +85,8 @@ import {
     type AlertLevel,
     type ExposedWorkerDetailDTO,
     type ExposureAlertDTO,
-    type ThresholdDTO,
 } from '../../services/DosimetryService';
+import { resolveConfiguredRegulatoryLimit } from './dosimetryRegulatoryLimits';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC helper
@@ -225,19 +225,6 @@ function gaugeTone(ratio: number): GaugeTone {
 }
 
 /** Resoud la limite reglementaire Hp(10) annuelle. */
-function resolveHp10AnnualLimit(
-    thresholds: ThresholdDTO[] | undefined,
-    category: DoseCategory,
-): number {
-    if (thresholds && thresholds.length > 0) {
-        const hp10 = thresholds.find((t) => t.grandeur === 'HP10');
-        if (hp10?.regulatoryLimit != null && hp10.regulatoryLimit > 0) {
-            return hp10.regulatoryLimit;
-        }
-    }
-    return category === 'A' ? 20 : 6;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  Filtres locaux
 // ─────────────────────────────────────────────────────────────────────────────
@@ -346,7 +333,7 @@ const DoseTrackingPage = () => {
     const isApprentice = specialStatus === 'APPRENTICE';
 
     const annualLimitHp10 = useMemo(
-        () => resolveHp10AnnualLimit(detail?.thresholds, category),
+        () => resolveConfiguredRegulatoryLimit(detail?.thresholds, category),
         [detail, category],
     );
 
@@ -642,7 +629,7 @@ const DoseTrackingPage = () => {
                                 })}
                                 value={cumulative?.annualHp10 ?? null}
                                 ratio={
-                                    cumulative?.annualHp10 != null && annualLimitHp10 > 0
+                                    cumulative?.annualHp10 != null && annualLimitHp10 != null && annualLimitHp10 > 0
                                         ? cumulative.annualHp10 / annualLimitHp10
                                         : null
                                 }
@@ -1016,17 +1003,19 @@ const DoseTrackingPage = () => {
                                         }
                                     />
                                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                                    <ReferenceLine
-                                        y={annualLimitHp10}
-                                        stroke="#dc2626"
-                                        strokeDasharray="4 4"
-                                        label={{
-                                            value: `${t('doseTracking.trend.limit')} (${annualLimitHp10} mSv)`,
-                                            position: 'right',
-                                            fontSize: 10,
-                                            fill: '#dc2626',
-                                        }}
-                                    />
+                                    {annualLimitHp10 != null && (
+                                        <ReferenceLine
+                                            y={annualLimitHp10}
+                                            stroke="#dc2626"
+                                            strokeDasharray="4 4"
+                                            label={{
+                                                value: `${t('doseTracking.trend.limit')} (${annualLimitHp10} mSv)`,
+                                                position: 'right',
+                                                fontSize: 10,
+                                                fill: '#dc2626',
+                                            }}
+                                        />
+                                    )}
                                     <Line
                                         type="monotone"
                                         dataKey="monthly"
@@ -1174,7 +1163,7 @@ function KpiTile({
     sublabel: string;
     value: number | null;
     ratio: number | null;
-    limit: number;
+    limit: number | null;
     t: (k: string, o?: any) => string;
     showRatio: boolean;
     rawNumber?: boolean;
@@ -1193,7 +1182,9 @@ function KpiTile({
                 </span>
                 {!rawNumber && (
                     <span className="text-[11px] text-slate-500">
-                        / {limit.toFixed(0)} {t('doseTracking.kpi.msvUnit')}
+                        {limit != null
+                            ? `/ ${limit.toFixed(0)} ${t('doseTracking.kpi.msvUnit')}`
+                            : t('doseTracking.regulatoryLimitNotConfiguredShort', { defaultValue: '/ limite non configurée' })}
                     </span>
                 )}
             </div>
@@ -1218,14 +1209,16 @@ function GaugeCard({
     title: string;
     subtitle: string;
     value: number | null;
-    limit: number;
+    limit: number | null;
     t: (k: string, o?: any) => string;
 }) {
-    const ratio = value == null || limit <= 0 ? 0 : Math.min(value / limit, 1.2);
+    const ratio = value == null || limit == null || limit <= 0 ? 0 : Math.min(value / limit, 1.2);
     const pct = Math.min(ratio * 100, 100);
     const tone = gaugeTone(ratio);
     const tooltipValue = t('doseTracking.cumuls.tooltipValue', { value: formatMsv(value) });
-    const tooltipLimit = t('doseTracking.cumuls.tooltipLimit', { limit: limit.toFixed(0) });
+    const tooltipLimit = limit != null
+        ? t('doseTracking.cumuls.tooltipLimit', { limit: limit.toFixed(0) })
+        : t('doseTracking.regulatoryLimitNotConfigured', { defaultValue: 'Limite non configurée — à valider localement' });
     return (
         <div
             className={`relative rounded-xl border ${tone.border} ${tone.bg} p-3 ring-1 ${tone.ring}`}
@@ -1240,7 +1233,9 @@ function GaugeCard({
                     {formatMsv(value)}
                 </span>
                 <span className="text-[11px] text-slate-500">
-                    / {limit.toFixed(0)} {t('doseTracking.kpi.msvUnit')}
+                    {limit != null
+                        ? `/ ${limit.toFixed(0)} ${t('doseTracking.kpi.msvUnit')}`
+                        : t('doseTracking.regulatoryLimitNotConfiguredShort', { defaultValue: '/ limite non configurée' })}
                 </span>
             </div>
             <div className="mt-3 h-2 bg-white/70 rounded overflow-hidden border border-slate-200">
@@ -1253,9 +1248,15 @@ function GaugeCard({
                     aria-valuemax={100}
                 />
             </div>
-            <p className={`mt-1.5 text-[11px] font-medium ${tone.text}`}>
-                {(ratio * 100).toFixed(1)} %
-            </p>
+            {limit != null ? (
+                <p className={`mt-1.5 text-[11px] font-medium ${tone.text}`}>
+                    {(ratio * 100).toFixed(1)} %
+                </p>
+            ) : (
+                <p className="mt-1.5 text-[11px] font-medium text-amber-700">
+                    {t('doseTracking.regulatoryLimitNotConfigured', { defaultValue: 'Limite non configurée — à valider localement' })}
+                </p>
+            )}
         </div>
     );
 }

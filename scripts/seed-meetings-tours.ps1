@@ -3,10 +3,9 @@
 # 2) Crée des hs-activities (HSM = réunions, ST = tournées) rattachées au plan
 # 3) Fait évoluer quelques statuts (IN_PROGRESS / COMPLETED) pour la démo
 
-$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
-$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
-$h = @{ 'X-Secret-Key' = $secret }
-$base = 'http://localhost:8081/hns'
+if ([string]::IsNullOrWhiteSpace($env:SAFEX_ADMIN_SESSION_COOKIE)) { throw 'SAFEX_ADMIN_SESSION_COOKIE requis' }
+$h = @{ 'Cookie' = "jwt=$($env:SAFEX_ADMIN_SESSION_COOKIE)" }
+$base = 'http://localhost:9100/hns'
 
 function Invoke-Api {
     param([string]$Method, [string]$Url, [object]$Body)

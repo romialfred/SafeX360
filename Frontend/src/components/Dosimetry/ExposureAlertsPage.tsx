@@ -1143,9 +1143,20 @@ function AlertDetailModal({
                     <InfoGrid>
                         <InfoRow
                             label={t('alerts.modal.regulatoryLimit')}
-                            value={`${formatMsv(threshold.regulatoryLimit ?? null)} mSv`}
+                            value={threshold.regulatoryLimit != null
+                                ? `${formatMsv(threshold.regulatoryLimit)} mSv`
+                                : t('alerts.modal.regulatoryLimitNotConfigured', {
+                                    defaultValue: 'Non configurée — validation locale requise',
+                                })}
                             valueClass="font-mono text-red-700 font-semibold"
                         />
+                        {threshold.classificationThreshold != null && (
+                            <InfoRow
+                                label={t('alerts.modal.classificationThreshold', { defaultValue: 'Seuil de classification' })}
+                                value={`${formatMsv(threshold.classificationThreshold)} mSv`}
+                                valueClass="font-mono text-violet-700 font-semibold"
+                            />
+                        )}
                         <InfoRow
                             label={t('alerts.modal.actionLevel')}
                             value={`${formatMsv(threshold.actionLevel ?? null)} mSv`}

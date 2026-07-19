@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,9 +51,8 @@ import lombok.RequiredArgsConstructor;
  *   <li>logge la trace d'audit.</li>
  * </ol>
  *
- * <p>Les limites reglementaires (mSv/an) reproduisent la table de
- * {@link DosimetryAggregationServiceImpl} pour conserver l'absence de couplage entre les deux
- * services.
+ * <p>Les limites reglementaires sont resolues depuis les seuils actifs configures par mine,
+ * puis globalement. Aucune valeur n'est fabriquee en cas d'absence.
  */
 @Service
 @RequiredArgsConstructor
@@ -67,17 +65,6 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    /** Limites annuelles Hp(10) effectives (mSv) - alignees sur l'aggregation. */
-    private static final Map<KpiCategory, Double> REGULATORY_LIMITS = new EnumMap<>(KpiCategory.class);
-
-    static {
-        REGULATORY_LIMITS.put(KpiCategory.WORKER_A, 20.0);
-        REGULATORY_LIMITS.put(KpiCategory.WORKER_B, 6.0);
-        REGULATORY_LIMITS.put(KpiCategory.APPRENTICE, 6.0);
-        REGULATORY_LIMITS.put(KpiCategory.PREGNANCY, 1.0);
-        REGULATORY_LIMITS.put(KpiCategory.PUBLIC, 1.0);
-    }
-
     private final ExposedWorkerRepository workerRepository;
     private final DoseRecordRepository doseRecordRepository;
     private final DoseCumulativeRepository cumulativeRepository;
@@ -85,6 +72,7 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
     private final OverexposureCaseRepository caseRepository;
     private final HtmlToPdfRenderer pdfRenderer;
     private final DosimetryAuditService auditService;
+    private final RegulatoryLimitResolver regulatoryLimitResolver;
 
     // ============================================================
     //  generateIndividualDoseAttestation
@@ -104,7 +92,8 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
             DoseCumulative cum = cumulativeRepository.findByWorkerIdAndYear(workerId, y)
                     .orElse(null);
             KpiCategory kc = mapToKpiCategory(worker);
-            Double limit = REGULATORY_LIMITS.get(kc);
+            Double limit = regulatoryLimitResolver.resolveAnnualHp10(worker.getMineId(), kc)
+                    .orElse(null);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("year", y);
             row.put("annualHp10", scale(cum != null ? cum.getAnnualHp10() : null));
@@ -113,6 +102,7 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
             row.put("rolling5yHp10", scale(cum != null ? cum.getRolling5yHp10() : null));
             row.put("lifetimeHp10", scale(cum != null ? cum.getLifetimeHp10() : null));
             row.put("regulatoryLimit", limit);
+            row.put("regulatoryLimitConfigured", limit != null);
             row.put("percentOfLimit", percentOfLimit(
                     cum != null ? cum.getAnnualHp10() : null, limit));
             annualRows.add(row);
@@ -236,7 +226,7 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
             DoseCumulative cum = cumulativeRepository.findByWorkerIdAndYear(w.getId(), year)
                     .orElse(null);
             KpiCategory kc = mapToKpiCategory(w);
-            Double limit = REGULATORY_LIMITS.get(kc);
+            Double limit = regulatoryLimitResolver.resolveAnnualHp10(mineId, kc).orElse(null);
             Double annual = cum != null ? cum.getAnnualHp10() : null;
             BigDecimal pct = percentOfLimit(annual, limit);
 
@@ -252,6 +242,7 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
             row.put("kpiCategory", kc.name());
             row.put("annualHp10", scale(annual));
             row.put("regulatoryLimit", limit);
+            row.put("regulatoryLimitConfigured", limit != null);
             row.put("percentOfLimit", pct);
             row.put("fitness", fitnessLabel);
             rows.add(row);
@@ -361,7 +352,7 @@ public class DosimetryReportServiceImpl implements DosimetryReportService {
         Context ctx = new Context();
         ctx.setVariable("generatedAt", LocalDateTime.now().format(DATETIME_FORMATTER));
         ctx.setVariable("regulationFootnote",
-                "CIPR 103 - AIEA GSR Part 3 - Code du travail R.4451");
+                "Limites applicables a confirmer localement par PCR/RPO, medecin du travail et conseil juridique.");
         ctx.setVariable("brand", "SafeX 360");
         return ctx;
     }

@@ -2,6 +2,7 @@ package com.minexpert.hns.api.emergency.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,8 @@ import com.minexpert.hns.api.emergency.entity.SosAlert;
 import com.minexpert.hns.api.emergency.enums.SosStatus;
 
 public interface SosAlertRepository extends JpaRepository<SosAlert, Long> {
+
+    Optional<SosAlert> findByClientRequestId(String clientRequestId);
 
     List<SosAlert> findByCompanyIdAndStatusNotInOrderByTriggeredAtDesc(
         Long companyId, List<SosStatus> excludedStatuses

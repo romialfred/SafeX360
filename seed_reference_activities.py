@@ -18,11 +18,13 @@ Usage :
     python seed_reference_activities.py --env prod       # DRY-RUN prod   (lecture seule)
     python seed_reference_activities.py --env prod --apply   # applique en PROD
 
-Auth : compte admin (login/mdp surchargeables via --login / --password).
+Auth : fournir --login/--password ou les variables SAFEX_ADMIN_LOGIN et
+SAFEX_ADMIN_PASSWORD. Aucun identifiant n'est défini par défaut.
 """
 import sys
 import time
 import argparse
+import os
 import requests
 
 
@@ -63,9 +65,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", choices=["local", "prod"], default="local")
     ap.add_argument("--apply", action="store_true", help="ecrit reellement (sinon dry-run lecture seule)")
-    ap.add_argument("--login", default="admin")
-    ap.add_argument("--password", default="Admin@2026")
+    ap.add_argument("--login", default=os.environ.get("SAFEX_ADMIN_LOGIN"))
+    ap.add_argument("--password", default=os.environ.get("SAFEX_ADMIN_PASSWORD"))
     args = ap.parse_args()
+    if not args.login or not args.password:
+        ap.error("SAFEX_ADMIN_LOGIN et SAFEX_ADMIN_PASSWORD sont requis (ou --login/--password)")
 
     base = GATEWAYS[args.env]
     mode = "APPLY" if args.apply else "DRY-RUN (lecture seule)"
@@ -76,15 +80,15 @@ def main():
     r = req_retry(lambda: s.post(f"{base}/hrms/auth/login",
                   json={"login": args.login, "password": args.password}, timeout=60))
     if r.status_code != 200:
-        print(f"[ERREUR] login {args.login} -> HTTP {r.status_code} : {r.text[:200]}")
+        print(f"[ERREUR] login -> HTTP {r.status_code}")
         sys.exit(1)
-    print(f"[OK] connecte en tant que {args.login}")
+    print("[OK] authentification réussie")
 
     # 2) Etat existant (idempotence) : activites TDM/PENDING de l'annee
     url_list = f"{base}/hns/activity/get/year/{YEAR}/status/PENDING/category/{CATEGORY}"
     r = req_retry(lambda: s.get(url_list, timeout=60))
     if r.status_code != 200:
-        print(f"[ERREUR] lecture activites -> HTTP {r.status_code} : {r.text[:200]}")
+        print(f"[ERREUR] lecture activites -> HTTP {r.status_code}")
         sys.exit(1)
     existing = r.json() if r.text else []
     existing_titles = {a.get("title") for a in existing}

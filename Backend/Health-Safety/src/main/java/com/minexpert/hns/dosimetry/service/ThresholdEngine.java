@@ -1,6 +1,8 @@
 package com.minexpert.hns.dosimetry.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +53,14 @@ public class ThresholdEngine {
     private final ThresholdRepository thresholdRepository;
     private final ExposureAlertRepository exposureAlertRepository;
     private final DosimetryAuditService auditService;
+
+    /** Résolution juridictionnelle injectée en production ; null uniquement dans les tests legacy. */
+    private RegulatoryLimitResolver regulatoryLimitResolver;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setRegulatoryLimitResolver(RegulatoryLimitResolver regulatoryLimitResolver) {
+        this.regulatoryLimitResolver = regulatoryLimitResolver;
+    }
 
     /**
      * Auto-ouverture d'un dossier de surexposition pour les alertes de niveau >= ACTION.
@@ -105,7 +115,17 @@ public class ThresholdEngine {
         if (opt.isEmpty()) return;
 
         Threshold t = opt.get();
-        AlertLevel level = computeLevel(value, t);
+        // Le referentiel juridictionnel PRIME quand une regle approuvee existe ;
+        // mais tant que ce referentiel — table neuve, donc vide au deploiement —
+        // n'est pas alimente ET approuve, on RETOMBE sur la limite configuree du
+        // seuil. L'`orElse(null)` initial eteignait silencieusement toutes les
+        // alertes de niveau reglementaire existantes le jour du deploiement :
+        // une surveillance de securite ne se degrade pas par effet de bord.
+        Double approvedRegulatoryLimit = regulatoryLimitResolver == null
+                ? t.getRegulatoryLimit()
+                : regulatoryLimitResolver.resolve(mineId, personCategory, grandeur,
+                        applicableDate(record.getPeriod())).orElse(t.getRegulatoryLimit());
+        AlertLevel level = computeLevel(value, t, approvedRegulatoryLimit);
         if (level == null) return;
 
         // Idempotence : pas de doublon si une alerte ACTIVE non-acknowledged existe deja pour
@@ -177,11 +197,10 @@ public class ThresholdEngine {
      * Calcule le niveau d'alerte a partir de la valeur et du seuil. Renvoie null si aucun
      * niveau n'est franchi (NONE).
      *
-     * <p>Algorithme : on calcule un ratio = value / regulatoryLimit. Si pas de regulatoryLimit
-     * configure, on tombe en fallback sur actionLevel / investigationLevel (compat. legacy).
+     * <p>Algorithme : on calcule un ratio uniquement avec la limite juridictionnelle approuvée.
+     * En son absence, seuls les niveaux opérationnels action/investigation restent évalués.
      */
-    private AlertLevel computeLevel(double value, Threshold t) {
-        Double limit = t.getRegulatoryLimit();
+    private AlertLevel computeLevel(double value, Threshold t, Double limit) {
 
         // Cas 1 : regulatoryLimit defini -> on raisonne en ratio.
         if (limit != null && limit > 0) {
@@ -201,6 +220,23 @@ public class ThresholdEngine {
         if (t.getActionLevel() != null && value >= t.getActionLevel()) return AlertLevel.ACTION;
         if (t.getInvestigationLevel() != null && value >= t.getInvestigationLevel()) {
             return AlertLevel.INVESTIGATION;
+        }
+        return null;
+    }
+
+    private LocalDate applicableDate(String period) {
+        if (period == null || period.isBlank()) return null;
+        try {
+            if (period.matches("\\d{4}-\\d{2}")) {
+                return YearMonth.parse(period).atEndOfMonth();
+            }
+            if (period.matches("\\d{4}-Q[1-4]")) {
+                int year = Integer.parseInt(period.substring(0, 4));
+                int quarter = Integer.parseInt(period.substring(6, 7));
+                return YearMonth.of(year, quarter * 3).atEndOfMonth();
+            }
+        } catch (RuntimeException ignored) {
+            // La validation de format reste au service de saisie.
         }
         return null;
     }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import com.hms.gateway.security.ServiceTokenIssuer;
 
 @Component
 public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config> {
@@ -22,8 +23,8 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     // LOT 41 P0 SECURITY: secret partagé entre Gateway et microservices.
     // Permet aux microservices de rejeter toute requête qui ne provient pas du Gateway.
     // L'attaquant doit désormais (1) atteindre le port backend ET (2) connaître ce secret.
-    @org.springframework.beans.factory.annotation.Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String INTERNAL_GATEWAY_SECRET;
+    @org.springframework.beans.factory.annotation.Autowired
+    private ServiceTokenIssuer serviceTokenIssuer;
 
     public TokenFilter() {
         super(Config.class);
@@ -40,8 +41,10 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             exchange = exchange.mutate()
                     .request(r -> r.headers(h -> {
                         h.remove("X-Secret-Key");
+                        h.remove(ServiceTokenIssuer.HEADER);
                         h.remove("X-Permissions");
                         h.remove("X-User-Id");
+                        h.remove("X-Role");
                         // Cloisonnement mines : ces en-têtes sont AUTORITAIRES (réinjectés
                         // depuis le JWT ci-dessous). On strip toute version cliente pour
                         // empêcher l'usurpation de périmètre de mines.
@@ -60,9 +63,17 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 return chain.filter(exchange);
             }
 
-            if (path.equals("/hrms/auth/login") || path.equals("/hrms/account/reset-password")) {
+            // Endpoints PRÉ-authentification : pas encore de cookie jwt à ce stade.
+            // Les trois routes MFA en font partie — l'utilisateur ne détient alors
+            // qu'un jeton de défi opaque (court, à usage unique, verrouillé après
+            // 5 essais côté HRMS) : exiger le cookie ici rendait tout le parcours
+            // MFA infranchissable, l'enrôlement comme la vérification.
+            if (path.equals("/hrms/auth/login") || path.equals("/hrms/account/reset-password")
+                    || path.equals("/hrms/auth/mfa/enroll/start")
+                    || path.equals("/hrms/auth/mfa/enroll/confirm")
+                    || path.equals("/hrms/auth/mfa/verify")) {
                 return chain.filter(exchange.mutate()
-                        .request(r -> r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET))
+                        .request(r -> r.header(ServiceTokenIssuer.HEADER, serviceTokenIssuer.issueForPath(path)))
                         .build());
             }
 
@@ -88,7 +99,8 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 // c'est ce qui permet au downstream de distinguer « requête utilisateur
                 // (RBAC strict) » de « appel système sans JWT (fallback de confiance) ».
                 final String role = claims.get("role", String.class);
-                final String permissions = permissionsForRole(role);
+                final String normalizedRole = normalizeRole(role);
+                final String permissions = permissionsForRole(normalizedRole);
                 // Identité autoritaire depuis le JWT (claim `id`) pour les gardes SELF.
                 final Object idClaim = claims.get("id");
                 final String userId = idClaim != null ? String.valueOf(idClaim) : "";
@@ -100,8 +112,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 final String companies = companiesClaim != null ? String.valueOf(companiesClaim) : "";
                 exchange = exchange.mutate()
                         .request(r -> {
-                            r.header("X-Secret-Key", INTERNAL_GATEWAY_SECRET);
+                            r.header(ServiceTokenIssuer.HEADER, serviceTokenIssuer.issueForPath(path));
                             r.header("X-Permissions", permissions);
+                            r.header("X-Role", normalizedRole);
                             if (!userId.isBlank()) {
                                 r.header("X-User-Id", userId);
                             }
@@ -173,10 +186,21 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
      * mais n'accorde aucune autorité downstream (fail-closed côté HNS).
      */
     private static String permissionsForRole(String role) {
+        return ROLE_PERMISSIONS.getOrDefault(normalizeRole(role), "");
+    }
+
+    /**
+     * Normalise le role issu du JWT avant de le propager. La Gateway retire toujours
+     * toute valeur fournie par le client : {@code X-Role} ne peut donc pas servir a
+     * une elevation de privileges par injection d'en-tete.
+     */
+    private static String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
             return "";
         }
-        return ROLE_PERMISSIONS.getOrDefault(role.trim().toUpperCase(), "");
+        return role.trim().toUpperCase(java.util.Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
     }
 
     public static class Config {

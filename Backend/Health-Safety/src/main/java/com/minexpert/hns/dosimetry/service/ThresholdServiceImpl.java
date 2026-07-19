@@ -24,11 +24,11 @@ public class ThresholdServiceImpl implements ThresholdService {
 
     @Override
     public Long create(Long companyId, ThresholdDTO dto) {
+        requireCompany(companyId);
+        validateThresholdSemantics(dto);
         Threshold e = toEntity(dto);
-        // mineId nullable (seuils globaux par defaut). Si non fourni, on hydrate avec companyId.
-        if (e.getMineId() == null && dto.getMineId() != null) {
-            e.setMineId(dto.getMineId());
-        }
+        // La mine vient exclusivement du perimetre authentifie, jamais du payload client.
+        e.setMineId(companyId);
         e.setCreatedAt(LocalDateTime.now());
         e.setUpdatedAt(LocalDateTime.now());
         Threshold saved = repository.save(e);
@@ -38,14 +38,21 @@ public class ThresholdServiceImpl implements ThresholdService {
 
     @Override
     public void update(Long companyId, ThresholdDTO dto) {
-        Threshold existing = repository.findById(dto.getId())
+        requireCompany(companyId);
+        validateThresholdSemantics(dto);
+        if (dto.getId() == null) {
+            throw new IllegalArgumentException("Threshold id is required");
+        }
+        Threshold existing = repository.findByIdAndMineId(dto.getId(), companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Threshold not found: " + dto.getId()));
-        existing.setMineId(dto.getMineId());
+        // Ne jamais permettre un transfert de tenant par modification du corps.
+        existing.setMineId(companyId);
         existing.setGrandeur(dto.getGrandeur());
         existing.setPersonCategory(dto.getPersonCategory());
         existing.setDoseConstraint(dto.getDoseConstraint());
         existing.setInvestigationLevel(dto.getInvestigationLevel());
         existing.setActionLevel(dto.getActionLevel());
+        existing.setClassificationThreshold(dto.getClassificationThreshold());
         existing.setRegulatoryLimit(dto.getRegulatoryLimit());
         existing.setWarnPercentages(dto.getWarnPercentages());
         existing.setUnit(dto.getUnit());
@@ -59,19 +66,37 @@ public class ThresholdServiceImpl implements ThresholdService {
 
     @Override
     public List<ThresholdDTO> getAll(Long companyId) {
-        return repository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+        requireCompany(companyId);
+        return repository.findByMineId(companyId).stream()
+                .map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
-    public ThresholdDTO getById(Long id) {
-        return toDTO(repository.findById(id)
+    public List<ThresholdDTO> getGlobalDefaults() {
+        return repository.findByMineIdIsNull().stream()
+                .map(this::toDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public ThresholdDTO getById(Long companyId, Long id) {
+        requireCompany(companyId);
+        return toDTO(repository.findByIdAndMineId(id, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Threshold not found: " + id)));
     }
 
     @Override
-    public void delete(Long id) {
-        repository.deleteById(id);
+    public void delete(Long companyId, Long id) {
+        requireCompany(companyId);
+        Threshold existing = repository.findByIdAndMineId(id, companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Threshold not found: " + id));
+        repository.delete(existing);
         audit("DELETE", id, null);
+    }
+
+    private void requireCompany(Long companyId) {
+        if (companyId == null || companyId <= 0L) {
+            throw new IllegalArgumentException("Company scope is required");
+        }
     }
 
     private void audit(String action, Long entityId, Long userId) {
@@ -89,6 +114,7 @@ public class ThresholdServiceImpl implements ThresholdService {
         e.setDoseConstraint(dto.getDoseConstraint());
         e.setInvestigationLevel(dto.getInvestigationLevel());
         e.setActionLevel(dto.getActionLevel());
+        e.setClassificationThreshold(dto.getClassificationThreshold());
         e.setRegulatoryLimit(dto.getRegulatoryLimit());
         e.setWarnPercentages(dto.getWarnPercentages());
         e.setUnit(dto.getUnit());
@@ -102,8 +128,27 @@ public class ThresholdServiceImpl implements ThresholdService {
     private ThresholdDTO toDTO(Threshold e) {
         return new ThresholdDTO(e.getId(), e.getMineId(), e.getGrandeur(),
                 e.getPersonCategory(), e.getDoseConstraint(), e.getInvestigationLevel(),
-                e.getActionLevel(), e.getRegulatoryLimit(), e.getWarnPercentages(),
+                e.getActionLevel(), e.getClassificationThreshold(), e.getRegulatoryLimit(),
+                e.getWarnPercentages(),
                 e.getUnit(), e.getReferenceFramework(), e.isActive(),
                 e.getCreatedAt(), e.getUpdatedAt(), e.getCreatedBy(), e.getUpdatedBy());
+    }
+
+    /**
+     * Interdit de requalifier silencieusement le seuil de classification WORKER_B de 6 mSv
+     * en limite reglementaire. Une autre limite peut etre configuree uniquement apres
+     * validation locale et reste distincte de {@code classificationThreshold}.
+     */
+    private void validateThresholdSemantics(ThresholdDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Threshold payload is required");
+        }
+        Double regulatoryLimit = dto.getRegulatoryLimit();
+        if ("WORKER_B".equalsIgnoreCase(dto.getPersonCategory())
+                && regulatoryLimit != null
+                && Math.abs(regulatoryLimit - 6.0d) < 0.000001d) {
+            throw new IllegalArgumentException(
+                    "WORKER_B: 6 mSv is a classification threshold, not a regulatory limit");
+        }
     }
 }

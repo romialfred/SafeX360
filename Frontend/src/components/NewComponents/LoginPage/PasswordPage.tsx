@@ -41,7 +41,7 @@ const PasswordPage = () => {
             resetProgress: 'Envoi…',
             backToLogin: 'Retour à la connexion',
             remember: 'Vous vous souvenez de votre mot de passe ?',
-            standards: 'Conformité ISO 45001 · 14001 · 9001 · 19011',
+            standards: 'Référentiels pris en compte : ISO 45001 · 14001 · 9001 · 19011',
         },
         en: {
             kicker: 'SafeX 360 · Mining HSE Platform',
@@ -55,7 +55,7 @@ const PasswordPage = () => {
             resetProgress: 'Sending…',
             backToLogin: 'Back to sign in',
             remember: 'Remember your password?',
-            standards: 'ISO 45001 · 14001 · 9001 · 19011 compliant',
+            standards: 'Referenced frameworks: ISO 45001 · 14001 · 9001 · 19011',
         },
     };
 

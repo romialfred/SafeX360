@@ -15,7 +15,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — Certification d'un auditeur interne (ISO 19011:2018 §7).
+ * LOT 52 — Qualification d'un auditeur interne (ISO 19011:2026 — compétences).
  *
  * <p>Permet de tracer les qualifications formelles (ex. IRCA Lead Auditor,
  * formation ISO 45001) avec leur date d'expiration, exploitée par la

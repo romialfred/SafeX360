@@ -34,6 +34,8 @@ public class SecurityHeadersFilter implements GlobalFilter, Ordered {
             headers.addIfAbsent("Referrer-Policy", "strict-origin-when-cross-origin");
             headers.addIfAbsent("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
             headers.addIfAbsent("X-Permitted-Cross-Domain-Policies", "none");
+            headers.addIfAbsent("Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
             return Mono.empty();
         });
         return chain.filter(exchange);

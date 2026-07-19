@@ -43,7 +43,7 @@ const RiskAssessments = () => {
                             <th className="p-3 text-gray-600 text-left ">Area</th>
                             <th className="p-3 text-gray-600 text-left" >Risk Level</th>
                             <th className="p-3 text-gray-600 text-left ">Next Due</th>
-                            <th className="p-3 text-gray-600 text-left ">Status</th>
+                            <th className="p-3 text-gray-600 text-left ">Statut</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">

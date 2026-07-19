@@ -200,7 +200,7 @@ const criteriaByLabel: any = {
     ],
     'Audit de conformité normative': [
         'ISO 45001:2018 (Santé et Sécurité au Travail)',
-        'ISO 14001:2015 (Management Environnemental)',
+        'ISO 14001:2026 (Management Environnemental)',
         'ISO 9001:2015 (Management de la Qualité)',
         'ISO 17025:2017 (Laboratoires d\'essais)',
         'ISO 50001:2018 (Management de l\'Énergie)',
@@ -208,7 +208,7 @@ const criteriaByLabel: any = {
     ],
     'Audit interne': [
         'ISO 45001:2018 (Santé et Sécurité au Travail)',
-        'ISO 14001:2015 (Management Environnemental)',
+        'ISO 14001:2026 (Management Environnemental)',
         'ISO 9001:2015 (Management de la Qualité)',
         'Procédures internes SSE',
         'Politique SSE de l\'entreprise',
@@ -217,7 +217,7 @@ const criteriaByLabel: any = {
     ],
     'Audit de certification': [
         'ISO 45001:2018 (Santé et Sécurité au Travail)',
-        'ISO 14001:2015 (Management Environnemental)',
+        'ISO 14001:2026 (Management Environnemental)',
         'ISO 9001:2015 (Management de la Qualité)',
         'Exigences de l\'organisme certificateur',
         'Référentiel de certification spécifique'
@@ -239,7 +239,7 @@ const criteriaByLabel: any = {
     ],
     'Audit croisé': [
         'ISO 45001:2018',
-        'ISO 14001:2015',
+        'ISO 14001:2026',
         'Procédures internes',
         'Bonnes pratiques sectorielles',
         'Benchmarks industriels'
@@ -253,7 +253,7 @@ const criteriaByLabel: any = {
     ],
     'Audit HSE intégré': [
         'ISO 45001:2018 (Santé et Sécurité)',
-        'ISO 14001:2015 (Environnement)',
+        'ISO 14001:2026 (Environnement)',
         'Réglementations locales SSE',
         'Système de management intégré',
         'Politique HSE intégrée'

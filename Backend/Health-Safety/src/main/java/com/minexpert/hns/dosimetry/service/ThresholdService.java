@@ -12,7 +12,9 @@ public interface ThresholdService {
 
     List<ThresholdDTO> getAll(Long companyId);
 
-    ThresholdDTO getById(Long id);
+    List<ThresholdDTO> getGlobalDefaults();
 
-    void delete(Long id);
+    ThresholdDTO getById(Long companyId, Long id);
+
+    void delete(Long companyId, Long id);
 }

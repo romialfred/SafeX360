@@ -137,6 +137,11 @@ public class AccountDTO {
                 // ⚠ Ne PAS persister le résultat de ce toEntity() en écrasant un
                 // compte existant sans recharger assignedCompanies (cf. update).
                 null,
+                null,
+                false,
+                null,
+                null,
+                null,
                 null);
     }
 }

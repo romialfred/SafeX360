@@ -1,6 +1,9 @@
 package com.minexpert.hns.config;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,52 +13,86 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Component;
 
-/**
- * Intercepteur STOMP qui sécurise les connexions WebSocket (LOT 48 Phase 6).
- *
- * <p>Au CONNECT, vérifie qu'un en-tête {@code X-Auth-Token} OU un cookie
- * {@code accessToken} est présent. Si non, le frame CONNECT est rejeté
- * et la connexion se ferme.</p>
- *
- * <p>Note : on n'exige pas un JWT cryptographiquement valide à ce stade
- * (le HS partage la signature avec MineXpert mais ne valide pas ici la
- * signature). On exige juste la présence d'un token, ce qui suffit pour
- * exiger que le client soit "logged in" — l'identité réelle est imposée
- * par le filter X-Secret-Key sur les actions REST critiques.</p>
- *
- * <p>Le SUBSCRIBE et SEND ne sont pas restreints au-delà : tout client
- * authentifié peut s'abonner aux broadcasts d'urgence (par design — les
- * alertes sont diffusées à tous les coordinateurs de la mine).</p>
- */
+/** Autorisation STOMP deny-by-default pour les alertes d'urgence et de tir. */
+@Component
 public class StompSecurityInterceptor implements ChannelInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(StompSecurityInterceptor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StompSecurityInterceptor.class);
+
+    private static final Pattern MINE_TOPIC = Pattern.compile(
+            "^/topic/(?:emergency/(?:sos|alert|escalation)/company|blast-popup/mine|blast-misfire/mine)/(\\d+)$");
+    private static final Set<String> SOS_ROLES = Set.of(
+            "SYSTEM_ADMINISTRATOR", "ADMINISTRATOR", "ADMIN",
+            "HEALTH_SAFETY_COORDINATOR", "HSE_MANAGER", "HSE_OFFICER",
+            "INCIDENT_INVESTIGATOR");
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        if (accessor == null || accessor.getCommand() == null) return message;
-
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            // Vérifie la présence d'un token d'auth (header ou cookie)
-            String authHeader = firstNative(accessor, "X-Auth-Token");
-            String cookieHeader = firstNative(accessor, "cookie");
-            boolean hasAuth = (authHeader != null && !authHeader.isBlank())
-                || (cookieHeader != null && cookieHeader.contains("accessToken="));
-
-            if (!hasAuth) {
-                log.warn("STOMP CONNECT without auth token — connection rejected.");
-                throw new IllegalArgumentException("Authentication required for WebSocket");
-            }
+        StompHeaderAccessor accessor =
+                MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null || accessor.getCommand() == null) {
+            return message;
         }
 
+        StompCommand command = accessor.getCommand();
+        if (command == StompCommand.DISCONNECT || command == StompCommand.UNSUBSCRIBE) {
+            return message;
+        }
+
+        StompIdentity identity = identity(accessor);
+        if (identity == null) {
+            throw denied("authenticated WebSocket session required");
+        }
+
+        if (command == StompCommand.CONNECT) {
+            accessor.setUser(new UsernamePasswordAuthenticationToken(
+                    identity.subject(), "N/A",
+                    Set.of(new SimpleGrantedAuthority("ROLE_" + identity.role()))));
+            return message;
+        }
+        if (command == StompCommand.SEND) {
+            throw denied("client STOMP SEND is disabled");
+        }
+        if (command != StompCommand.SUBSCRIBE) {
+            return message;
+        }
+
+        String destination = accessor.getDestination();
+        if (destination != null && destination.startsWith("/user/")) {
+            return message;
+        }
+
+        Matcher matcher = destination == null ? null : MINE_TOPIC.matcher(destination);
+        if (matcher == null || !matcher.matches()) {
+            throw denied("global or unknown subscription destination");
+        }
+
+        long mineId = Long.parseLong(matcher.group(1));
+        if (!identity.canAccessMine(mineId)) {
+            throw denied("cross-mine subscription rejected");
+        }
+        if (destination.startsWith("/topic/emergency/sos/")
+                || destination.startsWith("/topic/emergency/escalation/")) {
+            if (!SOS_ROLES.contains(identity.role())) {
+                throw denied("role not authorized for SOS subscription");
+            }
+        }
         return message;
     }
 
-    private String firstNative(StompHeaderAccessor accessor, String header) {
-        List<String> values = accessor.getNativeHeader(header);
-        if (values == null || values.isEmpty()) return null;
-        return values.get(0);
+    private StompIdentity identity(StompHeaderAccessor accessor) {
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        Object value = sessionAttributes == null
+                ? null : sessionAttributes.get(StompIdentity.SESSION_KEY);
+        return value instanceof StompIdentity stompIdentity ? stompIdentity : null;
+    }
+
+    private IllegalArgumentException denied(String reason) {
+        LOG.warn("STOMP frame rejected: {}", reason);
+        return new IllegalArgumentException(reason);
     }
 }

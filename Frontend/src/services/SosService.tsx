@@ -16,6 +16,8 @@ export type SosStatus =
 
 export interface SosAlertDTO {
     id?: number;
+    /** Clé générée côté client pour rendre les rejeux réseau idempotents. */
+    clientRequestId?: string;
     companyId: number;
     employeeId: number;
     employeeName?: string | null;

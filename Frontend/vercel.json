@@ -1,20 +1,60 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/hrms/:path*", "destination": "https://safex360-gateway.onrender.com/hrms/:path*" },
-    { "source": "/hns/:path*", "destination": "https://safex360-gateway.onrender.com/hns/:path*" },
-    { "source": "/safex-analytics", "destination": "/safex-analytics/index.html" },
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/hrms/:path*",
+      "destination": "https://safex360-gateway.onrender.com/hrms/:path*"
+    },
+    {
+      "source": "/hns/:path*",
+      "destination": "https://safex360-gateway.onrender.com/hns/:path*"
+    },
+    {
+      "source": "/safex-analytics",
+      "destination": "/safex-analytics/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=(self)" }
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(), geolocation=(self)"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://safex360-gateway.onrender.com wss://safex360-gateway.onrender.com; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+        }
+      ]
+    },
+    {
+      "source": "/safex-analytics/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.tailwindcss.com https://d3js.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self'; worker-src 'self' blob:"
+        }
       ]
     }
   ]

@@ -117,7 +117,7 @@ const Header = () => {
 
                     <div className="leading-tight min-w-0">
                         {/* Titre principal : clamp + truncate sur mobile */}
-                        <h1
+                        <p
                             className="tracking-tight truncate"
                             style={{
                                 fontFamily: "'Source Serif 4', Georgia, serif",
@@ -130,7 +130,7 @@ const Header = () => {
                             }}
                         >
                             {t('navigation:header.platformTitle')}
-                        </h1>
+                        </p>
                         {/* Sous-titre : MASQUÉ sur mobile (< sm) pour libérer de l'espace */}
                         <p
                             className="hidden sm:block mt-1 truncate italic"

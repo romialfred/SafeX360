@@ -47,7 +47,8 @@ import lombok.NoArgsConstructor;
         @Index(name = "idx_sos_status",   columnList = "status"),
         @Index(name = "idx_sos_company_status", columnList = "company_id,status"),
         @Index(name = "idx_sos_employee", columnList = "employee_id"),
-        @Index(name = "idx_sos_triggered", columnList = "triggered_at")
+        @Index(name = "idx_sos_triggered", columnList = "triggered_at"),
+        @Index(name = "ux_sos_client_request", columnList = "client_request_id", unique = true)
     }
 )
 @Data
@@ -58,6 +59,10 @@ public class SosAlert {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Clé d'idempotence créée par le terminal émetteur. */
+    @Column(name = "client_request_id", length = 64, unique = true)
+    private String clientRequestId;
 
     @Column(name = "company_id", nullable = false)
     private Long companyId;

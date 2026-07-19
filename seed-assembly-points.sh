@@ -3,7 +3,8 @@
 # Utilise des fichiers JSON intermediaires (UTF-8) pour eviter le bug d'encodage
 # curl/Git-Bash avec les accents francais dans le payload.
 
-SECRET="a-very-long-random-string-must-be-rotated-prod-XYZ-2026-LOT41"
+: "${INTERNAL_GATEWAY_SECRET:?INTERNAL_GATEWAY_SECRET is required}"
+SECRET="$INTERNAL_GATEWAY_SECRET"
 HS="http://localhost:8081/hns"
 TMP="$(dirname "$0")/.seed-tmp"
 mkdir -p "$TMP"

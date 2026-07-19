@@ -26,7 +26,7 @@ import com.minexpert.hns.service.audit.AuditProgramService;
 import lombok.RequiredArgsConstructor;
 
 /**
- * LOT 52 — Programme d'audit annuel (ISO 19011:2018 §5).
+ * LOT 52 — Programme d'audit annuel (ISO 19011:2026, programme d'audit).
  *
  * <p>Endpoints (via gateway /hns/audit-program) : CRUD du programme,
  * approbation par la direction, priorisation fondée sur les risques

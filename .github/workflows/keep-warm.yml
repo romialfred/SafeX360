@@ -1,40 +1,59 @@
-name: Keep Render services warm
+name: SafeX availability probe
 
-# Les services SafeX tournent sur l'offre gratuite Render : ils s'endorment
-# apres ~15 min d'inactivite et mettent 50-60 s a se reveiller (renvoyant des
-# 500 pendant ce laps). Ce workflow les ping toutes les 10 min pour les garder
-# chauds. Meme une reponse non-200 reveille le dyno (le conteneur doit demarrer
-# pour repondre). Declenchable aussi a la main juste avant une demo.
+# Cette sonde détecte une indisponibilité ; elle ne constitue ni un mécanisme
+# de haute disponibilité ni un substitut à un hébergement assorti d'un SLA.
 
 on:
   schedule:
-    # Toutes les 10 min. Note : le planificateur GitHub peut retarder de
-    # quelques minutes en periode de forte charge ; la marge 10 min vs 15 min
-    # d'endormissement absorbe ce delai.
     - cron: '*/10 * * * *'
   workflow_dispatch: {}
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Ping des services SafeX
+      - name: Vérifier les services critiques
+        shell: bash
         run: |
-          set +e
-          urls=(
-            "https://safex360-gateway.onrender.com/actuator/health"
-            "https://safex360-hns.onrender.com/actuator/health"
-            "https://safex360-minexpert.onrender.com/actuator/health"
-            "https://safex360-eureka.onrender.com/"
+          set -u
+          services=(
+            "gateway|https://safex360-gateway.onrender.com/actuator/health|actuator"
+            "health-safety|https://safex360-hns.onrender.com/actuator/health|actuator"
+            "minexpert|https://safex360-minexpert.onrender.com/actuator/health|actuator"
+            "eureka|https://safex360-eureka.onrender.com/|http"
           )
-          fail=0
-          for url in "${urls[@]}"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$url")
-            echo "$url -> ${code:-timeout}"
-            # 000 = pas de reponse du tout (service injoignable) : on le signale
-            # mais on ne fait PAS echouer le job pour un simple reveil lent.
-            if [ "$code" = "000" ]; then fail=$((fail+1)); fi
+          failures=0
+          for service in "${services[@]}"; do
+            IFS='|' read -r name url mode <<< "$service"
+            body_file="$(mktemp)"
+            result=$(curl --silent --show-error --location \
+              --retry 2 --retry-delay 2 --retry-all-errors \
+              --connect-timeout 10 --max-time 90 \
+              --output "$body_file" --write-out "%{http_code}|%{time_total}" \
+              "$url")
+            curl_exit=$?
+            IFS='|' read -r code elapsed <<< "${result:-000|20}"
+            healthy=true
+            if [ "$curl_exit" -ne 0 ] || [[ ! "$code" =~ ^2 ]]; then
+              healthy=false
+            elif [ "$mode" = "actuator" ] && ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$body_file"; then
+              healthy=false
+            elif awk "BEGIN { exit !($elapsed > 10) }"; then
+              # Cold start Render free tier : 50-60 s est NORMAL au reveil. Le but
+              # premier du job est precisement de reveiller les dynos — punir la
+              # lenteur ferait echouer le job a chaque reveil nocturne.
+              echo "::warning::$name lent (${elapsed}s) — probable cold start, non bloquant"
+            fi
+            rm -f "$body_file"
+            if [ "$healthy" = true ]; then
+              echo "OK $name HTTP=$code durée=${elapsed}s"
+            else
+              echo "ERREUR $name HTTP=${code:-000} durée=${elapsed:-inconnue}s"
+              failures=$((failures+1))
+            fi
           done
-          echo "Services injoignables : $fail/${#urls[@]}"
-          # Le job reste vert : le but est de reveiller, pas de monitorer.
-          exit 0
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures service(s) critique(s) indisponible(s) ou trop lent(s)."
+            exit 1
+          fi

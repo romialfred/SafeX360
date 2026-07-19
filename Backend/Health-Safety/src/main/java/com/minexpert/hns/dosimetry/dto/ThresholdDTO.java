@@ -31,6 +31,8 @@ public class ThresholdDTO {
     private Double doseConstraint;
     private Double investigationLevel;
     private Double actionLevel;
+    /** Seuil de classification administrative, distinct d'une limite legale. */
+    private Double classificationThreshold;
     private Double regulatoryLimit;
 
     /** JSON array d'entiers, ex. "[75,90]". */

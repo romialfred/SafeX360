@@ -69,7 +69,20 @@ public class SosAlertService {
 
     @Transactional
     public SosAlertDTO create(SosAlertDTO dto, Long actorId) {
+        String clientRequestId = normalizeClientRequestId(dto.getClientRequestId());
+        if (clientRequestId != null) {
+            Optional<SosAlert> existing = alertRepo.findByClientRequestId(clientRequestId);
+            if (existing.isPresent()) {
+                SosAlert prior = existing.get();
+                if (!prior.getCompanyId().equals(dto.getCompanyId())
+                        || !prior.getEmployeeId().equals(dto.getEmployeeId())) {
+                    throw new IllegalArgumentException("Clé d'idempotence SOS déjà utilisée");
+                }
+                return toDto(prior);
+            }
+        }
         SosAlert a = new SosAlert();
+        a.setClientRequestId(clientRequestId);
         a.setCompanyId(dto.getCompanyId());
         a.setEmployeeId(dto.getEmployeeId());
         a.setReasonCode(dto.getReasonCode());
@@ -264,6 +277,7 @@ public class SosAlertService {
 
         return SosAlertDTO.builder()
             .id(a.getId())
+            .clientRequestId(a.getClientRequestId())
             .companyId(a.getCompanyId())
             .employeeId(a.getEmployeeId())
             .coordinatorId(a.getCoordinatorId())
@@ -301,5 +315,10 @@ public class SosAlertService {
     private String jsonEscape(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private String normalizeClientRequestId(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
     }
 }

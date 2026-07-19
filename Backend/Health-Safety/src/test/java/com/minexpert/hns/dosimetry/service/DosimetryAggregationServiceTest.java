@@ -68,6 +68,7 @@ class DosimetryAggregationServiceTest {
     @Mock private MeasurementPointRepository measurementPointRepository;
     @Mock private AmbientMeasurementRepository ambientRepository;
     @Mock private ThresholdRepository thresholdRepository;
+    @Mock private RegulatoryLimitResolver regulatoryLimitResolver;
 
     @InjectMocks
     private DosimetryAggregationServiceImpl service;
@@ -98,6 +99,8 @@ class DosimetryAggregationServiceTest {
                 .thenReturn(Collections.emptyList());
         when(doseRecordRepository.findActiveByWorkerIdAndYear(anyLong(), any()))
                 .thenReturn(Collections.emptyList());
+        when(regulatoryLimitResolver.resolveAnnualHp10(anyLong(), any()))
+                .thenReturn(Optional.empty());
     }
 
     // ------------------------------------------------------------------
@@ -116,16 +119,17 @@ class DosimetryAggregationServiceTest {
 
         when(workerRepository.findByMineIdAndActiveTrue(mineId))
                 .thenReturn(List.of(w1, w2, w3));
-        when(cumulativeRepository.findByWorkerIdAndYear(1L, 2026))
-                .thenReturn(Optional.of(cumulative(1L, 2026, 2.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(2L, 2026))
-                .thenReturn(Optional.of(cumulative(2L, 2026, 5.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(3L, 2026))
-                .thenReturn(Optional.of(cumulative(3L, 2026, 8.0)));
+        when(cumulativeRepository.findByWorkerIdInAndYear(any(), eq(2026)))
+                .thenReturn(List.of(
+                        cumulative(1L, 2026, 2.0),
+                        cumulative(2L, 2026, 5.0),
+                        cumulative(3L, 2026, 8.0)));
         when(snapshotRepository.findByMineIdAndSnapshotDateAndCategory(anyLong(), any(), any()))
                 .thenReturn(Optional.empty());
         when(snapshotRepository.save(any(DosimetryKpiSnapshot.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
+        when(regulatoryLimitResolver.resolveAnnualHp10(mineId, KpiCategory.WORKER_A))
+                .thenReturn(Optional.of(20.0));
 
         // Capture snapshots saved per category to validate the WORKER_A one.
         java.util.List<DosimetryKpiSnapshot> saved = new ArrayList<>();
@@ -173,16 +177,15 @@ class DosimetryAggregationServiceTest {
                 workerA(5, 22.0)  // 110% -> b100+
         );
         when(workerRepository.findByMineIdAndActiveTrue(mineId)).thenReturn(workers);
-        when(cumulativeRepository.findByWorkerIdAndYear(1L, year))
-                .thenReturn(Optional.of(cumulative(1L, year, 1.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(2L, year))
-                .thenReturn(Optional.of(cumulative(2L, year, 6.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(3L, year))
-                .thenReturn(Optional.of(cumulative(3L, year, 11.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(4L, year))
-                .thenReturn(Optional.of(cumulative(4L, year, 17.0)));
-        when(cumulativeRepository.findByWorkerIdAndYear(5L, year))
-                .thenReturn(Optional.of(cumulative(5L, year, 22.0)));
+        when(cumulativeRepository.findByWorkerIdInAndYear(any(), eq(year)))
+                .thenReturn(List.of(
+                        cumulative(1L, year, 1.0),
+                        cumulative(2L, year, 6.0),
+                        cumulative(3L, year, 11.0),
+                        cumulative(4L, year, 17.0),
+                        cumulative(5L, year, 22.0)));
+        when(regulatoryLimitResolver.resolveAnnualHp10(mineId, KpiCategory.WORKER_A))
+                .thenReturn(Optional.of(20.0));
 
         DosimetryDistributionDTO dist = service.getDistribution(mineId, year, KpiCategory.WORKER_A);
 
@@ -192,6 +195,39 @@ class DosimetryAggregationServiceTest {
         assertThat(sum).isEqualTo(dist.getWorkersCount());
         // Et le bucket 100+ doit contenir au moins 1 worker (le 22 mSv / 20 mSv limit)
         assertThat(dist.getBuckets().get(5).getCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("AUD-REG-002 : WORKER_B sans limite configuree n'utilise jamais 6 mSv")
+    void getDistribution_workerBWithoutConfiguredLimitDoesNotFallbackToSix() {
+        Long mineId = 1L;
+        when(workerRepository.findByMineIdAndActiveTrue(mineId)).thenReturn(List.of(
+                ExposedWorker.builder().id(9L).mineId(mineId).employeeId(1009L)
+                        .category(DoseCategory.B).active(true).build()));
+        when(regulatoryLimitResolver.resolveAnnualHp10(mineId, KpiCategory.WORKER_B))
+                .thenReturn(Optional.empty());
+
+        DosimetryDistributionDTO dist = service.getDistribution(
+                mineId, 2026, KpiCategory.WORKER_B);
+
+        assertThat(dist.getRegulatoryLimit()).isNull();
+        assertThat(dist.isRegulatoryLimitConfigured()).isFalse();
+        assertThat(dist.getRegulatoryLimitStatus())
+                .isEqualTo("NOT_CONFIGURED_LOCAL_VALIDATION_REQUIRED");
+        assertThat(dist.getBuckets()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("AUD-REG-002 : la vue multi-categories n'invente pas une limite commune")
+    void getDistribution_allCategoriesRequiresCategoryForRegulatoryComparison() {
+        when(workerRepository.findByMineIdAndActiveTrue(1L)).thenReturn(List.of());
+
+        DosimetryDistributionDTO dist = service.getDistribution(1L, 2026, null);
+
+        assertThat(dist.getRegulatoryLimit()).isNull();
+        assertThat(dist.isRegulatoryLimitConfigured()).isFalse();
+        assertThat(dist.getRegulatoryLimitStatus()).isEqualTo("CATEGORY_REQUIRED");
+        assertThat(dist.getBuckets()).isEmpty();
     }
 
     // ------------------------------------------------------------------

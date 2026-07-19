@@ -23,7 +23,7 @@ import SafeXBrandMark from '../../components/UtilityComp/SafeXBrandMark';
  *
  * Sections :
  *   1. Identité plateforme (marque + version + tagline factuelle)
- *   2. Conformité réglementaire (normes ISO couvertes)
+ *   2. Référentiels pris en compte par les fonctionnalités
  *   3. Périmètre opérationnel (pays + secteur)
  *   4. Édition technique (stack, version, build)
  *   5. Contacts & mentions
@@ -112,7 +112,7 @@ export default function AboutPage() {
                     </div>
                 </section>
 
-                {/* ═══ Section 2 — Conformité ═══ */}
+                {/* ═══ Section 2 — Référentiels ═══ */}
                 <section className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-8 mb-6">
                     <div className="flex items-start gap-3 mb-5">
                         <div className="w-9 h-9 rounded-md bg-teal-50 border border-teal-100 flex items-center justify-center">
@@ -127,11 +127,11 @@ export default function AboutPage() {
                                     fontSize: '18px',
                                 }}
                             >
-                                Référentiels de conformité
+                                Référentiels pris en compte
                             </h3>
                             <p className="text-[12.5px] text-slate-500 mt-0.5">
-                                Normes internationales utilisées comme socle fonctionnel
-                                des modules SafeX 360.
+                                Normes internationales utilisées comme repères fonctionnels.
+                                Leur présence ne constitue pas une attestation tierce.
                             </p>
                         </div>
                     </div>

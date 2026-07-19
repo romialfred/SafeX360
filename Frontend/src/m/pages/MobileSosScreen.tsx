@@ -24,10 +24,17 @@ import {
 import MobileTopBar from '../components/MobileTopBar';
 import { useStatusBarColor } from '../hooks/useStatusBarColor';
 import { useHaptics } from '../hooks/useHaptics';
-import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { mutateOffline } from '../services/mobileApi';
 import { getCapacitorPlugin } from '../utils/capacitorBridge';
 import { useAppSelector } from '../../slices/hooks';
+import type { SosAlertDTO } from '../../services/SosService';
+import {
+    createSosClientRequestId,
+    deriveSosDeliveryState,
+    getSosDeliveryNotice,
+    SOS_DEGRADED_GUIDANCE,
+    type SosDeliveryState,
+} from '../../utility/SosDeliveryState';
 
 type ReasonCode = 'GENERAL' | 'MEDICAL' | 'FIRE' | 'COLLAPSE' | 'CHEMICAL' | 'ARMED_ATTACK';
 
@@ -78,34 +85,34 @@ export default function MobileSosScreen() {
     const haptic = useHaptics();
     const user = useAppSelector((state: any) => state.user);
 
-    const redirectAfter = useRedirectTimer();
-
     const [sending, setSending] = useState<ReasonCode | null>(null);
-    // Etats succes / echec SEPARES : afficher un echec dans l'ecran de succes
-    // (« Alerte transmise » + cercle vert) serait dramatique pour un SOS.
-    const [sentMessage, setSentMessage] = useState<string | null>(null);
-    // Distingue « transmis au serveur » (vert) de « enregistré hors ligne,
-    // en attente de réseau » (ambre) — l'utilisateur ne doit jamais croire
-    // que le coordinateur est déjà alerté quand le SOS est seulement en queue.
-    const [pendingOffline, setPendingOffline] = useState(false);
+    const [delivery, setDelivery] = useState<{
+        state: SosDeliveryState;
+        reasonLabel: string;
+    } | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [failedTile, setFailedTile] = useState<Tile | null>(null);
 
     // empId en priorité : le backend attend l'ID EMPLOYÉ, pas l'ID de compte.
-    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 14);
-    const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+    const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub);
+    const companyId = Number(user?.mineId ?? user?.companyId);
 
     const handleSendSos = async (tile: Tile) => {
         if (sending) return;
         setSending(tile.code);
         setErrorMessage(null);
         setFailedTile(null);
-        setPendingOffline(false);
+        setDelivery(null);
         haptic('sos');
         try {
+            if (!Number.isSafeInteger(userId) || userId <= 0
+                    || !Number.isSafeInteger(companyId) || companyId <= 0) {
+                throw new Error('Identité ou mine absente de la session.');
+            }
             const position = await getGeolocation();
-            const fingerprint = `sos-${userId}-${tile.code}-${Math.floor(Date.now() / 10000)}`;
+            const clientRequestId = createSosClientRequestId();
             const payload = {
+                clientRequestId,
                 companyId,
                 employeeId: userId,
                 reasonCode: tile.code,
@@ -118,30 +125,23 @@ export default function MobileSosScreen() {
             };
             // Endpoint réel du backend : POST /hns/emergency/sos (SosAlertController)
             // — « /hns/sos/create » n'existe pas et renvoyait 404.
-            const result = await mutateOffline({
+            const result = await mutateOffline<SosAlertDTO>({
                 endpoint: `/hns/emergency/sos?actorId=${userId}`,
                 method: 'POST',
                 payload,
                 headers: { 'X-User-Id': String(userId) },
                 kind: 'sos',
-                fingerprint,
+                fingerprint: clientRequestId,
             });
-            if (result.online) {
-                setPendingOffline(false);
-                setSentMessage(`SOS envoyé. Coordinateur HSE alerté. (${tile.label})`);
-            } else {
-                setPendingOffline(true);
-                setSentMessage(`SOS sauvegardé hors ligne. Sera transmis au retour du réseau. (${tile.label})`);
-            }
-            redirectAfter(() => {
-                setSentMessage(null);
-                setPendingOffline(false);
-                navigate('/m/home');
-            }, 3000);
-        } catch {
+            setDelivery({
+                state: deriveSosDeliveryState(result.online, result.data?.status),
+                reasonLabel: tile.label,
+            });
+        } catch (error) {
             haptic('error');
             setFailedTile(tile);
-            setErrorMessage("Échec de l'envoi du SOS. Réessayez ou contactez la salle de contrôle.");
+            const detail = error instanceof Error ? ` ${error.message}` : '';
+            setErrorMessage(`Échec de l'envoi du SOS.${detail} ${SOS_DEGRADED_GUIDANCE}`);
         } finally {
             setSending(null);
         }
@@ -199,49 +199,48 @@ export default function MobileSosScreen() {
         );
     }
 
-    /* ── Ecran de confirmation ──────────────────────────────────────── */
-    /* AMBRE si le SOS n'est qu'enregistre hors ligne (en attente de reseau),
-       VERT « transmise » uniquement si le serveur a bien recu l'envoi. */
-    if (sentMessage) {
-        if (pendingOffline) {
-            return (
-                <div className="min-h-[80vh] flex items-center justify-center px-6">
-                    <div className="w-full max-w-md bg-amber-50 rounded-2xl shadow-lg ring-2 ring-amber-300 p-6 text-center">
-                        <div className="w-16 h-16 rounded-full bg-amber-100 mx-auto flex items-center justify-center mb-3">
-                            <IconWifiOff size={28} stroke={2.4} className="text-amber-700" />
-                        </div>
-                        <h2
-                            className="text-amber-900 mb-2"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: '18px',
-                            }}
-                        >
-                            SOS enregistré — en attente de réseau
-                        </h2>
-                        <p className="text-[13px] text-amber-900 leading-relaxed">{sentMessage}</p>
-                    </div>
-                </div>
-            );
-        }
+    /* La réception serveur n'est jamais présentée comme un acquittement humain. */
+    if (delivery) {
+        const notice = getSosDeliveryNotice(delivery.state, delivery.reasonLabel);
+        const queued = delivery.state === 'QUEUED';
+        const acknowledged = delivery.state === 'ACKNOWLEDGED';
+        const palette = queued
+            ? 'bg-amber-50 ring-amber-300 text-amber-900'
+            : acknowledged
+                ? 'bg-emerald-50 ring-emerald-300 text-emerald-900'
+                : 'bg-sky-50 ring-sky-300 text-sky-950';
         return (
             <div className="min-h-[80vh] flex items-center justify-center px-6">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-lg ring-2 ring-emerald-200 p-6 text-center">
-                    <div className="w-16 h-16 rounded-full bg-emerald-100 mx-auto flex items-center justify-center mb-3">
-                        <IconCheck size={28} stroke={2.4} className="text-emerald-700" />
+                <div className={`w-full max-w-md rounded-2xl shadow-lg ring-2 p-6 text-center ${palette}`}>
+                    <div className="w-16 h-16 rounded-full bg-white/70 mx-auto flex items-center justify-center mb-3">
+                        {queued
+                            ? <IconWifiOff size={28} stroke={2.4} />
+                            : <IconCheck size={28} stroke={2.4} />}
                     </div>
                     <h2
-                        className="text-slate-900 mb-2"
+                        className="mb-2"
                         style={{
                             fontFamily: "'Source Serif 4', Georgia, serif",
                             fontWeight: 600,
                             fontSize: '18px',
                         }}
                     >
-                        Alerte transmise
+                        {notice.title}
                     </h2>
-                    <p className="text-[13px] text-slate-600 leading-relaxed">{sentMessage}</p>
+                    <p className="text-[13px] leading-relaxed">{notice.body}</p>
+                    {!acknowledged && (
+                        <p className="mt-3 text-[12.5px] font-semibold leading-relaxed">
+                            {SOS_DEGRADED_GUIDANCE}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => navigate('/m/home')}
+                        className="w-full mt-5 px-4 py-3 rounded-xl bg-slate-900 text-white text-[13px] font-semibold"
+                        style={{ minHeight: 48 }}
+                    >
+                        Retour à l'accueil
+                    </button>
                 </div>
             </div>
         );
@@ -259,7 +258,7 @@ export default function MobileSosScreen() {
                 <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-[12.5px] text-rose-900 mb-3 flex items-start gap-2">
                     <IconAlertOctagon size={16} stroke={2} className="text-rose-700 mt-0.5 flex-shrink-0" />
                     <span>
-                        Ceci n'est pas un exercice. Un tap suffit. Votre position GPS et identité sont transmises au coordinateur HSE.
+                        Ceci n'est pas un exercice. Un appui déclenche l'envoi immédiat. SafeX indique séparément la mise en file, la réception serveur et la prise en charge.
                     </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

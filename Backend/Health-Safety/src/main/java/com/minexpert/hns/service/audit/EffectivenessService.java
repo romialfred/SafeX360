@@ -8,7 +8,7 @@ import com.minexpert.hns.exception.HSException;
 
 /**
  * LOT 52 — Vérification d'efficacité des recommandations d'audit
- * (ISO 19011:2018 §6.6 — suivi d'audit).
+ * (ISO 19011:2026 — suivi des audits et amélioration du programme).
  */
 public interface EffectivenessService {
 

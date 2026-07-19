@@ -1,7 +1,11 @@
 # SafeX 360 — Glossaire HSE bilingue (référentiel ISO)
 
 > Terminologie officielle française ↔ anglaise selon les normes
-> **ISO 45001:2018** (SST), **ISO 9001:2015** (Qualité), **ISO 19011:2018** (Audit), **ISO 14001:2015** (Environnement).
+> Référentiels suivis au 19 juillet 2026 : **ISO 45001:2018/Amd 1:2024** (SST),
+> **ISO 9001:2015/Amd 1:2024** (Qualité), **ISO 19011:2026** (Audit),
+> **ISO 14001:2026** (Environnement).
+> Ce glossaire est une aide linguistique interne. Il ne reproduit pas le texte
+> normatif et les repères doivent être vérifiés dans une copie officielle sous licence.
 >
 > Ce document est le référentiel canonique pour toutes les traductions de la plateforme.
 > Toute divergence dans les fichiers `locales/*.json` doit être justifiée.
@@ -55,7 +59,7 @@
 | Exigence | Requirement | ISO 9001 §3.6.4 | |
 | Obligation de conformité | Compliance obligation | ISO 14001 §3.2.9 | inclut légal + autre |
 | Exigence légale | Legal requirement | — | |
-| Constat | Finding | ISO 19011 §3.10 | dans contexte audit |
+| Constat | Finding | ISO 19011 | dans contexte audit |
 | Constat central | Central finding | — | Terme maison SafeX (à conserver tel quel) |
 | Écart | Gap / Deviation | — | |
 
@@ -63,16 +67,16 @@
 
 | Français | English | Source ISO | Notes |
 |---|---|---|---|
-| Audit | Audit | ISO 19011 §3.1 | |
+| Audit | Audit | ISO 19011 | |
 | Audit interne | Internal audit | ISO 45001 §9.2 | |
 | Audit externe | External audit | ISO 19011 | |
-| Programme d'audit | Audit programme | ISO 19011 §3.4 | "program" en US |
-| Critères d'audit | Audit criteria | ISO 19011 §3.7 | |
-| Preuve d'audit | Audit evidence | ISO 19011 §3.8 | |
-| Constat d'audit | Audit finding | ISO 19011 §3.10 | |
-| Conclusion d'audit | Audit conclusion | ISO 19011 §3.11 | |
-| Auditeur | Auditor | ISO 19011 §3.14 | |
-| Audité | Auditee | ISO 19011 §3.15 | |
+| Programme d'audit | Audit programme | ISO 19011 | "program" en US |
+| Critères d'audit | Audit criteria | ISO 19011 | |
+| Preuve d'audit | Audit evidence | ISO 19011 | |
+| Constat d'audit | Audit finding | ISO 19011 | |
+| Conclusion d'audit | Audit conclusion | ISO 19011 | |
+| Auditeur | Auditor | ISO 19011 | |
+| Audité | Auditee | ISO 19011 | |
 | Inspection | Inspection | — | |
 | Tournée terrain | Field tour / Safety walk | — | Terme maison |
 

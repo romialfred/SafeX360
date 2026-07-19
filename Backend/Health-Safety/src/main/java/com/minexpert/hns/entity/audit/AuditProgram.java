@@ -18,7 +18,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — Programme d'audit annuel (ISO 19011:2018 §5).
+ * LOT 52 — Programme d'audit annuel (ISO 19011:2026).
  *
  * <p>Regroupe les audits planifiés sur une année : objectifs du programme,
  * périmètre global, ressources allouées et cycle d'approbation

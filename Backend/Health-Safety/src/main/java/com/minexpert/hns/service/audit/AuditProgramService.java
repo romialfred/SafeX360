@@ -8,7 +8,7 @@ import com.minexpert.hns.dto.audit.RiskSuggestionDTO;
 import com.minexpert.hns.exception.HSException;
 
 /**
- * LOT 52 — Gestion du programme d'audit annuel (ISO 19011:2018 §5).
+ * LOT 52 — Gestion du programme d'audit annuel (ISO 19011:2026, programme d'audit).
  */
 public interface AuditProgramService {
 

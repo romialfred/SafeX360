@@ -1,71 +1,58 @@
 package com.minexpert.hns.config;
 
+import java.util.HashSet;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class SecretsBootValidator {
-
     private static final Logger LOG = LoggerFactory.getLogger(SecretsBootValidator.class);
-
     private static final String LEAKED_JWT_PREFIX = "80f9762a858c60d6a48a940ffbe1bb2c";
+    @Value("${JWT_SECRET:}") private String jwtSecret;
+    @Value("${SAFEX_GATEWAY_HNS_TOKEN_KEY:}") private String gatewayHnsKey;
+    @Value("${SAFEX_HRMS_HNS_TOKEN_KEY:}") private String hrmsHnsKey;
+    @Value("${SAFEX_HNS_HRMS_TOKEN_KEY:}") private String hnsHrmsKey;
 
-    @Value("${JWT_SECRET:}")
-    private String jwtSecret;
+    private final Environment environment;
 
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String gatewaySecret;
+    public SecretsBootValidator(Environment environment) {
+        this.environment = environment;
+    }
 
     @PostConstruct
     public void validate() {
-        boolean fatal = false;
-        fatal |= !validateJwtSecret();
-        fatal |= !validateGatewaySecret();
-        if (!fatal) {
-            LOG.info("[SecretsBootValidator] All secrets validated — boot authorized.");
-        } else {
-            LOG.error("╔══════════════════════════════════════════════════════════════╗");
-            LOG.error("║  FATAL — required secrets missing or compromised.           ║");
-            LOG.error("║  The application CANNOT start safely. Fix env vars above.   ║");
-            LOG.error("╚══════════════════════════════════════════════════════════════╝");
-            throw new IllegalStateException(
-                    "SecretsBootValidator: required secrets are missing or compromised — refusing to start. "
-                    + "Set JWT_SECRET and INTERNAL_GATEWAY_SECRET as environment variables.");
+        // JWT_SECRET reste exige PARTOUT, y compris en dev : le login local en
+        // depend et .env le fournit toujours (comportement d'avant la refonte).
+        if (jwtSecret == null || jwtSecret.isBlank() || jwtSecret.startsWith(LEAKED_JWT_PREFIX)) {
+            LOG.error("JWT_SECRET missing or compromised");
+            throw new IllegalStateException("Required authentication keys missing, weak, or reused");
         }
+        List<String> keys = List.of(safe(gatewayHnsKey), safe(hrmsHnsKey), safe(hnsHrmsKey));
+        // Cles d'identite de service : fatales en PRODUCTION uniquement — c'est
+        // l'intention documentee dans .env.example (« laisser vide fait echouer
+        // le demarrage en production »). En dev/test/local, ServiceTokenVerifier
+        // et ServiceTokenIssuer generent des cles ephemeres ; exiger les cles ici
+        // aurait tue ce repli et rendu tout demarrage local impossible.
+        boolean local = environment.acceptsProfiles(Profiles.of("dev", "test", "local"));
+        if (local && keys.stream().allMatch(String::isBlank)) {
+            LOG.warn("Cles d'identite de service absentes — tolere en profil local, cles ephemeres utilisees");
+            return;
+        }
+        boolean valid = keys.stream().allMatch(key -> key.length() >= 32)
+                && new HashSet<>(keys).size() == keys.size();
+        if (!valid) {
+            LOG.error("Distinct HNS workload keys missing, weak, or reused");
+            throw new IllegalStateException("Required authentication keys missing, weak, or reused");
+        }
+        LOG.info("Authentication and least-privilege workload keys validated");
     }
-
-    private boolean validateJwtSecret() {
-        if (jwtSecret == null || jwtSecret.isBlank()) {
-            LOG.error("[SecretsBootValidator] JWT_SECRET is BLANK. "
-                    + "Authentication will fail. Set JWT_SECRET (min 64 hex chars). "
-                    + "Generate: openssl rand -hex 64");
-            return false;
-        }
-        if (jwtSecret.startsWith(LEAKED_JWT_PREFIX)) {
-            LOG.error("[SecretsBootValidator] JWT_SECRET matches the value leaked in public git history. "
-                    + "This key is COMPROMISED — anyone can forge JWTs. "
-                    + "Rotate ASAP: openssl rand -hex 64, then set JWT_SECRET on ALL services.");
-            return false;
-        }
-        return true;
-    }
-
-    private boolean validateGatewaySecret() {
-        if (gatewaySecret == null || gatewaySecret.isBlank()) {
-            LOG.warn("[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is blank. "
-                    + "Security filter will match empty header — set a proper value.");
-            return false;
-        }
-        if ("CHANGE_ME_IN_PROD".equals(gatewaySecret) || "dev-secret".equals(gatewaySecret)) {
-            LOG.warn("[SecretsBootValidator] INTERNAL_GATEWAY_SECRET is a known default ('"
-                    + gatewaySecret + "'). Not safe for production. "
-                    + "Generate: openssl rand -hex 32");
-            return false;
-        }
-        return true;
-    }
+    private static String safe(String value) { return value == null ? "" : value; }
 }

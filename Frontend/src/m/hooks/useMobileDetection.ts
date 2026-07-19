@@ -23,6 +23,33 @@ export interface MobileDetection {
     ready: boolean;
 }
 
+export interface MobileSignals {
+    isCapacitor: boolean;
+    isSafexUa: boolean;
+    isMobileUa: boolean;
+    isCoarsePointer: boolean;
+    isSmallViewport: boolean;
+    prefersDesktop: boolean;
+}
+
+export function computeMobileDetection(signals: MobileSignals): MobileDetection {
+    const viewportMobile = signals.isCoarsePointer && signals.isSmallViewport;
+    const isMobile = signals.isCapacitor || signals.isSafexUa
+        || viewportMobile || signals.isMobileUa;
+    // La REDIRECTION forcee exige un terminal SUREMENT mobile (Capacitor, UA).
+    // `viewportMobile` reste un simple indice d'affichage : un laptop tactile a
+    // fenetre etroite etait expulse vers /m/home a chaque navigation, avec pour
+    // seule sortie un ?desktop=1 que rien n'annonce. Etre PROBABLEMENT mobile
+    // suffit a informer, pas a confisquer l'application desktop.
+    const surelyMobile = signals.isCapacitor || signals.isSafexUa || signals.isMobileUa;
+    return {
+        isMobile,
+        isCapacitor: signals.isCapacitor,
+        shouldRedirectToMobile: surelyMobile && !signals.prefersDesktop,
+        ready: true,
+    };
+}
+
 const INITIAL: MobileDetection = {
     isMobile: false,
     isCapacitor: false,
@@ -46,7 +73,7 @@ export function useMobileDetection(): MobileDetection {
 
     useEffect(() => {
         let cancelled = false;
-        (async () => {
+        const evaluate = () => {
             let isCapacitor = false;
             try {
                 // Capacitor injecte window.Capacitor a l'execution native.
@@ -69,20 +96,20 @@ export function useMobileDetection(): MobileDetection {
             const isSmallViewport =
                 typeof window !== 'undefined' && window.innerWidth < 768;
 
-            const isMobile =
-                isCapacitor || isSafexUa || (isCoarsePointer && isSmallViewport) || isMobileUa;
-            const shouldRedirectToMobile =
-                (isCapacitor || isSafexUa || isMobileUa) && !userExplicitlyWantsDesktop();
-
-            setDetection({
-                isMobile,
+            setDetection(computeMobileDetection({
                 isCapacitor,
-                shouldRedirectToMobile,
-                ready: true,
-            });
-        })();
+                isSafexUa,
+                isMobileUa,
+                isCoarsePointer,
+                isSmallViewport,
+                prefersDesktop: userExplicitlyWantsDesktop(),
+            }));
+        };
+        evaluate();
+        window.addEventListener('resize', evaluate);
         return () => {
             cancelled = true;
+            window.removeEventListener('resize', evaluate);
         };
     }, []);
 

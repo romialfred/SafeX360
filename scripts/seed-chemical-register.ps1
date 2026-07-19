@@ -2,10 +2,9 @@
 # 8 produits chimiques réels du secteur minier + leur analyse de risque
 # positionnée sur la matrice probabilité × gravité (riskMap frontend).
 
-$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
-$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
-$h = @{ 'X-Secret-Key' = $secret }
-$base = 'http://localhost:8081/hns'
+if ([string]::IsNullOrWhiteSpace($env:SAFEX_ADMIN_SESSION_COOKIE)) { throw 'SAFEX_ADMIN_SESSION_COOKIE requis' }
+$h = @{ 'Cookie' = "jwt=$($env:SAFEX_ADMIN_SESSION_COOKIE)" }
+$base = 'http://localhost:9100/hns'
 $today = Get-Date
 
 function Invoke-Api {

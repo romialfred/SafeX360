@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import com.minexpert.hns.entity.audit.EffectivenessCheck;
 
 /**
- * LOT 52 — Accès aux vérifications d'efficacité (ISO 19011:2018 §6.6).
+ * LOT 52 — Accès aux vérifications d'efficacité (ISO 19011:2026 — suivi des audits).
  */
 public interface EffectivenessCheckRepository extends CrudRepository<EffectivenessCheck, Long> {
 

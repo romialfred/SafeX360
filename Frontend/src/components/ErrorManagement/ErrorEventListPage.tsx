@@ -51,6 +51,10 @@ import {
     HipoBadge,
     StatusChip,
 } from './ErrorChips';
+import {
+    classifyRegisterLoadFailure,
+    type RegisterLoadFailure,
+} from './registerLoadFailure';
 
 const CRITICALITY_FILTER: CriticalityLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
@@ -63,6 +67,7 @@ const ErrorEventListPage = () => {
     const [kpis, setKpis] = useState<ErrorKpiDTO | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [loadFailure, setLoadFailure] = useState<RegisterLoadFailure | null>(null);
 
     const [search, setSearch] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<ErrorEventStatus | ''>('');
@@ -93,6 +98,7 @@ const ErrorEventListPage = () => {
     );
 
     const loadAll = useCallback(async () => {
+        setLoadFailure(null);
         try {
             const [evts, types, mtx, kpi] = await Promise.allSettled([
                 listEvents({
@@ -106,13 +112,17 @@ const ErrorEventListPage = () => {
             if (evts.status === 'fulfilled') setEvents(evts.value);
             else {
                 setEvents([]);
-                errorNotification("Impossible de charger les événements. Vérifiez vos droits d'accès.");
+                const failure = classifyRegisterLoadFailure(evts.reason);
+                setLoadFailure(failure);
+                errorNotification(`${failure.title}. ${failure.message}`);
             }
             if (types.status === 'fulfilled') setEventTypes(types.value);
             if (mtx.status === 'fulfilled') setMatrix(mtx.value);
             if (kpi.status === 'fulfilled') setKpis(kpi.value);
         } catch (err) {
-            errorNotification(extractErrorMessage(err, 'Une erreur est survenue lors du chargement du registre.'));
+            const failure = classifyRegisterLoadFailure(err);
+            setLoadFailure(failure);
+            errorNotification(extractErrorMessage(err, `${failure.title}. ${failure.message}`));
         }
     }, [statusFilter, typeFilter]);
 
@@ -123,8 +133,11 @@ const ErrorEventListPage = () => {
 
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
-        await loadAll();
-        setRefreshing(false);
+        try {
+            await loadAll();
+        } finally {
+            setRefreshing(false);
+        }
     }, [loadAll]);
 
     // Filtrage client (onglet nature + recherche libre + criticité). Statut/type filtrés serveur.
@@ -339,6 +352,34 @@ const ErrorEventListPage = () => {
                         <div className="flex flex-col items-center justify-center py-16">
                             <Loader color={NAVY} size="sm" />
                             <p className="text-[12.5px] text-slate-500 mt-3">Chargement du registre…</p>
+                        </div>
+                    ) : loadFailure ? (
+                        <div
+                            className="flex flex-col items-center justify-center py-14 text-center px-4"
+                            role="alert"
+                            aria-live="assertive"
+                        >
+                            <div
+                                className="w-16 h-16 rounded-2xl border flex items-center justify-center mb-4 shadow-sm"
+                                style={{ background: '#FEF2F2', borderColor: '#FECACA' }}
+                                aria-hidden="true"
+                            >
+                                <IconShieldExclamation size={28} className="text-red-700" stroke={1.6} />
+                            </div>
+                            <p className="text-[14px] text-slate-900 font-semibold mb-1">{loadFailure.title}</p>
+                            <p className="text-[12.5px] text-slate-600 max-w-lg mb-4 leading-relaxed">
+                                {loadFailure.message}
+                            </p>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                leftSection={<IconRefresh size={15} />}
+                                loading={refreshing}
+                                onClick={handleRefresh}
+                                styles={{ root: { color: NAVY, borderColor: NAVY } }}
+                            >
+                                Réessayer le chargement
+                            </Button>
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-14 text-center px-4">

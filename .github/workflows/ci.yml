@@ -1,0 +1,133 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality:
+    name: Frontend - lint, unit tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Reject high-severity dependency vulnerabilities
+        run: npm run audit:security
+      - name: Reject new ESLint violations
+        run: npm run lint:baseline
+      - name: Reject new design-system debt
+        run: npm run design:baseline
+      - name: Run unit tests
+        run: npm test
+      - name: Build production bundle
+        run: npm run build
+      - name: Enforce field performance budgets
+        run: npm run performance:budget
+
+  backend-quality:
+    name: Backend - ${{ matrix.service }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: Gateway
+            path: Backend/GatewayMS
+          - service: MineXpert
+            path: Backend/MineXpert
+          - service: Eureka
+            path: Backend/Eureka-Server
+          - service: Health-Safety
+            path: Backend/Health-Safety
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Set up Java
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: ${{ matrix.path }}/pom.xml
+      - name: Run tests and package
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp -Dspring.profiles.active=test verify
+
+  e2e-smoke:
+    name: Browser smoke tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run autonomous browser smoke tests
+        run: npm run test:e2e:smoke
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: playwright-diagnostics
+          path: |
+            Frontend/playwright-report
+            Frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  quality-gate:
+    name: Required quality gate
+    if: always()
+    needs: [frontend-quality, backend-quality, e2e-smoke]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every quality job
+        shell: bash
+        run: |
+          [[ "${{ needs.frontend-quality.result }}" == "success" ]]
+          [[ "${{ needs.backend-quality.result }}" == "success" ]]
+          [[ "${{ needs.e2e-smoke.result }}" == "success" ]]

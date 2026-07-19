@@ -75,6 +75,10 @@ import {
     type MeasurementPointDTO,
     type ThresholdDTO,
 } from '../../services/DosimetryService';
+import {
+    resolveClassificationThreshold,
+    resolveConfiguredRegulatoryLimit,
+} from './dosimetryRegulatoryLimits';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC tolerant
@@ -114,13 +118,7 @@ const MAX_FRACTION_TOTAL = 1.0;
 const newKey = (): string =>
     `link-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-// CIPR 103 default thresholds (mSv/an) — fallback si aucune entree backend
-const CIPR_DEFAULT_LIMIT_MSV: { workerA: number; workerB: number; public: number } = {
-    workerA: 20,
-    workerB: 6,
-    public: 1,
-};
-
+// Les limites sont exclusivement issues des seuils actifs mine/globaux.
 // ─────────────────────────────────────────────────────────────────────────────
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
@@ -286,35 +284,28 @@ const ExposureProfileLinkEditor = () => {
         return totalUSv / 1000;
     }, [links, workHours]);
 
-    /** Pourcentage vs limite reglementaire workerA (par defaut 20 mSv/an). */
-    const ciprWorkerALimit = useMemo(() => {
-        const match = thresholds.find(
-            (th) =>
-                th.grandeur === 'HP10'
-                && th.referenceFramework === 'CIPR_103'
-                && (th.personCategory === 'WORKER_A' || th.personCategory === 'A')
-                && th.regulatoryLimit != null,
-        );
-        return match?.regulatoryLimit ?? CIPR_DEFAULT_LIMIT_MSV.workerA;
-    }, [thresholds]);
+    /** Pourcentages calculés uniquement si une limite active est configurée. */
+    const ciprWorkerALimit = useMemo(
+        () => resolveConfiguredRegulatoryLimit(thresholds, 'WORKER_A', mineId),
+        [thresholds, mineId],
+    );
 
-    const ciprWorkerBLimit = useMemo(() => {
-        const match = thresholds.find(
-            (th) =>
-                th.grandeur === 'HP10'
-                && th.referenceFramework === 'CIPR_103'
-                && (th.personCategory === 'WORKER_B' || th.personCategory === 'B')
-                && th.regulatoryLimit != null,
-        );
-        return match?.regulatoryLimit ?? CIPR_DEFAULT_LIMIT_MSV.workerB;
-    }, [thresholds]);
+    const ciprWorkerBLimit = useMemo(
+        () => resolveConfiguredRegulatoryLimit(thresholds, 'WORKER_B', mineId),
+        [thresholds, mineId],
+    );
 
-    const pctVsWorkerA = ciprWorkerALimit > 0
+    const workerBClassificationThreshold = useMemo(
+        () => resolveClassificationThreshold(thresholds, 'WORKER_B', mineId),
+        [thresholds, mineId],
+    );
+
+    const pctVsWorkerA = ciprWorkerALimit != null && ciprWorkerALimit > 0
         ? (estimatedAnnualMsv / ciprWorkerALimit) * 100
-        : 0;
-    const pctVsWorkerB = ciprWorkerBLimit > 0
+        : null;
+    const pctVsWorkerB = ciprWorkerBLimit != null && ciprWorkerBLimit > 0
         ? (estimatedAnnualMsv / ciprWorkerBLimit) * 100
-        : 0;
+        : null;
 
     const indicatorTone = (pct: number) => {
         if (pct >= 90) return { color: 'red', label: 'critical' };
@@ -749,19 +740,24 @@ const ExposureProfileLinkEditor = () => {
                             {/* Comparaisons aux seuils CIPR 103 */}
                             <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <CiprComparison
-                                    label={t('exposureProfile.links.editor.cipr.workerA', {
-                                        limit: ciprWorkerALimit,
-                                    })}
+                                    label={ciprWorkerALimit != null
+                                        ? t('exposureProfile.links.editor.cipr.workerA', { limit: ciprWorkerALimit })
+                                        : t('thresholds.categories.WORKER_A', { defaultValue: 'Travailleur catégorie A' })}
                                     pct={pctVsWorkerA}
                                     indicatorTone={indicatorTone}
                                 />
                                 <CiprComparison
-                                    label={t('exposureProfile.links.editor.cipr.workerB', {
-                                        limit: ciprWorkerBLimit,
-                                    })}
+                                    label={ciprWorkerBLimit != null
+                                        ? t('exposureProfile.links.editor.cipr.workerB', { limit: ciprWorkerBLimit })
+                                        : t('thresholds.categories.WORKER_B', { defaultValue: 'Travailleur catégorie B' })}
                                     pct={pctVsWorkerB}
                                     indicatorTone={indicatorTone}
                                 />
+                                {workerBClassificationThreshold != null && (
+                                    <p className="md:col-span-2 text-[11px] text-violet-700">
+                                        {workerBClassificationThreshold} mSv = seuil de classification catégorie B, pas une limite réglementaire.
+                                    </p>
+                                )}
                             </div>
                         </section>
 
@@ -818,9 +814,21 @@ function CiprComparison({
     indicatorTone,
 }: {
     label: string;
-    pct: number;
+    pct: number | null;
     indicatorTone: (pct: number) => { color: string; label: string };
 }) {
+    if (pct == null) {
+        return (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                <span className="text-[11px] uppercase tracking-[0.1em] font-semibold text-slate-600">
+                    {label}
+                </span>
+                <p className="mt-1 text-[11px] text-amber-800">
+                    Limite non configurée — à valider localement
+                </p>
+            </div>
+        );
+    }
     const tone = indicatorTone(pct);
     const colorMap: Record<
         string,

@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — DTO d'une certification d'auditeur interne (ISO 19011:2018 §7).
+ * LOT 52 — DTO d'une qualification d'auditeur interne (ISO 19011:2026 — compétences).
  */
 @Data
 @AllArgsConstructor

@@ -49,8 +49,8 @@
             <td th:text="${row.category}">-</td>
             <td><span class="pill" th:text="${row.kpiCategory}">-</span></td>
             <td class="right" th:text="${row.annualHp10}">-</td>
-            <td class="right" th:text="${row.regulatoryLimit}">-</td>
-            <td class="right" th:text="${row.percentOfLimit}">-</td>
+            <td class="right" th:text="${row.regulatoryLimit != null ? row.regulatoryLimit : 'Non configurée — validation locale requise'}">-</td>
+            <td class="right" th:text="${row.percentOfLimit != null ? row.percentOfLimit : 'Non calculé'}">-</td>
             <td th:text="${row.fitness}">-</td>
         </tr>
         <tr th:if="${rows.empty}">

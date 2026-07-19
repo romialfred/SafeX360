@@ -28,15 +28,13 @@ export default function MobileRedirectGuard() {
         if (!shouldRedirectToMobile) return;
         const path = location.pathname;
         if (path.startsWith('/m/') || path === '/m') return;
+        // La vitrine publique n'a pas d'equivalent /m : l'expulser vers
+        // /m/home (ecran authentifie) interdisait a tout visiteur mobile de
+        // simplement VOIR le site.
+        if (path === '/') return;
         if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return;
-        // Eviter une boucle de redirection : on ne redirige qu'une seule fois
-        // par session par origine.
-        try {
-            if (sessionStorage.getItem('safex360-mobile-redirected') === '1') return;
-            sessionStorage.setItem('safex360-mobile-redirected', '1');
-        } catch {
-            // ignore
-        }
+        // Toute route desktop reste redirigée tant que le terminal est mobile.
+        // Le choix explicite ?desktop=1 est le seul mécanisme de désactivation.
         navigate('/m/home', { replace: true });
     }, [ready, shouldRedirectToMobile, location.pathname, navigate]);
 

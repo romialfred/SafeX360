@@ -1,16 +1,26 @@
 /**
- * File d'attente IndexedDB pour les check-in d'évacuation hors-ligne
- * (LOT 48 Phase 6).
+ * File d'attente chiffree des check-in d'evacuation hors-ligne.
  *
- * <p>Garantit qu'un employé en zone sans réseau peut tout de même pointer son
- * statut (SAFE / INJURED) lors d'une alerte générale. Le check-in sera transmis
- * dès reconnexion.</p>
+ * Les donnees personnelles et de geolocalisation sont chiffrees avant toute
+ * ecriture IndexedDB. Les metadonnees minimales restent partitionnees par
+ * utilisateur et mine afin d'interdire lecture, rejeu ou mutation croises.
  */
 
+import {
+    belongsToOfflineOwner,
+    createOfflineCryptoId,
+    currentOfflineOwnerContext,
+    decryptOfflineJson,
+    encryptOfflineJson,
+    type EncryptedOfflinePayload,
+    type OfflineOwnerContext,
+} from '../security/offlineVault';
+
 const DB_NAME = 'safex-emergency-checkin';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'pending_checkin';
 const MAX_PENDING = 30;
+const CRYPTO_PURPOSE = 'emergency-checkin';
 
 export interface PendingCheckIn {
     id?: number;
@@ -28,7 +38,15 @@ export interface PendingCheckIn {
     lastError?: string;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+type CheckInSensitivePayload = Omit<PendingCheckIn, 'id' | 'enqueuedAt' | 'attempts'>;
+
+interface StoredPendingCheckIn extends OfflineOwnerContext {
+    id?: number;
+    enqueuedAt: string;
+    attempts: number;
+    cryptoId: string;
+    encryptedSensitive: EncryptedOfflinePayload;
+}
 
 const openDb = (): Promise<IDBDatabase> =>
     new Promise((resolve, reject) => {
@@ -36,75 +54,193 @@ const openDb = (): Promise<IDBDatabase> =>
             reject(new Error('IndexedDB indisponible'));
             return;
         }
+
         const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = () => {
+        req.onupgradeneeded = (event) => {
             const db = req.result;
+            const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
             if (!db.objectStoreNames.contains(STORE)) {
                 db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+            } else if (oldVersion < 2) {
+                // Les entrees v1 etaient en clair et non partitionnees. Leur
+                // proprietaire ne peut pas etre prouve : purge fail-closed.
+                req.transaction?.objectStore(STORE).clear();
             }
         };
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
     });
 
-export const enqueueCheckIn = async (entry: Omit<PendingCheckIn, 'id' | 'enqueuedAt' | 'attempts'>): Promise<void> => {
+const readAllStored = async (): Promise<StoredPendingCheckIn[]> => {
     const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).getAll();
+        req.onsuccess = () => resolve((req.result as StoredPendingCheckIn[]) ?? []);
+        req.onerror = () => reject(req.error);
+    });
+};
+
+const decryptEntry = async (
+    stored: StoredPendingCheckIn,
+    owner: OfflineOwnerContext,
+): Promise<PendingCheckIn> => {
+    if (!belongsToOfflineOwner(stored, owner)) {
+        throw new Error('OFFLINE_PARTITION_MISMATCH');
+    }
+
+    const sensitive = await decryptOfflineJson<CheckInSensitivePayload>(
+        owner,
+        CRYPTO_PURPOSE,
+        stored.cryptoId,
+        stored.encryptedSensitive,
+    );
+    return {
+        ...sensitive,
+        id: stored.id,
+        enqueuedAt: stored.enqueuedAt,
+        attempts: stored.attempts,
+    };
+};
+
+const encryptEntry = async (
+    entry: PendingCheckIn,
+    owner: OfflineOwnerContext,
+): Promise<StoredPendingCheckIn> => {
+    const { id, enqueuedAt, attempts, ...sensitive } = entry;
+    const cryptoId = createOfflineCryptoId();
+    return {
+        id,
+        enqueuedAt,
+        attempts,
+        ...owner,
+        cryptoId,
+        encryptedSensitive: await encryptOfflineJson(
+            owner,
+            CRYPTO_PURPOSE,
+            cryptoId,
+            sensitive,
+        ),
+    };
+};
+
+export const enqueueCheckIn = async (
+    entry: Omit<PendingCheckIn, 'id' | 'enqueuedAt' | 'attempts'>,
+): Promise<void> => {
+    const owner = currentOfflineOwnerContext();
+    const stored = await encryptEntry(
+        { ...entry, enqueuedAt: new Date().toISOString(), attempts: 0 },
+        owner,
+    );
+    const db = await openDb();
+
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE, 'readwrite');
         const store = tx.objectStore(STORE);
-        const count = store.count();
-        count.onsuccess = () => {
-            if (count.result >= MAX_PENDING) {
-                const cur = store.openCursor();
-                cur.onsuccess = () => {
-                    const c = cur.result;
-                    if (c) c.delete();
-                    store.add({ ...entry, enqueuedAt: new Date().toISOString(), attempts: 0 });
-                };
-            } else {
-                store.add({ ...entry, enqueuedAt: new Date().toISOString(), attempts: 0 });
+        const all = store.getAll();
+        all.onsuccess = () => {
+            const owned = (all.result as StoredPendingCheckIn[])
+                .filter((candidate) => belongsToOfflineOwner(candidate, owner))
+                .sort((left, right) => left.enqueuedAt.localeCompare(right.enqueuedAt));
+
+            if (owned.length >= MAX_PENDING && owned[0]?.id !== undefined) {
+                store.delete(owned[0].id);
             }
+            store.add(stored);
         };
+        all.onerror = () => reject(all.error);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error ?? new Error('Transaction IndexedDB annulee'));
     });
 };
 
 export const listPendingCheckIns = async (): Promise<PendingCheckIn[]> => {
     try {
-        const db = await openDb();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE, 'readonly');
-            const req = tx.objectStore(STORE).getAll();
-            req.onsuccess = () => resolve((req.result as PendingCheckIn[]) ?? []);
-            req.onerror = () => reject(req.error);
-        });
+        const owner = currentOfflineOwnerContext();
+        const stored = (await readAllStored()).filter((entry) => belongsToOfflineOwner(entry, owner));
+        return await Promise.all(stored.map((entry) => decryptEntry(entry, owner)));
     } catch {
         return [];
     }
 };
 
-const updateEntry = async (entry: PendingCheckIn): Promise<void> => {
+/** Supprime uniquement les pointages du compte/mine actifs. */
+export const purgePendingCheckIns = async (): Promise<void> => {
+    const owner = currentOfflineOwnerContext();
     const db = await openDb();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).put(entry);
+        const store = tx.objectStore(STORE);
+        const cursor = store.openCursor();
+        cursor.onsuccess = () => {
+            const current = cursor.result;
+            if (!current) return;
+            if (belongsToOfflineOwner(current.value as StoredPendingCheckIn, owner)) {
+                current.delete();
+            }
+            current.continue();
+        };
+        cursor.onerror = () => reject(cursor.error);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
     });
 };
 
-const deleteEntry = async (id: number): Promise<void> => {
+const assertActiveOwner = (expected: OfflineOwnerContext): void => {
+    if (!belongsToOfflineOwner(currentOfflineOwnerContext(), expected)) {
+        throw new Error('OFFLINE_ACCOUNT_CHANGED');
+    }
+};
+
+const updateEntry = async (entry: PendingCheckIn, owner: OfflineOwnerContext): Promise<void> => {
+    if (entry.id === undefined) throw new Error('OFFLINE_ENTRY_ID_REQUIRED');
+    assertActiveOwner(owner);
+    const encrypted = await encryptEntry(entry, owner);
     const db = await openDb();
+
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).delete(id);
+        const store = tx.objectStore(STORE);
+        const get = store.get(entry.id as number);
+        get.onsuccess = () => {
+            const current = get.result as StoredPendingCheckIn | undefined;
+            if (!current || !belongsToOfflineOwner(current, owner)) {
+                tx.abort();
+                return;
+            }
+            store.put(encrypted);
+        };
+        get.onerror = () => reject(get.error);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error ?? new Error('OFFLINE_PARTITION_MISMATCH'));
     });
 };
 
-export type PostCheckInFn = (entry: PendingCheckIn) => Promise<any>;
+const deleteEntry = async (id: number, owner: OfflineOwnerContext): Promise<void> => {
+    assertActiveOwner(owner);
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        const get = store.get(id);
+        get.onsuccess = () => {
+            const current = get.result as StoredPendingCheckIn | undefined;
+            if (!current || !belongsToOfflineOwner(current, owner)) {
+                tx.abort();
+                return;
+            }
+            store.delete(id);
+        };
+        get.onerror = () => reject(get.error);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error ?? new Error('OFFLINE_PARTITION_MISMATCH'));
+    });
+};
+
+export type PostCheckInFn = (entry: PendingCheckIn) => Promise<unknown>;
 
 export interface ReplayCheckInResult {
     attempted: number;
@@ -113,41 +249,56 @@ export interface ReplayCheckInResult {
 }
 
 export const replayPendingCheckIns = async (post: PostCheckInFn): Promise<ReplayCheckInResult> => {
+    const owner = currentOfflineOwnerContext();
     const pending = await listPendingCheckIns();
     let succeeded = 0;
     let failed = 0;
+
     for (const entry of pending) {
         try {
+            assertActiveOwner(owner);
             await post(entry);
-            if (entry.id !== undefined) await deleteEntry(entry.id);
+            assertActiveOwner(owner);
+            if (entry.id !== undefined) await deleteEntry(entry.id, owner);
             succeeded++;
-        } catch (err: any) {
+        } catch (error: unknown) {
             failed++;
-            entry.attempts = (entry.attempts ?? 0) + 1;
-            entry.lastError = err?.message ?? 'Erreur inconnue';
-            try { await updateEntry(entry); } catch { /* ignore */ }
+            try {
+                assertActiveOwner(owner);
+                await updateEntry(
+                    {
+                        ...entry,
+                        attempts: (entry.attempts ?? 0) + 1,
+                        lastError: error instanceof Error ? error.message : 'Erreur inconnue',
+                    },
+                    owner,
+                );
+            } catch {
+                // Un changement de compte ou une disparition de l'entree interdit
+                // toute mutation. L'entree d'origine reste chiffree pour son compte.
+            }
         }
     }
     return { attempted: pending.length, succeeded, failed };
 };
-
-// ── Auto-replay (à installer au boot, comme pour les SOS) ──
 
 let installed = false;
 let intervalId: number | null = null;
 
 export const installAutoReplayCheckIns = (
     post: PostCheckInFn,
-    onResult?: (r: ReplayCheckInResult) => void
+    onResult?: (result: ReplayCheckInResult) => void,
 ): (() => void) => {
     if (installed) return () => {};
     installed = true;
 
     const run = async () => {
         try {
-            const r = await replayPendingCheckIns(post);
-            if (r.attempted > 0 && onResult) onResult(r);
-        } catch { /* silencieux */ }
+            const result = await replayPendingCheckIns(post);
+            if (result.attempted > 0 && onResult) onResult(result);
+        } catch {
+            // La prochaine reconnexion/tentative reprendra la file du compte actif.
+        }
     };
 
     void run();

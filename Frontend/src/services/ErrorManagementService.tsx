@@ -20,6 +20,9 @@
 
 import axiosInstance from '../interceptors/AxiosInterceptor';
 
+/** Délai borné pour les lectures du registre : l'interface doit pouvoir proposer une reprise. */
+export const ERROR_MANAGEMENT_READ_TIMEOUT_MS = 15_000;
+
 // ─────────────────────────────────────────────────────────────────────────
 //  ENUMS (alignés EXACTEMENT sur le backend)
 // ─────────────────────────────────────────────────────────────────────────
@@ -201,7 +204,10 @@ const listEvents = async (params?: ListEventsParams): Promise<ErrorEventDTO[]> =
     const query: Record<string, unknown> = {};
     if (params?.status) query.status = params.status;
     if (params?.eventTypeId != null) query.eventTypeId = params.eventTypeId;
-    const res = await axiosInstance.get('/hns/error/events', { params: query });
+    const res = await axiosInstance.get('/hns/error/events', {
+        params: query,
+        timeout: ERROR_MANAGEMENT_READ_TIMEOUT_MS,
+    });
     return res.data ?? [];
 };
 
@@ -295,7 +301,7 @@ const upsertJustCulture = async (
 // ─────────────────────────────────────────────────────────────────────────
 
 const getKpis = async (): Promise<ErrorKpiDTO> => {
-    const res = await axiosInstance.get('/hns/error/kpis');
+    const res = await axiosInstance.get('/hns/error/kpis', { timeout: ERROR_MANAGEMENT_READ_TIMEOUT_MS });
     return res.data;
 };
 
@@ -304,7 +310,9 @@ const getKpis = async (): Promise<ErrorKpiDTO> => {
 // ─────────────────────────────────────────────────────────────────────────
 
 const listEventTypes = async (): Promise<ErrorEventType[]> => {
-    const res = await axiosInstance.get('/hns/error/referentials/event-types');
+    const res = await axiosInstance.get('/hns/error/referentials/event-types', {
+        timeout: ERROR_MANAGEMENT_READ_TIMEOUT_MS,
+    });
     return res.data ?? [];
 };
 
@@ -319,7 +327,9 @@ const listProbabilities = async (): Promise<ErrorProbability[]> => {
 };
 
 const listCriticalityMatrix = async (): Promise<ErrorCriticalityMatrixCell[]> => {
-    const res = await axiosInstance.get('/hns/error/referentials/criticality-matrix');
+    const res = await axiosInstance.get('/hns/error/referentials/criticality-matrix', {
+        timeout: ERROR_MANAGEMENT_READ_TIMEOUT_MS,
+    });
     return res.data ?? [];
 };
 

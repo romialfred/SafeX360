@@ -33,13 +33,11 @@ import com.minexpert.hns.dosimetry.entity.DosimetryKpiSnapshot;
 import com.minexpert.hns.dosimetry.entity.ExposedWorker;
 import com.minexpert.hns.dosimetry.entity.ExposureAlert;
 import com.minexpert.hns.dosimetry.entity.MeasurementPoint;
-import com.minexpert.hns.dosimetry.entity.Threshold;
 import com.minexpert.hns.dosimetry.enums.AlertStatus;
 import com.minexpert.hns.dosimetry.enums.CaseStatus;
 import com.minexpert.hns.dosimetry.enums.DoseCategory;
 import com.minexpert.hns.dosimetry.enums.DoseSpecialStatus;
 import com.minexpert.hns.dosimetry.enums.KpiCategory;
-import com.minexpert.hns.dosimetry.enums.ThresholdGrandeur;
 import com.minexpert.hns.dosimetry.repository.AmbientMeasurementRepository;
 import com.minexpert.hns.dosimetry.repository.DoseCumulativeRepository;
 import com.minexpert.hns.dosimetry.repository.DoseRecordRepository;
@@ -49,7 +47,6 @@ import com.minexpert.hns.dosimetry.repository.ExposureAlertRepository;
 import com.minexpert.hns.dosimetry.repository.FitnessAssessmentRepository;
 import com.minexpert.hns.dosimetry.repository.MeasurementPointRepository;
 import com.minexpert.hns.dosimetry.repository.OverexposureCaseRepository;
-import com.minexpert.hns.dosimetry.repository.ThresholdRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,20 +66,10 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DosimetryAggregationServiceImpl.class);
 
-    /** Limite reglementaire CIPR 103 par categorie KPI (mSv/an, Hp(10) effective). */
-    private static final Map<KpiCategory, Double> REGULATORY_LIMITS = new EnumMap<>(KpiCategory.class);
     /** Echelle BigDecimal pour les doses (mSv). */
     private static final int SCALE = 4;
     /** Fenetre d'expiration des fiches d'aptitude (jours). */
     private static final int FITNESS_EXPIRY_WINDOW_DAYS = 60;
-
-    static {
-        REGULATORY_LIMITS.put(KpiCategory.WORKER_A, 20.0);
-        REGULATORY_LIMITS.put(KpiCategory.WORKER_B, 6.0);
-        REGULATORY_LIMITS.put(KpiCategory.APPRENTICE, 6.0);
-        REGULATORY_LIMITS.put(KpiCategory.PREGNANCY, 1.0);
-        REGULATORY_LIMITS.put(KpiCategory.PUBLIC, 1.0);
-    }
 
     private final DosimetryKpiSnapshotRepository snapshotRepository;
     private final ExposedWorkerRepository workerRepository;
@@ -93,7 +80,7 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
     private final FitnessAssessmentRepository fitnessRepository;
     private final MeasurementPointRepository measurementPointRepository;
     private final AmbientMeasurementRepository ambientRepository;
-    private final ThresholdRepository thresholdRepository;
+    private final RegulatoryLimitResolver regulatoryLimitResolver;
     /**
      * Enrichissement RH (nom / matricule du worker dans le top exposés). Best-effort,
      * peut être null si la table {@code employee} n'est pas accessible.
@@ -163,12 +150,14 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         LocalDateTime now = LocalDateTime.now();
         for (KpiCategory cat : KpiCategory.values()) {
             List<ExposedWorker> categoryWorkers = byCategory.getOrDefault(cat, List.of());
+            Double regulatoryLimit = regulatoryLimitResolver.resolveAnnualHp10(mineId, cat)
+                    .orElse(null);
             DosimetryKpiSnapshot snap = computeOneSnapshot(mineId, date, year, cat,
                     categoryWorkers, cumulativesByWorker,
                     alertsByCategory.getOrDefault(cat, 0L),
                     casesByCategory.getOrDefault(cat, 0L),
                     fitnessExpiringByCategory.getOrDefault(cat, 0L),
-                    measurementPointsCount, ambientAvg, now);
+                    measurementPointsCount, ambientAvg, now, regulatoryLimit);
 
             try {
                 Optional<DosimetryKpiSnapshot> existing = snapshotRepository
@@ -198,11 +187,10 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
             KpiCategory cat, List<ExposedWorker> categoryWorkers,
             Map<Long, DoseCumulative> cumulativesByWorker,
             long activeAlertsCount, long overexposureCasesOpen, long fitnessExpiringSoon,
-            long measurementPointsCount, BigDecimal ambientAvg, LocalDateTime now) {
+            long measurementPointsCount, BigDecimal ambientAvg, LocalDateTime now,
+            Double regulatoryLimit) {
 
         long workersCount = categoryWorkers.size();
-        Double limit = REGULATORY_LIMITS.get(cat);
-
         List<Double> annualDoses = new ArrayList<>();
         for (ExposedWorker w : categoryWorkers) {
             DoseCumulative dc = cumulativesByWorker.get(w.getId());
@@ -219,10 +207,10 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
         BigDecimal median = median(annualDoses);
         BigDecimal max = max(annualDoses);
 
-        long over50 = countOver(annualDoses, limit, 0.50);
-        long over75 = countOver(annualDoses, limit, 0.75);
-        long over90 = countOver(annualDoses, limit, 0.90);
-        long over100 = countOver(annualDoses, limit, 1.00);
+        long over50 = countOver(annualDoses, regulatoryLimit, 0.50);
+        long over75 = countOver(annualDoses, regulatoryLimit, 0.75);
+        long over90 = countOver(annualDoses, regulatoryLimit, 0.90);
+        long over100 = countOver(annualDoses, regulatoryLimit, 1.00);
 
         return DosimetryKpiSnapshot.builder()
                 .mineId(mineId)
@@ -296,9 +284,10 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
                 continue;
             }
             KpiCategory kc = mapToKpiCategory(w);
-            Double regulatoryLimit = REGULATORY_LIMITS.get(kc);
+            Double regulatoryLimit = regulatoryLimitResolver.resolveAnnualHp10(w.getMineId(), kc)
+                    .orElse(null);
             BigDecimal annual = BigDecimal.valueOf(dc.getAnnualHp10()).setScale(SCALE, RoundingMode.HALF_UP);
-            BigDecimal pct = BigDecimal.ZERO;
+            BigDecimal pct = null;
             if (regulatoryLimit != null && regulatoryLimit > 0d) {
                 pct = annual.multiply(BigDecimal.valueOf(100))
                         .divide(BigDecimal.valueOf(regulatoryLimit), 2, RoundingMode.HALF_UP);
@@ -354,9 +343,22 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
                     .filter(w -> mapToKpiCategory(w) == category)
                     .collect(Collectors.toList());
         }
-        Double regulatoryLimit = category != null ? REGULATORY_LIMITS.get(category) : 20.0;
-        if (regulatoryLimit == null || regulatoryLimit <= 0) {
-            regulatoryLimit = 20.0;
+        Double regulatoryLimit = category != null
+                ? regulatoryLimitResolver.resolveAnnualHp10(mineId, category).orElse(null)
+                : null;
+        if (regulatoryLimit == null || regulatoryLimit <= 0d) {
+            return DosimetryDistributionDTO.builder()
+                    .mineId(mineId)
+                    .year(year)
+                    .category(category)
+                    .regulatoryLimit(null)
+                    .regulatoryLimitConfigured(false)
+                    .regulatoryLimitStatus(category == null
+                            ? "CATEGORY_REQUIRED"
+                            : "NOT_CONFIGURED_LOCAL_VALIDATION_REQUIRED")
+                    .workersCount(workers.size())
+                    .buckets(List.of())
+                    .build();
         }
         List<Long> distWorkerIds = workers.stream().map(ExposedWorker::getId).collect(Collectors.toList());
         Map<Long, DoseCumulative> distCumul = distWorkerIds.isEmpty() ? Map.of()
@@ -403,6 +405,8 @@ public class DosimetryAggregationServiceImpl implements DosimetryAggregationServ
                 .year(year)
                 .category(category)
                 .regulatoryLimit(regulatoryLimit)
+                .regulatoryLimitConfigured(true)
+                .regulatoryLimitStatus("CONFIGURED")
                 .workersCount(total)
                 .buckets(buckets)
                 .build();

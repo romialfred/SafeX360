@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import com.minexpert.hns.entity.audit.AuditProgram;
 
 /**
- * LOT 52 — Accès aux programmes d'audit annuels (ISO 19011:2018 §5).
+ * LOT 52 — Accès aux programmes d'audit annuels (ISO 19011:2026).
  */
 public interface AuditProgramRepository extends CrudRepository<AuditProgram, Long> {
 

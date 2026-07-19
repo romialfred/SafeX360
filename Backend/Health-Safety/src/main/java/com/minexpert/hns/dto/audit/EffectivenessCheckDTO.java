@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — DTO d'une vérification d'efficacité (ISO 19011:2018 §6.6).
+ * LOT 52 — DTO d'une vérification d'efficacité (ISO 19011:2026 — suivi des audits).
  */
 @Data
 @AllArgsConstructor

@@ -6,7 +6,7 @@ import com.minexpert.hns.exception.HSException;
 
 /**
  * LOT 52 — Validation de la composition d'une équipe d'audit
- * (ISO 19011:2018 §5.4.4 — sélection de l'équipe / §7 — compétences).
+ * (ISO 19011:2026 — mise en œuvre du programme et compétences des auditeurs).
  */
 public interface TeamValidationService {
 

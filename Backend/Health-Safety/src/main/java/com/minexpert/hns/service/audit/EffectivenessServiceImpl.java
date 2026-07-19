@@ -22,7 +22,7 @@ import com.minexpert.hns.repository.audit.RecommendationRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * LOT 52 — Vérification d'efficacité (ISO 19011:2018 §6.6).
+ * LOT 52 — Vérification d'efficacité (ISO 19011:2026 — suivi des audits).
  *
  * Règle de rigueur : on ne planifie une vérification que pour une
  * recommandation TERMINÉE (COMPLETED) — l'efficacité ne se vérifie qu'après

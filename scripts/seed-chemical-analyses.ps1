@@ -1,10 +1,9 @@
 ﻿# LOT 49 — Réparation : rattache les analyses de risque aux 8 produits chimiques
 # déjà créés (le POST /create renvoie le DTO complet, pas un Long).
 
-$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
-$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
-$h = @{ 'X-Secret-Key' = $secret }
-$base = 'http://localhost:8081/hns'
+if ([string]::IsNullOrWhiteSpace($env:SAFEX_ADMIN_SESSION_COOKIE)) { throw 'SAFEX_ADMIN_SESSION_COOKIE requis' }
+$h = @{ 'Cookie' = "jwt=$($env:SAFEX_ADMIN_SESSION_COOKIE)" }
+$base = 'http://localhost:9100/hns'
 
 function Invoke-Api {
     param([string]$Method, [string]$Url, [object]$Body)

@@ -4,10 +4,9 @@
 # conforme / échéance proche / expiré / en attente de validation / manquant.
 
 # Secret interne lu depuis Backend/.env (jamais en dur dans le depot).
-$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
-$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
-$h = @{ 'X-Secret-Key' = $secret }
-$base = 'http://localhost:8081/hns'
+if ([string]::IsNullOrWhiteSpace($env:SAFEX_ADMIN_SESSION_COOKIE)) { throw 'SAFEX_ADMIN_SESSION_COOKIE requis' }
+$h = @{ 'Cookie' = "jwt=$($env:SAFEX_ADMIN_SESSION_COOKIE)" }
+$base = 'http://localhost:9100/hns'
 
 $pdf = "%PDF-1.4`n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj`n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj`n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]>>endobj`ntrailer<</Size 4/Root 1 0 R>>`n%%EOF"
 $pdfB64 = [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pdf))

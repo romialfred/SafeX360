@@ -7,7 +7,8 @@
  * On évite aussi de re-naviguer si l'on est déjà sur la page de connexion.
  */
 import { setUser } from '../slices/UserSlice';
-const navigateToLogin = (navigate: any, dispatch: any) => {
+
+const navigateToLogin = async (navigate: any, dispatch: any) => {
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) {
         return;
     }
@@ -16,6 +17,10 @@ const navigateToLogin = (navigate: any, dispatch: any) => {
     try {
         dispatch?.(setUser(null));
     } catch { /* dispatch indisponible — la navigation reste prioritaire */ }
+    // Un 401 applicatif signifie que la session ne protege plus les donnees
+    // locales. Les queues offline restent preservees par defaut.
+    const { purgeLocalSecurityState } = await import('../security/purgeLocalSecurityState');
+    await purgeLocalSecurityState();
     navigate('/login');
 };
 

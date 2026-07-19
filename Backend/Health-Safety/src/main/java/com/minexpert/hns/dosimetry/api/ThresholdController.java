@@ -21,6 +21,7 @@ import com.minexpert.hns.dosimetry.service.ThresholdService;
 import com.minexpert.hns.dto.ResponseDTO;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 /**
  * Controller des seuils dosimetriques (Threshold).
@@ -39,14 +40,14 @@ public class ThresholdController {
     @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<Long> create(@RequestParam("companyId") Long companyId,
-            @RequestBody ThresholdDTO dto) {
+            @Valid @RequestBody ThresholdDTO dto) {
         return new ResponseEntity<>(service.create(companyId, dto), HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> update(@RequestParam("companyId") Long companyId,
-            @RequestBody ThresholdDTO dto) {
+            @Valid @RequestBody ThresholdDTO dto) {
         service.update(companyId, dto);
         return new ResponseEntity<>(new ResponseDTO("Threshold updated successfully"), HttpStatus.OK);
     }
@@ -56,14 +57,23 @@ public class ThresholdController {
         return new ResponseEntity<>(service.getAll(companyId), HttpStatus.OK);
     }
 
-    @GetMapping("/get/{id}")
-    public ResponseEntity<ThresholdDTO> getById(@PathVariable Long id) {
-        return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
+    @GetMapping("/global-defaults")
+    public ResponseEntity<List<ThresholdDTO>> getGlobalDefaults() {
+        return new ResponseEntity<>(service.getGlobalDefaults(), HttpStatus.OK);
     }
 
+    @GetMapping("/get/{id}")
+    public ResponseEntity<ThresholdDTO> getById(@RequestParam("companyId") Long companyId,
+            @PathVariable Long id) {
+        return new ResponseEntity<>(service.getById(companyId, id), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> delete(@PathVariable Long id) {
-        service.delete(id);
+    public ResponseEntity<ResponseDTO> delete(@RequestParam("companyId") Long companyId,
+            @PathVariable Long id) {
+        service.delete(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Threshold deleted successfully"), HttpStatus.OK);
     }
 }

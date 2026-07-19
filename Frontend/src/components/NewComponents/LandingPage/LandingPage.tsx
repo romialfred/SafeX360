@@ -22,7 +22,6 @@ import {
     IconBolt,
     IconArrowRight,
     IconCheck,
-    IconStar,
     IconCertificate,
     IconChevronDown,
     IconChevronLeft,
@@ -81,8 +80,8 @@ const FEATURES = [
         icon: IconBellRinging,
         title: 'SOS instantané',
         highlight: true,
-        description: 'Le travailleur appuie sur SOS. Le préventeur reçoit l\'alerte avec position GPS en moins de 200 ms. Sirène déclenchée, escalade automatique.',
-        bullets: ['Temps réel < 200 ms', 'Géolocalisation auto', 'Escalade hiérarchique'],
+        description: 'Le travailleur déclenche un SOS. La plateforme transmet l\'alerte, la position disponible et les informations utiles aux destinataires configurés.',
+        bullets: ['Transmission multi-canal', 'Position disponible', 'Escalade configurable'],
         color: C.emergency,
         bgLight: '#FEF2F2',
         ring: '#FCA5A5',
@@ -103,7 +102,7 @@ const FEATURES = [
         icon: IconBomb,
         title: 'Gestion des dynamitages',
         highlight: true,
-        description: 'Planification, validation hiérarchique, notification multi-canal, périmètre de sécurité, traçabilité complète. Conforme aux codes miniers africains.',
+        description: 'Planification, validation hiérarchique, notification multi-canal, périmètre de sécurité et journalisation des étapes du tir.',
         bullets: ['Workflow validation', 'Périmètre sécurité', 'Notifications J-1 / J / J+1'],
         color: C.blasting,
         bgLight: '#FFF7ED',
@@ -114,7 +113,7 @@ const FEATURES = [
         icon: IconBinoculars,
         title: 'Inspections terrain',
         highlight: true,
-        description: 'Checklists mobile, photos contextuelles, signatures multiples, rapport PDF automatique. Les inspecteurs gagnent 2 heures par tournée.',
+        description: 'Checklists mobiles, photos contextuelles, signatures multiples et génération de rapports PDF.',
         bullets: ['Checklists configurables', 'Photos & signatures', 'Rapport PDF auto'],
         color: C.inspection,
         bgLight: '#F0F9FF',
@@ -123,7 +122,7 @@ const FEATURES = [
     {
         id: 'incidents',
         icon: IconAlertTriangle,
-        title: 'Incidents en 90 secondes',
+        title: 'Déclaration d’incident guidée',
         description: 'Le chef de poste sort son téléphone, choisit le type, prend une photo. C\'est tout. Le préventeur reçoit l\'info en temps réel.',
         bullets: ['Marche hors-réseau au fond', 'GPS automatique', 'Photos & témoins'],
         color: C.green,
@@ -143,9 +142,9 @@ const FEATURES = [
     {
         id: 'audits',
         icon: IconClipboardCheck,
-        title: 'Audits ISO sans la corvée',
-        description: 'L\'auditeur externe trouve ses preuves tout seul. Vos équipes dorment la veille de l\'audit.',
-        bullets: ['Conforme ISO 19011', 'Rapport PDF auto', 'CAPA intégré'],
+        title: 'Audits et preuves structurés',
+        description: 'Le module rassemble le programme, les constats, les preuves et le suivi des actions dans un même workflow.',
+        bullets: ['Conçu pour soutenir ISO 19011', 'Rapport PDF', 'CAPA intégré'],
         color: C.audit,
         bgLight: '#F3E8FF',
         ring: '#C4B5FD',
@@ -168,48 +167,41 @@ const FEATURES = [
 
 const STATS = [
     { value: '21+', label: 'modules métier', icon: IconClipboardCheck, color: C.green, bg: C.greenBg, ring: C.greenSoft },
-    { value: '4', label: 'normes ISO conformes', icon: IconCertificate, color: C.audit, bg: '#F3E8FF', ring: '#C4B5FD' },
-    { value: '< 200 ms', label: 'temps réponse SOS', icon: IconBolt, color: C.emergency, bg: '#FEF2F2', ring: '#FCA5A5' },
-    { value: '6', label: 'sites déployés', icon: IconBuildingFactory, color: C.inspection, bg: '#F0F9FF', ring: '#7DD3FC' },
+    { value: '5', label: 'référentiels pris en compte', icon: IconCertificate, color: C.audit, bg: '#F3E8FF', ring: '#C4B5FD' },
+    { value: 'SOS', label: 'workflow d’alerte configurable', icon: IconBolt, color: C.emergency, bg: '#FEF2F2', ring: '#FCA5A5' },
+    { value: 'Multi', label: 'organisation et sites', icon: IconBuildingFactory, color: C.inspection, bg: '#F0F9FF', ring: '#7DD3FC' },
 ];
 
-const BENEFITS = [
-    { value: '−42%', title: 'd\'accidents en moins', detail: 'LTIFR moyen sur 18 mois, mesuré sur 6 sites' },
-    { value: '−67%', title: 'de délai entre signalement et clôture', detail: 'Workflows mobiles automatisés' },
-    { value: '100%', title: 'd\'audits ISO certifiés', detail: 'Toutes les preuves documentaires sont déjà là' },
-    { value: '×3,2', title: 'd\'efficacité côté préventeurs', detail: 'Plus de terrain, beaucoup moins d\'admin' },
-];
-
-const TESTIMONIALS = [
+const USE_CASES = [
     {
-        quote: 'Avant SafeX, on perdait deux jours par incident en paperasse. Aujourd\'hui le constat est clos en quatre heures, et l\'action corrective se suit toute seule.',
-        author: 'Mamadou Diallo',
-        role: 'Directeur HSE',
-        company: 'Mine d\'or au Sénégal',
+        quote: 'Déclarer un événement, documenter l’analyse et suivre les actions associées dans un dossier partagé.',
+        author: 'Gestion des incidents',
+        role: 'Scénario fonctionnel',
+        company: 'Illustration SafeX',
         avatarBg: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
     },
     {
-        quote: 'Notre dernier audit ISO 45001 a duré deux jours au lieu de cinq. L\'auditeur a trouvé toutes ses preuves dans la plateforme, sans rien nous demander.',
-        author: 'Aïssata Konaté',
-        role: 'QHSE Manager',
-        company: 'Exploitation minière au Mali',
+        quote: 'Préparer un audit, relier les constats aux preuves et piloter les mesures correctives jusqu’à leur vérification.',
+        author: 'Gestion des audits',
+        role: 'Scénario fonctionnel',
+        company: 'Illustration SafeX',
         avatarBg: `linear-gradient(135deg, ${C.audit} 0%, #A855F7 100%)`,
     },
     {
-        quote: 'Le SOS a sauvé une équipe coincée au fond après un éboulement. Sans SafeX, on ne les aurait jamais localisés à temps.',
-        author: 'Joseph Mbeki',
-        role: 'Chef de poste sécurité',
-        company: 'Site d\'extraction en RDC',
+        quote: 'Déclencher une alerte, appliquer l’escalade configurée et conserver la chronologie des traitements et accusés.',
+        author: 'Gestion des urgences',
+        role: 'Scénario fonctionnel',
+        company: 'Illustration SafeX',
         avatarBg: `linear-gradient(135deg, ${C.emergency} 0%, ${C.blasting} 100%)`,
     },
 ];
 
-// LOT — Vrais logos de certification ISO en couleurs officielles reconnaissables
-// Chaque norme a son code couleur identitaire (utilise par les certificateurs)
+// Repères visuels des référentiels pris en compte par certains modules.
+// Leur affichage ne représente pas un label délivré à SafeX.
 const ISO_BADGES = [
     { code: '9001', title: 'Management qualité', year: '2015', color: '#1D4ED8', colorDeep: '#1E40AF', bg: '#EFF6FF' },     // Bleu royal qualite
-    { code: '14001', title: 'Environnement', year: '2015', color: '#15803D', colorDeep: '#166534', bg: '#F0FDF4' },         // Vert foret environnement
-    { code: '19011', title: 'Audits qualité', year: '2018', color: '#6D28D9', colorDeep: '#5B21B6', bg: '#F5F3FF' },        // Violet indigo audits
+    { code: '14001', title: 'Environnement', year: '2026', color: '#15803D', colorDeep: '#166534', bg: '#F0FDF4' },         // Vert foret environnement
+    { code: '19011', title: 'Audits des systèmes', year: '2026', color: '#6D28D9', colorDeep: '#5B21B6', bg: '#F5F3FF' },   // Violet indigo audits
     { code: '45001', title: 'Santé & Sécurité', year: '2018', color: '#0F766E', colorDeep: '#115E59', bg: '#F0FDFA' },      // Teal sante/securite
     { code: '31000', title: 'Gestion des risques', year: '2018', color: '#C2410C', colorDeep: '#9A3412', bg: '#FFF7ED' },   // Orange risques
 ];
@@ -371,7 +363,7 @@ export default function LandingPage() {
                             { label: 'Produit', href: '#features' },
                             { label: 'Plateforme', href: '#gallery' },
                             { label: 'Résultats', href: '#benefits' },
-                            { label: 'ISO', href: '#certifications' },
+                            { label: 'Référentiels', href: '#referentiels' },
                             { label: 'Contact', href: '#contact' },
                         ].map((item) => (
                             <a
@@ -399,6 +391,7 @@ export default function LandingPage() {
                 </div>
             </nav>
 
+            <main>
             {/* ═══ HERO CINEMATIC — Carousel premium avec effets Ken Burns, sweep, parallax ═══ */}
             <CinematicHero onLogin={() => navigate('/login')} />
 
@@ -470,8 +463,8 @@ export default function LandingPage() {
                             >
                                 SafeX 360 outille les préventeurs HSE des mines africaines.{' '}
                                 <strong style={{ color: C.dark, fontWeight: 700 }}>21 modules métier</strong>,
-                                une app mobile qui marche au fond, et la conformité ISO qui se construit
-                                au fil des jours.
+                                une app mobile pour le terrain et des workflows conçus pour soutenir
+                                votre système de management HSE.
                             </p>
                         </Reveal>
 
@@ -502,7 +495,7 @@ export default function LandingPage() {
 
                         <Reveal delay={400}>
                             <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5">
-                                {['Conforme RGPD', 'Souverain', 'Sans engagement', 'Support 24/7'].map((t) => (
+                                {['Accès contrôlé', 'Actions journalisées', 'Configuration par organisation', 'Assistance sur horaires convenus'].map((t) => (
                                     <div key={t} className="flex items-center gap-1.5 text-[13px] text-slate-700 font-medium">
                                         <span
                                             className="inline-flex items-center justify-center w-5 h-5 rounded-full"
@@ -544,7 +537,7 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto">
                     <Reveal>
                         <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>En chiffres</SectionEyebrow>
+                            <SectionEyebrow color={C.green}>Périmètre fonctionnel</SectionEyebrow>
                             <h2
                                 className="mt-4"
                                 style={{
@@ -556,14 +549,14 @@ export default function LandingPage() {
                                     color: C.dark,
                                 }}
                             >
-                                Robuste, mesuré,{' '}
+                                Structuré pour{' '}
                                 <span style={{
                                     background: `linear-gradient(120deg, ${C.green} 0%, ${C.greenLight} 100%)`,
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
                                     backgroundClip: 'text',
                                     fontStyle: 'italic',
-                                }}>en production.</span>
+                                }}>les métiers HSE.</span>
                             </h2>
                         </div>
                     </Reveal>
@@ -606,7 +599,7 @@ export default function LandingPage() {
                             </h2>
                             <p className="mt-5 text-[16.5px] leading-relaxed max-w-2xl" style={{ color: '#475569' }}>
                                 Quatre modules font tourner la sécurité au quotidien sur un site minier :
-                                <strong style={{ color: C.dark }}> SOS, Évacuation, Dynamitages et Inspections.</strong> Tout autour, on retrouve les fondamentaux ISO 45001 : Incidents, Risques, Audits, Communication.
+                                <strong style={{ color: C.dark }}> SOS, Évacuation, Dynamitages et Inspections.</strong> Incidents, Risques, Audits et Communication complètent le pilotage opérationnel.
                             </p>
                         </div>
                     </Reveal>
@@ -665,18 +658,39 @@ export default function LandingPage() {
             {/* ═══ AI SHOWCASE — Innovation IA mise en avant (3 piliers) ═══ */}
             <AIShowcase />
 
-            {/* ═══ BÉNÉFICES — DYNAMIQUE ÉCLATANT ═══ */}
+            {/* ═══ CYCLES FONCTIONNELS — aucune promesse de résultat ═══ */}
             <BenefitsDynamic />
 
-            {/* ═══ ROI CALCULATOR ═══ */}
-            <ROICalculator onContact={() => setContactOpen(true)} onLogin={() => navigate('/login')} />
+            {/* Les résultats et gains ne sont publiés qu'après validation de leurs preuves. */}
+            <section className="bg-white py-20 px-6" aria-labelledby="public-capabilities-title">
+                <div className="max-w-5xl mx-auto text-center">
+                    <SectionEyebrow color={C.green}>Démarche HSE</SectionEyebrow>
+                    <h2
+                        id="public-capabilities-title"
+                        className="mt-4"
+                        style={{
+                            fontFamily: "'Source Serif 4', Georgia, serif",
+                            fontWeight: 600,
+                            fontSize: 'clamp(30px, 4vw, 50px)',
+                            letterSpacing: '-0.025em',
+                            color: C.dark,
+                        }}
+                    >
+                        Des capacités conçues pour soutenir votre organisation
+                    </h2>
+                    <p className="mt-5 text-[16px] leading-relaxed text-slate-600 max-w-3xl mx-auto">
+                        SafeX centralise les données, responsabilités, preuves et actions. Les résultats dépendent du
+                        paramétrage, des processus et de l’utilisation propres à chaque organisation.
+                    </p>
+                </div>
+            </section>
 
             {/* ═══ ISO ═══ */}
-            <section id="certifications" className="bg-white py-28 px-6">
+            <section id="referentiels" className="bg-white py-28 px-6">
                 <div className="max-w-7xl mx-auto">
                     <Reveal>
                         <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>Conformité</SectionEyebrow>
+                            <SectionEyebrow color={C.green}>Référentiels</SectionEyebrow>
                             <h2
                                 className="mt-4"
                                 style={{
@@ -688,9 +702,13 @@ export default function LandingPage() {
                                     color: C.dark,
                                 }}
                             >
-                                Vos audits ISO,<br />
-                                <span style={{ fontStyle: 'italic', color: C.green }}>sans la corvée.</span>
+                                Des workflows conçus pour soutenir<br />
+                                <span style={{ fontStyle: 'italic', color: C.green }}>vos démarches de management.</span>
                             </h2>
+                            <p className="mt-5 text-[14px] leading-relaxed text-slate-600">
+                                Les références affichées décrivent des cadres de travail pris en compte par les modules.
+                                Elles ne constituent pas une attestation délivrée par un organisme tiers.
+                            </p>
                         </div>
                     </Reveal>
 
@@ -704,12 +722,12 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ═══ TESTIMONIALS ═══ */}
+            {/* ═══ SCÉNARIOS D'USAGE — exemples fonctionnels, sans témoignage attribué ═══ */}
             <section className="bg-[#FAF9F5] py-28 px-6">
                 <div className="max-w-7xl mx-auto">
                     <Reveal>
                         <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>Ils en parlent</SectionEyebrow>
+                            <SectionEyebrow color={C.green}>Scénarios d’usage</SectionEyebrow>
                             <h2
                                 className="mt-4"
                                 style={{
@@ -721,20 +739,18 @@ export default function LandingPage() {
                                     color: C.dark,
                                 }}
                             >
-                                Des préventeurs HSE,<br />
-                                <span style={{ fontStyle: 'italic', color: C.green }}>sur le terrain.</span>
+                                Trois workflows illustrés,<br />
+                                <span style={{ fontStyle: 'italic', color: C.green }}>sans résultat préjugé.</span>
                             </h2>
                         </div>
                     </Reveal>
 
                     <div className="grid lg:grid-cols-3 gap-6">
-                        {TESTIMONIALS.map((t, i) => (
+                        {USE_CASES.map((t, i) => (
                             <Reveal key={i} delay={i * 120}>
                                 <div className="p-8 rounded-2xl bg-white border-2 border-slate-200 hover:shadow-2xl hover:border-slate-300 hover:-translate-y-1 transition-all h-full">
-                                    <div className="flex items-center gap-0.5 mb-5">
-                                        {Array.from({ length: 5 }).map((_, j) => (
-                                            <IconStar key={j} size={16} className="fill-amber-400 text-amber-400" />
-                                        ))}
+                                    <div className="inline-flex items-center gap-2 mb-5 rounded-full bg-teal-50 border border-teal-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-teal-800">
+                                        <IconClipboardCheck size={14} /> Exemple fonctionnel
                                     </div>
                                     <p
                                         className="text-[15.5px] leading-relaxed mb-7"
@@ -744,7 +760,7 @@ export default function LandingPage() {
                                             color: '#1E293B',
                                         }}
                                     >
-                                        « {t.quote} »
+                                        {t.quote}
                                     </p>
                                     <div className="flex items-center gap-3 pt-5 border-t border-slate-100">
                                         <div
@@ -840,8 +856,10 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            </main>
+
             {/* ═══ FOOTER ═══ */}
-            <footer className="bg-[#FAF9F5] py-14 px-6 border-t border-slate-200">
+            <footer className="bg-stone-50 py-14 px-6 border-t border-slate-200">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-4 gap-10 mb-10">
                         <div className="md:col-span-2">
@@ -872,7 +890,7 @@ export default function LandingPage() {
                                 <li><a href="#features" className="text-slate-700 hover:text-slate-900 cursor-pointer">Modules</a></li>
                                 <li><a href="#gallery" className="text-slate-700 hover:text-slate-900 cursor-pointer">Plateforme</a></li>
                                 <li><a href="#benefits" className="text-slate-700 hover:text-slate-900 cursor-pointer">Résultats</a></li>
-                                <li><a href="#certifications" className="text-slate-700 hover:text-slate-900 cursor-pointer">ISO</a></li>
+                                <li><a href="#referentiels" className="text-slate-700 hover:text-slate-900 cursor-pointer">Référentiels</a></li>
                             </ul>
                         </div>
 
@@ -892,8 +910,8 @@ export default function LandingPage() {
                             © {new Date().getFullYear()} Data Universe · Tous droits réservés
                         </p>
                         <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600 font-medium">
-                            <span className="flex items-center gap-1.5"><IconLockSquare size={12} /> Hébergement souverain</span>
-                            <span className="flex items-center gap-1.5"><IconCloudUpload size={12} /> Sauvegarde quotidienne</span>
+                            <span className="flex items-center gap-1.5"><IconLockSquare size={12} /> Accès contrôlé</span>
+                            <span className="flex items-center gap-1.5"><IconCloudUpload size={12} /> Sauvegarde configurable</span>
                             <span className="flex items-center gap-1.5"><IconHelmet size={12} /> Conçu au Burkina Faso</span>
                         </div>
                     </div>
@@ -1282,39 +1300,39 @@ const AI_PILLARS: AIPillar[] = [
         icon: <IconSparkles size={26} stroke={1.8} />,
         eyebrow: '01 · Vision',
         title: 'Déclaration assistée par IA',
-        description: 'Le chef de poste prend la scène en photo. Claude Vision repère le type d\'incident, en évalue la gravité, suggère les causes possibles et même un premier plan d\'actions correctives. Tout ça en moins de huit secondes.',
+        description: 'Le chef de poste ajoute une photo. L’assistant peut proposer une catégorie, des dangers à vérifier et une première trame d’actions, toujours soumise à validation humaine.',
         highlights: [
-            'Reconnaît EPI manquants, dangers électriques, chutes',
-            'Classifie selon ISO 45001 §10.2 automatiquement',
-            'Pré-rédige le plan d\'actions correctives',
+            'Suggère les dangers à contrôler sur la photo',
+            'Conserve la décision de l’utilisateur responsable',
+            'Propose une trame d’actions correctives',
         ],
         accent: '#8B5CF6',
         image: '/screenshots/formulaire-incident.png',
-        mockTag: 'Claude Sonnet 4.5 · Vision',
+        mockTag: 'Assistance visuelle · Validation humaine',
     },
     {
         icon: <IconClipboardCheck size={26} stroke={1.8} />,
         eyebrow: '02 · Terrain',
         title: 'Inspections assistées par IA',
-        description: 'Au fil des tournées, les checklists s\'affinent. L\'IA détecte les non-conformités sur les photos, propose les actions adaptées et programme les vérifications de suivi sans qu\'on ait à y penser.',
+        description: 'Pendant les tournées, l’assistant peut signaler des éléments à examiner et proposer des actions. L’inspecteur confirme, modifie ou rejette chaque suggestion.',
         highlights: [
-            'Détection automatique des EPI sur les photos terrain',
+            'Repérage assisté d’éléments visibles sur les photos',
             'Suggestions contextuelles selon le type d\'inspection',
-            'Apprentissage continu par site (méthodes ICAM, MORT, TapRoot)',
+            'Décision finale conservée sous la responsabilité de l’inspecteur',
         ],
         accent: '#06B6D4',
         image: '/screenshots/non-conformite.png',
-        mockTag: 'Apprentissage continu',
+        mockTag: 'Suggestions contrôlées',
     },
     {
         icon: <IconBolt size={26} stroke={1.8} />,
         eyebrow: '03 · Copilote',
         title: 'Assistant IA pour la plateforme',
-        description: 'Posez votre question comme à un collègue : « Quels sont les cinq risques majeurs ce mois-ci ? » ou « Génère le rapport mensuel ISO 45001 ». Le copilote SafeX exécute, cite ses sources, garde une trace de chaque action.',
+        description: 'L’assistant aide à rechercher des informations et à préparer des synthèses. Les sources et actions doivent rester visibles pour vérification avant utilisation.',
         highlights: [
-            'Recherche sémantique sur les 21 modules',
-            'Génération de rapports avec sources citées',
-            'Traçabilité complète des actions admin via audit log',
+            'Recherche dans les données autorisées',
+            'Préparation de synthèses avec sources',
+            'Journalisation des actions administratives',
         ],
         accent: '#0EA5E9',
         image: '/screenshots/dashboard.png',
@@ -1366,7 +1384,7 @@ function AIShowcase() {
                             <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
                             <IconSparkles size={14} className="text-violet-300" />
                             <span className="text-[11.5px] uppercase tracking-[0.24em] font-bold text-white">
-                                Innovation 2026 · Première mondiale HSE
+                                Assistance IA · Contrôle humain requis
                             </span>
                             <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
                         </div>
@@ -1404,7 +1422,7 @@ function AIShowcase() {
                                 color: 'rgba(248, 250, 252, 0.78)',
                             }}
                         >
-                            SafeX 360 est la première plateforme HSE à utiliser Claude Sonnet 4.5 sur trois axes concrets du métier. Vos préventeurs gagnent en précision sur le terrain, en vitesse au quotidien, et finissent par peser dans les arbitrages stratégiques.
+                            SafeX 360 propose des fonctions d’assistance sur trois axes du métier. Les suggestions ne remplacent ni l’analyse du préventeur, ni les validations prévues par l’organisation.
                         </p>
                     </div>
                 </Reveal>
@@ -1534,10 +1552,10 @@ function AIShowcase() {
                         }}
                     >
                         {[
-                            { value: '8 s', label: 'pour analyser une photo' },
-                            { value: '96 %', label: 'précision détection EPI' },
-                            { value: '−45 %', label: 'temps de saisie HSE' },
-                            { value: '21', label: 'modules connectés à l\'IA' },
+                            { value: 'Humain', label: 'validation obligatoire' },
+                            { value: 'Sources', label: 'à vérifier avant usage' },
+                            { value: 'Journal', label: 'actions administratives tracées' },
+                            { value: 'Droits', label: 'accès selon les autorisations' },
                         ].map((s, i) => (
                             <div key={i} className="flex flex-col items-center sm:items-start text-center sm:text-left">
                                 <span
@@ -1645,7 +1663,7 @@ const HERO_SLIDES: HeroSlide[] = [
         eyebrow: 'Culture HSE · Formations terrain',
         title: <>La culture<br /><em>qui se construit.</em></>,
         subtitle: 'Règles d\'or, exercices réguliers, communications de proximité. Petit à petit, le préventeur HSE prend sa place de coach sur le terrain.',
-        keyword: 'Zéro accident',
+        keyword: 'Culture de prévention',
         accent: '#0F766E',
         burnsClass: 'ken-burns-3',
         // Preventeur debout au centre : focal a 50% 25% pour garder le visage visible
@@ -1655,9 +1673,9 @@ const HERO_SLIDES: HeroSlide[] = [
     {
         src: '/hero/workers-loto.png',
         eyebrow: 'Énergies dangereuses · Consignation LOTO',
-        title: <>Verrouillage,<br /><em>vies sauvées.</em></>,
+        title: <>Consignation,<br /><em>étapes tracées.</em></>,
         subtitle: 'Chaque étape LOTO laisse une trace, les EPI sont vérifiés, le registre des consignations reste à jour en permanence.',
-        keyword: 'LOTO certifié',
+        keyword: 'LOTO documenté',
         accent: '#0F766E',
         burnsClass: 'ken-burns-1',
         // 3 travailleurs : focal centre pour les garder ensemble
@@ -1667,8 +1685,8 @@ const HERO_SLIDES: HeroSlide[] = [
         src: '/hero/incident-scene.png',
         eyebrow: 'Investigation · Apprentissage continu',
         title: <>Chaque incident,<br /><em>une leçon apprise.</em></>,
-        subtitle: 'Une déclaration tient en 90 secondes. L\'investigation se fait pas à pas, le plan d\'actions sort dans la foulée. Quelques mois plus tard, la récurrence a vraiment baissé.',
-        keyword: '−67 % récurrence',
+        subtitle: 'La déclaration guide les informations utiles. L’investigation et le plan d’actions sont ensuite suivis étape par étape.',
+        keyword: 'Retour d’expérience',
         accent: '#C2410C',
         burnsClass: 'ken-burns-2',
         // Scene action complexe : focal centre-bas pour cadrer le chariot
@@ -1862,7 +1880,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                 >
                     {slide.subtitle}{' '}
                     <strong style={{ color: 'white', fontWeight: 700 }}>21 modules métier</strong>,
-                    une app mobile qui marche au fond, et la conformité ISO qui se construit au fil des jours.
+                    une app mobile pour le terrain et des workflows conçus pour soutenir le système de management HSE.
                 </p>
 
                 {/* CTAs */}
@@ -1935,7 +1953,7 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
                         animationFillMode: 'backwards',
                     }}
                 >
-                    {['Conforme RGPD', 'Souverain · Hébergé en Afrique', 'Sans engagement', 'Support 24/7'].map((t) => (
+                    {['Accès contrôlé', 'Actions journalisées', 'Configuration par organisation', 'Assistance sur horaires convenus'].map((t) => (
                         <div key={t} className="flex items-center gap-1.5 text-[13px] font-medium" style={{ color: 'rgba(248, 250, 252, 0.85)' }}>
                             <span
                                 className="inline-flex items-center justify-center w-5 h-5 rounded-full"
@@ -2040,12 +2058,12 @@ function CinematicHero({ onLogin }: CinematicHeroProps) {
 }
 
 const HERO_MARQUEE = [
-    { value: '−87 %', label: 'd\'incidents graves' },
-    { value: '90 s', label: 'pour déclarer un accident' },
+    { value: 'Terrain', label: 'signalement structuré' },
+    { value: 'CAPA', label: 'actions et échéances suivies' },
     { value: '21', label: 'modules métier HSE' },
-    { value: 'ISO 45001', label: 'conformité native' },
-    { value: '24/7', label: 'support francophone' },
-    { value: '6 sites', label: 'mesurés sur 18 mois' },
+    { value: 'ISO 45001', label: 'référentiel pris en compte' },
+    { value: 'FR', label: 'interface et assistance' },
+    { value: 'Multi-site', label: 'périmètres configurables' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2069,7 +2087,7 @@ function HeroVisual() {
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: C.green }} />
                         </span>
                         <span className="text-[10.5px] uppercase tracking-[0.14em] font-bold" style={{ color: C.green }}>
-                            En direct
+                            Aperçu illustratif
                         </span>
                     </div>
                     <IconBolt size={15} style={{ color: C.green }} />
@@ -2080,18 +2098,16 @@ function HeroVisual() {
                         <div className="text-[10px] uppercase tracking-[0.12em] mb-1.5 font-bold" style={{ color: C.green }}>LTIFR</div>
                         <div className="flex items-baseline gap-1.5">
                             <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 26, color: C.green, letterSpacing: '-0.02em' }}>
-                                2.4
+                                Suivi
                             </span>
-                            <span className="text-[10px] text-emerald-700 font-bold">↓ 18%</span>
                         </div>
                     </div>
                     <div className="p-3.5 rounded-xl" style={{ background: '#F0F9FF', border: '1.5px solid #7DD3FC' }}>
-                        <div className="text-[10px] uppercase tracking-[0.12em] mb-1.5 font-bold" style={{ color: '#0369A1' }}>Conformité</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] mb-1.5 font-bold" style={{ color: '#0369A1' }}>Revue</div>
                         <div className="flex items-baseline gap-1.5">
                             <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 26, color: '#0369A1', letterSpacing: '-0.02em' }}>
-                                98.7
+                                À planifier
                             </span>
-                            <span className="text-sm text-sky-700">%</span>
                         </div>
                     </div>
                 </div>
@@ -2099,7 +2115,7 @@ function HeroVisual() {
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-[10.5px] font-semibold text-slate-700">Tendance 30 j</span>
-                        <span className="text-[9.5px] font-bold" style={{ color: C.green }}>↓ baisse continue</span>
+                        <span className="text-[9.5px] font-bold" style={{ color: C.green }}>Exemple de visualisation</span>
                     </div>
                     <Sparkline />
                 </div>
@@ -2141,8 +2157,8 @@ function HeroVisual() {
                         <IconCheck size={16} className="text-white" stroke={3} />
                     </span>
                     <div>
-                        <div className="text-[10px] uppercase tracking-[0.12em] font-bold" style={{ color: C.green }}>ISO conforme</div>
-                        <div className="text-[11px] text-slate-900 font-semibold">98.7% des modules</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] font-bold" style={{ color: C.green }}>Référentiels suivis</div>
+                        <div className="text-[11px] text-slate-900 font-semibold">État à valider</div>
                     </div>
                 </div>
             </div>
@@ -2270,7 +2286,7 @@ const GALLERY: GalleryItem[] = [
     {
         label: 'Tableau de bord',
         title: 'Une vue d\'ensemble qui parle',
-        description: 'KPI en temps réel, incidents classés par catégorie, conformité ISO sous les yeux. Voilà ce que le préventeur consulte en arrivant le matin, café à la main.',
+        description: 'KPI opérationnels et incidents classés par catégorie. Le préventeur dispose d’une vue de pilotage configurable pour préparer sa journée.',
         color: C.green,
         bg: C.greenBg,
         aspect: 'wide',
@@ -2289,8 +2305,8 @@ const GALLERY: GalleryItem[] = [
     },
     {
         label: 'App mobile terrain',
-        title: 'Déclaration en 90 secondes',
-        description: 'Au fond, hors-réseau, ça marche quand même. Le GPS s\'active, la photo se prend. Le chef de poste a fini sa déclaration en moins de deux minutes.',
+        title: 'Déclaration guidée',
+        description: 'Le mode terrain permet de préparer une déclaration avec les informations disponibles, puis de la synchroniser lorsque la connexion revient.',
         color: C.dark,
         bg: '#F8FAFC',
         aspect: 'tall',
@@ -2474,7 +2490,7 @@ function PreviewDashboard() {
                     { label: 'Incidents', val: '847', col: C.emergency },
                     { label: 'LTIFR', val: '2.4', col: C.green },
                     { label: 'Audits', val: '23/30', col: C.audit },
-                    { label: 'ISO', val: '98.7%', col: C.inspection },
+                    { label: 'Référentiels', val: 'À évaluer', col: C.inspection },
                 ].map((k, i) => (
                     <div key={i} className="bg-white rounded-lg p-2.5 border border-slate-200">
                         <div className="text-[8px] uppercase tracking-wider text-slate-500 font-bold">{k.label}</div>
@@ -2733,7 +2749,7 @@ function PreviewAudits() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ISO MEDALLION — Badge médaille premium (style certificat officiel)
+// ISO MEDALLION — Repère visuel d'un référentiel, sans valeur d'attestation
 // ═══════════════════════════════════════════════════════════════════════
 
 function ISOMedallion({ iso }: { iso: typeof ISO_BADGES[0] }) {
@@ -2741,7 +2757,7 @@ function ISOMedallion({ iso }: { iso: typeof ISO_BADGES[0] }) {
     const uid = `iso-${iso.code}`;
     return (
         <div className="group p-6 rounded-2xl bg-white border-2 border-slate-200 hover:border-slate-400 hover:shadow-2xl hover:-translate-y-1 transition-all h-full">
-            {/* Logo officiel de certification ISO (refonte LOT — design type sceau international) */}
+            {/* Repère graphique interne : il ne reproduit pas le logo d'un organisme tiers. */}
             <div className="flex justify-center mb-5">
                 <svg width="100" height="100" viewBox="0 0 120 120" className="transition-transform group-hover:scale-110">
                     <defs>
@@ -2792,11 +2808,11 @@ function ISOMedallion({ iso }: { iso: typeof ISO_BADGES[0] }) {
                             INTERNATIONAL  STANDARD
                         </textPath>
                     </text>
-                    {/* Texte en arc bas : "CERTIFIED" */}
+                    {/* Texte en arc bas : qualification neutre du référentiel */}
                     <text fontSize="5.5" fontWeight="700" letterSpacing="3"
                           fill={iso.colorDeep} opacity="0.85">
                         <textPath xlinkHref={`#${uid}-arc-bot`} startOffset="50%" textAnchor="middle">
-                            • CERTIFIED •
+                            • REFERENCE •
                         </textPath>
                     </text>
 
@@ -2899,7 +2915,7 @@ function ISOMedallion({ iso }: { iso: typeof ISO_BADGES[0] }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// BENEFITS DYNAMIC — section éclatante avec animations & comparaisons
+// CYCLES FONCTIONNELS — exemples de séquences, sans promesse de résultat
 // ═══════════════════════════════════════════════════════════════════════
 
 function BenefitsDynamic() {
@@ -2946,7 +2962,7 @@ function BenefitsDynamic() {
                             <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
                             <IconTrendingUp size={14} className="text-emerald-200" />
                             <span className="text-[11.5px] uppercase tracking-[0.24em] text-white font-semibold">
-                                Mesuré sur 6 sites · 18 mois
+                                Capacités fonctionnelles illustrées
                             </span>
                             <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
                         </div>
@@ -2961,7 +2977,7 @@ function BenefitsDynamic() {
                                 textShadow: '0 4px 30px rgba(0,0,0,0.3)',
                             }}
                         >
-                            Ce qui change<br />
+                            Ce que les workflows<br />
                             <span style={{
                                 background: 'linear-gradient(120deg, #5EEAD4 0%, #FFFFFF 100%)',
                                 WebkitBackgroundClip: 'text',
@@ -2969,45 +2985,45 @@ function BenefitsDynamic() {
                                 backgroundClip: 'text',
                                 fontStyle: 'italic',
                             }}>
-                                vraiment.
+                                structurent.
                             </span>
                         </h2>
                         <p className="mt-6 text-[17px] leading-relaxed max-w-2xl mx-auto" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                            Indicateurs avant / après déploiement. Données réelles, audités par les
-                            départements HSE des sites clients.
+                            Exemples de cycles couverts par les workflows. Les résultats sont propres au
+                            paramétrage et aux pratiques de chaque organisation.
                         </p>
                     </div>
                 </Reveal>
 
-                {/* Grid 4 cards avec comparaisons AVANT/APRÈS */}
+                {/* Grid 4 cards présentant des entrées et sorties de workflow */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
                     {[
                         {
-                            value: 42, suffix: '%', prefix: '−',
-                            title: 'Accidents (LTIFR)',
-                            before: '4.1', after: '2.4',
-                            unit: '/ million d\'heures',
+                            value: 4, suffix: '', prefix: '',
+                            title: 'Cycle incident',
+                            before: 'Déclarer', after: 'Vérifier',
+                            unit: 'étapes structurées',
                             icon: IconShieldCheck,
                         },
                         {
-                            value: 67, suffix: '%', prefix: '−',
-                            title: 'Délai traitement',
-                            before: '12 j', after: '4 h',
-                            unit: 'signalement → clôture',
+                            value: 5, suffix: '', prefix: '',
+                            title: 'Suivi des actions',
+                            before: 'Affecter', after: 'Clôturer',
+                            unit: 'états de traitement',
                             icon: IconClock,
                         },
                         {
-                            value: 100, suffix: '%', prefix: '',
-                            title: 'Conformité ISO',
-                            before: '67 %', after: '100 %',
-                            unit: 'audits certifiés',
+                            value: 4, suffix: '', prefix: '',
+                            title: 'Cycle d’audit',
+                            before: 'Planifier', after: 'Suivre',
+                            unit: 'phases documentées',
                             icon: IconCertificate,
                         },
                         {
-                            value: 3.2, suffix: '×', prefix: '',
-                            title: 'Productivité HSE',
-                            before: '40 %', after: '128 %',
-                            unit: 'capacité préventeurs',
+                            value: 3, suffix: '', prefix: '',
+                            title: 'Escalade configurée',
+                            before: 'Alerter', after: 'Accuser',
+                            unit: 'niveaux illustratifs',
                             icon: IconTrendingUp,
                         },
                     ].map((b, i) => (
@@ -3020,9 +3036,8 @@ function BenefitsDynamic() {
                 {/* Note bas de section */}
                 <Reveal delay={500}>
                     <p className="text-center text-[12.5px] text-white/70 mt-10 max-w-2xl mx-auto">
-                        Méthodologie : moyennes pondérées sur 6 sites d'extraction en Afrique de l'Ouest,
-                        comparaison T0 (déploiement) → T+18 mois. Sources : DUERP, rapports d'audit ISO,
-                        registres CSE.
+                        Illustration fonctionnelle : étapes, états et niveaux doivent être adaptés aux procédures,
+                        rôles et exigences applicables dans chaque organisation.
                     </p>
                 </Reveal>
             </div>
@@ -3087,14 +3102,14 @@ function BenefitCardDynamic({
             {/* Titre */}
             <div className="text-[14.5px] text-white font-bold mb-4">{title}</div>
 
-            {/* Comparaison avant / après */}
+            {/* Entrée et sortie du workflow illustré */}
             <div className="pt-4 border-t border-white/20 space-y-2">
                 <div className="flex items-center justify-between text-[11.5px]">
-                    <span className="text-white/60">Avant SafeX</span>
-                    <span className="font-bold text-red-200 line-through">{before}</span>
+                    <span className="text-white/60">Entrée</span>
+                    <span className="font-bold text-white">{before}</span>
                 </div>
                 <div className="flex items-center justify-between text-[11.5px]">
-                    <span className="text-white/60">Après 18 mois</span>
+                    <span className="text-white/60">Sortie</span>
                     <span className="font-bold text-emerald-200">{after}</span>
                 </div>
                 <div className="text-[10px] text-white/50 mt-2 italic">{unit}</div>
@@ -3108,7 +3123,7 @@ function BenefitCardDynamic({
 // ═══════════════════════════════════════════════════════════════════════
 
 function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin: () => void }) {
-    // Inputs avec valeurs par défaut crédibles pour une mine moyenne
+    // Prototype interne désactivé : aucune hypothèse chiffrée n'est approuvée pour publication.
     const [employees, setEmployees] = useState(450);
     const [sites, setSites] = useState(2);
     const [ltifr, setLtifr] = useState(4.2);
@@ -3118,24 +3133,24 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
     const [preventerCount, setPreventerCount] = useState(4);
     const [annualLicenseCost, setAnnualLicenseCost] = useState(28000); // USD coût SafeX estimé
 
-    // Calculs ROI basés sur les benchmarks réels du secteur minier
+    // Ancien prototype de calcul conservé hors rendu dans l'attente d'une méthodologie contrôlée.
     const calc = useMemo(() => {
         // Conversion FCFA → USD (1 USD ≈ 600 FCFA)
         const USD_PER_FCFA = 1 / 600;
         const HOURS_PER_YEAR = 1820; // base 35h/sem × 52 sem
         const MILLION_HOURS = (employees * HOURS_PER_YEAR) / 1_000_000;
 
-        // 1. ACCIDENTS — baisse 42% sur 18 mois (benchmark plateforme)
+        // 1. Hypothèse interne non validée
         const ltiPerYear = ltifr * MILLION_HOURS;
         const ltiAvoidedPerYear = ltiPerYear * 0.42;
         const accidentSavingsUSD = ltiAvoidedPerYear * costPerLti;
 
-        // 2. PRODUCTIVITÉ PRÉVENTEURS — 3.2× capacité = 30% temps gagné en admin
+        // 2. Hypothèse interne non validée
         const hoursSavedPerPreventerPerYear = HOURS_PER_YEAR * 0.30;
         const totalHoursSaved = preventerCount * hoursSavedPerPreventerPerYear;
         const productivitySavingsUSD = totalHoursSaved * hourlyRate * USD_PER_FCFA;
 
-        // 3. AUDITS ISO — 35% du coût annuel économisé (workflow automatisé)
+        // 3. Hypothèse interne non validée
         const auditSavingsUSD = auditCostPerYear * 0.35;
 
         // 4. INCIDENTS NON DÉCLARÉS révélés (estimation conservative : 15% LTI cachés)
@@ -3152,7 +3167,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
         const monthlySavings = totalAnnualSavingsUSD / 12;
         const paybackMonths = monthlySavings > 0 ? Math.max(1, Math.round(annualLicenseCost / monthlySavings)) : 999;
 
-        // Vies potentiellement préservées (statistique secteur minier : 1 fatalité ≈ 600 LTI)
+        // Indicateur interne non validé et interdit de publication
         const livesPreserved = Math.round(ltiAvoidedPerYear / 600 * 18 / 12 * 10) / 10; // sur 18 mois
 
         return {
@@ -3176,7 +3191,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
             <div className="max-w-7xl mx-auto">
                 <Reveal>
                     <div className="text-center max-w-3xl mx-auto mb-14">
-                        <SectionEyebrow color={C.green}>Calculateur ROI</SectionEyebrow>
+                        <SectionEyebrow color={C.green}>Prototype désactivé</SectionEyebrow>
                         <h2
                             className="mt-4"
                             style={{
@@ -3188,18 +3203,18 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                 color: C.dark,
                             }}
                         >
-                            Combien votre mine{' '}
+                            Simulation chiffrée{' '}
                             <span style={{
                                 background: `linear-gradient(120deg, ${C.green} 0%, ${C.greenLight} 100%)`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
                                 fontStyle: 'italic',
-                            }}>économiserait</span> ?
+                            }}>non publiée</span>
                         </h2>
                         <p className="mt-5 text-[16.5px] leading-relaxed" style={{ color: '#475569' }}>
-                            Calcul basé sur les benchmarks réels du secteur minier ouest-africain.
-                            Ajustez les paramètres ci-dessous selon votre exploitation.
+                            Les hypothèses et sources doivent être validées avant toute utilisation externe.
+                            Ce prototype n'est pas affiché sur la vitrine.
                         </p>
                     </div>
                 </Reveal>
@@ -3318,7 +3333,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                     <div className="flex items-center gap-2 mb-4">
                                         <IconSparkles size={16} className="text-emerald-200" />
                                         <span className="text-[11px] uppercase tracking-[0.18em] text-emerald-200 font-bold">
-                                            Retour sur investissement annuel
+                                            Résultat interne non validé
                                         </span>
                                     </div>
 
@@ -3344,14 +3359,14 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                     </div>
 
                                     <div className="text-[14.5px] text-white/85 mb-7 max-w-md">
-                                        Net gain annuel <strong className="text-white text-[17px]">{fmt(calc.netGainUSD)} USD</strong> après
-                                        déduction du coût SafeX 360.
+                                        Valeur de prototype <strong className="text-white text-[17px]">{fmt(calc.netGainUSD)} USD</strong>,
+                                        non approuvée pour publication.
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/20">
                                         <div>
                                             <div className="text-[10.5px] uppercase tracking-wider text-white/70 font-bold mb-1.5">
-                                                Retour investissement
+                                                Hypothèse de délai
                                             </div>
                                             <div className="flex items-baseline gap-1">
                                                 <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 36, color: '#5EEAD4' }}>
@@ -3362,7 +3377,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                         </div>
                                         <div>
                                             <div className="text-[10.5px] uppercase tracking-wider text-white/70 font-bold mb-1.5">
-                                                Vies préservées (18 mois)
+                                                Indicateur retiré
                                             </div>
                                             <div className="flex items-baseline gap-1">
                                                 <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 36, color: '#FCA5A5' }}>
@@ -3375,7 +3390,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                 </div>
                             </div>
 
-                            {/* Détails économies */}
+                            {/* Variables du prototype interne */}
                             <div className="bg-white rounded-3xl p-7 border-2 border-slate-200">
                                 <h4
                                     className="mb-5"
@@ -3386,29 +3401,29 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                         color: C.dark,
                                     }}
                                 >
-                                    Détail des économies annuelles
+                                    Variables non validées
                                 </h4>
 
                                 <div className="space-y-3">
                                     <SavingsLine
                                         icon={IconShieldCheck}
                                         color={C.green}
-                                        label="Accidents évités"
-                                        sub={`${calc.ltiAvoidedPerYear} LTI/an évités × coût moyen`}
+                                        label="Hypothèse incidents"
+                                        sub={`${calc.ltiAvoidedPerYear} LTI/an · variable interne`}
                                         value={`${fmt(calc.accidentSavingsUSD)} USD`}
                                     />
                                     <SavingsLine
                                         icon={IconTrendingUp}
                                         color={C.inspection}
-                                        label="Productivité préventeurs"
-                                        sub="30% temps admin gagné → terrain"
+                                        label="Hypothèse de charge"
+                                        sub="Variable interne à documenter"
                                         value={`${fmt(calc.productivitySavingsUSD)} USD`}
                                     />
                                     <SavingsLine
                                         icon={IconCertificate}
                                         color={C.audit}
-                                        label="Audits ISO automatisés"
-                                        sub="35% du coût d'audit externe économisé"
+                                        label="Hypothèse audits"
+                                        sub="Variable interne à documenter"
                                         value={`${fmt(calc.auditSavingsUSD)} USD`}
                                     />
                                     <SavingsLine
@@ -3422,7 +3437,7 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                                     <div className="pt-3 mt-3 border-t-2 border-slate-200 flex items-center justify-between">
                                         <div>
                                             <div className="text-[13px] font-bold" style={{ color: C.dark }}>
-                                                Total économisé / an
+                                                Résultat interne
                                             </div>
                                             <div className="text-[11px] text-slate-500">Avant déduction licence</div>
                                         </div>
@@ -3445,8 +3460,8 @@ function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin:
                             <div className="bg-white rounded-3xl p-6 border-2 border-slate-200">
                                 <p className="text-[13px] text-slate-700 mb-4 leading-relaxed">
                                     <strong style={{ color: C.dark }}>Envie d'aller plus loin ?</strong>{' '}
-                                    Demandez une étude personnalisée avec nos préventeurs HSE pour affiner
-                                    ce ROI avec vos chiffres réels.
+                                    Demandez une étude personnalisée pour documenter vos hypothèses,
+                                    vos sources et le périmètre de calcul.
                                 </p>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <button

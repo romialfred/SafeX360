@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -187,31 +188,32 @@ public class BlastServiceImpl implements BlastService {
         Blast blast = loadOrThrow(dto.getId());
         BlastStatus current = blast.getStatus();
 
-        // 2026-06-08 : elargissement du perimetre modifiable. Tant que le tir
-        // n'est pas execute ou cloture, il reste editable. Cela couvre :
-        //   - DRAFT, PLANNED : edition libre
-        //   - CONFIRMED, POSTPONED : edition autorisee (recalcul auto des
-        //     notifications si scheduledAt ou perimetre change)
-        // Les statuts verrouilles definitivement : IMMINENT (T-10 declenche),
-        // FIRED, ALL_CLEAR, MISFIRE, CANCELLED.
-        boolean isOpenForEdit = current == BlastStatus.DRAFT
-                || current == BlastStatus.PLANNED
-                || current == BlastStatus.CONFIRMED
-                || current == BlastStatus.POSTPONED;
-        boolean isLockedStatus = current == BlastStatus.IMMINENT
-                || current == BlastStatus.FIRED
-                || current == BlastStatus.ALL_CLEAR
-                || current == BlastStatus.MISFIRE
-                || current == BlastStatus.CANCELLED;
-        if (isLockedStatus) {
+        if (dto.getVersion() == null) {
+            throw new IllegalArgumentException("version is required to update a blast");
+        }
+        if (dto.getVersion().intValue() != blast.getVersion()) {
+            throw new OptimisticLockingFailureException(
+                    "Blast " + blast.getReference()
+                            + " was modified by another user; reload before updating");
+        }
+
+        boolean confirmedOverride = current == BlastStatus.CONFIRMED;
+        boolean normallyEditable = current == BlastStatus.DRAFT
+                || current == BlastStatus.PLANNED;
+        if (!normallyEditable && !confirmedOverride) {
+            throw new IllegalStateException(
+                    "Blast " + blast.getReference() + " is " + current
+                            + " and cannot be edited; use the dedicated lifecycle action");
+        }
+        if (confirmedOverride) {
             if (!adminOverride) {
                 throw new IllegalStateException(
-                        "Blast " + blast.getReference() + " is " + current
-                                + " ; only BLAST_ADMIN can update with a reason");
+                        "Blast " + blast.getReference()
+                                + " is CONFIRMED; BLAST_ADMIN override is required");
             }
             if (dto.getReason() == null || dto.getReason().isBlank()) {
                 throw new IllegalArgumentException(
-                        "reason is required to update a blast in status " + current);
+                        "reason is required to update a confirmed blast");
             }
         }
 
@@ -226,28 +228,23 @@ public class BlastServiceImpl implements BlastService {
             replaceRecipients(blast, dto.getRecipients());
         }
 
+        if (confirmedOverride) {
+            // Toute modification matérielle invalide la confirmation. Le tir
+            // doit repasser par le contrôle BLAST_CONFIRM avant que la chaîne
+            // de notifications soit recréée.
+            blast.setStatus(BlastStatus.PLANNED);
+        }
         blast.setUpdatedAt(LocalDateTime.now());
         blast.setUpdatedBy(userId);
         blastRepository.save(blast);
 
-        // Edition apres CONFIRMED ou POSTPONED : recalcul automatique des
-        // notifications (les rappels sont indexes sur scheduledAt, qui peut
-        // avoir change). On log aussi un evenement d'audit traceable.
-        boolean needsReplanning = current == BlastStatus.CONFIRMED
-                || current == BlastStatus.POSTPONED;
-        if (needsReplanning) {
-            auditService.logTransition(blast.getId(), current, current, userId,
-                    dto.getReason() != null && !dto.getReason().isBlank()
-                            ? "Edit (" + current + "): " + dto.getReason()
-                            : "Edit while " + current + " (auto replanning)");
+        if (confirmedOverride) {
+            auditService.logTransition(blast.getId(), BlastStatus.CONFIRMED,
+                    BlastStatus.PLANNED, userId,
+                    "Confirmation invalidated after controlled update: "
+                            + dto.getReason().trim());
+            notificationPlanner.cancelFor(blast.getId());
             cancelScheduledJobs(blast.getId());
-            notificationPlanner.scheduleForBlast(blast);
-        }
-        // Cas admin override sur statut verrouille (workflow termine) : trace
-        // explicite mais pas de replanning des notifications (le tir est fini).
-        if (adminOverride && isLockedStatus) {
-            auditService.logTransition(blast.getId(), current, current, userId,
-                    "Admin override edit (locked status " + current + "): " + dto.getReason());
         }
     }
 

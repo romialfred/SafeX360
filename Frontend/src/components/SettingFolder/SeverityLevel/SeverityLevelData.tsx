@@ -596,7 +596,7 @@ const SeverityLevelData = ({ opened, close }: any) => {
                     <Select disabled label="Level" withAsterisk placeholder='Select Level' data={severityLevels} {...updateForm.getInputProps('level')} />
                     <TextInput label="Name" withAsterisk placeholder='Enter name' {...updateForm.getInputProps('name')} />
                     <Textarea label={categoryMap[updateForm.values.incidentCategoryId]?.name} withAsterisk placeholder="Enter Description" {...updateForm.getInputProps(`description`)} />
-                    <Button type="submit" mt="md" variant="gradient">Update</Button>
+                    <Button type="submit" mt="md" variant="gradient">Mettre à jour</Button>
                 </form>
             </Modal>
 

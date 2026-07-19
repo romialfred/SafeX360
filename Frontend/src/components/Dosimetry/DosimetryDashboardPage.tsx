@@ -83,17 +83,6 @@ const CATEGORY_SHORT: Record<KpiCategory, string> = {
     PUBLIC: 'Public',
 };
 
-// Limites reglementaires CIPR 103 par categorie (mSv/an, Hp10).
-// On laisse le backend retourner la limite via distribution.regulatoryLimit,
-// mais on conserve un fallback de reference pour le chart de tendance.
-const CIPR_LIMIT_BY_CATEGORY: Record<KpiCategory, number> = {
-    WORKER_A: 20,
-    WORKER_B: 6,
-    APPRENTICE: 6,
-    PREGNANCY: 1,
-    PUBLIC: 1,
-};
-
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS: number[] = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2, CURRENT_YEAR - 3];
 
@@ -317,16 +306,14 @@ const DosimetryDashboardPage = () => {
     }, [trendMax]);
 
     // ───── Regulatory limit pour le chart de tendance ─────
-    const regulatoryLimit = useMemo(() => {
-        if (distribution?.regulatoryLimit != null) {
+    const regulatoryLimit = useMemo<number | null>(() => {
+        if (distribution?.regulatoryLimitConfigured !== false
+            && distribution?.regulatoryLimit != null
+            && Number(distribution.regulatoryLimit) > 0) {
             return Number(distribution.regulatoryLimit);
         }
-        if (category !== 'ALL') {
-            return CIPR_LIMIT_BY_CATEGORY[category];
-        }
-        // Par defaut on prend la limite la plus restrictive du subset visible
-        return CIPR_LIMIT_BY_CATEGORY.WORKER_B;
-    }, [distribution, category]);
+        return null;
+    }, [distribution]);
 
     // ───── Selection multi-mine -> delegue au selecteur global (CompanySelector) ─────
     // Au clic sur une carte du comparatif multi-mines, on dispatch le changement de tenant
@@ -618,13 +605,25 @@ const DosimetryDashboardPage = () => {
                                     })}
                                 </p>
                             </div>
-                            {regulatoryLimit > 0 && (
+                            {regulatoryLimit != null && regulatoryLimit > 0 ? (
                                 <div className="text-right flex-shrink-0">
                                     <p className="text-[10px] uppercase tracking-[0.10em] text-slate-500 font-semibold">
                                         {t('dashboard.trend.limitLabel', { defaultValue: 'Limite réglementaire' })}
                                     </p>
                                     <p className="text-[14px] font-mono font-bold text-red-700 tabular-nums">
                                         {regulatoryLimit.toFixed(0)} mSv/an
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="text-right flex-shrink-0 max-w-[220px]">
+                                    <p className="text-[10px] uppercase tracking-[0.08em] text-amber-700 font-semibold">
+                                        {distribution?.regulatoryLimitStatus === 'CATEGORY_REQUIRED'
+                                            ? t('dashboard.trend.categoryRequired', {
+                                                defaultValue: 'Sélectionnez une catégorie pour appliquer sa limite configurée',
+                                            })
+                                            : t('dashboard.trend.limitNotConfigured', {
+                                                defaultValue: 'Limite non configurée — à valider localement',
+                                            })}
                                     </p>
                                 </div>
                             )}

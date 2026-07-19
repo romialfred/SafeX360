@@ -40,7 +40,7 @@ const ActiveTasks = () => {
                             <th className="text-left p-3 text-gray-600">Activity</th>
                             <th className="text-left p-3 text-gray-600">Type</th>
                             <th className="text-left p-3 text-gray-600">Progress</th>
-                            <th className="text-left p-3 text-gray-600">Status</th>
+                            <th className="text-left p-3 text-gray-600">Statut</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-gray-200'>

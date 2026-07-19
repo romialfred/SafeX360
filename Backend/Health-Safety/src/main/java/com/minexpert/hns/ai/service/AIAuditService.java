@@ -86,8 +86,9 @@ public class AIAuditService {
             return mockClassification(fact, templates);
         }
         try {
-            String system = "Tu es un auditeur principal certifié ISO 19011:2018 dans le secteur minier. "
-                    + "Tu classes les constats d'audit avec rigueur : NC_MAJEURE (défaillance du système ou "
+            String system = "Tu assistes un auditeur humain dans la préparation d'un audit interne, "
+                    + "avec ISO 19011:2026 comme référentiel méthodologique à vérifier dans la copie officielle. "
+                    + "Tu classes les constats proposés avec rigueur : NC_MAJEURE (défaillance du système ou "
                     + "risque grave), NC_MINEURE (écart ponctuel à une exigence), OBSERVATION (point de "
                     + "vigilance sans écart avéré), OPPORTUNITE (piste d'amélioration). "
                     + "Réponds UNIQUEMENT en JSON strict : {\"classification\":\"...\",\"clause\":\"...\","
@@ -171,8 +172,9 @@ public class AIAuditService {
                             + (o.getClause() != null ? " · clause " + o.getClause() : "") + "] "
                             + o.getTitle() + " : " + o.getObservedFact())
                     .collect(Collectors.joining("\n"));
-            String system = "Tu es un auditeur principal ISO 19011:2018 (secteur minier) qui relit un rapport "
-                    + "d'audit interne avant diffusion (§6.5). Évalue : complétude (conclusions, critères, "
+            String system = "Tu assistes le responsable d'audit humain dans la relecture d'un rapport "
+                    + "d'audit interne selon la méthodologie ISO 19011:2026, à confirmer dans la copie officielle. "
+                    + "Évalue : complétude (conclusions, critères, "
                     + "périmètre), formulation factuelle et vérifiable des constats, cohérence entre la "
                     + "checklist et les constats formels, traçabilité aux clauses. Réponds UNIQUEMENT en JSON "
                     + "strict : {\"qualityScore\":0-10,\"strengths\":[\"...\"],\"gaps\":[\"...\"],"

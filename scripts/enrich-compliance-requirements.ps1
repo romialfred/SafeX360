@@ -3,11 +3,10 @@
 # catalogue minier français et complète jusqu'à 15. Conserve les IDs pour ne
 # pas casser les affectations de postes ni les documents existants.
 
-# Secret interne lu depuis Backend/.env (jamais en dur dans le depot).
-$envLine = Get-Content "$PSScriptRoot\..\Backend\.env" | Where-Object { $_ -match '^INTERNAL_GATEWAY_SECRET=' }
-$secret = ($envLine -split '=', 2)[1].Trim().Trim("'").Trim('"')
-$h = @{ 'X-Secret-Key' = $secret }
-$base = 'http://localhost:8081/hns/compliance-requirement'
+# Session administrateur explicite; les scripts ne disposent plus d'un secret omnipotent.
+if ([string]::IsNullOrWhiteSpace($env:SAFEX_ADMIN_SESSION_COOKIE)) { throw 'SAFEX_ADMIN_SESSION_COOKIE requis' }
+$h = @{ 'Cookie' = "jwt=$($env:SAFEX_ADMIN_SESSION_COOKIE)" }
+$base = 'http://localhost:9100/hns/compliance-requirement'
 
 $catalogue = @(
     @{ id = 1; referenceCode = 'EXG-001'; title = "Certificat d'aptitude médicale au poste"; description = "Visite médicale d'aptitude réalisée par le médecin du travail, obligatoire pour tout salarié affecté à un poste en zone minière."; category = 'Medical'; renewalFrequency = 'Annually'; docType = 'Certificate'; legalSource = 'Code du Travail — Médecine du travail'; authority = 'Ministère du Travail'; criticality = 'CRITIQUE' },

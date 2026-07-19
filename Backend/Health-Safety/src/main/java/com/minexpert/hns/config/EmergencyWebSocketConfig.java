@@ -28,6 +28,15 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class EmergencyWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final StompSecurityInterceptor stompSecurityInterceptor;
+    private final EmergencyWebSocketHandshakeInterceptor handshakeInterceptor;
+
+    public EmergencyWebSocketConfig(StompSecurityInterceptor stompSecurityInterceptor,
+            EmergencyWebSocketHandshakeInterceptor handshakeInterceptor) {
+        this.stompSecurityInterceptor = stompSecurityInterceptor;
+        this.handshakeInterceptor = handshakeInterceptor;
+    }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // Topic préfixe pour les broadcasts serveur → clients
@@ -41,13 +50,14 @@ public class EmergencyWebSocketConfig implements WebSocketMessageBrokerConfigure
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         // LOT 48 Phase 6 — Intercepteur sécurité STOMP CONNECT
-        registration.interceptors(new StompSecurityInterceptor());
+        registration.interceptors(stompSecurityInterceptor);
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry
             .addEndpoint("/ws/emergency")
+            .addInterceptors(handshakeInterceptor)
             // Origines : localhost dev + prod Vercel + prod custom domain
             .setAllowedOriginPatterns(
                 "http://localhost:5173",

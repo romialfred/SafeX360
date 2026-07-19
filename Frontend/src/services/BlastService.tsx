@@ -165,6 +165,8 @@ export interface BlastCreateDTO {
 /** Payload de mise a jour d'un tir. */
 export interface BlastUpdateDTO {
     id: number;
+    /** Version optimiste renvoyée par le détail du tir. */
+    version: number;
     scheduledAt?: string | null;
     timezone?: string | null;
     type?: BlastType | null;
@@ -194,7 +196,7 @@ export interface BlastUpdateDTO {
     plan?: BlastPlanDTO | null;
     guards?: BlastGuardDTO[];
     recipients?: BlastRecipientDTO[];
-    /** Obligatoire si le tir est deja CONFIRMED ou ulterieur. */
+    /** Obligatoire si le tir est déjà CONFIRMED. */
     reason?: string | null;
 }
 
@@ -252,7 +254,8 @@ export interface BlastDetailDTO {
      * pour audit reglementaire.
      */
     misfireResolutionNotes?: string | null;
-    version?: number;
+    /** Version optimiste requise pour toute mise à jour. */
+    version: number;
     createdAt?: string;
     updatedAt?: string;
     createdBy?: number | null;
@@ -337,8 +340,9 @@ const createBlast = async (data: BlastCreateDTO): Promise<number> => {
 };
 
 /**
- * Met a jour un tir existant. Sur statut CONFIRMED ou ulterieur, seul un
- * BLAST_ADMIN peut modifier, avec param adminOverride=true et raison tracee.
+ * Met à jour un tir existant. Sur statut CONFIRMED, seul un BLAST_ADMIN peut
+ * invalider la confirmation avec adminOverride=true, une raison et la version
+ * courante. Le tir revient alors en PLANNED pour une nouvelle confirmation.
  * Backend : PUT /hns/blast/update/{id}  (RBAC : BLAST_PLAN ou BLAST_ADMIN)
  */
 const updateBlast = async (

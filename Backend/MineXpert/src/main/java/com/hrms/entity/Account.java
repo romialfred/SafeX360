@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Column;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -118,6 +119,22 @@ public class Account {
      * prime sur assignedCompanies (l'utilisateur voit tout). Typiquement les admins.
      */
     private Boolean allMinesAccess;
+
+    /** MFA TOTP des roles privilegies. Le secret est chiffre par AES-GCM. */
+    private Boolean mfaEnabled;
+
+    @Column(length = 1024)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String mfaSecretEncrypted;
+
+    @Column(length = 4096)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String mfaRecoveryCodeHashes;
+
+    /** Pas TOTP deja accepte, afin d'interdire la reutilisation dans la meme fenetre. */
+    private Long mfaLastAcceptedStep;
+
+    private LocalDateTime mfaEnrolledAt;
 
     public AccountDTO toDTO() {
         return new AccountDTO(

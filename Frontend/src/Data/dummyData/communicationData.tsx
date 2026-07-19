@@ -388,7 +388,7 @@ export const employeeCommunicationsData: EmployeeCommunication[] = [
 export const communicationRecipients: CommunicationRecipient[] = [
     {
         id: 'EMP-001',
-        name: 'Jean Dupont',
+        name: 'Utilisateur fictif — démonstration',
         email: 'jean.dupont@company.com',
         department: 'Mining Operations',
         position: 'Production Operator',

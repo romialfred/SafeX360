@@ -12,10 +12,14 @@ Usage :
     python fix_orphan_audit_programs.py                       # DRY-RUN local
     python fix_orphan_audit_programs.py --env prod            # DRY-RUN prod
     python fix_orphan_audit_programs.py --env prod --company 1 --apply
+
+Auth : fournir --login/--password ou les variables SAFEX_ADMIN_LOGIN et
+SAFEX_ADMIN_PASSWORD. Aucun identifiant n'est défini par défaut.
 """
 import sys
 import time
 import argparse
+import os
 import requests
 
 GATEWAYS = {"local": "http://localhost:9100", "prod": "https://safex360-gateway.onrender.com"}
@@ -36,9 +40,11 @@ def main():
     ap.add_argument("--env", choices=["local", "prod"], default="local")
     ap.add_argument("--company", type=int, default=1, help="companyId cible (Burkina GOLD SA = 1)")
     ap.add_argument("--apply", action="store_true")
-    ap.add_argument("--login", default="SAFEX360DEMO")
-    ap.add_argument("--password", default="Demo@2026")
+    ap.add_argument("--login", default=os.environ.get("SAFEX_ADMIN_LOGIN"))
+    ap.add_argument("--password", default=os.environ.get("SAFEX_ADMIN_PASSWORD"))
     args = ap.parse_args()
+    if not args.login or not args.password:
+        ap.error("SAFEX_ADMIN_LOGIN et SAFEX_ADMIN_PASSWORD sont requis (ou --login/--password)")
 
     base = GATEWAYS[args.env]
     mode = "APPLY" if args.apply else "DRY-RUN (lecture seule)"
@@ -48,8 +54,8 @@ def main():
     r = req_retry(lambda: s.post(f"{base}/hrms/auth/login",
                   json={"login": args.login, "password": args.password}, timeout=60))
     if r.status_code != 200:
-        print(f"[ERREUR] login -> HTTP {r.status_code} : {r.text[:200]}"); sys.exit(1)
-    print(f"[OK] connecte en tant que {args.login}")
+        print(f"[ERREUR] login -> HTTP {r.status_code}"); sys.exit(1)
+    print("[OK] authentification réussie")
 
     # getAll sans companyId -> tous les programmes (query :companyId IS NULL OR ...)
     r = req_retry(lambda: s.get(f"{base}/hns/audit-program/getAll", timeout=60))

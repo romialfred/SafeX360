@@ -7,18 +7,28 @@
     "dev": "vite",
     "start": "npm run dev",
     "build": "tsc -b && vite build",
+    "performance:budget": "node scripts/check-performance-budgets.mjs",
     "build:mobile": "tsc -b && vite build --mode mobile",
     "lint": "eslint .",
+    "lint:baseline": "node scripts/check-eslint-baseline.mjs",
+    "lint:baseline:update": "node scripts/check-eslint-baseline.mjs --update",
+    "design:baseline": "node scripts/check-design-debt-baseline.mjs",
+    "design:baseline:update": "node scripts/check-design-debt-baseline.mjs --update",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cap:sync": "npm run build && npx cap sync",
-    "cap:android": "npm run build && npx cap sync android && npx cap open android",
-    "cap:android:run": "npm run build && npx cap sync android && npx cap run android",
-    "android:build:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "android:build:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
-    "android:build:release:signed": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease -PkeystoreProperties=key.properties",
-    "android:build:bundle": "npm run build && npx cap sync android && cd android && ./gradlew bundleRelease",
+    "audit:security": "npm audit --audit-level=high",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:smoke": "npm run build && playwright test e2e/smoke",
+    "test:e2e:install": "playwright install chromium",
+    "android:harden": "node scripts/harden-android-backup.mjs",
+    "cap:sync": "npm run build && npx cap sync && npm run android:harden",
+    "cap:android": "npm run build && npx cap sync android && npm run android:harden && npx cap open android",
+    "cap:android:run": "npm run build && npx cap sync android && npm run android:harden && npx cap run android",
+    "android:build:debug": "npm run build && npx cap sync android && npm run android:harden && cd android && ./gradlew assembleDebug",
+    "android:build:release": "npm run build && npx cap sync android && npm run android:harden && cd android && ./gradlew assembleRelease",
+    "android:build:release:signed": "npm run build && npx cap sync android && npm run android:harden && cd android && ./gradlew assembleRelease -PkeystoreProperties=key.properties",
+    "android:build:bundle": "npm run build && npx cap sync android && npm run android:harden && cd android && ./gradlew bundleRelease",
     "android:clean": "cd android && ./gradlew clean"
   },
   "dependencies": {
@@ -89,6 +99,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@playwright/test": "1.61.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -110,5 +121,10 @@
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^4.1.8",
     "workbox-window": "^7.3.0"
+  },
+  "overrides": {
+    "@capacitor/cli": {
+      "tar": "7.5.19"
+    }
   }
 }

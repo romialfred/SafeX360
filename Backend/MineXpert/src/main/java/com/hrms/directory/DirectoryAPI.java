@@ -54,9 +54,6 @@ public class DirectoryAPI {
     @Autowired
     private AccountRepository accountRepository;
 
-    @Value("${INTERNAL_GATEWAY_SECRET:dev-secret}")
-    private String internalSecret;
-
     /**
      * LOT 52 — accès réservé aux administrateurs (remédiation GATE IAM-01).
      * Si un cookie JWT est présent, SEUL le rôle décide (le secret interne,
@@ -77,8 +74,6 @@ public class DirectoryAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
         }
-        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
-        if (secret != null && secret.equals(internalSecret)) return;
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
     }

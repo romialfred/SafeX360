@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:minexpert;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: ''
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+  mail:
+    host: 127.0.0.1
+    port: 2525
+    username: qa@safex.invalid
+    test-connection: false
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  cloud:
+    discovery:
+      enabled: false
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+server:
+  port: 0
+
+eureka:
+  client:
+    enabled: false
+    fetch-registry: false
+    register-with-eureka: false
+
+management:
+  health:
+    mail:
+      enabled: false
+
+app:
+  mail:
+    from: qa@safex.invalid
+
+EUREKA_SERVER_URL: http://127.0.0.1:65535/eureka
+LOGIN_URL: http://127.0.0.1:4173

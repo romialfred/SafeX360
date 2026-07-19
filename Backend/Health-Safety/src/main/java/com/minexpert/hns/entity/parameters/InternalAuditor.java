@@ -32,7 +32,7 @@ public class InternalAuditor {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // ─── LOT 52 — Compétences auditeurs (ISO 19011:2018 §7) ────────────────
+    // ─── LOT 52 — Compétences auditeurs (ISO 19011:2026) ──────────────────
 
     /** Qualifications / formations (texte libre). */
     @Column(length = 1024)

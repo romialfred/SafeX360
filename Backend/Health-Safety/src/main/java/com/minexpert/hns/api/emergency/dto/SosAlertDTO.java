@@ -17,6 +17,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SosAlertDTO {
     private Long id;
+    @Size(max = 64, message = "clientRequestId must not exceed 64 characters")
+    private String clientRequestId;
     @NotNull(message = "companyId is required")
     private Long companyId;
     @NotNull(message = "employeeId is required")

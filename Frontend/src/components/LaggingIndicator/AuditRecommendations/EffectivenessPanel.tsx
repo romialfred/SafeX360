@@ -13,7 +13,7 @@ import { toLocalDate } from '../../../utility/dateConversion';
 
 /**
  * LOT 52 — Vérification d'efficacité d'une recommandation d'audit
- * (ISO 19011:2018 §6.6). Panneau autonome monté dans la mise à jour d'une
+ * (ISO 19011:2026 — suivi des audits). Panneau autonome monté dans la mise à jour d'une
  * recommandation : planification (échéance), puis verdict — un verdict
  * INEFFICACE rouvre automatiquement la recommandation côté backend.
  */

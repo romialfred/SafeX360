@@ -96,9 +96,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // SafeX 360 Field — Service Worker pour la version mobile (PWA + APK
-    // Capacitor). Strategie : prendre en cache l'app shell (JS/CSS/HTML) et
-    // les images statiques. Les appels API REST utilisent un NetworkFirst
-    // avec fallback cache (TTL 5 min sur GET /hns/*).
+    // Capacitor). Strategie : mettre en cache uniquement l'app shell
+    // (JS/CSS/HTML) et les images statiques. Les API authentifiees ne sont
+    // jamais placees dans CacheStorage ; l'offline metier passe par IndexedDB.
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest'],
@@ -106,9 +106,11 @@ export default defineConfig({
       // On reutilise public/manifest.webmanifest existant — pas de re-genere
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Bundle JS principal ~4 MB → augmenter la limite a 8 MB pour precache PWA
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // Le précache reste limité au document d'amorçage. Les chunks et médias
+        // réellement utilisés sont ajoutés aux caches runtime à la première visite,
+        // ce qui évite de transférer ~34 MiB sur les réseaux terrain contraints.
+        globPatterns: ['index.html'],
+        maximumFileSizeToCacheInBytes: 512 * 1024,
         // Durcissement : purge les anciens precaches a chaque nouveau SW
         // (evite l'accumulation d'assets perimes et les melanges de versions).
         cleanupOutdatedCaches: true,
@@ -153,19 +155,6 @@ export default defineConfig({
               expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 },
             },
           },
-          // GET /hns/* : NetworkFirst 5s puis fallback cache
-          {
-            urlPattern: ({ url }) =>
-              url.pathname.startsWith('/hns/') || url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            method: 'GET',
-            options: {
-              cacheName: 'safex-api-get',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 100, maxAgeSeconds: 5 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
       // En dev : on n'enregistre pas le SW pour eviter de stale-cache pendant
@@ -190,6 +179,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
   },
   build: {
+    manifest: true,
     chunkSizeWarningLimit: 1500,
     assetsInlineLimit: 4096,
     rollupOptions: {

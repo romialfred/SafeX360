@@ -36,9 +36,6 @@ public class ErrorRbacGuard {
     @Value("${JWT_SECRET:}")
     private String jwtSecret;
 
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String internalGatewaySecret;
-
     /** Alias de role « administrateur » (insensible a la casse) — aligne sur MineXpert. */
     private static final Set<String> ADMIN_ROLE_ALIASES = Set.of(
             "SYSTEM_ADMINISTRATOR", "ADMINISTRATOR", "ADMIN");
@@ -64,10 +61,6 @@ public class ErrorRbacGuard {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Acces reserve aux administrateurs");
         }
-        String secret = request.getHeader("X-Secret-Key");
-        if (secret != null && secret.equals(internalGatewaySecret)) {
-            return;
-        }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Acces reserve aux administrateurs");
     }
@@ -88,10 +81,6 @@ public class ErrorRbacGuard {
                 LOG.warn("JWT module erreurs invalide: {}", e.getMessage());
             }
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
-        }
-        String secret = request.getHeader("X-Secret-Key");
-        if (secret != null && secret.equals(internalGatewaySecret)) {
-            return;
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
     }

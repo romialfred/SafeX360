@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -449,6 +450,7 @@ class BlastServiceTest {
 
         var dto = com.minexpert.hns.blast.dto.BlastUpdateDTO.builder()
                 .id(42L)
+                .version(0)
                 .pit("FOSSE_SUD")
                 .build();
         service.update(dto, 7L, false);
@@ -463,7 +465,7 @@ class BlastServiceTest {
         when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
 
         var dto = com.minexpert.hns.blast.dto.BlastUpdateDTO.builder()
-                .id(42L).pit("FOSSE_OUEST").build();
+                .id(42L).version(0).pit("FOSSE_OUEST").build();
 
         assertThatThrownBy(() -> service.update(dto, 7L, false))
                 .isInstanceOf(IllegalStateException.class)
@@ -471,19 +473,59 @@ class BlastServiceTest {
     }
 
     @Test
-    @DisplayName("update: CONFIRMED + adminOverride requires reason and triggers reschedule")
-    void updateConfirmedWithOverrideTriggersReplan() {
+    @DisplayName("update: CONFIRMED + adminOverride invalidates confirmation and cancels jobs")
+    void updateConfirmedWithOverrideRequiresReconfirmation() {
         Blast b = buildBlast(BlastStatus.CONFIRMED);
         when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
         when(jobRepository.findByBlastIdAndStatus(42L, JobStatus.SCHEDULED))
                 .thenReturn(List.of());
 
         var dto = com.minexpert.hns.blast.dto.BlastUpdateDTO.builder()
-                .id(42L).pit("FOSSE_OUEST").reason("Operational shift").build();
+                .id(42L).version(0).pit("FOSSE_OUEST")
+                .reason("Operational shift").build();
         service.update(dto, 7L, true);
 
         assertThat(b.getPit()).isEqualTo("FOSSE_OUEST");
-        verify(notificationPlanner).scheduleForBlast(b);
+        assertThat(b.getStatus()).isEqualTo(BlastStatus.PLANNED);
+        verify(notificationPlanner).cancelFor(42L);
+        verify(notificationPlanner, never()).scheduleForBlast(any());
+        verify(auditService).logTransition(eq(42L), eq(BlastStatus.CONFIRMED),
+                eq(BlastStatus.PLANNED), eq(7L), contains("Operational shift"));
+    }
+
+    @Test
+    @DisplayName("update: rejects a stale optimistic version")
+    void updateRejectsStaleVersion() {
+        Blast b = buildBlast(BlastStatus.DRAFT);
+        b.setVersion(4);
+        when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+
+        var dto = com.minexpert.hns.blast.dto.BlastUpdateDTO.builder()
+                .id(42L).version(3).pit("FOSSE_OUEST").build();
+
+        assertThatThrownBy(() -> service.update(dto, 7L, false))
+                .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class)
+                .hasMessageContaining("reload");
+        verify(blastRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("update: terminal and imminent statuses remain immutable even with override")
+    void updateLockedStatusesRejectedEvenWithOverride() {
+        for (BlastStatus status : List.of(BlastStatus.IMMINENT, BlastStatus.FIRED,
+                BlastStatus.MISFIRE, BlastStatus.ALL_CLEAR, BlastStatus.CANCELLED,
+                BlastStatus.POSTPONED)) {
+            Blast b = buildBlast(status);
+            when(blastRepository.findById(42L)).thenReturn(Optional.of(b));
+            var dto = com.minexpert.hns.blast.dto.BlastUpdateDTO.builder()
+                    .id(42L).version(0).pit("FOSSE_OUEST")
+                    .reason("Administrative correction").build();
+
+            assertThatThrownBy(() -> service.update(dto, 7L, true))
+                    .as("direct edit from %s should be rejected", status)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("cannot be edited");
+        }
     }
 
     // ── SEARCH / DETAIL ────────────────────────────────────────────────────

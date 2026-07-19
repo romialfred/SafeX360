@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * LOT 52 — Suggestion de priorisation basée risques pour un domaine d'audit
- * (ISO 19011:2018 §5.4.2 — approche par les risques).
+ * (ISO 19011:2026 — risques et opportunités du programme d'audit).
  *
  * <p>Score = (non-conformités ouvertes liées au domaine, sinon total) × 2
  * + mois écoulés depuis le dernier audit CLOSED couvrant le domaine (plafonné à 24).

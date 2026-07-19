@@ -68,7 +68,7 @@ const Navbar = () => {
 
                 {/* Button */}
                 <div>
-                    <Button onClick={() => navigate("/dashboard/home")}>Dashboard</Button>
+                    <Button onClick={() => navigate("/dashboard/home")}>Tableau de bord</Button>
                 </div>
             </div>
         </header>

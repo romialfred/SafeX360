@@ -19,8 +19,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Seuils dosimetriques (contrainte de dose, niveau d'investigation, niveau d'action, limite
- * reglementaire) par couple (grandeur, categorie de personne).
+ * Seuils dosimetriques par couple (grandeur, categorie de personne).
+ * Le seuil de classification est distinct de la limite reglementaire.
  *
  * <p>mineId nullable : si null, il s'agit du seuil par defaut global (utilise comme fallback
  * en absence de configuration specifique a la mine).
@@ -60,6 +60,10 @@ public class Threshold {
 
     @Column(name = "action_level")
     private Double actionLevel;
+
+    /** Seuil de classification administrative, sans valeur de limite legale. */
+    @Column(name = "classification_threshold")
+    private Double classificationThreshold;
 
     @Column(name = "regulatory_limit")
     private Double regulatoryLimit;

@@ -1,10 +1,9 @@
 /**
- * IsoBadge — médaillon officiel d'une norme ISO (LOT 49).
+ * IsoBadge — repère visuel interne d'un référentiel ISO (LOT 49).
  *
  * Règle plateforme : toute mention autonome d'une norme ISO s'affiche avec
- * son badge couleur, jamais en texte nu. Le design reprend les médaillons
- * de certification de la section Conformité (sceau circulaire : anneau,
- * sphère-globe colorée, ISO / numéro / édition en blanc), en version compacte.
+ * son badge couleur, jamais en texte nu. Ce composant facilite l'identification
+ * d'un référentiel dans l'interface et ne constitue pas une attestation tierce.
  *
  *   <IsoBadge norm="ISO 45001" />                       → médaillon seul (30px)
  *   <IsoBadge norm="ISO 14001" size="md" withLabel />   → 42px + norme et domaine
@@ -24,11 +23,11 @@ interface IsoIdentity {
     domain: string;
 }
 
-// Palette alignée sur les médaillons de la landing (section Conformité).
+// Palette alignée sur les repères de la landing (section Référentiels).
 export const ISO_IDENTITIES: Record<IsoNorm, IsoIdentity> = {
     'ISO 9001':  { color: '#1D4ED8', deep: '#1E40AF', year: '2015', domain: 'Management qualité' },
-    'ISO 14001': { color: '#15803D', deep: '#166534', year: '2015', domain: 'Environnement' },
-    'ISO 19011': { color: '#6D28D9', deep: '#5B21B6', year: '2018', domain: 'Audits qualité' },
+    'ISO 14001': { color: '#15803D', deep: '#166534', year: '2026', domain: 'Environnement' },
+    'ISO 19011': { color: '#6D28D9', deep: '#5B21B6', year: '2026', domain: 'Audits des systèmes' },
     'ISO 45001': { color: '#0F766E', deep: '#115E59', year: '2018', domain: 'Santé & Sécurité' },
     'ISO 31000': { color: '#C2410C', deep: '#9A3412', year: '2018', domain: 'Gestion des risques' },
     'ISO 22301': { color: '#BE123C', deep: '#9F1239', year: '2019', domain: "Continuité d'activité" },

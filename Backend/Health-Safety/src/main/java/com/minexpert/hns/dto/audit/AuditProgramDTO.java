@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — DTO du programme d'audit annuel (ISO 19011:2018 §5).
+ * LOT 52 — DTO du programme d'audit annuel (ISO 19011:2026, programme d'audit).
  */
 @Data
 @AllArgsConstructor

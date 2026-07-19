@@ -52,7 +52,7 @@ const Polcies = () => {
 
                         {/* Label with Dynamic Colors */}
                         <div className="flex items-center gap-2 hover:bg-primary/30 p-2 rounded">
-                            <p className="text-primary  text-sm ">View</p>
+                            <p className="text-primary  text-sm ">Consulter</p>
                             <IconArrowNarrowRight size={20} className="text-primary" />
                         </div>
                     </div>

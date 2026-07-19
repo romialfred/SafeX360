@@ -38,7 +38,7 @@ public interface AuditRepository extends CrudRepository<Audit, Long> {
 
     Optional<Audit> findFirstByEndDateGreaterThanEqualOrderByEndDateAsc(LocalDate date);
 
-    // ─── LOT 52 — Programme d'audit (ISO 19011:2018 §5) ────────────────────
+    // ─── LOT 52 — Programme d'audit (ISO 19011:2026) ──────────────────────
 
     List<Audit> findByProgramId(Long programId);
 

@@ -68,10 +68,10 @@ import {
     type ExposedWorkerDetailDTO,
     type DoseCategory,
     type ExposureAlertDTO,
-    type ThresholdDTO,
 } from '../../services/DosimetryService';
 import PdfDownloadModal from './PdfDownloadModal';
 import DoseForecastCard from './DoseForecastCard';
+import { resolveConfiguredRegulatoryLimit } from './dosimetryRegulatoryLimits';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Constants
@@ -226,20 +226,7 @@ function gaugeTone(ratio: number | null | undefined): GaugeTone {
     };
 }
 
-/** Limite Hp(10) annuelle — fallback CIPR 103 si pas de seuil custom. */
-function resolveHp10AnnualLimit(
-    thresholds: ThresholdDTO[] | undefined,
-    category: DoseCategory,
-): number {
-    if (thresholds && thresholds.length > 0) {
-        const hp10 = thresholds.find((th) => th.grandeur === 'HP10');
-        if (hp10?.regulatoryLimit != null && hp10.regulatoryLimit > 0) {
-            return hp10.regulatoryLimit;
-        }
-    }
-    return category === 'A' ? 20 : 6;
-}
-
+/** La limite Hp(10) doit provenir d'un seuil actif configuré. */
 // ─────────────────────────────────────────────────────────────────────────────
 //  Composant principal
 // ─────────────────────────────────────────────────────────────────────────────
@@ -493,7 +480,7 @@ const MyMedicalAreaPage = () => {
     const category: DoseCategory = classification?.category ?? 'B';
 
     const annualLimitHp10 = useMemo(
-        () => resolveHp10AnnualLimit(workerDetail?.thresholds, category),
+        () => resolveConfiguredRegulatoryLimit(workerDetail?.thresholds, category),
         [workerDetail, category],
     );
 
@@ -908,10 +895,11 @@ const MyMedicalAreaPage = () => {
                         <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <DoseGauge
                                 label={t('myMedical.gaugeAnnual')}
-                                sublabel={t('myMedical.gaugeAnnualSub', {
-                                    limit: annualLimitHp10,
-                                    cat: category,
-                                })}
+                                sublabel={annualLimitHp10 != null
+                                    ? t('myMedical.gaugeAnnualSub', { limit: annualLimitHp10, cat: category })
+                                    : t('myMedical.regulatoryLimitNotConfigured', {
+                                        defaultValue: 'Limite non configurée — à valider localement',
+                                    })}
                                 value={cumulative?.annualHp10 ?? null}
                                 limit={annualLimitHp10}
                             />
@@ -936,7 +924,7 @@ const MyMedicalAreaPage = () => {
                 </SectionCard>
 
                 {/* ─── 5.bis Phase 10-B : Prevision dose annuelle Hp(10) ─── */}
-                {resolvedWorkerId != null && (
+                {resolvedWorkerId != null && annualLimitHp10 != null && (
                     <div className="mb-5">
                         <DoseForecastCard
                             workerId={resolvedWorkerId}
@@ -1042,12 +1030,12 @@ interface DoseGaugeProps {
     label: string;
     sublabel?: string;
     value: number | null;
-    limit: number;
+    limit: number | null;
 }
 
 function DoseGauge({ label, sublabel, value, limit }: DoseGaugeProps) {
     const { t } = useTranslation('dosimetry');
-    const ratio = value != null && limit > 0 ? value / limit : null;
+    const ratio = value != null && limit != null && limit > 0 ? value / limit : null;
     const tone = gaugeTone(ratio);
     const pct = ratio != null ? Math.min(100, Math.max(0, ratio * 100)) : 0;
     const displayValue = value != null ? value.toFixed(2) : '—';
@@ -1076,7 +1064,9 @@ function DoseGauge({ label, sublabel, value, limit }: DoseGaugeProps) {
                     {displayValue}
                 </span>
                 <span className="text-[11.5px] text-slate-500">
-                    / {limit} {t('myMedical.gaugeUnit')}
+                    {limit != null
+                        ? `/ ${limit} ${t('myMedical.gaugeUnit')}`
+                        : t('myMedical.regulatoryLimitNotConfiguredShort', { defaultValue: '/ limite non configurée' })}
                 </span>
             </div>
             <div

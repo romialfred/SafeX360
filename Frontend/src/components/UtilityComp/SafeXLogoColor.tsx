@@ -97,7 +97,7 @@ export default function SafeXLogoColor({
 
     const Wordmark = (
         <div className="flex flex-col leading-none">
-            <h1
+            <div
                 className="flex items-baseline gap-0.5"
                 style={{
                     fontFamily: "'Source Serif 4', Georgia, serif",
@@ -111,7 +111,7 @@ export default function SafeXLogoColor({
                 <span>Safe</span>
                 <span style={{ color: xColor }}>X</span>
                 <span style={{ marginLeft: '0.18em', color: accentColor }}>360</span>
-            </h1>
+            </div>
             {showTagline && (
                 <p
                     className="mt-1"

@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — Indicateurs de pilotage d'un programme d'audit (ISO 19011:2018 §5.6).
+ * LOT 52 — Indicateurs de pilotage d'un programme d'audit (ISO 19011:2026 — surveillance du programme).
  */
 @Data
 @AllArgsConstructor

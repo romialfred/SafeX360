@@ -39,7 +39,7 @@ import com.minexpert.hns.repository.parameters.AuditAreasRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * LOT 52 — Implémentation du programme d'audit annuel (ISO 19011:2018 §5).
+ * LOT 52 — Implémentation du programme d'audit annuel (ISO 19011:2026, programme d'audit).
  *
  * <p>Couvre le cycle de vie du programme (PROPOSED → APPROVED → CLOSED), la
  * priorisation basée risques des domaines d'audit et les indicateurs de

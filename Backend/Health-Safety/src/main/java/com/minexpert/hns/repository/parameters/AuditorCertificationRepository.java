@@ -7,7 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 import com.minexpert.hns.entity.parameters.AuditorCertification;
 
 /**
- * LOT 52 — Accès aux certifications des auditeurs internes (ISO 19011:2018 §7).
+ * LOT 52 — Accès aux qualifications des auditeurs internes (ISO 19011:2026 — compétences).
  */
 public interface AuditorCertificationRepository extends CrudRepository<AuditorCertification, Long> {
 

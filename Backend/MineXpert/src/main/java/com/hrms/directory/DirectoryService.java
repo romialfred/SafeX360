@@ -14,6 +14,8 @@ import javax.naming.directory.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import com.hrms.repository.AccountRepository;
@@ -42,6 +44,11 @@ public class DirectoryService {
     private DirectoryCrypto crypto;
     @Autowired
     private AccountRepository accountRepository;
+    @Autowired
+    private Environment environment;
+
+    @Value("${SAFEX_DEMO_DIRECTORY_PASSWORD:}")
+    private String demoDirectoryPassword;
 
     /** Configuration courante (créée avec les défauts au premier accès). */
     public DirectorySettings getSettings() {
@@ -55,7 +62,7 @@ public class DirectoryService {
     }
 
     public boolean isDemoMode() {
-        return Boolean.TRUE.equals(getSettings().getDemoMode());
+        return Boolean.TRUE.equals(getSettings().getDemoMode()) && isDemoAccessConfigured();
     }
 
     /** Recherche d'utilisateurs dans l'annuaire + marquage de ceux déjà importés. */
@@ -64,9 +71,13 @@ public class DirectoryService {
         if (!Boolean.TRUE.equals(s.getEnabled())) {
             throw new IllegalStateException("DIRECTORY_DISABLED");
         }
-        List<DirectoryUserDTO> results = Boolean.TRUE.equals(s.getDemoMode())
-                ? DemoDirectory.search(query)
-                : ldapSearch(s, query);
+        List<DirectoryUserDTO> results;
+        if (Boolean.TRUE.equals(s.getDemoMode())) {
+            requireDemoAccessConfigured();
+            results = DemoDirectory.search(query);
+        } else {
+            results = ldapSearch(s, query);
+        }
         results.forEach(u -> u.setAlreadyImported(
                 accountRepository.findByLogin(u.getLogin()).isPresent()));
         return results;
@@ -81,7 +92,8 @@ public class DirectoryService {
         DirectorySettings s = getSettings();
         if (!Boolean.TRUE.equals(s.getEnabled())) return false;
         if (Boolean.TRUE.equals(s.getDemoMode())) {
-            return DemoDirectory.authenticate(login, password);
+            return isDemoAccessConfigured()
+                    && DemoDirectory.authenticate(login, password, demoDirectoryPassword);
         }
         return ldapAuthenticate(s, login, password);
     }
@@ -89,6 +101,7 @@ public class DirectoryService {
     /** Test de connexion LDAP avec la configuration fournie (avant sauvegarde). */
     public String testConnection(DirectorySettings s, String bindPasswordPlain) {
         if (Boolean.TRUE.equals(s.getDemoMode())) {
+            requireDemoAccessConfigured();
             return "Mode démo actif : " + DemoDirectory.search("").size() + " utilisateurs simulés disponibles.";
         }
         try {
@@ -97,6 +110,24 @@ public class DirectoryService {
             return "Connexion LDAP réussie à " + s.getHost() + ":" + s.getPort();
         } catch (Exception e) {
             throw new IllegalStateException("LDAP_CONNECTION_FAILED: " + e.getMessage());
+        }
+    }
+
+    private boolean isDemoAccessConfigured() {
+        if (environment == null || demoDirectoryPassword == null || demoDirectoryPassword.isBlank()) {
+            return false;
+        }
+        for (String profile : environment.getActiveProfiles()) {
+            if ("dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void requireDemoAccessConfigured() {
+        if (!isDemoAccessConfigured()) {
+            throw new IllegalStateException("DEMO_DIRECTORY_NOT_CONFIGURED_FOR_ACTIVE_PROFILE");
         }
     }
 

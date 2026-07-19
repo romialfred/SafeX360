@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -37,6 +39,7 @@ import com.minexpert.hns.dosimetry.enums.CaseStatus;
 import com.minexpert.hns.dosimetry.enums.DoseCategory;
 import com.minexpert.hns.dosimetry.enums.DoseSpecialStatus;
 import com.minexpert.hns.dosimetry.enums.FitnessLevel;
+import com.minexpert.hns.dosimetry.enums.KpiCategory;
 import com.minexpert.hns.dosimetry.repository.DoseCumulativeRepository;
 import com.minexpert.hns.dosimetry.repository.DoseRecordRepository;
 import com.minexpert.hns.dosimetry.repository.ExposedWorkerRepository;
@@ -86,6 +89,9 @@ class DosimetryReportServiceTest {
     @Mock
     private DosimetryAuditService auditService;
 
+    @Mock
+    private RegulatoryLimitResolver regulatoryLimitResolver;
+
     @InjectMocks
     private DosimetryReportServiceImpl service;
 
@@ -97,6 +103,8 @@ class DosimetryReportServiceTest {
         String fake = "%PDF-1.4\n%fake-test-content\n%%EOF\n";
         fakePdf = fake.getBytes(StandardCharsets.US_ASCII);
         when(pdfRenderer.render(anyString(), any(Context.class))).thenReturn(fakePdf);
+        when(regulatoryLimitResolver.resolveAnnualHp10(anyLong(), any()))
+                .thenReturn(Optional.of(20.0));
     }
 
     private ExposedWorker worker(Long id, Long employeeId, DoseCategory cat, Long mineId) {
@@ -220,6 +228,31 @@ class DosimetryReportServiceTest {
         assertThat(doc.getContent()).startsWith(PDF_MAGIC);
         verify(auditService).log(eq("GENERATE_PDF_REGISTER"), eq("Mine"),
                 eq(1L), eq(99L), eq("DOSIMETRY_PCR_RPO"), eq(null), anyString());
+    }
+
+    @Test
+    @DisplayName("AUD-REG-002 : le registre WORKER_B sans limite ne calcule jamais sur 6 mSv")
+    void annual_register_workerBWithoutConfiguredLimitDoesNotExposeSix() {
+        ExposedWorker workerB = worker(8L, 1002L, DoseCategory.B, 1L);
+        when(workerRepository.findByMineIdAndActiveTrueOrderByEmployeeIdAsc(1L))
+                .thenReturn(List.of(workerB));
+        when(cumulativeRepository.findByWorkerIdAndYear(8L, 2026))
+                .thenReturn(Optional.of(cumul(8L, 2026, 7.0d)));
+        when(fitnessRepository.findCurrentSigned(8L)).thenReturn(Optional.empty());
+        when(regulatoryLimitResolver.resolveAnnualHp10(1L, KpiCategory.WORKER_B))
+                .thenReturn(Optional.empty());
+
+        service.generateAnnualMineRegister(1L, 2026, 99L);
+
+        ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+        verify(pdfRenderer).render(eq("dosimetry/annual_register"), contextCaptor.capture());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) contextCaptor.getValue()
+                .getVariable("rows");
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).get("regulatoryLimit")).isNull();
+        assertThat(rows.get(0).get("percentOfLimit")).isNull();
+        assertThat(rows.get(0).get("regulatoryLimitConfigured")).isEqualTo(false);
     }
 
     // ────────────────────────────────────────────────────────────────────────

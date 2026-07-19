@@ -447,7 +447,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                                     <th className="text-left py-3 px-4 text-gray-900">Module</th>
                                                     <th className="text-center py-3 px-4 text-blue-600">View/Read</th>
                                                     <th className="text-center py-3 px-4 text-orange-600">Edit/Create</th>
-                                                    <th className="text-center py-3 px-4 text-red-600">Delete</th>
+                                                    <th className="text-center py-3 px-4 text-red-600">Supprimer</th>
                                                     <th className="text-center py-3 px-4 text-green-600">Full Access</th>
                                                 </tr>
                                             </thead>
@@ -601,7 +601,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({ onBackToUsers, onCreateUser }
                                     <div className="border-l-4 border-red-500 pl-4">
                                         <div className="flex items-center mb-2">
                                             <IconTrash className="w-5 h-5 text-red-600 mr-2" />
-                                            <h4 className="text-red-900">Delete</h4>
+                                            <h4 className="text-red-900">Supprimer</h4>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Allows users to permanently remove records. This is a high-level permission that should be granted carefully.

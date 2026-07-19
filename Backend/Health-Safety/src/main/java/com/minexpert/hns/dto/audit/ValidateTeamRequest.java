@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * LOT 52 — Requête de validation d'équipe d'audit (ISO 19011:2018 §5.4.4 / §7).
+ * LOT 52 — Requête de validation d'équipe d'audit (ISO 19011:2026 — programme et compétences).
  */
 @Data
 @AllArgsConstructor

@@ -31,6 +31,16 @@ type BlastPopupListener = (popup: BlastPopupPayload) => void;
 type EscalationListener = (event: EscalationEvent) => void;
 type MisfireListener = (event: BlastMisfirePayload) => void;
 
+const SOS_SUBSCRIBER_ROLES = new Set([
+    'SYSTEM_ADMINISTRATOR',
+    'ADMINISTRATOR',
+    'ADMIN',
+    'HEALTH_SAFETY_COORDINATOR',
+    'HSE_MANAGER',
+    'HSE_OFFICER',
+    'INCIDENT_INVESTIGATOR',
+]);
+
 /**
  * Payload d'une popup de tir diffusee par {@code BlastPopupBroadcaster}
  * (LOT Blast P4). Aligne sur la spec backend : tous les champs sont nullables
@@ -156,6 +166,9 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
     // EXACTEMENT la même résolution que l'émetteur SOS (SosButton.resolveCompanyId),
     // donc l'émetteur reçoit bien son propre broadcast.
     const effectiveCompanyId = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1);
+    const canSubscribeSos = SOS_SUBSCRIBER_ROLES.has(
+        String(user?.role ?? '').trim().toUpperCase(),
+    );
     const [connected, setConnected] = useState(false);
     const clientRef = useRef<Client | null>(null);
     const listenersRef = useRef<Set<AlertListener>>(new Set());
@@ -275,8 +288,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
             },
             onConnect: () => {
                 setConnected(true);
-                // SOS individuels
-                client.subscribe(
+                // SOS individuels : rôles HSE autorisés uniquement.
+                if (canSubscribeSos) client.subscribe(
                     `/topic/emergency/sos/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
@@ -307,18 +320,6 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                 // assure que les admins / coordinateurs centralises soient
                 // toujours notifies.
                 client.subscribe(
-                    '/topic/blast-popup',
-                    (msg: IMessage) => {
-                        try {
-                            if (!isEventAllowed('BLAST')) return; // préférence utilisateur
-                            const payload: BlastPopupPayload = JSON.parse(msg.body);
-                            blastListenersRef.current.forEach((l) => {
-                                try { l(payload); } catch { /* swallow */ }
-                            });
-                        } catch { /* non-JSON */ }
-                    }
-                );
-                client.subscribe(
                     `/topic/blast-popup/mine/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
@@ -330,8 +331,8 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                         } catch { /* non-JSON */ }
                     }
                 );
-                // R3 — Escalade SOS (SosEscalationScheduler) : canal per-company.
-                client.subscribe(
+                // Escalade SOS : même restriction de rôle que le canal SOS.
+                if (canSubscribeSos) client.subscribe(
                     `/topic/emergency/escalation/company/${effectiveCompanyId}`,
                     (msg: IMessage) => {
                         try {
@@ -343,20 +344,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
                         } catch { /* non-JSON */ }
                     }
                 );
-                // R7 — Misfires de tir (BlastMisfireBroadcaster) : broadcast global
-                // + canal per-mine — meme pattern que les popups de tir.
-                client.subscribe(
-                    '/topic/blast-misfire',
-                    (msg: IMessage) => {
-                        try {
-                            if (!isEventAllowed('MISFIRE')) return; // préférence utilisateur
-                            const payload: BlastMisfirePayload = JSON.parse(msg.body);
-                            misfireListenersRef.current.forEach((l) => {
-                                try { l(payload); } catch { /* swallow */ }
-                            });
-                        } catch { /* non-JSON */ }
-                    }
-                );
+                // Ratés de tir : canal strictement cloisonné par mine.
                 client.subscribe(
                     `/topic/blast-misfire/mine/${effectiveCompanyId}`,
                     (msg: IMessage) => {
@@ -385,7 +373,7 @@ export const EmergencyWebSocketProvider = ({ children }: Props) => {
         };
         // `isEventAllowed` est stable (useCallback sans dépendance) : l'ajouter ici
         // ne provoque aucune reconnexion, il lit `prefsRef` au moment du message.
-    }, [effectiveCompanyId, isEventAllowed]);
+    }, [effectiveCompanyId, canSubscribeSos, isEventAllowed]);
 
     const value = useMemo(
         () => ({ connected, subscribe, subscribeGeneralAlert, subscribeBlastPopup, subscribeEscalation, subscribeMisfire }),

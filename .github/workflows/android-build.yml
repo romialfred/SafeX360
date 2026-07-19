@@ -1,4 +1,4 @@
-name: SafeX 360 Field — Build APK Android
+name: SafeX 360 Field - Build APK Android
 
 on:
     push:
@@ -18,42 +18,52 @@ on:
                     - release
 
 permissions:
-    contents: write   # necessaire pour pousser l'APK dans Mobile/ apres build release
+    contents: read
+
+concurrency:
+    group: android-${{ github.workflow }}-${{ github.ref }}-${{ inputs.build_type || 'debug' }}
+    cancel-in-progress: true
+
+env:
+    BUILD_TYPE: ${{ inputs.build_type || 'debug' }}
 
 jobs:
     build-apk:
-        name: Build APK ${{ github.event.inputs.build_type || 'debug' }}
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
+        name: Build APK ${{ inputs.build_type || 'debug' }}
+        runs-on: ubuntu-24.04
+        timeout-minutes: 35
+        permissions:
+            contents: read
+            id-token: write
+            attestations: write
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
               with:
                   fetch-depth: 1
+                  persist-credentials: false
 
             - name: Setup Node.js 20
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
               with:
                   node-version: '20'
                   cache: 'npm'
                   cache-dependency-path: Frontend/package-lock.json
 
             - name: Setup JDK 17
-              uses: actions/setup-java@v4
+              uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
               with:
                   distribution: 'temurin'
                   java-version: '17'
 
             - name: Setup Android SDK
-              uses: android-actions/setup-android@v3
+              uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
               with:
-                  api-level: 34
-                  build-tools-version: '34.0.0'
-                  ndk-version: '26.1.10909125'
+                  packages: 'tools platform-tools platforms;android-34 build-tools;34.0.0'
 
             - name: Cache Gradle
-              uses: actions/cache@v4
+              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
               with:
                   path: |
                       ~/.gradle/caches
@@ -62,9 +72,58 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-gradle-
 
+            - name: Validate release signing material
+              if: env.BUILD_TYPE == 'release'
+              shell: bash
+              env:
+                  KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+                  KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                  KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+              run: |
+                  set -euo pipefail
+
+                  missing=0
+                  for secret_name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+                    if [[ -z "${!secret_name:-}" ]]; then
+                      echo "::error title=Signature Android indisponible::Le secret ${secret_name} est absent ou vide."
+                      missing=1
+                    fi
+                  done
+                  if [[ "$missing" -ne 0 ]]; then
+                    exit 1
+                  fi
+
+                  signing_dir="$RUNNER_TEMP/android-signing"
+                  keystore_path="$signing_dir/safex360.keystore"
+                  install -d -m 700 "$signing_dir"
+
+                  if ! printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore_path"; then
+                    echo "::error title=Keystore invalide::Le secret ANDROID_KEYSTORE_BASE64 ne peut pas etre decode."
+                    rm -f "$keystore_path"
+                    exit 1
+                  fi
+                  chmod 600 "$keystore_path"
+                  if [[ ! -s "$keystore_path" ]]; then
+                    echo "::error title=Keystore invalide::Le keystore decode est vide."
+                    exit 1
+                  fi
+
+                  if ! keytool -list \
+                    -keystore "$keystore_path" \
+                    -storepass "$KEYSTORE_PASSWORD" \
+                    -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+                    echo "::error title=Keystore invalide::Le mot de passe, le format ou l'alias du keystore est invalide."
+                    exit 1
+                  fi
+
             - name: Install npm dependencies
               working-directory: Frontend
               run: npm ci
+
+            - name: Validate Android workflow policy
+              working-directory: Frontend
+              run: npm test -- src/__tests__/workflows/androidBuildWorkflow.test.ts
 
             - name: TypeScript check
               working-directory: Frontend
@@ -72,26 +131,22 @@ jobs:
 
             - name: Build web bundle (Vite production, mobile env)
               working-directory: Frontend
-              # IMPORTANT : pour le build APK on utilise .env.mobile qui pointe
-              # vers la prod (https://safex360-gateway.onrender.com) au lieu de
-              # localhost:9000 dans le .env de dev. Sans ca, l'APK installe sur
-              # un device ne pourrait pas joindre le backend (BD Aiven).
               run: |
-                  if [ -f .env.mobile ]; then
+                  set -euo pipefail
+                  if [[ -f .env.mobile ]]; then
                     cp .env.mobile .env.production.local
-                    echo "Build avec config mobile :"
-                    grep VITE_API_URL .env.production.local || true
                   fi
                   npm run build
 
             - name: Check Capacitor Android project exists
               id: android-check
               working-directory: Frontend
+              shell: bash
               run: |
-                  if [ -d "android" ]; then
-                    echo "exists=true" >> $GITHUB_OUTPUT
+                  if [[ -d android ]]; then
+                    echo "exists=true" >> "$GITHUB_OUTPUT"
                   else
-                    echo "exists=false" >> $GITHUB_OUTPUT
+                    echo "exists=false" >> "$GITHUB_OUTPUT"
                   fi
 
             - name: Capacitor add android (first time only)
@@ -103,76 +158,180 @@ jobs:
               working-directory: Frontend
               run: npx cap sync android
 
+            - name: Harden Android backup policy
+              working-directory: Frontend
+              run: npm run android:harden
+
             - name: Make gradlew executable
               working-directory: Frontend/android
               run: chmod +x gradlew
 
             - name: Build APK (debug)
-              if: ${{ github.event.inputs.build_type != 'release' }}
+              if: env.BUILD_TYPE == 'debug'
               working-directory: Frontend/android
-              run: ./gradlew assembleDebug --stacktrace
+              run: ./gradlew assembleDebug --stacktrace --no-daemon
 
-            - name: Build APK (release)
-              if: ${{ github.event.inputs.build_type == 'release' }}
+            - name: Build APK for release signing
+              if: env.BUILD_TYPE == 'release'
               working-directory: Frontend/android
+              run: ./gradlew assembleRelease --stacktrace --no-daemon
+
+            - name: Stage and sign immutable release files
+              id: package
+              shell: bash
               env:
-                  KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
                   KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
                   KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
                   KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
               run: |
-                  # Reconstituer le keystore depuis le secret base64
-                  echo "$KEYSTORE_BASE64" | base64 -d > app/safex360.keystore
-                  # Generer key.properties (aligne sur MOBILE_DEPLOY.md)
-                  cat > key.properties <<EOF
-                  storeFile=safex360.keystore
-                  storePassword=$KEYSTORE_PASSWORD
-                  keyAlias=$KEY_ALIAS
-                  keyPassword=$KEY_PASSWORD
-                  EOF
-                  # Build APK signe
-                  ./gradlew assembleRelease --stacktrace
-                  # Verification signature
-                  echo "::group::Verification signature APK"
-                  $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose \
-                      app/build/outputs/apk/release/app-release.apk || \
-                      echo "::warning::apksigner verify a echoue — verifier la cle"
-                  echo "::endgroup::"
+                  set -euo pipefail
+                  source_dir="Frontend/android/app/build/outputs/apk/$BUILD_TYPE"
+                  shopt -s nullglob
+                  apk_files=("$source_dir"/*.apk)
+                  if [[ "${#apk_files[@]}" -ne 1 ]]; then
+                    echo "::error title=APK ambigu::Un unique APK etait attendu dans $source_dir, trouve: ${#apk_files[@]}."
+                    exit 1
+                  fi
 
-            - name: Upload APK artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: safex360-field-${{ github.event.inputs.build_type || 'debug' }}-${{ github.sha }}
-                  path: Frontend/android/app/build/outputs/apk/${{ github.event.inputs.build_type || 'debug' }}/*.apk
-                  retention-days: 90
+                  release_dir="$RUNNER_TEMP/safex-android-release"
+                  apk_name="SafeX360-Field-${BUILD_TYPE}-${GITHUB_SHA}.apk"
+                  sbom_name="SafeX360-Field-${BUILD_TYPE}-${GITHUB_SHA}.cdx.json"
+                  metadata_name="SafeX360-Field-${BUILD_TYPE}-${GITHUB_SHA}.metadata.json"
+                  install -d -m 700 "$release_dir"
 
-            - name: Copy APK to Mobile/ and Frontend/public/downloads/
-              run: |
-                  BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
-                  SRC_DIR="Frontend/android/app/build/outputs/apk/$BUILD_TYPE"
-                  if [ -d "$SRC_DIR" ]; then
-                    APK_FILE=$(ls $SRC_DIR/*.apk | head -1)
-                    if [ -f "$APK_FILE" ]; then
-                      mkdir -p Mobile Frontend/public/downloads
-                      cp "$APK_FILE" Mobile/SafexMobile.apk
-                      cp "$APK_FILE" Frontend/public/downloads/SafexMobile.apk
-                      echo "✅ APK copie dans Mobile/SafexMobile.apk + Frontend/public/downloads/SafexMobile.apk"
-                      ls -lh Mobile/SafexMobile.apk
+                  if [[ "$BUILD_TYPE" == "release" ]]; then
+                    zipalign="$ANDROID_HOME/build-tools/34.0.0/zipalign"
+                    apksigner="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+                    keystore_path="$RUNNER_TEMP/android-signing/safex360.keystore"
+                    aligned_apk="$release_dir/aligned-unsigned.apk"
+
+                    if [[ ! -x "$zipalign" || ! -x "$apksigner" ]]; then
+                      echo "::error title=Outils Android indisponibles::zipalign ou apksigner 34.0.0 est absent."
+                      exit 1
                     fi
+
+                    "$zipalign" -f -v 4 "${apk_files[0]}" "$aligned_apk"
+                    "$apksigner" sign \
+                      --ks "$keystore_path" \
+                      --ks-key-alias "$KEY_ALIAS" \
+                      --ks-pass env:KEYSTORE_PASSWORD \
+                      --key-pass env:KEY_PASSWORD \
+                      --out "$release_dir/$apk_name" \
+                      "$aligned_apk"
+                    rm -f "$aligned_apk"
+                  else
+                    cp -- "${apk_files[0]}" "$release_dir/$apk_name"
                   fi
 
-            - name: Commit APK to repo (only on main + release)
-              if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.build_type == 'release' && github.event_name == 'workflow_dispatch' }}
-              run: |
-                  if [ -f Mobile/SafexMobile.apk ]; then
-                    git config user.name "github-actions[bot]"
-                    git config user.email "github-actions[bot]@users.noreply.github.com"
-                    git add Mobile/SafexMobile.apk Frontend/public/downloads/SafexMobile.apk
-                    git diff --cached --quiet || \
-                      git commit -m "ci(mobile): publish APK v${{ github.run_number }} (commit ${{ github.sha }})"
-                    git push || echo "::warning::Push echoue — peut-etre commit deja present"
+                  if [[ ! -s "$release_dir/$apk_name" ]]; then
+                    echo "::error title=APK invalide::Le fichier APK produit est vide."
+                    exit 1
                   fi
 
-            - name: Print install command
+                  (
+                    cd "$release_dir"
+                    sha256sum "$apk_name" > SHA256SUMS.txt
+                    sha256sum --check SHA256SUMS.txt
+                  )
+
+                  jq -n \
+                    --arg repository "$GITHUB_REPOSITORY" \
+                    --arg commit "$GITHUB_SHA" \
+                    --arg ref "$GITHUB_REF" \
+                    --arg run_id "$GITHUB_RUN_ID" \
+                    --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+                    --arg build_type "$BUILD_TYPE" \
+                    '{repository: $repository, commit: $commit, ref: $ref, runId: $run_id, runAttempt: $run_attempt, buildType: $build_type}' \
+                    > "$release_dir/$metadata_name"
+
+                  {
+                    echo "release_dir=$release_dir"
+                    echo "apk_path=$release_dir/$apk_name"
+                    echo "sbom_path=$release_dir/$sbom_name"
+                    echo "metadata_path=$release_dir/$metadata_name"
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Remove release signing material
+              if: ${{ always() && env.BUILD_TYPE == 'release' }}
+              shell: bash
+              run: rm -f "$RUNNER_TEMP/android-signing/safex360.keystore"
+
+            - name: Verify APK signature
+              shell: bash
+              env:
+                  APK_PATH: ${{ steps.package.outputs.apk_path }}
               run: |
-                  echo "::notice title=APK pret::Telecharger l'artifact safex360-field-* depuis Actions, puis sur appareil Android : adb install -r app-*.apk"
+                  set -euo pipefail
+                  apksigner="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+                  if [[ ! -x "$apksigner" ]]; then
+                    echo "::error title=apksigner indisponible::Android build-tools 34.0.0 est absent."
+                    exit 1
+                  fi
+                  "$apksigner" verify --verbose --print-certs "$APK_PATH"
+
+            - name: Generate CycloneDX SBOM
+              uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+              with:
+                  path: Frontend
+                  format: cyclonedx-json
+                  output-file: ${{ steps.package.outputs.sbom_path }}
+                  upload-artifact: false
+                  upload-release-assets: false
+                  dependency-snapshot: false
+
+            - name: Validate SBOM and SHA-256 manifest
+              shell: bash
+              env:
+                  RELEASE_DIR: ${{ steps.package.outputs.release_dir }}
+                  SBOM_PATH: ${{ steps.package.outputs.sbom_path }}
+              run: |
+                  set -euo pipefail
+                  jq -e '.bomFormat == "CycloneDX" and (.specVersion | length > 0) and (.components | type == "array")' "$SBOM_PATH" > /dev/null
+                  (
+                    cd "$RELEASE_DIR"
+                    sha256sum "$(basename "$SBOM_PATH")" >> SHA256SUMS.txt
+                    sha256sum --check SHA256SUMS.txt
+                  )
+
+            - name: Attest APK build provenance
+              uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+              with:
+                  subject-path: ${{ steps.package.outputs.apk_path }}
+
+            - name: Attest APK CycloneDX SBOM
+              uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+              with:
+                  subject-path: ${{ steps.package.outputs.apk_path }}
+                  sbom-path: ${{ steps.package.outputs.sbom_path }}
+
+            - name: Upload immutable APK release artifact
+              id: upload
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+              with:
+                  name: safex360-field-${{ env.BUILD_TYPE }}-${{ github.sha }}
+                  path: ${{ steps.package.outputs.release_dir }}
+                  if-no-files-found: error
+                  retention-days: 90
+                  compression-level: 0
+                  overwrite: false
+                  include-hidden-files: false
+
+            - name: Publish verification summary
+              shell: bash
+              env:
+                  RELEASE_DIR: ${{ steps.package.outputs.release_dir }}
+                  ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+                  ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+              run: |
+                  {
+                    echo "## SafeX Android $BUILD_TYPE"
+                    echo
+                    echo "- Commit: \`$GITHUB_SHA\`"
+                    echo "- Artifact: $ARTIFACT_URL"
+                    echo "- Digest archive GitHub: \`$ARTIFACT_DIGEST\`"
+                    echo "- SHA-256 fichiers:"
+                    echo '```text'
+                    cat "$RELEASE_DIR/SHA256SUMS.txt"
+                    echo '```'
+                    echo "- Provenance et SBOM: onglet Attestations du depot"
+                  } >> "$GITHUB_STEP_SUMMARY"

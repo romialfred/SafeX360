@@ -13,8 +13,10 @@ import lombok.NoArgsConstructor;
 
 /**
  * Payload de mise a jour d'un tir. Autorise en statut {@code DRAFT} et
- * {@code PLANNED}. Sur statut {@code CONFIRMED} ou ulterieur, seul un
- * utilisateur {@code BLAST_ADMIN} peut modifier, avec raison tracee.
+ * {@code PLANNED}. Une modification exceptionnelle d'un tir
+ * {@code CONFIRMED} exige un {@code BLAST_ADMIN}, une raison et la version
+ * lue par le client ; elle invalide la confirmation et remet le tir en
+ * {@code PLANNED} pour une nouvelle validation.
  */
 @Data
 @Builder
@@ -24,6 +26,10 @@ public class BlastUpdateDTO {
 
     @NotNull
     private Long id;
+
+    /** Version optimiste lue avec le détail du tir. */
+    @NotNull
+    private Integer version;
 
     private LocalDateTime scheduledAt;
     private String timezone;
@@ -66,6 +72,6 @@ public class BlastUpdateDTO {
     private List<BlastGuardDTO> guards;
     private List<BlastRecipientDTO> recipients;
 
-    /** Raison obligatoire si le tir est deja confirme. */
+    /** Raison obligatoire si le tir est déjà confirmé. */
     private String reason;
 }

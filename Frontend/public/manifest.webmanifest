@@ -55,7 +55,7 @@
         {
             "name": "Déclarer un incident",
             "short_name": "Incident",
-            "description": "Déclaration rapide en 90 secondes",
+            "description": "Déclaration guidée d'un incident terrain",
             "url": "/m/incident/new",
             "icons": [{ "src": "/icons/shortcut-incident.png", "sizes": "96x96" }]
         }

@@ -27,9 +27,10 @@ public interface BlastService {
 
     /**
      * Met a jour les champs metier d'un tir. Autorise sur DRAFT et PLANNED sans
-     * raison. Sur CONFIRMED, exige un appelant {@code adminOverride=true} et
-     * {@code dto.reason} non vide ; cas exceptionnel qui recalcule la chaine
-     * de notifications (recalcul effectif branche en P3).
+     * raison. Sur CONFIRMED, exige un appelant {@code adminOverride=true}, une
+     * version optimiste courante et {@code dto.reason} non vide. Cette action
+     * annule la confirmation et replace le tir en PLANNED ; une nouvelle
+     * confirmation est obligatoire avant toute notification opérationnelle.
      */
     void update(BlastUpdateDTO dto, Long userId, boolean adminOverride);
 

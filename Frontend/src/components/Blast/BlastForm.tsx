@@ -282,6 +282,7 @@ const BlastForm = () => {
 
     const [state, setState] = useState<BlastFormState>(INITIAL_STATE);
     const [originalStatus, setOriginalStatus] = useState<BlastStatus | null>(null);
+    const [originalVersion, setOriginalVersion] = useState<number | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loadError, setLoadError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -400,6 +401,7 @@ const BlastForm = () => {
             .then((d: BlastDetailDTO) => {
                 if (cancelled) return;
                 setOriginalStatus(d.status);
+                setOriginalVersion(d.version);
                 // P2.1 : re-injection des 7 champs additionnels desormais
                 // persistés cote backend (V015). Avant le fix, le load forçait
                 // ces champs a chaine vide → toute edition d'un brouillon
@@ -556,6 +558,7 @@ const BlastForm = () => {
 
     const buildUpdatePayload = (reason?: string): BlastUpdateDTO => ({
         id: Number(id),
+        version: originalVersion ?? 0,
         scheduledAt: state.scheduledAt ? isoLocal(state.scheduledAt) : null,
         timezone: state.timezone || null,
         type: (state.type || null) as BlastType | null,

@@ -1,284 +1,229 @@
 import { useMemo, useState } from 'react';
 import {
-    IconShieldCheck,
-    IconCertificate,
+    IconArrowRight,
+    IconExternalLink,
+    IconFileCheck,
     IconLayoutGrid,
     IconList,
     IconSearch,
-    IconArrowRight,
+    IconUsersGroup,
 } from '@tabler/icons-react';
-import { Badge, SegmentedControl, TextInput, Select } from '@mantine/core';
+import { Badge, SegmentedControl, Select, TextInput } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import {
-    ISO_STANDARDS,
     ISO_CLAUSES,
+    ISO_REGISTRY_VERSION,
+    ISO_STANDARDS,
+    ORGANIZATIONAL_PROCESS_CONTROLS,
     SAFEX_MODULES,
-    coverageStats,
     clausesForModule,
+    coverageStats,
     type IsoStandardCode,
-    type SafeXModuleId,
+    type ProductSupport,
 } from '../../Data/IsoMappingData';
 
-/**
- * LOT 39 audit P0 fix — mapping statique des couleurs par norme.
- *
- * Tailwind 4 JIT n'extrait que les chaînes littérales présentes dans les
- * sources : `bg-${std.color}` était transparent. On déclare ici une table
- * de correspondance, ce qui force Tailwind à voir les classes complètes.
- */
+type ViewMode = 'matrix' | 'modules' | 'processes';
+
 const STANDARD_DOT_BG: Record<IsoStandardCode, string> = {
     'ISO 45001': 'bg-red-700',
     'ISO 14001': 'bg-emerald-700',
-    'ISO 9001':  'bg-blue-700',
+    'ISO 9001': 'bg-blue-700',
     'ISO 19011': 'bg-indigo-700',
     'ISO 31000': 'bg-amber-700',
 };
 
-/**
- * IsoMappingPage — Cartographie clauses ISO ↔ modules SafeX 360.
- *
- * Deux vues complémentaires :
- *
- *   1. Vue "ISO → modules" (tableau)
- *      Pour chaque clause ISO, liste les modules SafeX qui la couvrent.
- *      C'est la vue privilégiée par un auditeur externe ISO 19011 :
- *      "Montrez-moi comment vous couvrez la clause 6.1.2 d'ISO 45001."
- *
- *   2. Vue "Modules → ISO" (cartes)
- *      Pour chaque module, liste les clauses qu'il instrumente.
- *      Vue utile en interne : "Sur quelle base ISO repose ce module ?"
- *
- * Cette page est la source unique de vérité pour les badges ISO
- * affichés ailleurs dans la plateforme.
- */
+const SUPPORT_LABEL: Record<ProductSupport, string> = {
+    SUPPORTED: 'Support produit',
+    PARTIAL: 'Support partiel',
+    OUTSIDE_PRODUCT: 'Hors produit',
+};
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  COMPOSANT PAGE
-// ─────────────────────────────────────────────────────────────────────────────
+const SUPPORT_COLOR: Record<ProductSupport, string> = {
+    SUPPORTED: 'teal',
+    PARTIAL: 'yellow',
+    OUTSIDE_PRODUCT: 'gray',
+};
+
+const MATURITY_LABEL = {
+    NOT_SUPPORTED: 'non supporté',
+    SUPPORTED: 'support produit',
+    CONFIGURED: 'configuré',
+    APPLIED: 'appliqué',
+    VERIFIED: 'vérifié',
+    EFFECTIVE: 'efficace',
+} as const;
+
+/**
+ * Cartographie de traçabilité. Cette vue décrit les capacités du produit et
+ * les preuves attendues ; elle ne calcule aucun score de conformité ISO.
+ */
 export default function IsoMappingPage() {
-    const [viewMode, setViewMode] = useState<'matrix' | 'modules'>('matrix');
+    const [viewMode, setViewMode] = useState<ViewMode>('matrix');
     const [searchTerm, setSearchTerm] = useState('');
     const [standardFilter, setStandardFilter] = useState<IsoStandardCode | 'all'>('all');
     const stats = useMemo(() => coverageStats(), []);
 
     return (
-        <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-10 py-6">
-            <div className="max-w-[1500px] mx-auto">
-
-                {/* ═══ En-tête ═══ */}
-                <div className="mb-6 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-                    <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                            SafeX 360 · Conformité
-                        </p>
-                        <h1
-                            className="text-slate-900 mt-1.5"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 500,
-                                fontSize: '30px',
-                                letterSpacing: '-0.018em',
-                            }}
-                        >
-                            Cartographie ISO &harr; modules
-                        </h1>
-                        <p className="text-[13.5px] text-slate-600 mt-1.5 max-w-2xl leading-relaxed">
-                            Traçabilité fonctionnelle des clauses ISO 45001, 14001, 9001, 19011 et 31000
-                            avec les modules SafeX 360 qui les instrumentent.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        <StatPill icon={IconCertificate} label="Normes" value={ISO_STANDARDS.length} />
-                        <StatPill icon={IconShieldCheck} label="Clauses couvertes" value={stats.total} />
-                        <StatPill icon={IconLayoutGrid} label="Modules" value={SAFEX_MODULES.length} />
-                    </div>
+        <main className="min-h-full w-full bg-stone-50 px-4 py-5 sm:px-5 lg:px-6">
+            <header className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Conformité › Référentiels</p>
+                    <h1 className="mt-1 text-[clamp(19px,2vw,24px)] font-medium text-slate-900 [font-family:'Source_Serif_4',Georgia,serif]">
+                        Cartographie ISO et preuves attendues
+                    </h1>
+                    <p className="mt-1 max-w-4xl text-[13px] leading-relaxed text-slate-600">
+                        Registre versionné des éditions, processus, responsabilités, contrôles et écarts. Une capacité
+                        SafeX ne constitue jamais, à elle seule, une preuve de conformité organisationnelle.
+                    </p>
+                    <p className="mt-1 text-[10.5px] text-slate-500">Version du registre : {ISO_REGISTRY_VERSION} · approbation organisationnelle en attente</p>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                    <StatPill label="Référentiels" value={ISO_STANDARDS.length} />
+                    <StatPill label="Lignes de traçabilité" value={stats.total} />
+                    <StatPill label="Processus structurants" value={ORGANIZATIONAL_PROCESS_CONTROLS.length} />
+                </div>
+            </header>
 
-                {/* ═══ Couverture par norme ═══ */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-                    {ISO_STANDARDS.map((std) => (
-                        <button
-                            key={std.code}
-                            type="button"
-                            onClick={() =>
-                                setStandardFilter(standardFilter === std.code ? 'all' : std.code)
-                            }
-                            className={`text-left rounded-lg border p-3 transition-all ${
-                                standardFilter === std.code
-                                    ? 'border-teal-300 bg-teal-50/40 shadow-sm'
-                                    : 'border-slate-200 bg-white hover:border-slate-300'
-                            }`}
-                        >
-                            <div className="flex items-center gap-2 mb-1.5">
-                                <span className={`w-2.5 h-2.5 rounded-full ${STANDARD_DOT_BG[std.code]}`} />
-                                <p className="text-[12px] tracking-tight text-slate-900">{std.code}</p>
+            <section aria-label="Avertissement de conformité" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12.5px] text-amber-950">
+                <strong className="font-semibold">Lecture obligatoire :</strong> les états « support produit »,
+                « configuré », « appliqué », « vérifié » et « efficace » sont distincts. Le registre ne positionne
+                aucune exigence au-delà de « support produit » sans preuve réelle revue par une personne compétente.
+            </section>
+
+            <section aria-labelledby="standard-register-title" className="mb-4">
+                <h2 id="standard-register-title" className="sr-only">Registre des éditions normatives</h2>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    {ISO_STANDARDS.map((standard) => (
+                        <article key={standard.code} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="flex items-start justify-between gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStandardFilter(standardFilter === standard.code ? 'all' : standard.code)}
+                                    className="min-w-0 text-left"
+                                    aria-pressed={standardFilter === standard.code}
+                                >
+                                    <span className="flex items-center gap-2 text-[12px] font-medium text-slate-900">
+                                        <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${STANDARD_DOT_BG[standard.code]}`} />
+                                        {standard.code}:{standard.year}
+                                    </span>
+                                    <span className="mt-1 block text-[10.5px] leading-snug text-slate-500">Édition {standard.edition} · publiée {standard.publicationDate}</span>
+                                </button>
+                                <a
+                                    href={standard.officialSource}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={`Ouvrir la source ISO officielle pour ${standard.code}`}
+                                    className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                                >
+                                    <IconExternalLink aria-hidden size={14} />
+                                </a>
                             </div>
-                            <p className="text-[10.5px] text-slate-500 leading-snug mb-2 min-h-[2.5em] line-clamp-2">
-                                {std.fullName}
-                            </p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-slate-400">{std.year}</span>
-                                <span className="text-[11px] text-slate-700">
-                                    {stats.byStandard[std.code]} clauses
-                                </span>
-                            </div>
-                        </button>
+                            <p className="mt-2 text-[10.5px] leading-snug text-slate-600">Revue : {standard.reviewedAt}</p>
+                            <p className="text-[10.5px] leading-snug text-slate-600">Prochaine revue : {standard.nextReviewDate}</p>
+                            <p className="mt-1.5 text-[10.5px] leading-snug text-slate-500">{standard.impactStatement}</p>
+                        </article>
                     ))}
                 </div>
+            </section>
 
-                {/* ═══ Contrôles ═══ */}
-                <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 mb-5">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                        <SegmentedControl
-                            value={viewMode}
-                            onChange={(v) => setViewMode(v as any)}
-                            data={[
-                                { value: 'matrix', label: (
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <IconList size={13} /> Matrice
-                                    </span>
-                                ) as any },
-                                { value: 'modules', label: (
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <IconLayoutGrid size={13} /> Par module
-                                    </span>
-                                ) as any },
-                            ]}
-                            color="teal"
-                            size="sm"
-                        />
-
-                        <TextInput
-                            placeholder="Rechercher une clause, un titre…"
-                            leftSection={<IconSearch size={14} className="text-slate-400" />}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.currentTarget.value)}
-                            radius="md"
-                            size="sm"
-                            className="flex-1"
-                            styles={{ input: { fontSize: '13px' } }}
-                        />
-
-                        <Select
-                            value={standardFilter}
-                            onChange={(v) => setStandardFilter(((v as IsoStandardCode) || 'all') as any)}
-                            data={[
-                                { value: 'all', label: 'Toutes les normes' },
-                                ...ISO_STANDARDS.map((s) => ({ value: s.code, label: s.code })),
-                            ]}
-                            radius="md"
-                            size="sm"
-                            allowDeselect={false}
-                            styles={{ input: { fontSize: '13px' } }}
-                            className="lg:w-[200px]"
-                        />
-                    </div>
+            <section aria-label="Filtres de la cartographie" className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <SegmentedControl
+                        value={viewMode}
+                        onChange={(value) => setViewMode(value as ViewMode)}
+                        data={[
+                            { value: 'matrix', label: <span className="inline-flex items-center gap-1.5"><IconList aria-hidden size={13} /> Exigences</span> as never },
+                            { value: 'modules', label: <span className="inline-flex items-center gap-1.5"><IconLayoutGrid aria-hidden size={13} /> Modules</span> as never },
+                            { value: 'processes', label: <span className="inline-flex items-center gap-1.5"><IconUsersGroup aria-hidden size={13} /> Processus</span> as never },
+                        ]}
+                        color="teal"
+                        size="sm"
+                    />
+                    <TextInput
+                        aria-label="Rechercher dans la cartographie"
+                        placeholder="Rechercher une clause, un processus, une preuve ou un écart"
+                        leftSection={<IconSearch aria-hidden size={14} className="text-slate-400" />}
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.currentTarget.value)}
+                        className="flex-1"
+                        size="sm"
+                    />
+                    <Select
+                        aria-label="Filtrer par référentiel"
+                        value={standardFilter}
+                        onChange={(value) => setStandardFilter((value as IsoStandardCode | 'all') ?? 'all')}
+                        data={[{ value: 'all', label: 'Tous les référentiels' }, ...ISO_STANDARDS.map((standard) => ({ value: standard.code, label: `${standard.code}:${standard.year}` }))]}
+                        allowDeselect={false}
+                        className="lg:w-[230px]"
+                        size="sm"
+                    />
                 </div>
+            </section>
 
-                {/* ═══ Contenu ═══ */}
-                {viewMode === 'matrix' ? (
-                    <MatrixView searchTerm={searchTerm} standardFilter={standardFilter} />
-                ) : (
-                    <ModulesView searchTerm={searchTerm} standardFilter={standardFilter} />
-                )}
-            </div>
-        </div>
+            {viewMode === 'matrix' && <MatrixView searchTerm={searchTerm} standardFilter={standardFilter} />}
+            {viewMode === 'modules' && <ModulesView searchTerm={searchTerm} standardFilter={standardFilter} />}
+            {viewMode === 'processes' && <ProcessesView searchTerm={searchTerm} standardFilter={standardFilter} />}
+        </main>
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Vue 1 — Matrice (tableau clauses)
-// ─────────────────────────────────────────────────────────────────────────────
-function MatrixView({
-    searchTerm,
-    standardFilter,
-}: {
-    searchTerm: string;
-    standardFilter: IsoStandardCode | 'all';
-}) {
+function MatrixView({ searchTerm, standardFilter }: { searchTerm: string; standardFilter: IsoStandardCode | 'all' }) {
     const navigate = useNavigate();
-
     const filtered = useMemo(() => {
-        const needle = searchTerm.toLowerCase();
-        return ISO_CLAUSES.filter((c) => {
-            if (standardFilter !== 'all' && c.standard !== standardFilter) return false;
+        const needle = searchTerm.trim().toLocaleLowerCase('fr');
+        return ISO_CLAUSES.filter((item) => {
+            if (standardFilter !== 'all' && item.standard !== standardFilter) return false;
             if (!needle) return true;
-            return (
-                c.title.toLowerCase().includes(needle) ||
-                c.code.toLowerCase().includes(needle) ||
-                c.standard.toLowerCase().includes(needle)
-            );
+            return [item.code, item.standard, item.title, item.process, item.ownerRole, item.expectedEvidence, item.gap]
+                .some((value) => value.toLocaleLowerCase('fr').includes(needle));
         });
     }, [searchTerm, standardFilter]);
 
-    if (filtered.length === 0) {
-        return (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-10 text-center">
-                <p className="text-[13.5px] text-slate-500">
-                    Aucune clause ne correspond à ces filtres.
-                </p>
-            </div>
-        );
-    }
+    if (filtered.length === 0) return <EmptyState />;
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <section aria-label="Matrice exigences et preuves" className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50/70 border-b border-slate-200">
+                <table className="w-full min-w-[88rem] text-left">
+                    <thead className="border-b border-slate-200 bg-slate-50">
                         <tr>
-                            <th className="px-4 py-3 text-[10.5px] uppercase tracking-[0.14em] text-slate-500 whitespace-nowrap">
-                                Norme
-                            </th>
-                            <th className="px-4 py-3 text-[10.5px] uppercase tracking-[0.14em] text-slate-500 whitespace-nowrap">
-                                Clause
-                            </th>
-                            <th className="px-4 py-3 text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
-                                Intitulé
-                            </th>
-                            <th className="px-4 py-3 text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
-                                Modules couvrants
-                            </th>
+                            {['Référence', 'Processus', 'Responsable', 'Preuve attendue', 'Contrôle', 'État', 'Résultat', 'Écart', 'Supports'].map((label) => (
+                                <th key={label} scope="col" className="px-3 py-2.5 text-[10px] uppercase tracking-[0.12em] text-slate-500">{label}</th>
+                            ))}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filtered.map((clause) => {
-                            const modules = SAFEX_MODULES.filter((m) => clause.coveredBy.includes(m.id));
-                            const stdMeta = ISO_STANDARDS.find((s) => s.code === clause.standard);
+                        {filtered.map((item) => {
+                            const modules = SAFEX_MODULES.filter((module) => item.coveredBy.includes(module.id));
                             return (
-                                <tr key={clause.code} className="hover:bg-slate-50/40 transition-colors">
-                                    <td className="px-4 py-3 whitespace-nowrap">
-                                        <span className="inline-flex items-center gap-1.5 text-[11.5px] text-slate-700">
-                                            <span className={`w-2 h-2 rounded-full ${stdMeta ? STANDARD_DOT_BG[stdMeta.code] : 'bg-slate-400'}`} />
-                                            {clause.standard}
-                                        </span>
+                                <tr key={item.id} className="align-top hover:bg-slate-50/60">
+                                    <td className="px-3 py-3">
+                                        <p className="whitespace-nowrap text-[11px] font-medium text-slate-800">{item.standard} §{item.code}</p>
+                                        <p className="mt-1 max-w-[190px] text-[11px] leading-snug text-slate-600">{item.title}</p>
                                     </td>
-                                    <td className="px-4 py-3 text-[12.5px] font-mono text-slate-800 whitespace-nowrap">
-                                        {clause.code}
+                                    <td className="px-3 py-3 text-[11px] text-slate-700">{item.process}</td>
+                                    <td className="px-3 py-3 text-[11px] text-slate-700">{item.ownerRole}</td>
+                                    <td className="px-3 py-3 text-[11px] leading-snug text-slate-700">{item.expectedEvidence}</td>
+                                    <td className="px-3 py-3 text-[11px] leading-snug text-slate-700">{item.controlMethod}</td>
+                                    <td className="px-3 py-3">
+                                        <Badge size="xs" variant="light" color={SUPPORT_COLOR[item.productSupport]}>{SUPPORT_LABEL[item.productSupport]}</Badge>
+                                        <p className="mt-1 text-[10px] text-slate-500">Maturité : {MATURITY_LABEL[item.maturity]}</p>
                                     </td>
-                                    <td className="px-4 py-3 text-[13px] text-slate-800">
-                                        {clause.title}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {modules.map((m) => (
+                                    <td className="px-3 py-3 text-[11px] leading-snug text-slate-600">{item.result}</td>
+                                    <td className="px-3 py-3 text-[11px] leading-snug text-rose-800">{item.gap}</td>
+                                    <td className="px-3 py-3">
+                                        <div className="flex max-w-[220px] flex-wrap gap-1">
+                                            {modules.map((module) => (
                                                 <button
-                                                    key={m.id}
+                                                    key={module.id}
                                                     type="button"
-                                                    onClick={() => m.routes[0] && navigate(m.routes[0])}
-                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-teal-50 border border-teal-100 text-teal-800 hover:bg-teal-100 transition-colors"
-                                                    title={m.description}
+                                                    onClick={() => navigate(module.routes[0])}
+                                                    className="inline-flex items-center gap-1 rounded border border-teal-100 bg-teal-50 px-1.5 py-0.5 text-[10px] text-teal-900 hover:bg-teal-100"
                                                 >
-                                                    {m.label}
-                                                    <IconArrowRight size={10} />
+                                                    {module.label}<IconArrowRight aria-hidden size={9} />
                                                 </button>
                                             ))}
-                                            {modules.length === 0 && (
-                                                <Badge size="xs" color="gray" variant="light">
-                                                    Aucun module
-                                                </Badge>
-                                            )}
+                                            {modules.length === 0 && <span className="text-[10px] text-slate-500">Aucun workflow</span>}
                                         </div>
                                     </td>
                                 </tr>
@@ -287,141 +232,128 @@ function MatrixView({
                     </tbody>
                 </table>
             </div>
-
-            <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <span className="text-[11.5px] text-slate-500">
-                    {filtered.length} clause{filtered.length > 1 ? 's' : ''} affichée{filtered.length > 1 ? 's' : ''}
-                </span>
-                <span className="text-[11px] text-slate-400">
-                    Source de vérité : <span className="font-mono">data/IsoMappingData.ts</span>
-                </span>
-            </div>
-        </div>
+            <p className="border-t border-slate-100 bg-slate-50 px-3 py-2 text-[10.5px] text-slate-500">
+                {filtered.length} lignes · identifiants composites norme + clause · aucune agrégation en taux de conformité
+            </p>
+        </section>
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Vue 2 — Par module (cartes)
-// ─────────────────────────────────────────────────────────────────────────────
-function ModulesView({
-    searchTerm,
-    standardFilter,
-}: {
-    searchTerm: string;
-    standardFilter: IsoStandardCode | 'all';
-}) {
+function ModulesView({ searchTerm, standardFilter }: { searchTerm: string; standardFilter: IsoStandardCode | 'all' }) {
     const navigate = useNavigate();
-
     const modules = useMemo(() => {
-        return SAFEX_MODULES.map((m) => {
-            let clauses = clausesForModule(m.id);
-            if (standardFilter !== 'all') {
-                clauses = clauses.filter((c) => c.standard === standardFilter);
-            }
-            if (searchTerm.trim()) {
-                const needle = searchTerm.toLowerCase();
-                if (
-                    !m.label.toLowerCase().includes(needle) &&
-                    !m.description.toLowerCase().includes(needle)
-                ) {
-                    clauses = clauses.filter(
-                        (c) =>
-                            c.title.toLowerCase().includes(needle) ||
-                            c.code.toLowerCase().includes(needle),
-                    );
-                }
-            }
-            return { module: m, clauses };
-        }).filter((entry) => entry.clauses.length > 0);
+        const needle = searchTerm.trim().toLocaleLowerCase('fr');
+        return SAFEX_MODULES.map((module) => {
+            let items = clausesForModule(module.id);
+            if (standardFilter !== 'all') items = items.filter((item) => item.standard === standardFilter);
+            if (needle) items = items.filter((item) => [module.label, module.description, item.title, item.process, item.gap].some((value) => value.toLocaleLowerCase('fr').includes(needle)));
+            return { module, items };
+        }).filter(({ items }) => items.length > 0);
     }, [searchTerm, standardFilter]);
 
-    if (modules.length === 0) {
-        return (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-10 text-center">
-                <p className="text-[13.5px] text-slate-500">
-                    Aucun module ne correspond à ces filtres.
-                </p>
-            </div>
-        );
-    }
+    if (modules.length === 0) return <EmptyState />;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {modules.map(({ module, clauses }) => (
-                <div
-                    key={module.id}
-                    className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col"
-                >
-                    <button
-                        type="button"
-                        onClick={() => module.routes[0] && navigate(module.routes[0])}
-                        className="px-5 py-4 border-b border-slate-100 bg-slate-50/40 flex items-start justify-between gap-3 text-left hover:bg-slate-50 transition-colors"
-                    >
-                        <div className="flex-1 min-w-0">
-                            <h3
-                                className="text-slate-900"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 500,
-                                    fontSize: '16px',
-                                    letterSpacing: '-0.008em',
-                                }}
-                            >
-                                {module.label}
-                            </h3>
-                            <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
-                                {module.description}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge size="xs" color="teal" variant="light" radius="sm">
-                                {clauses.length} clause{clauses.length > 1 ? 's' : ''}
-                            </Badge>
-                            <IconArrowRight size={14} className="text-slate-400" />
-                        </div>
+        <section aria-label="Cartographie par module" className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {modules.map(({ module, items }) => (
+                <article key={module.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <button type="button" onClick={() => navigate(module.routes[0])} className="flex w-full items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 p-3 text-left hover:bg-slate-100">
+                        <span>
+                            <span className="block text-[14px] font-medium text-slate-900">{module.label}</span>
+                            <span className="mt-0.5 block text-[11px] text-slate-500">{module.description}</span>
+                        </span>
+                        <IconArrowRight aria-hidden size={14} className="mt-1 text-slate-500" />
                     </button>
-
-                    <div className="divide-y divide-slate-100 flex-1">
-                        {clauses.map((clause) => {
-                            const stdMeta = ISO_STANDARDS.find((s) => s.code === clause.standard);
-                            return (
-                                <div key={clause.code} className="px-5 py-2.5 flex items-start gap-3">
-                                    <span className={`mt-1 w-2 h-2 rounded-full ${stdMeta ? STANDARD_DOT_BG[stdMeta.code] : 'bg-slate-400'} flex-shrink-0`} />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-[12.5px] text-slate-800">
-                                            <span className="font-mono text-slate-600 mr-2">{clause.code}</span>
-                                            {clause.title}
-                                        </p>
-                                        <p className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400 mt-0.5">
-                                            {clause.standard}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="divide-y divide-slate-100">
+                        {items.map((item) => (
+                            <div key={item.id} className="grid grid-cols-[130px_1fr_auto] gap-2 px-3 py-2 text-[11px]">
+                                <span className="font-mono text-slate-600">{item.standard} §{item.code}</span>
+                                <span className="text-slate-800">{item.title}</span>
+                                <Badge size="xs" variant="light" color={SUPPORT_COLOR[item.productSupport]}>{SUPPORT_LABEL[item.productSupport]}</Badge>
+                            </div>
+                        ))}
                     </div>
-                </div>
+                </article>
             ))}
-        </div>
+        </section>
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Petit composant UI réutilisable
-// ─────────────────────────────────────────────────────────────────────────────
-function StatPill({ icon: Icon, label, value }: { icon: any; label: string; value: number | string }) {
+function ProcessesView({ searchTerm, standardFilter }: { searchTerm: string; standardFilter: IsoStandardCode | 'all' }) {
+    const navigate = useNavigate();
+    const filtered = useMemo(() => {
+        const needle = searchTerm.trim().toLocaleLowerCase('fr');
+        return ORGANIZATIONAL_PROCESS_CONTROLS.filter((control) => {
+            if (standardFilter !== 'all' && !control.clauses.some((reference) => reference.startsWith(standardFilter))) return false;
+            if (!needle) return true;
+            return [control.process, control.ownerRole, control.inputs, control.decisions, control.participants, control.signedEvidence, control.residual]
+                .some((value) => value.toLocaleLowerCase('fr').includes(needle));
+        });
+    }, [searchTerm, standardFilter]);
+
+    if (filtered.length === 0) return <EmptyState />;
+
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white border border-slate-200">
-            <div className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center">
-                <Icon size={13} className="text-slate-600" />
-            </div>
-            <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 leading-none">{label}</p>
-                <p className="text-[14px] text-slate-900 mt-0.5 leading-none">{value}</p>
-            </div>
+        <section aria-label="Processus organisationnels structurants" className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {filtered.map((control) => (
+                <article key={control.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h2 className="text-[15px] font-medium text-slate-900">{control.process}</h2>
+                            <p className="mt-0.5 text-[10.5px] text-slate-500">{control.clauses.join(' · ')}</p>
+                        </div>
+                        <Badge size="sm" variant="light" color={SUPPORT_COLOR[control.support]}>{SUPPORT_LABEL[control.support]}</Badge>
+                    </div>
+                    <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-[11px] sm:grid-cols-2">
+                        <Field label="Responsable" value={control.ownerRole} />
+                        <Field label="Participants" value={control.participants} />
+                        <Field label="Entrées" value={control.inputs} />
+                        <Field label="Décisions" value={control.decisions} />
+                        <Field label="Preuve signée" value={control.signedEvidence} />
+                        <Field label="Échéance" value={control.dueRule} />
+                        <Field label="Version" value={control.versioning} />
+                        <Field label="Conservation" value={control.retention} />
+                        <Field label="Efficacité" value={control.effectivenessIndicator} />
+                        <Field label="Résiduel" value={control.residual} emphasize />
+                    </dl>
+                    {control.availableRoutes.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2">
+                            {control.availableRoutes.map((route) => (
+                                <button key={route} type="button" onClick={() => navigate(route)} className="inline-flex items-center gap-1 rounded border border-teal-100 bg-teal-50 px-2 py-1 text-[10.5px] text-teal-900 hover:bg-teal-100">
+                                    Ouvrir le support <IconArrowRight aria-hidden size={10} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </article>
+            ))}
+        </section>
+    );
+}
+
+function Field({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
+    return (
+        <div>
+            <dt className="text-[9.5px] uppercase tracking-[0.1em] text-slate-500">{label}</dt>
+            <dd className={`mt-0.5 leading-snug ${emphasize ? 'text-rose-800' : 'text-slate-700'}`}>{value}</dd>
         </div>
     );
 }
 
-// Re-export pour cohérence d'API (optional usage)
-export type { SafeXModuleId };
+function EmptyState() {
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <IconFileCheck aria-hidden size={22} className="mx-auto text-slate-400" />
+            <p className="mt-2 text-[13px] text-slate-600">Aucun élément ne correspond aux filtres.</p>
+        </div>
+    );
+}
+
+function StatPill({ label, value }: { label: string; value: number }) {
+    return (
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <p className="text-[9.5px] uppercase tracking-[0.12em] text-slate-500">{label}</p>
+            <p className="mt-0.5 text-[14px] font-medium tabular-nums text-slate-900">{value}</p>
+        </div>
+    );
+}

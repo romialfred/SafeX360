@@ -16,7 +16,8 @@
 #   9. EmergencyMedia endpoint répond
 # ===========================================================================
 
-SECRET="a-very-long-random-string-must-be-rotated-prod-XYZ-2026-LOT41"
+: "${INTERNAL_GATEWAY_SECRET:?INTERNAL_GATEWAY_SECRET is required}"
+SECRET="$INTERNAL_GATEWAY_SECRET"
 GW="http://localhost:9000"
 HS_DIRECT="http://localhost:8081/hns"
 COMPANY_ID=1   # Adapter à votre BDD (Burkina GOLD SA)

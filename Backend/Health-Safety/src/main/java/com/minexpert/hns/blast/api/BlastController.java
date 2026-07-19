@@ -5,7 +5,9 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,9 +68,16 @@ public class BlastController {
             @RequestParam(value = "adminOverride", required = false, defaultValue = "false")
             boolean adminOverride,
             @RequestParam(value = "companyId", required = false) Long companyId,
-            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId,
+            Authentication authentication) {
         // Securise le contrat : l'id du path fait foi.
         dto.setId(id);
+        if (adminOverride && (authentication == null
+                || authentication.getAuthorities().stream().noneMatch(authority ->
+                        BlastRBACConfig.BLAST_ADMIN.equals(authority.getAuthority())))) {
+            throw new AccessDeniedException(
+                    "BLAST_ADMIN authority is required for a confirmed blast override");
+        }
         service.update(dto, userId, adminOverride, companyId);
         return new ResponseEntity<>(new ResponseDTO("Blast updated"), HttpStatus.OK);
     }

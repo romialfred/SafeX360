@@ -15,9 +15,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * LOT 52 — Seed idempotent des questions types de checklist d'audit pour les
- * trois référentiels ISO (45001:2018, 14001:2015, 9001:2015), avec clauses
- * exactes. Ne s'exécute que si la table est vide : les bibliothèques restent
- * modifiables par les administrateurs ensuite.
+ * trois référentiels ISO. Les questions sont des aides internes paraphrasées,
+ * jamais le texte normatif. Les repères doivent être revus contre une copie
+ * officielle avant usage. Ne s'exécute que pour une bibliothèque absente.
  */
 @Component
 @RequiredArgsConstructor
@@ -62,7 +62,7 @@ public class AuditChecklistTemplateSeeder implements CommandLineRunner {
         add(templates, order, r, "10.2", "Les événements indésirables et non-conformités font-ils l'objet d'analyses et d'actions correctives efficaces ?", "Investigations, causes racines, vérification d'efficacité.");
         add(templates, order, r, "10.3", "L'amélioration continue du système SST est-elle démontrée ?", null);
 
-        // ── ISO 14001:2015 — Environnement ──────────────────────────────────
+        // ── ISO 14001 — aide historique à revalider pour l'édition 2026 ─────
         r = "ISO_14001";
         add(templates, order, r, "4.1", "Les enjeux environnementaux internes et externes pertinents sont-ils déterminés, y compris les conditions environnementales ?", null);
         add(templates, order, r, "4.2", "Les besoins et attentes des parties intéressées et les obligations de conformité sont-ils identifiés ?", null);

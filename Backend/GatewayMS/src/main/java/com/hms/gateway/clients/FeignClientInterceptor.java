@@ -1,6 +1,5 @@
 package com.hms.gateway.clients;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import feign.RequestInterceptor;
@@ -20,11 +19,9 @@ import feign.RequestTemplate;
 @Configuration
 public class FeignClientInterceptor implements RequestInterceptor {
 
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String internalSecret;
-
     @Override
     public void apply(RequestTemplate template) {
-        template.header("X-Secret-Key", internalSecret);
+        // Les clients Feign de la Gateway ne sondent que les endpoints actuator publics.
+        // Aucun credential omnipotent n'est ajoute par defaut.
     }
 }

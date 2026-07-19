@@ -1,20 +1,20 @@
 import { DonutChart } from "@mantine/charts";
 import { IconChevronLeft, IconChevronRight, IconChartPie, IconAlertTriangle, IconBulb, IconCircleCheck } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { getAllAudit, getPendingRecommendations } from "../../../../services/AuditService";
+import { useEffect, useMemo, useState } from "react";
+import { getPendingRecommendations } from "../../../../services/AuditService";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import { Link } from "react-router-dom";
 import EmptyState from "../../../UtilityComp/EmptyState";
+import { computeAuditDistribution, type AuditMetricSource } from './auditDashboardMetrics';
 
 type DonutItem = { name: string; value: number; color: string };
-
-const normalizeStatus = (raw: any): string => {
-    if (raw === null || raw === undefined) return '';
-    if (typeof raw === 'number') {
-        const map = ['PLANNING', 'PREPARATION', 'EXECUTION', 'CLOSED', 'CANCELLED'];
-        return map[raw] || '';
-    }
-    return String(raw).toUpperCase();
+type PendingRecommendation = {
+    auditId?: number | null;
+    audit?: { id?: number | null } | null;
+    title?: string | null;
+    priority?: string | null;
+    auditTitle?: string | null;
+    deadline?: string | null;
 };
 
 const priorityLabels: Record<string, string> = {
@@ -34,43 +34,25 @@ const priorityBadgeClass = (priority: string) => {
     return 'bg-yellow-50 text-yellow-800 border-yellow-200';
 };
 
-const AuditDashPlanned = () => {
+const AuditDashPlanned = ({ audits = [] }: { audits?: AuditMetricSource[] }) => {
     const [startIndex, setStartIndex] = useState(0);
     const itemsPerPage = 2;
-    const [totalAudits, setTotalAudits] = useState<number>(0);
-    const [pendingRecs, setPendingRecs] = useState<any[]>([]);
+    const [pendingRecs, setPendingRecs] = useState<PendingRecommendation[]>([]);
     // Palette charte R7 : cyan=planifié, violet=préparation, amber=exécution,
     // emerald=clôturé, slate=annulé.
-    const [complianceData, setComplianceData] = useState<DonutItem[]>([
-        { name: 'Planification', value: 0, color: '#0891B2' },
-        { name: 'Préparation', value: 0, color: '#7C3AED' },
-        { name: 'Exécution', value: 0, color: '#D97706' },
-        { name: 'Clôturés', value: 0, color: '#059669' },
-        { name: 'Annulés', value: 0, color: '#64748B' },
-    ]);
+    const counts = useMemo(() => computeAuditDistribution(audits), [audits]);
+    const totalAudits = audits.length;
+    const complianceData: DonutItem[] = [
+        { name: 'Planification', value: counts.PLANNING, color: '#0891B2' },
+        { name: 'Préparation', value: counts.PREPARATION, color: '#7C3AED' },
+        { name: 'Exécution', value: counts.EXECUTION, color: '#D97706' },
+        { name: 'Clôturés', value: counts.CLOSED, color: '#059669' },
+        { name: 'Annulés', value: counts.CANCELLED, color: '#64748B' },
+    ];
 
     useEffect(() => {
-        getAllAudit()
-            .then((audits: any[]) => {
-                const total = audits?.length || 0;
-                const counts = { PLANNING: 0, PREPARATION: 0, EXECUTION: 0, CLOSED: 0, CANCELLED: 0 } as Record<string, number>;
-                (audits || []).forEach((a: any) => {
-                    const key = normalizeStatus(a?.status);
-                    if (counts[key] !== undefined) counts[key] += 1;
-                });
-                setTotalAudits(total);
-                setComplianceData([
-                    { name: 'Planification', value: counts.PLANNING, color: '#0891B2' },
-                    { name: 'Préparation', value: counts.PREPARATION, color: '#7C3AED' },
-                    { name: 'Exécution', value: counts.EXECUTION, color: '#D97706' },
-                    { name: 'Clôturés', value: counts.CLOSED, color: '#059669' },
-                    { name: 'Annulés', value: counts.CANCELLED, color: '#64748B' },
-                ]);
-            })
-            .catch((e) => console.error("Failed to load audit stats", e));
-
         getPendingRecommendations()
-            .then((res) => setPendingRecs(res || []))
+            .then((res) => setPendingRecs(Array.isArray(res) ? res as PendingRecommendation[] : []))
             .catch(() => setPendingRecs([]));
     }, []);
 
@@ -176,6 +158,7 @@ const AuditDashPlanned = () => {
                     {visiblePending.map((rec, index) => {
                         const auditId = rec.auditId || rec.audit?.id;
                         const recommendationLink = auditId ? `/audit-management/details/${auditId}?tab=recommendation` : undefined;
+                        const priority = String(rec.priority ?? '').toUpperCase();
 
                         return (
                             <div
@@ -186,8 +169,8 @@ const AuditDashPlanned = () => {
                                     <h3 className="text-sm text-slate-900 leading-tight flex-1 line-clamp-2">
                                         {rec.title || '—'}
                                     </h3>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${priorityBadgeClass(rec.priority)} whitespace-nowrap`}>
-                                        {priorityLabels[String(rec.priority || '').toUpperCase()] || priorityLabels[rec.priority] || rec.priority || '—'}
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${priorityBadgeClass(priority)} whitespace-nowrap`}>
+                                        {priorityLabels[priority] || rec.priority || '—'}
                                     </span>
                                 </div>
                                 <p className="text-[11px] text-slate-600 line-clamp-1 mb-2">

@@ -120,7 +120,7 @@ export type QualifStatus = 'VALID' | 'EXPIRED' | 'REVOKED';
 /** Niveau d'exposition agrege (calcule cote backend par ExposedWorkerQueryService). */
 export type ExposureLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
 
-/** ThresholdDTO — limite reglementaire. */
+/** ThresholdDTO — seuils de classification et limites reglementaires distincts. */
 export interface ThresholdDTO {
     id?: number | null;
     /** Null = seuil global par defaut. */
@@ -131,6 +131,8 @@ export interface ThresholdDTO {
     doseConstraint?: number | null;
     investigationLevel?: number | null;
     actionLevel?: number | null;
+    /** Seuil administratif de classification, jamais utilise comme limite legale. */
+    classificationThreshold?: number | null;
     regulatoryLimit?: number | null;
     /** JSON array d'entiers, ex. "[75,90]". */
     warnPercentages?: string | null;
@@ -2548,6 +2550,8 @@ export interface DosimetryDistributionDTO {
     year: number;
     category?: KpiCategory | null;
     regulatoryLimit?: number | null;
+    regulatoryLimitConfigured?: boolean;
+    regulatoryLimitStatus?: 'CONFIGURED' | 'CATEGORY_REQUIRED' | 'NOT_CONFIGURED_LOCAL_VALIDATION_REQUIRED' | string;
     workersCount: number;
     buckets: DosimetryDistributionBucketDTO[];
 }

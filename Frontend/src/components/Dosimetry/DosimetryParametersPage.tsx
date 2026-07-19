@@ -102,7 +102,8 @@ const CIPR_REFERENCE: Threshold[] = [
         doseConstraint: null,
         investigationLevel: null,
         actionLevel: null,
-        regulatoryLimit: 6,
+        classificationThreshold: 6,
+        regulatoryLimit: null,
         unit: 'mSv',
         referenceFramework: 'AIEA_GSR_PART3',
         active: true,
@@ -318,6 +319,16 @@ const DosimetryParametersPage = () => {
         return th?.regulatoryLimit ?? null;
     };
 
+    const classificationFor = (
+        cat: Threshold['personCategory'],
+        grandeur: Threshold['grandeur'],
+    ): number | null => {
+        const th = thresholds.find(
+            (x) => x.personCategory === cat && x.grandeur === grandeur && x.active !== false,
+        );
+        return th?.classificationThreshold ?? null;
+    };
+
     const frameworkFor = (cat: Threshold['personCategory']): string | null => {
         const th = thresholds.find((x) => x.personCategory === cat && x.active !== false);
         return th?.referenceFramework ?? null;
@@ -445,6 +456,7 @@ const DosimetryParametersPage = () => {
                                         const hp10 = limitFor(cat, 'HP10');
                                         const hp007 = limitFor(cat, 'HP007');
                                         const hp3 = limitFor(cat, 'HP3');
+                                        const classificationHp10 = classificationFor(cat, 'HP10');
                                         const fw = frameworkFor(cat);
                                         const tooltip = t(`parameters.limitsSection.tooltips.${cat}`, {
                                             defaultValue: '',
@@ -463,20 +475,36 @@ const DosimetryParametersPage = () => {
                                                         withArrow
                                                         disabled={!tooltip}
                                                     >
-                                                        <span className="inline-flex items-center gap-1.5 text-slate-800 font-medium cursor-help">
-                                                            {t(`thresholds.categories.${cat}`)}
-                                                            {tooltip && (
-                                                                <IconInfoCircle
-                                                                    size={12}
-                                                                    stroke={1.6}
-                                                                    className="text-slate-400"
-                                                                />
+                                                        <div>
+                                                            <span className="inline-flex items-center gap-1.5 text-slate-800 font-medium cursor-help">
+                                                                {t(`thresholds.categories.${cat}`)}
+                                                                {tooltip && (
+                                                                    <IconInfoCircle
+                                                                        size={12}
+                                                                        stroke={1.6}
+                                                                        className="text-slate-400"
+                                                                    />
+                                                                )}
+                                                            </span>
+                                                            {classificationHp10 != null && (
+                                                                <span className="mt-1 block text-[10.5px] text-violet-700 font-medium">
+                                                                    {t('parameters.limitsSection.classificationThreshold', {
+                                                                        defaultValue: 'Seuil de classification',
+                                                                    })}: {classificationHp10} mSv
+                                                                </span>
                                                             )}
-                                                        </span>
+                                                        </div>
                                                     </Tooltip>
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-mono">
                                                     <DoseCell value={hp10} t={t} />
+                                                    {cat === 'WORKER_B' && hp10 == null && (
+                                                        <span className="block text-[9.5px] leading-tight text-amber-700 mt-1">
+                                                            {t('parameters.limitsSection.localValidationRequired', {
+                                                                defaultValue: 'Non configurée — validation locale requise',
+                                                            })}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-mono">
                                                     <DoseCell value={hp007} t={t} />

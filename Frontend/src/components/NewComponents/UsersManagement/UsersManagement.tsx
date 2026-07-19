@@ -416,7 +416,7 @@ const UsersManagement = () => {
             return <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Full Access</span>;
         }
         if (permission.edit) {
-            return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Edit</span>;
+            return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Modifier</span>;
         }
         return <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">View Only</span>;
     };
@@ -833,7 +833,7 @@ const UsersManagement = () => {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Statut</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Activity</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Session</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
@@ -907,7 +907,7 @@ const UsersManagement = () => {
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Login Time</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Pages Visited</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Details</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Détails</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -985,7 +985,7 @@ const UsersManagement = () => {
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Role</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Department</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Statut</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Login</th>
                                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>

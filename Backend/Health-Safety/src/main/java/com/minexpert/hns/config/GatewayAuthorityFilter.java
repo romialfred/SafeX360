@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,9 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.minexpert.hns.blast.config.BlastRBACConfig;
-import com.minexpert.hns.dosimetry.config.DosimetryRBACConfig;
-import com.minexpert.hns.inspections.config.InspectionRBACConfig;
+import com.minexpert.hns.security.ServiceIdentity;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -57,54 +54,23 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
 
     static final String HEADER_USER_ID = "X-User-Id";
     static final String HEADER_PERMISSIONS = "X-Permissions";
-    static final String HEADER_SECRET_KEY = "X-Secret-Key";
 
-    /**
-     * Toutes les permissions Dosimetry, accordees automatiquement aux requetes system-to-system
-     * authentifiees via le secret partage Gateway (compat ascendante pour les jobs internes).
-     */
-    private static final List<String> SYSTEM_TRUST_PERMISSIONS = List.of(
-            DosimetryRBACConfig.DOSIMETRY_READ_AGGREGATE,
-            DosimetryRBACConfig.DOSIMETRY_READ_NOMINATIVE,
-            DosimetryRBACConfig.DOSIMETRY_WRITE,
-            DosimetryRBACConfig.DOSIMETRY_MEDICAL,
-            DosimetryRBACConfig.DOSIMETRY_PCR_RPO,
-            DosimetryRBACConfig.DOSIMETRY_ADMIN,
-            DosimetryRBACConfig.DOSIMETRY_EXPORT_MEDICAL,
-            // Blast Management — toutes les permissions accordees aux requetes system-to-system
-            BlastRBACConfig.BLAST_VIEW,
-            BlastRBACConfig.BLAST_PLAN,
-            BlastRBACConfig.BLAST_CONFIRM,
-            BlastRBACConfig.BLAST_ALARM,
-            BlastRBACConfig.BLAST_REPORT,
-            BlastRBACConfig.BLAST_ADMIN,
-            // Inspections (refonte 2026-06) — toutes les permissions system-to-system
-            InspectionRBACConfig.INSPECTION_VIEW,
-            InspectionRBACConfig.INSPECTION_PLAN,
-            InspectionRBACConfig.INSPECTION_EXECUTE,
-            InspectionRBACConfig.INSPECTION_VALIDATE,
-            InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE,
-            InspectionRBACConfig.INSPECTION_ADMIN
-    );
-
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String internalGatewaySecret;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
-            String secretKey = request.getHeader(HEADER_SECRET_KEY);
+            ServiceIdentity service = (ServiceIdentity) request.getAttribute(ServiceIdentity.REQUEST_ATTRIBUTE);
 
             // SEC 2.1 — Fail-closed : les headers d'identite/permissions ne sont
             // honores QUE si la requete prouve qu'elle vient de la Gateway via le
             // secret partage. Le service etant joignable directement (URL publique
             // Render), un client forgeant X-Permissions obtiendrait sinon toutes
             // les permissions SANS JWT. Secret non configure = aucun trust.
-            boolean fromGateway = internalGatewaySecret != null
-                    && !internalGatewaySecret.isBlank()
-                    && internalGatewaySecret.equals(secretKey);
+            boolean fromGateway = service != null
+                    && "safex-gateway".equals(service.issuer())
+                    && service.hasScope("hns:proxy");
 
             if (fromGateway) {
                 String permissionsHeader = request.getHeader(HEADER_PERMISSIONS);
@@ -121,13 +87,6 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
                 //  - header ABSENT -> appel système-à-système direct (jobs internes, pas de
                 //    JWT) : on conserve le fallback de confiance (secret partagé garant),
                 //    sinon on casserait le trafic interne légitime.
-                boolean permissionsHeaderPresent = permissionsHeader != null;
-                if (authorities.isEmpty() && !permissionsHeaderPresent) {
-                    authorities = SYSTEM_TRUST_PERMISSIONS.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toCollection(ArrayList::new));
-                }
-
                 PreAuthenticatedAuthorityToken auth = new PreAuthenticatedAuthorityToken(
                         userIdHeader != null ? userIdHeader : "anonymous-gateway",
                         authorities);

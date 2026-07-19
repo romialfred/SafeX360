@@ -46,10 +46,10 @@ import {
     type DosimeterAssignmentDTO,
     type QualificationDTO,
     type AlertLevel,
-    type ThresholdDTO,
 } from '../../services/DosimetryService';
 import PdfDownloadModal from './PdfDownloadModal';
 import DoseForecastCard from './DoseForecastCard';
+import { resolveConfiguredRegulatoryLimit } from './dosimetryRegulatoryLimits';
 
 /**
  * ExposedWorkerDetailPage — Fiche 360 d'un travailleur expose (Phase 2 Frontend-B).
@@ -214,19 +214,9 @@ function deriveQualifUiStatus(q: QualificationDTO): 'VALID' | 'EXPIRING' | 'EXPI
 }
 
 /**
- * Resolve la limite reglementaire Hp(10) annuelle a partir des seuils backend.
- * Fallback : 20 mSv (categorie A) / 6 mSv (categorie B) selon CIPR 103.
+ * La limite reglementaire Hp(10) annuelle provient des seuils actifs backend.
+ * Aucune valeur n'est inventee si la configuration applicable est absente.
  */
-function resolveHp10AnnualLimit(thresholds: ThresholdDTO[] | undefined, category: DoseCategory): number {
-    if (thresholds && thresholds.length > 0) {
-        const hp10 = thresholds.find((t) => t.grandeur === 'HP10');
-        if (hp10?.regulatoryLimit != null && hp10.regulatoryLimit > 0) {
-            return hp10.regulatoryLimit;
-        }
-    }
-    return category === 'A' ? 20 : 6;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  Onglets
 // ─────────────────────────────────────────────────────────────────────────────
@@ -310,7 +300,7 @@ const ExposedWorkerDetailPage = () => {
     }, [detail]);
 
     const annualLimitHp10 = useMemo(
-        () => resolveHp10AnnualLimit(detail?.thresholds, category),
+        () => resolveConfiguredRegulatoryLimit(detail?.thresholds, category),
         [detail, category],
     );
 
@@ -804,7 +794,7 @@ function DosesTab({
 }: {
     detail: ExposedWorkerDetailDTO;
     trendData: { period: string; cumulHp10: number }[];
-    annualLimitHp10: number;
+    annualLimitHp10: number | null;
     t: (k: string, o?: any) => string;
 }) {
     const records = detail.doseHistory ?? [];
@@ -913,17 +903,19 @@ function DosesTab({
                                 }}
                             />
                             <Legend wrapperStyle={{ fontSize: 11 }} />
-                            <ReferenceLine
-                                y={annualLimitHp10}
-                                stroke="#dc2626"
-                                strokeDasharray="4 4"
-                                label={{
-                                    value: `${t('workerDetail.doses.trend.limit')} (${annualLimitHp10} mSv)`,
-                                    position: 'right',
-                                    fontSize: 10,
-                                    fill: '#dc2626',
-                                }}
-                            />
+                            {annualLimitHp10 != null && (
+                                <ReferenceLine
+                                    y={annualLimitHp10}
+                                    stroke="#dc2626"
+                                    strokeDasharray="4 4"
+                                    label={{
+                                        value: `${t('workerDetail.doses.trend.limit')} (${annualLimitHp10} mSv)`,
+                                        position: 'right',
+                                        fontSize: 10,
+                                        fill: '#dc2626',
+                                    }}
+                                />
+                            )}
                             <Line
                                 type="monotone"
                                 dataKey="cumulHp10"
@@ -963,7 +955,7 @@ function DosesTab({
             </Card>
 
             {/* Phase 10-B : Prevision Holt-Winters de la dose cumulee EOY */}
-            {detail.identity.workerId != null && (
+            {detail.identity.workerId != null && annualLimitHp10 != null && (
                 <div className="mt-4">
                     <DoseForecastCard
                         workerId={Number(detail.identity.workerId)}
@@ -985,9 +977,9 @@ function GaugeCard({
     title: string;
     subtitle: string;
     value: number | null;
-    limit: number;
+    limit: number | null;
 }) {
-    const ratio = value == null || limit <= 0 ? 0 : Math.min(value / limit, 1.2);
+    const ratio = value == null || limit == null || limit <= 0 ? 0 : Math.min(value / limit, 1.2);
     const pct = Math.min(ratio * 100, 100);
     const tone = gaugeTone(ratio);
     return (
@@ -999,7 +991,7 @@ function GaugeCard({
                     {formatMsv(value)}
                 </span>
                 <span className="text-[11px] text-slate-500">
-                    / {limit.toFixed(0)} mSv
+                    {limit != null ? `/ ${limit.toFixed(0)} mSv` : '/ limite non configurée'}
                 </span>
             </div>
             <div className="mt-3 h-2 bg-white/70 rounded overflow-hidden border border-slate-200">
@@ -1012,9 +1004,15 @@ function GaugeCard({
                     aria-valuemax={100}
                 />
             </div>
-            <p className={`mt-1.5 text-[11px] font-medium ${tone.text}`}>
-                {(ratio * 100).toFixed(1)} %
-            </p>
+            {limit != null ? (
+                <p className={`mt-1.5 text-[11px] font-medium ${tone.text}`}>
+                    {(ratio * 100).toFixed(1)} %
+                </p>
+            ) : (
+                <p className="mt-1.5 text-[11px] font-medium text-amber-700">
+                    Limite non configurée — à valider localement
+                </p>
+            )}
         </div>
     );
 }

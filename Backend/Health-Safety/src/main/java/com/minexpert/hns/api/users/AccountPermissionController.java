@@ -11,7 +11,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +28,7 @@ import com.minexpert.hns.entity.users.PermissionManagement;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.enums.UserRole;
 import com.minexpert.hns.repository.users.PermissionManagementRepository;
+import com.minexpert.hns.security.ServiceIdentity;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -79,11 +79,8 @@ public class AccountPermissionController {
 
     // MÊME valeur par défaut que les autres services (MineXpert, gateway) : une
     // divergence casserait la validation de signature. La ROTATION reste requise.
-    @Value("${JWT_SECRET:}")
+    @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
     private String jwtSecret;
-
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String internalGatewaySecret;
 
     /** Alias de rôle « administrateur » (insensible à la casse) — aligné sur MineXpert. */
     private static final Set<String> ADMIN_ROLE_ALIASES = Set.of(
@@ -112,8 +109,9 @@ public class AccountPermissionController {
                     "Accès réservé aux administrateurs");
         }
         // Aucune identité utilisateur : appel interne service-à-service uniquement.
-        String secret = request.getHeader("X-Secret-Key");
-        if (secret != null && secret.equals(internalGatewaySecret)) {
+        ServiceIdentity service = (ServiceIdentity) request.getAttribute(ServiceIdentity.REQUEST_ATTRIBUTE);
+        if (service != null && "safex-hrms".equals(service.issuer())
+                && service.hasScope("hns:permissions:write")) {
             return;
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,

@@ -16,6 +16,10 @@ public interface ThresholdRepository extends JpaRepository<Threshold, Long> {
 
     List<Threshold> findByMineId(Long mineId);
 
+    Optional<Threshold> findByIdAndMineId(Long id, Long mineId);
+
+    List<Threshold> findByMineIdIsNull();
+
     /**
      * Recupere le seuil actif pour un couple (mine, grandeur, categorie de personne).
      * Si aucun seuil specifique a la mine n'existe, le moteur d'alertes pourra utiliser

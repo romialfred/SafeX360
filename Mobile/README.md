@@ -2,13 +2,15 @@
 
 ## Téléchargement
 
-### Lien direct (utilisateurs finaux)
+### Distribution validee
 
-👉 **[Télécharger SafexMobile.apk](./SafexMobile.apk)**
+Le depot ne publie plus d'APK par commit Git. Recuperer un artefact release depuis le
+workflow [SafeX 360 Field - Build APK Android](https://github.com/BICONSULT/SafeX360/actions/workflows/android-build.yml),
+puis verifier `SHA256SUMS.txt` et l'attestation GitHub avant installation.
 
-> Une fois téléchargé, ouvrir le fichier sur votre Android.
-> Si Android refuse l'installation, autoriser temporairement
-> *"Installer depuis sources inconnues"* dans Paramètres > Sécurité.
+Le lien public historique reste temporairement disponible, mais il n'est plus
+mis a jour par le workflow et ne doit pas etre considere comme la derniere
+release validee.
 
 ### Lien depuis la page web
 
@@ -61,7 +63,8 @@ Pour déclencher un build manuel :
 gh workflow run android-build.yml -f build_type=release
 ```
 
-L'artefact apparait ensuite dans l'onglet **Actions** du repo.
+L'artefact immuable, son SHA-256, son SBOM CycloneDX et ses attestations
+apparaissent ensuite dans l'onglet **Actions** du depot.
 
 ## Mise à jour
 

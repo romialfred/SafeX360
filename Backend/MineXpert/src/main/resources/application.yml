@@ -44,6 +44,12 @@ spring:
           ssl:
             enable: true
 
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+
 management:
   endpoints:
     web:

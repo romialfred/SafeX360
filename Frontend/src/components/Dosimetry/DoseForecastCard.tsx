@@ -59,7 +59,7 @@ export interface DoseForecastCardProps {
     /** Annee courante a projeter. */
     currentYear: number;
     /** Limite reglementaire annuelle Hp(10) en mSv (defaut : 20 Cat A). */
-    annualLimitHp10?: number;
+    annualLimitHp10: number;
     /** Coefficients optionnels — overridables par la page parent. */
     alpha?: number;
     beta?: number;
@@ -174,7 +174,7 @@ const buildMonthlyHistory = (
 const DoseForecastCard = ({
     workerId,
     currentYear,
-    annualLimitHp10 = 20,
+    annualLimitHp10,
     alpha = 0.3,
     beta = 0.1,
     gamma = 0.1,

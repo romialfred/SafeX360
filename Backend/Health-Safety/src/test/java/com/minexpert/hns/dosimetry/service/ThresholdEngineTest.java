@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,6 +73,26 @@ class ThresholdEngineTest {
         r.setWorker(worker);
         r.setHp10(hp10);
         return r;
+    }
+
+    @Test
+    @DisplayName("AUD-REG-002 : 6 mSv WORKER_B classification ne declenche pas EXCEEDED")
+    void workerBClassificationThresholdIsNotUsedAsRegulatoryLimit() {
+        Threshold classificationOnly = new Threshold();
+        classificationOnly.setId(100L);
+        classificationOnly.setClassificationThreshold(6.0);
+        classificationOnly.setRegulatoryLimit(null);
+        classificationOnly.setActionLevel(null);
+        classificationOnly.setInvestigationLevel(null);
+
+        DoseRecord record = recordHp10(7.0);
+        record.getWorker().setCategory(DoseCategory.B);
+        stubThreshold(classificationOnly);
+
+        List<ExposureAlert> alerts = engine.evaluateAndCreateAlerts(record);
+
+        assertThat(alerts).isEmpty();
+        verify(exposureAlertRepository, never()).save(any(ExposureAlert.class));
     }
 
     private void stubThreshold(Threshold t) {

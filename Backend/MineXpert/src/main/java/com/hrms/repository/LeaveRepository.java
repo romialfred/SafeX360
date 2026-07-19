@@ -17,11 +17,10 @@ public interface LeaveRepository extends CrudRepository<Leave, Long> {
 
     List<Leave> findByApproverId(Long empId);
 
-    @Query("SELECT l.type AS leaveType, SUM(DATEDIFF( l.endDate, l.startDate) + 1) AS totalDays " +
+    @Query("SELECT l.type AS leaveType, SUM(TIMESTAMPDIFF(DAY, l.startDate, l.endDate) + 1) AS totalDays " +
             "FROM Leave l " +
             "WHERE l.status = :status AND l.empId = :empId " +
             "GROUP BY l.type")
-//     @Query("SELECT l.type AS leaveType, SUM(DATEDIFF(DAY, l.startDate, l.endDate)+ 1) AS totalDays " + "FROM Leave l " + "WHERE l.status = :status AND l.empId = :empId " + "GROUP BY l.type")
     List<Object[]> findTotalLeaveDaysGroupedByTypeAndEmpId(@Param("empId") Long empId,
             @Param("status") LeaveStatus status);
 

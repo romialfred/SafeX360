@@ -14,10 +14,11 @@
  *    la saisie.
  *
  * <p><b>Architecture</b> :
- *  - Database IndexedDB : {@code safex_dosimetry_offline} (version 1).
+ *  - Database IndexedDB : {@code safex_dosimetry_offline} (version 4).
  *  - Stores :
  *      - {@code queued_doses}        : doses en attente d'envoi.
- *      - {@code synced_doses}        : doses envoyees avec succes (historique).
+ *      - {@code synced_doses}        : store historique conservé uniquement
+ *        pour migration/purge ; aucune donnée synchronisée nouvelle n'y est écrite.
  *      - {@code queued_measurements} : mesures d'ambiance en attente.
  *  - Chaque entree porte un id local (UUID), un timestamp et un compteur
  *    d'essais d'envoi (utile pour limiter le retry en cas d'erreur 4xx
@@ -25,7 +26,7 @@
  *
  * <p><b>Strategie de sync</b> :
  *  - {@link syncPending} tente un POST par entree dans l'ordre chronologique
- *    et migre les succes dans {@code synced_doses} apres un appel reussi.
+ *    et supprime immédiatement la copie locale après acquittement serveur.
  *  - En cas d'echec, l'entree reste dans la queue et son {@code attempts} est
  *    incremente. Au-dela de 5 tentatives, l'entree est marquee
  *    {@code blocked} (UI doit la signaler pour resolution manuelle).
@@ -38,6 +39,14 @@
  */
 
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
+import {
+    belongsToOfflineOwner,
+    createOfflineCryptoId,
+    currentOfflineOwnerContext,
+    decryptOfflineJson,
+    encryptOfflineJson,
+    type EncryptedOfflinePayload,
+} from '../security/offlineVault';
 import {
     createDoseRecord,
     recordAmbientMeasurement,
@@ -67,6 +76,9 @@ export interface QueuedDoseEntry {
     attempts: number;
     lastError?: string | null;
     status: OfflineEntryStatus;
+    /** Partition de sécurité : identité et mine actives lors de la saisie. */
+    ownerKey: string;
+    mineId: number;
     payload: DoseRecordDTO;
 }
 
@@ -77,7 +89,19 @@ export interface QueuedMeasurementEntry {
     attempts: number;
     lastError?: string | null;
     status: OfflineEntryStatus;
+    ownerKey: string;
+    mineId: number;
     payload: AmbientMeasurementDTO;
+}
+
+interface StoredQueuedDoseEntry extends Omit<QueuedDoseEntry, 'payload'> {
+    cryptoId: string;
+    encryptedPayload: EncryptedOfflinePayload;
+}
+
+interface StoredQueuedMeasurementEntry extends Omit<QueuedMeasurementEntry, 'payload'> {
+    cryptoId: string;
+    encryptedPayload: EncryptedOfflinePayload;
 }
 
 /** Wrapper persistant pour une entree synchronisee (archive). */
@@ -91,7 +115,7 @@ export interface SyncedEntry<T> {
 interface DosimetryOfflineSchema extends DBSchema {
     queued_doses: {
         key: string;
-        value: QueuedDoseEntry;
+        value: StoredQueuedDoseEntry;
     };
     synced_doses: {
         key: string;
@@ -99,12 +123,12 @@ interface DosimetryOfflineSchema extends DBSchema {
     };
     queued_measurements: {
         key: string;
-        value: QueuedMeasurementEntry;
+        value: StoredQueuedMeasurementEntry;
     };
 }
 
 const DB_NAME = 'safex_dosimetry_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 4;
 const MAX_ATTEMPTS = 5;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,7 +155,7 @@ const getDb = async (): Promise<IDBPDatabase<DosimetryOfflineSchema>> => {
     }
     if (!dbPromise) {
         dbPromise = openDB<DosimetryOfflineSchema>(DB_NAME, DB_VERSION, {
-            upgrade(db) {
+            upgrade(db, oldVersion, _newVersion, transaction) {
                 if (!db.objectStoreNames.contains('queued_doses')) {
                     db.createObjectStore('queued_doses', { keyPath: 'id' });
                 }
@@ -140,6 +164,21 @@ const getDb = async (): Promise<IDBPDatabase<DosimetryOfflineSchema>> => {
                 }
                 if (!db.objectStoreNames.contains('queued_measurements')) {
                     db.createObjectStore('queued_measurements', { keyPath: 'id' });
+                }
+                // v3 : purge unique des anciennes files non partitionnées. Le
+                // terminal ne doit jamais attribuer une saisie legacy au compte suivant.
+                if (oldVersion < 3) {
+                    for (const name of ['queued_doses', 'synced_doses', 'queued_measurements'] as const) {
+                        if (db.objectStoreNames.contains(name)) transaction.objectStore(name).clear();
+                    }
+                }
+                // v4 : purge des payloads partitionnés mais encore stockés en
+                // clair par la version 3. Aucune migration cryptographique ne
+                // doit attribuer silencieusement une dose à une autre session.
+                if (oldVersion < 4) {
+                    for (const name of ['queued_doses', 'synced_doses', 'queued_measurements'] as const) {
+                        if (db.objectStoreNames.contains(name)) transaction.objectStore(name).clear();
+                    }
                 }
             },
         });
@@ -183,13 +222,17 @@ const generateId = (): string => {
  * methode deux fois pour une meme saisie (sinon doublon a la sync).
  */
 export const queueDose = async (dose: DoseRecordDTO): Promise<string> => {
+    const owner = currentOfflineOwnerContext();
     const id = generateId();
-    const entry: QueuedDoseEntry = {
+    const cryptoId = createOfflineCryptoId();
+    const entry: StoredQueuedDoseEntry = {
         id,
         createdAt: new Date().toISOString(),
         attempts: 0,
         status: 'pending',
-        payload: dose,
+        ...owner,
+        cryptoId,
+        encryptedPayload: await encryptOfflineJson(owner, 'dosimetry-dose', cryptoId, dose),
     };
     const db = await getDb();
     await db.put('queued_doses', entry);
@@ -203,13 +246,17 @@ export const queueDose = async (dose: DoseRecordDTO): Promise<string> => {
 export const queueMeasurement = async (
     measurement: AmbientMeasurementDTO,
 ): Promise<string> => {
+    const owner = currentOfflineOwnerContext();
     const id = generateId();
-    const entry: QueuedMeasurementEntry = {
+    const cryptoId = createOfflineCryptoId();
+    const entry: StoredQueuedMeasurementEntry = {
         id,
         createdAt: new Date().toISOString(),
         attempts: 0,
         status: 'pending',
-        payload: measurement,
+        ...owner,
+        cryptoId,
+        encryptedPayload: await encryptOfflineJson(owner, 'dosimetry-measurement', cryptoId, measurement),
     };
     const db = await getDb();
     await db.put('queued_measurements', entry);
@@ -222,14 +269,48 @@ export const queueMeasurement = async (
  */
 export const listPendingDoses = async (): Promise<QueuedDoseEntry[]> => {
     if (!isIndexedDbAvailable()) return [];
+    const owner = currentOfflineOwnerContext();
     const db = await getDb();
-    return db.getAll('queued_doses');
+    const entries = (await db.getAll('queued_doses'))
+        .filter((entry) => belongsToOfflineOwner(entry, owner));
+    return Promise.all(entries.map(async (entry) => {
+        const payload = await decryptOfflineJson<DoseRecordDTO>(
+            owner, 'dosimetry-dose', entry.cryptoId, entry.encryptedPayload,
+        );
+        return {
+            id: entry.id,
+            createdAt: entry.createdAt,
+            attempts: entry.attempts,
+            lastError: entry.lastError,
+            status: entry.status,
+            ownerKey: entry.ownerKey,
+            mineId: entry.mineId,
+            payload,
+        };
+    }));
 };
 
 export const listPendingMeasurements = async (): Promise<QueuedMeasurementEntry[]> => {
     if (!isIndexedDbAvailable()) return [];
+    const owner = currentOfflineOwnerContext();
     const db = await getDb();
-    return db.getAll('queued_measurements');
+    const entries = (await db.getAll('queued_measurements'))
+        .filter((entry) => belongsToOfflineOwner(entry, owner));
+    return Promise.all(entries.map(async (entry) => {
+        const payload = await decryptOfflineJson<AmbientMeasurementDTO>(
+            owner, 'dosimetry-measurement', entry.cryptoId, entry.encryptedPayload,
+        );
+        return {
+            id: entry.id,
+            createdAt: entry.createdAt,
+            attempts: entry.attempts,
+            lastError: entry.lastError,
+            status: entry.status,
+            ownerKey: entry.ownerKey,
+            mineId: entry.mineId,
+            payload,
+        };
+    }));
 };
 
 /**
@@ -242,12 +323,11 @@ export const getPendingCount = async (): Promise<{
 }> => {
     if (!isIndexedDbAvailable()) return { doses: 0, measurements: 0 };
     try {
-        const db = await getDb();
         const [doses, measurements] = await Promise.all([
-            db.count('queued_doses'),
-            db.count('queued_measurements'),
+            listPendingDoses(),
+            listPendingMeasurements(),
         ]);
-        return { doses, measurements };
+        return { doses: doses.length, measurements: measurements.length };
     } catch {
         return { doses: 0, measurements: 0 };
     }
@@ -262,11 +342,24 @@ export interface SyncResult {
     blocked: number;
 }
 
+const syncErrorMessage = (error: unknown): string => {
+    if (typeof error !== 'object' || error === null) return 'sync_failed';
+    const candidate = error as {
+        message?: unknown;
+        response?: { data?: { errorMessage?: unknown; message?: unknown } };
+    };
+    const serverMessage = candidate.response?.data?.errorMessage
+        ?? candidate.response?.data?.message
+        ?? candidate.message;
+    return typeof serverMessage === 'string' && serverMessage.trim()
+        ? serverMessage
+        : 'sync_failed';
+};
+
 /**
  * Synchronise toutes les entrees en attente (doses + mesures). Tente un
  * envoi par entree dans l'ordre chronologique. Les entrees envoyees avec
- * succes sont migrees dans le store {@code synced_doses} (archive) pour
- * permettre un audit local. Les echecs voient leur {@code attempts}
+ * succes sont supprimés du terminal après acquittement serveur. Les echecs voient leur {@code attempts}
  * incremente ; au-dela de 5, l'entree est marquee {@code blocked} (UI doit
  * alors offrir une action de resolution manuelle / suppression).
  *
@@ -282,10 +375,38 @@ export const syncPending = async (): Promise<SyncResult> => {
     }
 
     const db = await getDb();
+    const owner = currentOfflineOwnerContext();
     const result: SyncResult = { success: 0, failed: 0, blocked: 0 };
 
+    const assertActiveOwner = () => {
+        const active = currentOfflineOwnerContext();
+        if (active.ownerKey !== owner.ownerKey || active.mineId !== owner.mineId) {
+            throw new Error('OFFLINE_ENTRY_FORBIDDEN');
+        }
+    };
+
+    const updateDoseMetadata = async (
+        id: string,
+        patch: Pick<QueuedDoseEntry, 'attempts' | 'lastError' | 'status'>,
+    ) => {
+        assertActiveOwner();
+        const stored = await db.get('queued_doses', id);
+        if (!stored || !belongsToOfflineOwner(stored, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
+        await db.put('queued_doses', { ...stored, ...patch });
+    };
+
+    const updateMeasurementMetadata = async (
+        id: string,
+        patch: Pick<QueuedMeasurementEntry, 'attempts' | 'lastError' | 'status'>,
+    ) => {
+        assertActiveOwner();
+        const stored = await db.get('queued_measurements', id);
+        if (!stored || !belongsToOfflineOwner(stored, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
+        await db.put('queued_measurements', { ...stored, ...patch });
+    };
+
     // ─── Doses ──────────────────────────────────────────────────────────
-    const doseEntries = (await db.getAll('queued_doses')).sort((a, b) =>
+    const doseEntries = (await listPendingDoses()).sort((a, b) =>
         a.createdAt.localeCompare(b.createdAt),
     );
     for (const entry of doseEntries) {
@@ -293,28 +414,20 @@ export const syncPending = async (): Promise<SyncResult> => {
             result.blocked += 1;
             continue;
         }
+        assertActiveOwner();
         try {
             await createDoseRecord(entry.payload);
+            assertActiveOwner();
+            const stored = await db.get('queued_doses', entry.id);
+            if (!stored || !belongsToOfflineOwner(stored, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
             await db.delete('queued_doses', entry.id);
-            const synced: SyncedEntry<DoseRecordDTO> = {
-                id: entry.id,
-                createdAt: entry.createdAt,
-                syncedAt: new Date().toISOString(),
-                payload: entry.payload,
-            };
-            await db.put('synced_doses', synced);
             result.success += 1;
-        } catch (err: any) {
+        } catch (error: unknown) {
             const attempts = entry.attempts + 1;
             const status: OfflineEntryStatus =
                 attempts >= MAX_ATTEMPTS ? 'blocked' : 'pending';
-            const lastError: string =
-                err?.response?.data?.errorMessage ||
-                err?.response?.data?.message ||
-                err?.message ||
-                'sync_failed';
-            await db.put('queued_doses', {
-                ...entry,
+            const lastError = syncErrorMessage(error);
+            await updateDoseMetadata(entry.id, {
                 attempts,
                 lastError,
                 status,
@@ -325,7 +438,7 @@ export const syncPending = async (): Promise<SyncResult> => {
     }
 
     // ─── Mesures ────────────────────────────────────────────────────────
-    const measurementEntries = (await db.getAll('queued_measurements')).sort(
+    const measurementEntries = (await listPendingMeasurements()).sort(
         (a, b) => a.createdAt.localeCompare(b.createdAt),
     );
     for (const entry of measurementEntries) {
@@ -333,21 +446,20 @@ export const syncPending = async (): Promise<SyncResult> => {
             result.blocked += 1;
             continue;
         }
+        assertActiveOwner();
         try {
             await recordAmbientMeasurement(entry.payload);
+            assertActiveOwner();
+            const stored = await db.get('queued_measurements', entry.id);
+            if (!stored || !belongsToOfflineOwner(stored, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
             await db.delete('queued_measurements', entry.id);
             result.success += 1;
-        } catch (err: any) {
+        } catch (error: unknown) {
             const attempts = entry.attempts + 1;
             const status: OfflineEntryStatus =
                 attempts >= MAX_ATTEMPTS ? 'blocked' : 'pending';
-            const lastError: string =
-                err?.response?.data?.errorMessage ||
-                err?.response?.data?.message ||
-                err?.message ||
-                'sync_failed';
-            await db.put('queued_measurements', {
-                ...entry,
+            const lastError = syncErrorMessage(error);
+            await updateMeasurementMetadata(entry.id, {
                 attempts,
                 lastError,
                 status,
@@ -390,14 +502,20 @@ export const clearSynced = async (olderThanDays = 30): Promise<void> => {
  */
 export const removeQueuedDose = async (id: string): Promise<void> => {
     if (!isIndexedDbAvailable()) return;
+    const owner = currentOfflineOwnerContext();
     const db = await getDb();
+    const entry = await db.get('queued_doses', id);
+    if (!entry || !belongsToOfflineOwner(entry, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
     await db.delete('queued_doses', id);
 };
 
 /** Supprime une mesure d'ambiance en attente — voir {@link removeQueuedDose}. */
 export const removeQueuedMeasurement = async (id: string): Promise<void> => {
     if (!isIndexedDbAvailable()) return;
+    const owner = currentOfflineOwnerContext();
     const db = await getDb();
+    const entry = await db.get('queued_measurements', id);
+    if (!entry || !belongsToOfflineOwner(entry, owner)) throw new Error('OFFLINE_ENTRY_FORBIDDEN');
     await db.delete('queued_measurements', id);
 };
 
@@ -415,6 +533,63 @@ export const purgeAll = async (): Promise<void> => {
     ]);
 };
 
+export interface DosimetrySecurityPurgeResult {
+    preservedDoses: number;
+    preservedMeasurements: number;
+}
+
+/**
+ * Efface l'historique dosimetrique local a la fin d'une session.
+ *
+ * Les saisies non synchronisees sont conservees par defaut afin qu'un logout
+ * ou une expiration de session ne detruise pas silencieusement un relevé
+ * terrain. Elles restent chiffrées et rattachées au couple compte-mine.
+ */
+export const purgeDosimetrySecurityState = async (
+    preserveUnsynced = true,
+): Promise<DosimetrySecurityPurgeResult> => {
+    if (!isIndexedDbAvailable()) {
+        return { preservedDoses: 0, preservedMeasurements: 0 };
+    }
+    const db = await getDb();
+    let owner: ReturnType<typeof currentOfflineOwnerContext>;
+    try {
+        owner = currentOfflineOwnerContext();
+    } catch {
+        // Sur expiration, l'identité Redux peut déjà avoir été effacée. Les
+        // entrées partitionnées restent inaccessibles au compte suivant.
+        await db.clear('synced_doses');
+        return { preservedDoses: 0, preservedMeasurements: 0 };
+    }
+    const [ownedDoses, ownedMeasurements] = await Promise.all([
+        db.getAll('queued_doses'),
+        db.getAll('queued_measurements'),
+    ]);
+    const preservedDoses = preserveUnsynced
+        ? ownedDoses.filter((entry) => belongsToOfflineOwner(entry, owner)).length
+        : 0;
+    const preservedMeasurements = preserveUnsynced
+        ? ownedMeasurements.filter((entry) => belongsToOfflineOwner(entry, owner)).length
+        : 0;
+
+    const tx = db.transaction(
+        ['queued_doses', 'synced_doses', 'queued_measurements'],
+        'readwrite',
+    );
+    await tx.objectStore('synced_doses').clear();
+    if (!preserveUnsynced) {
+        for (const entry of ownedDoses.filter((candidate) => belongsToOfflineOwner(candidate, owner))) {
+            await tx.objectStore('queued_doses').delete(entry.id);
+        }
+        for (const entry of ownedMeasurements.filter((candidate) => belongsToOfflineOwner(candidate, owner))) {
+            await tx.objectStore('queued_measurements').delete(entry.id);
+        }
+    }
+    await tx.done;
+
+    return { preservedDoses, preservedMeasurements };
+};
+
 const DosimetryOfflineService = {
     queueDose,
     queueMeasurement,
@@ -426,6 +601,7 @@ const DosimetryOfflineService = {
     removeQueuedDose,
     removeQueuedMeasurement,
     purgeAll,
+    purgeDosimetrySecurityState,
 };
 
 export default DosimetryOfflineService;

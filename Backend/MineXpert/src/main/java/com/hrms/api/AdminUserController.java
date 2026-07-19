@@ -37,6 +37,7 @@ import com.hrms.directory.DirectoryService;
 import com.hrms.entity.Account;
 import com.hrms.entity.AdminActionLog;
 import com.hrms.exception.HRMSException;
+import com.hrms.dto.ResponseDTO;
 import com.hrms.repository.AccountRepository;
 import com.hrms.repository.AdminActionLogRepository;
 import com.hrms.repository.CompanyRepository;
@@ -131,8 +132,8 @@ public class AdminUserController {
     // d'environnement hsePermissionsUrl=https://safex360-hns.onrender.com/hns/users/permissions
     @Value("${hsePermissionsUrl:http://localhost:8081/hns/users/permissions}")
     private String hsePermissionsUrl;
-    @Value("${INTERNAL_GATEWAY_SECRET:dev-secret}")
-    private String internalSecret;
+    @Autowired
+    private com.hrms.security.ServiceTokenIssuer serviceTokenIssuer;
 
     // ─────────────────────────────────────────────────────────────────────
     // POST /admin/users/create — creation atomique compte + permissions
@@ -347,10 +348,6 @@ public class AdminUserController {
                     "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
         }
         // Aucune identité utilisateur : appel interne service-à-service uniquement.
-        String secret = request != null ? request.getHeader("X-Secret-Key") : null;
-        if (secret != null && secret.equals(internalSecret)) {
-            return "system-internal";
-        }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
     }
@@ -408,6 +405,52 @@ public class AdminUserController {
                     ? "MDP reinitialise. Email envoye (valable " + INVITATION_VALIDITY_HOURS + " h)."
                     : "MDP reinitialise. Email NON envoye - copiez le mot de passe ci-dessous (valable " + INVITATION_VALIDITY_HOURS + " h)."
         ), HttpStatus.OK);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // POST /admin/users/{id}/mfa/reset
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Réinitialise l'état MFA d'un compte : secret TOTP, codes de récupération
+     * et anti-rejeu effacés, {@code mfaEnabled=false}. Au prochain login, le
+     * rôle étant toujours privilégié, un NOUVEL enrôlement est exigé.
+     *
+     * <p><b>Pourquoi cet endpoint existe.</b> Le dispositif MFA livré ne
+     * prévoyait AUCUN secours : un utilisateur privilégié qui perdait son
+     * téléphone ET ses huit codes de récupération — ou dont le secret devenait
+     * indéchiffrable après rotation de {@code MFA_ENCRYPTION_KEY} — était
+     * définitivement verrouillé, sans autre issue qu'une intervention SQL
+     * manuelle en production. La réinitialisation est un acte d'administration
+     * nominal, journalisé comme les autres.</p>
+     */
+    @PostMapping("/{id}/mfa/reset")
+    @Transactional(rollbackFor = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#id"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true)
+    })
+    public ResponseEntity<ResponseDTO> resetMfa(@PathVariable Long id,
+            @CookieValue(name = "jwt", required = false) String token,
+            HttpServletRequest httpRequest) throws HRMSException {
+        String performedBy = requireAdmin(token, httpRequest);
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
+
+        account.setMfaEnabled(false);
+        account.setMfaSecretEncrypted(null);
+        account.setMfaRecoveryCodeHashes(null);
+        account.setMfaLastAcceptedStep(null);
+        account.setMfaEnrolledAt(null);
+        accountRepository.save(account);
+
+        adminActionLogRepository.save(AdminActionLog.of("MFA_RESET",
+                account.getId(), account.getLogin(), performedBy,
+                "MFA réinitialisée — nouvel enrôlement exigé au prochain login"));
+
+        return new ResponseEntity<>(new ResponseDTO(
+                "MFA réinitialisée. L'utilisateur enrôlera un nouveau facteur à sa prochaine connexion."),
+                HttpStatus.OK);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -529,7 +572,8 @@ public class AdminUserController {
             RestTemplate rest = new RestTemplate();
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.set("Content-Type", "application/json");
-            headers.set("X-Secret-Key", internalSecret);
+            headers.set(com.hrms.security.ServiceTokenVerifier.HEADER,
+                    serviceTokenIssuer.issuePermissions(true));
 
             // Sérialisation Jackson : élimine toute injection JSON via role/allowedModules.
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -554,7 +598,8 @@ public class AdminUserController {
         try {
             RestTemplate rest = new RestTemplate();
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("X-Secret-Key", internalSecret);
+            headers.set(com.hrms.security.ServiceTokenVerifier.HEADER,
+                    serviceTokenIssuer.issuePermissions(true));
             org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
             rest.exchange(hsePermissionsUrl + "/by-account/" + accountId,
                     org.springframework.http.HttpMethod.DELETE, entity, String.class);

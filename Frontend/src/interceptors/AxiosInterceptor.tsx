@@ -135,7 +135,10 @@ axiosInstance.interceptors.request.use(
  * sur ces 401, sinon : 401 → navigate → re-montage → re-sonde → 401 → boucle
  * infinie (bug du spinner sans fin sur /login).
  */
-const AUTH_PROBE_PATHS = ['/hrms/auth/me', '/hrms/me/profile', '/hns/users/permissions/me'];
+// /hrms/auth/mfa/ : un code TOTP errone repond 401 — c'est une etape NORMALE du
+// parcours MFA, deja expliquee dans la modale de connexion. Sans cette entree,
+// l'intercepteur superposait un toast « Session expiree » a chaque code faux.
+const AUTH_PROBE_PATHS = ['/hrms/auth/me', '/hrms/me/profile', '/hns/users/permissions/me', '/hrms/auth/mfa/'];
 
 const isAuthProbe = (url?: string): boolean =>
     !!url && AUTH_PROBE_PATHS.some((p) => url.includes(p));
@@ -153,7 +156,7 @@ export const setupResponseInterceptor = (navigate: any, dispatch: any) => {
         (response: AxiosResponse) => {
             return response;
         },
-        (error) => {
+        async (error) => {
             const status = error.response?.status;
             const url: string | undefined = error.config?.url;
 
@@ -166,7 +169,7 @@ export const setupResponseInterceptor = (navigate: any, dispatch: any) => {
             // 401 sur un appel applicatif réel = session réellement expirée.
             if (status === 401) {
                 errorNotification("Session expirée, veuillez vous reconnecter");
-                navigateToLogin(navigate, dispatch);
+                await navigateToLogin(navigate, dispatch);
                 return Promise.reject(error);
             }
 

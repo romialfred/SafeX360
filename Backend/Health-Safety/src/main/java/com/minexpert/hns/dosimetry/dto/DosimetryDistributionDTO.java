@@ -37,6 +37,10 @@ public class DosimetryDistributionDTO {
     private int year;
     private KpiCategory category;
     private Double regulatoryLimit;
+    /** True uniquement si une limite active mine/globale a ete resolue. */
+    private boolean regulatoryLimitConfigured;
+    /** CONFIGURED, CATEGORY_REQUIRED ou NOT_CONFIGURED_LOCAL_VALIDATION_REQUIRED. */
+    private String regulatoryLimitStatus;
     private long workersCount;
     private List<Bucket> buckets;
 

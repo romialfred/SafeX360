@@ -1,40 +1,49 @@
 package com.hrms.directory;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
- * LOT 52 — annuaire Active Directory SIMULÉ.
+ * Annuaire synthétique réservé aux profils dev/test.
  *
- * Utilisé tant que demoMode=true (aucun serveur LDAP requis) : permet de
- * démontrer le parcours « importer depuis AD » de bout en bout avec un jeu
- * de données réaliste couvrant les deux mines de la plateforme. Le mot de
- * passe de TOUS les comptes démo est « SafeX-AD-2026 » (authentification
- * déléguée simulée).
+ * Les identifiants sont générés en mémoire à chaque démarrage et utilisent le
+ * domaine non routable {@code example.invalid}. Le mot de passe est injecté à
+ * l'exécution ; aucune donnée d'authentification n'est persistée dans le dépôt.
  */
 public final class DemoDirectory {
 
-    public static final String DEMO_PASSWORD = "SafeX-AD-2026";
-
-    private static final List<DirectoryUserDTO> USERS = List.of(
-            entry("akone",      "aicha.kone@minexpert-or.ci",        "Aïcha Koné",            "Production",              "Chef de poste extraction"),
-            entry("jbouattara", "jb.ouattara@minexpert-or.ci",       "Jean-Baptiste Ouattara","Maintenance",             "Ingénieur maintenance"),
-            entry("mdiabate",   "mariam.diabate@minexpert-or.ci",    "Mariam Diabaté",        "HSE",                     "Superviseure HSE"),
-            entry("syeo",       "souleymane.yeo@minexpert-or.ci",    "Souleymane Yéo",        "Laboratoire",             "Chimiste analyste"),
-            entry("fbamba",     "fatou.bamba@minexpert-or.ci",       "Fatou Bamba",           "Ressources Humaines",     "Chargée de formation"),
-            entry("kkouame",    "kofi.kouame@minexpert-or.ci",       "Kofi Kouamé",           "Logistique",              "Coordinateur transport"),
-            entry("etremblay",  "emilie.tremblay@canadianmining.ca", "Émilie Tremblay",       "Production",              "Mine Operations Manager"),
-            entry("lmacdonald", "liam.macdonald@canadianmining.ca",  "Liam MacDonald",        "Maintenance",             "Reliability Engineer"),
-            entry("sgagnon",    "sophie.gagnon@canadianmining.ca",   "Sophie Gagnon",         "HSE",                     "EHS Superintendent"),
-            entry("nsingh",     "noah.singh@canadianmining.ca",      "Noah Singh",            "Géologie",                "Senior Geologist"),
-            entry("cbouchard",  "camille.bouchard@canadianmining.ca","Camille Bouchard",      "Environnement",           "Environmental Advisor"),
-            entry("wfortin",    "william.fortin@canadianmining.ca",  "William Fortin",        "Forage & Dynamitage",     "Blast Supervisor"),
-            entry("ndembele",   "nana.dembele@minexpert-or.ci",      "Nana Dembélé",          "Direction",               "Directrice d'exploitation"),
-            entry("rthompson",  "ryan.thompson@canadianmining.ca",   "Ryan Thompson",         "Direction",               "General Manager")
+    private static final int USER_COUNT = 14;
+    private static final List<String> DEPARTMENTS = List.of(
+            "Safety", "Operations", "Maintenance", "Environment", "Human Resources",
+            "Finance", "Laboratory"
     );
+    private static final List<String> TITLES = List.of(
+            "Coordinateur HSE", "Superviseur", "Technicien", "Auditeur"
+    );
+    private static final List<DirectoryUserDTO> USERS = generateUsers();
 
     private DemoDirectory() {
+    }
+
+    private static List<DirectoryUserDTO> generateUsers() {
+        String processId = UUID.randomUUID().toString().substring(0, 8);
+        return IntStream.range(0, USER_COUNT)
+                .mapToObj(index -> {
+                    String login = "safex-demo-" + String.format("%02d", index + 1) + "-" + processId;
+                    return entry(
+                            login,
+                            login + "@example.invalid",
+                            "Utilisateur démonstration " + String.format("%02d", index + 1),
+                            DEPARTMENTS.get(index % DEPARTMENTS.size()),
+                            TITLES.get(index % TITLES.size())
+                    );
+                })
+                .toList();
     }
 
     private static DirectoryUserDTO entry(String login, String email, String name, String dept, String title) {
@@ -45,24 +54,31 @@ public final class DemoDirectory {
     public static List<DirectoryUserDTO> search(String query) {
         String q = normalize(query);
         return USERS.stream()
-                .filter(u -> q.isEmpty()
-                        || normalize(u.getLogin()).contains(q)
-                        || normalize(u.getEmail()).contains(q)
-                        || normalize(u.getDisplayName()).contains(q)
-                        || normalize(u.getDepartment()).contains(q))
-                .map(u -> new DirectoryUserDTO(u.getLogin(), u.getEmail(), u.getDisplayName(),
-                        u.getDepartment(), u.getTitle(), false))
+                .filter(user -> q.isEmpty()
+                        || normalize(user.getLogin()).contains(q)
+                        || normalize(user.getEmail()).contains(q)
+                        || normalize(user.getDisplayName()).contains(q)
+                        || normalize(user.getDepartment()).contains(q))
+                .map(user -> new DirectoryUserDTO(
+                        user.getLogin(), user.getEmail(), user.getDisplayName(),
+                        user.getDepartment(), user.getTitle(), false))
                 .collect(Collectors.toList());
     }
 
-    public static boolean authenticate(String login, String password) {
-        return USERS.stream().anyMatch(u -> u.getLogin().equalsIgnoreCase(login))
-                && DEMO_PASSWORD.equals(password);
+    public static boolean authenticate(String login, String password, String expectedPassword) {
+        if (login == null || password == null || expectedPassword == null || expectedPassword.isBlank()) {
+            return false;
+        }
+        boolean validPassword = MessageDigest.isEqual(
+                password.getBytes(StandardCharsets.UTF_8),
+                expectedPassword.getBytes(StandardCharsets.UTF_8));
+        return USERS.stream().anyMatch(user -> user.getLogin().equalsIgnoreCase(login))
+                && validPassword;
     }
 
-    private static String normalize(String s) {
-        if (s == null) return "";
-        return java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+    private static String normalize(String value) {
+        if (value == null) return "";
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT)
                 .trim();

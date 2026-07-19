@@ -60,8 +60,8 @@ public class MeController {
 
     @Value("${hsePermissionsUrl:http://localhost:9000/hns/users/permissions}")
     private String hsePermissionsUrl;
-    @Value("${INTERNAL_GATEWAY_SECRET:}")
-    private String internalSecret;
+    @Autowired
+    private com.hrms.security.ServiceTokenIssuer serviceTokenIssuer;
 
     // ─────────────────────────────────────────────────────────────────────
     // GET /me/profile — profil consolide
@@ -216,7 +216,8 @@ public class MeController {
         try {
             RestTemplate rest = new RestTemplate();
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("X-Secret-Key", internalSecret);
+            headers.set(com.hrms.security.ServiceTokenVerifier.HEADER,
+                    serviceTokenIssuer.issuePermissions(false));
             org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
             String url = hsePermissionsUrl + "/by-account/" + accountId;
             org.springframework.http.ResponseEntity<Map> resp = rest.exchange(

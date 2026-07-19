@@ -111,7 +111,7 @@ const ActionData = [
         incident: 'Equipment Malfunction - Drill Rig Failure',
         severity: 'Level 3',
         actionPlan: 'Hydraulic System Overhaul',
-        assigned: 'John Doe',
+        assigned: 'Non attribué',
         department: 'maintenance',
         deadline: '15/3/2024',
         progress: '50%',

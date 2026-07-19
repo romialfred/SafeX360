@@ -12,14 +12,21 @@ import {
     IconMountain,
     IconBiohazard,
     IconShieldX,
+    IconWifiOff,
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../slices/hooks';
-import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
+import { errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 import { createSosAlert } from '../../../services/SosService';
 import { enqueueSos } from '../../../utility/OfflineSosQueue';
+import {
+    createSosClientRequestId,
+    deriveSosDeliveryState,
+    getSosDeliveryNotice,
+    SOS_DEGRADED_GUIDANCE,
+    type SosDeliveryState,
+} from '../../../utility/SosDeliveryState';
 
 /**
  * Bouton SOS : signal d'urgence direct au coordinateur HSE.
@@ -126,7 +133,6 @@ const COLOR_CLASSES: Record<Tile['color'], {
 const SosButton = () => {
     // Namespaces : 'navigation' pour le bouton header, 'emergency' pour le formulaire.
     const { t } = useTranslation(['navigation', 'emergency']);
-    const navigate = useNavigate();
     const [opened, { open, close }] = useDisclosure(false);
     const user = useAppSelector((state: any) => state.user);
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
@@ -136,7 +142,7 @@ const SosButton = () => {
     const [position, setPosition] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
     const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle');
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
+    const [delivery, setDelivery] = useState<SosDeliveryState | null>(null);
 
     // ── Auto-transmission state ──
     // null = aucun overlay actif. 15..1 = countdown en cours.
@@ -179,7 +185,7 @@ const SosButton = () => {
 
     const handleOpen = () => {
         open();
-        setSent(false);
+        setDelivery(null);
         setReasonCode('GENERAL');
         autoTriggeredRef.current = false;
         requestLocation();
@@ -192,7 +198,7 @@ const SosButton = () => {
         setMessage('');
         setPosition(null);
         setLocationStatus('idle');
-        setSent(false);
+        setDelivery(null);
         setReasonCode('GENERAL');
         autoTriggeredRef.current = false;
     };
@@ -203,37 +209,34 @@ const SosButton = () => {
      */
     /**
      * Résout l'identifiant de la mine pour le SOS.
-     * Priorité : sélecteur header > mine d'attache du user > fallback 1.
-     * Le SOS NE DOIT JAMAIS bloquer pour absence de contexte mine —
-     * une vie est en jeu : on transmet même en mode "Vue consolidée".
+     * Priorité : sélecteur header > mine d'attache du user.
+     * Aucun identifiant de démonstration ne doit être substitué à l'identité réelle.
      */
-    const resolveCompanyId = (): number => {
-        return Number(
-            selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
-        );
+    const resolveCompanyId = (): number | null => {
+        const value = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId);
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
     };
 
     /**
      * Resolution tolerante de l'identifiant utilisateur. Le JWT decode peut
      * exposer le claim sous {id}, {empId}, {userId} ou {sub} selon le
-     * backend emetteur. Fallback final 14 (compte Romuald TIEGNAN seede)
-     * pour ne JAMAIS bloquer un SOS — une vie est en jeu.
+     * backend émetteur. Une identité absente est signalée comme un échec critique.
      */
-    const resolveUserId = (): number => {
-        return Number(
-            user?.id ?? user?.empId ?? user?.userId ?? user?.sub ?? 14,
-        );
+    const resolveUserId = (): number | null => {
+        const value = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub);
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
     };
 
-    const buildPayload = (autoTransmitted: boolean) => {
+    const buildPayload = (autoTransmitted: boolean, companyId: number, employeeId: number) => {
         const base = (message || '').trim();
         const suffix = autoTransmitted ? t('emergency:sos.autoTransmit.descriptionSuffix') : '';
         const description = autoTransmitted
             ? (base ? `${base}${suffix}` : suffix.trim())
             : (base || null);
         return {
-            companyId: resolveCompanyId(),
-            employeeId: resolveUserId(),
+            clientRequestId: createSosClientRequestId(),
+            companyId,
+            employeeId,
             reasonCode,
             description,
             latitude: position?.lat ?? 0,
@@ -245,31 +248,37 @@ const SosButton = () => {
     };
 
     const handleSend = async (autoTransmitted = false) => {
-        // Le SOS NE BLOQUE JAMAIS : meme sans contexte mine et meme sans
-        // claim id explicite, on transmet (fallback 1 / 14). Une vie peut
-        // etre en jeu, on accepte un audit imparfait plutot qu'un silence.
         // Annule l'auto-transmit dès qu'on commence l'envoi
         clearAutoTimers();
         setAutoCountdown(null);
         setSending(true);
-        const payload = buildPayload(autoTransmitted);
+        const companyId = resolveCompanyId();
+        const employeeId = resolveUserId();
+        if (companyId === null || employeeId === null) {
+            setDelivery('FAILED');
+            setSending(false);
+            errorNotification(`Identité ou mine absente de la session. ${SOS_DEGRADED_GUIDANCE}`);
+            return;
+        }
+        const payload = buildPayload(autoTransmitted, companyId, employeeId);
         try {
-            const saved = await createSosAlert(payload, resolveUserId());
-            setSent(true);
-            successNotification(t('emergency:sos.notifications.success'));
-            setTimeout(() => {
-                handleClose();
-                if (saved.id) navigate(`/emergency/sos/${saved.id}`);
-            }, 2000);
-        } catch {
+            const saved = await createSosAlert(payload, employeeId);
+            setDelivery(deriveSosDeliveryState(true, saved.status));
+        } catch (requestError: any) {
+            const status = requestError?.response?.status;
+            const canQueue = !status || status === 408 || status === 429 || status >= 500;
+            if (!canQueue) {
+                setDelivery('FAILED');
+                errorNotification(`${extractErrorMessage(requestError, 'SOS refusé par le serveur.')} ${SOS_DEGRADED_GUIDANCE}`);
+                return;
+            }
             // ── Fallback hors-ligne : enqueue dans IndexedDB ──
             try {
-                await enqueueSos(payload, Number(user.id));
-                setSent(true);
-                successNotification(t('emergency:sos.notifications.offlineQueued'));
-                setTimeout(handleClose, 2500);
+                await enqueueSos(payload, employeeId);
+                setDelivery('QUEUED');
             } catch (err) {
-                errorNotification(extractErrorMessage(err, t('emergency:sos.notifications.criticalFailure')));
+                setDelivery('FAILED');
+                errorNotification(`${extractErrorMessage(err, t('emergency:sos.notifications.criticalFailure'))} ${SOS_DEGRADED_GUIDANCE}`);
             }
         } finally {
             setSending(false);
@@ -278,7 +287,7 @@ const SosButton = () => {
 
     // ─── Auto-transmission : arme le timer 30 s à l'ouverture du modal ───
     useEffect(() => {
-        if (!opened || sent) return;
+        if (!opened || delivery) return;
         // Reset garde + arme la prompt
         autoTriggeredRef.current = false;
         clearAutoTimers();
@@ -311,7 +320,7 @@ const SosButton = () => {
             clearAutoTimers();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [opened, sent]);
+    }, [opened, delivery]);
 
     // Nettoyage final à l'unmount du composant
     useEffect(() => () => clearAutoTimers(), []);
@@ -332,6 +341,7 @@ const SosButton = () => {
         () => t(`emergency:sos.reasons.${reasonCode.toLowerCase()}`),
         [reasonCode, t]
     );
+    const deliveryNotice = delivery ? getSosDeliveryNotice(delivery, reasonLabel) : null;
 
     return (
         <>
@@ -374,10 +384,22 @@ const SosButton = () => {
                     </div>
                 }
             >
-                {sent ? (
-                    <Alert color="green" icon={<IconCheck size={18} />} variant="light">
-                        <p className="font-medium">{t('emergency:sos.success.title')}</p>
-                        <p className="text-xs mt-1">{t('emergency:sos.success.body')}</p>
+                {delivery && deliveryNotice ? (
+                    <Alert
+                        color={deliveryNotice.tone}
+                        icon={delivery === 'QUEUED'
+                            ? <IconWifiOff size={18} />
+                            : <IconCheck size={18} />}
+                        variant="light"
+                    >
+                        <p className="font-medium">{deliveryNotice.title}</p>
+                        <p className="text-xs mt-1">{deliveryNotice.body}</p>
+                        {delivery !== 'ACKNOWLEDGED' && (
+                            <p className="text-xs mt-2 font-semibold">{SOS_DEGRADED_GUIDANCE}</p>
+                        )}
+                        <Button variant="default" size="xs" mt="sm" onClick={handleClose}>
+                            Fermer
+                        </Button>
                     </Alert>
                 ) : (
                     <div className="space-y-3">
@@ -515,7 +537,7 @@ const SosButton = () => {
                     OVERLAY AUTO-TRANSMISSION (compte à rebours rouge plein-écran)
                     Affiché uniquement quand autoCountdown !== null.
                 ════════════════════════════════════════════════════════ */}
-                {autoCountdown !== null && !sent && (
+                {autoCountdown !== null && !delivery && (
                     <div
                         className="fixed inset-0 z-[10001] flex items-center justify-center"
                         role="alertdialog"

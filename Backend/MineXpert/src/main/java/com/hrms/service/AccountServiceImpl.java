@@ -136,6 +136,13 @@ public class AccountServiceImpl implements AccountService {
         // (sinon un update via ce chemin viderait la table account_company).
         entity.setAssignedCompanies(existing.getAssignedCompanies());
         entity.setAllMinesAccess(existing.getAllMinesAccess());
+        // Les mises a jour de profil ne doivent jamais desactiver ou remplacer le
+        // second facteur d'un compte privilegie.
+        entity.setMfaEnabled(existing.getMfaEnabled());
+        entity.setMfaSecretEncrypted(existing.getMfaSecretEncrypted());
+        entity.setMfaRecoveryCodeHashes(existing.getMfaRecoveryCodeHashes());
+        entity.setMfaLastAcceptedStep(existing.getMfaLastAcceptedStep());
+        entity.setMfaEnrolledAt(existing.getMfaEnrolledAt());
         accountRepository.save(entity);
     }
 

@@ -1,0 +1,64 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:health_safety;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: ''
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 0
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+        globally_quoted_identifiers_skip_column_definitions: true
+  mail:
+    host: 127.0.0.1
+    port: 2525
+    username: qa@safex.invalid
+    test-connection: false
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  cloud:
+    discovery:
+      enabled: false
+
+server:
+  port: 0
+
+eureka:
+  client:
+    enabled: false
+    fetch-registry: false
+    register-with-eureka: false
+
+management:
+  health:
+    mail:
+      enabled: false
+
+app:
+  mail:
+    from: qa@safex.invalid
+
+scheduler:
+  poll-ms: 3600000
+  batch-size: 1
+
+hrms:
+  url: http://127.0.0.1:65535
+
+EUREKA_SERVER_URL: http://127.0.0.1:65535/eureka
+MINE_XPERT_URL: http://127.0.0.1:65535
+DB_URL: jdbc:h2:mem:health_safety
+DB_USERNAME: sa
+DB_PASSWORD: ''
+MAIL_USERNAME: qa@safex.invalid
+MAIL_FROM: qa@safex.invalid

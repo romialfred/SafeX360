@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * LOT 52 — Vérification d'efficacité d'une recommandation d'audit
- * (ISO 19011:2018 §6.6 — suivi d'audit).
+ * (ISO 19011:2026 — suivi des audits et amélioration du programme).
  *
  * <p>Planifiée à une échéance donnée, puis conclue par un verdict :
  * EFFICACE / PARTIELLEMENT_EFFICACE / INEFFICACE. Un verdict INEFFICACE

@@ -84,7 +84,7 @@ const CIPR_REFERENCE: ThresholdDTO[] = [
     { id: -2, mineId: null, grandeur: 'HP007', personCategory: 'WORKER_A', doseConstraint: 400, investigationLevel: 450, actionLevel: 500, regulatoryLimit: 500, unit: 'mSv', referenceFramework: 'CIPR_103', active: true },
     { id: -3, mineId: null, grandeur: 'HP3', personCategory: 'WORKER_A', doseConstraint: 15, investigationLevel: 18, actionLevel: 20, regulatoryLimit: 20, unit: 'mSv', referenceFramework: 'CIPR_103', active: true },
     // WORKER_B
-    { id: -4, mineId: null, grandeur: 'HP10', personCategory: 'WORKER_B', doseConstraint: null, investigationLevel: null, actionLevel: null, regulatoryLimit: 6, unit: 'mSv', referenceFramework: 'AIEA_GSR_PART3', active: true },
+    { id: -4, mineId: null, grandeur: 'HP10', personCategory: 'WORKER_B', doseConstraint: null, investigationLevel: null, actionLevel: null, classificationThreshold: 6, regulatoryLimit: null, unit: 'mSv', referenceFramework: 'AIEA_GSR_PART3', active: true },
     // APPRENTICE
     { id: -5, mineId: null, grandeur: 'HP10', personCategory: 'APPRENTICE', doseConstraint: null, investigationLevel: null, actionLevel: null, regulatoryLimit: 6, unit: 'mSv', referenceFramework: 'CIPR_103', active: true },
     // PREGNANCY
@@ -97,7 +97,7 @@ const CIPR_REFERENCE: ThresholdDTO[] = [
 function findReferenceValue(
     category: string,
     grandeur: string,
-    field: keyof Pick<ThresholdDTO, 'doseConstraint' | 'investigationLevel' | 'actionLevel' | 'regulatoryLimit'>,
+    field: keyof Pick<ThresholdDTO, 'doseConstraint' | 'investigationLevel' | 'actionLevel' | 'classificationThreshold' | 'regulatoryLimit'>,
 ): number | null {
     const ref = CIPR_REFERENCE.find((r) => r.personCategory === category && r.grandeur === grandeur);
     if (!ref) return null;
@@ -136,6 +136,7 @@ type SortableColumn =
     | 'doseConstraint'
     | 'investigationLevel'
     | 'actionLevel'
+    | 'classificationThreshold'
     | 'regulatoryLimit'
     | 'framework'
     | 'status';
@@ -145,7 +146,7 @@ interface SortState {
     direction: 'asc' | 'desc';
 }
 
-type EditableField = 'doseConstraint' | 'investigationLevel' | 'actionLevel' | 'regulatoryLimit';
+type EditableField = 'doseConstraint' | 'investigationLevel' | 'actionLevel' | 'classificationThreshold' | 'regulatoryLimit';
 
 interface InlineEditState {
     thresholdId: number | string;
@@ -351,6 +352,16 @@ const DosimetryThresholdsPage = () => {
     const commitEdit = (th: ThresholdDTO) => {
         if (!inlineEdit || inlineEdit.thresholdId !== th.id) return;
         const next = inlineEdit.draft;
+        if (
+            (th.personCategory === 'WORKER_B' || th.personCategory === 'B')
+            && inlineEdit.field === 'regulatoryLimit'
+            && next === 6
+        ) {
+            errorNotification(t('thresholdsPage.modal.errors.workerBClassificationNotLimit', {
+                defaultValue: '6 mSv est un seuil de classification, pas une limite réglementaire.',
+            }));
+            return;
+        }
         const ref = findReferenceValue(th.personCategory, th.grandeur, inlineEdit.field);
         // Confirmation si modif > 50 % par rapport a la CIPR de reference
         if (ref != null && ref > 0 && next != null) {
@@ -628,6 +639,13 @@ const DosimetryThresholdsPage = () => {
                                     <SortableTh column="doseConstraint" label={t('thresholdsPage.table.doseConstraint')} sort={sort} onToggle={toggleSort} align="right" />
                                     <SortableTh column="investigationLevel" label={t('thresholdsPage.table.investigationLevel')} sort={sort} onToggle={toggleSort} align="right" />
                                     <SortableTh column="actionLevel" label={t('thresholdsPage.table.actionLevel')} sort={sort} onToggle={toggleSort} align="right" />
+                                    <SortableTh
+                                        column="classificationThreshold"
+                                        label={t('thresholdsPage.table.classificationThreshold', { defaultValue: 'Seuil de classification' })}
+                                        sort={sort}
+                                        onToggle={toggleSort}
+                                        align="right"
+                                    />
                                     <SortableTh column="regulatoryLimit" label={t('thresholdsPage.table.regulatoryLimit')} sort={sort} onToggle={toggleSort} align="right" />
                                     <SortableTh column="framework" label={t('thresholdsPage.table.framework')} sort={sort} onToggle={toggleSort} />
                                     <SortableTh column="status" label={t('thresholdsPage.table.status')} sort={sort} onToggle={toggleSort} />
@@ -637,14 +655,14 @@ const DosimetryThresholdsPage = () => {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
+                                        <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
                                             <span className="inline-block w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mr-2 align-middle" />
                                             {t('thresholdsPage.table.loading')}
                                         </td>
                                     </tr>
                                 ) : visibleThresholds.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
+                                        <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
                                             {t('thresholdsPage.table.empty')}
                                         </td>
                                     </tr>
@@ -708,6 +726,17 @@ const DosimetryThresholdsPage = () => {
                                                     onCommit={() => commitEdit(th)}
                                                     onCancel={cancelEdit}
                                                     colorClass="text-orange-700"
+                                                />
+                                                <EditableCell
+                                                    th={th}
+                                                    field="classificationThreshold"
+                                                    inlineEdit={inlineEdit}
+                                                    canAdmin={canAdmin}
+                                                    onStart={startEdit}
+                                                    onDraftChange={(v) => setInlineEdit({ thresholdId: th.id ?? -1, field: 'classificationThreshold', draft: v })}
+                                                    onCommit={() => commitEdit(th)}
+                                                    onCancel={cancelEdit}
+                                                    colorClass="text-violet-700 font-semibold"
                                                 />
                                                 <EditableCell
                                                     th={th}
@@ -821,9 +850,20 @@ const DosimetryThresholdsPage = () => {
                                         <tr key={cat} className="border-t border-slate-100">
                                             <td className="px-3 py-2 text-slate-700 font-medium">
                                                 {t(`thresholds.categories.${cat}`, { defaultValue: cat })}
+                                                {hp10?.classificationThreshold != null && (
+                                                    <span className="block text-[10px] text-violet-700 mt-0.5">
+                                                        {t('thresholdsPage.table.classificationThreshold', { defaultValue: 'Seuil de classification' })}: {hp10.classificationThreshold} mSv
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono text-slate-700">
-                                                {hp10?.regulatoryLimit ?? '—'} <span className="text-slate-400 text-[10px]">mSv</span>
+                                                {hp10?.regulatoryLimit != null ? (
+                                                    <>{hp10.regulatoryLimit} <span className="text-slate-400 text-[10px]">mSv</span></>
+                                                ) : (
+                                                    <span className="text-[10px] font-sans text-amber-700">
+                                                        {t('thresholdsPage.table.localValidationRequired', { defaultValue: 'Non configurée — validation locale requise' })}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono text-slate-700">
                                                 {hp007?.regulatoryLimit ?? '—'} <span className="text-slate-400 text-[10px]">mSv</span>
@@ -933,6 +973,8 @@ function readSortValue(
             return th.investigationLevel ?? null;
         case 'actionLevel':
             return th.actionLevel ?? null;
+        case 'classificationThreshold':
+            return th.classificationThreshold ?? null;
         case 'regulatoryLimit':
             return th.regulatoryLimit ?? null;
         case 'framework':
@@ -1067,7 +1109,15 @@ function EditableCell({
             onDoubleClick={() => canAdmin && onStart(th, field)}
             title={canAdmin ? 'Double-clic pour modifier' : undefined}
         >
-            {value ?? '—'} <span className="text-slate-400 text-[10px] font-normal">{th.unit}</span>
+            {field === 'regulatoryLimit'
+                && value == null
+                && (th.personCategory === 'WORKER_B' || th.personCategory === 'B') ? (
+                <span className="block max-w-[130px] text-[10px] leading-tight font-sans text-amber-700">
+                    Non configurée — validation locale requise
+                </span>
+            ) : (
+                <>{value ?? '—'} <span className="text-slate-400 text-[10px] font-normal">{th.unit}</span></>
+            )}
         </td>
     );
 }
@@ -1093,6 +1143,7 @@ function AddThresholdModal({ opened, onClose, activeMineOptions, onSubmit }: Add
     const [doseConstraint, setDoseConstraint] = useState<number | null>(null);
     const [investigationLevel, setInvestigationLevel] = useState<number | null>(null);
     const [actionLevel, setActionLevel] = useState<number | null>(null);
+    const [classificationThreshold, setClassificationThreshold] = useState<number | null>(null);
     const [regulatoryLimit, setRegulatoryLimit] = useState<number | null>(null);
     const [justification, setJustification] = useState<string>('');
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1100,9 +1151,22 @@ function AddThresholdModal({ opened, onClose, activeMineOptions, onSubmit }: Add
 
     const validate = (): boolean => {
         const next: Record<string, string> = {};
+        const isWorkerB = category === 'WORKER_B' || category === 'B';
         if (!category) next.category = t('thresholdsPage.modal.errors.categoryRequired');
         if (!grandeur) next.grandeur = t('thresholdsPage.modal.errors.grandeurRequired');
-        if (regulatoryLimit == null) next.regulatoryLimit = t('thresholdsPage.modal.errors.regulatoryRequired');
+        if (isWorkerB && grandeur === 'HP10' && classificationThreshold == null) {
+            next.classificationThreshold = t('thresholdsPage.modal.errors.classificationRequired', {
+                defaultValue: 'Le seuil de classification est requis pour la catégorie B.',
+            });
+        }
+        if (!isWorkerB && regulatoryLimit == null) {
+            next.regulatoryLimit = t('thresholdsPage.modal.errors.regulatoryRequired');
+        }
+        if (isWorkerB && regulatoryLimit === 6) {
+            next.regulatoryLimit = t('thresholdsPage.modal.errors.workerBClassificationNotLimit', {
+                defaultValue: '6 mSv est un seuil de classification, pas une limite réglementaire.',
+            });
+        }
         if (justification.trim().length < 30)
             next.justification = t('thresholdsPage.modal.errors.justificationMin');
         // Monotonicite : c ≤ i ≤ a ≤ l (en ignorant les nulls)
@@ -1131,6 +1195,7 @@ function AddThresholdModal({ opened, onClose, activeMineOptions, onSubmit }: Add
             doseConstraint,
             investigationLevel,
             actionLevel,
+            classificationThreshold,
             regulatoryLimit,
             unit: 'mSv',
             referenceFramework: 'CUSTOM',
@@ -1229,6 +1294,18 @@ function AddThresholdModal({ opened, onClose, activeMineOptions, onSubmit }: Add
                     min={0}
                     step={0.5}
                     size="sm"
+                />
+                <NumberInput
+                    label={t('thresholdsPage.modal.classificationThresholdLabel', { defaultValue: 'Seuil de classification (mSv)' })}
+                    description={t('thresholdsPage.modal.classificationThresholdDescription', {
+                        defaultValue: 'Critère de classement distinct de la limite réglementaire.',
+                    })}
+                    value={classificationThreshold ?? undefined}
+                    onChange={(v) => setClassificationThreshold(typeof v === 'number' ? v : v === '' ? null : Number(v))}
+                    min={0}
+                    step={0.5}
+                    size="sm"
+                    error={errors.classificationThreshold}
                 />
                 <NumberInput
                     label={t('thresholdsPage.modal.regulatoryLimitLabel')}

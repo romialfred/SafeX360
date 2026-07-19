@@ -1,5 +1,8 @@
 # LOT 52 — Plan d'implémentation
-## Module A : Gestion des utilisateurs (refonte professionnelle) · Module B : Gestion des Audits conforme ISO 19011:2018
+## Module A : Gestion des utilisateurs · Module B : Support des audits selon ISO 19011:2026
+
+> Plan historique. Les repères de l'ancienne édition doivent être vérifiés dans
+> la copie officielle ISO 19011:2026 avant toute validation organisationnelle.
 
 > Statut : **EN ATTENTE DE VALIDATION** — rédigé le 2026-06-10 après cartographie exhaustive du code existant.
 > Après validation, exécution en autonomie, puis évaluation par un Expert indépendant (gate ≥ 9/10, sinon itération).
@@ -59,7 +62,7 @@
 
 ---
 
-# MODULE B — Gestion des Audits conforme ISO 19011:2018
+# MODULE B — Gestion des audits assistée selon ISO 19011:2026
 
 ## B.0 État des lieux
 

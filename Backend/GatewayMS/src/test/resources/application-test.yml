@@ -1,0 +1,19 @@
+spring:
+  cloud:
+    discovery:
+      enabled: false
+
+server:
+  port: 0
+
+SAFEX_ALLOWED_ORIGINS: http://localhost:4173
+
+eureka:
+  client:
+    enabled: false
+    fetch-registry: false
+    register-with-eureka: false
+
+MINE_XPERT_URL: http://127.0.0.1:65535
+SAFEX_URL: http://127.0.0.1:65535
+EUREKA_SERVER_URL: http://127.0.0.1:65535/eureka

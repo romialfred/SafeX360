@@ -35,6 +35,9 @@ import com.hrms.dto.AuthenticationResponse;
 import com.hrms.dto.EmployeeDTO;
 import com.hrms.entity.Account;
 import com.hrms.repository.AccountRepository;
+import com.hrms.security.MfaChallengeService;
+import com.hrms.security.MfaChallengeService.Purpose;
+import com.hrms.security.MfaRolePolicy;
 import com.hrms.service.AuditLogService;
 
 import io.jsonwebtoken.Claims;
@@ -66,6 +69,12 @@ public class AuthAPI {
 
     @Autowired
     private com.hrms.service.LoginAttemptService loginAttemptService;
+
+    @Autowired
+    private MfaRolePolicy mfaRolePolicy;
+
+    @Autowired
+    private MfaChallengeService mfaChallengeService;
 
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
@@ -120,6 +129,30 @@ public class AuthAPI {
             }
 
             final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getLogin());
+            final Account authenticatedAccount = accountRepository.findByLogin(request.getLogin())
+                    .orElseThrow(() -> new UsernameNotFoundException("ACCOUNT_NOT_FOUND"));
+
+            if (mfaRolePolicy.requiresMfa(authenticatedAccount.getRole())) {
+                boolean enrolled = Boolean.TRUE.equals(authenticatedAccount.getMfaEnabled())
+                        && authenticatedAccount.getMfaSecretEncrypted() != null
+                        && !authenticatedAccount.getMfaSecretEncrypted().isBlank();
+                MfaChallengeService.Challenge challenge = mfaChallengeService.issue(
+                        authenticatedAccount.getId(), authenticatedAccount.getLogin(),
+                        enrolled ? Purpose.VERIFY : Purpose.ENROLL);
+                try {
+                    auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
+                            LocalDateTime.now(), enrolled
+                                    ? "Primary credential accepted; MFA required"
+                                    : "Primary credential accepted; MFA enrollment required"));
+                } catch (Exception ignored) { }
+                return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).body(Map.of(
+                        "errorCode", enrolled ? "MFA_REQUIRED" : "MFA_ENROLLMENT_REQUIRED",
+                        "errorMessage", enrolled
+                                ? "Verification multifacteur requise"
+                                : "Enrolement multifacteur obligatoire",
+                        "challenge", challenge.token(),
+                        "expiresInSeconds", 300));
+            }
             final String jwt = helper.generateToken(userDetails);
 
             try {
@@ -134,7 +167,7 @@ public class AuthAPI {
                     .secure(true)
                     .path("/")
                     .sameSite("None")
-                    .maxAge(Duration.ofHours(8))
+                    .maxAge(Duration.ofMillis(helper.getExpirationMillis()))
                     .build();
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -193,7 +226,7 @@ public class AuthAPI {
         }
     }
 
-    @GetMapping("/logout")
+    @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletResponse response) {
         // LOT 42 hotfix : retrait du .domain(".data-univers.com") qui empêche
         // la suppression du cookie sur safex360-gateway.onrender.com (domain

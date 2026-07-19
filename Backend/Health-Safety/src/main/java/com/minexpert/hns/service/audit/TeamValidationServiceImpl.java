@@ -22,7 +22,7 @@ import com.minexpert.hns.repository.parameters.InternalAuditorRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * LOT 52 — Implémentation de la validation d'équipe d'audit (ISO 19011:2018).
+ * LOT 52 — Implémentation de la validation d'équipe d'audit (ISO 19011:2026).
  *
  * <p>Ne lève pas d'exception en cas de violation : retourne la liste complète
  * des écarts en français pour affichage côté client.

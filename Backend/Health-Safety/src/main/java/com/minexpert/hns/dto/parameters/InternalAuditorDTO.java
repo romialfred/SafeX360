@@ -22,7 +22,7 @@ public class InternalAuditorDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // ─── LOT 52 — Compétences auditeurs (ISO 19011:2018 §7) ────────────────
+    // ─── LOT 52 — Compétences auditeurs (ISO 19011:2026) ──────────────────
     private String qualifications;
     private String domains;
     private String languages;
