@@ -12,7 +12,12 @@ public class AllowedOriginPolicy {
 
     private final List<String> origins;
 
-    public AllowedOriginPolicy(@Value("${SAFEX_ALLOWED_ORIGINS}") String configuredOrigins) {
+    // Propriete INTERNE `safex.allowed-origins` (elle-meme alimentee par l'env
+    // var SAFEX_ALLOWED_ORIGINS avec repli sur la liste par defaut du yml).
+    // Ne JAMAIS redonner a la propriete le nom de l'env var : le placeholder
+    // se resoudrait sur lui-meme quand la variable est absente -> « Circular
+    // placeholder reference » -> crash au demarrage (panne prod du 2026-07-19).
+    public AllowedOriginPolicy(@Value("${safex.allowed-origins}") String configuredOrigins) {
         this.origins = Arrays.stream(configuredOrigins.split(","))
             .map(String::trim)
             .filter(value -> !value.isBlank())
