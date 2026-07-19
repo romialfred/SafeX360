@@ -14,6 +14,12 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("https://health-safety-eight.vercel.app", "https://safex360.data-univers.com",
+                                // Domaine Vercel de PROD. Manquait depuis toujours : le defaut
+                                // etait LATENT tant que l'Origin ne parvenait pas jusqu'ici, et
+                                // la nouvelle chaine gateway (qui transmet l'Origin de bout en
+                                // bout) l'a revele — « Invalid CORS request » sur tout POST
+                                // depuis safex360.vercel.app.
+                                "https://safex360.vercel.app",
                                 "http://localhost:3000",
                                 "http://localhost:5173", "http://localhost:5174",
                                 "http://localhost:5474", "http://localhost:5475",
