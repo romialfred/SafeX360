@@ -52,9 +52,17 @@ public class MfaService {
             throw new MfaException("MFA_ENROLLMENT_NOT_ALLOWED");
         }
         String secret = pendingSecrets.computeIfAbsent(challengeToken, ignored -> totp.newSecret());
-        String label = url("SafeX 360:" + challenge.login());
-        String uri = "otpauth://totp/" + label + "?secret=" + secret
-                + "&issuer=" + url("SafeX 360") + "&algorithm=SHA1&digits=6&period=30";
+        // Affichage dans l'application d'authentification (Microsoft
+        // Authenticator, Google Authenticator...) : l'`issuer` est le titre en
+        // gras (« SafeX 360 »), la partie compte est la ligne du dessous. On y
+        // met le login ET le domaine datauniverse.bf : le titre reste « SafeX 360 »
+        // et la seconde ligne « <login> · datauniverse.bf » — ainsi un
+        // administrateur qui gère plusieurs comptes SafeX les distingue, tout en
+        // voyant le domaine demandé.
+        String issuer = "SafeX 360";
+        String accountLabel = challenge.login() + " · datauniverse.bf";
+        String uri = "otpauth://totp/" + url(issuer + ":" + accountLabel) + "?secret=" + secret
+                + "&issuer=" + url(issuer) + "&algorithm=SHA1&digits=6&period=30";
         return new Enrollment(secret, uri);
     }
 

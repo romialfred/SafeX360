@@ -7,7 +7,15 @@ import {
     IconWorld,
     IconArrowRight,
     IconArrowLeft,
+    IconShieldLock,
+    IconDeviceMobile,
+    IconCopy,
+    IconCheck,
+    IconKey,
+    IconX,
 } from '@tabler/icons-react';
+import SafeXBrandMark from '../../UtilityComp/SafeXBrandMark';
+import OtpQrCode from '../../UtilityComp/OtpQrCode';
 import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { isNativePlatform } from '../../../m/utils/capacitorBridge';
@@ -123,6 +131,19 @@ const LoginsPage = () => {
     // par un echec sec et ne pouvait que recharger la page.
     const [mfaDeadline, setMfaDeadline] = useState<number | null>(null);
     const [mfaRemaining, setMfaRemaining] = useState<number>(0);
+    const [keyCopied, setKeyCopied] = useState(false);
+    const [showManualKey, setShowManualKey] = useState(false);
+
+    const copyManualKey = async (key: string) => {
+        try {
+            await navigator.clipboard.writeText(key);
+            setKeyCopied(true);
+            window.setTimeout(() => setKeyCopied(false), 2000);
+        } catch {
+            // Presse-papiers indisponible (contexte non sécurisé) : la clé reste
+            // lisible à l'écran, la copie n'est qu'un confort.
+        }
+    };
 
     useEffect(() => {
         if (mfaDeadline === null || mfaMode === null || mfaMode === 'recoveryCodes') return;
@@ -141,6 +162,8 @@ const LoginsPage = () => {
         setMfaError('');
         setUseRecoveryCode(false);
         setMfaDeadline(null);
+        setShowManualKey(false);
+        setKeyCopied(false);
     };
 
     const t = language === 'fr'
@@ -720,7 +743,7 @@ const LoginsPage = () => {
                     </div>
                 )}
 
-                {/* ═══ Popup d'erreur SafeX — professionnelle avec logo officiel ═══ */}
+                {/* ═══ Modale MFA SafeX — en-tête de marque + QR d'enrôlement ═══ */}
                 <Modal
                     opened={mfaMode !== null}
                     /* Echappable — SAUF pendant l'affichage unique des codes de
@@ -729,35 +752,121 @@ const LoginsPage = () => {
                     onClose={() => { if (mfaMode !== 'recoveryCodes') cancelMfa(); }}
                     closeOnClickOutside={false}
                     closeOnEscape={mfaMode !== 'recoveryCodes'}
-                    withCloseButton={mfaMode !== 'recoveryCodes'}
+                    withCloseButton={false}
                     centered
-                    title={language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
                     radius="lg"
                     size="md"
+                    padding={0}
                     overlayProps={{ backgroundOpacity: 0.65, blur: 6 }}
+                    styles={{ body: { padding: 0 } }}
                 >
+                    {/* En-tête de marque : bouclier + wordmark SafeX 360 sur un
+                        aplat sombre, comme la vitrine — plus aucune fenêtre
+                        générique. Bouton de fermeture réintégré ici (sauf sur
+                        l'écran des codes de récupération). */}
+                    <div className="relative flex items-center gap-3 px-6 py-4 bg-[#0a1f1d] text-white rounded-t-[14px]">
+                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10">
+                            <IconShieldLock size={20} stroke={1.8} className="text-teal-300" />
+                        </span>
+                        <div className="min-w-0">
+                            <SafeXBrandMark variant="wordmark" tone="light" size={26} />
+                            <p className="text-[11px] tracking-[0.16em] uppercase text-white/60 mt-0.5">
+                                {language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
+                            </p>
+                        </div>
+                        {mfaMode !== 'recoveryCodes' && (
+                            <button
+                                type="button"
+                                onClick={cancelMfa}
+                                aria-label={language === 'fr' ? 'Fermer' : 'Close'}
+                                className="absolute top-3 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md text-white/70 hover:text-white hover:bg-white/10 transition"
+                            >
+                                <IconX size={16} stroke={2} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="px-6 py-5">
                     {mfaMode === 'enroll' && mfaEnrollment && (
-                        <div className="space-y-4 text-sm text-slate-800">
-                            <p>{language === 'fr'
-                                ? 'Ce rôle sensible exige un second facteur. Ajoutez cette clé dans votre application TOTP, puis saisissez le code à six chiffres.'
-                                : 'This sensitive role requires a second factor. Add this key to your TOTP app, then enter the six-digit code.'}</p>
-                            <div className="rounded-md bg-slate-100 p-3 font-mono break-all" aria-label={language === 'fr' ? 'Clé MFA manuelle' : 'Manual MFA key'}>
-                                {mfaEnrollment.manualKey}
+                        <div className="space-y-5 text-sm text-slate-800">
+                            <p className="text-slate-600 leading-relaxed">
+                                {language === 'fr'
+                                    ? 'Ce rôle sensible exige un second facteur. Scannez ce QR code avec Microsoft Authenticator (ou une application TOTP) pour ajouter votre compte SafeX 360.'
+                                    : 'This sensitive role requires a second factor. Scan this QR code with Microsoft Authenticator (or any TOTP app) to add your SafeX 360 account.'}
+                            </p>
+
+                            {/* Étape 1 — le QR, élément principal */}
+                            <div className="flex flex-col items-center gap-3">
+                                <OtpQrCode
+                                    value={mfaEnrollment.otpAuthUri}
+                                    size={208}
+                                    ariaLabel={language === 'fr'
+                                        ? 'QR code d’enrôlement à scanner avec votre application d’authentification'
+                                        : 'Enrollment QR code to scan with your authenticator app'}
+                                />
+                                <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                                    <IconDeviceMobile size={14} stroke={1.8} />
+                                    <span>
+                                        {language === 'fr'
+                                            ? 'Microsoft Authenticator → « + » → Compte professionnel → Scanner un code QR'
+                                            : 'Microsoft Authenticator → “+” → Work account → Scan a QR code'}
+                                    </span>
+                                </div>
                             </div>
-                            <a className="text-teal-700 underline" href={mfaEnrollment.otpAuthUri}>
-                                {language === 'fr' ? 'Ouvrir dans une application compatible' : 'Open in a compatible app'}
-                            </a>
-                            <TextInput
-                                label={language === 'fr' ? 'Code de vérification' : 'Verification code'}
-                                value={mfaCode}
-                                onChange={(event) => setMfaCode(event.currentTarget.value.replace(/\D/g, '').slice(0, 6))}
-                                inputMode="numeric"
-                                autoComplete="one-time-code"
-                                maxLength={6}
-                            />
-                            {mfaError && <p role="alert" className="text-red-700">{mfaError}</p>}
-                            <Button fullWidth loading={loading} onClick={handleMfaEnrollment} disabled={mfaCode.length !== 6}>
-                                {language === 'fr' ? 'Activer la MFA' : 'Enable MFA'}
+
+                            {/* Repli — saisie manuelle de la clé, replié par défaut */}
+                            <div className="border-t border-slate-100 pt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowManualKey((v) => !v)}
+                                    className="inline-flex items-center gap-1.5 text-[12.5px] text-teal-700 hover:text-teal-900 font-medium"
+                                >
+                                    <IconKey size={14} stroke={1.8} />
+                                    {language === 'fr'
+                                        ? 'Impossible de scanner ? Saisir la clé manuellement'
+                                        : 'Can’t scan? Enter the key manually'}
+                                </button>
+                                {showManualKey && (
+                                    <div className="mt-2 flex items-stretch gap-2">
+                                        <code
+                                            className="flex-1 rounded-md bg-slate-100 px-3 py-2 font-mono text-[12.5px] text-slate-700 break-all leading-relaxed"
+                                            aria-label={language === 'fr' ? 'Clé MFA manuelle' : 'Manual MFA key'}
+                                        >
+                                            {mfaEnrollment.manualKey}
+                                        </code>
+                                        <button
+                                            type="button"
+                                            onClick={() => copyManualKey(mfaEnrollment.manualKey)}
+                                            title={language === 'fr' ? 'Copier la clé' : 'Copy the key'}
+                                            aria-label={language === 'fr' ? 'Copier la clé' : 'Copy the key'}
+                                            className="flex-shrink-0 inline-flex items-center justify-center w-10 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 transition"
+                                        >
+                                            {keyCopied ? <IconCheck size={16} className="text-emerald-600" /> : <IconCopy size={16} />}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Étape 2 — le code à 6 chiffres */}
+                            <div>
+                                <TextInput
+                                    label={language === 'fr'
+                                        ? 'Code à 6 chiffres affiché par l’application'
+                                        : '6-digit code shown by the app'}
+                                    placeholder="000000"
+                                    value={mfaCode}
+                                    onChange={(event) => setMfaCode(event.currentTarget.value.replace(/\D/g, '').slice(0, 6))}
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={6}
+                                    size="md"
+                                    styles={{ input: { letterSpacing: '0.3em', fontFamily: 'monospace', textAlign: 'center', fontSize: 18 } }}
+                                />
+                                {mfaError && <p role="alert" className="text-red-700 text-[12.5px] mt-1.5">{mfaError}</p>}
+                            </div>
+
+                            <Button fullWidth size="md" color="teal" loading={loading} onClick={handleMfaEnrollment} disabled={mfaCode.length !== 6}>
+                                {language === 'fr' ? 'Activer la double authentification' : 'Enable two-factor authentication'}
                             </Button>
                         </div>
                     )}
@@ -834,6 +943,7 @@ const LoginsPage = () => {
                             </Button>
                         </div>
                     )}
+                    </div>
                 </Modal>
 
                 <Modal
