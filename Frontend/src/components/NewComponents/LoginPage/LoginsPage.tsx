@@ -7,14 +7,13 @@ import {
     IconWorld,
     IconArrowRight,
     IconArrowLeft,
-    IconShieldLock,
     IconDeviceMobile,
     IconCopy,
     IconCheck,
     IconKey,
     IconX,
 } from '@tabler/icons-react';
-import SafeXBrandMark from '../../UtilityComp/SafeXBrandMark';
+import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 import OtpQrCode from '../../UtilityComp/OtpQrCode';
 import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
@@ -135,13 +134,37 @@ const LoginsPage = () => {
     const [showManualKey, setShowManualKey] = useState(false);
 
     const copyManualKey = async (key: string) => {
+        // Copie robuste : l'API presse-papiers moderne exige un contexte
+        // sécurisé (HTTPS/localhost) ET peut être bloquée par la Permissions
+        // Policy. On tente d'abord clipboard.writeText, puis on REPLIE sur la
+        // sélection + execCommand('copy') — sinon la clé restait « incopiable ».
+        let ok = false;
         try {
-            await navigator.clipboard.writeText(key);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(key);
+                ok = true;
+            }
+        } catch {
+            ok = false;
+        }
+        if (!ok) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = key;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch {
+                ok = false;
+            }
+        }
+        if (ok) {
             setKeyCopied(true);
             window.setTimeout(() => setKeyCopied(false), 2000);
-        } catch {
-            // Presse-papiers indisponible (contexte non sécurisé) : la clé reste
-            // lisible à l'écran, la copie n'est qu'un confort.
         }
     };
 
@@ -760,20 +783,17 @@ const LoginsPage = () => {
                     overlayProps={{ backgroundOpacity: 0.65, blur: 6 }}
                     styles={{ body: { padding: 0 } }}
                 >
-                    {/* En-tête de marque : bouclier + wordmark SafeX 360 sur un
-                        aplat sombre, comme la vitrine — plus aucune fenêtre
-                        générique. Bouton de fermeture réintégré ici (sauf sur
-                        l'écran des codes de récupération). */}
+                    {/* En-tête de marque : VRAI logo SafeX (bouclier dégradé
+                        teal→rouge + wordmark Safe[X]360), l'identité unifiée de
+                        la plateforme — plus aucune fenêtre générique. Bouton de
+                        fermeture réintégré ici (sauf sur l'écran des codes de
+                        récupération). */}
                     <div className="relative flex items-center gap-3 px-6 py-4 bg-[#0a1f1d] text-white rounded-t-[14px]">
-                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10">
-                            <IconShieldLock size={20} stroke={1.8} className="text-teal-300" />
-                        </span>
-                        <div className="min-w-0">
-                            <SafeXBrandMark variant="wordmark" tone="light" size={26} />
-                            <p className="text-[11px] tracking-[0.16em] uppercase text-white/60 mt-0.5">
-                                {language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
-                            </p>
-                        </div>
+                        <SafeXLogoColor variant="full" tone="light" size={34} />
+                        <span className="hidden sm:block h-8 w-px bg-white/15" aria-hidden="true" />
+                        <p className="hidden sm:block text-[11px] tracking-[0.16em] uppercase text-white/60">
+                            {language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
+                        </p>
                         {mfaMode !== 'recoveryCodes' && (
                             <button
                                 type="button"
@@ -829,7 +849,14 @@ const LoginsPage = () => {
                                 {showManualKey && (
                                     <div className="mt-2 flex items-stretch gap-2">
                                         <code
-                                            className="flex-1 rounded-md bg-slate-100 px-3 py-2 font-mono text-[12.5px] text-slate-700 break-all leading-relaxed"
+                                            className="flex-1 rounded-md bg-slate-100 px-3 py-2 font-mono text-[12.5px] text-slate-700 break-all leading-relaxed select-all cursor-text"
+                                            style={{ userSelect: 'all' }}
+                                            onClick={(e) => {
+                                                // Sélectionne toute la clé au clic — l'utilisateur
+                                                // peut copier au clavier même si le bouton échoue.
+                                                const sel = window.getSelection();
+                                                if (sel) { sel.removeAllRanges(); const r = document.createRange(); r.selectNodeContents(e.currentTarget); sel.addRange(r); }
+                                            }}
                                             aria-label={language === 'fr' ? 'Clé MFA manuelle' : 'Manual MFA key'}
                                         >
                                             {mfaEnrollment.manualKey}
