@@ -1,9 +1,13 @@
 package com.minexpert.hns.service.risks;
 
 import com.minexpert.hns.dto.risks.RiskControlDTO;
+import com.minexpert.hns.entity.chemicalrisks.ChemicalRisk;
+import com.minexpert.hns.entity.risks.Risk;
 import com.minexpert.hns.entity.risks.RiskControl;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.repository.chemicalrisks.ChemicalRiskRepository;
 import com.minexpert.hns.repository.risks.RiskControlRepository;
+import com.minexpert.hns.repository.risks.RiskRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,9 +20,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RiskControlServiceImpl implements RiskControlService {
     private final RiskControlRepository riskControlRepository;
+    private final RiskRepository riskRepository;
+    private final ChemicalRiskRepository chemicalRiskRepository;
 
     @Override
     public RiskControlDTO create(RiskControlDTO dto) throws HSException {
+        // Un controle (mesure de maitrise) HERITE TOUJOURS de la mine de son entite
+        // parente — comme RiskAnalysisServiceImpl.create derive du risque parent. On
+        // ne fait donc PAS confiance au companyId eventuellement porte par le DTO
+        // client : la mine vient de la SOURCE DE VERITE (le risque ou le risque
+        // chimique parent, selon sourceType). Cela evite un controle orphelin
+        // (companyId nul) OU rattache a une autre mine que son parent.
+        String sourceType = dto.getSourceType();
+        Long parentCompanyId;
+        if (sourceType != null && sourceType.trim().toUpperCase().startsWith("CHEMICAL")) {
+            ChemicalRisk parent = chemicalRiskRepository.findById(dto.getRiskId())
+                    .orElseThrow(() -> new HSException("CHEMICAL_RISK_NOT_FOUND"));
+            parentCompanyId = parent.getCompanyId();
+        } else {
+            Risk parent = riskRepository.findById(dto.getRiskId())
+                    .orElseThrow(() -> new HSException("RISK_NOT_FOUND"));
+            parentCompanyId = parent.getCompanyId();
+        }
+        dto.setCompanyId(parentCompanyId);
         RiskControl control = dto.toEntity();
         RiskControl saved = riskControlRepository.save(control);
         return saved.toDTO();

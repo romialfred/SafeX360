@@ -211,10 +211,24 @@ const UpdateIncidents = () => {
             errorNotification(lockedInfo.status === 'CLOSED' ? 'Cet incident est clôturé. Les modifications ne sont plus autorisées.' : 'Cet incident est rejeté. Les modifications ne sont pas autorisées.');
             return;
         }
+        // Valider les champs requis (titre, lieu, département…) AVANT le PUT :
+        // un envoi non validé provoquait un 400/500 côté serveur.
+        const validation = form.validate();
+        if (validation.hasErrors) {
+            setErrorMessage("Veuillez remplir correctement tous les champs obligatoires.");
+            return;
+        }
         const values = form.values;
+        // Le département est dérivé du déclarant. Sans déclarant résolu, departmentId
+        // partirait undefined (FK obligatoire) → on bloque avec un message actionnable.
+        const deptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
+        if (deptId === undefined || deptId === null) {
+            setErrorMessage("Impossible de déterminer le département : sélectionnez un déclarant valide.");
+            return;
+        }
+        setErrorMessage(null);
         const evidence = await convertFilesToBase64New(values.evidence);
         dispatch(showOverlay());
-        const deptId = emps.find((emp: any) => emp.id == values.reporterId)?.departmentId;
         updateIncident({ ...values, departmentId: deptId, evidence: evidence, involvedPersons: values.involvedPersons?.map((x: any) => x.id), witnesses: values.witnesses?.map((x: any) => x.id) }).then((_res: any) => {
             successNotification("Incident mis à jour avec succès");
             navigate("/incidents");

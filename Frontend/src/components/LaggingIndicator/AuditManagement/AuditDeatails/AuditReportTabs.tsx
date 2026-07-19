@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import {
     Button,
     Card,
@@ -73,6 +74,14 @@ const AuditReportTabs = () => {
             },
             contributors: [],
         },
+        // Le schéma de validation était vide : form.validate() ne bloquait rien.
+        // Champs requis du rédacteur (nom + date) désormais contrôlés avant POST.
+        validate: {
+            report: {
+                preparerName: (value: string) => (value && value.trim().length > 0 ? null : "Le nom du rédacteur est requis"),
+                preDate: (value: any) => (value ? null : "La date de rédaction est requise"),
+            },
+        },
     });
 
     const addContributor = () => {
@@ -124,7 +133,12 @@ const AuditReportTabs = () => {
             onConfirm: async () => {
                 const evidence = await convertFilesToBase64New(values.report.docs);
                 dispatch(showOverlay());
-                addAuditReport({ report: { ...values.report, docs: evidence }, contributors: values.contributors })
+                // Date de rédaction sérialisée en 'YYYY-MM-DD' (LocalDate backend),
+                // même approche que InspectionReport — évite l'envoi d'une Date brute.
+                const preDate = values.report.preDate
+                    ? dayjs(values.report.preDate).format("YYYY-MM-DD")
+                    : values.report.preDate;
+                addAuditReport({ report: { ...values.report, docs: evidence, preDate }, contributors: values.contributors })
                     .then(() => {
                         successNotification("Rapport enregistré");
                         form.reset();

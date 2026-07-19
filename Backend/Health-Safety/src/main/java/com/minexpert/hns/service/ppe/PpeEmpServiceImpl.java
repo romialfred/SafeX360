@@ -31,6 +31,13 @@ public class PpeEmpServiceImpl implements PpeEmpService {
             @CacheEvict(cacheNames = "ppeEmpAssignmentCounts", allEntries = true)
     })
     public PpeEmpDTO create(PpeEmpDTO dto) throws HSException {
+        // Une attribution EPI SANS mine (companyId absent) devient une entite
+        // orpheline, invisible des qu'une mine est selectionnee. On refuse la
+        // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+        // injecte dans le DTO par le controller (ou propage par PpeRequest).
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         PpeEmp e = dto.toEntity();
         PpeEmp saved = empRepository.save(e);
         return saved.toDTO();
@@ -46,6 +53,16 @@ public class PpeEmpServiceImpl implements PpeEmpService {
             @CacheEvict(cacheNames = "ppeEmpAssignmentCounts", allEntries = true)
     })
     public List<Long> createMultiple(List<PpeEmpDTO> dtos) throws HSException {
+        // Meme regle qu'en creation unitaire : aucune attribution EPI ne doit etre
+        // persistee sans mine (companyId absent = entite orpheline invisible).
+        // Defense en profondeur meme si l'appelant (PpeRequest) propage deja la mine.
+        if (dtos != null) {
+            for (PpeEmpDTO dto : dtos) {
+                if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+                    throw new HSException("COMPANY_ID_REQUIRED");
+                }
+            }
+        }
         return empRepository.saveAll(dtos.stream()
                 .map(PpeEmpDTO::toEntity)
                 .toList())

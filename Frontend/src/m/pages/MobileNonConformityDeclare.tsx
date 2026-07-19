@@ -20,6 +20,7 @@ import { useHaptics } from '../hooks/useHaptics';
 import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { getCached, mutateOffline } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
+import { positiveMineId } from '../../utils/activeMine';
 import { MobileButton, MobileCard, MobileErrorState, toIsoDateLocal } from '../components/MobileUI';
 import { MSelectSheet, MSegment, MDateField, MTextArea, MTextField, MSelectOption } from '../components/MobileForm';
 
@@ -61,7 +62,8 @@ export default function MobileNonConformityDeclare() {
     const redirectAfter = useRedirectTimer();
     const user = useAppSelector((state: any) => state.user);
     const userId = Number(user?.empId ?? user?.id ?? 0);
-    const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+    // Mine mono-tenant du terrain : jamais de repli fabriqué (1/0/NaN). null → bloqué au submit.
+    const companyId = positiveMineId(user?.mineId) ?? positiveMineId(user?.companyId);
 
     const locations = useRefOptions('/hns/locations/getAllActive', `nc-locations-${companyId}`);
     const processes = useRefOptions('/hns/work-process/getAllActive', `nc-processes-${companyId}`);
@@ -89,6 +91,11 @@ export default function MobileNonConformityDeclare() {
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
+        if (companyId === null) {
+            haptic('error');
+            setSubmitError('Aucune mine valide associée à votre compte. Reconnectez-vous puis réessayez.');
+            return;
+        }
         setSending(true);
         setSubmitError(null);
         haptic('medium');

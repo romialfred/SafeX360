@@ -31,6 +31,7 @@ import { useHaptics } from '../hooks/useHaptics';
 import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { mutateOffline } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
+import { positiveMineId } from '../../utils/activeMine';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -87,7 +88,9 @@ export default function MobileGeneralAlertScreen() {
 
     // empId en priorité : le backend attend l'ID EMPLOYÉ, pas l'ID de compte.
     const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 14);
-    const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+    // Mine mono-tenant du terrain : jamais de repli fabriqué (1/0/NaN) — sinon
+    // l'alerte serait diffusée sur la mauvaise mine. null → bloqué au submit.
+    const companyId = positiveMineId(user?.mineId) ?? positiveMineId(user?.companyId);
 
     const descriptionValid = description.trim().length >= MIN_DESCRIPTION_LENGTH;
     const canSubmit = selectedType !== null && descriptionValid && !sending;
@@ -101,6 +104,11 @@ export default function MobileGeneralAlertScreen() {
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
+        if (companyId === null) {
+            haptic('error');
+            setErrorMessage('Aucune mine valide associée à votre compte. Reconnectez-vous puis réessayez.');
+            return;
+        }
         setSending(true);
         setErrorMessage(null);
         setPendingOffline(false);

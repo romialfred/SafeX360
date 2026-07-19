@@ -32,6 +32,13 @@ public class ChemicalRiskServiceImpl implements ChemicalRiskService {
             @CacheEvict(cacheNames = ChemicalRiskCacheNames.CHEMICAL_RISK_BY_ID, allEntries = true)
     })
     public ChemicalRiskDTO create(ChemicalRiskDTO dto) throws HSException {
+        // Un risque chimique SANS mine (companyId absent) devient une entite
+        // orpheline, invisible des qu'une mine est selectionnee. On refuse la
+        // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+        // injecte dans le DTO par le controller depuis la mine active du header.
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         requireWorkProcess(dto.getWorkProcessId());
         ChemicalRisk risk = dto.toEntity();
         ChemicalRisk saved = chemicalRiskRepository.save(risk);

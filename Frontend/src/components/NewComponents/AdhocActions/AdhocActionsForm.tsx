@@ -95,11 +95,20 @@ const AdhocActionsForm = () => {
     }, []);
 
     const handleSubmit = () => {
+        // Garde hydratation Redux : ownerId/departmentId sont figés dans initialValues
+        // au montage ; si l'utilisateur n'est pas encore résolu ils partiraient null
+        // (400 backend). On bloque et on relit l'utilisateur courant au submit.
+        if (!user?.id) {
+            errorNotification(t('form.createFailed'));
+            return;
+        }
         setSubmitting(true);
         dispatch(showOverlay());
 
         const payload = {
             ...form.values,
+            ownerId: user.id,
+            departmentId: user.departmentId ?? null,
             actionName: form.values.actionName.trim(),
             deadline: form.values.deadline instanceof Date
                 ? toIsoDateLocal(form.values.deadline)

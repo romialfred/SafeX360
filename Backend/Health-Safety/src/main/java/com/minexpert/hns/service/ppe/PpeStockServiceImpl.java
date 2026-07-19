@@ -29,6 +29,13 @@ public class PpeStockServiceImpl implements PpeStockService {
             @CacheEvict(cacheNames = "ppeStocksByPpe", allEntries = true)
     })
     public PpeStockDTO create(PpeStockDTO dto) throws HSException {
+        // Une entree de stock EPI SANS mine (companyId absent) devient une entite
+        // orpheline, invisible des qu'une mine est selectionnee. On refuse la
+        // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+        // injecte dans le DTO par le controller depuis la mine active du header.
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         System.out.println(dto);
         PpeStock stock = dto.toEntity();
         stock.setCreatedAt(LocalDateTime.now());

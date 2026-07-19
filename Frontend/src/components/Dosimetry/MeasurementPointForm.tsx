@@ -71,6 +71,7 @@ import {
     type MeasurementPointDTO,
     type ZoneClass,
 } from '../../services/DosimetryService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Modele de formulaire
@@ -108,7 +109,11 @@ const MeasurementPointForm = () => {
     const editId = params?.id ? Number(params.id) : null;
     const isEdit = editId !== null && !Number.isNaN(editId);
 
-    const mineId: number = Number(selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1);
+    // Mine active résolue (> 0) : null en vue consolidée → le submit bloque.
+    const mineId: number | null =
+        positiveMineId(selectedCompanyId) ??
+        positiveMineId(user?.mineId) ??
+        positiveMineId(user?.companyId);
 
     const [activeStep, setActiveStep] = useState(0);
     const [workAreas, setWorkAreas] = useState<{ value: string; label: string }[]>([]);
@@ -248,7 +253,7 @@ const MeasurementPointForm = () => {
         const ref = v.parameters.referenceLevel;
         return {
             id: isEdit ? (editId as number) : null,
-            mineId,
+            mineId: mineId as number,
             code: v.identification.code.trim().toUpperCase(),
             label: v.identification.label.trim(),
             zoneId: v.location.zoneId ? Number(v.location.zoneId) : null,
@@ -267,6 +272,10 @@ const MeasurementPointForm = () => {
         const validation = form.validate();
         if (validation.hasErrors) {
             errorNotification(t('ambient.form.errors.invalid'));
+            return;
+        }
+        if (mineId === null) {
+            errorNotification(selectMineMessage('créer ce point de mesure'));
             return;
         }
         setSubmitting(true);

@@ -70,6 +70,7 @@ import {
     type MeasurementPointDTO,
 } from '../../services/DosimetryService';
 import { getEmployeeDropdown } from '../../services/EmployeeService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Modele de formulaire
@@ -116,9 +117,11 @@ const MonitoringCampaignForm = () => {
         (state: any) => state.companySelection?.selectedCompanyId,
     );
 
-    const mineId: number = Number(
-        selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
-    );
+    // Mine active résolue (> 0) : null en vue consolidée → le submit bloque.
+    const mineId: number | null =
+        positiveMineId(selectedCompanyId) ??
+        positiveMineId(user?.mineId) ??
+        positiveMineId(user?.companyId);
 
     const [activeStep, setActiveStep] = useState(0);
     const [loadingInitial, setLoadingInitial] = useState(true);
@@ -271,7 +274,7 @@ const MonitoringCampaignForm = () => {
         const v = form.values;
         return {
             id: null,
-            mineId,
+            mineId: mineId as number,
             code: v.identification.code.trim().toUpperCase(),
             label: v.identification.label.trim(),
             objective: v.identification.objective.trim() || null,
@@ -288,6 +291,10 @@ const MonitoringCampaignForm = () => {
         const validation = form.validate();
         if (validation.hasErrors) {
             errorNotification(t('campaigns.form.errors.invalid'));
+            return;
+        }
+        if (mineId === null) {
+            errorNotification(selectMineMessage('créer cette campagne de surveillance'));
             return;
         }
         setSubmitting(true);

@@ -27,6 +27,7 @@ import { useHaptics } from '../hooks/useHaptics';
 import { mutateOffline } from '../services/mobileApi';
 import { getCapacitorPlugin } from '../utils/capacitorBridge';
 import { useAppSelector } from '../../slices/hooks';
+import { positiveMineId } from '../../utils/activeMine';
 import type { SosAlertDTO } from '../../services/SosService';
 import {
     createSosClientRequestId,
@@ -95,7 +96,9 @@ export default function MobileSosScreen() {
 
     // empId en priorité : le backend attend l'ID EMPLOYÉ, pas l'ID de compte.
     const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub);
-    const companyId = Number(user?.mineId ?? user?.companyId);
+    // Mine mono-tenant du terrain : jamais de repli fabriqué (1/0/NaN) — null si
+    // la session n'a pas de mine valide ; bloqué avant l'envoi du SOS.
+    const companyId = positiveMineId(user?.mineId) ?? positiveMineId(user?.companyId);
 
     const handleSendSos = async (tile: Tile) => {
         if (sending) return;
@@ -105,8 +108,7 @@ export default function MobileSosScreen() {
         setDelivery(null);
         haptic('sos');
         try {
-            if (!Number.isSafeInteger(userId) || userId <= 0
-                    || !Number.isSafeInteger(companyId) || companyId <= 0) {
+            if (!Number.isSafeInteger(userId) || userId <= 0 || companyId === null) {
                 throw new Error('Identité ou mine absente de la session.');
             }
             const position = await getGeolocation();

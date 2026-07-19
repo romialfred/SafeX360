@@ -48,7 +48,7 @@ import {
     equipmentFamilyOptions,
     normalizeFamilyKey,
 } from './inspectionLabels';
-import { successNotification, errorNotification } from '../../utility/NotificationUtility';
+import { successNotification, errorNotification, extractErrorMessage } from '../../utility/NotificationUtility';
 import { Z } from '../../constants/zIndex';
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -304,11 +304,9 @@ export default function EquipmentRegistryPage() {
             handleClose();
             await fetchList();
         } catch (e: any) {
-            errorNotification(
-                e?.response?.data?.message ||
-                    e?.response?.data?.error ||
-                    "Échec de l'enregistrement de l'équipement.",
-            );
+            // extractErrorMessage lit AUSSI errorMessage (format SafeX) — le message
+            // serveur précis n'est plus avalé au profit du repli générique.
+            errorNotification(extractErrorMessage(e, "Échec de l'enregistrement de l'équipement."));
         } finally {
             setSaving(false);
         }

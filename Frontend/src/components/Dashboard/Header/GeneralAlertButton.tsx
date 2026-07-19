@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { useAppSelector } from '../../../slices/hooks';
 import { triggerAlert } from '../../../services/GeneralAlertService';
+import { positiveMineId, selectMineMessage } from '../../../utils/activeMine';
 import { useNavigate } from 'react-router-dom';
 import { GENERAL_ALERT_TRIGGERED_EVENT } from '../../EmergencyManagement/GeneralAlert/GeneralAlertListener';
 
@@ -82,13 +83,16 @@ const GeneralAlertButton = () => {
             return;
         }
 
-        // Resolution tolerante de la mine. L'absence de selectedCompanyId
-        // (cas "Vue consolidee - Toutes les Mines") ne doit PAS empecher
-        // le declenchement d'une alerte : fallback sur mine d'attache user,
-        // sinon mine 1 par defaut. Le backend gere l'autorisation finale.
-        const resolvedCompanyId = Number(
-            selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
-        );
+        // Une évacuation cible une mine PRÉCISE. En vue consolidée (« Toutes les
+        // Mines », selectedCompanyId === null) il n'y a pas de mine active :
+        // l'ancien repli sur la mine 1 diffusait l'alerte aux MAUVAIS
+        // destinataires (danger vital). On exige donc une mine explicite ; à
+        // défaut, on bloque avec un message clair plutôt que de deviner.
+        const resolvedCompanyId = positiveMineId(selectedCompanyId);
+        if (resolvedCompanyId === null) {
+            errorNotification(selectMineMessage("déclencher une alerte d'évacuation"));
+            return;
+        }
 
         setSending(true);
 

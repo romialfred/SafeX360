@@ -26,14 +26,23 @@ const errorNotification = (message: string) => {
   })
 }
 
+/**
+ * Extrait TOUJOURS une CHAÎNE affichable d'une erreur, quel que soit le format
+ * renvoyé par le backend. Garantit qu'aucun objet ne finit rendu comme enfant
+ * React (cause d'« Objects are not valid as a React child » → écran blanc).
+ * Ordre : corps texte brut → errorMessage → message → error → err.message →
+ * repli. Un corps objet inconnu ne fait JAMAIS échouer le rendu.
+ */
 function extractErrorMessage(error: unknown, fallback: string): string {
   const err = error as any;
-  return (
-    err?.response?.data?.errorMessage ||
-    err?.response?.data?.message ||
-    err?.message ||
-    fallback
-  );
+  const data = err?.response?.data;
+  if (typeof data === "string" && data.trim()) return data.trim();
+  const picked =
+    data?.errorMessage ||
+    data?.message ||
+    data?.error ||
+    err?.message;
+  return typeof picked === "string" && picked.trim() ? picked.trim() : fallback;
 }
 
 export { successNotification, errorNotification, extractErrorMessage };

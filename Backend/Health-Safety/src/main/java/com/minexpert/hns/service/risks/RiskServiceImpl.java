@@ -36,6 +36,14 @@ public class RiskServiceImpl implements RiskService {
                         @CacheEvict(cacheNames = "riskOverview", allEntries = true)
         })
         public RiskDTO create(RiskDTO dto) throws HSException {
+                // Un risque SANS mine (companyId absent) devient une entite orpheline,
+                // invisible des qu'une mine est selectionnee. On refuse la creation
+                // silencieuse (doctrine COMPANY_ID_REQUIRED, cf. IncidentServiceImpl).
+                // Le companyId est injecte dans le DTO par le controller depuis la mine
+                // active du header ; son absence = aucune mine selectionnee.
+                if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+                        throw new HSException("COMPANY_ID_REQUIRED");
+                }
                 requireWorkProcess(dto.getWorkProcessId());
                 Risk risk = dto.toEntity();
                 Risk saved = riskRepository.save(risk);

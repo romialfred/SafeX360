@@ -56,6 +56,7 @@ import {
     type ExposedWorkerDTO,
     type DoseCategory,
 } from '../../services/DosimetryService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 /**
  * ExposedWorkerForm — Phase 2 Frontend-C (LOT Dosimetrie).
@@ -185,6 +186,9 @@ const ExposedWorkerForm = () => {
     const params = useParams();
     const dispatch = useAppDispatch();
     const user = useAppSelector((state: any) => state.user);
+    const selectedCompanyId = useAppSelector(
+        (state: any) => state.companySelection?.selectedCompanyId,
+    );
 
     const editId = params?.id ? Number(params.id) : null;
     const isEdit = editId !== null && !Number.isNaN(editId);
@@ -432,6 +436,17 @@ const ExposedWorkerForm = () => {
         }
         const values = form.values;
 
+        // Mine active OBLIGATOIRE : en vue consolidée (« Toutes les Mines »),
+        // selectedCompanyId est null — on ne devine pas, on bloque.
+        const mineId =
+            positiveMineId(selectedCompanyId) ??
+            positiveMineId(user?.mineId) ??
+            positiveMineId(user?.companyId);
+        if (mineId === null) {
+            errorNotification(selectMineMessage('enregistrer ce travailleur exposé'));
+            return;
+        }
+
         const payload: ExposedWorkerDTO = {
             id: isEdit ? editId : null,
             employeeId: Number(values.identity.employeeId),
@@ -443,8 +458,7 @@ const ExposedWorkerForm = () => {
             specialStatusStartDate: toLocalDate(values.special.startDate),
             specialStatusEndDate: null,
             active: true,
-            // mineId est injecte par le backend si possible — sinon on prend le user.mineId
-            mineId: user?.mineId ?? user?.companyId ?? 1,
+            mineId: mineId as number,
             // Date d'affectation : champ obligatoire de l'etape 1, jete jusqu'ici
             // faute d'exister cote DTO/entite. Desormais persiste.
             assignmentDate: toLocalDate(values.identity.assignmentDate),

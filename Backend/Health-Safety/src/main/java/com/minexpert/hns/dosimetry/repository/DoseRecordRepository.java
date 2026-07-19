@@ -21,6 +21,14 @@ public interface DoseRecordRepository extends JpaRepository<DoseRecord, Long> {
 
     List<DoseRecord> findByWorkerId(Long workerId);
 
+    /**
+     * Tous les enregistrements de dose d'une mine. Le DoseRecord n'a pas de colonne
+     * mineId propre : la mine est portee par le travailleur lie (worker.mineId), d'ou
+     * la traversee de relation. Sert au cloisonnement de getAll(companyId).
+     */
+    @Query("SELECT d FROM DoseRecord d WHERE d.worker.mineId = :mineId")
+    List<DoseRecord> findByMineId(@Param("mineId") Long mineId);
+
     List<DoseRecord> findByWorkerIdAndPeriod(Long workerId, String period);
 
     List<DoseRecord> findByWorkerIdOrderByPeriodAsc(Long workerId);

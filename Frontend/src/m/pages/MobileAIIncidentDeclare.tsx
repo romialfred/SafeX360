@@ -32,6 +32,7 @@ import { capturePhoto } from '../services/cameraService';
 import axiosInstance from '../../interceptors/AxiosInterceptor';
 import { useAppSelector } from '../../slices/hooks';
 import { extractErrorMessage } from '../../utility/NotificationUtility';
+import { positiveMineId } from '../../utils/activeMine';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -89,7 +90,8 @@ export default function MobileAIIncidentDeclare() {
     // Attribution employé : empId prioritaire sur l'id de compte. Repli 0
     // (bloqué au submit) — plus jamais d'attribution fantôme à l'employé 14.
     const userId = Number(user?.empId ?? user?.id ?? user?.userId ?? user?.sub ?? 0);
-    const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+    // Mine mono-tenant du terrain : jamais de repli fabriqué (1/0/NaN). null → bloqué au submit.
+    const companyId = positiveMineId(user?.mineId) ?? positiveMineId(user?.companyId);
 
     // FK nullable=false backend — mêmes défauts référentiels que le wizard IA web
     const [defaultIds, setDefaultIds] = useState<{ locationId?: number; workAreaId?: number; workProcessId?: number }>({});
@@ -241,6 +243,11 @@ export default function MobileAIIncidentDeclare() {
         if (userId === 0) {
             haptic('error');
             setSubmitError('Utilisateur non identifié. Reconnectez-vous puis réessayez.');
+            return;
+        }
+        if (companyId === null) {
+            haptic('error');
+            setSubmitError('Aucune mine valide associée à votre compte. Reconnectez-vous puis réessayez.');
             return;
         }
         // FK nullable=false backend : un payload à locationId/workAreaId/

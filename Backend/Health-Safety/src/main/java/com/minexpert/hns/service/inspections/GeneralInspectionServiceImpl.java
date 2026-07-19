@@ -51,6 +51,13 @@ public class GeneralInspectionServiceImpl implements GeneralInspectionService {
                         @CacheEvict(cacheNames = "inspectionInfoById", allEntries = true)
         })
         public void createGeneralInspection(GeneralInspectionDTO generalInspectionDTO) throws HSException {
+                // Une inspection SANS mine (companyId absent) devient une entite
+                // orpheline, invisible des qu'une mine est selectionnee. On refuse la
+                // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+                // injecte dans le DTO par le controller depuis la mine active du header.
+                if (generalInspectionDTO.getCompanyId() == null || generalInspectionDTO.getCompanyId() <= 0) {
+                        throw new HSException("COMPANY_ID_REQUIRED");
+                }
                 generalInspectionDTO.setCreatedAt(LocalDateTime.now());
                 generalInspectionDTO.setUpdatedAt(LocalDateTime.now());
                 generalInspectionDTO.setStatus(InspectionStatus.PENDING);

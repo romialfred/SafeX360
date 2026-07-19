@@ -62,7 +62,16 @@ public class AuditAPI {
         // Cloisonnement par mine : le companyId de la mine active (injecté en query par
         // l'intercepteur Axios) est persisté sur l'audit, sinon l'audit devient INVISIBLE
         // dans les listes filtrées par mine. Les auditeurs en héritent (voir service).
-        if (companyId != null && request.getAudit() != null) {
+        //
+        // On EXIGE la mine (doctrine COMPANY_ID_REQUIRED) : sans elle, l'audit — et les
+        // auditeurs qui en héritent — naîtrait orphelin (companyId=null), invisible dès
+        // qu'une mine est sélectionnée. L'HSException est convertie en 400 clair par
+        // ExceptionControllerAdvice, exactement comme les autres endpoints signalent
+        // leurs refus métier.
+        if (companyId == null || companyId <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (request.getAudit() != null) {
             request.getAudit().setCompanyId(companyId);
         }
         return new ResponseEntity<>(auditService.createAudit(request), HttpStatus.CREATED);

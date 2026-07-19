@@ -55,6 +55,7 @@ import {
     searchWorkers,
     type FitnessLevel,
 } from '../../services/DosimetryService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC helper
@@ -62,7 +63,7 @@ import {
 
 function hasDosimetryPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (['ADMINISTRATOR', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'SUPER_ADMIN'].includes(String(user.role ?? '').toUpperCase())) return true;
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {
@@ -142,7 +143,11 @@ const FitnessAssessmentForm = () => {
     );
 
     const canMedical = hasDosimetryPermission(user, 'DOSIMETRY_MEDICAL');
-    const mineId: number = selectedMineId ?? user?.mineId ?? user?.companyId ?? 1;
+    // Mine active résolue (> 0) : null en vue consolidée → le submit bloque.
+    const mineId: number | null =
+        positiveMineId(selectedMineId) ??
+        positiveMineId(user?.mineId) ??
+        positiveMineId(user?.companyId);
 
     const [workers, setWorkers] = useState<WorkerLite[]>([]);
     const [workerId, setWorkerId] = useState<string>(presetWorkerId ?? '');
@@ -161,6 +166,7 @@ const FitnessAssessmentForm = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     useEffect(() => {
+        if (mineId == null) return;
         let mounted = true;
         searchWorkers({ mineId }).then((list) => {
             if (!mounted) return;
@@ -200,6 +206,10 @@ const FitnessAssessmentForm = () => {
 
     const handleSignAndSave = async () => {
         if (!validate()) return;
+        if (mineId == null) {
+            errorNotification(selectMineMessage("enregistrer cette fiche d'aptitude"));
+            return;
+        }
         setConfirmOpen(true);
     };
 
@@ -210,7 +220,7 @@ const FitnessAssessmentForm = () => {
             const physicianId: number = Number(user?.id ?? user?.userId ?? 0) || 0;
             const newId = await createFitnessAssessment({
                 workerId: Number(workerId),
-                mineId,
+                mineId: mineId as number,
                 medicalVisitId: presetVisitId ? Number(presetVisitId) : null,
                 fitness,
                 restrictions: restrictions.trim() || null,

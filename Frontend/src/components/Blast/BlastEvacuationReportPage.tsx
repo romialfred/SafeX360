@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { extractErrorMessage } from '../../utility/NotificationUtility';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -195,7 +196,7 @@ const BlastEvacuationReportPage = () => {
             setIncidentModalOpen(false);
         } catch (err: any) {
             setActionError(
-                err?.response?.data ?? (t('evacReport.errors.actionFailed') as string),
+                extractErrorMessage(err, t('evacReport.errors.actionFailed') as string),
             );
         } finally {
             setActionLoading(false);
@@ -212,7 +213,7 @@ const BlastEvacuationReportPage = () => {
             setSignModalOpen(false);
         } catch (err: any) {
             setActionError(
-                err?.response?.data ?? (t('evacReport.errors.actionFailed') as string),
+                extractErrorMessage(err, t('evacReport.errors.actionFailed') as string),
             );
         } finally {
             setActionLoading(false);
@@ -227,7 +228,7 @@ const BlastEvacuationReportPage = () => {
             downloadBlob(blob, `evacuation-report-${report.id}-${lang}.pdf`);
         } catch (err: any) {
             setActionError(
-                err?.response?.data ?? (t('evacReport.errors.downloadFailed') as string),
+                extractErrorMessage(err, t('evacReport.errors.downloadFailed') as string),
             );
         }
     };

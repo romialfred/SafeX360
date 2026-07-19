@@ -52,7 +52,24 @@ public class OverexposureCaseServiceImpl implements OverexposureCaseService {
 
     @Override
     public Long create(Long companyId, OverexposureCaseDTO dto) {
+        // Donnee reglementaire : la mine doit etre EXPLICITE (mine active du header),
+        // jamais nulle/<=0. On leve une IllegalArgumentException("COMPANY_ID_REQUIRED")
+        // et non une HSException car la signature create() (et son interface + son
+        // controller, hors perimetre) ne declarent pas throws HSException ; le module
+        // Dosimetrie utilise deja les exceptions non verifiees, mappees en 400 par
+        // ExceptionControllerAdvice (meme code metier renvoye au frontend).
+        if (companyId == null || companyId <= 0) {
+            throw new IllegalArgumentException("COMPANY_ID_REQUIRED");
+        }
         OverexposureCase e = toEntity(dto);
+        // L'OverexposureCase n'a pas de mineId propre : sa mine EST celle de son
+        // travailleur (worker.mineId). Auparavant le parametre companyId etait
+        // totalement ignore, donc un dossier pouvait etre ouvert pour un travailleur
+        // d'une AUTRE mine que la mine active. On fait desormais foi a companyId : le
+        // travailleur cible doit appartenir a la mine active, sinon on refuse.
+        if (e.getWorker() == null || !companyId.equals(e.getWorker().getMineId())) {
+            throw new IllegalArgumentException("WORKER_NOT_IN_COMPANY");
+        }
         LocalDateTime now = LocalDateTime.now();
         if (e.getOpenedAt() == null) e.setOpenedAt(now);
         e.setCreatedAt(now);

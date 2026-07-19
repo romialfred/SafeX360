@@ -66,6 +66,7 @@ import {
     type DosimeterType,
     type DosimeterStatus,
 } from '../../services/DosimetryService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC tolerant — aligne sur les autres pages Dosimetry
@@ -73,7 +74,7 @@ import {
 
 function hasDosimetryPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (['ADMINISTRATOR', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'SUPER_ADMIN'].includes(String(user.role ?? '').toUpperCase())) return true;
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {
@@ -143,9 +144,11 @@ const DosimeterForm = () => {
     const isEdit = editId !== null && !Number.isNaN(editId);
 
     const canWrite = hasDosimetryPermission(user, 'DOSIMETRY_WRITE');
-    const mineId: number = Number(
-        selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
-    );
+    // Mine active résolue (> 0) : null en vue consolidée → le submit bloque.
+    const mineId: number | null =
+        positiveMineId(selectedCompanyId) ??
+        positiveMineId(user?.mineId) ??
+        positiveMineId(user?.companyId);
 
     const [loadingInitial, setLoadingInitial] = useState(isEdit);
     const [submitting, setSubmitting] = useState(false);
@@ -226,6 +229,10 @@ const DosimeterForm = () => {
             errorNotification(t('dosimeters.form.errors.permissionDenied'));
             return;
         }
+        if (mineId === null) {
+            errorNotification(selectMineMessage('enregistrer ce dosimètre'));
+            return;
+        }
         setSubmitting(true);
         setSubmitError(null);
         const payload: DosimeterDTO = {
@@ -235,7 +242,7 @@ const DosimeterForm = () => {
             qrCode: values.qrCode.trim() || null,
             status: values.status,
             calibrationDueDate: toIsoDate(values.calibrationDueDate),
-            mineId,
+            mineId: mineId as number,
         };
         try {
             if (isEdit) {

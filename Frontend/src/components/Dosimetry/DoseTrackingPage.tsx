@@ -94,7 +94,7 @@ import { resolveConfiguredRegulatoryLimit } from './dosimetryRegulatoryLimits';
 
 function hasDosimetryPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (['ADMINISTRATOR', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'SUPER_ADMIN'].includes(String(user.role ?? '').toUpperCase())) return true;
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {

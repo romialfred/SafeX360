@@ -93,6 +93,7 @@ import {
 } from '../../services/DosimetryService';
 import { getEmployeeDropdown } from '../../services/EmployeeService';
 import AmbientMeasurementForm from './AmbientMeasurementForm';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RBAC
@@ -100,7 +101,7 @@ import AmbientMeasurementForm from './AmbientMeasurementForm';
 
 function hasDosimetryPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (['ADMINISTRATOR', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'SUPER_ADMIN'].includes(String(user.role ?? '').toUpperCase())) return true;
     const candidates: string[] = [];
     if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
     if (Array.isArray(user.authorities)) {
@@ -172,9 +173,11 @@ const MonitoringCampaignDetailPage = () => {
     const canPcr = hasDosimetryPermission(user, 'DOSIMETRY_PCR_RPO');
     const canWrite = hasDosimetryPermission(user, 'DOSIMETRY_WRITE');
 
-    const mineId: number = Number(
-        selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1,
-    );
+    // Mine active résolue (> 0) : null en vue consolidée → l'ajout de mesure bloque.
+    const mineId: number | null =
+        positiveMineId(selectedCompanyId) ??
+        positiveMineId(user?.mineId) ??
+        positiveMineId(user?.companyId);
 
     const [campaign, setCampaign] = useState<MonitoringCampaignDTO | null>(null);
     const [measurements, setMeasurements] = useState<AmbientMeasurementDTO[]>([]);
@@ -281,6 +284,16 @@ const MonitoringCampaignDetailPage = () => {
     useEffect(() => {
         fetchAll();
     }, [fetchAll]);
+
+    // Ouverture du modal de saisie de mesure : exige une mine précise, sinon la
+    // mesure serait rattachée à la mauvaise mine (le payload porte mineId).
+    const openMeasureModal = () => {
+        if (mineId === null) {
+            errorNotification(selectMineMessage("ajouter une mesure d'ambiance"));
+            return;
+        }
+        setMeasureModalOpen(true);
+    };
 
     // ─── Helpers calcules ───
     const coveredPoints = useMemo(() => {
@@ -487,7 +500,7 @@ const MonitoringCampaignDetailPage = () => {
                                     color="indigo"
                                     size="sm"
                                     leftSection={<IconPlus size={14} />}
-                                    onClick={() => setMeasureModalOpen(true)}
+                                    onClick={openMeasureModal}
                                 >
                                     {t('campaigns.detail.actions.recordMeasurement')}
                                 </Button>
@@ -687,7 +700,7 @@ const MonitoringCampaignDetailPage = () => {
                                         size="xs"
                                         color="indigo"
                                         leftSection={<IconPlus size={12} />}
-                                        onClick={() => setMeasureModalOpen(true)}
+                                        onClick={openMeasureModal}
                                     >
                                         {t('campaigns.detail.actions.recordMeasurement')}
                                     </Button>
@@ -1060,7 +1073,7 @@ const MonitoringCampaignDetailPage = () => {
             <AmbientMeasurementForm
                 opened={measureModalOpen}
                 onClose={() => setMeasureModalOpen(false)}
-                mineId={mineId}
+                mineId={mineId ?? 0}
                 lockedCampaignId={Number(campaignId)}
                 pointIdAllowList={
                     coveredPoints

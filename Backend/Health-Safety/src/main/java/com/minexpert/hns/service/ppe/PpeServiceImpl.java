@@ -29,6 +29,13 @@ public class PpeServiceImpl implements PpeService {
             @CacheEvict(cacheNames = "ppeActive", allEntries = true)
     })
     public PpeDTO create(PpeDTO dto) throws HSException {
+        // Un EPI SANS mine (companyId absent) devient une entite orpheline,
+        // invisible des qu'une mine est selectionnee. On refuse la creation
+        // silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est injecte
+        // dans le DTO par le controller depuis la mine active du header.
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         if (dto.getId() != null && ppeRepository.existsById(dto.getId())) {
             throw new HSException("PPE_ALREADY_EXISTS");
         }

@@ -96,7 +96,12 @@ public class DoseRecordServiceImpl implements DoseRecordService {
 
     @Override
     public List<DoseRecordDTO> getAll(Long companyId) {
-        return repository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+        // Cloisonnement par mine : findAll() renvoyait les doses de TOUTES les mines
+        // (fuite de donnees radiologiques nominatives inter-mines). On filtre desormais
+        // sur la mine recue, comme ExposedWorkerServiceImpl.getAll(companyId). Le
+        // DoseRecord n'a pas de mineId propre : la mine est portee par son travailleur
+        // (worker.mineId), d'ou le filtrage via le repository sur ce chemin.
+        return repository.findByMineId(companyId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override

@@ -102,6 +102,16 @@ const ActivityReport = () => {
     };
 
     const handleSubmit = async () => {
+        // Chaque action décidée doit être complète : intitulé, responsable, échéance
+        // et statut sont NOT NULL côté backend — une action partielle → 400/500.
+        const actions = form.values.actions as any[];
+        for (let i = 0; i < actions.length; i++) {
+            const a = actions[i];
+            if (!a.actionName?.trim() || !a.assignedEmployeeId || !a.deadline || !a.status) {
+                errorNotification(`Action ${i + 1} : renseignez l'intitulé, le responsable, l'échéance et le statut.`);
+                return;
+            }
+        }
         setSubmitting(true);
         const docs = await convertFilesToBase64(form.values.report.docs);
         dispatch(showOverlay());

@@ -32,6 +32,14 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
         public PpeRequestDTO create(PpeRequestDTO dto) throws HSException {
+                // Une demande EPI SANS mine (companyId absent) devient une entite
+                // orpheline, invisible des qu'une mine est selectionnee — et propage
+                // ce companyId nul a toutes ses attributions filles. On refuse la
+                // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+                // injecte dans le DTO par le controller depuis la mine active du header.
+                if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+                        throw new HSException("COMPANY_ID_REQUIRED");
+                }
 
                 if (dto.getEmpIds() == null || dto.getEmpIds().isEmpty()
                                 || dto.getPpeIds() == null || dto.getPpeIds().isEmpty()) {

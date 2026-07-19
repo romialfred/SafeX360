@@ -31,6 +31,13 @@ public class InspectionReportServiceImpl implements InspectionReportService {
             @CacheEvict(cacheNames = "inspectionReportByInspection", allEntries = true)
     })
     public Long createReport(InspectionReportDTO report) throws HSException {
+        // Un rapport d'inspection SANS mine (companyId absent) devient une entite
+        // orpheline, invisible des qu'une mine est selectionnee. On refuse la
+        // creation silencieuse (doctrine COMPANY_ID_REQUIRED). Le companyId est
+        // injecte dans le DTO par le controller depuis la mine active du header.
+        if (report.getCompanyId() == null || report.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
 
         if (inspectionReportRepository.existsByGeneralInspectionId(report.getGeneralInspectionId())) {
             throw new HSException("INSPECTION_REPORT_ALREADY_EXISTS");

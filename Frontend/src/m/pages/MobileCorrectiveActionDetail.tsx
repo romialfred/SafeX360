@@ -17,6 +17,7 @@ import { useHaptics } from '../hooks/useHaptics';
 import { useRedirectTimer } from '../hooks/useRedirectTimer';
 import { getCached, mutateOffline } from '../services/mobileApi';
 import { useAppSelector } from '../../slices/hooks';
+import { positiveMineId } from '../../utils/activeMine';
 import {
     MobileButton, MobileCard, MobileChip, MobileDetailRow, MobileErrorState, MobileSection, MobileStaleBanner, ChipTone, SERIF,
 } from '../components/MobileUI';
@@ -46,7 +47,8 @@ export default function MobileCorrectiveActionDetail() {
     const { id } = useParams<{ id: string }>();
     const user = useAppSelector((state: any) => state.user);
     const userId = Number(user?.empId ?? user?.id ?? 0);
-    const companyId = Number(user?.mineId ?? user?.companyId ?? 1);
+    // Mine mono-tenant du terrain : jamais de repli fabriqué (1/0/NaN). null → bloqué au submit.
+    const companyId = positiveMineId(user?.mineId) ?? positiveMineId(user?.companyId);
 
     const [action, setAction] = useState<any | null>(null);
     const [stale, setStale] = useState(false);
@@ -96,6 +98,11 @@ export default function MobileCorrectiveActionDetail() {
 
     const markCompleted = async () => {
         if (!action || completing) return;
+        if (companyId === null) {
+            haptic('error');
+            setCompleteError('Aucune mine valide associée à votre compte. Reconnectez-vous puis réessayez.');
+            return;
+        }
         setCompleting(true);
         setCompleteError(null);
         haptic('medium');

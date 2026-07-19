@@ -79,6 +79,8 @@ import {
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import { getEmployeeDropdown } from '../../services/EmployeeService';
+import { positiveMineId, selectMineMessage } from '../../utils/activeMine';
+import { extractErrorMessage } from '../../utility/NotificationUtility';
 import {
     createBlast,
     updateBlast,
@@ -277,8 +279,11 @@ const BlastForm = () => {
     const selectedCompanyId: number | null = useAppSelector(
         (state: any) => state?.companySelection?.selectedCompanyId ?? null,
     );
-    const mineId: number =
-        selectedCompanyId ?? user?.mineId ?? user?.companyId ?? 1;
+    // Mine du tir : la mine active du header. En vue consolidée (null) il n'y a
+    // PAS de mine précise — l'ancien repli « ?? 1 » créait le tir sous la mine 1
+    // (mauvaise mine ou 403). On exige une mine explicite ; validate() bloque
+    // sinon. (garde positive : jamais 0/NaN)
+    const mineId: number | null = positiveMineId(selectedCompanyId);
 
     const [state, setState] = useState<BlastFormState>(INITIAL_STATE);
     const [originalStatus, setOriginalStatus] = useState<BlastStatus | null>(null);
@@ -479,6 +484,12 @@ const BlastForm = () => {
     // ───── Validation ─────
     const validate = (): boolean => {
         const e: Record<string, string> = {};
+        if (mineId === null) {
+            // Pas de mine précise (vue consolidée) : on bloque avec un message
+            // clair plutôt que de rattacher le tir à une mine par défaut.
+            setLoadError(selectMineMessage('enregistrer ce tir'));
+            return false;
+        }
         if (!state.scheduledAt) {
             e.scheduledAt = t('form.validation.scheduledAtRequired');
         }
@@ -536,7 +547,7 @@ const BlastForm = () => {
         alarmZoneScope: state.alarmZoneScope || null,
         attachmentsNote: state.attachmentsNote || null,
         notes: state.notes || null,
-        mineId,
+        mineId: mineId as number,
         plan: {
             holeCount: state.holeCount === '' ? null : Number(state.holeCount),
             holeDiameterMm:
@@ -615,8 +626,8 @@ const BlastForm = () => {
                 await createBlast(buildCreatePayload());
             }
             navigate('/blast/registry');
-        } catch {
-            setLoadError(t('form.saveError'));
+        } catch (err) {
+            setLoadError(extractErrorMessage(err, t('form.saveError')));
         } finally {
             setSaving(false);
         }
@@ -646,8 +657,8 @@ const BlastForm = () => {
             await confirmBlast(blastId);
             setShowConfirmModal(false);
             navigate('/blast/registry');
-        } catch {
-            setLoadError(t('form.saveError'));
+        } catch (err) {
+            setLoadError(extractErrorMessage(err, t('form.saveError')));
         } finally {
             setSaving(false);
         }
@@ -667,8 +678,8 @@ const BlastForm = () => {
             await updateBlast(id as string, buildUpdatePayload(lockedReason), true);
             setShowLockedModal(false);
             navigate('/blast/registry');
-        } catch {
-            setLoadError(t('form.saveError'));
+        } catch (err) {
+            setLoadError(extractErrorMessage(err, t('form.saveError')));
         } finally {
             setSaving(false);
         }

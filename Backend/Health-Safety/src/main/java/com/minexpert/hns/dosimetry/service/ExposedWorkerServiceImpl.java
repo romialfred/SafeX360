@@ -25,7 +25,13 @@ public class ExposedWorkerServiceImpl implements ExposedWorkerService {
     @Override
     public Long create(Long companyId, ExposedWorkerDTO dto) {
         ExposedWorker entity = toEntity(dto);
-        entity.setMineId(companyId);
+        // Mine du travailleur expose : companyId (mine active du header) s'il est
+        // precis, SINON on conserve le mineId deja porte par le DTO (toEntity l'a
+        // pose). On n'ecrase JAMAIS avec un null/0 : ce sont des donnees
+        // radiologiques reglementaires, les orpheliner est une corruption.
+        if (companyId != null && companyId > 0) {
+            entity.setMineId(companyId);
+        }
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
         ExposedWorker saved = repository.save(entity);
@@ -46,7 +52,13 @@ public class ExposedWorkerServiceImpl implements ExposedWorkerService {
         ExposedWorker existing = repository.findById(dto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("ExposedWorker not found: " + dto.getId()));
         copy(dto, existing);
-        existing.setMineId(companyId);
+        // NE JAMAIS ecraser la mine d'un travailleur deja scelle : en vue
+        // consolidee (companyId null/<=0) un admin allMines ne doit pas orpheliner
+        // une donnee reglementaire existante. On ne reaffecte la mine que si une
+        // mine PRECISE est demandee.
+        if (companyId != null && companyId > 0) {
+            existing.setMineId(companyId);
+        }
         existing.setUpdatedAt(LocalDateTime.now());
         repository.save(existing);
 

@@ -246,6 +246,12 @@ export default function AIIncidentDeclaration() {
      */
     const submitIncident = async () => {
         if (!analysis) return;
+        // Garde titre : le champ est editable en step REVIEW et NOT NULL cote backend.
+        // Un titre vide/blanc provoquait un 400/500 — on bloque avec un message clair.
+        if (!editedTitle.trim()) {
+            errorNotification('Le titre de l\'incident est requis avant la soumission.');
+            return;
+        }
         // Garde : sans les 3 FK obligatoires, le backend renvoie un 500 generique.
         // On bloque en amont avec un message actionnable (le bouton est deja desactive).
         if (!refsReady) {
@@ -262,7 +268,7 @@ export default function AIIncidentDeclaration() {
             // veille — l'incident changeait de jour (ISO 45001 §9.1).
             const now = toIsoDateTimeLocal(new Date());
             const payload: any = {
-                title: editedTitle,
+                title: editedTitle.trim(),
                 // source/aiConfidence/aiModel sont les NOUVEAUX champs persistes en BDD
                 source: 'AI',
                 aiConfidence: analysis.confidence,

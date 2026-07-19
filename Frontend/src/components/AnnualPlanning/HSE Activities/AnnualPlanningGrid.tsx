@@ -17,6 +17,7 @@ import { modals } from '@mantine/modals';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 import { hideOverlay, showOverlay } from '../../../slices/OverlaySlice';
 import { useDispatch } from 'react-redux';
+import { toIsoDateLocal } from '../planningLabels';
 
 
 interface AnnualPlanningGridProps {
@@ -207,11 +208,21 @@ export default function AnnualPlanningGrid({
             monthStr = `${y}-${m}-01`;
         }
 
+        // dateTime (DateTimePicker) sérialisé en LocalDateTime local, SANS « Z » :
+        // envoyer la Date brute laissait axios produire un ISO UTC, décalant l'heure
+        // (voire le jour) au parse LocalDateTime côté serveur.
+        let dateTimeStr: string | null = null;
+        if (values.dateTime instanceof Date && !isNaN(values.dateTime as any)) {
+            const dt: Date = values.dateTime;
+            const pad = (n: number) => String(n).padStart(2, '0');
+            dateTimeStr = `${toIsoDateLocal(dt)}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+        }
+
         const payload = {
             title: values.title,
             responsibleId: Number(values.responsibleId),
             category: values.category,
-            dateTime: values.dateTime,
+            dateTime: dateTimeStr,
             month: monthStr,
             theme: values.theme || null,
         };
