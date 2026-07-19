@@ -1,6 +1,7 @@
 package com.minexpert.hns.api.emergency.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.minexpert.hns.api.emergency.enums.GeneralAlertStatus;
 
@@ -24,6 +25,14 @@ public class GeneralAlertDTO {
     private String reasonCode;
     private String message;
     private Boolean drillMode;
+
+    /** Périmètre de zones : "ALL" ou "SELECTION". */
+    private String zoneScope;
+    /** Zones ciblées (ids de Location) si SELECTION. */
+    private List<Long> zoneIds;
+    /** Noms des zones ciblées, pour affichage direct aux destinataires. */
+    private List<String> zoneNames;
+
     private LocalDateTime triggeredAt;
     private LocalDateTime endedAt;
     private Long elapsedSeconds;

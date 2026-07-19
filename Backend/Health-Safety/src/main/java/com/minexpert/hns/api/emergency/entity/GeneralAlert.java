@@ -74,6 +74,20 @@ public class GeneralAlert {
     @Column(name = "drill_mode", nullable = false)
     private Boolean drillMode = false;
 
+    /**
+     * Périmètre de zones de l'alerte : {@code "ALL"} (mine entière) ou
+     * {@code "SELECTION"} (zones précises listées dans {@link #zoneIds}).
+     * L'alerte est TOUJOURS diffusée à toute la mine (sécurité vitale : on ne
+     * coupe jamais une évacuation selon une zone potentiellement périmée) ; ce
+     * champ décrit QUELLES zones doivent évacuer, affiché aux destinataires.
+     */
+    @Column(name = "zone_scope", length = 20)
+    private String zoneScope;
+
+    /** Zones ciblées (ids de Location, séparés par des virgules) si SELECTION. */
+    @Column(name = "zone_ids", columnDefinition = "TEXT")
+    private String zoneIds;
+
     @Column(name = "triggered_at", nullable = false)
     private LocalDateTime triggeredAt;
 

@@ -385,6 +385,13 @@ const GeneralAlertDetailPage = () => {
                             <p className="text-[20px] mt-1" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>
                                 {alert.message || 'Évacuation générale du site'}
                             </p>
+                            {/* Périmètre de zones : « toute la mine » ou les zones ciblées. */}
+                            <p className="text-[12px] opacity-90 mt-1 font-medium">
+                                Périmètre :{' '}
+                                {alert.zoneScope === 'SELECTION' && (alert.zoneNames?.length ?? 0) > 0
+                                    ? `zones à évacuer — ${alert.zoneNames!.join(', ')}`
+                                    : 'toute la mine'}
+                            </p>
                             <p className="text-[12px] opacity-80 mt-0.5">
                                 Déclenchée par {alert.triggeredByName || '—'} · {formatTime(alert.triggeredAt)}
                             </p>

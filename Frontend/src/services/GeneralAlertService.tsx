@@ -28,6 +28,12 @@ export interface GeneralAlertDTO {
     safeCount?: number;
     injuredCount?: number;
     missingCount?: number;
+    /** Périmètre de zones : "ALL" ou "SELECTION". */
+    zoneScope?: string | null;
+    /** Zones ciblées (ids de Location) si SELECTION. */
+    zoneIds?: number[] | null;
+    /** Noms des zones ciblées, pour affichage. */
+    zoneNames?: string[] | null;
 }
 
 export interface EvacuationCheckInDTO {
@@ -53,6 +59,10 @@ export interface GeneralAlertRequest {
     reasonCode?: string | null;
     message?: string | null;
     drillMode?: boolean;
+    /** "ALL" (mine entière) ou "SELECTION" (zones précises). */
+    zoneScope?: 'ALL' | 'SELECTION';
+    /** Zones ciblées (ids de Location) quand zoneScope = "SELECTION". */
+    zoneIds?: number[];
 }
 
 // ── Lecture ─────────────────────────────────────────────────────────────────

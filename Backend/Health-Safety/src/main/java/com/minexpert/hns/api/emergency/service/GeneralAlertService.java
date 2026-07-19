@@ -2,7 +2,9 @@ package com.minexpert.hns.api.emergency.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +26,8 @@ import com.minexpert.hns.api.emergency.enums.GeneralAlertStatus;
 import com.minexpert.hns.api.emergency.repository.AssemblyPointRepository;
 import com.minexpert.hns.api.emergency.repository.EvacuationCheckInRepository;
 import com.minexpert.hns.api.emergency.repository.GeneralAlertRepository;
+import com.minexpert.hns.entity.parameters.Location;
+import com.minexpert.hns.repository.parameters.LocationRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +55,7 @@ public class GeneralAlertService {
     private final GeneralAlertRepository alertRepo;
     private final EvacuationCheckInRepository checkInRepo;
     private final AssemblyPointRepository apRepo;
+    private final LocationRepository locationRepo;
     private final EmergencyAuditService auditService;
     private final SimpMessagingTemplate messaging;
     private final EmergencyEmailService emergencyEmailService;
@@ -116,6 +121,7 @@ public class GeneralAlertService {
         a.setMessage(req.getMessage());
         a.setDrillMode(Boolean.TRUE.equals(req.getDrillMode()));
         a.setStatus(GeneralAlertStatus.ACTIVE);
+        applyZoneScope(a, req);
         GeneralAlert saved = alertRepo.save(a);
 
         auditService.log(
@@ -227,6 +233,45 @@ public class GeneralAlertService {
 
     // ── Mappers ──────────────────────────────────────────────────────────────
 
+    // ── Zones ────────────────────────────────────────────────────────────────
+
+    /**
+     * Valide et applique le périmètre de zones. En SELECTION, chaque zone doit
+     * être une Location EXISTANTE et APPARTENANT à la mine de l'alerte
+     * (cloisonnement : une zone d'une autre mine est refusée). Sinon → ALL.
+     */
+    private void applyZoneScope(GeneralAlert a, GeneralAlertRequest req) {
+        boolean selection = "SELECTION".equalsIgnoreCase(req.getZoneScope())
+                && req.getZoneIds() != null && !req.getZoneIds().isEmpty();
+        if (!selection) {
+            a.setZoneScope("ALL");
+            a.setZoneIds(null);
+            return;
+        }
+        List<Long> ids = req.getZoneIds().stream()
+                .filter(id -> id != null && id > 0).distinct().toList();
+        List<Location> zones = new ArrayList<>();
+        locationRepo.findAllById(ids).forEach(zones::add);
+        if (zones.size() != ids.size()
+                || zones.stream().anyMatch(z -> !a.getCompanyId().equals(z.getCompanyId()))) {
+            throw new IllegalArgumentException("INVALID_ALERT_ZONE");
+        }
+        a.setZoneScope("SELECTION");
+        a.setZoneIds(ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
+    }
+
+    private static List<Long> parseZoneIds(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        List<Long> out = new ArrayList<>();
+        for (String s : csv.split(",")) {
+            String t = s.trim();
+            if (!t.isEmpty()) {
+                try { out.add(Long.parseLong(t)); } catch (NumberFormatException ignored) { }
+            }
+        }
+        return out;
+    }
+
     private GeneralAlertDTO toDto(GeneralAlert a) {
         List<EvacuationCheckIn> checkIns = checkInRepo.findByGeneralAlertIdOrderByCheckedAtDesc(a.getId());
         return toDtoWithCheckIns(a, checkIns);
@@ -244,6 +289,15 @@ public class GeneralAlertService {
         LocalDateTime end = a.getEndedAt() != null ? a.getEndedAt() : LocalDateTime.now();
         long elapsed = Duration.between(a.getTriggeredAt(), end).getSeconds();
 
+        // Zones ciblées : ids + noms résolus (pour affichage direct « évacuez X, Y »).
+        List<Long> zoneIds = parseZoneIds(a.getZoneIds());
+        List<String> zoneNames = List.of();
+        if (!zoneIds.isEmpty()) {
+            Map<Long, String> nameById = new HashMap<>();
+            locationRepo.findAllById(zoneIds).forEach(l -> nameById.put(l.getId(), l.getName()));
+            zoneNames = zoneIds.stream().map(id -> nameById.getOrDefault(id, "#" + id)).toList();
+        }
+
         return GeneralAlertDTO.builder()
             .id(a.getId())
             .companyId(a.getCompanyId())
@@ -253,6 +307,9 @@ public class GeneralAlertService {
             .reasonCode(a.getReasonCode())
             .message(a.getMessage())
             .drillMode(a.getDrillMode())
+            .zoneScope(a.getZoneScope() != null ? a.getZoneScope() : "ALL")
+            .zoneIds(zoneIds)
+            .zoneNames(zoneNames)
             .triggeredAt(a.getTriggeredAt())
             .endedAt(a.getEndedAt())
             .elapsedSeconds(elapsed)

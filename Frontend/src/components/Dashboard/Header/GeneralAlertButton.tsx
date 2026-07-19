@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Modal, Checkbox, Radio, MultiSelect, Tooltip, Alert, Textarea, Group, Loader } from '@mantine/core';
 import { IconBroadcast, IconCheck, IconAlertTriangle, IconUsers, IconDeviceMobile, IconMail, IconBell } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import { useAppSelector } from '../../../slices/hooks';
 import { triggerAlert } from '../../../services/GeneralAlertService';
+import { getAllActiveLocations } from '../../../services/LocationService';
 import { positiveMineId, selectMineMessage } from '../../../utils/activeMine';
 import { useNavigate } from 'react-router-dom';
 import { GENERAL_ALERT_TRIGGERED_EVENT } from '../../EmergencyManagement/GeneralAlert/GeneralAlertListener';
@@ -38,17 +39,29 @@ const GeneralAlertButton = () => {
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
 
-    // TODO Phase 2.b : charger les zones depuis l'API /hns/locations/getAll
-    const availableZones = [
-        { value: 'open-pit-north', label: 'Open Pit North' },
-        { value: 'open-pit-south', label: 'Open Pit South' },
-        { value: 'crushing-station', label: 'Crushing Station' },
-        { value: 'heap-leach', label: 'Heap Leach Pad' },
-        { value: 'workshop', label: 'Workshop' },
-        { value: 'magazine', label: 'Explosive Magazine' },
-        { value: 'tailings', label: 'Tailings Storage Facility' },
-        { value: 'office-camp', label: 'Office Camp' },
-    ];
+    // Zones = les LIEUX (Locations) actifs de la mine active, chargés depuis
+    // l'API à l'ouverture du panneau. value = id de Location, label = nom.
+    // (l'intercepteur axios scope /hns/locations sur la mine active)
+    const [availableZones, setAvailableZones] = useState<{ value: string; label: string }[]>([]);
+    const [zonesLoading, setZonesLoading] = useState(false);
+    useEffect(() => {
+        if (!opened) return;
+        let alive = true;
+        setZonesLoading(true);
+        Promise.resolve(getAllActiveLocations())
+            .then((list: any[]) => {
+                if (!alive) return;
+                const arr = Array.isArray(list) ? list : [];
+                setAvailableZones(
+                    arr
+                        .filter((l) => l && l.id !== undefined && l.id !== null)
+                        .map((l) => ({ value: String(l.id), label: l.name ?? `#${l.id}` })),
+                );
+            })
+            .catch(() => { if (alive) setAvailableZones([]); })
+            .finally(() => { if (alive) setZonesLoading(false); });
+        return () => { alive = false; };
+    }, [opened, selectedCompanyId]);
 
     const handleClose = () => {
         close();
@@ -112,6 +125,13 @@ const GeneralAlertButton = () => {
                             : 'Évacuation immédiate.'
                     ),
                     drillMode: false,
+                    // Périmètre de zones : l'alerte reste diffusée à toute la mine
+                    // (sécurité), mais les zones ciblées sont enregistrées et
+                    // affichées aux destinataires (« évacuez telles zones »).
+                    zoneScope: zoneScope === 'selection' ? 'SELECTION' : 'ALL',
+                    zoneIds: zoneScope === 'selection'
+                        ? selectedZones.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+                        : undefined,
                 },
                 resolvedUserId
             );
@@ -224,7 +244,11 @@ const GeneralAlertButton = () => {
                                     data={availableZones}
                                     value={selectedZones}
                                     onChange={setSelectedZones}
-                                    placeholder="Sélectionner les zones concernées"
+                                    placeholder={zonesLoading
+                                        ? 'Chargement des zones…'
+                                        : (availableZones.length ? 'Sélectionner les zones concernées' : 'Aucun lieu défini pour cette mine')}
+                                    disabled={zonesLoading || availableZones.length === 0}
+                                    rightSection={zonesLoading ? <Loader size="xs" /> : undefined}
                                     searchable
                                     hidePickedOptions
                                 />
@@ -274,12 +298,18 @@ const GeneralAlertButton = () => {
                             size="sm"
                         />
 
-                        {/* Récapitulatif estimatif */}
+                        {/* Récapitulatif du périmètre. L'alerte est TOUJOURS
+                            diffusée à toute la mine (sécurité) ; en sélection, les
+                            zones ciblées sont annoncées aux destinataires. */}
                         <div className="bg-slate-50 border border-slate-200 rounded-md p-3 flex items-start gap-2">
                             <IconUsers size={16} className="text-slate-600 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-slate-700">
-                                <span className="font-medium">Destinataires estimés :</span>
-                                {zoneScope === 'all' ? ' tous les employés actifs (≈ 25 personnes sur les sites NMC et CITIZEN).' : ` employés affectés aux ${selectedZones.length || 0} zone(s) sélectionnée(s).`}
+                                <span className="font-medium">Diffusion :</span> tous les employés actifs de la mine sont notifiés.
+                                {zoneScope === 'selection' && (
+                                    selectedZones.length > 0
+                                        ? ` Zones à évacuer annoncées : ${selectedZones.length}.`
+                                        : ' Sélectionnez au moins une zone à évacuer.'
+                                )}
                             </p>
                         </div>
 
