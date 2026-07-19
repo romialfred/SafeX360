@@ -75,6 +75,10 @@ public class InspectionWorkflowService {
     private InspectionTeamMemberRepository teamMemberRepository;
     @Autowired(required = false)
     private InspectionHistoryRepository historyRepository;
+    // Sert a DERIVER la mine de l'inspection depuis le lieu cible lorsque le
+    // parametre companyId est absent (vue consolidee « Toutes les Mines »).
+    @Autowired(required = false)
+    private com.minexpert.hns.repository.parameters.LocationRepository locationRepository;
 
     // ─────────────────────────────────────────────────────────────
     //  Planification
@@ -119,7 +123,12 @@ public class InspectionWorkflowService {
         inspection.setTargetRefId(dto.getTargetRefId());
         inspection.setTargetLabel(dto.getTargetLabel());
         inspection.setPrimaryInspectorId(dto.getPrimaryInspectorId());
-        inspection.setCompanyId(companyId);
+        // Mine de l'inspection : le parametre companyId prime (mine active du
+        // header). En vue consolidee « Toutes les Mines » il est absent : on
+        // DERIVE alors la mine du LIEU cible (source de verite), puis, en dernier
+        // recours, de la mine du template. Sans cela l'inspection serait orpheline
+        // (company_id NULL) et invisible hors vue consolidee.
+        inspection.setCompanyId(resolveEffectiveCompany(companyId, dto.getSiteId(), tpl));
         inspection.setCreatedAt(LocalDateTime.now());
         inspection.setUpdatedAt(LocalDateTime.now());
         // Note : la colonne activity_id est NOT NULL en BDD pour rétro-compat.
@@ -166,6 +175,35 @@ public class InspectionWorkflowService {
         logHistory(saved, null, InspectionStatus.SCHEDULED, userId,
                 "Inspection planifiee avec template " + tpl.getCode());
         return saved.getId();
+    }
+
+    /**
+     * Determine la mine effective de l'inspection :
+     * <ol>
+     *   <li>le parametre {@code companyId} s'il est positif (mine active du
+     *       header, hors vue consolidee) ;</li>
+     *   <li>sinon la mine du LIEU cible ({@code siteId}) — source de verite ;</li>
+     *   <li>sinon la mine du template.</li>
+     * </ol>
+     * Renvoie {@code null} si aucune mine ne peut etre determinee (cible et
+     * template eux-memes non rattaches) : l'inspection reste alors visible en vue
+     * consolidee sans casser la planification.
+     */
+    private Long resolveEffectiveCompany(Long companyId, Long siteId, InspectionTemplate tpl) {
+        if (companyId != null && companyId > 0) {
+            return companyId;
+        }
+        if (siteId != null && locationRepository != null) {
+            Long fromSite = locationRepository.findById(siteId)
+                    .map(loc -> loc.getCompanyId())
+                    .filter(c -> c != null && c > 0)
+                    .orElse(null);
+            if (fromSite != null) {
+                return fromSite;
+            }
+        }
+        Long fromTemplate = tpl.getCompanyId();
+        return (fromTemplate != null && fromTemplate > 0) ? fromTemplate : null;
     }
 
     // ─────────────────────────────────────────────────────────────

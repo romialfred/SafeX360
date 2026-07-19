@@ -77,6 +77,37 @@ class CompanyScopeFilterSecurityTest {
     }
 
     @Test
+    void companyIdZeroIsTreatedAsAbsentAndClampedForScopedUser() throws Exception {
+        // Sentinelle « vue consolidee » (companyId=0) pour un compte cloisonne :
+        // NE DOIT PAS renvoyer 403 (ancien bug de planification), mais retomber
+        // sur le clamp vers la 1re mine assignee.
+        MockHttpServletRequest request = userRequest("7,9", false);
+        request.addParameter("companyId", "0");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicReference<ServletRequest> forwarded = new AtomicReference<>();
+
+        filter.doFilterInternal(request, response, (req, res) -> forwarded.set(req));
+
+        assertEquals(200, response.getStatus());
+        assertEquals("7", forwarded.get().getParameter("companyId"));
+    }
+
+    @Test
+    void companyIdZeroIsStrippedForAllMinesUser() throws Exception {
+        // Pour un compte allMines en vue consolidee, companyId=0 est RETIRE : le
+        // controleur doit le voir absent (et non « 0 », qui empoisonnerait l'aval).
+        MockHttpServletRequest request = userRequest("", true);
+        request.addParameter("companyId", "0");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicReference<ServletRequest> forwarded = new AtomicReference<>();
+
+        filter.doFilterInternal(request, response, (req, res) -> forwarded.set(req));
+
+        assertEquals(200, response.getStatus());
+        assertEquals(null, forwarded.get().getParameter("companyId"));
+    }
+
+    @Test
     void userWithoutAssignedMineIsDeniedByDefault() throws Exception {
         MockHttpServletRequest request = userRequest("", false);
         MockHttpServletResponse response = new MockHttpServletResponse();

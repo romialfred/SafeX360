@@ -301,13 +301,19 @@ export const getLastInspection = (
  * n'injecte aucun companyId — on file alors l'inspection sous la mine de la
  * cible sélectionnée. Fourni explicitement, il court-circuite l'intercepteur.
  */
-export const scheduleInspection = (dto: ScheduleInspectionDTO, companyId?: number | null) =>
-    axiosInstance
+export const scheduleInspection = (dto: ScheduleInspectionDTO, companyId?: number | null) => {
+    // On n'envoie companyId QUE s'il désigne une mine précise (> 0). Un 0 (ou une
+    // valeur nulle/NaN) = « vue consolidée / aucune mine » : on omet alors le
+    // paramètre, et le serveur dérive la mine depuis la cible. Envoyer companyId=0
+    // était rejeté en 403 par le cloisonnement (sentinelle empoisonnée).
+    const scoped = typeof companyId === 'number' && Number.isFinite(companyId) && companyId > 0;
+    return axiosInstance
         .post<number>('/hns/inspection/schedule', dto, {
             headers: writeHeaders(),
-            ...(companyId !== null && companyId !== undefined ? { params: { companyId } } : {}),
+            ...(scoped ? { params: { companyId } } : {}),
         })
         .then((r) => r.data);
+};
 
 /**
  * Remplace l'équipe d'une inspection DÉJÀ PLANIFIÉE (employés + rôles).

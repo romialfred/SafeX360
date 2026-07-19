@@ -61,12 +61,29 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
 
         UserContext user = resolution.user();
         String[] requestedValues = request.getParameterValues(PARAMETER_COMPANY_ID);
+
+        // Mine PRECISE demandee (companyId > 0), sinon null.
+        Long requestedCompany = null;
         if (requestedValues != null && requestedValues.length > 0) {
-            Long requestedCompany = parseSingleCompanyId(requestedValues);
-            if (requestedCompany == null) {
+            // Pollution de parametres (valeurs multiples) ou valeur non numerique
+            // => refus strict : ce sont des requetes malformees, jamais legitimes.
+            if (requestedValues.length != 1 || !isParsableLong(requestedValues[0])) {
                 deny(response, request, "INVALID_COMPANY_PARAMETER");
                 return;
             }
+            long parsed = Long.parseLong(requestedValues[0].trim());
+            if (parsed > 0) {
+                requestedCompany = parsed;
+            }
+            // parsed <= 0 : SENTINELLE « vue consolidee / aucune mine precise »
+            // (le front envoie 0 quand l'en-tete est sur « Toutes les Mines »).
+            // On la traite comme un parametre ABSENT — repli allMines/clamp
+            // ci-dessous — et NON comme une tentative d'acces hors perimetre : un
+            // 0 n'est pas une mine etrangere. Rejeter en 403 cassait TOUTE
+            // ecriture en vue consolidee (planification d'inspection, etc.).
+        }
+
+        if (requestedCompany != null) {
             if (!user.allMines() && !user.companyIds().contains(requestedCompany)) {
                 deny(response, request, "COMPANY_SCOPE_FORBIDDEN");
                 return;
@@ -75,8 +92,12 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Aucune mine precise (parametre absent ou <= 0). On RETIRE tout companyId
+        // residuel (ex. « 0 ») avant de poursuivre : laisser filer companyId=0
+        // jusqu'au controleur empoisonnait les traitements aval (mine orpheline,
+        // controle de template en echec...).
         if (user.allMines()) {
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(new CompanyIdInjectingRequest(request, null), response);
             return;
         }
         if (user.companyIds().isEmpty()) {
@@ -88,15 +109,15 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
         filterChain.doFilter(new CompanyIdInjectingRequest(request, clamp), response);
     }
 
-    private static Long parseSingleCompanyId(String[] values) {
-        if (values.length != 1 || values[0] == null || values[0].isBlank()) {
-            return null;
+    private static boolean isParsableLong(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
         }
         try {
-            long parsed = Long.parseLong(values[0].trim());
-            return parsed > 0 ? parsed : null;
+            Long.parseLong(value.trim());
+            return true;
         } catch (NumberFormatException ex) {
-            return null;
+            return false;
         }
     }
 
@@ -117,30 +138,44 @@ public class CompanyScopeFilter extends OncePerRequestFilter {
                 || path.endsWith("/error");
     }
 
+    /**
+     * Force la valeur de {@code companyId} vue par le controleur :
+     * <ul>
+     *   <li>valeur non nulle → le parametre est remplace (clamp vers la mine
+     *       assignee) ;</li>
+     *   <li>{@code null} → le parametre est RETIRE (le controleur le voit absent,
+     *       ce qui neutralise une sentinelle « 0 » de vue consolidee).</li>
+     * </ul>
+     */
     private static final class CompanyIdInjectingRequest extends HttpServletRequestWrapper {
-        private final String clampValue;
+        private final String overrideValue;
 
-        CompanyIdInjectingRequest(HttpServletRequest request, String clampValue) {
+        CompanyIdInjectingRequest(HttpServletRequest request, String overrideValue) {
             super(request);
-            this.clampValue = clampValue;
+            this.overrideValue = overrideValue;
         }
 
         @Override
         public String getParameter(String name) {
-            return PARAMETER_COMPANY_ID.equals(name) ? clampValue : super.getParameter(name);
+            return PARAMETER_COMPANY_ID.equals(name) ? overrideValue : super.getParameter(name);
         }
 
         @Override
         public String[] getParameterValues(String name) {
-            return PARAMETER_COMPANY_ID.equals(name)
-                    ? new String[] { clampValue }
-                    : super.getParameterValues(name);
+            if (PARAMETER_COMPANY_ID.equals(name)) {
+                return overrideValue == null ? null : new String[] { overrideValue };
+            }
+            return super.getParameterValues(name);
         }
 
         @Override
         public Map<String, String[]> getParameterMap() {
             Map<String, String[]> map = new HashMap<>(super.getParameterMap());
-            map.put(PARAMETER_COMPANY_ID, new String[] { clampValue });
+            if (overrideValue == null) {
+                map.remove(PARAMETER_COMPANY_ID);
+            } else {
+                map.put(PARAMETER_COMPANY_ID, new String[] { overrideValue });
+            }
             return Collections.unmodifiableMap(map);
         }
     }

@@ -542,7 +542,15 @@ export default function InspectionScheduleForm() {
                 form.type === 'LOCATION'
                     ? Number(form.targetRefId)
                     : rec?.locationId ?? null;
-            const targetCompanyId = rec?.companyId ?? resolvedMineId ?? null;
+            // Mine cible : companyId de la cible, sinon mine active (repli). On
+            // ne retient qu'une valeur POSITIVE — `??` ne filtre pas le 0, or un
+            // 0 (cible orpheline / vue consolidée) empoisonnait la requête. Si
+            // aucune mine positive n'est disponible, on laisse null : le serveur
+            // dérivera la mine depuis le lieu cible.
+            const positiveMine = (v: unknown): number | null =>
+                typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+            const targetCompanyId =
+                positiveMine(rec?.companyId) ?? positiveMine(resolvedMineId) ?? null;
 
             // D3 : targetLabel dérivé du nom de la cible, jamais saisi.
             const derivedLabel =
