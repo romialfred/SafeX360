@@ -7,7 +7,15 @@ import axiosInstance from '../interceptors/AxiosInterceptor';
  */
 
 export type GeneralAlertStatus = 'ACTIVE' | 'ENDED';
-export type CheckInStatus = 'SAFE' | 'INJURED' | 'MISSING';
+/**
+ * Statut d'un employé à l'appel nominatif.
+ *
+ * ATTENTION : « pas encore pointé » ne fait PAS partie de cette énumération —
+ * c'est l'absence de check-in. Un employé sans check-in reste à vérifier ; le
+ * confondre avec MISSING (absence constatée) masquerait des personnes que
+ * personne n'a cherchées.
+ */
+export type CheckInStatus = 'SAFE' | 'INJURED' | 'MISSING' | 'NOT_APPLICABLE';
 
 export interface GeneralAlertDTO {
     id?: number;
@@ -28,6 +36,8 @@ export interface GeneralAlertDTO {
     safeCount?: number;
     injuredCount?: number;
     missingCount?: number;
+    /** Employés explicitement écartés de l'évacuation (congé, hors site). */
+    notApplicableCount?: number;
     /** Périmètre de zones : "ALL" ou "SELECTION". */
     zoneScope?: string | null;
     /** Zones ciblées (ids de Location) si SELECTION. */
@@ -116,5 +126,34 @@ export const checkInToAlert = (params: {
     const { alertId, ...rest } = params;
     return axiosInstance
         .post(`/hns/emergency/alerts/general/${alertId}/check-in`, null, { params: rest })
+        .then((r) => r.data);
+};
+
+export interface BulkCheckInEntry {
+    employeeId: number;
+    status: CheckInStatus;
+    note?: string | null;
+    assemblyPointId?: number | null;
+}
+
+/**
+ * Pointage EN LOT de l'appel nominatif : une requête pour N employés.
+ *
+ * Le centre de contrôle marque souvent une équipe entière d'un coup. En
+ * unitaire cela ferait N requêtes et N diffusions WebSocket — inacceptable
+ * pendant une évacuation.
+ */
+export const bulkCheckInToAlert = (params: {
+    alertId: number;
+    entries: BulkCheckInEntry[];
+    assemblyPointId?: number | null;
+    note?: string | null;
+    actorId?: number;
+}): Promise<EvacuationCheckInDTO[]> => {
+    const { alertId, actorId, ...body } = params;
+    return axiosInstance
+        .post(`/hns/emergency/alerts/general/${alertId}/check-in/bulk`, body, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
         .then((r) => r.data);
 };

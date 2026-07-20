@@ -10,6 +10,8 @@ import {
     IconShieldCheck,
     IconStethoscope,
     IconShieldX,
+    IconCircleMinus,
+    IconClipboardList,
     IconBuildingBank,
     IconUrgent,
     IconArchive,
@@ -43,6 +45,7 @@ import {
     type CheckInStatus,
 } from '../../../services/GeneralAlertService';
 import { formatReasonCode } from './alertHelpers';
+import EvacuationRollCall from './EvacuationRollCall';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
 import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
@@ -124,7 +127,7 @@ const GeneralAlertDetailPage = () => {
     const [editNote, setEditNote] = useState('');
     const [editSaving, setEditSaving] = useState(false);
     const [elapsedLive, setElapsedLive] = useState(0);
-    const [activeTab, setActiveTab] = useState<'points' | 'headcount'>('points');
+    const [activeTab, setActiveTab] = useState<'points' | 'headcount' | 'rollcall'>('rollcall');
 
     // ── Load ──
     useEffect(() => {
@@ -221,9 +224,15 @@ const GeneralAlertDetailPage = () => {
 
         const computeForCategory = (deps: { name: string }[]) => {
             const employeesInCat = employees.filter((e) => e.department && deps.some((d) => d.name.toLowerCase() === e.department!.toLowerCase()));
-            const safe = employeesInCat.filter((e) => checkedInByEmployee.get(e.id)?.status === 'SAFE').length;
-            const injured = employeesInCat.filter((e) => checkedInByEmployee.get(e.id)?.status === 'INJURED').length;
-            const missing = employeesInCat.length - safe - injured;
+            const statusOf = (e: EmployeeEnriched) => checkedInByEmployee.get(e.id)?.status;
+            const safe = employeesInCat.filter((e) => statusOf(e) === 'SAFE').length;
+            const injured = employeesInCat.filter((e) => statusOf(e) === 'INJURED').length;
+            // « missing » = absence CONSTATÉE + personnes qu'aucun pointage n'a
+            // encore couvertes. On en exclut explicitement les NOT_APPLICABLE :
+            // les compter comme manquants (ancien calcul par soustraction) ferait
+            // chercher des employés en congé pendant une évacuation.
+            const notApplicable = employeesInCat.filter((e) => statusOf(e) === 'NOT_APPLICABLE').length;
+            const missing = employeesInCat.length - safe - injured - notApplicable;
             return { total: employeesInCat.length, safe, injured, missing, employees: employeesInCat };
         };
 
@@ -235,6 +244,22 @@ const GeneralAlertDetailPage = () => {
     }, [employees, checkedInByEmployee]);
 
     // ── Actions ──
+    /**
+     * Fusionne les pointages renvoyés par l'appel nominatif dans l'état local.
+     * Clé de fusion = employeeId (un seul pointage par employé et par alerte),
+     * ce qui rend l'opération idempotente : mise à jour optimiste puis
+     * réconciliation serveur passent par le même chemin sans doublon.
+     */
+    const mergeCheckIns = (incoming: EvacuationCheckInDTO[]) => {
+        if (!incoming || incoming.length === 0) return;
+        setCheckIns((prev) => {
+            const byEmployee = new Map<number, EvacuationCheckInDTO>();
+            prev.forEach((c) => byEmployee.set(c.employeeId, c));
+            incoming.forEach((c) => byEmployee.set(c.employeeId, c));
+            return Array.from(byEmployee.values());
+        });
+    };
+
     const openEditStatus = (employee: EmployeeEnriched) => {
         setEditingEmployee(employee);
         const existing = checkedInByEmployee.get(employee.id);
@@ -452,6 +477,9 @@ const GeneralAlertDetailPage = () => {
                 <div className="xl:col-span-2 space-y-5">
                     {/* Tabs : Points de rassemblement / Head-count */}
                     <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+                        <TabBtn active={activeTab === 'rollcall'} onClick={() => setActiveTab('rollcall')} icon={<IconClipboardList size={13} stroke={1.8} />}>
+                            Appel nominatif
+                        </TabBtn>
                         <TabBtn active={activeTab === 'points'} onClick={() => setActiveTab('points')} icon={<IconMapPin size={13} stroke={1.8} />}>
                             Points de rassemblement
                         </TabBtn>
@@ -459,6 +487,18 @@ const GeneralAlertDetailPage = () => {
                             Head-count par catégorie
                         </TabBtn>
                     </div>
+
+                    {activeTab === 'rollcall' && (
+                        <EvacuationRollCall
+                            alertId={Number(id)}
+                            employees={employees}
+                            checkIns={checkIns}
+                            isActive={isActive}
+                            actorId={currentUser?.id}
+                            onCheckInsUpdated={mergeCheckIns}
+                            onOpenDetail={openEditStatus}
+                        />
+                    )}
 
                     {activeTab === 'points' && (
                         <div className="space-y-3">
@@ -707,7 +747,7 @@ const GeneralAlertDetailPage = () => {
                     <div>
                         <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-2">Nouveau statut</label>
                         <div className="grid grid-cols-3 gap-2">
-                            {(['SAFE', 'INJURED', 'MISSING'] as CheckInStatus[]).map((s) => {
+                            {(['SAFE', 'INJURED', 'MISSING', 'NOT_APPLICABLE'] as CheckInStatus[]).map((s) => {
                                 const conf = STATUS_BTN[s];
                                 const active = editStatus === s;
                                 return (
@@ -779,15 +819,17 @@ const GeneralAlertDetailPage = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const STATUS_COLORS: Record<CheckInStatus, { bg: string; text: string; icon: any }> = {
-    SAFE:    { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: IconShieldCheck },
-    INJURED: { bg: 'bg-amber-100',   text: 'text-amber-700',   icon: IconStethoscope },
-    MISSING: { bg: 'bg-red-100',     text: 'text-red-700',     icon: IconShieldX },
+    SAFE:           { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: IconShieldCheck },
+    INJURED:        { bg: 'bg-amber-100',   text: 'text-amber-700',   icon: IconStethoscope },
+    MISSING:        { bg: 'bg-red-100',     text: 'text-red-700',     icon: IconShieldX },
+    NOT_APPLICABLE: { bg: 'bg-slate-100',   text: 'text-slate-600',   icon: IconCircleMinus },
 };
 
 const STATUS_BTN: Record<CheckInStatus, { icon: any; label: string; active: string }> = {
-    SAFE:    { icon: IconShieldCheck, label: 'En sécurité', active: 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' },
-    INJURED: { icon: IconStethoscope, label: 'Blessé',      active: 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-200' },
-    MISSING: { icon: IconShieldX,     label: 'Manquant',     active: 'bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' },
+    SAFE:           { icon: IconShieldCheck, label: 'En sécurité',   active: 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200' },
+    INJURED:        { icon: IconStethoscope, label: 'Blessé',        active: 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-200' },
+    MISSING:        { icon: IconShieldX,     label: 'Absent',        active: 'bg-red-50 border-red-500 text-red-900 ring-2 ring-red-200' },
+    NOT_APPLICABLE: { icon: IconCircleMinus, label: 'Non concerné',  active: 'bg-slate-100 border-slate-500 text-slate-900 ring-2 ring-slate-200' },
 };
 
 const KPI_STYLES: Record<string, { bg: string; border: string; icon: string; value: string }> = {

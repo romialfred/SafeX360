@@ -387,7 +387,16 @@ const GeneralAlertListener = () => {
     }, [activeAlert, soundEnabled, checkedInStatus, i18n.language, t]);
 
     // ── Check-in ──
-    const doCheckIn = async (status: CheckInStatus) => {
+    /**
+     * Statuts qu'un employé peut déclarer LUI-MÊME. « Non concerné »
+     * (NOT_APPLICABLE) en est volontairement exclu : écarter quelqu'un du
+     * décompte d'une évacuation est une décision du centre de contrôle, pas une
+     * auto-déclaration. Ce type garantit aussi la compatibilité avec la file
+     * d'attente hors-ligne.
+     */
+    type SelfCheckInStatus = Exclude<CheckInStatus, 'NOT_APPLICABLE'>;
+
+    const doCheckIn = async (status: SelfCheckInStatus) => {
         if (!activeAlert?.id || !currentUser?.id) return;
         setCheckingIn(true);
 

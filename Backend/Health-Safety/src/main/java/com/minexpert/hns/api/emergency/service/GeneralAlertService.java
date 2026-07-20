@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.minexpert.hns.api.emergency.dto.BulkCheckInRequest;
 import com.minexpert.hns.api.emergency.dto.EvacuationCheckInDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertRequest;
@@ -218,6 +219,62 @@ public class GeneralAlertService {
                 ? Map.of(saved.getAssemblyPointId(), apName) : Map.of());
     }
 
+    /**
+     * Pointage EN LOT (LOT 63). Une seule transaction, un seul flush, une seule
+     * diffusion WebSocket — au lieu de N appels unitaires pendant une évacuation.
+     *
+     * <p>Les entrées sans {@code employeeId} ou sans {@code status} sont ignorées
+     * silencieusement plutôt que de faire échouer tout le lot : en situation
+     * d'urgence, perdre 40 pointages valides à cause d'une ligne malformée serait
+     * pire que d'en ignorer une.</p>
+     */
+    @Transactional
+    public List<EvacuationCheckInDTO> bulkCheckIn(Long alertId, BulkCheckInRequest req, Long actorId) {
+        if (req == null || req.getEntries() == null || req.getEntries().isEmpty()) {
+            return List.of();
+        }
+
+        // Un seul aller-retour en base pour connaître les pointages déjà posés.
+        Map<Long, EvacuationCheckIn> existingByEmployee = checkInRepo
+                .findByGeneralAlertIdOrderByCheckedAtDesc(alertId).stream()
+                .collect(Collectors.toMap(EvacuationCheckIn::getEmployeeId, c -> c, (a, b) -> a));
+
+        LocalDateTime now = LocalDateTime.now();
+        List<EvacuationCheckIn> toSave = new ArrayList<>();
+
+        for (BulkCheckInRequest.Entry e : req.getEntries()) {
+            if (e == null || e.getEmployeeId() == null || e.getStatus() == null) continue;
+
+            EvacuationCheckIn ci = existingByEmployee.get(e.getEmployeeId());
+            if (ci == null) {
+                ci = new EvacuationCheckIn();
+                ci.setGeneralAlertId(alertId);
+                ci.setEmployeeId(e.getEmployeeId());
+            }
+            ci.setStatus(e.getStatus());
+            ci.setAssemblyPointId(e.getAssemblyPointId() != null
+                    ? e.getAssemblyPointId() : req.getAssemblyPointId());
+            ci.setNote(e.getNote() != null ? e.getNote() : req.getNote());
+            ci.setCheckedBy(actorId);
+            ci.setCheckedAt(now);
+            toSave.add(ci);
+        }
+
+        if (toSave.isEmpty()) return List.of();
+        List<EvacuationCheckIn> saved = checkInRepo.saveAll(toSave);
+
+        // Une seule diffusion pour tout le lot.
+        alertRepo.findById(alertId).ifPresent(a -> broadcast(a.getCompanyId(), toDto(a)));
+
+        List<Long> apIds = saved.stream().map(EvacuationCheckIn::getAssemblyPointId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, String> apNames = apIds.isEmpty() ? Map.of()
+                : apRepo.findAllById(apIds).stream()
+                    .collect(Collectors.toMap(AssemblyPoint::getId, AssemblyPoint::getName));
+
+        return saved.stream().map(c -> toCheckInDtoWithNames(c, apNames)).toList();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void broadcast(Long companyId, GeneralAlertDTO payload) {
@@ -278,12 +335,13 @@ public class GeneralAlertService {
     }
 
     private GeneralAlertDTO toDtoWithCheckIns(GeneralAlert a, List<EvacuationCheckIn> checkIns) {
-        int safe = 0, injured = 0, missing = 0;
+        int safe = 0, injured = 0, missing = 0, notApplicable = 0;
         for (EvacuationCheckIn c : checkIns) {
             switch (c.getStatus()) {
                 case SAFE -> safe++;
                 case INJURED -> injured++;
                 case MISSING -> missing++;
+                case NOT_APPLICABLE -> notApplicable++;
             }
         }
         LocalDateTime end = a.getEndedAt() != null ? a.getEndedAt() : LocalDateTime.now();
@@ -317,6 +375,7 @@ public class GeneralAlertService {
             .safeCount(safe)
             .injuredCount(injured)
             .missingCount(missing)
+            .notApplicableCount(notApplicable)
             .build();
     }
 

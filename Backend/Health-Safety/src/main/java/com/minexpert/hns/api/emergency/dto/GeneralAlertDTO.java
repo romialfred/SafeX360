@@ -43,4 +43,12 @@ public class GeneralAlertDTO {
     private Integer safeCount;
     private Integer injuredCount;
     private Integer missingCount;
+    /** LOT 63 — employés explicitement écartés de l'évacuation (congé, hors site). */
+    private Integer notApplicableCount;
+    /*
+     * NB : le nombre d'employés « restant à pointer » n'est volontairement PAS
+     * exposé ici. Il vaut (effectif - pointages), or l'effectif provient du HRMS
+     * et n'est pas connu de ce service : le champ serait toujours nul. Il est
+     * calculé côté client, qui dispose du référentiel des employés.
+     */
 }

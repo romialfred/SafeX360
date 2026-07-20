@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.minexpert.hns.api.emergency.dto.BulkCheckInRequest;
 import com.minexpert.hns.api.emergency.dto.EvacuationCheckInDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertRequest;
@@ -93,5 +94,18 @@ public class GeneralAlertController {
             id, employeeId, assemblyPointId, status,
             latitude, longitude, gpsAccuracy, note, actorId
         ));
+    }
+
+    /**
+     * LOT 63 — Pointage EN LOT depuis le centre de contrôle (appel nominatif).
+     * Une requête, une transaction, une diffusion WebSocket.
+     */
+    @PostMapping("/{id}/check-in/bulk")
+    public ResponseEntity<List<EvacuationCheckInDTO>> bulkCheckIn(
+        @PathVariable Long id,
+        @RequestBody BulkCheckInRequest request,
+        @RequestParam(required = false) Long actorId
+    ) {
+        return ResponseEntity.ok(service.bulkCheckIn(id, request, actorId));
     }
 }
