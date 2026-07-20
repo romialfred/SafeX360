@@ -74,4 +74,12 @@ public class ScheduleInspectionDTO {
      * dont l'{@code employeeId} alimente {@code primaryInspectorId}.</p>
      */
     private List<InspectionTeamMemberDTO> teamMembers;
+
+    /**
+     * Points de contrôle RETENUS pour cette inspection (personnalisation à la
+     * planification : l'utilisateur part du modèle et peut en décocher certains).
+     * Chaque id doit appartenir au template. Null ou vide = comportement
+     * historique : TOUS les checkpoints du template sont retenus.
+     */
+    private List<Long> checkpointIds;
 }

@@ -111,6 +111,11 @@ export interface ScheduleInspectionDTO {
     primaryInspectorId?: number | null;
     /** Équipe d'inspection (D4). Null/vide toléré par le backend. */
     teamMembers?: InspectionTeamMemberDTO[];
+    /**
+     * Points de contrôle retenus (personnalisation à la planification). Chaque id
+     * appartient au template. Null/vide = tous les points du modèle.
+     */
+    checkpointIds?: number[];
 }
 
 export interface LastInspectionDTO {

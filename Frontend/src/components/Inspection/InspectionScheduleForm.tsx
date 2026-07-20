@@ -50,6 +50,7 @@ import {
     IconListCheck,
     IconUsers,
     IconClock,
+    IconLock,
 } from '@tabler/icons-react';
 
 import {
@@ -120,6 +121,9 @@ const INITIAL: FormState = {
     objectives: '',
     description: '',
 };
+
+/** Point de contrôle d'un modèle, réduit à ce dont l'écran a besoin. */
+type TemplateCheckpoint = { id: number; label: string; critical: boolean };
 
 const TYPE_ICON: Record<InspectionTemplateType, React.ReactNode> = {
     EQUIPMENT: <IconBuildingFactory2 size={28} stroke={1.6} />,
@@ -364,7 +368,10 @@ export default function InspectionScheduleForm() {
     // quelques-uns) pour les montrer dès la planification. Une `ref` mémorise
     // les identifiants déjà demandés : sans elle, la dépendance sur l'état
     // rechargerait en boucle.
-    const [checkpointPreviews, setCheckpointPreviews] = useState<Record<number, string[]>>({});
+    // On stocke les points de contrôle COMPLETS (id + libellé + criticité) : ils
+    // servent à la fois à l'aperçu des tuiles ET à la personnalisation (cases à
+    // cocher du volet droit). L'aperçu (libellés) est dérivé plus bas.
+    const [templateCheckpoints, setTemplateCheckpoints] = useState<Record<number, TemplateCheckpoint[]>>({});
     const requestedTemplateIds = useRef<Set<number>>(new Set());
 
     useEffect(() => {
@@ -382,22 +389,74 @@ export default function InspectionScheduleForm() {
                                 (detail.checkpoints ?? [])
                                     .slice()
                                     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-                                    .map((cp) => cp.label)
-                                    .filter(Boolean),
+                                    .filter((cp) => cp.id != null && cp.label)
+                                    .map((cp) => ({
+                                        id: cp.id as number,
+                                        label: cp.label,
+                                        critical: cp.critical === true,
+                                    })),
                             ] as const,
                     )
                     // Un aperçu indisponible ne doit JAMAIS bloquer la planification :
                     // on retombe sur la liste vide, l'écran affiche alors le seul
                     // décompte, comme avant.
-                    .catch(() => [tpl.id, []] as const),
+                    .catch(() => [tpl.id, [] as TemplateCheckpoint[]] as const),
             ),
         ).then((entries) => {
-            if (alive) setCheckpointPreviews((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+            if (alive) setTemplateCheckpoints((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
         });
         return () => {
             alive = false;
         };
     }, [applicableTemplates]);
+
+    // Aperçu (libellés seuls) dérivé, pour les tuiles et l'étape Détails —
+    // signatures inchangées.
+    const checkpointPreviews = useMemo<Record<number, string[]>>(
+        () =>
+            Object.fromEntries(
+                Object.entries(templateCheckpoints).map(([id, cps]) => [id, cps.map((c) => c.label)]),
+            ),
+        [templateCheckpoints],
+    );
+
+    // ── Personnalisation du modèle : points de contrôle décochés ──────────────
+    // L'utilisateur part du modèle et peut retirer des points non applicables.
+    // Les points CRITIQUES restent obligatoires (verrouillés). On mémorise les
+    // points DÉCOCHÉS (défaut : tous cochés).
+    const [deselectedCheckpointIds, setDeselectedCheckpointIds] = useState<Set<number>>(new Set());
+    // Changer de modèle réinitialise la sélection (tout coché).
+    useEffect(() => {
+        setDeselectedCheckpointIds(new Set());
+    }, [form.templateId]);
+
+    const activeTemplateCheckpoints = useMemo<TemplateCheckpoint[]>(
+        () => (form.templateId ? templateCheckpoints[form.templateId] ?? [] : []),
+        [form.templateId, templateCheckpoints],
+    );
+    const selectedCheckpointIds = useMemo<number[]>(
+        () =>
+            activeTemplateCheckpoints
+                .filter((cp) => cp.critical || !deselectedCheckpointIds.has(cp.id))
+                .map((cp) => cp.id),
+        [activeTemplateCheckpoints, deselectedCheckpointIds],
+    );
+    const toggleCheckpoint = (cp: TemplateCheckpoint) => {
+        if (cp.critical) return; // point critique : non désélectionnable
+        setDeselectedCheckpointIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(cp.id)) next.delete(cp.id);
+            else next.add(cp.id);
+            return next;
+        });
+    };
+    const setAllCheckpoints = (selectAll: boolean) => {
+        setDeselectedCheckpointIds(
+            selectAll
+                ? new Set()
+                : new Set(activeTemplateCheckpoints.filter((cp) => !cp.critical).map((cp) => cp.id)),
+        );
+    };
 
     const autoTemplate =
         selectedRecord && applicableTemplates.length === 1 ? applicableTemplates[0] : null;
@@ -490,6 +549,12 @@ export default function InspectionScheduleForm() {
         }
         if (s >= 3) {
             if (!form.plannedDate) errs.push(t('schedule.errors.dateRequired'));
+            // Personnalisation : au moins un point de contrôle doit rester coché.
+            if (activeTemplateCheckpoints.length > 0 && selectedCheckpointIds.length === 0) {
+                errs.push(t('schedule.errors.noCheckpointSelected', {
+                    defaultValue: 'Sélectionnez au moins un point de contrôle à inspecter.',
+                }));
+            }
             // Équipe optionnelle ; mais dès qu'elle existe elle doit être valide.
             if (form.team.length > 0) {
                 if (form.team.some((m) => !m.employeeId)) {
@@ -574,6 +639,14 @@ export default function InspectionScheduleForm() {
                 teamMembers: members.length
                     ? members.map((m) => ({ employeeId: Number(m.employeeId), role: m.role }))
                     : undefined,
+                // Points de contrôle retenus (personnalisation). On n'envoie la
+                // liste que si des points ont réellement été décochés — sinon on
+                // laisse le serveur appliquer tout le modèle (rétro-compat).
+                checkpointIds:
+                    activeTemplateCheckpoints.length > 0
+                        && selectedCheckpointIds.length < activeTemplateCheckpoints.length
+                        ? selectedCheckpointIds
+                        : undefined,
             };
             const id = await scheduleInspection(payload, targetCompanyId);
             successNotification(t('schedule.success.submitted', { id }));
@@ -746,7 +819,11 @@ export default function InspectionScheduleForm() {
                         }
                         familyLabel={familyLabel}
                         appliedTemplate={templates.find((tpl) => tpl.id === form.templateId) ?? null}
-                        checkpointPreviews={checkpointPreviews}
+                        checkpoints={activeTemplateCheckpoints}
+                        deselectedIds={deselectedCheckpointIds}
+                        selectedCount={selectedCheckpointIds.length}
+                        onToggleCheckpoint={toggleCheckpoint}
+                        onToggleAll={setAllCheckpoints}
                         employees={employees}
                         locale={i18n.language}
                     />
@@ -1136,7 +1213,7 @@ function StepTemplate({
                     <span>{t('schedule.templateStep.noTemplateForFamily', { family: familyLabel })}</span>
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                     {templates.map((tpl) => {
                         const active = selectedTemplateId === tpl.id;
                         return (
@@ -1144,42 +1221,62 @@ function StepTemplate({
                                 key={tpl.id}
                                 type="button"
                                 onClick={() => onSelect(tpl.id)}
-                                className={`w-full text-left p-3 rounded-lg border-2 transition flex items-center gap-3 ${
+                                aria-pressed={active}
+                                className={`group relative w-full text-left rounded-xl border transition overflow-hidden ${
                                     active
-                                        ? 'border-cyan-600 bg-cyan-50/60 shadow-sm'
-                                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                        ? 'border-cyan-500 ring-2 ring-cyan-500/25 bg-white shadow-md'
+                                        : 'border-slate-200 bg-white hover:border-cyan-300 hover:shadow-sm'
                                 }`}
                             >
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                        <IconListCheck size={14} stroke={1.8} className="text-slate-400 flex-shrink-0" />
-                                        <div className="text-[13.5px] font-medium text-slate-900 truncate">
-                                            {tpl.name}
+                                {/* Liseré d'accent à gauche, plus marqué si sélectionné. */}
+                                <span
+                                    className={`absolute inset-y-0 left-0 w-1 ${
+                                        active ? 'bg-cyan-500' : 'bg-slate-200 group-hover:bg-cyan-200'
+                                    }`}
+                                />
+                                <div className="p-3 pl-4">
+                                    <div className="flex items-start gap-2.5">
+                                        <span
+                                            className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
+                                                active ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500'
+                                            }`}
+                                        >
+                                            <IconListCheck size={18} stroke={1.8} />
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[13.5px] font-semibold text-slate-900 leading-tight line-clamp-2">
+                                                {tpl.name}
+                                            </div>
+                                            <div className="text-[10.5px] text-slate-400 mt-0.5 font-mono">{tpl.code}</div>
                                         </div>
+                                        {active && (
+                                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center">
+                                                <IconCheck size={12} stroke={3} />
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-3">
-                                        <span>{tpl.code}</span>
-                                        <span>
+
+                                    {/* Métriques en pastilles. */}
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10.5px] font-medium">
+                                            <IconListCheck size={11} stroke={2} />
                                             {t('schedule.templateStep.checkpoints', { count: tpl.checkpointCount })}
                                         </span>
                                         {tpl.estimatedDurationMin && (
-                                            <span>
+                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10.5px] font-medium">
+                                                <IconClock size={11} stroke={2} />
                                                 {t('schedule.templateStep.estimated', { min: tpl.estimatedDurationMin })}
                                             </span>
                                         )}
                                     </div>
-                                    {/* Les intitulés réels lèvent toute ambiguïté : on
-                                        choisit une GRILLE, pas un lieu. */}
+
+                                    {/* Aperçu des points — l'utilisateur pourra en
+                                        décocher dans le volet de droite après sélection. */}
                                     <CheckpointPreview
                                         labels={checkpointPreviews[tpl.id] ?? []}
                                         total={tpl.checkpointCount}
                                     />
                                 </div>
-                                {active && (
-                                    <div className="w-6 h-6 rounded-full bg-cyan-700 text-white flex items-center justify-center flex-shrink-0">
-                                        <IconCheck size={14} stroke={2.4} />
-                                    </div>
-                                )}
                             </button>
                         );
                     })}
@@ -1229,6 +1326,104 @@ function CheckpointPreview({ labels, total }: { labels: string[]; total: number 
     );
 }
 
+/**
+ * CheckpointSelector — liste INTERACTIVE des points de contrôle du modèle
+ * retenu, dans le volet de droite. L'utilisateur part du modèle et DÉCOCHE les
+ * points non applicables à cette inspection. Les points CRITIQUES restent
+ * obligatoires (verrouillés). C'est le cœur de la personnalisation demandée.
+ */
+function CheckpointSelector({
+    checkpoints,
+    deselectedIds,
+    selectedCount,
+    onToggle,
+    onToggleAll,
+}: {
+    checkpoints: TemplateCheckpoint[];
+    deselectedIds: Set<number>;
+    selectedCount: number;
+    onToggle: (cp: TemplateCheckpoint) => void;
+    onToggleAll: (selectAll: boolean) => void;
+}) {
+    const { t } = useTranslation('inspection');
+    if (checkpoints.length === 0) {
+        return (
+            <p className="text-[11.5px] text-slate-400 mt-1.5">
+                {t('schedule.recap.checkpointsLoading', { defaultValue: 'Chargement des points de contrôle…' })}
+            </p>
+        );
+    }
+    const total = checkpoints.length;
+    const allSelected = selectedCount >= total;
+    return (
+        <div className="mt-2">
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400">
+                    {t('schedule.recap.checkpointsHeading', { defaultValue: 'Ce qui sera vérifié' })}
+                </span>
+                <span className="text-[11px] font-semibold text-cyan-700 tabular-nums">
+                    {selectedCount}/{total}
+                </span>
+            </div>
+            <button
+                type="button"
+                onClick={() => onToggleAll(!allSelected)}
+                className="text-[11px] text-cyan-700 hover:text-cyan-900 mb-1.5"
+            >
+                {allSelected
+                    ? t('schedule.recap.deselectAll', { defaultValue: 'Tout décocher' })
+                    : t('schedule.recap.selectAll', { defaultValue: 'Tout cocher' })}
+            </button>
+            <ul className="space-y-0.5 max-h-[260px] overflow-y-auto pr-0.5 -mr-0.5">
+                {checkpoints.map((cp) => {
+                    const selected = cp.critical || !deselectedIds.has(cp.id);
+                    return (
+                        <li key={cp.id}>
+                            <button
+                                type="button"
+                                onClick={() => onToggle(cp)}
+                                disabled={cp.critical}
+                                aria-pressed={selected}
+                                className={`group w-full flex items-start gap-2 text-left px-1.5 py-1 rounded-md transition ${
+                                    cp.critical ? 'cursor-default' : 'hover:bg-slate-50'
+                                }`}
+                            >
+                                <span
+                                    className={`mt-[1px] flex-shrink-0 w-[16px] h-[16px] rounded-[4px] border flex items-center justify-center transition ${
+                                        selected
+                                            ? 'bg-cyan-600 border-cyan-600 text-white'
+                                            : 'bg-white border-slate-300 group-hover:border-slate-400'
+                                    }`}
+                                >
+                                    {selected && <IconCheck size={11} stroke={3} />}
+                                </span>
+                                <span
+                                    className={`text-[12px] leading-snug ${
+                                        selected ? 'text-slate-700' : 'text-slate-400 line-through'
+                                    }`}
+                                >
+                                    {cp.label}
+                                    {cp.critical && (
+                                        <span className="ml-1 inline-flex items-center gap-0.5 text-[9px] uppercase tracking-wide text-amber-700 align-middle">
+                                            <IconLock size={9} stroke={2.2} />
+                                            {t('schedule.recap.critical', { defaultValue: 'critique' })}
+                                        </span>
+                                    )}
+                                </span>
+                            </button>
+                        </li>
+                    );
+                })}
+            </ul>
+            <p className="text-[10.5px] text-slate-400 mt-1.5 leading-snug">
+                {t('schedule.recap.customizeHint', {
+                    defaultValue: 'Décochez les points non applicables à cette inspection.',
+                })}
+            </p>
+        </div>
+    );
+}
+
 /** Ligne du volet : intitulé discret à gauche, valeur affirmée à droite. */
 function RecapRow({ label, value }: { label: string; value?: string | null }) {
     return (
@@ -1260,7 +1455,11 @@ function RecapPanel({
     typeLabel,
     familyLabel,
     appliedTemplate,
-    checkpointPreviews,
+    checkpoints,
+    deselectedIds,
+    selectedCount,
+    onToggleCheckpoint,
+    onToggleAll,
     employees,
     locale,
 }: {
@@ -1268,7 +1467,11 @@ function RecapPanel({
     typeLabel: string | null;
     familyLabel: string;
     appliedTemplate: InspectionTemplateSummaryDTO | null;
-    checkpointPreviews: Record<number, string[]>;
+    checkpoints: TemplateCheckpoint[];
+    deselectedIds: Set<number>;
+    selectedCount: number;
+    onToggleCheckpoint: (cp: TemplateCheckpoint) => void;
+    onToggleAll: (selectAll: boolean) => void;
     employees: { value: string; label: string }[];
     locale: string;
 }) {
@@ -1282,8 +1485,6 @@ function RecapPanel({
         ? new Date(`${form.plannedDate}T00:00:00`).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB')
         : null;
     const slot = [form.startTime, form.endTime].filter(Boolean).join(' → ') || null;
-
-    const previewLabels = appliedTemplate ? checkpointPreviews[appliedTemplate.id] ?? [] : [];
 
     return (
         <aside className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 lg:sticky lg:top-4">
@@ -1322,12 +1523,14 @@ function RecapPanel({
                     label={t('schedule.recap.gridName', { defaultValue: 'Modèle' })}
                     value={appliedTemplate?.name ?? null}
                 />
-                <RecapRow
-                    label={t('schedule.recap.gridPoints', { defaultValue: 'Points' })}
-                    value={appliedTemplate ? String(appliedTemplate.checkpointCount) : null}
-                />
                 {appliedTemplate && (
-                    <CheckpointPreview labels={previewLabels} total={appliedTemplate.checkpointCount} />
+                    <CheckpointSelector
+                        checkpoints={checkpoints}
+                        deselectedIds={deselectedIds}
+                        selectedCount={selectedCount}
+                        onToggle={onToggleCheckpoint}
+                        onToggleAll={onToggleAll}
+                    />
                 )}
             </section>
 

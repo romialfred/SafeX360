@@ -161,8 +161,21 @@ public class InspectionWorkflowService {
             teamMemberRepository.save(member);
         }
 
-        // Cree un finding vide pour chaque checkpoint
-        for (InspectionCheckpoint cp : tpl.getCheckpoints()) {
+        // Points de contrôle RETENUS : personnalisation à la planification. Si le
+        // client fournit une liste, on ne garde QUE ces checkpoints (en ne
+        // conservant que ceux qui appartiennent réellement au template — on
+        // ignore un id étranger plutôt que d'échouer). Liste absente/vide =
+        // comportement historique (tous les checkpoints). Au moins un point est
+        // exigé : une inspection sans point de contrôle n'a pas de sens.
+        java.util.Set<Long> retained = dto.getCheckpointIds() == null ? null
+                : new java.util.HashSet<>(dto.getCheckpointIds());
+        List<InspectionCheckpoint> selectedCheckpoints = tpl.getCheckpoints().stream()
+                .filter(cp -> retained == null || retained.contains(cp.getId()))
+                .toList();
+        if (selectedCheckpoints.isEmpty()) {
+            throw new IllegalArgumentException("AT_LEAST_ONE_CHECKPOINT_REQUIRED");
+        }
+        for (InspectionCheckpoint cp : selectedCheckpoints) {
             InspectionFinding f = new InspectionFinding();
             f.setInspection(saved);
             f.setCheckpoint(cp);
