@@ -25,6 +25,25 @@ public class LocationServiceImpl implements LocationService {
     @Autowired
     private LocationRepository locationRepository;
 
+    /**
+     * Mine effective pour une opération sur un lieu EXISTANT (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une
+     * mine précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin
+     * « Toutes les Mines » en vue consolidée, param absent) on DÉRIVE la mine du
+     * lieu lui-même. Un utilisateur cloisonné ne peut jamais toucher le lieu d'une
+     * autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, Location existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("LOCATION_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private void ensureCompanyIdProvided(Long companyId) throws HSException {
         if (companyId == null) {
             throw new HSException("COMPANY_ID_REQUIRED");
@@ -64,12 +83,10 @@ public class LocationServiceImpl implements LocationService {
             @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateLocation(Long companyId, LocationDTO locationDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(locationDTO.getId())
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
-        if (!companyId.equals(existingLocation.getCompanyId())) {
-            throw new HSException("LOCATION_NOT_FOUND");
-        }
+        // Mine dérivée du lieu existant si absente (édition en vue consolidée).
+        companyId = resolveOwningCompany(companyId, existingLocation);
         if (!existingLocation.getName().equalsIgnoreCase(locationDTO.getName())) {
             Optional<Location> optional1 = locationRepository.findByCompanyIdAndNameIgnoreCase(companyId,
                     locationDTO.getName());
@@ -97,12 +114,9 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public void deleteLocation(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(id)
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
-        if (!companyId.equals(existingLocation.getCompanyId())) {
-            throw new HSException("LOCATION_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, existingLocation);
         locationRepository.delete(existingLocation);
     }
 
@@ -124,12 +138,9 @@ public class LocationServiceImpl implements LocationService {
             @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateLocation(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(id)
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
-        if (!companyId.equals(existingLocation.getCompanyId())) {
-            throw new HSException("LOCATION_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, existingLocation);
         existingLocation.setStatus(Status.ACTIVE);
         existingLocation.setUpdatedAt(LocalDateTime.now());
         locationRepository.save(existingLocation);
@@ -142,12 +153,9 @@ public class LocationServiceImpl implements LocationService {
             @CacheEvict(cacheNames = "locationsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateLocation(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Location existingLocation = locationRepository.findById(id)
                 .orElseThrow(() -> new HSException("LOCATION_NOT_FOUND"));
-        if (!companyId.equals(existingLocation.getCompanyId())) {
-            throw new HSException("LOCATION_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, existingLocation);
         existingLocation.setStatus(Status.INACTIVE);
         existingLocation.setUpdatedAt(LocalDateTime.now());
         locationRepository.save(existingLocation);

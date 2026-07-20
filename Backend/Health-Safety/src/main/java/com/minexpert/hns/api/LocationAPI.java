@@ -36,7 +36,7 @@ public class LocationAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateLocation(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<String> updateLocation(@RequestParam(name = "companyId", required = false) Long companyId,
             @RequestBody LocationDTO locationDTO) throws HSException {
         locationService.updateLocation(companyId, locationDTO);
         return new ResponseEntity<>("Location Updated Successfully", HttpStatus.OK);
@@ -50,14 +50,14 @@ public class LocationAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<String> activateLocation(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<String> activateLocation(@RequestParam(name = "companyId", required = false) Long companyId,
             @PathVariable Long id) throws HSException {
         locationService.activateLocation(companyId, id);
         return new ResponseEntity<>("Location Activated Successfully", HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<String> deactivateLocation(@RequestParam("companyId") Long companyId,
+    public ResponseEntity<String> deactivateLocation(@RequestParam(name = "companyId", required = false) Long companyId,
             @PathVariable Long id) throws HSException {
         locationService.deactivateLocation(companyId, id);
         return new ResponseEntity<>("Location Deactivated Successfully", HttpStatus.OK);

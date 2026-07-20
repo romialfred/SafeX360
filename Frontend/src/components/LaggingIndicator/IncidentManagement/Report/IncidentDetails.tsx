@@ -57,6 +57,13 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         },
     ];
 
+    // EPI en liste déroulante multi-sélectionnable (compacte) : mêmes catégories
+    // anatomiques conservées comme GROUPES dans le menu déroulant.
+    const ppeData = ppeCategories.map((cat) => ({
+        group: cat.label,
+        items: cat.items.map((item) => ({ value: item.id, label: item.name })),
+    }));
+
 
 
 
@@ -144,37 +151,20 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                     <span className="text-[10px] text-slate-500 ml-auto">Cochez les EPI concernés ou manquants au moment de l'incident</span>
                 </header>
                 <div className="p-4">
-                    <Checkbox.Group {...form.getInputProps("ppe")}>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            {ppeCategories.map((cat) => (
-                                <div key={cat.label} className="bg-slate-50/60 rounded-md border border-slate-200 flex flex-col">
-                                    <div className="px-3 py-1.5 border-b border-slate-200 bg-white">
-                                        <p className="text-[11px] text-slate-700 uppercase tracking-wider">{cat.label}</p>
-                                    </div>
-                                    <div className="p-2 space-y-1.5 max-h-[180px] overflow-y-auto">
-                                        {cat.items.map((item) => (
-                                            <Checkbox.Card key={item.id}
-                                                value={item.id}
-                                                radius="md"
-                                                className="group border border-slate-200 transition duration-150 cursor-pointer w-full
-                                                 hover:!border-teal-500 hover:!bg-teal-50/60
-                                                 data-[checked]:!border-teal-500 data-[checked]:!bg-teal-50
-                                                 data-[checked]:shadow-sm bg-white"
-                                                p="xs"
-                                            >
-                                                <Group align="center" gap="xs" wrap="nowrap">
-                                                    <Checkbox.Indicator size="xs" />
-                                                    <Text size="xs" className="text-slate-800 group-data-[checked]:text-teal-800 group-data-[checked]:truncate">
-                                                        {item.name}
-                                                    </Text>
-                                                </Group>
-                                            </Checkbox.Card>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Checkbox.Group>
+                    {/* EPI en liste déroulante multi-sélectionnable (compacte) :
+                        remplace l'ancienne grille de 3 colonnes de cases à cocher
+                        qui occupait trop de place. Les catégories anatomiques
+                        restent des groupes dans le menu. */}
+                    <MultiSelect
+                        {...form.getInputProps("ppe")}
+                        data={ppeData}
+                        placeholder="Sélectionnez les EPI concernés ou manquants"
+                        searchable
+                        clearable
+                        hidePickedOptions
+                        nothingFoundMessage="Aucun EPI"
+                        maxDropdownHeight={280}
+                    />
                 </div>
             </section>
 
