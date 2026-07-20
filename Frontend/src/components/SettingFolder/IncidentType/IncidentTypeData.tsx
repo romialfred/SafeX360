@@ -1,4 +1,4 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, SegmentedControl, Select, Tabs, Textarea, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, LoadingOverlay, Modal, Select, Tabs, Textarea, TextInput, Tooltip } from "@mantine/core";
 import { IconCheck, IconEdit, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
 import { FilterMatchMode } from "primereact/api";
 import { Column } from "primereact/column";
@@ -20,13 +20,6 @@ const defaultFilters: DataTableFilterMeta = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 };
 
-const colorMap: Record<string, string> = {
-    1: "green",
-    4: "red",
-    3: "orange",
-    2: "yellow",
-    5: "brown"
-}
 
 const IncidentTypeData = ({ opened, open, close }: any) => {
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
@@ -258,7 +251,18 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
 
 
     const centerToolbarTemplate = () => (
-        <SegmentedControl color={colorMap[severityMap[selectedSeverity ?? ""]] ?? "primary"} value={selectedSeverity} onChange={setSelectedSeverity} data={severityLevels} />
+        <Select
+            size="sm"
+            w={240}
+            value={selectedSeverity}
+            onChange={(v) => setSelectedSeverity(v ?? "All")}
+            data={severityLevels}
+            allowDeselect={false}
+            checkIconPosition="right"
+            placeholder="Niveau de sévérité"
+            aria-label="Filtrer par niveau de sévérité"
+            comboboxProps={{ zIndex: Z.modal + 10 }}
+        />
     );
     const rightToolbarTemplate = () => (
         <div className='flex gap-5'>
@@ -290,7 +294,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
         </div>
     );
     const renderHeader = () => {
-        return <Tabs value={tab} fw={400} variant="pills" autoContrast onChange={setTab}>
+        return <Tabs value={tab} fw={400} variant="outline" autoContrast onChange={setTab}>
             <Tabs.List>
                 <Tabs.Tab value="all">All</Tabs.Tab>
                 {categories.map((category) => (
