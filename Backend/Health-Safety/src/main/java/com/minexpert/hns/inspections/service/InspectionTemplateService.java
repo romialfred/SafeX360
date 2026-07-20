@@ -43,15 +43,30 @@ public class InspectionTemplateService {
      */
     @Transactional(readOnly = true)
     public List<InspectionTemplateSummaryDTO> listByType(InspectionTemplateType type, Long companyId) {
-        List<InspectionTemplate> list = templateRepository.findActiveByTypeAndCompany(type, companyId);
+        return listByType(type, companyId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InspectionTemplateSummaryDTO> listByType(InspectionTemplateType type, Long companyId,
+            boolean includeInactive) {
+        List<InspectionTemplate> list = includeInactive
+                ? templateRepository.findAllByTypeForCompany(type, companyId)
+                : templateRepository.findActiveByTypeAndCompany(type, companyId);
         return list.stream().map(this::toSummary).toList();
     }
 
-    /** Liste tous les templates actifs (toutes types confondus) pour la mine. */
+    /** Liste les templates (toutes types confondus) pour la mine. */
     @Transactional(readOnly = true)
     public List<InspectionTemplateSummaryDTO> listAll(Long companyId) {
-        return templateRepository.findActiveByCompany(companyId).stream()
-                .map(this::toSummary).toList();
+        return listAll(companyId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InspectionTemplateSummaryDTO> listAll(Long companyId, boolean includeInactive) {
+        List<InspectionTemplate> list = includeInactive
+                ? templateRepository.findAllForCompany(companyId)
+                : templateRepository.findActiveByCompany(companyId);
+        return list.stream().map(this::toSummary).toList();
     }
 
     /** Detail d'un template avec ses checkpoints ordonnes. */
@@ -213,7 +228,8 @@ public class InspectionTemplateService {
                 t.getId(), t.getCode(), t.getName(), t.getType(),
                 t.getScopeRef(), t.getEstimatedDurationMin(),
                 t.getCheckpoints() != null ? t.getCheckpoints().size() : 0,
-                t.getActive());
+                t.getActive(),
+                t.getCompanyId() == null);
     }
 
     private InspectionTemplateDTO toDTO(InspectionTemplate t) {

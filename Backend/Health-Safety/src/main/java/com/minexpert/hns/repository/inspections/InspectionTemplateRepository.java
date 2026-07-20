@@ -50,4 +50,18 @@ public interface InspectionTemplateRepository extends JpaRepository<InspectionTe
             + "AND (:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId) "
             + "ORDER BY t.type ASC, t.name ASC")
     List<InspectionTemplate> findActiveByCompany(@Param("companyId") Long companyId);
+
+    // ── Variantes ADMIN : incluent les modeles INACTIFs (desactives) pour
+    //    permettre leur reactivation depuis l'ecran de parametrage. ──
+
+    @Query("SELECT t FROM InspectionTemplate t WHERE "
+            + "(:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId) "
+            + "ORDER BY t.type ASC, t.name ASC")
+    List<InspectionTemplate> findAllForCompany(@Param("companyId") Long companyId);
+
+    @Query("SELECT t FROM InspectionTemplate t WHERE t.type = :type "
+            + "AND (:companyId IS NULL OR t.companyId IS NULL OR t.companyId = :companyId) "
+            + "ORDER BY t.name ASC")
+    List<InspectionTemplate> findAllByTypeForCompany(@Param("type") InspectionTemplateType type,
+            @Param("companyId") Long companyId);
 }

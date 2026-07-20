@@ -46,6 +46,7 @@ const TeamSetupPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSe
 const AddTeamPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/AddTeamPage'));
 const DetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/CorrectiveAction/DetailsPage'));
 const CheckListPage = lazy(() => import('../pages/dashboard/SettingFolder/CheckList/CheckListPage'));
+const InspectionTemplatesPage = lazy(() => import('../pages/dashboard/SettingFolder/InspectionTemplates/InspectionTemplatesPage'));
 const TechMeasurementsPage = lazy(() => import('../pages/dashboard/SettingFolder/TechMeasurement/TechMeasurementsPage'));
 const InspectionPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/InspectionPage'));
 const ComingSoonPage = lazy(() => import('../pages/ComingSoonPage'));
@@ -513,6 +514,7 @@ const router = createBrowserRouter([
             { path: 'team-setup/details/:id', element: <TeamDetailsPage />, },
             { path: 'addTeam', element: <AddTeamPage />, },
             { path: 'checkList', element: <CheckListPage />, },
+            { path: 'inspection-templates', element: <InspectionTemplatesPage />, },
             { path: 'technical-Measurements', element: <TechMeasurementsPage />, },
             { path: 'audit-area', element: <AuditAreaPage />, },
             { path: 'work-area', element: <WorkAreaPage />, },

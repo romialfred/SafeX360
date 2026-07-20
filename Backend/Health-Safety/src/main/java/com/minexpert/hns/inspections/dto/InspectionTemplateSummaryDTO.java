@@ -23,4 +23,10 @@ public class InspectionTemplateSummaryDTO {
     private Integer estimatedDurationMin;
     private int checkpointCount;
     private Boolean active;
+    /**
+     * {@code true} pour un modèle du CATALOGUE GLOBAL (companyId nul, partagé par
+     * toutes les mines) : il est visible partout mais NON éditable depuis une
+     * mine. {@code false} pour un modèle PROPRE à la mine (éditable/supprimable).
+     */
+    private Boolean global;
 }

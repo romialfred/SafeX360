@@ -45,10 +45,12 @@ public class InspectionTemplateController {
     @GetMapping("/list")
     public ResponseEntity<List<InspectionTemplateSummaryDTO>> list(
             @RequestParam(value = "type", required = false) InspectionTemplateType type,
-            @RequestParam(value = "companyId", required = false) Long companyId) {
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @RequestParam(value = "includeInactive", required = false, defaultValue = "false")
+            boolean includeInactive) {
         List<InspectionTemplateSummaryDTO> result = (type != null)
-                ? templateService.listByType(type, companyId)
-                : templateService.listAll(companyId);
+                ? templateService.listByType(type, companyId, includeInactive)
+                : templateService.listAll(companyId, includeInactive);
         return ResponseEntity.ok(result);
     }
 

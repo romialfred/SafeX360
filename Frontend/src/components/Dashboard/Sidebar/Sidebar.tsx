@@ -287,6 +287,7 @@ const Sidebar = () => {
                 items: [
 
                     { name: "CheckList", url: "checkList", icon: IconChecklist },
+                    { name: "Modèles d'inspection", url: "inspection-templates", icon: IconClipboardCheck },
                     { name: "Technical Measurements", url: "technical-Measurements", icon: IconBrandSpeedtest },
 
 

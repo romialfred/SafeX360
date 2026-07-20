@@ -83,6 +83,8 @@ export interface InspectionTemplateSummaryDTO {
     estimatedDurationMin?: number;
     checkpointCount: number;
     active: boolean;
+    /** true = modèle du catalogue GLOBAL (partagé, non éditable depuis une mine). */
+    global?: boolean;
 }
 
 /**
@@ -237,8 +239,10 @@ const writeHeaders = () => {
 //  API : Templates
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const listTemplates = (type?: InspectionTemplateType) => {
-    const params = type ? { type } : {};
+export const listTemplates = (type?: InspectionTemplateType, includeInactive = false) => {
+    const params: Record<string, unknown> = {};
+    if (type) params.type = type;
+    if (includeInactive) params.includeInactive = true;
     return axiosInstance
         .get<InspectionTemplateSummaryDTO[]>('/hns/inspection-template/list', { params })
         .then((r) => r.data);
