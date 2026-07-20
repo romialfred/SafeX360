@@ -49,7 +49,6 @@
       ]
     },
     {
-      "_comment": "Analytics Center = page HTML autonome (React/Tailwind/D3 par CDN + script inline). ATTENTION : il faut DEUX entrees — '/safex-analytics/(.*)' ne matche PAS l'URL exacte '/safex-analytics', qui recevait alors la CSP globale stricte et restait blanche.",
       "source": "/safex-analytics",
       "headers": [
         {
