@@ -39,14 +39,14 @@ public class AuditAreaAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateAuditArea(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateAuditArea(@RequestParam(required = false) Long companyId,
             @RequestBody AuditAreasDTO auditAreaDTO) throws HSException {
         auditAreaService.updateAuditArea(companyId, auditAreaDTO);
         return new ResponseEntity<>(new ResponseDTO("Audit Area updated."), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteAuditArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteAuditArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         auditAreaService.deleteAuditArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Audit Area deleted."), HttpStatus.OK);
@@ -71,14 +71,14 @@ public class AuditAreaAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateAuditArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateAuditArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         auditAreaService.activateAuditArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Audit Area activated."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateAuditArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateAuditArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         auditAreaService.deactivateAuditArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Audit Area deactivated."), HttpStatus.OK);

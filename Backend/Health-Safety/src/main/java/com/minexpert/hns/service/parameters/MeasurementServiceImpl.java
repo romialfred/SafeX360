@@ -30,6 +30,22 @@ public class MeasurementServiceImpl implements MeasurementService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, Measurement existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("MEASUREMENT_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private Measurement loadMeasurement(Long companyId, Long id) throws HSException {
         return measurementRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("MEASUREMENT_NOT_FOUND"));
@@ -61,8 +77,8 @@ public class MeasurementServiceImpl implements MeasurementService {
             @CacheEvict(cacheNames = "measurementById", key = "#companyId != null && #measurementDTO.id != null ? (#companyId + '-' + #measurementDTO.id) : 'ALL-' + #measurementDTO.id", condition = "#measurementDTO.id != null")
     })
     public void updateMeasurement(Long companyId, MeasurementDTO measurementDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Measurement measurement = loadMeasurement(companyId, measurementDTO.getId());
+        companyId = resolveOwningCompany(companyId, measurement);
         if (!measurementDTO.getName().equalsIgnoreCase(measurement.getName())) {
             Optional<Measurement> optional = measurementRepository.findByCompanyIdAndNameIgnoreCase(companyId,
                     measurementDTO.getName());
@@ -88,7 +104,6 @@ public class MeasurementServiceImpl implements MeasurementService {
             @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
     })
     public void deleteMeasurement(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Measurement measurement = loadMeasurement(companyId, id);
         measurementRepository.delete(measurement);
     }
@@ -120,7 +135,6 @@ public class MeasurementServiceImpl implements MeasurementService {
             @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
     })
     public void activateMeasurement(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Measurement measurement = loadMeasurement(companyId, id);
         measurement.setStatus(Status.ACTIVE);
         measurement.setUpdatedAt(LocalDateTime.now());
@@ -134,7 +148,6 @@ public class MeasurementServiceImpl implements MeasurementService {
             @CacheEvict(cacheNames = "measurementById", key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id")
     })
     public void deactivateMeasurement(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Measurement measurement = loadMeasurement(companyId, id);
         measurement.setStatus(Status.INACTIVE);
         measurement.setUpdatedAt(LocalDateTime.now());

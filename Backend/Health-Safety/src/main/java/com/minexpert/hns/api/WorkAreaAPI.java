@@ -38,14 +38,14 @@ public class WorkAreaAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateWorkArea(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateWorkArea(@RequestParam(required = false) Long companyId,
             @RequestBody WorkAreaDTO workAreaDTO) throws HSException {
         workAreaService.updateWorkArea(companyId, workAreaDTO);
         return new ResponseEntity<>(new ResponseDTO("Work Area updated."), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteWorkArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteWorkArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workAreaService.deleteWorkArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Area deleted."), HttpStatus.OK);
@@ -70,14 +70,14 @@ public class WorkAreaAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateWorkArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateWorkArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workAreaService.activateWorkArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Area activated."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateWorkArea(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateWorkArea(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workAreaService.deactivateWorkArea(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Area deactivated."), HttpStatus.OK);

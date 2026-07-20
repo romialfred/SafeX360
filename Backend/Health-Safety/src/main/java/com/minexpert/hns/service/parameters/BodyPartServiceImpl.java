@@ -31,6 +31,24 @@ public class BodyPartServiceImpl implements BodyPartService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, BodyPart existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("BODY_PART_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "bodyPartsAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -57,12 +75,9 @@ public class BodyPartServiceImpl implements BodyPartService {
             @CacheEvict(cacheNames = "bodyPartsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateBodyPart(Long companyId, BodyPartDTO bodyPartDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         BodyPart existingBodyPart = bodyPartRepository.findById(bodyPartDTO.getId())
                 .orElseThrow(() -> new HSException("BODY_PART_NOT_FOUND"));
-        if (!companyId.equals(existingBodyPart.getCompanyId())) {
-            throw new HSException("BODY_PART_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, existingBodyPart);
 
         if (!existingBodyPart.getName().equalsIgnoreCase(bodyPartDTO.getName())) {
             Optional<BodyPart> bodyPart = bodyPartRepository.findByCompanyIdAndNameIgnoreCase(companyId,
@@ -85,12 +100,9 @@ public class BodyPartServiceImpl implements BodyPartService {
             @CacheEvict(cacheNames = "bodyPartsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteBodyPart(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         BodyPart bodyPart = bodyPartRepository.findById(id)
                 .orElseThrow(() -> new HSException("BODY_PART_NOT_FOUND"));
-        if (!companyId.equals(bodyPart.getCompanyId())) {
-            throw new HSException("BODY_PART_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, bodyPart);
         bodyPartRepository.delete(bodyPart);
     }
 
@@ -128,12 +140,9 @@ public class BodyPartServiceImpl implements BodyPartService {
             @CacheEvict(cacheNames = "bodyPartsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateBodyPart(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         BodyPart bodyPart = bodyPartRepository.findById(id)
                 .orElseThrow(() -> new HSException("BODY_PART_NOT_FOUND"));
-        if (!companyId.equals(bodyPart.getCompanyId())) {
-            throw new HSException("BODY_PART_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, bodyPart);
         bodyPart.setStatus(Status.ACTIVE);
         bodyPart.setUpdatedAt(LocalDateTime.now());
         bodyPartRepository.save(bodyPart);
@@ -146,12 +155,9 @@ public class BodyPartServiceImpl implements BodyPartService {
             @CacheEvict(cacheNames = "bodyPartsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateBodyPart(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         BodyPart bodyPart = bodyPartRepository.findById(id)
                 .orElseThrow(() -> new HSException("BODY_PART_NOT_FOUND"));
-        if (!companyId.equals(bodyPart.getCompanyId())) {
-            throw new HSException("BODY_PART_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, bodyPart);
         bodyPart.setStatus(Status.INACTIVE);
         bodyPart.setUpdatedAt(LocalDateTime.now());
         bodyPartRepository.save(bodyPart);

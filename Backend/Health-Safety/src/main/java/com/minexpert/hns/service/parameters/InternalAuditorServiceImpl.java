@@ -36,6 +36,22 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, InternalAuditor existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("INTERNAL_AUDITOR_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private InternalAuditor loadInternalAuditor(Long companyId, Long id) throws HSException {
         return internalAuditorRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INTERNAL_AUDITOR_NOT_FOUND"));
@@ -62,7 +78,6 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
     @Override
     @CacheEvict(cacheNames = "internalAuditorsAll", key = "#companyId != null ? #companyId : 'ALL'")
     public void updateInternalAuditor(Long companyId, InternalAuditorDTO internalAuditorDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         InternalAuditor internalAuditor;
         if (internalAuditorDTO.getId() != null) {
             internalAuditor = loadInternalAuditor(companyId, internalAuditorDTO.getId());
@@ -71,6 +86,7 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
                     .findByCompanyIdAndEmployeeId(companyId, internalAuditorDTO.getEmployeeId())
                     .orElseThrow(() -> new HSException("INTERNAL_AUDITOR_NOT_FOUND"));
         }
+        companyId = resolveOwningCompany(companyId, internalAuditor);
 
         if (!internalAuditor.getEmployeeId().equals(internalAuditorDTO.getEmployeeId())) {
             Optional<InternalAuditor> existing = internalAuditorRepository
@@ -117,7 +133,6 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
     @Override
     @CacheEvict(cacheNames = "internalAuditorsAll", key = "#companyId != null ? #companyId : 'ALL'")
     public void activateInternalAuditor(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         InternalAuditor internalAuditor = loadInternalAuditor(companyId, id);
         internalAuditor.setStatus(Status.ACTIVE);
         internalAuditor.setUpdatedAt(LocalDateTime.now());
@@ -128,7 +143,6 @@ public class InternalAuditorServiceImpl implements InternalAuditorService {
     @Override
     @CacheEvict(cacheNames = "internalAuditorsAll", key = "#companyId != null ? #companyId : 'ALL'")
     public void deactivateInternalAuditor(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         InternalAuditor internalAuditor = loadInternalAuditor(companyId, id);
         internalAuditor.setStatus(Status.INACTIVE);
         internalAuditor.setUpdatedAt(LocalDateTime.now());

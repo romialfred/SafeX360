@@ -39,7 +39,7 @@ public class IncidentCategoryAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateIncidentCategory(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateIncidentCategory(@RequestParam(required = false) Long companyId,
             @RequestBody IncidentCategoryDTO incidentCategoryDTO)
             throws HSException {
         incidentCategoryService.updateIncidentCategory(companyId, incidentCategoryDTO);
@@ -67,14 +67,14 @@ public class IncidentCategoryAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateIncidentCategory(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateIncidentCategory(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         incidentCategoryService.activateIncidentCategory(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Category Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateIncidentCategory(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateIncidentCategory(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         incidentCategoryService.deactivateIncidentCategory(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Category Deactivated Successfully"), HttpStatus.OK);

@@ -40,7 +40,7 @@ public class InternalAuditorAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateInternalAuditor(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateInternalAuditor(@RequestParam(required = false) Long companyId,
             @RequestBody InternalAuditorDTO internalAuditorDTO)
             throws HSException {
         internalAuditorService.updateInternalAuditor(companyId, internalAuditorDTO);
@@ -48,14 +48,14 @@ public class InternalAuditorAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateInternalAuditor(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateInternalAuditor(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         internalAuditorService.activateInternalAuditor(companyId, id);
         return ResponseEntity.ok(new ResponseDTO("Internal Auditor activated successfully."));
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateInternalAuditor(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateInternalAuditor(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         internalAuditorService.deactivateInternalAuditor(companyId, id);
         return ResponseEntity.ok(new ResponseDTO("Internal Auditor deactivated successfully."));

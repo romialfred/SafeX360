@@ -38,14 +38,14 @@ public class BodyPartAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateBodyPart(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateBodyPart(@RequestParam(required = false) Long companyId,
             @RequestBody BodyPartDTO bodyPartDTO) throws HSException {
         bodyPartService.updateBodyPart(companyId, bodyPartDTO);
         return new ResponseEntity<>(new ResponseDTO("Body Part updated."), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteBodyPart(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteBodyPart(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         bodyPartService.deleteBodyPart(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Body Part deleted."), HttpStatus.OK);
@@ -70,14 +70,14 @@ public class BodyPartAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateBodyPart(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateBodyPart(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         bodyPartService.activateBodyPart(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Body Part activated."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateBodyPart(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateBodyPart(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         bodyPartService.deactivateBodyPart(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Body Part deactivated."), HttpStatus.OK);

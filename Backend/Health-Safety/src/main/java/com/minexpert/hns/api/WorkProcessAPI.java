@@ -38,7 +38,7 @@ public class WorkProcessAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateWorkProcess(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateWorkProcess(@RequestParam(required = false) Long companyId,
             @RequestBody WorkProcessDTO workProcessDTO)
             throws HSException {
         workProcessService.updateWorkProcess(companyId, workProcessDTO);
@@ -46,7 +46,7 @@ public class WorkProcessAPI {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteWorkProcess(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workProcessService.deleteWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process deleted."), HttpStatus.OK);
@@ -71,14 +71,14 @@ public class WorkProcessAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateWorkProcess(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workProcessService.activateWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process activated."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateWorkProcess(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateWorkProcess(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         workProcessService.deactivateWorkProcess(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Work Process deactivated."), HttpStatus.OK);

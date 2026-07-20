@@ -37,6 +37,22 @@ public class WorkAreaServiceImpl implements WorkAreaService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, WorkArea existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("WORK_AREA_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private WorkArea loadWorkArea(Long companyId, Long id) throws HSException {
         return workAreaRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("WORK_AREA_NOT_FOUND"));
@@ -69,8 +85,8 @@ public class WorkAreaServiceImpl implements WorkAreaService {
             @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateWorkArea(Long companyId, WorkAreaDTO workAreaDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkArea existingWorkArea = loadWorkArea(companyId, workAreaDTO.getId());
+        companyId = resolveOwningCompany(companyId, existingWorkArea);
         if (!workAreaDTO.getName().equalsIgnoreCase(existingWorkArea.getName()) ||
                 !Objects.equals(workAreaDTO.getDepartmentId(), existingWorkArea.getDepartmentId())) {
             Optional<WorkArea> opt = workAreaRepository
@@ -94,7 +110,6 @@ public class WorkAreaServiceImpl implements WorkAreaService {
             @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteWorkArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkArea workArea = loadWorkArea(companyId, id);
         workAreaRepository.delete(workArea);
     }
@@ -135,7 +150,6 @@ public class WorkAreaServiceImpl implements WorkAreaService {
             @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateWorkArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkArea workArea = loadWorkArea(companyId, id);
         if (workArea.getStatus() == Status.ACTIVE) {
             throw new HSException("WORK_AREA_ALREADY_ACTIVE");
@@ -152,7 +166,6 @@ public class WorkAreaServiceImpl implements WorkAreaService {
             @CacheEvict(cacheNames = "workAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateWorkArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkArea workArea = loadWorkArea(companyId, id);
         if (workArea.getStatus() == Status.INACTIVE) {
             throw new HSException("WORK_AREA_ALREADY_INACTIVE");

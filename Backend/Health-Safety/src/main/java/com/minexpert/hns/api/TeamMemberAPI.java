@@ -39,7 +39,7 @@ public class TeamMemberAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateTeamMember(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateTeamMember(@RequestParam(required = false) Long companyId,
             @RequestBody TeamMemberDTO teamMemberDTO) throws HSException {
         teamMemberService.updateTeamMember(companyId, teamMemberDTO);
         return new ResponseEntity<>(new ResponseDTO("Team Member updated successfully."),
@@ -47,7 +47,7 @@ public class TeamMemberAPI {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteTeamMember(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteTeamMember(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         teamMemberService.deleteTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member deleted successfully."),
@@ -74,7 +74,7 @@ public class TeamMemberAPI {
     }
 
     @PutMapping("/activate")
-    public ResponseEntity<ResponseDTO> activateTeamMember(@RequestParam Long companyId, @RequestBody Long id)
+    public ResponseEntity<ResponseDTO> activateTeamMember(@RequestParam(required = false) Long companyId, @RequestBody Long id)
             throws HSException {
         teamMemberService.activateTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member activated successfully."),
@@ -82,7 +82,7 @@ public class TeamMemberAPI {
     }
 
     @PutMapping("/deactivate")
-    public ResponseEntity<ResponseDTO> deactivateTeamMember(@RequestParam Long companyId, @RequestBody Long id)
+    public ResponseEntity<ResponseDTO> deactivateTeamMember(@RequestParam(required = false) Long companyId, @RequestBody Long id)
             throws HSException {
         teamMemberService.deactivateTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team Member deactivated successfully."),

@@ -31,6 +31,22 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, WeatherCondition existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("WEATHER_CONDITION_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private WeatherCondition loadWeatherCondition(Long companyId, Long id) throws HSException {
         return weatherConditionRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("WEATHER_CONDITION_NOT_FOUND"));
@@ -65,8 +81,8 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
             @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateWeatherCondition(Long companyId, WeatherConditionDTO weatherConditionDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, weatherConditionDTO.getId());
+        companyId = resolveOwningCompany(companyId, existingWeatherCondition);
         if (!existingWeatherCondition.getName().equalsIgnoreCase(weatherConditionDTO.getName())) {
             Optional<WeatherCondition> optional = weatherConditionRepository
                     .findByCompanyIdAndNameIgnoreCase(companyId, weatherConditionDTO.getName());
@@ -89,7 +105,6 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
             @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteWeatherCondition(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WeatherCondition weatherCondition = loadWeatherCondition(companyId, id);
         weatherConditionRepository.delete(weatherCondition);
     }
@@ -108,7 +123,6 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
             @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateWeatherCondition(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, id);
         existingWeatherCondition.setStatus(Status.ACTIVE);
         existingWeatherCondition.setUpdatedAt(LocalDateTime.now());
@@ -123,7 +137,6 @@ public class WeatherConditionServiceImpl implements WeatherConditionService {
             @CacheEvict(cacheNames = "weatherConditionsByIds", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateWeatherCondition(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WeatherCondition existingWeatherCondition = loadWeatherCondition(companyId, id);
         existingWeatherCondition.setStatus(Status.INACTIVE);
         existingWeatherCondition.setUpdatedAt(LocalDateTime.now());

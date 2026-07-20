@@ -31,6 +31,24 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, IncidentCategory existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("INCIDENT_CATEGORY_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "incidentCategoriesAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -59,12 +77,10 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
             @CacheEvict(cacheNames = "incidentCategoriesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateIncidentCategory(Long companyId, IncidentCategoryDTO incidentCategoryDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentCategory existingCategory = incidentCategoryRepository.findById(incidentCategoryDTO.getId())
                 .orElseThrow(() -> new HSException("INCIDENT_CATEGORY_NOT_FOUND"));
-        if (!companyId.equals(existingCategory.getCompanyId())) {
-            throw new HSException("INCIDENT_CATEGORY_NOT_FOUND");
-        }
+        // Mine dérivée de la catégorie existante si absente (édition en vue consolidée).
+        companyId = resolveOwningCompany(companyId, existingCategory);
         if (!existingCategory.getName().equalsIgnoreCase(incidentCategoryDTO.getName())) {
             Optional<IncidentCategory> optional = incidentCategoryRepository
                     .findByCompanyIdAndNameIgnoreCase(companyId, incidentCategoryDTO.getName());
@@ -85,12 +101,9 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
             @CacheEvict(cacheNames = "incidentCategoriesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteIncidentCategory(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentCategory incidentCategory = incidentCategoryRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_CATEGORY_NOT_FOUND"));
-        if (!companyId.equals(incidentCategory.getCompanyId())) {
-            throw new HSException("INCIDENT_CATEGORY_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, incidentCategory);
         incidentCategoryRepository.delete(incidentCategory);
 
     }
@@ -113,12 +126,9 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
             @CacheEvict(cacheNames = "incidentCategoriesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateIncidentCategory(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentCategory existingCategory = incidentCategoryRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_CATEGORY_NOT_FOUND"));
-        if (!companyId.equals(existingCategory.getCompanyId())) {
-            throw new HSException("INCIDENT_CATEGORY_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, existingCategory);
         existingCategory.setStatus(Status.ACTIVE);
         existingCategory.setUpdatedAt(LocalDateTime.now());
         incidentCategoryRepository.save(existingCategory);
@@ -131,12 +141,9 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
             @CacheEvict(cacheNames = "incidentCategoriesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateIncidentCategory(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentCategory existingCategory = incidentCategoryRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_CATEGORY_NOT_FOUND"));
-        if (!companyId.equals(existingCategory.getCompanyId())) {
-            throw new HSException("INCIDENT_CATEGORY_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, existingCategory);
         existingCategory.setStatus(Status.INACTIVE);
         existingCategory.setUpdatedAt(LocalDateTime.now());
         incidentCategoryRepository.save(existingCategory);

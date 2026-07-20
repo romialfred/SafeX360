@@ -31,6 +31,24 @@ public class CheckListServiceImpl implements CheckListService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, CheckList existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("CHECK_LIST_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "checkListsAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -59,12 +77,9 @@ public class CheckListServiceImpl implements CheckListService {
             @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateCheckList(Long companyId, CheckListDTO checkListDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(checkListDTO.getId())
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
-        if (!companyId.equals(existingCheckList.getCompanyId())) {
-            throw new HSException("CHECK_LIST_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, existingCheckList);
         if (!existingCheckList.getName().equalsIgnoreCase(checkListDTO.getName())) {
             Optional<CheckList> optional = checkListRepository.findByCompanyIdAndNameIgnoreCase(companyId,
                     checkListDTO.getName());
@@ -85,12 +100,9 @@ public class CheckListServiceImpl implements CheckListService {
             @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteCheckList(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         CheckList checkList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
-        if (!companyId.equals(checkList.getCompanyId())) {
-            throw new HSException("CHECK_LIST_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, checkList);
         checkListRepository.delete(checkList);
     }
 
@@ -112,12 +124,9 @@ public class CheckListServiceImpl implements CheckListService {
             @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateCheckList(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
-        if (!companyId.equals(existingCheckList.getCompanyId())) {
-            throw new HSException("CHECK_LIST_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, existingCheckList);
         existingCheckList.setStatus(Status.ACTIVE);
         existingCheckList.setUpdatedAt(LocalDateTime.now());
         checkListRepository.save(existingCheckList);
@@ -130,12 +139,9 @@ public class CheckListServiceImpl implements CheckListService {
             @CacheEvict(cacheNames = "checkListsActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateCheckList(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         CheckList existingCheckList = checkListRepository.findById(id)
                 .orElseThrow(() -> new HSException("CHECK_LIST_NOT_FOUND"));
-        if (!companyId.equals(existingCheckList.getCompanyId())) {
-            throw new HSException("CHECK_LIST_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, existingCheckList);
         existingCheckList.setStatus(Status.INACTIVE);
         existingCheckList.setUpdatedAt(LocalDateTime.now());
         checkListRepository.save(existingCheckList);

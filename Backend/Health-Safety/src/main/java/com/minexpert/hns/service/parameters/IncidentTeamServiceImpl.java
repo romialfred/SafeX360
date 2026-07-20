@@ -46,6 +46,24 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, IncidentTeam existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "incidentTeamsAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -93,13 +111,10 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
             @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
     })
     public void updateIncidentTeam(Long companyId, TeamRequest teamRequest) throws HSException {
-        ensureCompanyIdProvided(companyId);
-
         IncidentTeam incidentTeam = incidentTeamRepository.findById(teamRequest.getId())
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
-        if (!companyId.equals(incidentTeam.getCompanyId())) {
-            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
-        }
+        // Mine dérivée de l'équipe existante si absente (édition en vue consolidée).
+        companyId = resolveOwningCompany(companyId, incidentTeam);
         if (!java.util.Objects.equals(incidentTeam.getDepartmentId(), teamRequest.getDepartmentId())) {
             Optional<IncidentTeam> opt = incidentTeamRepository.findByCompanyIdAndDepartmentId(companyId,
                     teamRequest.getDepartmentId());
@@ -117,12 +132,14 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
         incidentTeam.setName(teamRequest.getName());
         incidentTeam.setDepartmentId(teamRequest.getDepartmentId());
         incidentTeam.setUpdatedAt(LocalDateTime.now());
+        // companyId a pu être réaffecté (mine dérivée) : copie effectivement finale pour la lambda.
+        final Long resolvedCompanyId = companyId;
         if (teamRequest.getMembers() != null) {
             teamRequest.getMembers().forEach(member -> {
                 member.setTeamId(teamRequest.getId());
-                member.setCompanyId(companyId);
+                member.setCompanyId(resolvedCompanyId);
                 try {
-                    teamMemberService.updateOrAddMember(companyId, member);
+                    teamMemberService.updateOrAddMember(resolvedCompanyId, member);
                 } catch (HSException e) {
                     log.error("Failed to process team member: {}", e.getMessage());
                 }
@@ -139,12 +156,9 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
             @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
     })
     public void deleteIncidentTeam(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentTeam team = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
-        if (!companyId.equals(team.getCompanyId())) {
-            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, team);
         incidentTeamRepository.delete(team);
     }
 
@@ -198,12 +212,9 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
             @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
     })
     public void activateIncidentTeam(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentTeam incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
-        if (!companyId.equals(incidentTeam.getCompanyId())) {
-            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, incidentTeam);
         incidentTeam.setStatus(Status.ACTIVE);
         incidentTeam.setUpdatedAt(LocalDateTime.now());
         incidentTeamRepository.save(incidentTeam);
@@ -217,12 +228,9 @@ public class IncidentTeamServiceImpl implements IncidentTeamService {
             @CacheEvict(cacheNames = "incidentTeamDetails", allEntries = true)
     })
     public void deactivateIncidentTeam(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentTeam incidentTeam = incidentTeamRepository.findById(id)
                 .orElseThrow(() -> new HSException("INCIDENT_TEAM_NOT_FOUND"));
-        if (!companyId.equals(incidentTeam.getCompanyId())) {
-            throw new HSException("INCIDENT_TEAM_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, incidentTeam);
         incidentTeam.setStatus(Status.INACTIVE);
         incidentTeam.setUpdatedAt(LocalDateTime.now());
         incidentTeamRepository.save(incidentTeam);

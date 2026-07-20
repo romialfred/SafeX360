@@ -40,7 +40,7 @@ public class WeatherConditionAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateWeatherCondition(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateWeatherCondition(@RequestParam(required = false) Long companyId,
             @RequestBody WeatherConditionDTO weatherConditionDTO)
             throws HSException {
         weatherConditionService.updateWeatherCondition(companyId, weatherConditionDTO);
@@ -54,14 +54,14 @@ public class WeatherConditionAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateWeatherCondition(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateWeatherCondition(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         weatherConditionService.activateWeatherCondition(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Weather Condition Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateWeatherCondition(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateWeatherCondition(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         weatherConditionService.deactivateWeatherCondition(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Weather Condition Deactivated Successfully"), HttpStatus.OK);

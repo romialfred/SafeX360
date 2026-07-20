@@ -39,6 +39,24 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, TeamMember existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("TEAM_MEMBER_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "teamMembersAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -71,12 +89,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             @CacheEvict(cacheNames = "teamResponseByEmployee", key = "#teamMemberDTO.employeeId != null ? (#companyId != null ? (#companyId + '-' + #teamMemberDTO.employeeId) : 'ALL-' + #teamMemberDTO.employeeId) : null", condition = "#teamMemberDTO.employeeId != null")
     })
     public void updateTeamMember(Long companyId, TeamMemberDTO teamMemberDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(teamMemberDTO.getId())
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
-        if (!companyId.equals(teamMember.getCompanyId())) {
-            throw new HSException("TEAM_MEMBER_NOT_FOUND");
-        }
+        // Mine dérivée du membre existant si absente (édition en vue consolidée).
+        resolveOwningCompany(companyId, teamMember);
         teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel() != null
                 ? teamMemberDTO.getNotificationLevel().toString() : null);
         teamMember.setRole(teamMemberDTO.getRole());
@@ -94,14 +110,12 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
     })
     public void updateOrAddMember(Long companyId, TeamMemberDTO teamMemberDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         Optional<TeamMember> opt = teamMemberRepository.findByCompanyIdAndEmployeeId(companyId,
                 teamMemberDTO.getEmployeeId());
         if (opt.isPresent()) {
             TeamMember teamMember = opt.get();
-            if (!companyId.equals(teamMember.getCompanyId())) {
-                throw new HSException("TEAM_MEMBER_ALREADY_EXISTS");
-            }
+            // Mine dérivée du membre existant si absente (édition en vue consolidée).
+            resolveOwningCompany(companyId, teamMember);
             teamMember.setNotificationLevel(teamMemberDTO.getNotificationLevel() != null
                     ? teamMemberDTO.getNotificationLevel().toString() : null);
             teamMember.setRole(teamMemberDTO.getRole());
@@ -122,12 +136,9 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
     })
     public void deleteTeamMember(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
-        if (!companyId.equals(teamMember.getCompanyId())) {
-            throw new HSException("TEAM_MEMBER_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, teamMember);
         teamMemberRepository.delete(teamMember);
     }
 
@@ -184,12 +195,9 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
     })
     public void activateTeamMember(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
-        if (!companyId.equals(teamMember.getCompanyId())) {
-            throw new HSException("TEAM_MEMBER_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, teamMember);
         teamMember.setStatus(Status.ACTIVE);
         teamMember.setUpdatedAt(LocalDateTime.now());
         teamMemberRepository.save(teamMember);
@@ -205,12 +213,9 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             @CacheEvict(cacheNames = "teamResponseByEmployee", allEntries = true)
     })
     public void deactivateTeamMember(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         TeamMember teamMember = teamMemberRepository.findById(id)
                 .orElseThrow(() -> new HSException("TEAM_MEMBER_NOT_FOUND"));
-        if (!companyId.equals(teamMember.getCompanyId())) {
-            throw new HSException("TEAM_MEMBER_NOT_FOUND");
-        }
+        resolveOwningCompany(companyId, teamMember);
         teamMember.setStatus(Status.INACTIVE);
         teamMember.setUpdatedAt(LocalDateTime.now());
         teamMemberRepository.save(teamMember);

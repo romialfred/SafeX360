@@ -38,7 +38,7 @@ public class MeasurementAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateMeasurement(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateMeasurement(@RequestParam(required = false) Long companyId,
             @RequestBody MeasurementDTO measurementDTO)
             throws HSException {
         measurementService.updateMeasurement(companyId, measurementDTO);
@@ -46,21 +46,21 @@ public class MeasurementAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateMeasurement(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         measurementService.activateMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Activated Successfully"), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateMeasurement(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         measurementService.deactivateMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Deactivated Successfully"), HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteMeasurement(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteMeasurement(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         measurementService.deleteMeasurement(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Measurement Deleted Successfully"), HttpStatus.OK);

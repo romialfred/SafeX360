@@ -48,7 +48,7 @@ public class IncidentTeamAPI {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ResponseDTO> updateIncidentTeam(@RequestParam Long companyId,
+    public ResponseEntity<ResponseDTO> updateIncidentTeam(@RequestParam(required = false) Long companyId,
             @RequestBody TeamRequest teamRequest)
             throws HSException {
         teamRequest.setCompanyId(companyId);
@@ -57,7 +57,7 @@ public class IncidentTeamAPI {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteIncidentTeam(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deleteIncidentTeam(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         incidentTeamService.deleteIncidentTeam(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Team deleted successfully."), HttpStatus.OK);
@@ -83,14 +83,14 @@ public class IncidentTeamAPI {
     }
 
     @PutMapping("/activate/{id}")
-    public ResponseEntity<ResponseDTO> activateIncidentTeam(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> activateIncidentTeam(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         incidentTeamService.activateIncidentTeam(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Team activated successfully."), HttpStatus.OK);
     }
 
     @PutMapping("/deactivate/{id}")
-    public ResponseEntity<ResponseDTO> deactivateIncidentTeam(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> deactivateIncidentTeam(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         incidentTeamService.deactivateIncidentTeam(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Incident Team deactivated successfully."), HttpStatus.OK);
@@ -103,7 +103,7 @@ public class IncidentTeamAPI {
     }
 
     @DeleteMapping("/removeMember/{id}")
-    public ResponseEntity<ResponseDTO> removeMember(@RequestParam Long companyId, @PathVariable Long id)
+    public ResponseEntity<ResponseDTO> removeMember(@RequestParam(required = false) Long companyId, @PathVariable Long id)
             throws HSException {
         teamMemberService.deleteTeamMember(companyId, id);
         return new ResponseEntity<>(new ResponseDTO("Team member removed successfully."), HttpStatus.OK);

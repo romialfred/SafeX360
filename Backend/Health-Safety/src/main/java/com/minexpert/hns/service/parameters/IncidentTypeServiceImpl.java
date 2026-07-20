@@ -34,6 +34,22 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, IncidentType existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("INCIDENT_TYPE_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private IncidentType loadIncidentType(Long companyId, Long id) throws HSException {
         return incidentTypeRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_TYPE_NOT_FOUND"));
@@ -73,8 +89,8 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
             @CacheEvict(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateIncidentType(Long companyId, IncidentTypeDTO incidentTypeDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentType existingIncidentType = loadIncidentType(companyId, incidentTypeDTO.getId());
+        companyId = resolveOwningCompany(companyId, existingIncidentType);
         if (!existingIncidentType.getName().equalsIgnoreCase(incidentTypeDTO.getName())) {
             Optional<IncidentType> optional = incidentTypeRepository
                     .findByCompanyIdAndNameIgnoreCase(companyId, incidentTypeDTO.getName());
@@ -101,7 +117,6 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
             @CacheEvict(cacheNames = "incidentTypeCountsCategorySeverity", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteIncidentType(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentType incidentType = loadIncidentType(companyId, id);
         incidentTypeRepository.delete(incidentType);
     }
@@ -119,7 +134,6 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
             @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateIncidentType(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentType existingIncidentType = loadIncidentType(companyId, id);
         existingIncidentType.setStatus(Status.ACTIVE);
         existingIncidentType.setUpdatedAt(LocalDateTime.now());
@@ -133,7 +147,6 @@ public class IncidentTypeServiceImpl implements IncidentTypeService {
             @CacheEvict(cacheNames = "incidentTypesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateIncidentType(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         IncidentType existingIncidentType = loadIncidentType(companyId, id);
         existingIncidentType.setStatus(Status.INACTIVE);
         existingIncidentType.setUpdatedAt(LocalDateTime.now());

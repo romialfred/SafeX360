@@ -36,6 +36,22 @@ public class WorkProcessServiceImpl implements WorkProcessService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE. Le paramètre
+     * {@code companyId} prime s'il désigne une mine précise (utilisateur cloisonné) ;
+     * sinon (admin « Toutes les Mines » en vue consolidée) on DÉRIVE la mine de l'entité.
+     */
+    private Long resolveOwningCompany(Long companyId, WorkProcess existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("WORK_PROCESS_NOT_FOUND");
+        }
+        return effective;
+    }
+
     private WorkProcess loadWorkProcess(Long companyId, Long id) throws HSException {
         return workProcessRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("WORK_PROCESS_NOT_FOUND"));
@@ -68,8 +84,8 @@ public class WorkProcessServiceImpl implements WorkProcessService {
             @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateWorkProcess(Long companyId, WorkProcessDTO workProcessDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkProcess existingWorkProcess = loadWorkProcess(companyId, workProcessDTO.getId());
+        companyId = resolveOwningCompany(companyId, existingWorkProcess);
         if (!workProcessDTO.getName().equalsIgnoreCase(existingWorkProcess.getName()) ||
                 !Objects.equals(workProcessDTO.getDepartmentId(), existingWorkProcess.getDepartmentId())) {
             Optional<WorkProcess> opt = workProcessRepository
@@ -93,7 +109,6 @@ public class WorkProcessServiceImpl implements WorkProcessService {
             @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteWorkProcess(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkProcess workProcess = loadWorkProcess(companyId, id);
         workProcessRepository.delete(workProcess);
     }
@@ -134,7 +149,6 @@ public class WorkProcessServiceImpl implements WorkProcessService {
             @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateWorkProcess(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkProcess workProcess = loadWorkProcess(companyId, id);
         if (workProcess.getStatus() == Status.ACTIVE) {
             throw new HSException("WORK_PROCESS_ALREADY_ACTIVE");
@@ -151,7 +165,6 @@ public class WorkProcessServiceImpl implements WorkProcessService {
             @CacheEvict(cacheNames = "workProcessesActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateWorkProcess(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         WorkProcess workProcess = loadWorkProcess(companyId, id);
         if (workProcess.getStatus() == Status.INACTIVE) {
             throw new HSException("WORK_PROCESS_ALREADY_INACTIVE");

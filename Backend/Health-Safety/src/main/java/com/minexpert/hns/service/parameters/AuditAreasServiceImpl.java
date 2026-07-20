@@ -37,6 +37,24 @@ public class AuditAreasServiceImpl implements AuditAreasService {
         }
     }
 
+    /**
+     * Mine effective pour une opération sur une entité EXISTANTE (update / activate /
+     * deactivate / delete). Le paramètre {@code companyId} prime s'il désigne une mine
+     * précise (utilisateur cloisonné, clampé par la gateway) ; sinon (admin « Toutes les
+     * Mines » en vue consolidée) on DÉRIVE la mine de l'entité. Un utilisateur cloisonné
+     * ne peut jamais toucher l'entité d'une autre mine (contrôle de propriété conservé).
+     */
+    private Long resolveOwningCompany(Long companyId, AuditAreas existing) throws HSException {
+        Long effective = (companyId != null && companyId > 0) ? companyId : existing.getCompanyId();
+        if (effective == null) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
+        if (!effective.equals(existing.getCompanyId())) {
+            throw new HSException("AUDIT_AREA_NOT_FOUND");
+        }
+        return effective;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "auditAreasAll", key = "#companyId != null ? #companyId : 'ALL'"),
@@ -64,12 +82,9 @@ public class AuditAreasServiceImpl implements AuditAreasService {
             @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deleteAuditArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
-        if (!companyId.equals(auditAreas.getCompanyId())) {
-            throw new HSException("AUDIT_AREA_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, auditAreas);
         auditAreasRepository.delete(auditAreas);
     }
 
@@ -131,12 +146,9 @@ public class AuditAreasServiceImpl implements AuditAreasService {
             @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void activateAuditArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
-        if (!companyId.equals(auditAreas.getCompanyId())) {
-            throw new HSException("AUDIT_AREA_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, auditAreas);
         auditAreas.setStatus(Status.ACTIVE);
         auditAreas.setUpdatedAt(LocalDateTime.now());
         auditAreasRepository.save(auditAreas);
@@ -149,12 +161,9 @@ public class AuditAreasServiceImpl implements AuditAreasService {
             @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void deactivateAuditArea(Long companyId, Long id) throws HSException {
-        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(id)
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
-        if (!companyId.equals(auditAreas.getCompanyId())) {
-            throw new HSException("AUDIT_AREA_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, auditAreas);
         auditAreas.setStatus(Status.INACTIVE);
         auditAreas.setUpdatedAt(LocalDateTime.now());
         auditAreasRepository.save(auditAreas);
@@ -167,12 +176,9 @@ public class AuditAreasServiceImpl implements AuditAreasService {
             @CacheEvict(cacheNames = "auditAreasActive", key = "#companyId != null ? #companyId : 'ALL'")
     })
     public void updateAuditArea(Long companyId, AuditAreasDTO auditAreasDTO) throws HSException {
-        ensureCompanyIdProvided(companyId);
         AuditAreas auditAreas = auditAreasRepository.findById(auditAreasDTO.getId())
                 .orElseThrow(() -> new HSException("AUDIT_AREA_NOT_FOUND"));
-        if (!companyId.equals(auditAreas.getCompanyId())) {
-            throw new HSException("AUDIT_AREA_NOT_FOUND");
-        }
+        companyId = resolveOwningCompany(companyId, auditAreas);
         if (!auditAreas.getName().equalsIgnoreCase(auditAreasDTO.getName())) {
             Optional<AuditAreas> opt = auditAreasRepository.findByCompanyIdAndNameIgnoreCase(companyId,
                     auditAreasDTO.getName());
