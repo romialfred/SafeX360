@@ -12,6 +12,7 @@ import {
     IconShieldX,
     IconCircleMinus,
     IconClipboardList,
+    IconChartBar,
     IconBuildingBank,
     IconUrgent,
     IconArchive,
@@ -46,6 +47,7 @@ import {
 } from '../../../services/GeneralAlertService';
 import { formatReasonCode } from './alertHelpers';
 import EvacuationRollCall from './EvacuationRollCall';
+import EvacuationDashboard from './EvacuationDashboard';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
 import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
@@ -127,7 +129,13 @@ const GeneralAlertDetailPage = () => {
     const [editNote, setEditNote] = useState('');
     const [editSaving, setEditSaving] = useState(false);
     const [elapsedLive, setElapsedLive] = useState(0);
-    const [activeTab, setActiveTab] = useState<'points' | 'headcount' | 'rollcall'>('rollcall');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'points' | 'headcount' | 'rollcall'>('dashboard');
+
+    /** Ouvre l'écran géant détaché dans un nouvel onglet (mur d'images). */
+    const openWallboard = () => {
+        if (!alert?.id) return;
+        window.open(`/emergency/wall/general/${alert.id}`, '_blank', 'noopener');
+    };
 
     // ── Load ──
     useEffect(() => {
@@ -476,7 +484,10 @@ const GeneralAlertDetailPage = () => {
                 {/* ── Colonne gauche : 2/3 ── */}
                 <div className="xl:col-span-2 space-y-5">
                     {/* Tabs : Points de rassemblement / Head-count */}
-                    <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+                    <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm overflow-x-auto">
+                        <TabBtn active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<IconChartBar size={13} stroke={1.8} />}>
+                            Tableau de bord
+                        </TabBtn>
                         <TabBtn active={activeTab === 'rollcall'} onClick={() => setActiveTab('rollcall')} icon={<IconClipboardList size={13} stroke={1.8} />}>
                             Appel nominatif
                         </TabBtn>
@@ -487,6 +498,18 @@ const GeneralAlertDetailPage = () => {
                             Head-count par catégorie
                         </TabBtn>
                     </div>
+
+                    {activeTab === 'dashboard' && (
+                        <EvacuationDashboard
+                            employees={employees}
+                            checkIns={checkIns}
+                            assemblyPoints={assemblyPoints}
+                            triggeredAt={alert.triggeredAt}
+                            isActive={isActive}
+                            nowMs={Date.now()}
+                            onDetach={openWallboard}
+                        />
+                    )}
 
                     {activeTab === 'rollcall' && (
                         <EvacuationRollCall

@@ -16,6 +16,8 @@ const AssemblyPointDetailPage = lazy(() => import('../components/EmergencyManage
 const SosListPage = lazy(() => import('../components/EmergencyManagement/Sos/SosListPage'));
 const SosDetailPage = lazy(() => import('../components/EmergencyManagement/Sos/SosDetailPage'));
 const GeneralAlertDetailPage = lazy(() => import('../components/EmergencyManagement/GeneralAlert/GeneralAlertDetailPage'));
+// LOT 64 — Écran géant d'évacuation (salle de crise) : plein écran, sans chrome.
+const EvacuationWallboard = lazy(() => import('../components/EmergencyManagement/GeneralAlert/EvacuationWallboard'));
 const EmergencyDashboardPage = lazy(() => import('../components/EmergencyManagement/Dashboard/EmergencyDashboardPage'));
 
 const ProfilePage = lazy(() => import('../pages/dashboard/ProfilePage'));
@@ -337,6 +339,18 @@ const router = createBrowserRouter([
     {
         path: '/first-login',
         element: <ProtectedRoute><FirstLoginPasswordChange /></ProtectedRoute>,
+    },
+
+    // LOT 64 — Écran géant d'évacuation (mur d'images / salle de crise).
+    // Hors DashboardLayout : plein écran, sans sidebar ni popup employé.
+    // Authentifié (cookie de session) ; rafraîchi par polling autonome.
+    {
+        path: '/emergency/wall/general/:id',
+        element: (
+            <ProtectedRoute>
+                <BlastSuspense><EvacuationWallboard /></BlastSuspense>
+            </ProtectedRoute>
+        ),
     },
 
     // ── SafeX 360 Field — version mobile Android (Phase M0) ─────────────
