@@ -17,11 +17,11 @@ public interface SeverityLevelService {
 
     public void activateSeverityLevel(Long id) throws HSException;
 
-    public List<SeverityLevelDTO> getAllSeverityLevels() throws HSException;
+    public List<SeverityLevelDTO> getAllSeverityLevels(Long companyId) throws HSException;
 
-    public List<SeverityLevelResponse> getUniqueLevelName() throws HSException;
+    public List<SeverityLevelResponse> getUniqueLevelName(Long companyId) throws HSException;
 
-    public List<SeverityLevelResponse> getAllActiveSeverityLevels() throws HSException;
+    public List<SeverityLevelResponse> getAllActiveSeverityLevels(Long companyId) throws HSException;
 
     public void deactivateSeverityLevel(Long id) throws HSException;
 

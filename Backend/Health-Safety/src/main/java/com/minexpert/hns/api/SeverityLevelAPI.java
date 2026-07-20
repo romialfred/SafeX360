@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.minexpert.hns.dto.ResponseDTO;
@@ -72,19 +73,29 @@ public class SeverityLevelAPI {
         return new ResponseEntity<>("Severity Level Deactivated Successfully", HttpStatus.OK);
     }
 
+    /*
+     * companyId optionnel : la gateway l'injecte (utilisateur cloisonné) ou le
+     * retire (admin « Toutes les Mines » => vue consolidée). Sans ce paramètre,
+     * les niveaux de gravité de TOUTES les mines remontaient dans le formulaire
+     * de déclaration d'incident.
+     */
+
     @GetMapping("/getAll")
-    public ResponseEntity<List<SeverityLevelDTO>> getAllSeverityLevels() throws HSException {
-        return new ResponseEntity<>(severityLevelService.getAllSeverityLevels(), HttpStatus.OK);
+    public ResponseEntity<List<SeverityLevelDTO>> getAllSeverityLevels(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(severityLevelService.getAllSeverityLevels(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllActive")
-    public ResponseEntity<List<SeverityLevelResponse>> getAllActiveSeverityLevels() throws HSException {
-        return new ResponseEntity<>(severityLevelService.getAllActiveSeverityLevels(), HttpStatus.OK);
+    public ResponseEntity<List<SeverityLevelResponse>> getAllActiveSeverityLevels(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(severityLevelService.getAllActiveSeverityLevels(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getUniqueLevelName")
-    public ResponseEntity<List<SeverityLevelResponse>> getUniqueLevelName() throws HSException {
-        return new ResponseEntity<>(severityLevelService.getUniqueLevelName(), HttpStatus.OK);
+    public ResponseEntity<List<SeverityLevelResponse>> getUniqueLevelName(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(severityLevelService.getUniqueLevelName(companyId), HttpStatus.OK);
     }
 
     @PostMapping("/addExample")

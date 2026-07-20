@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, Select, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, Select, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -17,15 +11,24 @@ import { getAllEmployeeWithDirection } from "../../../services/EmployeeService";
 import { activateAuditors, createAuditors, deactivateAuditors, getAllAuditors, updateAuditors } from "../../../services/AuditorsService";
 import { mapIdToName } from "../../../utility/OtherUtilities";
 import { auditorRoles } from "../../../Data/DropdownData";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+// Les rôles sont stockés en anglais côté base (DropdownData) : on ne traduit
+// que l'affichage, la valeur envoyée au serveur reste strictement identique.
+const ROLE_LABELS: Record<string, string> = {
+    "Lead Auditor": "Auditeur principal",
+    "Auditor": "Auditeur",
+    "Technical Expert": "Expert technique",
+    "Observer": "Observateur",
+    "Audit Reporter": "Rapporteur d'audit",
 };
+
+const roleLabel = (role: string) => ROLE_LABELS[role] ?? role ?? '—';
+
+const roleOptions = auditorRoles.map((role: string) => ({ value: role, label: roleLabel(role) }));
+
 const AuiditorData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -41,8 +44,8 @@ const AuiditorData = () => {
 
         },
         validate: {
-            employeeId: (value) => (value.trim().length > 0 ? null : "Employee Name is required"),
-            role: (value) => (value.trim().length > 0 ? null : "Role is required"),
+            employeeId: (value) => (value.trim().length > 0 ? null : "Le nom de l'employé est obligatoire"),
+            role: (value) => (value.trim().length > 0 ? null : "Le rôle est obligatoire"),
 
         }
     });
@@ -81,7 +84,7 @@ const AuiditorData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant de valider" });
                 setLoading(false);
                 return;
             }
@@ -93,7 +96,7 @@ const AuiditorData = () => {
 
             updateAuditors(payload)
                 .then(() => {
-                    successNotification("Auditors updated successfully");
+                    successNotification("Auditeur interne modifié avec succès");
 
 
                     const updatedData = data.map(item =>
@@ -110,13 +113,13 @@ const AuiditorData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong while updating");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue lors de la modification");
                 })
                 .finally(() => setLoading(false));
         } else {
             createAuditors(values)
                 .then(() => {
-                    successNotification("Auditors added successfully");
+                    successNotification("Auditeur interne ajouté avec succès");
 
 
                     getAllAuditors()
@@ -127,7 +130,7 @@ const AuiditorData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong while creating");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue lors de la création");
                 })
                 .finally(() => setLoading(false))
         }
@@ -156,16 +159,18 @@ const AuiditorData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'action</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the auditors: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> l'auditeur interne :{" "}
+                    <strong>{rowData.employeeName || rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'red', variant: "filled" },
             closeOnEscape: false,
@@ -176,7 +181,11 @@ const AuiditorData = () => {
                 const apiCall = action === "activate" ? activateAuditors : deactivateAuditors;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Auditors ${action}d successfully`);
+                        successNotification(
+                            action === "activate"
+                                ? "Auditeur interne activé avec succès"
+                                : "Auditeur interne désactivé avec succès"
+                        );
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -185,7 +194,11 @@ const AuiditorData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} auditors`);
+                        errorNotification(
+                            action === "activate"
+                                ? "Échec de l'activation de l'auditeur interne"
+                                : "Échec de la désactivation de l'auditeur interne"
+                        );
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -194,119 +207,76 @@ const AuiditorData = () => {
         });
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Auditor
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput
-                value={globalFilterValue}
-                onChange={onGlobalFilterChange}
-                size='sm'
-                placeholder='Search'
-                leftSection={<IconSearch />}
-            />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
-
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No Auditors Found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="employeeName" header="Employee Name" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="email" header="Email" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="direction" header="Direction" />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="role" header="Role" />
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvel auditeur"
+                onNew={open}
+                loading={loading}
+                columns={[
+                    { key: 'employeeName', label: 'Employé' },
+                    { key: 'email', label: 'E-mail', hideOnTablet: true },
+                    { key: 'direction', label: 'Direction', hideOnTablet: true },
+                    { key: 'role', label: 'Rôle' },
+                    { key: 'domains', label: 'Domaines', hideOnTablet: true },
+                ]}
+                rows={data}
+                getRowKey={(row: any, index: number) => row?.id ?? index}
+                searchPlaceholder="Rechercher un auditeur…"
+                searchText={(row: any) =>
+                    [row?.employeeName, row?.email, row?.direction, roleLabel(row?.role), row?.role, row?.domains, row?.qualifications]
+                        .filter(Boolean)
+                        .join(' ')
+                }
+                renderRow={(row: any) => ({
+                    employeeName: (
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-medium text-slate-800 truncate">
+                                {row?.employeeName || '—'}
+                            </span>
+                            {row?.leadQualified && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 ring-1 ring-teal-200 flex-shrink-0 whitespace-nowrap">
+                                    Auditeur principal
+                                </span>
+                            )}
+                        </div>
+                    ),
+                    email: <span className="text-slate-600">{row?.email || '—'}</span>,
+                    direction: row?.direction || '—',
+                    role: roleLabel(row?.role),
+                    domains: <span className="text-slate-600">{row?.domains || '—'}</span>,
+                })}
+                statusOf={(row: any) => row?.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+                emptyTitle="Aucun auditeur interne"
+                emptyHint="Déclarez les employés habilités à conduire les audits internes (compétences ISO 19011)."
+            />
 
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Add"} Auditor
+                    {edit ? "Modifier l'auditeur" : "Ajouter un auditeur"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
 
-                    {edit ? <Select searchable label="Employee" placeholder="Select employee" data={emps} withAsterisk disabled {...form.getInputProps('employeeId')} /> : <Select searchable label="Employee" placeholder="Select employee" data={emps.filter((x: any) => !data.some((y: any) => x.value == y.employeeId))} withAsterisk {...form.getInputProps('employeeId')} />}
-                    <TextInput disabled value={empMap[form.values.employeeId]?.email} label="Email" withAsterisk placeholder='Enter Email' />
+                    {edit ? <Select searchable label="Employé" placeholder="Sélectionner un employé" data={emps} withAsterisk disabled {...form.getInputProps('employeeId')} /> : <Select searchable label="Employé" placeholder="Sélectionner un employé" data={emps.filter((x: any) => !data.some((y: any) => x.value == y.employeeId))} withAsterisk {...form.getInputProps('employeeId')} />}
+                    <TextInput disabled value={empMap[form.values.employeeId]?.email} label="E-mail" withAsterisk placeholder="E-mail" />
 
 
-                    <TextInput disabled label="Direction" value={empMap[form.values.employeeId]?.direction} withAsterisk placeholder='Enter direction' />
+                    <TextInput disabled label="Direction" value={empMap[form.values.employeeId]?.direction} withAsterisk placeholder="Direction" />
 
-                    <Select label="Role" placeholder="Select Role" data={auditorRoles} withAsterisk {...form.getInputProps('role')} />
+                    <Select label="Rôle" placeholder="Sélectionner un rôle" data={roleOptions} withAsterisk {...form.getInputProps('role')} />
 
 
 
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"}</Button>
                 </form>
             </Modal>
 
 
-        </div>
+        </>
     )
 }
 

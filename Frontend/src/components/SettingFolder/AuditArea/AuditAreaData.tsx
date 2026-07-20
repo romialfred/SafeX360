@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, Select, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, Select, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -16,15 +10,31 @@ import { Z } from '../../../constants/zIndex';
 import { auditAreadata } from "../../../Data/DropdownData";
 import { getEmployeeDropdown } from "../../../services/EmployeeService";
 import { activateAuditArea, createAuditArea, deactivateAuditArea, GetAllAuditArea, updateAuditArea } from "../../../services/AuditAreaService";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+/**
+ * Libellés français des types de zone d'audit. Les VALEURS restent celles du
+ * référentiel partagé (DropdownData) : seul l'affichage est traduit, le payload
+ * envoyé au serveur est inchangé.
+ */
+const AUDIT_TYPE_LABELS: Record<string, string> = {
+    'PROCESS': 'Processus',
+    'SYSTEM': 'Système',
+    'PEOPLE': 'Personnel',
+    'OPEX ACCOUNT': 'Compte OPEX',
+    'APEX ACCOUNT': 'Compte APEX',
+    'OTHER': 'Autre',
 };
+
+const auditTypeOptions = auditAreadata.map((option: { label: string; value: string }) => ({
+    value: option.value,
+    label: AUDIT_TYPE_LABELS[option.value] ?? option.label,
+}));
+
+const auditTypeLabel = (value: any) => AUDIT_TYPE_LABELS[String(value ?? '').toUpperCase()] ?? value ?? '';
+
 const AuditAreaData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -41,13 +51,13 @@ const AuditAreaData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Audit Name is required";
+                if (trimmed.length === 0) return "Le nom de la zone d'audit est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
-            type: (value) => (value.trim().length > 0 ? null : "Audit Type is required"),
-            owner: (value) => (value.trim().length > 0 ? null : "Owner is required"),
+            type: (value) => (value.trim().length > 0 ? null : "Le type d'audit est obligatoire"),
+            owner: (value) => (value.trim().length > 0 ? null : "Le responsable est obligatoire"),
         }
     });
 
@@ -55,7 +65,7 @@ const AuditAreaData = () => {
         setLoading(true);
         getEmployeeDropdown()
             .then((res) => {
-                // Assuming res is array of {id, name}
+                // res est un tableau de {id, name}
                 const empOptions = res.map((item: any) => ({
                     label: item.name,
                     value: String(item.id),
@@ -63,21 +73,21 @@ const AuditAreaData = () => {
                 setEmps(empOptions);
             })
             .catch(() => {
-                errorNotification("Failed to fetch employees");
+                errorNotification("Échec du chargement des employés");
             });
 
         GetAllAuditArea({})
             .then((res) => {
-                // Assuming res is array of audit areas with status
+                // res est un tableau de zones d'audit avec leur statut
                 const formatted = res.map((item: any) => ({
                     ...item,
                     status: item.status.toUpperCase(),
-                    ownerName: item.ownerName || '', // ownerName included from API if any
+                    ownerName: item.ownerName || '', // ownerName fourni par l'API le cas échéant
                 }));
                 setData(formatted);
             })
             .catch(() => {
-                errorNotification("Failed to fetch audit areas");
+                errorNotification("Échec du chargement des zones d'audit");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -86,7 +96,7 @@ const AuditAreaData = () => {
         setLoading(true);
 
         if (edit) {
-            // Check if any field changed
+            // Vérifie qu'au moins un champ a changé
             const changed = Object.keys(values).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
@@ -94,7 +104,7 @@ const AuditAreaData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
@@ -106,16 +116,16 @@ const AuditAreaData = () => {
 
             updateAuditArea(payload)
                 .then(() => {
-                    successNotification("Audit Area updated successfully");
+                    successNotification("Zone d'audit modifiée avec succès");
 
-                    // Update local state with ownerName resolved from emps
+                    // Met à jour l'état local avec le responsable résolu depuis emps
                     const updatedData = data.map(item =>
                         item.id === selectedRow.id
                             ? {
                                 ...item,
                                 ...values,
                                 ownerName: emps.find(emp => emp.value === values.owner)?.label || item.ownerName,
-                                status: item.status, // keep status as is
+                                status: item.status, // le statut reste inchangé
                             }
                             : item
                     );
@@ -123,16 +133,16 @@ const AuditAreaData = () => {
                     handleClose();
                 })
                 .catch(() => {
-                    errorNotification("Something went wrong while updating");
+                    errorNotification("Une erreur est survenue lors de la modification");
                 })
                 .finally(() => setLoading(false));
         } else {
-            // Create new Audit Area
+            // Création d'une nouvelle zone d'audit
             createAuditArea(values)
                 .then((res) => {
-                    successNotification("Audit Area added successfully");
+                    successNotification("Zone d'audit ajoutée avec succès");
 
-                    // res is assumed to be the new id returned from server
+                    // res correspond à l'identifiant renvoyé par le serveur
                     const newEntry = {
                         ...values,
                         id: res,
@@ -144,7 +154,7 @@ const AuditAreaData = () => {
                     handleClose();
                 })
                 .catch(() => {
-                    errorNotification("Something went wrong while creating");
+                    errorNotification("Une erreur est survenue lors de la création");
                 })
                 .finally(() => setLoading(false));
         }
@@ -170,16 +180,18 @@ const AuditAreaData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
+        const doneLabel = action === "activate" ? "activée" : "désactivée";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'opération</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the area: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la zone d'audit : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'red', variant: "filled" },
             closeOnEscape: false,
@@ -190,7 +202,7 @@ const AuditAreaData = () => {
                 const apiCall = action === "activate" ? activateAuditArea : deactivateAuditArea;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Area ${action}d successfully`);
+                        successNotification(`Zone d'audit ${doneLabel} avec succès`);
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -199,7 +211,7 @@ const AuditAreaData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} area`);
+                        errorNotification(`Échec de l'opération : impossible de ${actionLabel} la zone d'audit`);
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -208,126 +220,64 @@ const AuditAreaData = () => {
         });
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Audit Area
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput
-                value={globalFilterValue}
-                onChange={onGlobalFilterChange}
-                size='sm'
-                placeholder='Search'
-                leftSection={<IconSearch />}
-            />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-
-
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle zone d'audit"
+                onNew={open}
+                columns={[
+                    { key: 'name', label: 'Nom' },
+                    { key: 'type', label: 'Type' },
+                    { key: 'ownerName', label: 'Responsable', hideOnTablet: true },
+                ]}
+                rows={data}
+                renderRow={(row) => ({
+                    name: row.name,
+                    type: auditTypeLabel(row.type),
+                    ownerName: row.ownerName,
+                })}
+                getRowKey={(row, index) => row.id ?? row.name ?? index}
+                searchText={(row) => `${row.name ?? ''} ${auditTypeLabel(row.type)} ${row.ownerName ?? ''}`}
+                searchPlaceholder="Rechercher une zone d'audit…"
+                loading={loading}
+                emptyTitle="Aucune zone d'audit"
+                emptyHint="Définissez les zones à auditer (processus, système, personnel…) et leur responsable."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+            />
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No Audit Area Found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="type" header="Type" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="ownerName" header="Owner Name" sortable />
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
+            {/* Modale de création / modification */}
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Audit Area
+                    {edit ? "Modifier la zone d'audit" : "Créer une zone d'audit"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
+                    <TextInput label="Nom" withAsterisk placeholder='Saisir le nom' {...form.getInputProps('name')} />
                     <Select
                         withAsterisk
-                        placeholder="Select Type"
+                        placeholder="Sélectionner un type"
                         label="Type"
-                        data={auditAreadata}
+                        data={auditTypeOptions}
                         {...form.getInputProps('type')}
                     />
 
                     <Select
                         withAsterisk
-                        placeholder="Select Owner"
-                        label="Owner"
+                        placeholder="Sélectionner un responsable"
+                        label="Responsable"
                         data={emps}
                         {...form.getInputProps('owner')}
                     />
 
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"}</Button>
                 </form>
             </Modal>
 
 
-        </div>
+        </>
     )
 }
 

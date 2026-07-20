@@ -15,7 +15,7 @@ import { reportIncident } from "../../../../services/IncidentService";
 import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
-import { GetAllBodyParts } from "../../../../services/BodyPartsService";
+import { getAllActiveBodyParts } from "../../../../services/BodyPartsService";
 import { isValidRichText, mapIdToName } from "../../../../utility/OtherUtilities";
 import { IconAlertOctagon, IconArrowLeft, IconArrowRight, IconCheck, IconClipboardList, IconUsers, IconChartDots3, IconActivity, IconChevronLeft, IconBolt, IconInfoCircle, IconLayoutSidebarRightCollapse, IconLayoutSidebarRightExpand, IconClock, IconHash } from "@tabler/icons-react";
 import IncidentAnalysis from "./IncidentAnalysis";
@@ -179,7 +179,11 @@ const ReportIncidents = () => {
         getAllActiveWeatherConditions().then((res: any) => {
             setWeatherConditions(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
         }).catch(() => { errorNotification("Impossible de charger les conditions météo"); });
-        GetAllBodyParts({}).then((res: any) => {
+        // Actives uniquement : une partie du corps désactivée dans les paramètres ne
+        // doit plus être proposée à la déclaration. Les écrans de consultation et de
+        // modification gardent la liste complète, pour que les événements déjà
+        // déclarés continuent d'afficher (et de conserver) leur sélection d'origine.
+        getAllActiveBodyParts().then((res: any) => {
             setBodyParts(res.map((item: any) => ({ ...item, label: item.name, value: "" + item.id })));
         }).catch(() => { errorNotification("Impossible de charger les parties du corps"); });
         getAllActiveWorkArea().then((res: any) => {

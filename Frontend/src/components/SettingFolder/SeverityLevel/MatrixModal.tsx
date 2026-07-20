@@ -37,7 +37,7 @@ const MatrixModal = ({ opened, onClose, categories }: MatrixModalProps) => {
                 });
                 res.forEach((data: any) => {
                     const entry = summary[categoryMap[data.incidentCategoryId]?.name];
-                    entry.push({ level: `Level ${data.severityLevel} (${data.severityLevelName})`, type: data.name, description: data.description });
+                    entry.push({ level: `Niveau ${data.severityLevel} (${data.severityLevelName})`, type: data.name, description: data.description });
 
                 });
 
@@ -62,7 +62,7 @@ const MatrixModal = ({ opened, onClose, categories }: MatrixModalProps) => {
             onClose={onClose}
             size="70%"
             centered
-            title={<div className="text-lg text-blue-500">Severity Levels</div>}
+            title={<div className="text-lg text-blue-500">Niveaux de gravité</div>}
             overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
         >
             <style>
@@ -114,8 +114,8 @@ const MatrixModal = ({ opened, onClose, categories }: MatrixModalProps) => {
                             scrollable
                             rowClassName={(data) => getRowClass(data.level)}
                         >
-                            <Column field="level" header="Severity Level" />
-                            <Column field="type" header="Incident Type" />
+                            <Column field="level" header="Niveau de gravité" />
+                            <Column field="type" header="Type d'incident" />
                             <Column field="description" header="Description" />
                         </DataTable>
                     </ScrollArea>

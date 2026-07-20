@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, Select, Textarea, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, Select, Textarea, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { modals } from '@mantine/modals';
 import { Z } from '../../../constants/zIndex';
@@ -15,17 +9,11 @@ import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { activateCheckList, createCheckList, deactivateCheckList, GetAllCheckList, updateCheckList } from "../../../services/ChecklistParameterService";
 import { GetAllIncidentCategories } from "../../../services/IncidentCategory";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
 
 const CheckListData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const dispatch = useDispatch();
@@ -43,20 +31,27 @@ const CheckListData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Name is required";
+                if (trimmed.length === 0) return "Le titre est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
             description: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Description is required";
+                if (trimmed.length === 0) return "La description est obligatoire";
                 const wordCount = trimmed.length;
-                return wordCount > 250 ? "Maximum 250 characters allowed" : null;
+                return wordCount > 250 ? "250 caractères maximum" : null;
             },
-            incidentCategoryId: (value) => value?.trim()?.length > 0 ? null : "Category is required",
+            incidentCategoryId: (value) => value?.trim()?.length > 0 ? null : "La catégorie est obligatoire",
         }
     });
+
+    const handleNew = () => {
+        setEdit(false);
+        setSelectedRow(null);
+        form.reset();
+        open();
+    };
 
     const handleEdit = (rowData: any) => {
         setEdit(true);
@@ -76,7 +71,7 @@ const CheckListData = () => {
             setChecklist(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
         })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des catégories");
             });
 
         GetAllCheckList({})
@@ -88,7 +83,7 @@ const CheckListData = () => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch checklist");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des check-lists");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -102,16 +97,17 @@ const CheckListData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'action</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the check list: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la check-list : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
             closeOnEscape: false,
@@ -122,7 +118,7 @@ const CheckListData = () => {
                 const apiCall = action === "activate" ? activateCheckList : deactivateCheckList;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Check List ${action}d successfully`);
+                        successNotification(action === "activate" ? "Check-list activée" : "Check-list désactivée");
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -131,7 +127,7 @@ const CheckListData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} check list`);
+                        errorNotification(`Impossible de ${actionLabel} la check-list`);
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -151,7 +147,7 @@ const CheckListData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
@@ -167,7 +163,7 @@ const CheckListData = () => {
 
             updateCheckList(payload)
                 .then(() => {
-                    successNotification("Check List updated successfully");
+                    successNotification("Check-list mise à jour");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id
                             ? {
@@ -181,13 +177,13 @@ const CheckListData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
             createCheckList({ ...values, incidentCategoryId: parseInt(values.incidentCategoryId) })
                 .then((res) => {
-                    successNotification("Check List added successfully");
+                    successNotification("Check-list ajoutée");
                     const category = checklist.find(cat => cat.value === values.incidentCategoryId);
 
                     const newEntry = {
@@ -200,7 +196,7 @@ const CheckListData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => {
                     setLoading(false);
@@ -208,107 +204,54 @@ const CheckListData = () => {
         }
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => {
-        return (
-            <div className="flex gap-5">
-                <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                    New Check List
-                </Button>
-            </div>
-        );
-    };
-
-    const rightToolbarTemplate = () => {
-        return (
-            <div className='flex gap-5'>
-                <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-                <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-            </div>
-        );
-    };
-
-    const actionBodyTemplate = (rowData: any) => {
-        return (
-            <div className='flex gap-3 justify-center'>
-                <Tooltip label="Edit">
-                    <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                        <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-
-                <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                    <ActionIcon
-                        color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                        onClick={() => handleStatusChange(rowData)}
-                        size="sm"
-                    >
-                        {rowData.status === 'ACTIVE'
-                            ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                            : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                        }
-                    </ActionIcon>
-                </Tooltip>
-            </div>
-        );
-    };
-
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle check-list"
+                onNew={handleNew}
+                columns={[
+                    { key: 'name', label: 'Titre' },
+                    { key: 'incidentCategoryName', label: 'Catégorie' },
+                    { key: 'description', label: 'Description', hideOnTablet: true },
+                ]}
+                rows={data}
+                renderRow={(row) => ({
+                    name: <span className="font-medium text-slate-900">{row.name}</span>,
+                    incidentCategoryName: row.incidentCategoryName || '—',
+                    description: (
+                        <span className="text-slate-600 line-clamp-2" title={row.description}>
+                            {row.description || '—'}
+                        </span>
+                    ),
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) =>
+                    `${row.name ?? ''} ${row.incidentCategoryName ?? ''} ${row.description ?? ''}`
+                }
+                searchPlaceholder="Rechercher une check-list…"
+                loading={loading}
+                emptyTitle="Aucune check-list"
+                emptyHint="Créez une check-list pour structurer les points de contrôle d'une catégorie d'incident."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+            />
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                globalFilterFields={['name']}
-                emptyMessage="No Check List found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="CheckList Title" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="description" header="Description" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentCategoryName" header="Category" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
+            {/* Modale de création / modification */}
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Check List Management
+                    {edit ? "Modifier la check-list" : "Créer une check-list"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Check List Title" withAsterisk placeholder='Enter title' {...form.getInputProps('name')} />
-                    <Textarea label="Description" placeholder="Enter Description" {...form.getInputProps('description')} />
-                    <Select label="Category" withAsterisk placeholder="Select category" data={checklist} {...form.getInputProps('incidentCategoryId')} />
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <TextInput label="Titre de la check-list" withAsterisk placeholder='Saisissez le titre' {...form.getInputProps('name')} />
+                    <Textarea label="Description" placeholder="Saisissez la description" {...form.getInputProps('description')} />
+                    <Select label="Catégorie" withAsterisk placeholder="Sélectionnez une catégorie" data={checklist} {...form.getInputProps('incidentCategoryId')} />
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Mettre à jour" : "Ajouter"}</Button>
                 </form>
             </Modal>
-        </div>
+        </>
     );
 };
 

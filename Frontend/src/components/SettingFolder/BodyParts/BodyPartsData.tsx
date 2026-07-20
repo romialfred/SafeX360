@@ -1,13 +1,8 @@
 import { ActionIcon, Button, FileInput, LoadingOverlay, Modal, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconEye, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { IconEye, IconPhotoOff } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -15,18 +10,11 @@ import { modals } from "@mantine/modals";
 import { Z } from '../../../constants/zIndex';
 import { activateBodyParts, createBodyParts, deactivateBodyParts, GetAllBodyParts, updateBodyParts } from "../../../services/BodyPartsService";
 import { base64ToFile, getBase64 } from "../../../utility/DocumentUtility";
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
-
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 
 const BodyPartsData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -42,12 +30,12 @@ const BodyPartsData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Name is required";
+                if (trimmed.length === 0) return "Le nom est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
-            file: (value) => (!edit && !value ? "Image is required" : null)
+            file: (value) => (!edit && !value ? "L'image est obligatoire" : null)
         }
     });
 
@@ -63,7 +51,7 @@ const BodyPartsData = () => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des parties du corps");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -76,7 +64,7 @@ const BodyPartsData = () => {
             ? ((await getBase64(values.file)) as string)?.split(',')[1] ?? null
             : (edit ? selectedRow?.file : null);
         if (edit) {
-            // Check if at least one field has changed
+            // Vérifie qu'au moins un champ a changé
             const changed = Object.keys({ ...values, file: filePart }).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
@@ -84,7 +72,7 @@ const BodyPartsData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
@@ -93,7 +81,7 @@ const BodyPartsData = () => {
 
             updateBodyParts(payload)
                 .then(() => {
-                    successNotification("Body Parts updated successfully");
+                    successNotification("Partie du corps mise à jour");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id
                             ? {
@@ -105,14 +93,14 @@ const BodyPartsData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
 
             createBodyParts({ ...values, file: filePart })
                 .then((res) => {
-                    successNotification("Body Part added successfully");
+                    successNotification("Partie du corps ajoutée");
 
 
                     const newEntry = {
@@ -126,12 +114,19 @@ const BodyPartsData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => {
                     setLoading(false)
                 });
         }
+    };
+
+    const handleNew = () => {
+        setEdit(false);
+        setSelectedRow(null);
+        form.reset();
+        open();
     };
 
     const handleEdit = (rowData: any) => {
@@ -154,16 +149,17 @@ const BodyPartsData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'action</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the parts: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la partie du corps : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
 
@@ -175,7 +171,7 @@ const BodyPartsData = () => {
                 const apiCall = action === "activate" ? activateBodyParts : deactivateBodyParts;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Parts ${action}d successfully`);
+                        successNotification(action === "activate" ? "Partie du corps activée" : "Partie du corps désactivée");
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -184,7 +180,7 @@ const BodyPartsData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} parts`);
+                        errorNotification(`Impossible de ${actionLabel} la partie du corps`);
                     }
                     ).finally(() => {
                         dispatch(hideOverlay())
@@ -192,107 +188,79 @@ const BodyPartsData = () => {
             },
         });
     };
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
+
+    /** Ouvre l'image (base64) dans un nouvel onglet — logique d'aperçu d'origine. */
+    const openImagePreview = (base64: string) => {
+        const byteCharacters = atob(base64);
+        const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
     };
 
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Body Parts
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-    const imageBodyTemplate = (rowData: any) => {
+    const thumbnail = (rowData: any) => {
         const base64 = rowData.file;
 
-        const handlePreview = () => {
-            const byteCharacters = atob(base64);
-            const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
+        if (!base64) {
+            return (
+                <span
+                    className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400"
+                    title="Aucune image"
+                >
+                    <IconPhotoOff size={14} stroke={1.6} />
+                </span>
+            );
+        }
 
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-        };
+        return (
+            <Tooltip label="Voir l'image" withArrow openDelay={300}>
+                <button
+                    type="button"
+                    aria-label={`Voir l'image de ${rowData.name}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openImagePreview(base64);
+                    }}
+                    className="block rounded ring-1 ring-slate-200 hover:ring-teal-400 transition-all"
+                >
+                    <img
+                        src={`data:image/png;base64,${base64}`}
+                        alt={rowData.name}
+                        className="w-7 h-7 rounded object-cover"
+                    />
+                </button>
+            </Tooltip>
+        );
+    };
 
-        return <Tooltip label="See Image">
-            <ActionIcon color="primary" onClick={handlePreview}>
-                <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
-            </ActionIcon>
-        </Tooltip>
-    }
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle partie du corps"
+                onNew={handleNew}
+                columns={[
+                    { key: 'preview', label: 'Aperçu', className: 'w-[80px]' },
+                    { key: 'name', label: 'Nom' },
+                ]}
+                rows={data}
+                renderRow={(row) => ({
+                    preview: thumbnail(row),
+                    name: <span className="font-medium text-slate-900">{row.name}</span>,
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) => row.name ?? ''}
+                searchPlaceholder="Rechercher une partie du corps…"
+                loading={loading}
+                emptyTitle="Aucune partie du corps"
+                emptyHint="Créez les zones anatomiques sélectionnables lors de la déclaration d'une blessure."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+            />
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No body parts found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="file" header="Image" body={imageBodyTemplate} sortable />
-
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
+            {/* Modale de création / modification */}
             <Modal
                 opened={opened}
                 size="lg"
@@ -300,24 +268,24 @@ const BodyPartsData = () => {
                 centered
                 title={
                     <h1 className="text-lg text-blue-500">
-                        {edit ? 'Update' : 'Create'} Body Parts
+                        {edit ? 'Modifier la partie du corps' : 'Créer une partie du corps'}
                     </h1>
                 }
             >
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: 'sm', blur: 2 }} />
 
                 <form className="flex flex-col gap-4" onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder="Enter name" {...form.getInputProps('name')} />
+                    <TextInput label="Nom" withAsterisk placeholder="Saisissez le nom" {...form.getInputProps('name')} />
 
                     <FileInput
                         label="Image"
-                        placeholder="Select Image"
+                        placeholder="Sélectionnez une image"
                         accept="image/*"
                         withAsterisk
                         {...form.getInputProps('file')}
                         rightSection={
                             form.values.file ? (
-                                <Tooltip label="View Image">
+                                <Tooltip label="Voir l'image">
                                     <ActionIcon
                                         size="lg"
                                         variant="light"
@@ -334,13 +302,11 @@ const BodyPartsData = () => {
                     />
 
                     <Button type="submit" mt="md" variant="gradient">
-                        {edit ? 'Update' : 'Add'}
+                        {edit ? 'Mettre à jour' : 'Ajouter'}
                     </Button>
                 </form>
             </Modal>
-
-
-        </div>
+        </>
     )
 }
 

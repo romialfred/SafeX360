@@ -14,14 +14,25 @@ public interface SeverityLevelRepository extends CrudRepository<SeverityLevel, L
 
     Optional<SeverityLevel> findByNameIgnoreCaseAndIncidentCategory_Id(String name, Long id);
 
-    @Query("SELECT s.id AS id, s.name AS name, s.description AS description,s.level as level, i.id AS incidentCategoryId, i.name AS incidentCategoryName, s.status AS status FROM SeverityLevel s JOIN s.incidentCategory i")
-    List<SeverityLevelResponse> findAllWithName();
+    /*
+     * CLOISONNEMENT PAR MINE — SeverityLevel ne porte PAS de companyId : un niveau
+     * de gravite appartient a une CATEGORIE d'incident, laquelle porte la mine. Le
+     * perimetre est donc applique via la jointure sur la categorie, ce qui evite
+     * une colonne redondante (et un risque de desynchronisation avec la categorie).
+     * Convention du projet : companyId NULL = vue consolidee « toutes les mines ».
+     */
 
-    @Query("SELECT DISTINCT  s.level as level, s.name as name FROM SeverityLevel s")
-    List<SeverityLevelResponse> findDistinctLevelAndName();
+    @Query("SELECT s.id AS id, s.name AS name, s.description AS description,s.level as level, i.id AS incidentCategoryId, i.name AS incidentCategoryName, s.status AS status FROM SeverityLevel s JOIN s.incidentCategory i WHERE (:companyId IS NULL OR i.companyId = :companyId)")
+    List<SeverityLevelResponse> findAllWithName(@Param("companyId") Long companyId);
 
-    @Query("SELECT s.id AS id, s.name AS name, s.level AS level, i.id as incidentCategoryId, i.name AS incidentCategoryName, s.description as description FROM SeverityLevel s JOIN s.incidentCategory i where s.status = Status.ACTIVE")
-    List<SeverityLevelResponse> findAllActiveLevels();
+    @Query("SELECT DISTINCT  s.level as level, s.name as name FROM SeverityLevel s JOIN s.incidentCategory i WHERE (:companyId IS NULL OR i.companyId = :companyId)")
+    List<SeverityLevelResponse> findDistinctLevelAndName(@Param("companyId") Long companyId);
+
+    @Query("SELECT s.id AS id, s.name AS name, s.level AS level, i.id as incidentCategoryId, i.name AS incidentCategoryName, s.description as description FROM SeverityLevel s JOIN s.incidentCategory i where s.status = Status.ACTIVE AND (:companyId IS NULL OR i.companyId = :companyId)")
+    List<SeverityLevelResponse> findAllActiveLevels(@Param("companyId") Long companyId);
+
+    @Query("SELECT s FROM SeverityLevel s JOIN s.incidentCategory i WHERE (:companyId IS NULL OR i.companyId = :companyId)")
+    List<SeverityLevel> findAllScoped(@Param("companyId") Long companyId);
 
     @Query(value = "SELECT * FROM severity_level WHERE level = :level AND incident_category_id = :incidentCategoryId", nativeQuery = true)
     Optional<SeverityLevel> findByLevelAndIncidentCategory(@Param("level") Integer level,

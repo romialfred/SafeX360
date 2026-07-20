@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 
 import { activateWeatherConditions, createWeatherConditions, deactivateWeatherConditions, GetAllWeatherConditions, updateWeatherConditions } from "../../../services/WeatherService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
@@ -15,16 +9,10 @@ import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { modals } from "@mantine/modals";
 import { Z } from '../../../constants/zIndex';
 import { useDispatch } from "react-redux";
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 const WeatherConditionData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -39,16 +27,16 @@ const WeatherConditionData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Name is required";
+                if (trimmed.length === 0) return "Le nom est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
             description: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Description is required";
+                if (trimmed.length === 0) return "La description est obligatoire";
                 const wordCount = trimmed.length;
-                return wordCount > 250 ? "Maximum 250 characters allowed" : null;
+                return wordCount > 250 ? "250 caractères maximum" : null;
             }
         }
     });
@@ -65,7 +53,7 @@ const WeatherConditionData = () => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des conditions environnementales");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -73,16 +61,18 @@ const WeatherConditionData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
+        const doneLabel = action === "activate" ? "activée" : "désactivée";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'opération</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the Conditions: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la condition environnementale : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
 
@@ -94,7 +84,7 @@ const WeatherConditionData = () => {
                 const apiCall = action === "activate" ? activateWeatherConditions : deactivateWeatherConditions;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Weather Conditions ${action}d successfully`);
+                        successNotification(`Condition environnementale ${doneLabel} avec succès`);
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -103,7 +93,7 @@ const WeatherConditionData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} weather conditions`);
+                        errorNotification(`Échec de l'opération : impossible de ${actionLabel} la condition environnementale`);
                     }
                     ).finally(() => {
                         dispatch(hideOverlay())
@@ -115,7 +105,7 @@ const WeatherConditionData = () => {
         setLoading(true);
 
         if (edit) {
-            // Check if at least one field has changed
+            // Vérifie qu'au moins un champ a changé
             const changed = Object.keys(values).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
@@ -123,7 +113,7 @@ const WeatherConditionData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
@@ -131,7 +121,7 @@ const WeatherConditionData = () => {
             const payload = { ...selectedRow, ...values };
             updateWeatherConditions(payload)
                 .then(() => {
-                    successNotification("Weather Conditions updated successfully");
+                    successNotification("Condition environnementale modifiée avec succès");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id ? { ...item, ...values } : item
                     );
@@ -139,13 +129,13 @@ const WeatherConditionData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
             createWeatherConditions(values)
                 .then((res) => {
-                    successNotification("Weather Conditions added successfully");
+                    successNotification("Condition environnementale ajoutée avec succès");
                     const newEntry = {
                         ...values,
                         status: "ACTIVE",
@@ -155,7 +145,7 @@ const WeatherConditionData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => {
                     setLoading(false)
@@ -180,101 +170,46 @@ const WeatherConditionData = () => {
         setSelectedRow(null);
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Environmental Condition
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle condition"
+                onNew={open}
+                columns={[
+                    { key: 'name', label: 'Nom' },
+                    { key: 'description', label: 'Description', hideOnTablet: true },
+                ]}
+                rows={data}
+                renderRow={(row) => ({
+                    name: row.name,
+                    description: row.description,
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) => `${row.name ?? ''} ${row.description ?? ''}`}
+                searchPlaceholder="Rechercher une condition…"
+                loading={loading}
+                emptyTitle="Aucune condition environnementale"
+                emptyHint="Décrivez les conditions rencontrées sur site (pluie, brouillard, forte chaleur…) pour les rattacher aux événements."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+            />
 
-            <DataTable selectionMode="single"
-                size='small'
-                className='[&_.p-datatable-tbody]:!text-sm'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="id"
-                filters={filters}
-                globalFilterFields={['name', 'description']}
-                emptyMessage="No Weather Conditions found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="description" header="Description" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
+            {/* Modale de création / modification */}
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Environmental Condition
+                    {edit ? "Modifier la condition environnementale" : "Créer une condition environnementale"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
-                    <TextInput label="Description" withAsterisk placeholder="Enter Description" {...form.getInputProps('description')} />
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <TextInput label="Nom" withAsterisk placeholder='Saisir le nom' {...form.getInputProps('name')} />
+                    <TextInput label="Description" withAsterisk placeholder="Saisir la description" {...form.getInputProps('description')} />
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"}</Button>
                 </form>
             </Modal>
 
-        </div>
+        </>
     );
 }
 

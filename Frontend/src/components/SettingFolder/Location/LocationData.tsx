@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 
 import { activateLocation, createLocation, deactivateLocation, getAllLocations, updateLocation } from "../../../services/LocationService";
 import { Z } from '../../../constants/zIndex';
@@ -16,16 +10,10 @@ import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { modals } from "@mantine/modals";
 import LocationPicker from "../../UtilityComp/LocationPicker";
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 const LocationData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -40,12 +28,12 @@ const LocationData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Name is required";
+                if (trimmed.length === 0) return "Le nom est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
-            location: (value) => value.length > 0 ? null : "Location is required",
+            location: (value) => value.length > 0 ? null : "L'emplacement est obligatoire",
         }
     });
 
@@ -62,27 +50,19 @@ const LocationData = () => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch locations");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des sites");
             })
             .finally(() => setLoading(false));
     }, []);
 
     const handleSubmit = (values: any) => {
         setLoading(true);
-        // console.log("values", values);
-        // return;
-        // Check if edit mode and value hasn't changed
-        // if (edit && values.name.trim() === selectedRow?.name.trim()) {
-        //     form.setErrors({name: "Please update the value before submitting" });
-        //     setLoading(false);
-        //     return;
-        // }
 
         if (edit) {
             const payload = { ...selectedRow, name: values.name, latitude: values.location[0], longitude: values.location[1] };
             updateLocation(payload)
                 .then(() => {
-                    successNotification("Location updated successfully");
+                    successNotification("Site modifié avec succès");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id ? { ...payload } : item
                     );
@@ -90,7 +70,7 @@ const LocationData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
@@ -98,7 +78,7 @@ const LocationData = () => {
             createLocation({ name: values.name, latitude: values.location[0], longitude: values.location[1] })
 
                 .then((res) => {
-                    successNotification("Location added successfully");
+                    successNotification("Site ajouté avec succès");
                     const newEntry = {
                         name: values.name, latitude: values.location[0], longitude: values.location[1],
                         status: "ACTIVE",
@@ -108,7 +88,7 @@ const LocationData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => {
                     setLoading(false)
@@ -120,16 +100,18 @@ const LocationData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
+        const doneLabel = action === "activate" ? "activé" : "désactivé";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'opération</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the Location: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> le site : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
 
@@ -141,7 +123,7 @@ const LocationData = () => {
                 const apiCall = action === "activate" ? activateLocation : deactivateLocation;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Location ${action}d successfully`);
+                        successNotification(`Site ${doneLabel} avec succès`);
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -150,7 +132,7 @@ const LocationData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} Location`);
+                        errorNotification(`Échec de l'opération : impossible de ${actionLabel} le site`);
                     }
                     ).finally(() => {
                         dispatch(hideOverlay())
@@ -178,106 +160,49 @@ const LocationData = () => {
         setSelectedRow(null);
     };
 
-
-
-
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Location
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouveau site"
+                onNew={open}
+                columns={[
+                    { key: 'name', label: 'Nom' },
+                    { key: 'latitude', label: 'Latitude', numeric: true, hideOnTablet: true },
+                    { key: 'longitude', label: 'Longitude', numeric: true, hideOnTablet: true },
+                ]}
+                rows={data}
+                renderRow={(row) => ({
+                    name: row.name,
+                    latitude: row.latitude,
+                    longitude: row.longitude,
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) => `${row.name ?? ''} ${row.latitude ?? ''} ${row.longitude ?? ''}`}
+                searchPlaceholder="Rechercher un site…"
+                loading={loading}
+                emptyTitle="Aucun site"
+                emptyHint="Créez un premier site pour localiser les événements et les inspections."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+            />
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="id"
-                filters={filters}
-                globalFilterFields={['name', 'location']}
-                emptyMessage="No Locations found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="latitude" header="Latitude" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="longitude" header="Longitude" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
+            {/* Modale de création / modification */}
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Location
+                    {edit ? "Modifier le site" : "Créer un site"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
-                    <LocationPicker label="Location" placeholder="Click to select location" form={form} id="location" required />
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <TextInput label="Nom" withAsterisk placeholder='Saisir le nom' {...form.getInputProps('name')} />
+                    <LocationPicker label="Emplacement" placeholder="Cliquer pour sélectionner l'emplacement" form={form} id="location" required />
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"}</Button>
                 </form>
             </Modal>
 
 
-        </div>
+        </>
     );
 };
 

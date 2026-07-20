@@ -1,13 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, Select, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconPlus, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, Select, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { useDispatch } from "react-redux";
@@ -15,16 +9,11 @@ import { modals } from "@mantine/modals";
 import { Z } from '../../../constants/zIndex';
 import { activateWorkArea, createWorkArea, deactivateWorkArea, GetAllWorkArea, updateWorkArea } from "../../../services/WorkAreaService";
 import { getAllDepartments } from "../../../services/HrmsService";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
 const WorkAreaData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -43,12 +32,12 @@ const WorkAreaData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Work Area Name is required";
+                if (trimmed.length === 0) return "Le nom de la zone de travail est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
-            departmentId: (value) => (value.trim().length > 0 ? null : "Department is required"),
+            departmentId: (value) => (value.trim().length > 0 ? null : "Le département est obligatoire"),
 
 
         }
@@ -57,7 +46,7 @@ const WorkAreaData = () => {
     useEffect(() => {
         setLoading(true);
 
-        // Fetch departments
+        // Chargement des départements
         getAllDepartments()
             .then((res) => {
                 const deptOptions = res.map((item: any) => ({
@@ -67,7 +56,7 @@ const WorkAreaData = () => {
                 setDepartments(deptOptions);
             })
             .catch(() => {
-                errorNotification("Failed to fetch departments");
+                errorNotification("Échec du chargement des départements");
             });
 
         GetAllWorkArea({})
@@ -81,7 +70,7 @@ const WorkAreaData = () => {
                 setData(formatted);
             })
             .catch(() => {
-                errorNotification("Failed to fetch work areas");
+                errorNotification("Échec du chargement des zones de travail");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -91,7 +80,7 @@ const WorkAreaData = () => {
         setLoading(true);
 
         if (edit) {
-            // Check if any field changed
+            // Vérifie qu'au moins un champ a changé
             const changed = Object.keys(values).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
@@ -99,7 +88,7 @@ const WorkAreaData = () => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
@@ -111,9 +100,9 @@ const WorkAreaData = () => {
 
             updateWorkArea(payload)
                 .then(() => {
-                    successNotification("Work Area updated successfully");
+                    successNotification("Zone de travail modifiée avec succès");
 
-                    // Update local state with ownerName resolved from emps
+                    // Mise à jour locale avec le nom du département résolu
                     const updatedData = data.map(item =>
                         item.id === selectedRow.id
                             ? {
@@ -129,14 +118,14 @@ const WorkAreaData = () => {
                     handleClose();
                 })
                 .catch(() => {
-                    errorNotification("Something went wrong while updating");
+                    errorNotification("Une erreur est survenue lors de la modification");
                 })
                 .finally(() => setLoading(false));
         } else {
-            // Create new Audit Area
+            // Création d'une nouvelle zone de travail
             createWorkArea(values)
                 .then((res) => {
-                    successNotification("Work Area added successfully");
+                    successNotification("Zone de travail ajoutée avec succès");
 
                     const newEntry = {
                         ...values,
@@ -150,23 +139,19 @@ const WorkAreaData = () => {
                     handleClose();
                 })
                 .catch(() => {
-                    errorNotification("Something went wrong while creating");
+                    errorNotification("Une erreur est survenue lors de la création");
                 })
                 .finally(() => setLoading(false));
         }
     };
-    const dropdownFilterTemplate = () => (
-        <div className="flex items-center gap-2">
 
-            <Select allowDeselect={false} searchable
-                size='sm'
-                data={[{ label: "All", value: "All" }, ...departments]}
-                value={selectedDepartment}
-                onChange={setSelectedDepartment}
+    const handleNew = () => {
+        setEdit(false);
+        setSelectedRow(null);
+        form.reset();
+        open();
+    };
 
-            />
-        </div>
-    );
     const handleEdit = (rowData: any) => {
         setEdit(true);
         setSelectedRow(rowData);
@@ -187,16 +172,18 @@ const WorkAreaData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
+        const actionDone = action === "activate" ? "activée" : "désactivée";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'opération</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the area: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la zone : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'red', variant: "filled" },
             closeOnEscape: false,
@@ -207,7 +194,7 @@ const WorkAreaData = () => {
                 const apiCall = action === "activate" ? activateWorkArea : deactivateWorkArea;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Area ${action}d successfully`);
+                        successNotification(`Zone ${actionDone} avec succès`);
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -216,7 +203,7 @@ const WorkAreaData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} area`);
+                        errorNotification(`Échec de l'opération : impossible de ${actionLabel} la zone`);
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -225,123 +212,71 @@ const WorkAreaData = () => {
         });
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => (
-        <div className="flex gap-5">
-            <Button size='sm' leftSection={<IconPlus />} variant="gradient" onClick={open}>
-                New Work Area
-            </Button>
-        </div>
-    );
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput
-                value={globalFilterValue}
-                onChange={onGlobalFilterChange}
-                size='sm'
-                placeholder='Search'
-                leftSection={<IconSearch />}
-            />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-
     const filteredData = data.filter((item) => {
 
         const departmentMatch = selectedDepartment === 'All' || (item.departmentId && selectedDepartment === "" + item.departmentId);
         return departmentMatch;
     });
+
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} center={dropdownFilterTemplate}></Toolbar>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle zone de travail"
+                onNew={handleNew}
+                columns={[
+                    { key: 'name', label: 'Nom' },
+                    { key: 'departmentName', label: 'Département' },
+                ]}
+                rows={filteredData}
+                renderRow={(row) => ({
+                    name: row.name,
+                    departmentName: row.departmentName || '—',
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) => `${row.name ?? ''} ${row.departmentName ?? ''}`}
+                searchPlaceholder="Rechercher une zone…"
+                loading={loading}
+                emptyTitle="Aucune zone de travail"
+                emptyHint="Créez une première zone de travail pour structurer vos activités par département."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+                toolbarExtra={
+                    <Select
+                        allowDeselect={false}
+                        searchable
+                        size="xs"
+                        className="sm:w-[220px]"
+                        aria-label="Filtrer par département"
+                        data={[{ label: "Tous les départements", value: "All" }, ...departments]}
+                        value={selectedDepartment}
+                        onChange={setSelectedDepartment}
+                    />
+                }
+            />
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={filteredData}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No Work Area Found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="departmentName" header="Department Name" sortable />
-
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
+            {/* Modale de création / modification */}
             <Modal opened={opened} size="lg" onClose={handleClose} centered title={
                 <h1 className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Work Area
+                    {edit ? "Modifier la zone de travail" : "Créer une zone de travail"}
                 </h1>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
+                    <TextInput label="Nom" withAsterisk placeholder='Saisissez le nom' {...form.getInputProps('name')} />
                     <Select
-                        label="Department"
+                        label="Département"
                         withAsterisk
-                        placeholder="Select department"
+                        placeholder="Sélectionnez un département"
                         data={departments}
                         {...form.getInputProps('departmentId')}
                     />
 
 
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"}</Button>
                 </form>
             </Modal>
-
-
-        </div>
+        </>
     )
 }
 

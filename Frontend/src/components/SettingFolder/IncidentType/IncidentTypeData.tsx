@@ -1,12 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, Select, Tabs, Textarea, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, Select, Tabs, Textarea, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
+import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import { activateIncidentType, createIncidentsType, deactivateIncidentType, GetAllIncidentType, updateIncidentType } from "../../../services/IncidentTypeService";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
@@ -15,16 +10,10 @@ import { modals } from "@mantine/modals";
 import { Z } from '../../../constants/zIndex';
 import { GetAllIncidentCategories } from "../../../services/IncidentCategory";
 import { getAllActiveSeverityLevel } from "../../../services/SeverityLevelService";
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 
 const IncidentTypeData = ({ opened, open, close }: any) => {
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -39,6 +28,14 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
 
     const [severityMap, setSeverityMap] = useState<Record<string, string>>({});
 
+    // L'écran est monté à deux endroits : la page héritée (qui pilote la modale via
+    // ses props) et l'onglet Paramètres (qui ne passe rien). On retombe alors sur
+    // une disclosure interne pour que le bouton de création reste opérant.
+    const [selfOpened, selfDisclosure] = useDisclosure(false);
+    const isOpened = opened ?? selfOpened;
+    const openForm = open ?? selfDisclosure.open;
+    const closeForm = close ?? selfDisclosure.close;
+
 
     const form = useForm({
         initialValues: {
@@ -51,18 +48,18 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Name is required";
+                if (trimmed.length === 0) return "Le nom est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
-            incidentCategoryId: (value) => value ? null : "Incident Category is required",
-            severityLevelId: (value) => value ? null : "Severity Level is required",
+            incidentCategoryId: (value) => value ? null : "La catégorie d'incident est obligatoire",
+            severityLevelId: (value) => value ? null : "Le niveau de gravité est obligatoire",
             description: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Description is required";
+                if (trimmed.length === 0) return "La description est obligatoire";
                 const wordCount = trimmed.length;
-                return wordCount > 250 ? "Maximum 250 characters allowed" : null;
+                return wordCount > 250 ? "250 caractères maximum" : null;
             }
         }
     });
@@ -73,11 +70,10 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
             setCategories(res.map((item: any) => ({ label: item.name, value: "" + item.id })));
         })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des catégories");
             })
 
         getAllActiveSeverityLevel().then((res) => {
-            console.log(res);
             setSeverities(res.map((item: any) => ({ ...item, label: item.name, value: "" + item.id })));
             setSeverityLevels(Array.from(["All", ...new Set(res.map((item: any) => item.name))]));
             setSeverityMap(
@@ -91,7 +87,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
 
         })
 
-        // Fetch incident types
+        // Chargement des types d'incident
         GetAllIncidentType({})
             .then((res) => {
                 const formatted = res.map((item: any) => ({
@@ -101,7 +97,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
                 setData(formatted);
             })
             .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+                errorNotification(err.response?.data?.errorMessage || "Échec du chargement des types d'incident");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -110,7 +106,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
         setLoading(true);
 
         if (edit) {
-            // Check if at least one field has changed
+            // Vérifie qu'au moins un champ a changé
             const changed = Object.keys(values).some((key) => {
                 const newValue = values[key]?.trim?.() ?? values[key];
                 const oldValue = selectedRow[key]?.trim?.() ?? selectedRow[key];
@@ -118,19 +114,19 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
             });
 
             if (!changed) {
-                form.setErrors({ name: "Please update at least one field before submitting" });
+                form.setErrors({ name: "Modifiez au moins un champ avant d'enregistrer" });
                 setLoading(false);
                 return;
             }
 
             const payload = { ...selectedRow, ...values };
 
-            // Get matching category name
+            // Récupère le libellé de la catégorie correspondante
             const category = categories.find(cat => cat.value === values.incidentCategoryId);
 
             updateIncidentType(payload)
                 .then(() => {
-                    successNotification("Incident Type updated successfully");
+                    successNotification("Type d'incident mis à jour");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id
                             ? {
@@ -145,15 +141,15 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
             createIncidentsType(values)
                 .then((res) => {
-                    successNotification("Incident Type added successfully");
+                    successNotification("Type d'incident ajouté");
 
-                    // Get matching category label from dropdown data
+                    // Récupère le libellé de la catégorie depuis la liste déroulante
                     const category = categories.find(cat => cat.value === values.incidentCategoryId);
 
                     const newEntry = {
@@ -168,12 +164,19 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => {
                     setLoading(false)
                 });
         }
+    };
+
+    const handleNew = () => {
+        setEdit(false);
+        setSelectedRow(null);
+        form.reset();
+        openForm();
     };
 
     const handleEdit = (rowData: any) => {
@@ -185,11 +188,11 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
             severityLevelId: "" + rowData.severityLevelId,
             description: rowData.description
         });
-        open();
+        openForm();
     };
 
     const handleClose = () => {
-        close();
+        closeForm();
         form.reset();
         setEdit(false);
         setSelectedRow(null);
@@ -197,16 +200,17 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'action</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the type: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> le type : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
 
@@ -218,7 +222,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
                 const apiCall = action === "activate" ? activateIncidentType : deactivateIncidentType;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Type ${action}d successfully`);
+                        successNotification(action === "activate" ? "Type activé" : "Type désactivé");
                         const updatedData = data.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -227,7 +231,7 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} type`);
+                        errorNotification(`Impossible de ${actionLabel} le type`);
                     }
                     ).finally(() => {
                         dispatch(hideOverlay())
@@ -240,73 +244,6 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
         if (!edit) form.setFieldValue('severityLevelId', '');
     }, [form.values.incidentCategoryId]);
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-
-    const centerToolbarTemplate = () => (
-        <Select
-            size="sm"
-            w={240}
-            value={selectedSeverity}
-            onChange={(v) => setSelectedSeverity(v ?? "All")}
-            data={severityLevels}
-            allowDeselect={false}
-            checkIconPosition="right"
-            placeholder="Niveau de sévérité"
-            aria-label="Filtrer par niveau de sévérité"
-            comboboxProps={{ zIndex: Z.modal + 10 }}
-        />
-    );
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon
-                    color={rowData.status === 'ACTIVE' ? "red" : "green"}
-                    onClick={() => handleStatusChange(rowData)}
-                    size="sm"
-                >
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
-    const renderHeader = () => {
-        return <Tabs value={tab} fw={400} variant="outline" autoContrast onChange={setTab}>
-            <Tabs.List>
-                <Tabs.Tab value="all">All</Tabs.Tab>
-                {categories.map((category) => (
-                    <Tabs.Tab key={category.value} value={category.label.toString()}>
-                        {category.label}
-                    </Tabs.Tab>
-                ))}
-            </Tabs.List>
-        </Tabs>
-
-    }
-
     useEffect(() => {
         setSelectedSeverity("All");
     }, [tab]);
@@ -318,73 +255,100 @@ const IncidentTypeData = ({ opened, open, close }: any) => {
         if (selectedSeverity === "All") return true;
         return item.severityLevelName === selectedSeverity;
     });
+
+    const severityFilter = (
+        <Select
+            size="sm"
+            w={240}
+            value={selectedSeverity}
+            onChange={(v) => setSelectedSeverity(v ?? "All")}
+            data={severityLevels.map((level: any) => ({
+                value: String(level),
+                label: String(level) === "All" ? "Toutes les gravités" : String(level),
+            }))}
+            allowDeselect={false}
+            checkIconPosition="right"
+            placeholder="Niveau de gravité"
+            aria-label="Filtrer par niveau de gravité"
+            comboboxProps={{ zIndex: Z.modal + 10 }}
+        />
+    );
+
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" right={rightToolbarTemplate} left={centerToolbarTemplate}></Toolbar>
+        <>
+            <Tabs value={tab} fw={400} variant="outline" autoContrast onChange={setTab} mb="sm">
+                <Tabs.List>
+                    <Tabs.Tab value="all">Toutes</Tabs.Tab>
+                    {categories.map((category) => (
+                        <Tabs.Tab key={category.value} value={category.label.toString()}>
+                            {category.label}
+                        </Tabs.Tab>
+                    ))}
+                </Tabs.List>
+            </Tabs>
 
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={filteredData}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="name"
-                filters={filters}
-                header={() => renderHeader()}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No Check List found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="incidentCategoryName" header="Incident Category" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="severityLevelName" header="Severity Level" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="description" header="Description" sortable />
+            <ReferencePanel<any>
+                newLabel="Nouveau type d'incident"
+                onNew={handleNew}
+                columns={[
+                    { key: 'name', label: 'Nom' },
+                    { key: 'incidentCategoryName', label: 'Catégorie' },
+                    { key: 'severityLevelName', label: 'Gravité' },
+                    { key: 'description', label: 'Description', hideOnTablet: true },
+                ]}
+                rows={filteredData}
+                renderRow={(row) => ({
+                    name: <span className="font-medium text-slate-900">{row.name}</span>,
+                    incidentCategoryName: row.incidentCategoryName || '—',
+                    severityLevelName: row.severityLevelName || '—',
+                    description: (
+                        <span className="text-slate-600 line-clamp-2" title={row.description}>
+                            {row.description || '—'}
+                        </span>
+                    ),
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) =>
+                    `${row.name ?? ''} ${row.incidentCategoryName ?? ''} ${row.severityLevelName ?? ''} ${row.description ?? ''}`
+                }
+                searchPlaceholder="Rechercher un type d'incident…"
+                loading={loading}
+                emptyTitle="Aucun type d'incident"
+                emptyHint="Créez un type d'incident pour l'ajouter à la liste proposée au déclarant."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+                toolbarExtra={severityFilter}
+            />
 
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-
-            {/* Add/Edit Modal */}
-            <Modal opened={opened} size="lg" onClose={handleClose} centered title={
+            {/* Modale de création / modification */}
+            <Modal opened={isOpened} size="lg" onClose={handleClose} centered title={
                 <div className="text-lg text-blue-500">
-                    {edit ? "Update" : "Create"} Incident Type
+                    {edit ? "Modifier le type d'incident" : "Créer un type d'incident"}
                 </div>
             }>
                 <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
                 <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-                    <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
+                    <TextInput label="Nom" withAsterisk placeholder='Saisissez le nom' {...form.getInputProps('name')} />
                     <Select readOnly={edit}
                         withAsterisk
-                        label="Incident Category"
-                        placeholder="Select Incident Category"
+                        label="Catégorie d'incident"
+                        placeholder="Sélectionnez une catégorie"
                         data={categories}
                         {...form.getInputProps('incidentCategoryId')}
                     />
                     <Select
                         withAsterisk
-                        label="Severity Level"
-                        placeholder="Select Severity Level"
+                        label="Niveau de gravité"
+                        placeholder="Sélectionnez un niveau de gravité"
                         data={severities.filter((item) => item.incidentCategoryId == form.values.incidentCategoryId)}
                         {...form.getInputProps('severityLevelId')}
                     />
-                    <Textarea label="Description" withAsterisk placeholder="Enter Description" {...form.getInputProps('description')} />
-                    <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"}</Button>
+                    <Textarea label="Description" withAsterisk placeholder="Saisissez la description" {...form.getInputProps('description')} />
+                    <Button type="submit" mt="md" variant="gradient">{edit ? "Mettre à jour" : "Ajouter"}</Button>
                 </form>
             </Modal>
-
-
-        </div>
+        </>
     )
 }
 

@@ -118,17 +118,23 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
         severityLevelRepository.save(existingSeverityLevel);
     }
 
+    /*
+     * Les clés de cache DOIVENT porter la mine : sans clé, une même entrée serait
+     * servie à toutes les mines et le cloisonnement appliqué en base serait annulé
+     * par le cache dès la première requête.
+     */
+
     @Override
-    @Cacheable(cacheNames = "severityLevelsAll")
-    public List<SeverityLevelDTO> getAllSeverityLevels() throws HSException {
-        return ((List<SeverityLevel>) severityLevelRepository.findAll()).stream().map(SeverityLevel::toDTO)
+    @Cacheable(cacheNames = "severityLevelsAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<SeverityLevelDTO> getAllSeverityLevels(Long companyId) throws HSException {
+        return severityLevelRepository.findAllScoped(companyId).stream().map(SeverityLevel::toDTO)
                 .toList();
     }
 
     @Override
-    @Cacheable(cacheNames = "severityLevelsActive")
-    public List<SeverityLevelResponse> getAllActiveSeverityLevels() throws HSException {
-        return severityLevelRepository.findAllActiveLevels();
+    @Cacheable(cacheNames = "severityLevelsActive", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<SeverityLevelResponse> getAllActiveSeverityLevels(Long companyId) throws HSException {
+        return severityLevelRepository.findAllActiveLevels(companyId);
     }
 
     @Override
@@ -176,9 +182,9 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     }
 
     @Override
-    @Cacheable(cacheNames = "severityLevelsDistinct")
-    public List<SeverityLevelResponse> getUniqueLevelName() throws HSException {
-        return severityLevelRepository.findDistinctLevelAndName();
+    @Cacheable(cacheNames = "severityLevelsDistinct", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<SeverityLevelResponse> getUniqueLevelName(Long companyId) throws HSException {
+        return severityLevelRepository.findDistinctLevelAndName(companyId);
     }
 
 }

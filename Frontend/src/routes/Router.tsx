@@ -34,21 +34,16 @@ const AddPgiPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/Ad
 const CalenderPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/CalenderPage'));
 const AuditPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/AuditPage'));
 const EditUserPermission = lazy(() => import('../components/NewComponents/UsersManagement/EditUserPermission'));
-const IncidentCategoryPage = lazy(() => import('../pages/dashboard/SettingFolder/IncidentCategory/IncidentCategoryPage'));
-const IncidentTypePage = lazy(() => import('../pages/dashboard/SettingFolder/IncidentType/IncidentTypePage'));
-const SeverityLevelPage = lazy(() => import('../pages/dashboard/SettingFolder/Severity Level/SeverityLevelPage'));
-const LocationPage = lazy(() => import('../pages/dashboard/SettingFolder/Location/LocationPage'));
-const WeatherPage = lazy(() => import('../pages/dashboard/SettingFolder/WeatherConditions/WeatherPage'));
-const BodyPartsPage = lazy(() => import('../pages/dashboard/SettingFolder/BodyParts/BodyPartsPage'));
 const ViewDetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Incident/ViewDetailsPage'));
 const UpdateIncidentsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Incident/UpdateIncidentsPage'));
-const TeamSetupPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/TeamSetupPage'));
 const AddTeamPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/AddTeamPage'));
 const DetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/CorrectiveAction/DetailsPage'));
-const CheckListPage = lazy(() => import('../pages/dashboard/SettingFolder/CheckList/CheckListPage'));
-const InspectionTemplatesPage = lazy(() => import('../pages/dashboard/SettingFolder/InspectionTemplates/InspectionTemplatesPage'));
-const TechMeasurementsPage = lazy(() => import('../pages/dashboard/SettingFolder/TechMeasurement/TechMeasurementsPage'));
 const InspectionPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/InspectionPage'));
+// LOT 62 — Paramètres réorganisés en 3 sections à onglets (remplace la navigation
+// hub → écrans isolés au design hétérogène).
+const SitesEnvironmentPage = lazy(() => import('../pages/dashboard/Parameters/SitesEnvironmentPage'));
+const IncidentParametersPage = lazy(() => import('../pages/dashboard/Parameters/IncidentParametersPage'));
+const ToolsTemplatesPage = lazy(() => import('../pages/dashboard/Parameters/ToolsTemplatesPage'));
 const ComingSoonPage = lazy(() => import('../pages/ComingSoonPage'));
 const ViewDeatailsPgiPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/ViewDeatailsPgiPage'));
 const HealthMeetingPage = lazy(() => import('../pages/dashboard/LeadingIndicator/Hs-Meetings/HealthMeetingPage'));
@@ -58,7 +53,6 @@ const ActivityReportPage = lazy(() => import('../pages/dashboard/LeadingIndicato
 const ExecuteAuditPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/ExecuteAuditPage'));
 const RecommendationPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/RecommendationPage'));
 const UpdateRecommendationPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/UpdateRecommendationPage'));
-const AuditAreaPage = lazy(() => import('../pages/dashboard/SettingFolder/AuditArea/AuditAreaPage'));
 const ViewDetailsMeetingPage = lazy(() => import('../pages/dashboard/LeadingIndicator/Hs-Meetings/ViewDetailsMeetingPage'));
 const UpdateTeamPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/UpdateTeamPage'));
 const TeamDetailsPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/TeamDetailsPage'));
@@ -81,12 +75,9 @@ const DocumentValidationPage = lazy(() => import('../pages/dashboard/ComplianceM
 const LessonLearnPage = lazy(() => import('../pages/dashboard/LaggingIndicator/LessonLearn/LessonLearnPage'));
 const LessonDetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/LessonLearn/LessonDetailsPage'));
 const OhsDashboardPage = lazy(() => import('../pages/OhsDashboardPage'));
-const WorkAreaPage = lazy(() => import('../pages/dashboard/SettingFolder/WorkArea/WorkAreaPage'));
-const WorkProcessPage = lazy(() => import('../pages/dashboard/SettingFolder/WorkProcess/WorkProcessPage'));
 const InvestigationPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Incident/InvestigationPage'));
 const InvestigationFilePage = lazy(() => import('../pages/dashboard/LaggingIndicator/Investigation/InvestigationFilePage'));
 const UpdateInvestigationPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Investigation/UpdateInvestigationPage'));
-const AuditorPage = lazy(() => import('../pages/dashboard/SettingFolder/Auditor/AuditorPage'));
 const NewAuditPlanPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/NewAuditPlanPage'));
 const AuditDetailsTabsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/AuditDetailsTabsPage'));
 const NonConformityDashboard = lazy(() => import('../components/LeadingIndicator/Non-conformity/NonConformityDashboard'));
@@ -503,23 +494,32 @@ const router = createBrowserRouter([
             { path: 'audit-management/edit-schedule/:id', element: <EditScheduleAuditPage />, },
 
 
-            { path: 'incidentCategory', element: <IncidentCategoryPage />, },
-            { path: 'incidentType', element: <IncidentTypePage />, },
-            { path: 'severityLevel', element: <SeverityLevelPage />, },
-            { path: 'location', element: <LocationPage />, },
-            { path: 'weatherCondition', element: <WeatherPage />, },
-            { path: 'bodyParts', element: <BodyPartsPage />, },
-            { path: 'team-setup', element: <TeamSetupPage />, },
+            /* LOT 62 — Les référentiels vivent désormais dans 3 pages à onglets.
+               Les anciennes URL (liens, favoris, tuiles du catalogue) redirigent vers
+               l'onglet correspondant : un seul design, et le retour arrière ne ramène
+               plus l'ancien écran. Les pages legacy ne sont plus montées. */
+            { path: 'incidentCategory', element: <Navigate to="/parameters/incidents?tab=categories" replace /> },
+            { path: 'incidentType', element: <Navigate to="/parameters/incidents?tab=types" replace /> },
+            { path: 'severityLevel', element: <Navigate to="/parameters/incidents?tab=severity" replace /> },
+            { path: 'bodyParts', element: <Navigate to="/parameters/incidents?tab=body-parts" replace /> },
+            { path: 'team-setup', element: <Navigate to="/parameters/incidents?tab=teams" replace /> },
+
+            { path: 'location', element: <Navigate to="/parameters/sites-environment?tab=sites" replace /> },
+            { path: 'weatherCondition', element: <Navigate to="/parameters/sites-environment?tab=conditions" replace /> },
+            { path: 'audit-area', element: <Navigate to="/parameters/sites-environment?tab=audit-areas" replace /> },
+            { path: 'work-area', element: <Navigate to="/parameters/sites-environment?tab=work-areas" replace /> },
+            { path: 'work-process', element: <Navigate to="/parameters/sites-environment?tab=work-processes" replace /> },
+
+            { path: 'checkList', element: <Navigate to="/parameters/tools-templates?tab=checklists" replace /> },
+            { path: 'inspection-templates', element: <Navigate to="/parameters/tools-templates?tab=inspection-templates" replace /> },
+            { path: 'technical-Measurements', element: <Navigate to="/parameters/tools-templates?tab=measurements" replace /> },
+            { path: 'auditor', element: <Navigate to="/parameters/tools-templates?tab=auditors" replace /> },
+
+            /* Écrans d'équipe conservés : ce sont de vraies pages de détail/édition,
+               pas des listes de référentiel. */
             { path: 'team-setup/edit/:id', element: <UpdateTeamPage />, },
             { path: 'team-setup/details/:id', element: <TeamDetailsPage />, },
             { path: 'addTeam', element: <AddTeamPage />, },
-            { path: 'checkList', element: <CheckListPage />, },
-            { path: 'inspection-templates', element: <InspectionTemplatesPage />, },
-            { path: 'technical-Measurements', element: <TechMeasurementsPage />, },
-            { path: 'audit-area', element: <AuditAreaPage />, },
-            { path: 'work-area', element: <WorkAreaPage />, },
-            { path: 'work-process', element: <WorkProcessPage />, },
-            { path: 'auditor', element: <AuditorPage />, },
 
 
             { path: 'mba-management', element: <MbaCardPage />, },
@@ -581,8 +581,14 @@ const router = createBrowserRouter([
             { /* LOT 48 P6.f — Page dédiée Gestion des Modules (séparée d'Administration) */
               path: "modules-management", element: <ModulesManagementPage /> },
 
-            { /* LOT 48 P6.g — Données de Références (refonte par onglets) */
+            { /* LOT 48 P6.g — Données de Références (vue d'ensemble / catalogue) */
               path: "operational-references", element: <OperationalReferencesPage /> },
+
+            { /* LOT 62 — Sections de paramètres : une page = des onglets = ses référentiels.
+                 Le contenu est rendu en place, sans quitter la section. */
+              path: "parameters/sites-environment", element: <SitesEnvironmentPage /> },
+            { path: "parameters/incidents", element: <IncidentParametersPage /> },
+            { path: "parameters/tools-templates", element: <ToolsTemplatesPage /> },
 
             { path: "performance", element: <TargetAndForecastPage /> },
 

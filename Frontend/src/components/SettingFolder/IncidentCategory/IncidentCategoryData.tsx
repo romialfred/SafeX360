@@ -1,12 +1,7 @@
-import { ActionIcon, Button, LoadingOverlay, Modal, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Button, LoadingOverlay, Modal, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
+import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import {
   activateIncidentCategory,
   createIncidentsCategory,
@@ -19,16 +14,18 @@ import { modals } from '@mantine/modals';
 import { Z } from '../../../constants/zIndex';
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
-
-const defaultFilters: DataTableFilterMeta = {
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
 
 const IncidentCategoryData = ({ opened, open, close }: any) => {
-  const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-  const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+  // L'écran est utilisable seul (onglet Paramètres) ou piloté par un parent
+  // qui fournit son propre bouton de création (écran historique).
+  const [selfOpened, selfDisclosure] = useDisclosure(false);
+  const controlled = typeof open === 'function' && typeof close === 'function';
+  const modalOpened = controlled ? Boolean(opened) : selfOpened;
+  const openModal = controlled ? open : selfDisclosure.open;
+  const closeModal = controlled ? close : selfDisclosure.close;
+
   const [edit, setEdit] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const dispatch = useDispatch();
@@ -40,19 +37,26 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
     validate: {
       name: (value) => {
         const trimmed = value.trim();
-        if (trimmed.length === 0) return "Name is required";
+        if (trimmed.length === 0) return "Le nom est obligatoire";
 
         const wordCount = trimmed.length;
-        return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+        return wordCount > 50 ? "50 caractères maximum" : null;
       },
     }
   });
+
+  const handleNew = () => {
+    setEdit(false);
+    setSelectedRow(null);
+    form.reset();
+    openModal();
+  };
 
   const handleEdit = (rowData: any) => {
     setEdit(true);
     setSelectedRow(rowData);
     form.setValues({ name: rowData.name });
-    open();
+    openModal();
   };
 
   useEffect(() => {
@@ -66,13 +70,13 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
         setData(formatted);
       })
       .catch((err) => {
-        errorNotification(err.response?.data?.errorMessage || "Failed to fetch categories");
+        errorNotification(err.response?.data?.errorMessage || "Échec du chargement des catégories");
       })
       .finally(() => setLoading(false));
   }, []);
 
   const handleClose = () => {
-    close();
+    closeModal();
     form.reset();
     setEdit(false);
     setSelectedRow(null);
@@ -80,16 +84,18 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
 
   const handleStatusChange = (rowData: any) => {
     const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+    const actionLabel = action === "activate" ? "activer" : "désactiver";
+    const actionDone = action === "activate" ? "activée" : "désactivée";
 
     modals.openConfirmModal({
-      title: <span className='text-2xl'>Are you sure?</span>,
+      title: <span className='text-2xl'>Confirmer l'opération</span>,
       centered: true,
       children: (
         <span className="text-md">
-          You want to <strong>{action}</strong> the category: <strong>{rowData.name}</strong>?
+          Voulez-vous <strong>{actionLabel}</strong> la catégorie : <strong>{rowData.name}</strong> ?
         </span>
       ),
-      labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+      labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
       cancelProps: { color: 'red', variant: "filled" },
       confirmProps: { color: action === 'activate' ? 'green' : 'green', variant: "filled" },
 
@@ -101,7 +107,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
         const apiCall = action === "activate" ? activateIncidentCategory : deactivateIncidentCategory;
         apiCall(rowData.id)
           .then(() => {
-            successNotification(`Category ${action}d successfully`);
+            successNotification(`Catégorie ${actionDone} avec succès`);
             const updatedData = data.map(item =>
               item.id === rowData.id
                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -110,7 +116,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
             setData(updatedData);
           })
           .catch(() => {
-            errorNotification(`Failed to ${action} category`);
+            errorNotification(`Échec de l'opération : impossible de ${actionLabel} la catégorie`);
           }
           ).finally(() => {
             dispatch(hideOverlay())
@@ -122,9 +128,9 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
   const handleSubmit = (values: any) => {
     setLoading(true);
 
-    // Check if edit mode and value hasn't changed
+    // En modification, refuse une soumission sans changement
     if (edit && values.name.trim() === selectedRow?.name.trim()) {
-      form.setErrors({ name: "Please update the value before submitting" });
+      form.setErrors({ name: "Modifiez la valeur avant d'enregistrer" });
       setLoading(false);
       return;
     }
@@ -133,7 +139,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
       const payload = { ...selectedRow, ...values };
       updateIncidentCategory(payload)
         .then(() => {
-          successNotification("Incident Category updated successfully");
+          successNotification("Catégorie d'incident modifiée avec succès");
           const updatedData = data.map((item) =>
             item.id === selectedRow.id ? { ...item, ...values } : item
           );
@@ -141,7 +147,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
           handleClose();
         })
         .catch((err) => {
-          errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+          errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
         })
         .finally(() => setLoading(false));
     } else {
@@ -149,7 +155,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
       createIncidentsCategory(values)
 
         .then((res) => {
-          successNotification("Incident Category added successfully");
+          successNotification("Catégorie d'incident ajoutée avec succès");
           const newEntry = {
             ...values,
             status: "ACTIVE",
@@ -159,7 +165,7 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
           handleClose();
         })
         .catch((err) => {
-          errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+          errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
         })
         .finally(() => {
           setLoading(false)
@@ -168,101 +174,42 @@ const IncidentCategoryData = ({ opened, open, close }: any) => {
     }
   };
 
-
-  const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    let _filters = { ...filters };
-    // @ts-ignore
-    _filters['global'].value = value;
-    setFilters(_filters);
-    setGlobalFilterValue(value);
-  };
-
-
-
-  const rightToolbarTemplate = () => {
-    return (
-      <div className='flex gap-5'>
-        <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-        <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-      </div>
-    );
-  };
-
-  const actionBodyTemplate = (rowData: any) => {
-    return (
-      <div className='flex gap-3 justify-center'>
-        <Tooltip label="Edit">
-          <ActionIcon color="primary" onClick={() => handleEdit(rowData)} size="sm">
-            <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-          </ActionIcon>
-        </Tooltip>
-
-        <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-          <ActionIcon
-            color={rowData.status === 'ACTIVE' ? "red" : "green"}
-            onClick={() => handleStatusChange(rowData)}
-            size="sm"
-          >
-            {rowData.status === 'ACTIVE'
-              ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-              : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-            }
-          </ActionIcon>
-        </Tooltip>
-      </div>
-    );
-  };
-
   return (
-    <div className="card">
-      <Toolbar className="mb-1 !p-2" right={rightToolbarTemplate}></Toolbar>
+    <>
+      <ReferencePanel<any>
+        newLabel={controlled ? undefined : "Nouvelle catégorie d'incident"}
+        onNew={controlled ? undefined : handleNew}
+        columns={[
+          { key: 'name', label: 'Nom' },
+        ]}
+        rows={data}
+        renderRow={(row) => ({
+          name: row.name,
+        })}
+        getRowKey={(row, index) => row.id ?? index}
+        searchText={(row) => row.name ?? ''}
+        searchPlaceholder="Rechercher une catégorie…"
+        loading={loading}
+        emptyTitle="Aucune catégorie d'incident"
+        emptyHint="Les catégories structurent la classification de premier niveau des événements HSE."
+        statusOf={(row) => row.status}
+        onToggleStatus={handleStatusChange}
+        onEdit={handleEdit}
+      />
 
-      <DataTable selectionMode="single"
-        className='[&_.p-datatable-tbody]:!text-sm'
-        size='small'
-        stripedRows
-        removableSort
-        paginator
-        value={data}
-        rows={10}
-        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-        rowsPerPageOptions={[10, 25, 50]}
-        dataKey="name"
-        filters={filters}
-        globalFilterFields={['name']}
-        emptyMessage="No Incident Category found."
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-        onFilter={(e) => setFilters(e.filters)}
-        expandedRows={expandedRows}
-        onRowToggle={(e) => setExpandedRows(e.data)}
-      >
-        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Name" sortable />
-        <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-          <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-            {rowData.status}
-          </Tag>
-        )} sortable />
-        <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-      </DataTable>
-
-      {/* Add/Edit Modal */}
-      <Modal opened={opened} size="lg" onClose={handleClose} centered title={
+      {/* Modale de création / modification */}
+      <Modal opened={modalOpened} size="lg" onClose={handleClose} centered title={
         <h1 className="text-lg text-blue-500">
-          {edit ? "Update" : "Create"} Incident Category
+          {edit ? "Modifier la catégorie d'incident" : "Créer une catégorie d'incident"}
         </h1>
       }>
         <LoadingOverlay visible={loading} zIndex={Z.overlay} overlayProps={{ radius: "sm", blur: 2 }} />
         <form className='flex flex-col gap-4' onSubmit={form.onSubmit(handleSubmit)}>
-          <TextInput label="Name" withAsterisk placeholder='Enter name' {...form.getInputProps('name')} />
-          <Button type="submit" mt="md" variant="gradient">{edit ? "Update" : "Add"} </Button>
+          <TextInput label="Nom" withAsterisk placeholder='Saisissez le nom' {...form.getInputProps('name')} />
+          <Button type="submit" mt="md" variant="gradient">{edit ? "Modifier" : "Ajouter"} </Button>
         </form>
       </Modal>
-
-
-
-
-    </div>
+    </>
   );
 }
 

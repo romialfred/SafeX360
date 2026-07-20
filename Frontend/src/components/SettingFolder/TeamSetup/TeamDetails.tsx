@@ -91,21 +91,21 @@ const TeamDetails = () => {
                 <div>
                     {/* LOT 40 P1: title color blue-500 -> slate-900 */}
                     <div className="text-2xl font-semibold text-slate-900 bg-gradient-to-r from-primary to-secondary bg-clip-text">
-                        Team Details
+                        Détail de l'équipe
                     </div>
                     <Breadcrumbs mt="xs">
                         {/* LOT 40 P1: breadcrumb variant=gradient -> c=dimmed / c=teal fw=500 */}
                         <Link to="/">
                             <Text c="dimmed" className="hover:underline cursor-pointer">
-                                Home
+                                Accueil
                             </Text>
                         </Link>
                         <Link to="/team-setup">
                             <Text c="dimmed" className="hover:underline cursor-pointer">
-                                Team Setup
+                                Équipes d'intervention
                             </Text>
                         </Link>
-                        <Text c="teal" fw={500}>Team Details</Text>
+                        <Text c="teal" fw={500}>Détail de l'équipe</Text>
                     </Breadcrumbs>
                 </div>
             </div>
@@ -114,17 +114,17 @@ const TeamDetails = () => {
             <div className="bg-white rounded-lg shadow-lg p-4 border border-gray-300 flex flex-col gap-5">
                 <div className="flex justify-between">
                     <div className="flex gap-1 items-center">
-                        <span className="text-gray-600 text-lg">Department: </span>
+                        <span className="text-gray-600 text-lg">Département : </span>
                         <span className="text-blue-600">{teamDetails.department}</span>
                     </div>
                     <div>
-                        <span className="text-gray-600 text-lg">Team Name: </span>
+                        <span className="text-gray-600 text-lg">Nom de l'équipe : </span>
                         <span className="text-blue-600">{teamDetails.teamName}</span>
                     </div>
                 </div>
 
 
-                <h2 className="text-lg text-gray-800">Team Members</h2>
+                <h2 className="text-lg text-gray-800">Membres de l'équipe</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-100 p-4 rounded-xl shadow-sm border border-gray-300">
                     {teamDetails.members.map((member) => (
                         <div
@@ -133,7 +133,7 @@ const TeamDetails = () => {
                         >
                             {member.isTeamLead && (
                                 <div className="absolute -top-0 -left-2 bg-blue-600 text-white text-[11px] px-2 py-[2px] rounded-md shadow-md z-10">
-                                    Team Lead
+                                    Chef d'équipe
                                 </div>
                             )}
 
@@ -153,7 +153,7 @@ const TeamDetails = () => {
                             <Divider />
                             <div className="flex flex-col gap-4">
                                 <p className="text-lg mt-2 text-gray-700">
-                                    Incident Level Notifications:
+                                    Notifications par niveau d'incident :
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                     {[1, 2, 3, 4, 5].map((level) => (
@@ -164,7 +164,7 @@ const TeamDetails = () => {
                                                 : "bg-gray-200 text-gray-700 border-gray-200 border hover:bg-white hover:text-gray-600 hover:border-gray-300"
                                                 }`}
                                         >
-                                            Level {level}
+                                            Niveau {level}
                                         </span>
                                     ))}
                                 </div>

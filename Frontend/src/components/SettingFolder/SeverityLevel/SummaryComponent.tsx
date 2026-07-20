@@ -39,7 +39,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
 
     useEffect(() => {
         setPieData(severityLevelCount.map((x: any) => ({
-            name: `Level ${x.level}`,
+            name: `Niveau ${x.level}`,
             value: x.count,
             color: pieMap[x.level] || 'gray',
         })));
@@ -108,7 +108,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                         <div className="flex justify-between p-5">
                             <div>
 
-                                <Text size="xl">Severity Levels Distribution</Text>
+                                <Text size="xl">Répartition des niveaux de gravité</Text>
                             </div>
 
                         </div>
@@ -120,7 +120,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                                     className="w-4 h-4 rounded-full"
                                     style={{ backgroundColor: pieMap[item] }}
                                 ></div>
-                                <span className="text-sm">Level {item}</span>
+                                <span className="text-sm">Niveau {item}</span>
                             </div>
                         ))}
                     </div>
@@ -136,7 +136,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
 
 
                     <div className=" mx-auto text-gray-700">
-                        Total Incident Type: <span className="text-blue-600">{totalIncidents}</span>
+                        Total des types d'incident : <span className="text-blue-600">{totalIncidents}</span>
                     </div>
                 </Card>
 
@@ -145,7 +145,7 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
                         <div className="flex justify-between p-5">
                             <div>
 
-                                <Text size="xl">Incident Types by Category</Text>
+                                <Text size="xl">Types d'incident par catégorie</Text>
                             </div>
 
                         </div>
@@ -178,14 +178,14 @@ const SummaryComponent = ({ severityLevelCount, categoryCount, categorySeverityC
 
 
             <Card shadow="sm" p="lg" radius="md" withBorder>
-                <h2 className="text-lg mt-8 mb-4">Incident Type Severity Summary</h2>
+                <h2 className="text-lg mt-8 mb-4">Synthèse des types d'incident par gravité</h2>
                 <DataTable selectionMode="single" rows={5} responsiveLayout="scroll" value={tableData} className='[&_.p-datatable-tbody]:!text-sm'>
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Category" />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level1" header="Level 1" body={(row) => renderLevelCell(row.level1, '#e3f2fd', '#1565c0')} />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level2" header="Level 2" body={(row) => renderLevelCell(row.level2, '#e8f5e9', '#2e7d32')} />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level3" header="Level 3" body={(row) => renderLevelCell(row.level3, '#fff3e0', '#ef6c00')} />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level4" header="Level 4" body={(row) => renderLevelCell(row.level4, '#fce4ec', '#ad1457')} />
-                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level5" header="Level 5" body={(row) => renderLevelCell(row.level5, '#f3e5f5', '#6a1b9a')} />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="category" header="Catégorie" />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level1" header="Niveau 1" body={(row) => renderLevelCell(row.level1, '#e3f2fd', '#1565c0')} />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level2" header="Niveau 2" body={(row) => renderLevelCell(row.level2, '#e8f5e9', '#2e7d32')} />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level3" header="Niveau 3" body={(row) => renderLevelCell(row.level3, '#fff3e0', '#ef6c00')} />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level4" header="Niveau 4" body={(row) => renderLevelCell(row.level4, '#fce4ec', '#ad1457')} />
+                    <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="level5" header="Niveau 5" body={(row) => renderLevelCell(row.level5, '#f3e5f5', '#6a1b9a')} />
                     <Column style={{ fontWeight: 'normal', fontSize: "14px" }} align="center" field="total" header="Total" />
                 </DataTable>
             </Card>

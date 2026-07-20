@@ -1,28 +1,19 @@
-import { ActionIcon, Button, TextInput, Tooltip } from "@mantine/core";
-import { IconCheck, IconEdit, IconEye, IconSearch, IconUpload, IconX } from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { DataTable, DataTableExpandedRows, DataTableFilterMeta, DataTableValueArray } from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
+import { Tooltip } from "@mantine/core";
+import { IconEye } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { Column } from "primereact/column";
-import { Tag } from "primereact/tag";
 import { useNavigate } from "react-router-dom";
 import { activateIncidentTeam, deactivateIncidentTeam, getAllIncidentTeams } from "../../../services/TeamService";
 import { useDispatch } from "react-redux";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { modals } from "@mantine/modals";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-};
 const TeamSetupData = () => {
 
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
-    const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
     const navigate = useNavigate();
     const [teams, setTeams] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -33,21 +24,24 @@ const TeamSetupData = () => {
         ).catch((_err) => { }
         ).finally(() => {
             dispatch(hideOverlay());
+            setLoading(false);
         });
     }, []);
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
+        const doneLabel = action === "activate" ? "activée" : "désactivée";
 
         modals.openConfirmModal({
-            title: <span className='text-2xl'>Are you sure?</span>,
+            title: <span className='text-2xl'>Confirmer l'opération</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the team: <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> l'équipe : <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: 'Cancel' },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: 'Annuler' },
             cancelProps: { color: 'red', variant: "filled" },
             confirmProps: { color: 'green', variant: "filled" },
             closeOnEscape: false,
@@ -58,7 +52,7 @@ const TeamSetupData = () => {
                 const apiCall = action === "activate" ? activateIncidentTeam : deactivateIncidentTeam;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Team ${action}d successfully`);
+                        successNotification(`Équipe ${doneLabel} avec succès`);
                         const updatedData = teams.map(item =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -67,7 +61,7 @@ const TeamSetupData = () => {
                         setTeams(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} team`);
+                        errorNotification(`Échec de l'opération : impossible de ${actionLabel} l'équipe`);
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -76,80 +70,46 @@ const TeamSetupData = () => {
         });
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-
-
-    const rightToolbarTemplate = () => (
-        <div className='flex gap-5'>
-            <Button size="sm" variant='outline' leftSection={<IconUpload />}>Export</Button>
-            <TextInput value={globalFilterValue} onChange={onGlobalFilterChange} size='sm' placeholder='Search' leftSection={<IconSearch />} />
-        </div>
-    );
-
-    const actionBodyTemplate = (rowData: any) => (
-        <div className='flex gap-3 justify-center'>
-            <Tooltip label="View Details">
-                <ActionIcon onClick={() => navigate(`details/${rowData.id}`)} color='yellow' size="sm">
-                    <IconEye className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Edit">
-                <ActionIcon color="primary" onClick={() => navigate(`edit/${rowData.id}`)} size="sm">
-                    <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label={rowData.status === 'ACTIVE' ? "Deactivate" : "Activate"}>
-                <ActionIcon color={rowData.status === 'ACTIVE' ? "red" : "green"} onClick={() => handleStatusChange(rowData)} size="sm">
-                    {rowData.status === 'ACTIVE'
-                        ? <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        : <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                    }
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
     return (
-        <div className="card">
-            <Toolbar className="mb-1 !p-2" right={rightToolbarTemplate}></Toolbar>
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size='small'
-                stripedRows
-                removableSort
-                paginator
-                value={teams}
-                rows={10}
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                dataKey="id"
-                filters={filters}
-                globalFilterFields={['name', 'incidentCategory', 'description']}
-                emptyMessage="No Incident Category found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Committee Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="departmentName" header="Department" sortable />
-
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="status" header="Status" body={(rowData) => (
-                    <Tag severity={rowData.status === "ACTIVE" ? "success" : rowData.status === "INACTIVE" ? "danger" : "info"}>
-                        {rowData.status}
-                    </Tag>
-                )} sortable />
-                <Column headerStyle={{ width: '8rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
-            </DataTable>
-        </div>
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle équipe"
+                onNew={() => navigate('/addTeam')}
+                columns={[
+                    { key: 'name', label: "Nom de l'équipe" },
+                    { key: 'departmentName', label: 'Département' },
+                ]}
+                rows={teams}
+                renderRow={(row) => ({
+                    name: row.name,
+                    departmentName: row.departmentName,
+                })}
+                getRowKey={(row, index) => row.id ?? index}
+                searchText={(row) => `${row.name ?? ''} ${row.departmentName ?? ''} ${row.incidentCategory ?? ''} ${row.description ?? ''}`}
+                searchPlaceholder="Rechercher une équipe…"
+                loading={loading}
+                emptyTitle="Aucune équipe d'intervention"
+                emptyHint="Créez une première équipe pour organiser les investigations et les secours."
+                statusOf={(row) => row.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={(row) => navigate(`/team-setup/edit/${row.id}`)}
+                rowActions={(row) => (
+                    <Tooltip label="Voir le détail" withArrow openDelay={300}>
+                        <button
+                            type="button"
+                            aria-label="Voir le détail"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/team-setup/details/${row.id}`);
+                            }}
+                            className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                        >
+                            <IconEye size={15} stroke={1.7} />
+                        </button>
+                    </Tooltip>
+                )}
+            />
+        </>
     )
 }
 

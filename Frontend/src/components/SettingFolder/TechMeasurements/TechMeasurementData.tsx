@@ -1,34 +1,14 @@
 import {
-    ActionIcon,
     Button,
     LoadingOverlay,
     Modal,
     Select,
     Textarea,
     TextInput,
-    Tooltip,
 } from "@mantine/core";
-import {
-    IconCheck,
-    IconEdit,
-    IconPlus,
-    IconSearch,
-    IconUpload,
-    IconX,
-} from "@tabler/icons-react";
-import { FilterMatchMode } from "primereact/api";
-import { Column } from "primereact/column";
-import {
-    DataTable,
-    DataTableExpandedRows,
-    DataTableFilterMeta,
-    DataTableValueArray,
-} from "primereact/datatable";
-import { Toolbar } from "primereact/toolbar";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
-import { Tag } from "primereact/tag";
 import {
     errorNotification,
     successNotification,
@@ -47,18 +27,10 @@ import {
     updateMeasurement,
 } from "../../../services/TechMeasurementService";
 import { Z } from '../../../constants/zIndex';
-
-const defaultFilters: DataTableFilterMeta = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-};
+import ReferencePanel from '../../NewComponents/Parameters/ReferencePanel';
 
 const TechMeasurementData = () => {
     const [opened, { open, close }] = useDisclosure(false);
-    const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
-    const [globalFilterValue, setGlobalFilterValue] = useState<string>("");
-    const [expandedRows, setExpandedRows] = useState<
-        DataTableExpandedRows | DataTableValueArray | undefined
-    >(undefined);
     const [edit, setEdit] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const dispatch = useDispatch();
@@ -76,32 +48,32 @@ const TechMeasurementData = () => {
         validate: {
             name: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Measurement Name is required";
+                if (trimmed.length === 0) return "Le nom de la mesure est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
             unit: (value) =>
-                value ? null : "Unit is required",
+                value ? null : "L'unité est obligatoire",
             normalValue: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Normal vlaue is required";
+                if (trimmed.length === 0) return "La valeur normale est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
             threshold: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Threshold is required";
+                if (trimmed.length === 0) return "Le seuil d'alerte est obligatoire";
 
                 const wordCount = trimmed.length;
-                return wordCount > 50 ? "Maximum 50 characters allowed" : null;
+                return wordCount > 50 ? "50 caractères maximum" : null;
             },
             description: (value) => {
                 const trimmed = value.trim();
-                if (trimmed.length === 0) return "Description is required";
+                if (trimmed.length === 0) return "La description est obligatoire";
                 const wordCount = trimmed.length;
-                return wordCount > 250 ? "Maximum 250 characters allowed" : null;
+                return wordCount > 250 ? "250 caractères maximum" : null;
             }
         },
     });
@@ -127,7 +99,7 @@ const TechMeasurementData = () => {
             })
             .catch((err) => {
                 errorNotification(
-                    err.response?.data?.errorMessage || "Failed to fetch measurement"
+                    err.response?.data?.errorMessage || "Échec du chargement des mesures techniques"
                 );
             })
             .finally(() => setLoading(false));
@@ -142,20 +114,21 @@ const TechMeasurementData = () => {
 
     const handleStatusChange = (rowData: any) => {
         const action = rowData.status === "ACTIVE" ? "deactivate" : "activate";
+        const actionLabel = action === "activate" ? "activer" : "désactiver";
 
         modals.openConfirmModal({
-            title: <span className="text-2xl">Are you sure?</span>,
+            title: <span className="text-2xl">Confirmer l'action</span>,
             centered: true,
             children: (
                 <span className="text-md">
-                    You want to <strong>{action}</strong> the measurement:{" "}
-                    <strong>{rowData.name}</strong>?
+                    Voulez-vous <strong>{actionLabel}</strong> la mesure technique :{" "}
+                    <strong>{rowData.name}</strong> ?
                 </span>
             ),
-            labels: { confirm: `Yes, ${action}`, cancel: "Cancel" },
+            labels: { confirm: `Oui, ${actionLabel}`, cancel: "Annuler" },
             cancelProps: { color: "red", variant: "filled" },
             confirmProps: {
-                color: action === "activate" ? "green" : "green",
+                color: action === "activate" ? "green" : "red",
                 variant: "filled",
             },
             closeOnEscape: false,
@@ -167,7 +140,11 @@ const TechMeasurementData = () => {
                     action === "activate" ? activateMeasurement : deactivateMeasurement;
                 apiCall(rowData.id)
                     .then(() => {
-                        successNotification(`Technical Measurement ${action}d successfully`);
+                        successNotification(
+                            action === "activate"
+                                ? "Mesure technique activée avec succès"
+                                : "Mesure technique désactivée avec succès"
+                        );
                         const updatedData = data.map((item) =>
                             item.id === rowData.id
                                 ? { ...item, status: action === "activate" ? "ACTIVE" : "INACTIVE" }
@@ -176,7 +153,11 @@ const TechMeasurementData = () => {
                         setData(updatedData);
                     })
                     .catch(() => {
-                        errorNotification(`Failed to ${action} Technical Measurements`);
+                        errorNotification(
+                            action === "activate"
+                                ? "Échec de l'activation de la mesure technique"
+                                : "Échec de la désactivation de la mesure technique"
+                        );
                     })
                     .finally(() => {
                         dispatch(hideOverlay());
@@ -187,13 +168,12 @@ const TechMeasurementData = () => {
 
     const handleSubmit = (values: any) => {
         setLoading(true);
-        console.log("values", values);
 
         if (edit) {
             const payload = { ...selectedRow, ...values };
             updateMeasurement(payload)
                 .then(() => {
-                    successNotification("Technical Measurements updated successfully");
+                    successNotification("Mesure technique modifiée avec succès");
                     const updatedData = data.map((item) =>
                         item.id === selectedRow.id ? { ...item, ...values } : item
                     );
@@ -201,13 +181,13 @@ const TechMeasurementData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         } else {
             createMeasurement(values)
                 .then((res) => {
-                    successNotification("Technical Measurements added successfully");
+                    successNotification("Mesure technique ajoutée avec succès");
                     const newEntry = {
                         ...values,
                         status: "ACTIVE",
@@ -217,148 +197,52 @@ const TechMeasurementData = () => {
                     handleClose();
                 })
                 .catch((err) => {
-                    errorNotification(err.response?.data?.errorMessage || "Something went wrong");
+                    errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
                 })
                 .finally(() => setLoading(false));
         }
     };
 
-    const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        // @ts-ignore
-        _filters["global"].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
-
-    const leftToolbarTemplate = () => {
-        return (
-            <div className="flex gap-5">
-                <Button
-                    size="sm"
-                    leftSection={<IconPlus />}
-                    variant="gradient"
-                    onClick={open}
-                >
-                    New Technical Measurements
-                </Button>
-            </div>
-        );
-    };
-
-    const rightToolbarTemplate = () => {
-        return (
-            <div className="flex gap-5">
-                <Button size="sm" variant="outline" leftSection={<IconUpload />}>
-                    Export
-                </Button>
-                <TextInput
-                    value={globalFilterValue}
-                    onChange={onGlobalFilterChange}
-                    size="sm"
-                    placeholder="Search"
-                    leftSection={<IconSearch />}
-                />
-            </div>
-        );
-    };
-
-    const actionBodyTemplate = (rowData: any) => {
-        return (
-            <div className="flex gap-3 justify-center">
-                <Tooltip label="Edit">
-                    <ActionIcon
-                        color="primary"
-                        onClick={() => handleEdit(rowData)}
-                        size="sm"
-                    >
-                        <IconEdit className="!w-4/5 !h-4/5" stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-
-                <Tooltip label={rowData.status === "ACTIVE" ? "Deactivate" : "Activate"}>
-                    <ActionIcon
-                        color={rowData.status === "ACTIVE" ? "red" : "green"}
-                        onClick={() => handleStatusChange(rowData)}
-                        size="sm"
-                    >
-                        {rowData.status === "ACTIVE" ? (
-                            <IconX className="!w-4/5 !h-4/5" stroke={1.5} />
-                        ) : (
-                            <IconCheck className="!w-4/5 !h-4/5" stroke={1.5} />
-                        )}
-                    </ActionIcon>
-                </Tooltip>
-            </div>
-        );
-    };
-
     return (
-        <div className="card">
-            <Toolbar
-                className="mb-1 !p-2"
-                left={leftToolbarTemplate}
-                right={rightToolbarTemplate}
-            ></Toolbar>
-
-            <DataTable selectionMode="single"
-                className='[&_.p-datatable-tbody]:!text-sm'
-                size="small"
-                stripedRows
-                removableSort
-                paginator
-                value={data}
-                rows={10}
-                dataKey="id" // ✅ FIXED HERE
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReportTemplate RowsPerPageDropdown"
-                rowsPerPageOptions={[10, 25, 50]}
-                filters={filters}
-                globalFilterFields={[
-                    "name",
-                    "unit",
-                    "normalValue",
-                    "threshold",
-                    "description",
-                    "status",
+        <>
+            <ReferencePanel<any>
+                newLabel="Nouvelle mesure technique"
+                onNew={open}
+                loading={loading}
+                columns={[
+                    { key: 'name', label: 'Mesure' },
+                    { key: 'unit', label: 'Unité', className: 'w-[90px]' },
+                    { key: 'normalValue', label: 'Valeur normale', numeric: true },
+                    { key: 'threshold', label: "Seuil d'alerte", numeric: true },
+                    { key: 'description', label: 'Description', hideOnTablet: true },
                 ]}
-                emptyMessage="No Technical Measurement found."
-                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                onFilter={(e) => setFilters(e.filters)}
-                expandedRows={expandedRows}
-                onRowToggle={(e) => setExpandedRows(e.data)}
-            >
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="name" header="Measurement Name" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="unit" header="Unit" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="normalValue" header="Normal Value" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="threshold" header="Alert Threshold" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }} field="description" header="Description" sortable />
-                <Column style={{ fontWeight: 'normal', fontSize: "14px" }}
-                    field="status"
-                    header="Status"
-                    body={(rowData) => (
-                        <Tag
-                            severity={
-                                rowData.status === "ACTIVE"
-                                    ? "success"
-                                    : rowData.status === "INACTIVE"
-                                        ? "danger"
-                                        : "info"
-                            }
-                        >
-                            {rowData.status}
-                        </Tag>
-                    )}
-                    sortable
-                />
-                <Column
-                    headerStyle={{ width: "8rem", textAlign: "center" }}
-                    bodyStyle={{ textAlign: "center", overflow: "visible" }}
-                    body={actionBodyTemplate}
-                />
-            </DataTable>
+                rows={data}
+                getRowKey={(row: any, index: number) => row?.id ?? index}
+                searchPlaceholder="Rechercher une mesure…"
+                searchText={(row: any) =>
+                    [row?.name, row?.unit, row?.normalValue, row?.threshold, row?.description]
+                        .filter(Boolean)
+                        .join(' ')
+                }
+                renderRow={(row: any) => ({
+                    name: <span className="font-medium text-slate-800">{row?.name || '—'}</span>,
+                    unit: <span className="text-slate-600">{row?.unit || '—'}</span>,
+                    normalValue: row?.normalValue || '—',
+                    threshold: (
+                        <span className="font-medium text-amber-700">{row?.threshold || '—'}</span>
+                    ),
+                    description: (
+                        <span className="text-slate-600 line-clamp-2">{row?.description || '—'}</span>
+                    ),
+                })}
+                statusOf={(row: any) => row?.status}
+                onToggleStatus={handleStatusChange}
+                onEdit={handleEdit}
+                emptyTitle="Aucune mesure technique"
+                emptyHint="Définissez les mesures suivies sur le terrain (valeur normale attendue et seuil de déclenchement d'alerte)."
+            />
 
-            {/* Modal */}
+            {/* Modale de saisie */}
             <Modal
                 opened={opened}
                 size="lg"
@@ -366,7 +250,7 @@ const TechMeasurementData = () => {
                 centered
                 title={
                     <h1 className="text-lg text-blue-500">
-                        {edit ? "Update" : "Create"} Technical Measurements
+                        {edit ? "Modifier la mesure technique" : "Créer une mesure technique"}
                     </h1>
                 }
             >
@@ -377,41 +261,41 @@ const TechMeasurementData = () => {
                 />
                 <form className="flex flex-col gap-4" onSubmit={form.onSubmit(handleSubmit)}>
                     <TextInput
-                        label="Measurement Name"
+                        label="Nom de la mesure"
                         withAsterisk
-                        placeholder="Enter name"
+                        placeholder="Saisir le nom"
                         {...form.getInputProps("name")}
                     />
                     <Select withAsterisk
-                        label="Unit"
-                        placeholder="Select unit"
+                        label="Unité"
+                        placeholder="Sélectionner une unité"
                         data={["ppm", "µg/m³", "%", "dB", "Lux", "m/s", "% LEL", "°C"]}
                         {...form.getInputProps("unit")}
                     />
                     <TextInput
-                        label="Expected Normal Value"
+                        label="Valeur normale attendue"
                         withAsterisk
-                        placeholder="Enter normal value"
+                        placeholder="Saisir la valeur normale"
                         {...form.getInputProps("normalValue")}
                     />
                     <TextInput
-                        label="Alert Threshold"
+                        label="Seuil d'alerte"
                         withAsterisk
-                        placeholder="Enter alert threshold"
+                        placeholder="Saisir le seuil d'alerte"
                         {...form.getInputProps("threshold")}
                     />
                     <Textarea
                         withAsterisk
                         label="Description"
-                        placeholder="Enter Description"
+                        placeholder="Saisir la description"
                         {...form.getInputProps("description")}
                     />
                     <Button type="submit" mt="md" variant="gradient">
-                        {edit ? "Update" : "Add"}
+                        {edit ? "Modifier" : "Ajouter"}
                     </Button>
                 </form>
             </Modal>
-        </div>
+        </>
     );
 };
 

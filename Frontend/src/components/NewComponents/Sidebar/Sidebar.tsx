@@ -32,7 +32,7 @@ import {
     IconFlask2, // FileCheck
     IconFileCheck, // UserCheck
     IconUserCheck, // FolderOpen
-    IconFolderOpen, // Bell
+    IconFolderOpen, IconTools, // Bell
     IconBell, IconReport, IconCalculator, IconTrendingUp, // Sparkles
     IconFileTextSpark, IconExternalLink,
     // LOT — Module Dosimetrie & Expositions
@@ -430,7 +430,12 @@ const menuItems: MenuItem[] = [
         icon: IconSettings,
         color: 'text-slate-600',
         subItems: [
-            { id: 'operational-references', label: 'Données de Références', icon: IconFolderOpen },
+            // LOT 62 — Une entrée par section : chaque page regroupe ses référentiels
+            // en onglets, au lieu de renvoyer vers des écrans isolés.
+            { id: 'param-sites-environment', label: 'Sites & Environnement', icon: IconMapPin },
+            { id: 'param-incidents', label: 'Paramètres Incidents', icon: IconAlertTriangle },
+            { id: 'param-tools-templates', label: 'Outils & Templates', icon: IconTools },
+            { id: 'operational-references', label: 'Vue d\'ensemble', icon: IconFolderOpen },
             { id: 'system-settings', label: 'Préférences de notification', icon: IconBell },
         ],
     },
@@ -551,8 +556,12 @@ export const menuIdToUrl: Record<string, string> = {
     // LOT 48 P6.f — Eclatement Administration en 4 modules
     admin: "/performance",                       // parent → page Cibles (sous-module pivot)
     "target-forecast": "/performance",
-    parameters: "/operational-references",       // parent → renvoie sur la page Donnees de References par defaut
+    parameters: "/parameters/sites-environment", // parent → 1re section de parametres
     "operational-references": "/operational-references",
+    // LOT 62 — Sections de parametres (une page a onglets par section)
+    "param-sites-environment": "/parameters/sites-environment",
+    "param-incidents": "/parameters/incidents",
+    "param-tools-templates": "/parameters/tools-templates",
     "system-settings": "/advanced-configuration",
     // LOT 49 — Nouvelle page admin Gestion utilisateurs (creation + permissions modules)
     "users-management-hub": "/users-admin",
@@ -628,6 +637,9 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'parameters': 'settings',
     'system-settings': 'settings',
     'operational-references': 'settings',
+    'param-sites-environment': 'settings',
+    'param-incidents': 'settings',
+    'param-tools-templates': 'settings',
     'annual-audit-plan': 'auditPlan',
     'audit-program': 'auditPlan',
     'risk-opportunities': 'riskRegister',
@@ -688,6 +700,7 @@ const Sidebar = () => {
         'home', 'users', 'settings',
         'admin', 'parameters', 'users-management-hub', 'modules-management',
         'target-forecast', 'operational-references', 'system-settings',
+        'param-sites-environment', 'param-incidents', 'param-tools-templates',
         'users-list', 'roles-permissions',
         // LOT — Dosimetrie : parent + page de parametres toujours accessibles
         // (les autres sous-modules s'activeront via Module Management)
