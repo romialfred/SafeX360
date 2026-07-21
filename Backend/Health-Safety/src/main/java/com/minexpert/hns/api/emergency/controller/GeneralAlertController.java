@@ -7,11 +7,14 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.minexpert.hns.api.emergency.dto.AlertMessageDTO;
 import com.minexpert.hns.api.emergency.dto.BulkCheckInRequest;
 import com.minexpert.hns.api.emergency.dto.EvacuationCheckInDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertDTO;
 import com.minexpert.hns.api.emergency.dto.GeneralAlertRequest;
+import com.minexpert.hns.api.emergency.enums.AlertMessageSender;
 import com.minexpert.hns.api.emergency.enums.CheckInStatus;
+import com.minexpert.hns.api.emergency.service.AlertMessageService;
 import com.minexpert.hns.api.emergency.service.GeneralAlertService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class GeneralAlertController {
 
     private final GeneralAlertService service;
+    private final AlertMessageService messageService;
 
     // ─── Lecture ─────────────────────────────────────────────────────────────
 
@@ -107,5 +111,28 @@ public class GeneralAlertController {
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.bulkCheckIn(id, request, actorId));
+    }
+
+    // ─── Liaison équipes de secours (fil de messages) ──────────────────────────
+
+    /** Fil de liaison de l'alerte (salle de crise ↔ équipes de secours). */
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<List<AlertMessageDTO>> messages(@PathVariable Long id) {
+        return ResponseEntity.ok(messageService.list(id));
+    }
+
+    /** Poste un message dans le fil de liaison (par défaut : salle de contrôle). */
+    @PostMapping("/{id}/messages")
+    public ResponseEntity<AlertMessageDTO> postMessage(
+        @PathVariable Long id,
+        @RequestBody AlertMessageDTO body,
+        @RequestParam(required = false) Long actorId
+    ) {
+        AlertMessageSender sender = body.getSenderType() != null
+            ? body.getSenderType() : AlertMessageSender.CONTROL_ROOM;
+        return ResponseEntity.ok(messageService.post(
+            id, sender, actorId, body.getSenderName(),
+            body.getRescueTeamId(), body.getRescueTeamName(), body.getBody()
+        ));
     }
 }

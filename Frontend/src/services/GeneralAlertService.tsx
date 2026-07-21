@@ -157,3 +157,39 @@ export const bulkCheckInToAlert = (params: {
         })
         .then((r) => r.data);
 };
+
+// ── Liaison équipes de secours (fil de messages de l'alerte) ─────────────────
+
+export type AlertMessageSender = 'CONTROL_ROOM' | 'RESCUE_TEAM' | 'SYSTEM';
+
+export interface AlertMessageDTO {
+    id: number;
+    generalAlertId: number;
+    senderType: AlertMessageSender;
+    senderId?: number | null;
+    senderName?: string | null;
+    rescueTeamId?: number | null;
+    rescueTeamName?: string | null;
+    body: string;
+    createdAt: string;
+}
+
+export const listAlertMessages = (alertId: number): Promise<AlertMessageDTO[]> =>
+    axiosInstance.get(`/hns/emergency/alerts/general/${alertId}/messages`).then((r) => r.data);
+
+export const postAlertMessage = (
+    alertId: number,
+    payload: {
+        body: string;
+        senderType?: AlertMessageSender;
+        senderName?: string | null;
+        rescueTeamId?: number | null;
+        rescueTeamName?: string | null;
+    },
+    actorId?: number
+): Promise<AlertMessageDTO> =>
+    axiosInstance
+        .post(`/hns/emergency/alerts/general/${alertId}/messages`, payload, {
+            params: actorId !== undefined ? { actorId } : {},
+        })
+        .then((r) => r.data);

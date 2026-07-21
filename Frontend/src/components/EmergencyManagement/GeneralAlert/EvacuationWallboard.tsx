@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -7,15 +7,25 @@ import {
 import {
     IconShieldCheck, IconStethoscope, IconShieldX, IconUsers,
     IconAlertTriangle, IconMaximize, IconWifi, IconRefresh, IconMapPin, IconBuildingCommunity, IconActivity,
+    IconLayoutDashboard, IconStar, IconMessage, IconSend, IconPlus, IconTrash, IconSearch, IconUserStar, IconX,
 } from '@tabler/icons-react';
 import {
     getAlert, getAlertCheckIns,
-    type GeneralAlertDTO, type EvacuationCheckInDTO,
+    listAlertMessages, postAlertMessage,
+    type GeneralAlertDTO, type EvacuationCheckInDTO, type AlertMessageDTO, type AlertMessageSender,
 } from '../../../services/GeneralAlertService';
-import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
+import { listAssemblyPoints, listRescueTeams, type AssemblyPointDTO, type RescueTeamDTO } from '../../../services/EmergencyService';
+import {
+    listEvacuationPriorities, upsertEvacuationPriority, deleteEvacuationPriority,
+    type EvacuationPriorityDTO, type EvacPriorityLevel,
+} from '../../../services/EmergencyPriorityService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
+import { useAppSelector } from '../../../slices/hooks';
 import { formatReasonCode } from './alertHelpers';
-import { computeEvacuationStats, formatClock, type EvacEmployee, type RosterPerson, type EvacStatus } from './evacuationStats';
+import {
+    computeEvacuationStats, formatClock, STATUS_COLOR, STATUS_LABEL,
+    type EvacEmployee, type RosterPerson, type EvacStatus,
+} from './evacuationStats';
 
 /**
  * EvacuationWallboard — Écran géant détaché (salle de crise).
@@ -30,6 +40,13 @@ import { computeEvacuationStats, formatClock, type EvacEmployee, type RosterPers
  */
 
 const POLL_MS = 5000;
+
+const WALL_TABS = [
+    { id: 'general' as const, label: 'Vue Générale', icon: <IconLayoutDashboard size={16} stroke={1.9} /> },
+    { id: 'vip' as const, label: 'Évacuation VIP', icon: <IconStar size={16} stroke={1.9} /> },
+    { id: 'liaison' as const, label: 'Liaison Équipe Secours', icon: <IconMessage size={16} stroke={1.9} /> },
+];
+type WallTab = (typeof WALL_TABS)[number]['id'];
 
 function BigTile({ icon, label, value, color, pulse, roster }: {
     icon: React.ReactNode; label: string; value: number | string; color: string; pulse?: boolean;
@@ -159,6 +176,381 @@ function ActivityFeed({ events, active }: { events: FeedEvent[]; active: boolean
     );
 }
 
+// ── Onglet « Évacuation VIP » (personnel prioritaire P1..P3) ─────────────────
+
+const LEVEL_META: Record<EvacPriorityLevel, { c: string; label: string }> = {
+    P1: { c: '#f87171', label: 'Priorité 1' },
+    P2: { c: '#fbbf24', label: 'Priorité 2' },
+    P3: { c: '#38bdf8', label: 'Priorité 3' },
+};
+
+function VipMetric({ label, value, sub, color, big }: {
+    label: string; value: number | string; sub?: string; color: string; big?: boolean;
+}) {
+    return (
+        <div className="rounded-2xl p-4 flex flex-col justify-between" style={{ background: `${color}18`, border: `1.5px solid ${color}55` }}>
+            <span className="text-[12px] uppercase tracking-[0.12em] font-extrabold" style={{ color }}>{label}</span>
+            <span className={`${big ? 'text-[46px]' : 'text-[34px]'} leading-none font-black tabular-nums mt-1`} style={{ color }}>{value}</span>
+            {sub && <span className="text-[12px] text-slate-300 mt-1">{sub}</span>}
+        </div>
+    );
+}
+
+function VipRow({ r, manage, onRemove }: {
+    r: { level: EvacPriorityLevel; name: string; department: string; roleLabel?: string | null;
+         status: EvacStatus | 'PENDING'; at?: string; assemblyPointName?: string | null; id?: number };
+    manage: boolean; onRemove: () => void;
+}) {
+    const color = STATUS_COLOR[r.status];
+    return (
+        <div className="rounded-xl border p-3 flex flex-col gap-2" style={{ borderColor: `${color}55`, background: `${color}12` }}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <div className="text-white font-bold text-[14.5px] truncate">{r.name}</div>
+                    <div className="text-slate-300 text-[11.5px] truncate">{r.roleLabel || r.department}</div>
+                </div>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded shrink-0"
+                    style={{ background: `${LEVEL_META[r.level].c}33`, color: LEVEL_META[r.level].c }}>{r.level}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${color}26`, color }}>
+                    {STATUS_LABEL[r.status]}
+                </span>
+                {r.at && <span className="text-[10.5px] text-slate-400">{new Date(r.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                {r.assemblyPointName && <span className="text-[10.5px] text-slate-400 truncate max-w-[45%]">· {r.assemblyPointName}</span>}
+                {manage && (
+                    <button type="button" onClick={onRemove} className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-red-300 hover:text-red-200">
+                        <IconTrash size={12} stroke={1.8} /> Retirer
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function VipView({ companyId, employees, checkIns, currentUserId }: {
+    companyId?: number; employees: EvacEmployee[]; checkIns: EvacuationCheckInDTO[];
+    isActive: boolean; currentUserId?: number;
+}) {
+    const [priorities, setPriorities] = useState<EvacuationPriorityDTO[]>([]);
+    const [manage, setManage] = useState(false);
+    const [search, setSearch] = useState('');
+    const [level, setLevel] = useState<EvacPriorityLevel>('P1');
+    const [roleLabel, setRoleLabel] = useState('');
+    const [picked, setPicked] = useState<EvacEmployee | null>(null);
+    const [saving, setSaving] = useState(false);
+
+    const refetch = useCallback(() => {
+        if (!companyId) return;
+        listEvacuationPriorities(companyId).then(setPriorities).catch(() => setPriorities([]));
+    }, [companyId]);
+    useEffect(() => { refetch(); const iv = setInterval(refetch, 8000); return () => clearInterval(iv); }, [refetch]);
+
+    const empMap = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
+    const ciMap = useMemo(() => {
+        const m = new Map<number, EvacuationCheckInDTO>();
+        checkIns.forEach((c) => m.set(c.employeeId, c));
+        return m;
+    }, [checkIns]);
+
+    const rows = useMemo(() => priorities.map((p) => {
+        const emp = empMap.get(p.employeeId);
+        const ci = ciMap.get(p.employeeId);
+        const status = (ci?.status ?? 'PENDING') as EvacStatus | 'PENDING';
+        return {
+            ...p, name: emp?.name ?? `Employé #${p.employeeId}`, department: emp?.department?.trim() || 'Sans département',
+            status, at: ci?.checkedAt, assemblyPointName: ci?.assemblyPointName,
+        };
+    }), [priorities, empMap, ciMap]);
+
+    const byLevel = (lv: EvacPriorityLevel) => rows.filter((r) => r.level === lv);
+    const p1 = byLevel('P1'), p2 = byLevel('P2'), p3 = byLevel('P3');
+    const cnt = (list: typeof rows, st: string) => list.filter((r) => r.status === st).length;
+    const p1safe = cnt(p1, 'SAFE'), p1inj = cnt(p1, 'INJURED'), p1miss = cnt(p1, 'MISSING'), p1pend = cnt(p1, 'PENDING');
+    const p1concerned = p1.filter((r) => r.status !== 'NOT_APPLICABLE').length;
+    const p1pct = p1concerned ? Math.round((p1safe / p1concerned) * 100) : 0;
+
+    const candidates = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return [] as EvacEmployee[];
+        return employees.filter((e) =>
+            e.name?.toLowerCase().includes(q) || (e.department ?? '').toLowerCase().includes(q)).slice(0, 8);
+    }, [search, employees]);
+
+    const add = () => {
+        if (!companyId || !picked) return;
+        setSaving(true);
+        upsertEvacuationPriority({ companyId, employeeId: picked.id, level, roleLabel: roleLabel || null }, currentUserId)
+            .then(() => { setPicked(null); setSearch(''); setRoleLabel(''); refetch(); })
+            .finally(() => setSaving(false));
+    };
+    const remove = (id?: number) => { if (id) deleteEvacuationPriority(id).then(refetch).catch(() => {}); };
+
+    return (
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-6">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                    <div className="text-[22px] font-black text-white" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                        Personnel prioritaire à évacuer
+                    </div>
+                    <p className="text-[13px] text-slate-300 mt-0.5">Suivi rapproché des personnalités (P1) et du personnel sensible pendant l'évacuation.</p>
+                </div>
+                <button type="button" onClick={() => setManage((v) => !v)}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold border ${
+                        manage ? 'bg-sky-500/20 text-sky-100 border-sky-400/50' : 'bg-white/10 text-white border-white/20 hover:bg-white/15'}`}>
+                    <IconUserStar size={16} stroke={1.8} /> {manage ? 'Terminer' : 'Gérer le personnel prioritaire'}
+                </button>
+            </div>
+
+            {!companyId ? (
+                <p className="text-slate-400 py-10 text-center">Mine indéterminée.</p>
+            ) : (
+                <>
+                    {/* Panneau de gestion */}
+                    {manage && (
+                        <div className="rounded-2xl bg-slate-800/70 border border-white/15 p-4 space-y-3">
+                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em]">Désigner une personne prioritaire</div>
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div className="md:col-span-5 relative">
+                                    <label className="text-[11px] text-slate-300 font-semibold">Personne</label>
+                                    <div className="relative">
+                                        <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input value={picked ? picked.name : search}
+                                            onChange={(e) => { setPicked(null); setSearch(e.target.value); }}
+                                            placeholder="Rechercher un employé…"
+                                            className="w-full mt-1 pl-8 pr-3 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-sky-400" />
+                                    </div>
+                                    {!picked && candidates.length > 0 && (
+                                        <div className="absolute z-20 left-0 right-0 mt-1 rounded-lg bg-slate-900 border border-white/20 shadow-2xl max-h-56 overflow-y-auto">
+                                            {candidates.map((e) => (
+                                                <button key={e.id} type="button" onClick={() => { setPicked(e); setSearch(''); }}
+                                                    className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center justify-between gap-2">
+                                                    <span className="text-[13px] text-white truncate">{e.name}</span>
+                                                    <span className="text-[11px] text-slate-400 truncate">{e.department}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="text-[11px] text-slate-300 font-semibold">Niveau</label>
+                                    <select value={level} onChange={(e) => setLevel(e.target.value as EvacPriorityLevel)}
+                                        className="w-full mt-1 px-2 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] focus:outline-none focus:border-sky-400">
+                                        <option value="P1">P1 — Priorité 1</option>
+                                        <option value="P2">P2 — Priorité 2</option>
+                                        <option value="P3">P3 — Priorité 3</option>
+                                    </select>
+                                </div>
+                                <div className="md:col-span-3">
+                                    <label className="text-[11px] text-slate-300 font-semibold">Rôle / fonction (option.)</label>
+                                    <input value={roleLabel} onChange={(e) => setRoleLabel(e.target.value)} placeholder="Directeur Général…"
+                                        className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-sky-400" />
+                                </div>
+                                <div className="md:col-span-2 flex items-end">
+                                    <button type="button" onClick={add} disabled={!picked || saving}
+                                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-[13px] font-bold hover:bg-emerald-400 disabled:opacity-40">
+                                        <IconPlus size={15} stroke={2} /> Ajouter
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {rows.length === 0 ? (
+                        <div className="rounded-2xl bg-slate-800/60 border border-white/15 p-10 text-center">
+                            <IconStar size={34} className="text-slate-500 mx-auto mb-2" stroke={1.5} />
+                            <p className="text-[15px] text-white font-semibold">Aucune personne prioritaire désignée</p>
+                            <p className="text-[12.5px] text-slate-400 mt-1">Cliquez « Gérer le personnel prioritaire » pour désigner les personnalités (P1) à évacuer en premier.</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Tableau de bord P1 */}
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <VipMetric big label="P1 sécurisés" value={`${p1pct}%`} sub={`${p1safe}/${p1concerned} concernés`} color={p1miss > 0 ? '#f87171' : p1pct >= 100 ? '#34d399' : '#fbbf24'} />
+                                <VipMetric label="Sécurisés" value={p1safe} color="#34d399" />
+                                <VipMetric label="Blessés" value={p1inj} color="#fbbf24" />
+                                <VipMetric label="Absents" value={p1miss} color="#f87171" />
+                                <VipMetric label="Reste à pointer" value={p1pend} color="#cbd5e1" />
+                            </div>
+
+                            {/* Roster P1 */}
+                            {p1.length > 0 && (
+                                <div>
+                                    <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 border-red-400 flex items-center gap-2">
+                                        <IconStar size={15} className="text-red-300" /> Priorité 1 — VIP ({p1.length})
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {p1.map((r) => <VipRow key={r.id} r={r} manage={manage} onRemove={() => remove(r.id)} />)}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* P2 / P3 */}
+                            {[{ lv: 'P2' as const, list: p2 }, { lv: 'P3' as const, list: p3 }].filter((g) => g.list.length > 0).map((g) => (
+                                <div key={g.lv}>
+                                    <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 mb-2 flex items-center gap-2"
+                                        style={{ borderColor: LEVEL_META[g.lv].c }}>
+                                        {LEVEL_META[g.lv].label} ({g.list.length})
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {g.list.map((r) => <VipRow key={r.id} r={r} manage={manage} onRemove={() => remove(r.id)} />)}
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+// ── Onglet « Liaison Équipe Secours » (messagerie salle de crise ↔ terrain) ──
+
+const BUBBLE_META: Record<AlertMessageSender, { align: string; bg: string; ring: string; name: string }> = {
+    CONTROL_ROOM: { align: 'items-end',    bg: 'rgba(20,184,166,0.16)', ring: 'rgba(20,184,166,0.5)',  name: 'text-teal-200' },
+    RESCUE_TEAM:  { align: 'items-start',  bg: 'rgba(245,158,11,0.15)', ring: 'rgba(245,158,11,0.5)',  name: 'text-amber-200' },
+    SYSTEM:       { align: 'items-center', bg: 'rgba(148,163,184,0.12)', ring: 'rgba(148,163,184,0.35)', name: 'text-slate-300' },
+};
+
+function LiaisonView({ alertId, companyId, currentUserId, controllerName }: {
+    alertId: number; companyId?: number; currentUserId?: number; controllerName: string;
+}) {
+    const [teams, setTeams] = useState<RescueTeamDTO[]>([]);
+    const [messages, setMessages] = useState<AlertMessageDTO[]>([]);
+    const [text, setText] = useState('');
+    const [addressed, setAddressed] = useState<RescueTeamDTO | null>(null);
+    const [asTeam, setAsTeam] = useState(false);
+    const [sending, setSending] = useState(false);
+    const listRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => { if (companyId) listRescueTeams(companyId).then(setTeams).catch(() => setTeams([])); }, [companyId]);
+    const refetch = useCallback(() => {
+        if (alertId) listAlertMessages(alertId).then(setMessages).catch(() => setMessages([]));
+    }, [alertId]);
+    useEffect(() => { refetch(); const iv = setInterval(refetch, 4000); return () => clearInterval(iv); }, [refetch]);
+    useEffect(() => { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages]);
+
+    const send = () => {
+        if (!text.trim() || sending) return;
+        setSending(true);
+        postAlertMessage(alertId, {
+            body: text.trim(),
+            senderType: asTeam && addressed ? 'RESCUE_TEAM' : 'CONTROL_ROOM',
+            senderName: asTeam && addressed ? addressed.name : controllerName,
+            rescueTeamId: addressed?.id ?? null,
+            rescueTeamName: addressed?.name ?? null,
+        }, currentUserId).then(() => { setText(''); refetch(); }).finally(() => setSending(false));
+    };
+
+    return (
+        <div className="flex-1 min-h-0 flex flex-col xl:flex-row">
+            {/* Colonne équipes */}
+            <aside className="w-full xl:w-[300px] shrink-0 xl:border-r border-white/10 bg-slate-900/30 flex flex-col min-h-0 max-xl:max-h-[34vh]">
+                <div className="shrink-0 px-4 py-3 border-b border-white/10 text-[13px] font-extrabold text-white uppercase tracking-[0.1em] flex items-center gap-2">
+                    <IconUsers size={16} className="text-sky-300" /> Équipes de secours
+                    <span className="ml-auto text-[12px] text-slate-400">{teams.length}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {teams.length === 0 ? (
+                        <p className="text-[12.5px] text-slate-400 text-center py-6">Aucune équipe de secours configurée pour cette mine.</p>
+                    ) : teams.map((tm) => {
+                        const on = addressed?.id === tm.id;
+                        return (
+                            <div key={tm.id} className={`rounded-xl border p-3 ${on ? 'border-sky-400/60 bg-sky-500/10' : 'border-white/12 bg-white/5'}`}>
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <div className="text-white font-bold text-[13.5px] truncate">{tm.name}</div>
+                                        <div className="text-slate-400 text-[11px]">{tm.memberCount ?? 0} membre(s)</div>
+                                    </div>
+                                    {tm.status && <span className="text-[9.5px] uppercase font-bold text-emerald-300">{tm.status}</span>}
+                                </div>
+                                <button type="button" onClick={() => setAddressed(on ? null : tm)}
+                                    className={`mt-2 w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[12px] font-bold ${
+                                        on ? 'bg-sky-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                    <IconMessage size={13} stroke={1.9} /> {on ? 'Adressé ✓' : 'Message au chef'}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            </aside>
+
+            {/* Fil + composeur */}
+            <div className="flex-1 min-h-0 flex flex-col">
+                <div className="shrink-0 px-5 py-3 border-b border-white/10 flex items-center gap-2">
+                    <IconMessage size={17} className="text-sky-300" stroke={2} />
+                    <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em]">Fil de liaison</div>
+                    <span className="ml-auto text-[12px] text-slate-400 tabular-nums">{messages.length}</span>
+                </div>
+
+                <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5">
+                    {messages.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                            <IconMessage size={30} className="text-slate-600 mb-2" stroke={1.5} />
+                            <p className="text-[13px] text-slate-400">Aucun message pour le moment.</p>
+                            <p className="text-[11.5px] text-slate-500 mt-1">Communiquez avec les équipes de secours et consignez leurs retours ici.</p>
+                        </div>
+                    ) : messages.map((m) => {
+                        const meta = BUBBLE_META[m.senderType] ?? BUBBLE_META.SYSTEM;
+                        const center = m.senderType === 'SYSTEM';
+                        return (
+                            <div key={m.id} className={`flex flex-col ${meta.align}`}>
+                                <div className={`max-w-[82%] rounded-2xl border px-3.5 py-2 ${center ? 'text-center' : ''}`}
+                                    style={{ background: meta.bg, borderColor: meta.ring }}>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className={`text-[11px] font-bold ${meta.name}`}>
+                                            {m.senderName || (m.senderType === 'CONTROL_ROOM' ? 'Salle de contrôle' : m.senderType === 'RESCUE_TEAM' ? 'Équipe de secours' : 'Système')}
+                                        </span>
+                                        {m.rescueTeamName && m.senderType === 'CONTROL_ROOM' && (
+                                            <span className="text-[10px] text-slate-400">→ {m.rescueTeamName}</span>
+                                        )}
+                                        <span className="text-[10px] text-slate-400 ml-auto">
+                                            {new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                    <div className="text-[13.5px] text-white whitespace-pre-wrap break-words">{m.body}</div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Composeur */}
+                <div className="shrink-0 border-t border-white/10 p-3 space-y-2 bg-slate-900/40">
+                    <div className="flex items-center gap-2 flex-wrap text-[12px]">
+                        <span className="text-slate-400">À :</span>
+                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-white font-semibold">
+                            {addressed ? `Chef d'équipe — ${addressed.name}` : 'Toutes les équipes'}
+                        </span>
+                        {addressed && (
+                            <>
+                                <button type="button" onClick={() => setAddressed(null)} className="text-slate-400 hover:text-white inline-flex items-center gap-0.5">
+                                    <IconX size={12} /> retirer
+                                </button>
+                                <label className="ml-auto inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                                    <input type="checkbox" checked={asTeam} onChange={(e) => setAsTeam(e.target.checked)} className="accent-amber-500" />
+                                    Consigner une réponse de l'équipe
+                                </label>
+                            </>
+                        )}
+                    </div>
+                    <div className="flex items-end gap-2">
+                        <textarea value={text} onChange={(e) => setText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                            rows={2} placeholder={addressed ? `Message au chef d'équipe ${addressed.name}…` : 'Message aux équipes de secours…'}
+                            className="flex-1 resize-none px-3 py-2 rounded-xl bg-slate-900/70 border border-white/15 text-white text-[13.5px] placeholder:text-slate-500 focus:outline-none focus:border-sky-400" />
+                        <button type="button" onClick={send} disabled={!text.trim() || sending}
+                            className="h-[46px] px-4 rounded-xl bg-sky-500 text-white font-bold inline-flex items-center gap-1.5 hover:bg-sky-400 disabled:opacity-40">
+                            <IconSend size={16} stroke={1.9} /> Envoyer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function EvacuationWallboard() {
     const { id } = useParams<{ id: string }>();
     const [alert, setAlert] = useState<GeneralAlertDTO | null>(null);
@@ -168,7 +560,14 @@ export default function EvacuationWallboard() {
     const [nowMs, setNowMs] = useState<number>(() => 0); // hydraté au 1er tick
     const [lastSync, setLastSync] = useState<number>(0);
     const [syncing, setSyncing] = useState(false);
+    const [tab, setTab] = useState<WallTab>('general');
     const rootRef = useRef<HTMLDivElement>(null);
+
+    // Utilisateur courant (pour attribuer les messages / actions de la salle de crise).
+    const user = useAppSelector((state: any) => state.user);
+    const currentUserId = Number(user?.id) || undefined;
+    const controllerName = [user?.firstName, user?.familyName ?? user?.lastName].filter(Boolean).join(' ')
+        || user?.name || user?.username || 'Salle de contrôle';
 
     useEffect(() => {
         const iv = setInterval(() => setNowMs(Date.now()), 1000);
@@ -311,6 +710,21 @@ export default function EvacuationWallboard() {
                 </div>
             </header>
 
+            {/* ── Onglets de la Salle de Crise ── */}
+            <nav className="shrink-0 px-8 flex items-end gap-1 border-b border-white/10 bg-slate-900/30 overflow-x-auto">
+                {WALL_TABS.map((tb) => {
+                    const on = tab === tb.id;
+                    return (
+                        <button key={tb.id} type="button" onClick={() => setTab(tb.id)}
+                            className={`inline-flex items-center gap-2 px-4 py-3 text-[13.5px] font-bold border-b-2 -mb-px whitespace-nowrap transition-colors ${
+                                on ? 'border-sky-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                            {tb.icon}{tb.label}
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {tab === 'general' && (
             <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden">
                 <main className="flex-1 min-w-0 min-h-0 px-8 py-6 space-y-6 xl:overflow-y-auto">
                 {/* ═══ Rangée 1 : Hero + Jauge + Progression ═══ */}
@@ -508,6 +922,17 @@ export default function EvacuationWallboard() {
                     <ActivityFeed events={feedEvents} active={isActive} />
                 </aside>
             </div>
+            )}
+
+            {tab === 'vip' && (
+                <VipView companyId={alert?.companyId} employees={employees} checkIns={checkIns}
+                    isActive={isActive} currentUserId={currentUserId} />
+            )}
+
+            {tab === 'liaison' && (
+                <LiaisonView alertId={Number(id)} companyId={alert?.companyId}
+                    currentUserId={currentUserId} controllerName={controllerName} />
+            )}
 
             {/* ── Pied ── */}
             <footer className="shrink-0 px-8 py-3 flex items-center justify-between text-[12.5px] text-slate-400 border-t border-white/10">
