@@ -240,6 +240,13 @@ export const moduleConfigurations: any[] = [
         description: 'Real-time emergency monitoring dashboard (SOS, evacuations, KPIs)'
     },
     {
+        id: 'emergency-alerts',
+        name: 'Alerts History',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Unified history of general alerts and SOS (reopen to continue handling)'
+    },
+    {
         id: 'emergency-sos',
         name: 'SOS Tracking',
         isEnabled: true,

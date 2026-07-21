@@ -48,6 +48,7 @@ import {
 import { formatReasonCode } from './alertHelpers';
 import EvacuationRollCall from './EvacuationRollCall';
 import EvacuationDashboard from './EvacuationDashboard';
+import { useCanCloseEmergency } from '../useEmergencyCoordinator';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
 import { successNotification, errorNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
@@ -115,6 +116,8 @@ const GeneralAlertDetailPage = () => {
     const currentUser = useAppSelector((state: any) => state.user);
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
     const { subscribeGeneralAlert } = useEmergencyWebSocket();
+    // Seul un coordinateur (ou un admin) peut mettre fin à l'alerte (backend idem).
+    const { canClose } = useCanCloseEmergency(currentUser?.id, currentUser?.role);
 
     const [alert, setAlert] = useState<GeneralAlertDTO | null>(null);
     const [checkIns, setCheckIns] = useState<EvacuationCheckInDTO[]>([]);
@@ -379,10 +382,15 @@ const GeneralAlertDetailPage = () => {
                         >
                             <IconSettings size={12} stroke={2} /> Points de rassemblement
                         </button>
-                        {isActive && (
+                        {isActive && canClose && (
                             <button onClick={() => setEndOpen(true)} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-semibold hover:bg-red-700 shadow-sm">
                                 <IconArchive size={12} stroke={1.8} /> Mettre fin à l'alerte
                             </button>
+                        )}
+                        {isActive && !canClose && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 text-[12px] font-medium" title="La clôture est réservée à un coordinateur des urgences">
+                                <IconShieldCheck size={12} stroke={1.8} /> Clôture réservée au coordinateur
+                            </span>
                         )}
                     </>
                 }

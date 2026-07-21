@@ -10,9 +10,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.minexpert.hns.api.emergency.dto.BulkCheckInRequest;
 import com.minexpert.hns.api.emergency.dto.EvacuationCheckInDTO;
@@ -23,6 +27,7 @@ import com.minexpert.hns.api.emergency.entity.EvacuationCheckIn;
 import com.minexpert.hns.api.emergency.entity.GeneralAlert;
 import com.minexpert.hns.api.emergency.enums.CheckInStatus;
 import com.minexpert.hns.api.emergency.enums.EmergencyAuditEventType;
+import com.minexpert.hns.api.emergency.enums.EmergencyPermission;
 import com.minexpert.hns.api.emergency.enums.GeneralAlertStatus;
 import com.minexpert.hns.api.emergency.repository.AssemblyPointRepository;
 import com.minexpert.hns.api.emergency.repository.EvacuationCheckInRepository;
@@ -60,6 +65,38 @@ public class GeneralAlertService {
     private final EmergencyAuditService auditService;
     private final SimpMessagingTemplate messaging;
     private final EmergencyEmailService emergencyEmailService;
+    private final EmergencyPermissionService permissionService;
+
+    /**
+     * Clôture d'une alerte réservée aux COORDINATEURS. Une évacuation ne se
+     * termine pas toute seule (aucun scheduler ne la ferme) : tant qu'un
+     * coordinateur ne l'a pas explicitement close, elle reste ACTIVE — y compris
+     * après un redémarrage serveur (l'état est persisté). Accepte un coordinateur
+     * de la mine concernée OU un coordinateur global (companyId nul).
+     */
+    private void requireCoordinator(Long actorId, Long companyId) {
+        boolean ok = isPlatformAdmin() || (actorId != null && (
+            permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, companyId)
+            || permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, null)));
+        if (!ok) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "COORDINATOR_REQUIRED");
+        }
+    }
+
+    /**
+     * Un administrateur plateforme (rôle Administrator / SYSTEM_ADMINISTRATOR)
+     * peut clore comme un coordinateur. Détecté via l'autorité {@code INSPECTION_ADMIN}
+     * que la Gateway n'injecte QUE pour ces rôles (ADMIN_PERMS) — jamais pour un
+     * responder ou un employé.
+     */
+    private boolean isPlatformAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+            .anyMatch(a -> "INSPECTION_ADMIN".equals(a.getAuthority()));
+    }
 
     // ── Lecture ──────────────────────────────────────────────────────────────
 
@@ -153,6 +190,8 @@ public class GeneralAlertService {
             if (a.getStatus() == GeneralAlertStatus.ENDED) {
                 return toDto(a);
             }
+            // Seul un coordinateur peut mettre fin à l'alerte.
+            requireCoordinator(actorId, a.getCompanyId());
             a.setStatus(GeneralAlertStatus.ENDED);
             a.setEndedBy(actorId);
             a.setEndedAt(LocalDateTime.now());

@@ -20,6 +20,7 @@ import {
 import PageHeader from '../../UtilityComp/PageHeader';
 import ConfirmModal from '../../UtilityComp/ConfirmModal';
 import { useAppSelector } from '../../../slices/hooks';
+import { useCanCloseEmergency } from '../useEmergencyCoordinator';
 import {
     getSosAlert,
     getSosLifecycle,
@@ -76,6 +77,8 @@ const SosDetailPage = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const currentUser = useAppSelector((state: any) => state.user);
+    // Seul un coordinateur (ou un admin) peut clore un SOS (fermeture / fausse alerte).
+    const { canClose } = useCanCloseEmergency(currentUser?.id, currentUser?.role);
     const selectedCompanyId = useAppSelector((state) => state.companySelection.selectedCompanyId);
     const { subscribe } = useEmergencyWebSocket();
 
@@ -449,7 +452,7 @@ const SosDetailPage = () => {
                                         Équipe sur place
                                     </ActionButton>
                                 )}
-                                {availableActions.includes('CLOSE') && (
+                                {availableActions.includes('CLOSE') && canClose && (
                                     <ActionButton
                                         onClick={() => setConfirmCloseOpen(true)}
                                         disabled={acting}
@@ -459,7 +462,7 @@ const SosDetailPage = () => {
                                         Clôturer (résolu)
                                     </ActionButton>
                                 )}
-                                {availableActions.includes('FALSE') && (
+                                {availableActions.includes('FALSE') && canClose && (
                                     <ActionButton
                                         onClick={() => setFalseAlarmOpen(true)}
                                         disabled={acting}
@@ -469,6 +472,11 @@ const SosDetailPage = () => {
                                     >
                                         Marquer fausse alerte
                                     </ActionButton>
+                                )}
+                                {(availableActions.includes('CLOSE') || availableActions.includes('FALSE')) && !canClose && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 text-[12px] font-medium">
+                                        La clôture d'un SOS est réservée à un coordinateur.
+                                    </span>
                                 )}
                             </div>
                         )}

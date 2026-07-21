@@ -16,6 +16,7 @@ const AssemblyPointDetailPage = lazy(() => import('../components/EmergencyManage
 const SosListPage = lazy(() => import('../components/EmergencyManagement/Sos/SosListPage'));
 const SosDetailPage = lazy(() => import('../components/EmergencyManagement/Sos/SosDetailPage'));
 const GeneralAlertDetailPage = lazy(() => import('../components/EmergencyManagement/GeneralAlert/GeneralAlertDetailPage'));
+const AlertsHistoryPage = lazy(() => import('../components/EmergencyManagement/AlertsHistory/AlertsHistoryPage'));
 // LOT 64 — Écran géant d'évacuation (salle de crise) : plein écran, sans chrome.
 const EvacuationWallboard = lazy(() => import('../components/EmergencyManagement/GeneralAlert/EvacuationWallboard'));
 const EmergencyDashboardPage = lazy(() => import('../components/EmergencyManagement/Dashboard/EmergencyDashboardPage'));
@@ -554,6 +555,8 @@ const router = createBrowserRouter([
             // LOT 48 Phase 3.b — Suivi SOS
             { path: 'emergency/sos', element: <SosListPage /> },
             { path: 'emergency/sos/:id', element: <SosDetailPage /> },
+            // Historique unifié des alertes (Alertes Générales + SOS) sous forme de tuiles
+            { path: 'emergency/alerts', element: <AlertsHistoryPage /> },
             // LOT 48 Phase 4 — Alerte Générale + Évacuation
             { path: 'emergency/alerts/general/:id', element: <GeneralAlertDetailPage /> },
             // LOT 48 Phase 5 — Tableau de bord temps réel + KPI

@@ -7,9 +7,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.minexpert.hns.api.emergency.dto.SosAlertDTO;
 import com.minexpert.hns.api.emergency.dto.SosLifecycleEventDTO;
@@ -17,6 +21,7 @@ import com.minexpert.hns.api.emergency.dto.SosTransitionRequest;
 import com.minexpert.hns.api.emergency.entity.SosAlert;
 import com.minexpert.hns.api.emergency.entity.SosLifecycleEvent;
 import com.minexpert.hns.api.emergency.enums.EmergencyAuditEventType;
+import com.minexpert.hns.api.emergency.enums.EmergencyPermission;
 import com.minexpert.hns.api.emergency.enums.SosStatus;
 import com.minexpert.hns.api.emergency.repository.RescueTeamRepository;
 import com.minexpert.hns.api.emergency.repository.SosAlertRepository;
@@ -52,6 +57,33 @@ public class SosAlertService {
     private final EmergencyAuditService auditService;
     private final SimpMessagingTemplate messaging;
     private final EmergencyEmailService emergencyEmailService;
+    private final EmergencyPermissionService permissionService;
+
+    /**
+     * Clôture d'un SOS (CLOSED / FALSE_ALARM) réservée aux COORDINATEURS : sans
+     * clôture explicite par un coordinateur, le SOS reste ouvert et son
+     * traitement actif — y compris après un redémarrage (état persisté).
+     * Les transitions intermédiaires (acknowledge, dispatch, on-site) restent
+     * ouvertes aux intervenants.
+     */
+    private void requireCoordinator(Long actorId, Long companyId) {
+        boolean ok = isPlatformAdmin() || (actorId != null && (
+            permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, companyId)
+            || permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, null)));
+        if (!ok) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "COORDINATOR_REQUIRED");
+        }
+    }
+
+    /** Admin plateforme (autorité INSPECTION_ADMIN, cf. GeneralAlertService). */
+    private boolean isPlatformAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+            .anyMatch(a -> "INSPECTION_ADMIN".equals(a.getAuthority()));
+    }
 
     // ─── Transitions autorisées ──────────────────────────────────────────────
 
@@ -175,6 +207,11 @@ public class SosAlertService {
     ) {
         SosAlert alert = alertRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("SOS introuvable : id=" + id));
+
+        // Clôture terminale = décision d'un coordinateur (voir requireCoordinator).
+        if (target == SosStatus.CLOSED || target == SosStatus.FALSE_ALARM) {
+            requireCoordinator(actorId, alert.getCompanyId());
+        }
 
         SosStatus current = alert.getStatus();
         if (!TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {

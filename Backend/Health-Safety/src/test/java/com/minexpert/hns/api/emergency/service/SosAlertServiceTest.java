@@ -33,6 +33,7 @@ class SosAlertServiceTest {
     @Mock private EmergencyAuditService auditService;
     @Mock private SimpMessagingTemplate messaging;
     @Mock private EmergencyEmailService emergencyEmailService;
+    @Mock private EmergencyPermissionService permissionService;
 
     private SosAlertService service;
 
@@ -44,7 +45,8 @@ class SosAlertServiceTest {
             teamRepo,
             auditService,
             messaging,
-            emergencyEmailService
+            emergencyEmailService,
+            permissionService
         );
     }
 

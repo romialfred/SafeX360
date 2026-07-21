@@ -46,6 +46,8 @@ import {
     IconRadar,
     // Phase 7 Frontend-B — Espace personnel travailleur
     IconUserHeart,
+    // Historique des alertes d'urgence
+    IconHistory,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -319,6 +321,7 @@ const menuItems: MenuItem[] = [
         color: 'text-red-600',
         subItems: [
             { id: 'emergency-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
+            { id: 'emergency-alerts', label: 'Historique des alertes', icon: IconHistory },
             { id: 'emergency-sos', label: 'Suivi SOS', icon: IconUrgent },
             { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
@@ -509,6 +512,7 @@ export const menuIdToUrl: Record<string, string> = {
     // LOT 48 Phase 1-3 — Emergency Management
     emergency: "/emergency/dashboard",
     "emergency-dashboard": "/emergency/dashboard",
+    "emergency-alerts": "/emergency/alerts",
     "emergency-sos": "/emergency/sos",
     "emergency-settings": "/emergency/settings",
     "emergency-assembly-points": "/emergency/assembly-points",

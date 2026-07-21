@@ -223,8 +223,18 @@ class IndustrialSiren {
 cleanupOldCheckIns();
 
 const POLL_INTERVAL_MS = 12_000;
-const MAX_SIREN_AGE_MS = 10 * 60 * 1000;
-const SIREN_AUTO_STOP_MS = 10 * 60 * 1000;
+/**
+ * Règle des 20 minutes = purement SONORE / VISUELLE.
+ *
+ * Passé ce délai, on cesse de faire hurler la sirène et de rouvrir le popup
+ * plein écran (une évacuation ne se pilote plus au son au bout de 20 min, elle
+ * se pilote au centre de commande). MAIS l'alerte elle-même reste ACTIVE : son
+ * traitement (appel nominatif, tableau de bord, pointages) continue et survit à
+ * un redémarrage — seule la clôture par un COORDINATEUR y met fin. Ces
+ * constantes ne touchent donc QUE l'audio et le popup, jamais le cycle de vie.
+ */
+const MAX_SIREN_AGE_MS = 20 * 60 * 1000;
+const SIREN_AUTO_STOP_MS = 20 * 60 * 1000;
 
 const isAlertFresh = (a: GeneralAlertDTO): boolean => {
     if (!a.triggeredAt) return false;
