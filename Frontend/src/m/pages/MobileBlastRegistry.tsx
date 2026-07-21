@@ -36,7 +36,7 @@ const STATUS_META: Record<BlastStatus, { label: string; tone: ChipTone }> = {
     IMMINENT: { label: 'Imminent', tone: 'orange' },
     FIRED: { label: 'Tiré', tone: 'slate' },
     ALL_CLEAR: { label: 'Fin d\'alerte', tone: 'emerald' },
-    MISFIRE: { label: 'Raté — verrouillé', tone: 'rose' },
+    MISFIRE: { label: 'Raté : verrouillé', tone: 'rose' },
     CANCELLED: { label: 'Annulé', tone: 'slate' },
     POSTPONED: { label: 'Reporté', tone: 'slate' },
 };

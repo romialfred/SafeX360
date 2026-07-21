@@ -498,9 +498,9 @@ export default function AnnualPlanningGrid({
                     <Select
                         size="sm"
                         data={[
-                            { label: "IGP — Inspection HSE", value: "IGP" },
-                            { label: "RSS — Réunion sécurité", value: "HSE" },
-                            { label: "TDM — Tournée Leadership", value: "TDM" },
+                            { label: "IGP : Inspection HSE", value: "IGP" },
+                            { label: "RSS : Réunion sécurité", value: "HSE" },
+                            { label: "TDM : Tournée Leadership", value: "TDM" },
                         ]}
                         label="Catégorie"
                         placeholder="Sélectionner la catégorie"

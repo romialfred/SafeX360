@@ -25,11 +25,11 @@ interface Props {
 
 // ── Couleurs par priorité (1 = rouge fort, 5 = gris) ──────────────────────
 const PRIORITY_COLORS: Record<number, { fill: string; ring: string; label: string }> = {
-    1: { fill: '#dc2626', ring: '#7f1d1d', label: 'P1 — Haute' },
-    2: { fill: '#f97316', ring: '#9a3412', label: 'P2 — Standard' },
-    3: { fill: '#eab308', ring: '#854d0e', label: 'P3 — Secondaire' },
-    4: { fill: '#0ea5e9', ring: '#0c4a6e', label: 'P4 — Repli' },
-    5: { fill: '#64748b', ring: '#1e293b', label: 'P5 — Faible' },
+    1: { fill: '#dc2626', ring: '#7f1d1d', label: 'P1 : Haute' },
+    2: { fill: '#f97316', ring: '#9a3412', label: 'P2 : Standard' },
+    3: { fill: '#eab308', ring: '#854d0e', label: 'P3 : Secondaire' },
+    4: { fill: '#0ea5e9', ring: '#0c4a6e', label: 'P4 : Repli' },
+    5: { fill: '#64748b', ring: '#1e293b', label: 'P5 : Faible' },
 };
 
 const buildSvgIcon = (priority: number) => {

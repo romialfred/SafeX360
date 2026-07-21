@@ -56,9 +56,9 @@ const ALERT_TILES: AlertTile[] = [
 ];
 
 const URGENCY_OPTIONS: { value: UrgencyLevel; label: string }[] = [
-    { value: 'INFORMATION', label: 'Information — pas de danger immédiat' },
-    { value: 'URGENT',      label: 'Urgent — action requise rapidement' },
-    { value: 'CRITICAL',    label: 'Critique — danger immédiat, évacuation possible' },
+    { value: 'INFORMATION', label: 'Information : pas de danger immédiat' },
+    { value: 'URGENT',      label: 'Urgent : action requise rapidement' },
+    { value: 'CRITICAL',    label: 'Critique : danger immédiat, évacuation possible' },
 ];
 
 const MIN_DESCRIPTION_LENGTH = 20;

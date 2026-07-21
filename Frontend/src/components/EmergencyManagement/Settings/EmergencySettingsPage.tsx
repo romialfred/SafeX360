@@ -538,7 +538,7 @@ const EmergencySettingsPage = () => {
                                     }
                                     className="w-full px-3 py-1.5 text-[13px] bg-slate-50/60 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white"
                                 >
-                                    <option value="">—</option>
+                                    <option value="">Sélectionner…</option>
                                     <option value="AFRICAS_TALKING">Africa's Talking</option>
                                     <option value="TWILIO">Twilio</option>
                                 </select>
@@ -565,7 +565,7 @@ const EmergencySettingsPage = () => {
                                     onChange={(e) => setDraft({ ...draft, voiceProvider: e.target.value || null })}
                                     className="w-full px-3 py-1.5 text-[13px] bg-slate-50/60 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white"
                                 >
-                                    <option value="">—</option>
+                                    <option value="">Sélectionner…</option>
                                     <option value="AZURE_SPEECH">Azure Speech</option>
                                     <option value="OTHER">Autre</option>
                                 </select>

@@ -575,7 +575,7 @@ const RescueTeamsSection = ({ companyId }: Props) => {
                             onChange={(e) => setMemberRole(e.target.value)}
                             className="w-full px-3 py-1.5 text-[12.5px] border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 bg-white"
                         >
-                            <option value="">— Aucun —</option>
+                            <option value="">Aucun</option>
                             <option value="Médecin">Médecin</option>
                             <option value="Infirmier">Infirmier</option>
                             <option value="Secouriste">Secouriste</option>

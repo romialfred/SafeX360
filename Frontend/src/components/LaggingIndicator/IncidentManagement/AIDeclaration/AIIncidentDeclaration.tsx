@@ -72,10 +72,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-    P0: { bg: '#FEE2E2', text: '#B91C1C', label: 'P0 — Immédiat' },
-    P1: { bg: '#FFEDD5', text: '#C2410C', label: 'P1 — Court terme' },
-    P2: { bg: '#FEF3C7', text: '#B45309', label: 'P2 — Moyen terme' },
-    P3: { bg: '#DBEAFE', text: '#1E40AF', label: 'P3 — Long terme' },
+    P0: { bg: '#FEE2E2', text: '#B91C1C', label: 'P0 : Immédiat' },
+    P1: { bg: '#FFEDD5', text: '#C2410C', label: 'P1 : Court terme' },
+    P2: { bg: '#FEF3C7', text: '#B45309', label: 'P2 : Moyen terme' },
+    P3: { bg: '#DBEAFE', text: '#1E40AF', label: 'P3 : Long terme' },
 };
 
 // ───────────────────────────────────────────────────────────────────────

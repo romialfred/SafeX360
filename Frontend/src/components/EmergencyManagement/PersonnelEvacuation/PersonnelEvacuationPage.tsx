@@ -15,6 +15,7 @@ import {
     IconPencil,
     IconMail,
     IconX,
+    IconChevronDown,
     IconBriefcase,
     IconBuilding,
 } from '@tabler/icons-react';
@@ -52,9 +53,9 @@ import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/Eme
 // ── Constantes d'affichage priorité ──────────────────────────────────────────
 
 const PRIORITY_META: Record<EvacPriorityLevel, { badge: string; label: string }> = {
-    P1: { badge: 'bg-red-50 text-red-700 border-red-200', label: 'P1 — Priorité 1' },
-    P2: { badge: 'bg-amber-50 text-amber-700 border-amber-200', label: 'P2 — Priorité 2' },
-    P3: { badge: 'bg-sky-50 text-sky-700 border-sky-200', label: 'P3 — Priorité 3' },
+    P1: { badge: 'bg-red-50 text-red-700 border-red-200', label: 'P1 : Priorité 1' },
+    P2: { badge: 'bg-amber-50 text-amber-700 border-amber-200', label: 'P2 : Priorité 2' },
+    P3: { badge: 'bg-sky-50 text-sky-700 border-sky-200', label: 'P3 : Priorité 3' },
 };
 const NONE_BADGE = 'bg-slate-50 text-slate-500 border-slate-200';
 
@@ -78,9 +79,9 @@ function PriorityBadge({ level, auto }: { level?: EvacPriorityLevel | null; auto
     if (!level) {
         return (
             <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${NONE_BADGE}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${NONE_BADGE}`}
             >
-                —
+                Sans
             </span>
         );
     }
@@ -265,7 +266,7 @@ function ContactRow({
                 <p className="text-[13px] text-slate-900 font-semibold leading-tight">
                     {contact.name || 'Contact'}
                     {contact.relationship && (
-                        <span className="text-[12px] text-slate-500 font-normal"> — {contact.relationship}</span>
+                        <span className="text-[12px] text-slate-500 font-normal"> · {contact.relationship}</span>
                     )}
                 </p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-[11.5px] text-slate-600">
@@ -542,7 +543,7 @@ const PersonnelEvacuationPage = () => {
                 ]}
                 useSafeXLogo
                 title="Personnel & Évacuation"
-                subtitle="Priorité d'évacuation, point de rassemblement et contacts d'urgence — par employé"
+                subtitle="Priorité d'évacuation, point de rassemblement et contacts d'urgence · par employé"
                 actions={
                     <button
                         type="button"
@@ -731,7 +732,7 @@ const PersonnelEvacuationPage = () => {
                                 {profile.director && (
                                     <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 border border-red-200 text-[11.5px] text-red-700 font-medium">
                                         <IconShieldCheck size={13} stroke={1.8} />
-                                        Directeur — P1 automatique si aucune priorité n'est définie
+                                        Directeur : P1 automatique si aucune priorité n'est définie
                                     </div>
                                 )}
                             </div>
@@ -747,33 +748,39 @@ const PersonnelEvacuationPage = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     <label className="flex flex-col gap-1">
                                         <span className="text-[11px] font-medium text-slate-600">Priorité d'évacuation</span>
-                                        <select
-                                            value={prioValue}
-                                            onChange={(e) => setPrioValue(e.target.value as '' | EvacPriorityLevel)}
-                                            className="w-full px-2.5 py-1.5 text-[12.5px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-400"
-                                        >
-                                            <option value="">— Aucune —</option>
-                                            <option value="P1">P1 — Priorité 1</option>
-                                            <option value="P2">P2 — Priorité 2</option>
-                                            <option value="P3">P3 — Priorité 3</option>
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                value={prioValue}
+                                                onChange={(e) => setPrioValue(e.target.value as '' | EvacPriorityLevel)}
+                                                className="w-full appearance-none cursor-pointer h-9 pl-3 pr-8 text-[12.5px] leading-tight border border-slate-200 rounded-lg bg-white text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-400"
+                                            >
+                                                <option value="">Aucune priorité</option>
+                                                <option value="P1">P1 : Priorité 1</option>
+                                                <option value="P2">P2 : Priorité 2</option>
+                                                <option value="P3">P3 : Priorité 3</option>
+                                            </select>
+                                            <IconChevronDown size={15} stroke={1.8} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        </div>
                                     </label>
                                     <label className="flex flex-col gap-1">
                                         <span className="text-[11px] font-medium text-slate-600">Point de rassemblement</span>
-                                        <select
-                                            value={apValue}
-                                            onChange={(e) => setApValue(e.target.value)}
-                                            className="w-full px-2.5 py-1.5 text-[12.5px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-400"
-                                        >
-                                            <option value="">— Non affecté —</option>
-                                            {assemblyPoints
-                                                .filter((ap) => ap.id != null)
-                                                .map((ap) => (
-                                                    <option key={ap.id} value={String(ap.id)}>
-                                                        {ap.name}
-                                                    </option>
-                                                ))}
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                value={apValue}
+                                                onChange={(e) => setApValue(e.target.value)}
+                                                className="w-full appearance-none cursor-pointer h-9 pl-3 pr-8 text-[12.5px] leading-tight border border-slate-200 rounded-lg bg-white text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-400"
+                                            >
+                                                <option value="">Non affecté</option>
+                                                {assemblyPoints
+                                                    .filter((ap) => ap.id != null)
+                                                    .map((ap) => (
+                                                        <option key={ap.id} value={String(ap.id)}>
+                                                            {ap.name}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                            <IconChevronDown size={15} stroke={1.8} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        </div>
                                     </label>
                                     <div className="sm:col-span-2">
                                         <Field

@@ -311,7 +311,7 @@ const WeeklyPlanningSection = ({ companyId }: Props) => {
                                                         onChange={(e) => setDraftDay(e.target.value)}
                                                         className="w-full px-2.5 py-1.5 text-[12.5px] border border-amber-200 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
                                                     >
-                                                        <option value="">— Aucune équipe —</option>
+                                                        <option value="">Aucune équipe</option>
                                                         {teams.map((t) => (
                                                             <option key={t.id} value={t.id}>
                                                                 {t.name}{' '}
@@ -356,7 +356,7 @@ const WeeklyPlanningSection = ({ companyId }: Props) => {
                                                         onChange={(e) => setDraftNight(e.target.value)}
                                                         className="w-full px-2.5 py-1.5 text-[12.5px] border border-indigo-200 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
                                                     >
-                                                        <option value="">— Aucune équipe —</option>
+                                                        <option value="">Aucune équipe</option>
                                                         {teams.map((t) => (
                                                             <option key={t.id} value={t.id}>
                                                                 {t.name}{' '}
