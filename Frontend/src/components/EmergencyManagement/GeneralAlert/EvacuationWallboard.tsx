@@ -60,7 +60,7 @@ function BigTile({ icon, label, value, color, pulse, roster }: {
                 {icon}
                 <span className="text-[14px] uppercase tracking-[0.14em] font-extrabold">{label}</span>
             </div>
-            <span className={`mt-1 text-[58px] leading-none font-black tabular-nums ${pulse ? 'animate-pulse' : ''}`} style={{ color }}>
+            <span className={`mt-1 text-[clamp(2rem,5.5vh,3.6rem)] leading-none font-black tabular-nums ${pulse ? 'animate-pulse' : ''}`} style={{ color }}>
                 {value}
             </span>
             {hasRoster && (
@@ -190,7 +190,7 @@ function VipMetric({ label, value, sub, color, big }: {
     return (
         <div className="rounded-2xl p-4 flex flex-col justify-between" style={{ background: `${color}18`, border: `1.5px solid ${color}55` }}>
             <span className="text-[12px] uppercase tracking-[0.12em] font-extrabold" style={{ color }}>{label}</span>
-            <span className={`${big ? 'text-[46px]' : 'text-[34px]'} leading-none font-black tabular-nums mt-1`} style={{ color }}>{value}</span>
+            <span className={`${big ? 'text-[clamp(1.8rem,4.5vh,2.9rem)]' : 'text-[clamp(1.5rem,3.4vh,2.2rem)]'} leading-none font-black tabular-nums mt-1`} style={{ color }}>{value}</span>
             {sub && <span className="text-[12px] text-slate-300 mt-1">{sub}</span>}
         </div>
     );
@@ -288,10 +288,10 @@ function VipView({ companyId, checkIns, assemblyPoints }: {
     const p1pct = p1concerned ? Math.round((p1safe / p1concerned) * 100) : 0;
 
     return (
-        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                    <div className="text-[22px] font-black text-white" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                    <div className="text-[clamp(1.15rem,2.4vh,1.5rem)] font-black text-white" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
                         Personnel prioritaire à évacuer
                     </div>
                     <p className="text-[13px] text-slate-300 mt-0.5">Suivi rapproché des personnalités (P1) et du personnel sensible pendant l'évacuation.</p>
@@ -611,14 +611,14 @@ export default function EvacuationWallboard() {
         <div ref={rootRef} className="h-screen w-full text-white flex flex-col overflow-hidden"
             style={{ background: 'linear-gradient(180deg,#111a2e 0%,#0d1424 60%,#0a0f1c 100%)' }}>
             {/* ── En-tête ── */}
-            <header className="shrink-0 flex items-center justify-between gap-4 px-8 pt-5 pb-4 flex-wrap border-b border-white/10">
-                <div className="flex items-center gap-4 min-w-0">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-red-600' : 'bg-emerald-600'}`}>
-                        {isActive ? <IconAlertTriangle size={30} stroke={2} className="animate-pulse" /> : <IconShieldCheck size={30} stroke={2} />}
+            <header className="shrink-0 flex items-center justify-between gap-4 px-4 lg:px-8 pt-3 lg:pt-5 pb-3 lg:pb-4 flex-wrap border-b border-white/10">
+                <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+                    <div className={`w-11 h-11 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-red-600' : 'bg-emerald-600'}`}>
+                        {isActive ? <IconAlertTriangle size={26} stroke={2} className="animate-pulse" /> : <IconShieldCheck size={26} stroke={2} />}
                     </div>
                     <div className="min-w-0">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <div className="text-[30px] leading-none font-black tracking-tight" style={{ color: '#ffffff', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                        <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
+                            <div className="text-[clamp(1.25rem,2.6vh,1.9rem)] leading-none font-black tracking-tight" style={{ color: '#ffffff', fontFamily: "'Source Serif 4', Georgia, serif" }}>
                                 Salle de Crise
                             </div>
                             {isActive ? (
@@ -639,17 +639,17 @@ export default function EvacuationWallboard() {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-6 flex-shrink-0">
+                <div className="flex items-center gap-3 lg:gap-6 flex-shrink-0">
                     <div className="text-right">
                         <p className="text-[12px] uppercase tracking-widest text-slate-300 font-semibold">Durée</p>
-                        <p className="text-[42px] leading-none font-mono font-bold tabular-nums text-white">{formatClock(s.elapsedSec)}</p>
+                        <p className="text-[clamp(1.5rem,4vh,2.6rem)] leading-none font-mono font-bold tabular-nums text-white">{formatClock(s.elapsedSec)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-[12px] uppercase tracking-widest text-slate-300 font-semibold">Heure</p>
-                        <p className="text-[26px] leading-none font-mono tabular-nums text-slate-100 mt-1.5">{clock}</p>
+                        <p className="text-[clamp(1rem,2.6vh,1.6rem)] leading-none font-mono tabular-nums text-slate-100 mt-1.5">{clock}</p>
                     </div>
                     <button type="button" onClick={goFullscreen} title="Plein écran"
-                        className="w-12 h-12 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center border border-white/20">
+                        className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center border border-white/20">
                         <IconMaximize size={22} stroke={1.8} />
                     </button>
                 </div>
@@ -671,17 +671,17 @@ export default function EvacuationWallboard() {
 
             {tab === 'general' && (
             <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden">
-                <main className="flex-1 min-w-0 min-h-0 px-8 py-6 space-y-6 xl:overflow-y-auto">
+                <main className="flex-1 min-w-0 min-h-0 px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6 xl:overflow-y-auto">
                 {/* ═══ Rangée 1 : Hero + Jauge + Progression ═══ */}
-                <div className="grid grid-cols-12 gap-6">
+                <div className="grid grid-cols-12 gap-4 lg:gap-6">
                     {/* Non localisés — LE chiffre */}
-                    <div className={`col-span-12 lg:col-span-4 rounded-3xl p-7 flex flex-col justify-center ${s.unaccounted > 0 ? 'bg-red-600/20 border-2 border-red-500/50' : 'bg-emerald-600/20 border-2 border-emerald-500/50'}`}>
-                        <p className="text-[17px] uppercase tracking-[0.18em] font-extrabold text-white">Personnes non localisées</p>
+                    <div className={`col-span-12 lg:col-span-4 rounded-3xl p-4 lg:p-7 flex flex-col justify-center ${s.unaccounted > 0 ? 'bg-red-600/20 border-2 border-red-500/50' : 'bg-emerald-600/20 border-2 border-emerald-500/50'}`}>
+                        <p className="text-[clamp(0.8rem,1.7vh,1.05rem)] uppercase tracking-[0.18em] font-extrabold text-white">Personnes non localisées</p>
                         <div className="flex items-end gap-4 mt-1">
-                            <span className={`text-[128px] leading-none font-black tabular-nums ${s.unaccounted > 0 ? 'text-red-300 animate-pulse' : 'text-emerald-300'}`}>
+                            <span className={`text-[clamp(3.25rem,13vh,8rem)] leading-none font-black tabular-nums ${s.unaccounted > 0 ? 'text-red-300 animate-pulse' : 'text-emerald-300'}`}>
                                 {s.unaccounted}
                             </span>
-                            <span className="mb-5 text-[19px] font-semibold text-slate-200">
+                            <span className="mb-3 lg:mb-5 text-[clamp(0.85rem,1.6vh,1.2rem)] font-semibold text-slate-200">
                                 {s.unaccounted > 0 ? 'à retrouver' : 'effectif localisé'}
                             </span>
                         </div>
@@ -697,7 +697,7 @@ export default function EvacuationWallboard() {
                     {/* Jauge radiale — taux de mise en sécurité */}
                     <div className="col-span-12 lg:col-span-3 rounded-3xl bg-slate-800/70 border border-white/15 p-5 flex flex-col">
                         <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-1 pl-2.5 border-l-4 border-sky-400">Taux de mise en sécurité</div>
-                        <div className="relative flex-1 min-h-[190px]">
+                        <div className="relative flex-1 min-h-[clamp(120px,16vh,190px)]">
                             <ResponsiveContainer>
                                 <RadialBarChart innerRadius="72%" outerRadius="100%" data={[{ value: s.securedPct }]} startAngle={90} endAngle={-270}>
                                     <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
@@ -705,7 +705,7 @@ export default function EvacuationWallboard() {
                                 </RadialBarChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[52px] leading-none font-black tabular-nums" style={{ color: gaugeColor }}>{s.securedPct}%</span>
+                                <span className="text-[clamp(1.9rem,5vh,3.25rem)] leading-none font-black tabular-nums" style={{ color: gaugeColor }}>{s.securedPct}%</span>
                                 <span className="text-[13px] text-slate-300 mt-1">{s.safe}/{s.concerned} concernés</span>
                             </div>
                         </div>
