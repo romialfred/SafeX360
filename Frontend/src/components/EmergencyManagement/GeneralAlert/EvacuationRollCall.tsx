@@ -227,7 +227,7 @@ export default function EvacuationRollCall({
     };
 
     const FILTERS: { key: FilterKey; label: string; count: number; tone: string }[] = [
-        { key: 'PENDING', label: 'Reste à pointer', count: counts.pending, tone: 'bg-slate-900 text-white' },
+        { key: 'PENDING', label: 'À pointer', count: counts.pending, tone: 'bg-slate-900 text-white' },
         { key: 'SAFE', label: 'En sécurité', count: counts.SAFE, tone: 'bg-emerald-600 text-white' },
         { key: 'INJURED', label: 'Blessés', count: counts.INJURED, tone: 'bg-amber-500 text-white' },
         { key: 'MISSING', label: 'Absents', count: counts.MISSING, tone: 'bg-red-600 text-white' },
@@ -277,15 +277,15 @@ export default function EvacuationRollCall({
                 </div>
             </div>
 
-            {/* ── Filtres + recherche ── */}
-            <div className="px-4 py-2.5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center gap-2.5">
-                <div className="flex flex-wrap gap-1.5 flex-1">
+            {/* ── Filtres (une seule ligne) puis recherche en dessous ── */}
+            <div className="px-4 py-2.5 border-b border-slate-100 flex flex-col gap-2.5">
+                <div className="flex flex-nowrap gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5">
                     {FILTERS.map((f) => (
                         <button
                             key={f.key}
                             type="button"
                             onClick={() => setFilter(f.key)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium transition-colors ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
                                 filter === f.key ? f.tone : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
                         >
@@ -295,7 +295,7 @@ export default function EvacuationRollCall({
                     ))}
                 </div>
 
-                <div className="relative lg:w-[220px] flex-shrink-0">
+                <div className="relative w-full">
                     <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                         type="text"

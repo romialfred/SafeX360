@@ -469,11 +469,8 @@ const GeneralAlertDetailPage = () => {
                         <TabBtn active={activeTab === 'rollcall'} onClick={() => setActiveTab('rollcall')} icon={<IconClipboardList size={13} stroke={1.8} />}>
                             Appel nominatif
                         </TabBtn>
-                        <TabBtn active={activeTab === 'points'} onClick={() => setActiveTab('points')} icon={<IconMapPin size={13} stroke={1.8} />}>
-                            Points de rassemblement
-                        </TabBtn>
                         <TabBtn active={activeTab === 'headcount'} onClick={() => setActiveTab('headcount')} icon={<IconUsers size={13} stroke={1.8} />}>
-                            Head-count par catégorie
+                            Total
                         </TabBtn>
                     </div>
 

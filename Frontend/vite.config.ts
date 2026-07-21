@@ -126,16 +126,14 @@ export default defineConfig({
           /^\/safex-analytics/,
         ],
         runtimeCaching: [
-          // App shell : Cache First avec revalidation
-          {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'safex-shell',
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 20, maxAgeSeconds: 7 * 24 * 3600 },
-            },
-          },
+          // NB : PAS de runtimeCaching sur les navigations (request.destination
+          // === 'document'). NetworkFirst faisait un fetch() dont la réponse
+          // pouvait être « redirected: true » (rewrite/redirect serveur), ce que
+          // le navigateur REFUSE pour une navigation (« a redirected response
+          // was used for a request whose redirect mode is not follow »),
+          // provoquant un ERR_FAILED à l'ouverture (ex. Salle de Crise en
+          // nouvelle fenêtre). Les navigations sont servies par navigateFallback
+          // (index.html PRÉCACHÉ, jamais redirigé), tenu à jour par autoUpdate.
           // Assets statiques (JS, CSS, fonts) : Cache First
           {
             urlPattern: ({ request }) =>
