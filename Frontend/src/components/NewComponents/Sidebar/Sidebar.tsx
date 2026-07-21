@@ -128,6 +128,7 @@ const SIDEBAR_LABEL_TO_KEY: Record<string, string> = {
     "Plan Annuel d'Audits": 'sidebar.annualAuditPlan',
     'Plan Annuel Audits': 'sidebar.annualAuditPlan',
     'Suivi SOS': 'sidebar.sosTracking',
+    'Suivi des alertes': 'sidebar.alertsTracking',
     'Exigences légales': 'sidebar.legalRequirements',
     'Affectations employés': 'sidebar.employeeAssignments',
     'Affectations par poste': 'sidebar.positionAssignments',
@@ -321,8 +322,7 @@ const menuItems: MenuItem[] = [
         color: 'text-red-600',
         subItems: [
             { id: 'emergency-dashboard', label: 'Tableau de bord', icon: IconLayoutDashboard },
-            { id: 'emergency-alerts', label: 'Historique des alertes', icon: IconHistory },
-            { id: 'emergency-sos', label: 'Suivi SOS', icon: IconUrgent },
+            { id: 'emergency-alerts', label: 'Suivi des alertes', icon: IconHistory },
             { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
             { id: 'emergency-personnel', label: 'Personnel & Évacuation', icon: IconUsers },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }

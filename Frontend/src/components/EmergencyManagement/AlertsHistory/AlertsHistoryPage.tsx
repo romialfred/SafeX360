@@ -218,11 +218,11 @@ const AlertsHistoryPage = () => {
                 breadcrumbs={[
                     { label: 'Accueil', to: '/' },
                     { label: 'Gestion des Urgences' },
-                    { label: 'Historique des alertes' },
+                    { label: 'Suivi des alertes' },
                 ]}
                 useSafeXLogo
-                title="Alertes & SOS — Historique"
-                subtitle="Rouvrez une alerte pour revoir ou poursuivre son traitement"
+                title="Suivi des alertes & SOS"
+                subtitle="Rouvrez une alerte ou un SOS pour revoir ou poursuivre son traitement"
                 actions={
                     <>
                         <span
