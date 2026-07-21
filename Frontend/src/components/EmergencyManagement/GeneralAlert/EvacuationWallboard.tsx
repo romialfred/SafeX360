@@ -52,8 +52,8 @@ function Panel({ title, icon, children, className = '' }: {
     title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string;
 }) {
     return (
-        <div className={`rounded-2xl bg-slate-800/70 border border-white/15 p-4 ${className}`}>
-            <h3 className="text-[15px] font-bold text-white mb-3 flex items-center gap-2">
+        <div className={`rounded-2xl bg-slate-800/80 border border-white/20 p-4 ${className}`}>
+            <h3 className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-3 flex items-center gap-2 pl-2.5 border-l-4 border-sky-400">
                 {icon}{title}
             </h3>
             {children}
@@ -151,9 +151,9 @@ export default function EvacuationWallboard() {
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
-                            <p className="text-[13px] uppercase tracking-[0.22em] font-bold text-sky-200">
-                                Centre de commande — Évacuation
-                            </p>
+                            <h1 className="text-[30px] leading-none font-black text-white tracking-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                                Salle de Crise
+                            </h1>
                             {isActive ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600 text-[12px] font-bold uppercase tracking-wider">
                                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Alerte en cours
@@ -165,10 +165,11 @@ export default function EvacuationWallboard() {
                                 {isDrill ? 'EXERCICE' : 'RÉEL'}
                             </span>
                         </div>
-                        <h1 className="text-[27px] font-bold mt-1 text-white truncate" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                        <p className="text-[15px] mt-1 text-slate-200 truncate">
+                            <span className="uppercase tracking-[0.16em] text-[11px] font-bold text-sky-300 mr-2">Évacuation</span>
                             {alert ? formatReasonCode(alert.reasonCode) : 'Chargement…'}
-                            {alert?.message ? <span className="text-slate-200 font-normal text-[19px]"> — {alert.message}</span> : null}
-                        </h1>
+                            {alert?.message ? <span className="text-slate-300"> — {alert.message}</span> : null}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-6 flex-shrink-0">

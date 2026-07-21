@@ -78,6 +78,14 @@ export interface CriticalPerson {
     assemblyPointName?: string | null;
 }
 
+export interface RosterPerson {
+    id: number;
+    name: string;
+    department: string;
+}
+
+export type RosterByStatus = Record<EvacStatus | 'PENDING', RosterPerson[]>;
+
 export interface ProgressPoint {
     /** Minutes écoulées depuis le déclenchement. */
     tMin: number;
@@ -109,6 +117,8 @@ export interface EvacuationStats {
     byDepartment: DeptRow[];
     injuredList: CriticalPerson[];
     criticalList: CriticalPerson[];
+    /** Liste des employés par statut (pour les popovers de survol). */
+    rosterByStatus: RosterByStatus;
     progression: ProgressPoint[];
     /** Cadence moyenne de localisation (personnes / minute). */
     ratePerMin: number;
@@ -138,28 +148,36 @@ export function computeEvacuationStats(
     let safe = 0, injured = 0, missing = 0, notApplicable = 0, pending = 0;
     const injuredList: CriticalPerson[] = [];
     const criticalList: CriticalPerson[] = [];
+    const rosterByStatus: RosterByStatus = { SAFE: [], INJURED: [], MISSING: [], NOT_APPLICABLE: [], PENDING: [] };
 
     employees.forEach((e) => {
         const dept = e.department?.trim() || NO_DEPT;
+        const person: RosterPerson = { id: e.id, name: e.name, department: dept };
         const ci = byEmp.get(e.id);
         if (!ci) {
             pending++;
+            rosterByStatus.PENDING.push(person);
             criticalList.push({ id: e.id, name: e.name, department: dept, kind: 'pending' });
             return;
         }
         switch (ci.status) {
-            case 'SAFE': safe++; break;
+            case 'SAFE': safe++; rosterByStatus.SAFE.push(person); break;
             case 'INJURED':
                 injured++;
+                rosterByStatus.INJURED.push(person);
                 injuredList.push({ id: e.id, name: e.name, department: dept, kind: 'injured', assemblyPointName: ci.assemblyPointName });
                 break;
             case 'MISSING':
                 missing++;
+                rosterByStatus.MISSING.push(person);
                 criticalList.push({ id: e.id, name: e.name, department: dept, kind: 'missing' });
                 break;
-            case 'NOT_APPLICABLE': notApplicable++; break;
+            case 'NOT_APPLICABLE': notApplicable++; rosterByStatus.NOT_APPLICABLE.push(person); break;
         }
     });
+    // Tri alphabétique de chaque liste (lecture au survol).
+    (Object.keys(rosterByStatus) as (EvacStatus | 'PENDING')[]).forEach((k) =>
+        rosterByStatus[k].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })));
 
     const total = employees.length;
     const concerned = total - notApplicable;
@@ -249,7 +267,7 @@ export function computeEvacuationStats(
     return {
         total, concerned, safe, injured, missing, notApplicable, pending, accounted,
         securedPct, accountedPct, unaccounted: pending,
-        donut, byAssemblyPoint, byDepartment, injuredList, criticalList, progression,
+        donut, byAssemblyPoint, byDepartment, injuredList, criticalList, rosterByStatus, progression,
         ratePerMin, elapsedSec,
     };
 }

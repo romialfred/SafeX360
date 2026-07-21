@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react';
 import {
     computeEvacuationStats, STATUS_COLOR,
-    type EvacEmployee, type EvacCheckIn, type EvacAssemblyPoint,
+    type EvacEmployee, type EvacCheckIn, type EvacAssemblyPoint, type RosterPerson,
 } from './evacuationStats';
 
 /**
@@ -33,11 +33,39 @@ interface Props {
     onDetach?: () => void;
 }
 
-function Stat({ icon, label, value, sub, color, pulse }: {
-    icon: React.ReactNode; label: string; value: string | number; sub?: string; color: string; pulse?: boolean;
-}) {
+function RosterPopover({ label, color, roster }: { label: string; color: string; roster: RosterPerson[] }) {
+    // Popover affiché au survol : liste des employés (nom + département).
     return (
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+        <div className="absolute left-0 top-full mt-1.5 z-30 w-72 max-w-[90vw] opacity-0 invisible translate-y-1
+                        group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
+                        transition-all duration-150 pointer-events-none">
+            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+                <div className="px-3 py-2 flex items-center justify-between" style={{ background: `${color}12` }}>
+                    <span className="text-[11.5px] font-bold" style={{ color }}>{label}</span>
+                    <span className="text-[11px] font-semibold text-slate-500 tabular-nums">{roster.length}</span>
+                </div>
+                <div className="max-h-[240px] overflow-y-auto divide-y divide-slate-50">
+                    {roster.length === 0 ? (
+                        <p className="px-3 py-3 text-[12px] text-slate-400 text-center">Personne dans cette catégorie</p>
+                    ) : roster.map((p) => (
+                        <div key={p.id} className="px-3 py-1.5 flex items-center justify-between gap-3">
+                            <span className="text-[12.5px] text-slate-800 font-medium truncate">{p.name}</span>
+                            <span className="text-[11px] text-slate-400 truncate flex-shrink-0 max-w-[45%]">{p.department}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Stat({ icon, label, value, sub, color, pulse, roster }: {
+    icon: React.ReactNode; label: string; value: string | number; sub?: string; color: string; pulse?: boolean;
+    roster?: RosterPerson[];
+}) {
+    const hasRoster = Array.isArray(roster);
+    return (
+        <div className={`group relative bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm ${hasRoster ? 'cursor-help hover:border-slate-300 hover:shadow-md transition-all' : ''}`}>
             <div className="flex items-center gap-2 mb-1">
                 <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${color}1a`, color }}>
                     {icon}
@@ -50,6 +78,7 @@ function Stat({ icon, label, value, sub, color, pulse }: {
                 </span>
                 {sub && <span className="text-[12px] text-slate-500">{sub}</span>}
             </div>
+            {hasRoster && <RosterPopover label={label} color={color} roster={roster!} />}
         </div>
     );
 }
@@ -92,13 +121,13 @@ export default function EvacuationDashboard({
             {/* ── KPI ── */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 <Stat icon={<IconShieldCheck size={15} stroke={2} />} label="Mis en sécurité" color="#059669"
-                    value={s.safe} sub={`/ ${s.concerned}`} />
+                    value={s.safe} sub={`/ ${s.concerned}`} roster={s.rosterByStatus.SAFE} />
                 <Stat icon={<IconStethoscope size={15} stroke={2} />} label="Blessés" color="#d97706" value={s.injured}
-                    pulse={isActive && s.injured > 0} />
+                    pulse={isActive && s.injured > 0} roster={s.rosterByStatus.INJURED} />
                 <Stat icon={<IconShieldX size={15} stroke={2} />} label="Absents" color="#dc2626" value={s.missing}
-                    pulse={isActive && s.missing > 0} />
+                    pulse={isActive && s.missing > 0} roster={s.rosterByStatus.MISSING} />
                 <Stat icon={<IconUsers size={15} stroke={2} />} label="Reste à pointer" color="#475569"
-                    value={s.pending} pulse={isActive && s.pending > 0} />
+                    value={s.pending} pulse={isActive && s.pending > 0} roster={s.rosterByStatus.PENDING} />
                 <Stat icon={<IconClock size={15} stroke={2} />} label="Taux sécurisé" color="#0f766e"
                     value={`${s.securedPct}%`} sub={`${s.accountedPct}% localisés`} />
             </div>

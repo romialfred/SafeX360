@@ -13,6 +13,7 @@ import {
     IconCircleMinus,
     IconClipboardList,
     IconChartBar,
+    IconMaximize,
     IconBuildingBank,
     IconUrgent,
     IconArchive,
@@ -369,18 +370,22 @@ const GeneralAlertDetailPage = () => {
                     { label: `#${alert.id}` },
                 ]}
                 useSafeXLogo
-                title="Centre de Commande — Évacuation"
+                title="Centre de Commande Évacuation"
                 subtitle={`Alerte #${alert.id} · ${formatReasonCode(alert.reasonCode)} · ${alert.drillMode ? 'EXERCICE' : 'RÉEL'}`}
                 actions={
                     <>
-                        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12.5px] font-medium hover:bg-slate-50 shadow-sm">
-                            <IconArrowLeft size={12} stroke={2} /> Retour
-                        </button>
                         <button
                             onClick={() => navigate('/emergency/assembly-points')}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12.5px] font-medium hover:bg-slate-50 shadow-sm"
                         >
-                            <IconSettings size={12} stroke={2} /> Points de rassemblement
+                            <IconMapPin size={12} stroke={2} /> Points de rassemblement
+                        </button>
+                        <button
+                            onClick={openWallboard}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-[12.5px] font-semibold hover:bg-slate-800 shadow-sm"
+                            title="Ouvrir la salle de crise sur un écran géant"
+                        >
+                            <IconMaximize size={12} stroke={2} /> Voir la Salle de Crise
                         </button>
                         {isActive && canClose && (
                             <button onClick={() => setEndOpen(true)} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-semibold hover:bg-red-700 shadow-sm">
@@ -396,95 +401,54 @@ const GeneralAlertDetailPage = () => {
                 }
             />
 
-            {/* ═══ BANDEAU D'URGENCE ═══ */}
-            <div className={`mt-5 rounded-2xl px-6 py-5 shadow-lg ${
+            {/* ═══ BANDEAU D'URGENCE (compact) ═══ */}
+            <div className={`mt-4 rounded-xl px-5 py-3 shadow-md ${
                 isActive
                     ? 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white'
                     : 'bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white'
             }`}>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white/20'}`}>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/20 flex-shrink-0">
                             {isActive ? (
-                                <IconBellRinging size={28} stroke={2} className="animate-pulse" />
+                                <IconBellRinging size={20} stroke={2} className="animate-pulse" />
                             ) : (
-                                <IconShieldCheck size={28} stroke={2} />
+                                <IconShieldCheck size={20} stroke={2} />
                             )}
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <p className="text-[11px] uppercase tracking-[0.18em] font-bold opacity-90">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-[10px] uppercase tracking-[0.18em] font-bold opacity-90">
                                     {isActive ? 'ALERTE EN COURS' : 'ALERTE TERMINÉE'}
                                 </p>
                                 {isActive && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider animate-pulse">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                                        Live
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[9px] font-bold uppercase tracking-wider animate-pulse">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white" /> Live
                                     </span>
                                 )}
+                                <span className="text-[15px] font-semibold truncate" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                                    {alert.message || 'Évacuation générale du site'}
+                                </span>
                             </div>
-                            <p className="text-[20px] mt-1" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>
-                                {alert.message || 'Évacuation générale du site'}
-                            </p>
-                            {/* Périmètre de zones : « toute la mine » ou les zones ciblées. */}
-                            <p className="text-[12px] opacity-90 mt-1 font-medium">
+                            <p className="text-[11px] opacity-85 mt-0.5 truncate">
                                 Périmètre :{' '}
                                 {alert.zoneScope === 'SELECTION' && (alert.zoneNames?.length ?? 0) > 0
                                     ? `zones à évacuer — ${alert.zoneNames!.join(', ')}`
                                     : 'toute la mine'}
-                            </p>
-                            <p className="text-[12px] opacity-80 mt-0.5">
-                                Déclenchée par {alert.triggeredByName || '—'} · {formatTime(alert.triggeredAt)}
+                                {' · '}Déclenchée par {alert.triggeredByName || '—'} · {formatTime(alert.triggeredAt)}
                             </p>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-[10.5px] uppercase tracking-wider opacity-80 mb-1">Durée écoulée</p>
-                        <p className="text-[32px] font-mono leading-none" style={{ fontWeight: 700 }}>
+                    <div className="text-right flex-shrink-0">
+                        <p className="text-[9.5px] uppercase tracking-wider opacity-80">Durée écoulée</p>
+                        <p className="text-[24px] font-mono leading-none font-bold">
                             {isActive ? formatElapsed(elapsedLive) : formatElapsed(alert.elapsedSeconds)}
                         </p>
                         {!isActive && alert.endedAt && (
-                            <p className="text-[11px] opacity-80 mt-1">Fin : {formatTime(alert.endedAt)}</p>
+                            <p className="text-[10px] opacity-80 mt-0.5">Fin : {formatTime(alert.endedAt)}</p>
                         )}
                     </div>
                 </div>
-            </div>
-
-            {/* ═══ KPI ROW ═══ */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-5">
-                <KpiCard
-                    icon={<IconAlertTriangle size={18} stroke={1.8} />}
-                    label="Alertes actives"
-                    value={isActive ? '1' : '0'}
-                    accent="red"
-                    highlight={isActive}
-                />
-                <KpiCard
-                    icon={<IconUsers size={18} stroke={1.8} />}
-                    label="En cours d'évacuation"
-                    value={String(totals.total - totals.safe)}
-                    accent="orange"
-                    highlight={isActive && totals.missing > 0}
-                />
-                <KpiCard
-                    icon={<IconShieldCheck size={18} stroke={1.8} />}
-                    label="Personnes en sécurité"
-                    value={String(totals.safe)}
-                    accent="emerald"
-                />
-                <KpiCard
-                    icon={<IconStethoscope size={18} stroke={1.8} />}
-                    label="Blessés"
-                    value={String(totals.injured)}
-                    accent="amber"
-                    highlight={totals.injured > 0}
-                />
-                <KpiCard
-                    icon={<IconHeartbeat size={18} stroke={1.8} />}
-                    label="Effectif total"
-                    value={totals.total.toLocaleString('fr-FR')}
-                    accent="slate"
-                />
             </div>
 
             {/* ═══ GRILLE PRINCIPALE ═══ */}
@@ -515,7 +479,6 @@ const GeneralAlertDetailPage = () => {
                             triggeredAt={alert.triggeredAt}
                             isActive={isActive}
                             nowMs={Date.now()}
-                            onDetach={openWallboard}
                         />
                     )}
 
