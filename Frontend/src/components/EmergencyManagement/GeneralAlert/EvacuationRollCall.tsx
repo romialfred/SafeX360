@@ -232,7 +232,6 @@ export default function EvacuationRollCall({
         { key: 'INJURED', label: 'Blessés', count: counts.INJURED, tone: 'bg-amber-500 text-white' },
         { key: 'MISSING', label: 'Absents', count: counts.MISSING, tone: 'bg-red-600 text-white' },
         { key: 'NOT_APPLICABLE', label: 'Non concernés', count: counts.NOT_APPLICABLE, tone: 'bg-slate-600 text-white' },
-        { key: 'ALL', label: 'Tout l\'effectif', count: counts.total, tone: 'bg-slate-700 text-white' },
     ];
 
     return (
